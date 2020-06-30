@@ -52,7 +52,9 @@ setup(
         'djangorestframework',
         'drf-extensions',
         'drf-yasg',
+        'passlib',
         'psycopg2',
+        'pymongo',
         'rich',
         'whitenoise[brotli]',
         # Production-only
