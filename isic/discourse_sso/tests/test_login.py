@@ -3,6 +3,7 @@ import urllib
 import base64
 import hmac
 import hashlib
+import urllib
 
 from isic.discourse_sso.forms import DiscourseSSOLoginForm
 from django.urls import reverse
@@ -30,9 +31,8 @@ def test_sso_login_post(client, girder_user, discourse_sso_credentials, monkeypa
 
     monkeypatch.setattr(DiscourseSSOLoginForm, '_get_girder_user_groups', _get_girder_user_groups)
 
-    sso, sig = discourse_sso_credentials
     resp = client.post(
-        reverse('discourse-sso-login') + f'?sso={sso}&sig={sig}',
+        reverse('discourse-sso-login') + f'?{urllib.parse.urlencode(discourse_sso_credentials)}',
         {'login': 'some-login', 'password': 'foo'},
     )
     assert resp.status_code == 302

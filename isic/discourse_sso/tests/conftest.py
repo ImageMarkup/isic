@@ -25,7 +25,10 @@ def discourse_sso_credentials(discourse_sso_secret):
     signature = hmac.new(
         key=discourse_sso_secret.encode('utf-8'), msg=sso_payload, digestmod=hashlib.sha256
     ).hexdigest()
-    return sso_payload.decode('utf-8'), signature
+    return {
+    	'sso': sso_payload.decode('utf-8'),
+    	'sig': signature
+    }
 
 
 @pytest.fixture

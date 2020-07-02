@@ -13,7 +13,7 @@ class DiscourseSSOLoginForm(forms.Form):
     password = forms.CharField(widget=forms.PasswordInput)
 
     girder_user: Optional[Dict] = None
-    girder_user_groups: Optional[List] = None
+    girder_user_groups: Optional[List[Dict]] = None
 
     @staticmethod
     def _get_girder_user(login_field, login) -> Optional[Dict]:
@@ -44,15 +44,13 @@ class DiscourseSSOLoginForm(forms.Form):
         # Handle users with no password
         if not self.girder_user['salt']:
             raise ValidationError(
-                'This user does not have a password. You must log in with an '
-                'external service, or reset your password.'
+                'This user does not have a password. '
+                'You must reset your password to obtain one.'
             )
 
         # Verify password
         if not CryptContext(schemes=['bcrypt']).verify(password, self.girder_user['salt']):
             raise ValidationError('Login failed.')
 
-        # This has the same behavior as User.canLogin, but returns more
-        # detailed error messages
         if self.girder_user.get('status', 'enabled') == 'disabled':
-            raise ValidationError('Account is disabled.', extra='disabled')
+            raise ValidationError('Account is disabled.')
