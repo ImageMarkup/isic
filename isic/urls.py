@@ -5,7 +5,7 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
-from isic.discourse_sso.views import DiscourseSSOLoginView
+from isic.discourse_sso.views import discourse_sso_login
 
 
 router = routers.SimpleRouter()
@@ -22,7 +22,7 @@ urlpatterns = [
     path('api/v1/', include(router.urls)),
     path('api/docs/redoc', schema_view.with_ui('redoc'), name='docs-redoc'),
     path('api/docs/swagger', schema_view.with_ui('swagger'), name='docs-swagger'),
-    path('discourse-sso/login', DiscourseSSOLoginView.as_view(), name='discourse-sso-login'),
+    path('discourse-sso/login', discourse_sso_login, name='discourse-sso-login'),
 ]
 
 if settings.DEBUG:
