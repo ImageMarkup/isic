@@ -9,13 +9,16 @@ from isic.discourse_sso.forms import DiscourseSSOLoginForm
 from django.urls import reverse
 
 
-def test_sso_login_get(client, girder_user):
-    resp = client.get(reverse('discourse-sso-login'))
-    assert resp.status_code == 302
-    assert resp['Location'] == 'https://forum.isic-archive.com'
-
-    # test bad SSO credentials
-    resp = client.get(reverse('discourse-sso-login') + '?sso=fake&sig=fake')
+@pytest.mark.parametrize(
+    'login_url',
+    [
+        reverse('discourse-sso-login') + '?sso=ZmFrZQo=&sig=fake',  # 'fake' in base64
+        reverse('discourse-sso-login'),
+    ],
+    ids=['bad_credentials', 'no_credentials'],
+)
+def test_sso_login_get(client, girder_user, login_url):
+    resp = client.get(login_url)
     assert resp.status_code == 302
     assert resp['Location'] == 'https://forum.isic-archive.com'
 
