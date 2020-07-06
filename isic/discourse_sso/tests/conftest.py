@@ -5,6 +5,7 @@ import urllib
 import base64
 import hmac
 import hashlib
+from bson.objectid import ObjectId
 
 
 @pytest.fixture
@@ -34,7 +35,7 @@ def discourse_sso_credentials(discourse_sso_secret):
 @pytest.fixture
 def girder_user():
     return {
-        '_id': 'some-fake-id',
+        '_id': ObjectId(),
         'login': 'some-login',
         'email': 'a-fake-email@email.test',
         'firstName': '',
