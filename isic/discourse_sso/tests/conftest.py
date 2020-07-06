@@ -1,11 +1,12 @@
+import base64
+import hashlib
+import hmac
+import urllib
+
+from bson.objectid import ObjectId
 import pytest
 
 from isic.discourse_sso import views
-import urllib
-import base64
-import hmac
-import hashlib
-from bson.objectid import ObjectId
 
 
 @pytest.fixture
@@ -26,10 +27,7 @@ def discourse_sso_credentials(discourse_sso_secret):
     signature = hmac.new(
         key=discourse_sso_secret.encode('utf-8'), msg=sso_payload, digestmod=hashlib.sha256
     ).hexdigest()
-    return {
-    	'sso': sso_payload.decode('utf-8'),
-    	'sig': signature
-    }
+    return {'sso': sso_payload.decode('utf-8'), 'sig': signature}
 
 
 @pytest.fixture

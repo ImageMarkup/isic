@@ -4,7 +4,6 @@ from django import forms
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from passlib.context import CryptContext
-import pymongo
 from pymongo import MongoClient
 
 
@@ -44,8 +43,7 @@ class DiscourseSSOLoginForm(forms.Form):
         # Handle users with no password
         if not self.girder_user['salt']:
             raise ValidationError(
-                'This user does not have a password. '
-                'You must reset your password to obtain one.'
+                'This user does not have a password. ' 'You must reset your password to obtain one.'
             )
 
         # Verify password
