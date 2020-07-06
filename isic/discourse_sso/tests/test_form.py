@@ -1,9 +1,3 @@
-import pytest
-import urllib
-import base64
-import hmac
-import hashlib
-
 from isic.discourse_sso.forms import DiscourseSSOLoginForm
 
 

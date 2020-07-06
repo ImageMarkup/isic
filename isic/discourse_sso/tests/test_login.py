@@ -1,12 +1,9 @@
-import pytest
-import urllib
-import base64
-import hmac
-import hashlib
 import urllib
 
-from isic.discourse_sso.forms import DiscourseSSOLoginForm
 from django.urls import reverse
+import pytest
+
+from isic.discourse_sso.forms import DiscourseSSOLoginForm
 
 
 @pytest.mark.parametrize(

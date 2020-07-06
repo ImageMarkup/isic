@@ -1,15 +1,14 @@
+import base64
 from dataclasses import dataclass
+import hashlib
+import hmac
+import urllib
 
 from django.conf import settings
 from django.shortcuts import redirect, render
-from django.views.generic.edit import FormView
 
 from isic.discourse_sso.forms import DiscourseSSOLoginForm
-import hmac
-import hashlib
-import base64
-import urllib
-from django.http import JsonResponse
+
 
 @dataclass
 class SSOParamSet:
@@ -41,9 +40,7 @@ def _get_sso_parameters(request) -> SSOParamSet:
 
     # Ensure HMAC-SHA256 digest matches provided signature
     expected_signature = hmac.new(
-        key=settings.DISCOURSE_SSO_SECRET.encode('utf-8'),
-        msg=sso,
-        digestmod=hashlib.sha256,
+        key=settings.DISCOURSE_SSO_SECRET.encode('utf-8'), msg=sso, digestmod=hashlib.sha256,
     ).hexdigest()
     if sig != expected_signature:
         # TODO: log forged sso
@@ -71,8 +68,8 @@ def discourse_sso_login(request):
                 'require_activation': 'false' if form.girder_user['emailVerified'] else 'true',
                 'admin': 'true' if form.girder_user['admin'] else 'false',
                 # Note, this list matches Discourse groups' "name" (which may only include numbers,
-                # letters and underscores), not "Full Name" (which is human readable), so it may be of
-                # limited utility
+                # letters and underscores), not "Full Name" (which is human readable), so it
+                # may be of limited utility
                 'add_groups': ','.join(group['name'] for group in form.girder_user_groups),
             }
             payload = urllib.parse.urlencode(payload)
@@ -80,7 +77,9 @@ def discourse_sso_login(request):
             payload = base64.b64encode(payload)
 
             digest = hmac.new(
-                key=settings.DISCOURSE_SSO_SECRET.encode('utf-8'), msg=payload, digestmod=hashlib.sha256
+                key=settings.DISCOURSE_SSO_SECRET.encode('utf-8'),
+                msg=payload,
+                digestmod=hashlib.sha256,
             ).hexdigest()
             args = urllib.parse.urlencode({'sso': payload, 'sig': digest})
 
@@ -89,4 +88,3 @@ def discourse_sso_login(request):
         form = DiscourseSSOLoginForm()
 
     return render(request, 'login.html', {'form': form})
-

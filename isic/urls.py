@@ -7,7 +7,6 @@ from rest_framework import permissions, routers
 
 from isic.discourse_sso.views import discourse_sso_login
 
-
 router = routers.SimpleRouter()
 
 # OpenAPI generation
