@@ -2,7 +2,6 @@ from pathlib import Path
 
 from setuptools import find_packages, setup
 
-
 readme_file = Path(__file__).parent / 'README.md'
 if readme_file.exists():
     with readme_file.open() as f:
@@ -52,7 +51,9 @@ setup(
         'djangorestframework',
         'drf-extensions',
         'drf-yasg',
+        'passlib',
         'psycopg2',
+        'pymongo',
         'rich',
         'whitenoise[brotli]',
         # Production-only
