@@ -16,7 +16,8 @@ class DiscourseSSOLoginForm(forms.Form):
     girder_user_groups: Optional[List[Dict]] = None
 
     @staticmethod
-    def _get_girder_user(login_field, login) -> Optional[Dict]:
+    def _get_girder_user(login) -> Optional[Dict]:
+        login_field = 'email' if '@' in login else 'login'
         db = MongoClient(settings.ARCHIVE_MONGO_URI).girder
         return db.users.find_one({login_field: login})
 
@@ -33,9 +34,8 @@ class DiscourseSSOLoginForm(forms.Form):
         # TODO: Support email verification requirement
         cleaned_data = super().clean()
         login, password = cleaned_data['login'], cleaned_data['password']
-        login_field = 'email' if '@' in login else 'login'
 
-        self.girder_user = self._get_girder_user(login_field, login)
+        self.girder_user = self._get_girder_user(login)
         if self.girder_user is None:
             raise ValidationError('Login failed.')
 
