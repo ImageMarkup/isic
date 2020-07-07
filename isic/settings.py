@@ -3,10 +3,16 @@ from __future__ import annotations
 from pathlib import Path
 
 from configurations import values
-from django_girders.configuration import DevelopmentBaseConfiguration
+from django_girders.configuration import (
+    ComposedConfiguration,
+    ConfigMixin,
+    DevelopmentBaseConfiguration,
+    HerokuProductionBaseConfiguration,
+    ProductionBaseConfiguration,
+)
 
 
-class DevelopmentConfiguration(DevelopmentBaseConfiguration):
+class IsicConfig(ConfigMixin):
     WSGI_APPLICATION = 'isic.wsgi.application'
     ROOT_URLCONF = 'isic.urls'
 
@@ -16,5 +22,17 @@ class DevelopmentConfiguration(DevelopmentBaseConfiguration):
     ARCHIVE_MONGO_URI = values.SecretValue()
 
     @staticmethod
-    def before_binding(configuration: DevelopmentConfiguration) -> None:
-        configuration.INSTALLED_APPS += ['isic.discourse_sso']
+    def before_binding(configuration: ComposedConfiguration) -> None:
+        configuration.INSTALLED_APPS += ['isic.discourse_sso.apps.DiscourseSSOConfig']
+
+
+class DevelopmentConfiguration(IsicConfig, DevelopmentBaseConfiguration):
+    pass
+
+
+class ProductionConfiguration(IsicConfig, ProductionBaseConfiguration):
+    pass
+
+
+class HerokuProductionConfiguration(IsicConfig, HerokuProductionBaseConfiguration):
+    pass
