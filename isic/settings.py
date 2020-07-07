@@ -27,7 +27,8 @@ class IsicConfig(ConfigMixin):
 
 
 class DevelopmentConfiguration(IsicConfig, DevelopmentBaseConfiguration):
-    pass
+    DISCOURSE_SSO_SECRET = 'secret'
+    ARCHIVE_MONGO_URI = values.Value('mongodb://localhost:27017/girder')
 
 
 class ProductionConfiguration(IsicConfig, ProductionBaseConfiguration):
