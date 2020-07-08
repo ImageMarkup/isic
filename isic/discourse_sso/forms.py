@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 from django import forms
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from passlib.context import CryptContext
+from passlib.hash import bcrypt
 from pymongo import MongoClient
 
 
@@ -17,8 +17,10 @@ class DiscourseSSOLoginForm(forms.Form):
     @staticmethod
     def _get_girder_user(login) -> Optional[Dict]:
         login_field = 'email' if '@' in login else 'login'
-        db = MongoClient(settings.ARCHIVE_MONGO_URI).girder
-        return db.users.find_one({login_field: login})
+        # Default database name is specified within ARCHIVE_MONGO_URI
+        db = MongoClient(settings.ARCHIVE_MONGO_URI).get_database()
+        # To facilitate type checking, use dictionary-style collection lookup
+        return db['user'].find_one({login_field: login})
 
     @staticmethod
     def _get_girder_user_groups(user: Dict) -> List:
@@ -47,7 +49,7 @@ class DiscourseSSOLoginForm(forms.Form):
             )
 
         # Verify password
-        if not CryptContext(schemes=['bcrypt']).verify(password, self.girder_user['salt']):
+        if not bcrypt.verify(password, self.girder_user['salt']):
             raise ValidationError('Login failed.')
 
         if self.girder_user.get('status', 'enabled') == 'disabled':
