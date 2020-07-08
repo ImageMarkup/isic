@@ -8,8 +8,14 @@ from pymongo import MongoClient
 
 
 class DiscourseSSOLoginForm(forms.Form):
-    login = forms.CharField(label='Email or username', max_length=100)
-    password = forms.CharField(widget=forms.PasswordInput)
+    login = forms.CharField(
+        widget=forms.TextInput(attrs={'autocomplete': 'username'}),
+        label='Email or username',
+        max_length=100,
+    )
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'autocomplete': 'current-password'})
+    )
 
     girder_user: Optional[Dict] = None
     girder_user_groups: Optional[List[Dict]] = None
