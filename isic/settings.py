@@ -23,7 +23,25 @@ class IsicConfig(ConfigMixin):
 
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:
-        configuration.INSTALLED_APPS += ['isic.discourse_sso.apps.DiscourseSSOConfig']
+        configuration.INSTALLED_APPS += [
+            'isic.discourse_sso.apps.DiscourseSSOConfig',
+            'oauth2_provider',
+        ]
+        configuration.REST_FRAMEWORK = {
+            'DEFAULT_AUTHENTICATION_CLASSES': [
+                'rest_framework.authentication.BasicAuthentication',
+                'rest_framework.authentication.TokenAuthentication',
+                'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+            ],
+            'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated',],
+        }
+        configuration.OAUTH2_PROVIDER = {
+            'SCOPES': {
+                'read': 'Read scope',
+                'write': 'Write scope',
+                'groups': 'Access to your groups',
+            }
+        }
 
 
 class DevelopmentConfiguration(IsicConfig, DevelopmentBaseConfiguration):
