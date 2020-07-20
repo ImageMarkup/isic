@@ -23,6 +23,7 @@ urlpatterns = [
     path('api/docs/swagger', schema_view.with_ui('swagger'), name='docs-swagger'),
     path('discourse-sso/login', discourse_sso_login, name='discourse-sso-login'),
     path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
+    path('accounts/', include('django.contrib.auth.urls')),
 ]
 
 if settings.DEBUG:

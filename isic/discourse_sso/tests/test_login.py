@@ -3,8 +3,7 @@ import urllib
 from django.urls import reverse
 import pytest
 
-from isic.discourse_sso.forms import DiscourseSSOLoginForm
-
+from isic.discourse_sso import views
 
 @pytest.mark.parametrize(
     'login_url',
@@ -24,12 +23,12 @@ def test_sso_login_post(client, girder_user, discourse_sso_credentials, monkeypa
     def _get_girder_user(*args, **kwargs):
         return girder_user
 
-    monkeypatch.setattr(DiscourseSSOLoginForm, '_get_girder_user', _get_girder_user)
+    monkeypatch.setattr(views, 'get_girder_user', _get_girder_user)
 
     def _get_girder_user_groups(*args, **kwargs):
         return []
 
-    monkeypatch.setattr(DiscourseSSOLoginForm, '_get_girder_user_groups', _get_girder_user_groups)
+    monkeypatch.setattr(views, 'get_girder_user_groups', _get_girder_user_groups)
 
     resp = client.post(
         reverse('discourse-sso-login') + f'?{urllib.parse.urlencode(discourse_sso_credentials)}',
