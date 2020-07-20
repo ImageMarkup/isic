@@ -33,15 +33,17 @@ class IsicConfig(ConfigMixin):
                 'rest_framework.authentication.TokenAuthentication',
                 'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
             ],
-            'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated',],
+            'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
         }
         configuration.OAUTH2_PROVIDER = {
             'SCOPES': {
-                'read': 'Read scope',
-                'write': 'Write scope',
-                'groups': 'Access to your groups',
-            }
+                'identity': 'Access to your basic profile information',
+                'image:read': 'Read access to images',
+                'image:write': 'Write access to images',
+            },
+            'DEFAULT_SCOPES': ['identity'],
         }
+        configuration.PKCE_REQUIRED = True
 
 
 class DevelopmentConfiguration(IsicConfig, DevelopmentBaseConfiguration):
@@ -50,7 +52,7 @@ class DevelopmentConfiguration(IsicConfig, DevelopmentBaseConfiguration):
 
 
 class ProductionConfiguration(IsicConfig, ProductionBaseConfiguration):
-    pass
+    ALLOWED_REDIRECT_URI_SCHEMES = ['https']
 
 
 class HerokuProductionConfiguration(IsicConfig, HerokuProductionBaseConfiguration):
