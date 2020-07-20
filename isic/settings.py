@@ -24,6 +24,7 @@ class IsicConfig(ConfigMixin):
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:
         configuration.INSTALLED_APPS += [
+            'isic.login.apps.LoginConfig',
             'isic.discourse_sso.apps.DiscourseSSOConfig',
             'oauth2_provider',
         ]
@@ -42,12 +43,18 @@ class IsicConfig(ConfigMixin):
                 'image:write': 'Write access to images',
             },
             'DEFAULT_SCOPES': ['identity'],
+            'ACCESS_TOKEN_MODEL': 'isic.login.apps.LoginConfig.GirderOAuthAccessToken',
         }
         configuration.PKCE_REQUIRED = True
 
+        configuration.AUTHENTICATION_BACKENDS = [
+            'isic.login.girder.GirderBackend',
+            'django.contrib.auth.backends.ModelBackend',
+        ]
+
 
 class DevelopmentConfiguration(IsicConfig, DevelopmentBaseConfiguration):
-    DISCOURSE_SSO_SECRET = 'secret'
+    DISCOURSE_SSO_SECRET = values.Value()
     ARCHIVE_MONGO_URI = values.Value('mongodb://localhost:27017/girder')
 
 
