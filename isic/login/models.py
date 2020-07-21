@@ -1,15 +1,16 @@
 from django.db import models
 from django.conf import settings
-from oauth2_provider.models import AbstractAccessToken
+from oauth2_provider.models import AccessToken
 import random
+from typing import Dict
 import string
 from pymongo.mongo_client import MongoClient
 import datetime
 
 from isic.login.girder import get_girder_user
 
-class GirderOAuthAccessToken(AbstractAccessToken):
-    girder_token = models.CharField()
+class GirderOAuthAccessToken(AccessToken):
+    girder_token = models.CharField(max_length=64)
 
     @staticmethod
     def _create_girder_token(girder_user: Dict) -> str:
