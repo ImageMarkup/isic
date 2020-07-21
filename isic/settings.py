@@ -24,7 +24,7 @@ class IsicConfig(ConfigMixin):
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:
         configuration.INSTALLED_APPS += [
-            'isic.login.apps.LoginConfig',
+            'isic.login',
             'isic.discourse_sso.apps.DiscourseSSOConfig',
             'oauth2_provider',
         ]
@@ -43,7 +43,7 @@ class IsicConfig(ConfigMixin):
                 'image:write': 'Write access to images',
             },
             'DEFAULT_SCOPES': ['identity'],
-            'ACCESS_TOKEN_MODEL': 'isic.login.apps.LoginConfig.GirderOAuthAccessToken',
+            'ACCESS_TOKEN_MODEL': 'login.GirderOAuthAccessToken',
         }
         configuration.PKCE_REQUIRED = True
 
