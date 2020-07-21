@@ -43,7 +43,6 @@ class IsicConfig(ConfigMixin):
                 'image:write': 'Write access to images',
             },
             'DEFAULT_SCOPES': ['identity'],
-            'ACCESS_TOKEN_MODEL': 'login.GirderOAuthAccessToken',
         }
         configuration.PKCE_REQUIRED = True
 

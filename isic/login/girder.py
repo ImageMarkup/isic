@@ -50,6 +50,7 @@ class GirderBackend(BaseBackend):
 
         try:
             user = User.objects.get(username=girder_user['email'])
+            # TODO: update password?
         except User.DoesNotExist:
             user = User.objects.create(
                 date_joined=girder_user['created'],
