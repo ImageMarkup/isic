@@ -6,7 +6,9 @@ import urllib
 from bson.objectid import ObjectId
 import pytest
 
+# Factory names must be imported into conftest, importing for side effects is not sufficient
 from isic.discourse_sso import views
+from .factories import *  # noqa: F401,F403
 
 
 @pytest.fixture

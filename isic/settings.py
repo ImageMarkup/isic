@@ -9,6 +9,7 @@ from django_girders.configuration import (
     DevelopmentBaseConfiguration,
     HerokuProductionBaseConfiguration,
     ProductionBaseConfiguration,
+    TestingBaseConfiguration,
 )
 
 
@@ -29,6 +30,11 @@ class IsicConfig(ConfigMixin):
 class DevelopmentConfiguration(IsicConfig, DevelopmentBaseConfiguration):
     DISCOURSE_SSO_SECRET = 'secret'
     ARCHIVE_MONGO_URI = values.Value('mongodb://localhost:27017/girder')
+
+
+class TestingConfiguration(IsicConfig, TestingBaseConfiguration):
+    DISCOURSE_SSO_SECRET = 'secret'
+    ARCHIVE_MONGO_URI = 'mongodb://localhost:27017/girder'
 
 
 class ProductionConfiguration(IsicConfig, ProductionBaseConfiguration):
