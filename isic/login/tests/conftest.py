@@ -1,8 +1,6 @@
 from pytest_factoryboy import register
 
-from .factories import ProfileFactory, UserFactory
+from .factories import GirderUserFactory
 
 
-# Can't use the register decorators with circular factory references
-register(ProfileFactory)
-register(UserFactory)
+register(GirderUserFactory, 'girder_user')
