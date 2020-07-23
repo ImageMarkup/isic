@@ -19,9 +19,6 @@ class IsicConfig(ConfigMixin):
 
     BASE_DIR = str(Path(__file__).absolute().parent.parent)
 
-    DISCOURSE_SSO_SECRET = values.SecretValue()
-    ARCHIVE_MONGO_URI = values.SecretValue()
-
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:
         configuration.INSTALLED_APPS += [
@@ -29,38 +26,44 @@ class IsicConfig(ConfigMixin):
             'isic.discourse_sso.apps.DiscourseSSOConfig',
             'oauth2_provider',
         ]
-        configuration.REST_FRAMEWORK = {
-            'DEFAULT_AUTHENTICATION_CLASSES': [
-                'rest_framework.authentication.BasicAuthentication',
-                'rest_framework.authentication.TokenAuthentication',
-                'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
-            ],
-            'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
-        }
-        configuration.OAUTH2_PROVIDER = {
-            'SCOPES': {
-                'identity': 'Access to your basic profile information',
-                'image:read': 'Read access to images',
-                'image:write': 'Write access to images',
-            },
-            'DEFAULT_SCOPES': ['identity'],
-        }
-        configuration.PKCE_REQUIRED = True
 
-        configuration.AUTHENTICATION_BACKENDS = [
-            'isic.login.girder.GirderBackend',
-            'django.contrib.auth.backends.ModelBackend',
-        ]
+    REST_FRAMEWORK = {
+        'DEFAULT_AUTHENTICATION_CLASSES': [
+            'rest_framework.authentication.BasicAuthentication',
+            'rest_framework.authentication.TokenAuthentication',
+            'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+        ],
+        'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
+    }
+    OAUTH2_PROVIDER = {
+        'SCOPES': {
+            'identity': 'Access to your basic profile information',
+            'image:read': 'Read access to images',
+            'image:write': 'Write access to images',
+        },
+        'DEFAULT_SCOPES': ['identity'],
+    }
+    PKCE_REQUIRED = True
+
+    AUTHENTICATION_BACKENDS = ['isic.login.girder.GirderBackend']
+
+    ISIC_DISCOURSE_SSO_SECRET = values.SecretValue()
+    ISIC_MONGO_URI = values.SecretValue()
 
 
 class DevelopmentConfiguration(IsicConfig, DevelopmentBaseConfiguration):
-    DISCOURSE_SSO_SECRET = values.Value()
-    ARCHIVE_MONGO_URI = values.Value('mongodb://localhost:27017/girder')
+    AUTHENTICATION_BACKENDS = [
+        'isic.login.girder.GirderBackend',
+        'django.contrib.auth.backends.ModelBackend',
+    ]
+
+    ISIC_DISCOURSE_SSO_SECRET = values.Value('discourse_secret')
+    ISIC_MONGO_URI = values.Value('mongodb://localhost:27017/girder')
 
 
 class TestingConfiguration(IsicConfig, TestingBaseConfiguration):
-    DISCOURSE_SSO_SECRET = 'secret'
-    ARCHIVE_MONGO_URI = 'mongodb://localhost:27017/girder'
+    ISIC_DISCOURSE_SSO_SECRET = 'discourse_secret'
+    ISIC_MONGO_URI = 'mongodb://localhost:27017/girder'
 
 
 class ProductionConfiguration(IsicConfig, ProductionBaseConfiguration):
