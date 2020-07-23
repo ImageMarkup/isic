@@ -19,22 +19,53 @@ class IsicConfig(ConfigMixin):
 
     BASE_DIR = str(Path(__file__).absolute().parent.parent)
 
-    DISCOURSE_SSO_SECRET = values.SecretValue()
-    ARCHIVE_MONGO_URI = values.SecretValue()
-
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:
-        configuration.INSTALLED_APPS += ['isic.discourse_sso.apps.DiscourseSSOConfig']
+        configuration.INSTALLED_APPS += [
+            'isic.login',
+            'isic.discourse_sso.apps.DiscourseSSOConfig',
+            'oauth2_provider',
+        ]
+
+    REST_FRAMEWORK = {
+        'DEFAULT_AUTHENTICATION_CLASSES': [
+            'rest_framework.authentication.BasicAuthentication',
+            'rest_framework.authentication.TokenAuthentication',
+            'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+        ],
+        'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
+    }
+    OAUTH2_PROVIDER = {
+        'SCOPES': {
+            'identity': 'Access to your basic profile information',
+            'image:read': 'Read access to images',
+            'image:write': 'Write access to images',
+        },
+        'DEFAULT_SCOPES': ['identity'],
+    }
+    PKCE_REQUIRED = True
+    ALLOWED_REDIRECT_URI_SCHEMES = ['https']
+
+    AUTHENTICATION_BACKENDS = ['isic.login.girder.GirderBackend']
+
+    ISIC_DISCOURSE_SSO_SECRET = values.SecretValue()
+    ISIC_MONGO_URI = values.SecretValue()
 
 
 class DevelopmentConfiguration(IsicConfig, DevelopmentBaseConfiguration):
-    DISCOURSE_SSO_SECRET = 'secret'
-    ARCHIVE_MONGO_URI = values.Value('mongodb://localhost:27017/girder')
+    AUTHENTICATION_BACKENDS = [
+        'isic.login.girder.GirderBackend',
+        'django.contrib.auth.backends.ModelBackend',
+    ]
+    ALLOWED_REDIRECT_URI_SCHEMES = ['http', 'https']
+
+    ISIC_DISCOURSE_SSO_SECRET = values.Value('discourse_secret')
+    ISIC_MONGO_URI = values.Value('mongodb://localhost:27017/girder')
 
 
 class TestingConfiguration(IsicConfig, TestingBaseConfiguration):
-    DISCOURSE_SSO_SECRET = 'secret'
-    ARCHIVE_MONGO_URI = 'mongodb://localhost:27017/girder'
+    ISIC_DISCOURSE_SSO_SECRET = 'discourse_secret'
+    ISIC_MONGO_URI = 'mongodb://localhost:27017/girder'
 
 
 class ProductionConfiguration(IsicConfig, ProductionBaseConfiguration):

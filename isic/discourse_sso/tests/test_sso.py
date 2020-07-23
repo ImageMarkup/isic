@@ -1,9 +1,7 @@
-import urllib
+import urllib.parse
 
 from django.urls import reverse
 import pytest
-
-from isic.discourse_sso.forms import DiscourseSSOLoginForm
 
 
 @pytest.mark.parametrize(
@@ -14,26 +12,23 @@ from isic.discourse_sso.forms import DiscourseSSOLoginForm
     ],
     ids=['bad_credentials', 'no_credentials'],
 )
-def test_sso_login_get(client, girder_user, login_url):
+def test_sso_login_get(client, login_url):
     resp = client.get(login_url)
+
     assert resp.status_code == 302
     assert resp['Location'] == 'https://forum.isic-archive.com'
 
 
-def test_sso_login_post(client, girder_user, discourse_sso_credentials, monkeypatch):
-    def _get_girder_user(*args, **kwargs):
-        return girder_user
-
-    monkeypatch.setattr(DiscourseSSOLoginForm, '_get_girder_user', _get_girder_user)
-
-    def _get_girder_user_groups(*args, **kwargs):
-        return []
-
-    monkeypatch.setattr(DiscourseSSOLoginForm, '_get_girder_user_groups', _get_girder_user_groups)
+@pytest.mark.django_db
+def test_sso_login_post(settings, client, user_factory, discourse_sso_credentials):
+    # We don't want to actually test the GirderBackend here, and usage requires additional mocking
+    settings.AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend']
+    user = user_factory(raw_password='testpassword')
 
     resp = client.post(
         reverse('discourse-sso-login') + f'?{urllib.parse.urlencode(discourse_sso_credentials)}',
-        {'login': 'some-login', 'password': 'foo'},
+        {'username': user.email, 'password': 'testpassword'},
     )
+
     assert resp.status_code == 302
     assert resp['Location'].startswith('https://a-return-url.com/session/sso_login')
