@@ -30,8 +30,7 @@ class Profile(models.Model):
 
         girder_user = self.fetch_girder_user(self.user.email)
         if not girder_user:
-            # TODO: Log an error?
-            return
+            raise Exception(f'Cannot retrieve girder_user for {self.user.email}.')
 
         if self.girder_id != str(girder_user['_id']):
             self.girder_id = str(girder_user['_id'])

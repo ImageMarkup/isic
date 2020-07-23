@@ -44,6 +44,7 @@ class IsicConfig(ConfigMixin):
         'DEFAULT_SCOPES': ['identity'],
     }
     PKCE_REQUIRED = True
+    ALLOWED_REDIRECT_URI_SCHEMES = ['https']
 
     AUTHENTICATION_BACKENDS = ['isic.login.girder.GirderBackend']
 
@@ -56,6 +57,7 @@ class DevelopmentConfiguration(IsicConfig, DevelopmentBaseConfiguration):
         'isic.login.girder.GirderBackend',
         'django.contrib.auth.backends.ModelBackend',
     ]
+    ALLOWED_REDIRECT_URI_SCHEMES = ['http', 'https']
 
     ISIC_DISCOURSE_SSO_SECRET = values.Value('discourse_secret')
     ISIC_MONGO_URI = values.Value('mongodb://localhost:27017/girder')
@@ -67,7 +69,7 @@ class TestingConfiguration(IsicConfig, TestingBaseConfiguration):
 
 
 class ProductionConfiguration(IsicConfig, ProductionBaseConfiguration):
-    ALLOWED_REDIRECT_URI_SCHEMES = ['https']
+    pass
 
 
 class HerokuProductionConfiguration(IsicConfig, HerokuProductionBaseConfiguration):
