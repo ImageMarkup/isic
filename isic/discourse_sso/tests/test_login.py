@@ -1,9 +1,10 @@
-import urllib
+import urllib.parse
 
 from django.urls import reverse
 import pytest
 
-from isic.discourse_sso import views
+from isic.login.models import Profile
+
 
 @pytest.mark.parametrize(
     'login_url',
@@ -13,26 +14,20 @@ from isic.discourse_sso import views
     ],
     ids=['bad_credentials', 'no_credentials'],
 )
-def test_sso_login_get(client, girder_user, login_url):
+def test_sso_login_get(client, login_url):
     resp = client.get(login_url)
     assert resp.status_code == 302
     assert resp['Location'] == 'https://forum.isic-archive.com'
 
 
-def test_sso_login_post(client, girder_user, discourse_sso_credentials, monkeypatch):
-    def _get_girder_user(*args, **kwargs):
-        return girder_user
-
-    monkeypatch.setattr(views, 'get_girder_user', _get_girder_user)
-
-    def _get_girder_user_groups(*args, **kwargs):
-        return []
-
-    monkeypatch.setattr(views, 'get_girder_user_groups', _get_girder_user_groups)
+@pytest.mark.django_db
+def test_sso_login_post(mocker, client, girder_user_factory, discourse_sso_credentials):
+    girder_user = girder_user_factory(email='foo@bar.test', raw_password='testpassword')
+    mocker.patch.object(Profile, 'fetch_girder_user', return_value=girder_user)
 
     resp = client.post(
         reverse('discourse-sso-login') + f'?{urllib.parse.urlencode(discourse_sso_credentials)}',
-        {'login': 'some-login', 'password': 'foo'},
+        {'username': 'foo@bar.test', 'password': 'testpassword'},
     )
     assert resp.status_code == 302
     assert resp['Location'].startswith('https://a-return-url.com/session/sso_login')
