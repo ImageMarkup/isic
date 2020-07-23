@@ -48,6 +48,7 @@ setup(
         'django-extensions',
         'django-filter',
         'django-girders',
+        'django-oauth-toolkit',
         'djangorestframework',
         'drf-extensions',
         'drf-yasg',
