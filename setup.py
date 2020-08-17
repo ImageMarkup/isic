@@ -52,6 +52,7 @@ setup(
         'djangorestframework',
         'drf-extensions',
         'drf-yasg',
+        'material',
         'passlib[bcrypt]',
         'psycopg2',
         'pymongo',
