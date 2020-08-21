@@ -12,7 +12,7 @@ router = routers.SimpleRouter()
 
 # OpenAPI generation
 schema_view = get_schema_view(
-    openapi.Info(title='ISIC', default_version='v1', description='',),
+    openapi.Info(title='ISIC', default_version='v1', description=''),
     public=True,
     permission_classes=(permissions.AllowAny,),
 )

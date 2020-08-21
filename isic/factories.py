@@ -18,8 +18,8 @@ class ProfileFactory(factory.django.DjangoModelFactory):
         lambda o: bcrypt.using(rounds=4).hash(o.raw_password) if o.raw_password else None
     )
 
-    # We pass in profile=None to prevent UserFactory from creating another profile
-    # (this disables the RelatedFactory)
+    # Pass in profile=None to prevent UserFactory from creating another profile this disables the
+    # RelatedFactory).
     user = factory.SubFactory(
         'isic.factories.UserFactory',
         profile=None,
@@ -41,8 +41,8 @@ class UserFactory(factory.django.DjangoModelFactory):
     last_name = factory.Faker('last_name')
     password = factory.LazyAttribute(lambda o: make_password(o.raw_password))
 
-    # We pass in 'user' to link the generated Profile to our just-generated User
-    # This will call ProfileFactory(user=our_new_user), thus skipping the SubFactory.
+    # We pass in 'user' to link the generated Profile to our just-generated User. This will call
+    # ProfileFactory(user=our_new_user), thus skipping the SubFactory.
     profile = factory.RelatedFactory(
         ProfileFactory,
         factory_related_name='user',
