@@ -6,7 +6,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
 from isic.discourse_sso.views import discourse_sso_login
-from isic.login.views import get_girder_token
+from isic.login.views import IsicLoginView, get_girder_token
 
 router = routers.SimpleRouter()
 
@@ -25,6 +25,7 @@ urlpatterns = [
     path('api/docs/swagger', schema_view.with_ui('swagger'), name='docs-swagger'),
     path('discourse-sso/login', discourse_sso_login, name='discourse-sso-login'),
     path('o', include('oauth2_provider.urls', namespace='oauth2_provider')),
+    path('accounts/login', IsicLoginView.as_view()),
     path('accounts', include('django.contrib.auth.urls')),
 ]
 
