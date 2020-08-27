@@ -25,6 +25,7 @@ class IsicConfig(ConfigMixin):
             'isic.login',
             'isic.discourse_sso.apps.DiscourseSSOConfig',
             'oauth2_provider',
+            'material',
         ]
 
     REST_FRAMEWORK = {
