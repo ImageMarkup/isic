@@ -101,4 +101,4 @@ def discourse_sso_login(request):
     else:
         form = LoginForm()
 
-    return render(request, 'login/login.html', {'form': form})
+    return render(request, 'login/login.html', {'form': form, 'app_name': 'Discourse Forum'})
