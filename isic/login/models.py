@@ -37,6 +37,9 @@ class Profile(models.Model):
             changed = True
 
         if self.girder_salt != girder_user['salt']:
+            # Add compatibility for users created with py3
+            if isinstance(girder_user['salt'], bytes):
+                girder_user['salt'] = girder_user['salt'].decode('utf-8')
             self.girder_salt = girder_user['salt']
             changed = True
 
