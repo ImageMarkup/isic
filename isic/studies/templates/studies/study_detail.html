@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div><h2>{{ object.name }}</h2>
+    <span>{{object.description}}</span>
+  </div>
+
+  {{ num_tasks }} annotation tasks ({{num_images}} images x {{num_annotators}} annotators)
+  <div class="row">
+    <div class="col s6">
+      <h4>Features</h4>
+      {% for feature in features %}
+        <div>{{ feature.label  }}</div>
+      {% endfor %}
+    </div>
+    <div class="col s6">
+
+      <h4>Questions</h4>
+      <ul>
+        {% for question in questions %}
+          <li>{{ question.prompt }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <hr/>
+
+  <h4>Responses ({{ num_responses }}/{{ num_tasks }})</h4>
+  {% include 'studies/partials/pagination.html' with page_obj=responses %}
+
+  <table>
+    <thead>
+      <tr>
+        <th>Annotator</th>
+        <th>Image</th>
+        <th></th>
+      </tr>
+    </thead>
+    {% for response in responses %}
+      <tr>
+        <td>{{ response.annotator  }}</td>
+        <td>{{ response.image.object_id  }}</td>
+        <td>
+          <a href="{{response.get_absolute_url}}">View Response</a>
+        </td>
+      </tr>
+    {% endfor %}
+  </table>
+
+  {% include 'studies/partials/pagination.html' with page_obj=responses %}
+{% endblock %}
