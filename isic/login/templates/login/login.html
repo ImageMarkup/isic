@@ -21,7 +21,11 @@
     <div id="login-card" class="card">
       <div class="card-content">
 
-        <h5>ISIC Login</h5>
+        {% if app_name %}
+          <h5>Login to {{ app_name }} with ISIC</h5>
+        {% else %}
+          <h5>Login to ISIC</h5>
+        {% endif %}
         {{ form.errors }}
         <form method="POST" action="">
           {% csrf_token %}
