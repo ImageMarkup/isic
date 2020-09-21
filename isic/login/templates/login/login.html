@@ -26,7 +26,6 @@
         {% else %}
           <h5>Login to ISIC</h5>
         {% endif %}
-        {{ form.errors }}
         <form method="POST" action="">
           {% csrf_token %}
           {% form form=form %}
