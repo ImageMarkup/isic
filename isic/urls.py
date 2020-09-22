@@ -18,15 +18,15 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    path('admin', admin.site.urls),
-    path('api/v1', include(router.urls)),
-    path('api/v1/token/legacy', get_girder_token),
-    path('api/docs/redoc', schema_view.with_ui('redoc'), name='docs-redoc'),
-    path('api/docs/swagger', schema_view.with_ui('swagger'), name='docs-swagger'),
-    path('discourse-sso/login', discourse_sso_login, name='discourse-sso-login'),
+    path('admin/', admin.site.urls),
+    path('api/v1/', include(router.urls)),
+    path('api/v1/token/legacy/', get_girder_token),
+    path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),
+    path('api/docs/swagger/', schema_view.with_ui('swagger'), name='docs-swagger'),
+    path('discourse-sso/login/', discourse_sso_login, name='discourse-sso-login'),
     path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
-    path('accounts/login', IsicLoginView.as_view()),
-    path('accounts', include('django.contrib.auth.urls')),
+    path('accounts/login/', IsicLoginView.as_view()),
+    path('accounts/', include('django.contrib.auth.urls')),
 ]
 
 if settings.DEBUG:
