@@ -1,8 +1,11 @@
 {% extends "base.html" %}
 
 {% block content %}
+      {{ request.user|pprint  }}
   <h3>Studies</h3>
-  {% for object in object_list %}
-    <div><a href="{{ object.get_absolute_url }}">{{ object.name }}</a></div>
-  {% endfor %}
+  <ul class="collection">
+    {% for study in studies %}
+      <a class="collection-item" href="{{ study.get_absolute_url }}">{{ study.name }}</a>
+    {% endfor %}
+  </ul>
 {% endblock %}

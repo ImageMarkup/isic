@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
+from django.views.generic.edit import CreateView
 from rest_framework import viewsets
 from django.core.paginator import Paginator
 
@@ -25,8 +26,11 @@ class AnnotationViewSet(viewsets.ModelViewSet):
     queryset = Annotation.objects.all()
 
 
-class StudyListView(ListView):
-    model = Study
+def study_list(request):
+    studies = get_objects_for_user(
+        request.user, 'studies.view_study'
+    )
+    return render(request, 'studies/study_list.html', {'studies': studies})
 
 
 def view_mask(request, markup_id):
@@ -77,3 +81,15 @@ class QuestionListView(ListView):
 
 class FeatureListView(ListView):
     model = Feature
+
+class CreateStudyView(CreateView):
+    model = Study
+    fields = ['name', 'description', 'features', 'questions']
+    template_name = 'studies/study_create.html'
+
+    def get_success_url(self):
+        return reverse('study-detail', args=[self.object.id])
+
+    def form_valid(self, form):
+        form.instance.creator = self.request.user
+        return super().form_valid(form)

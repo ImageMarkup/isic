@@ -1,4 +1,5 @@
 from django.apps import apps
+from isic.studies.views import AnnotationDetailView, AnnotationViewSet, CreateStudyView, StudyTaskViewSet, StudyViewSet, study_detail, study_list, view_mask
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
@@ -8,7 +9,6 @@ from rest_framework import permissions, routers
 
 from isic.discourse_sso.views import discourse_sso_login
 from isic.login.views import IsicLoginView, get_girder_token
-from isic.studies.views import *
 
 router = routers.SimpleRouter()
 router.register('studies', StudyViewSet)
@@ -31,8 +31,9 @@ urlpatterns = [
     path('api/v1/token/legacy/', get_girder_token),
     path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),
     path('api/docs/swagger/', schema_view.with_ui('swagger'), name='docs-swagger'),
-    path('studies/', StudyListView.as_view()),
-    path('studies/<pk>/', StudyDetailView.as_view(), name='study-detail'),
+    path('studies/', study_list),
+    path('studies/create/', CreateStudyView.as_view()),
+    path('studies/<pk>/', study_detail, name='study-detail'),
     path('study-annotations/<pk>/', AnnotationDetailView.as_view(), name='study-annotation-detail'),
     path('mask/<markup_id>/', view_mask, name='view-mask'),
 ]
