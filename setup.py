@@ -40,7 +40,7 @@ setup(
     python_requires='>=3.8',
     packages=find_packages(),
     install_requires=[
-        'celery',
+        'celery<5',
         'django',
         'django-admin-display',
         'django-configurations[database,email]',
@@ -50,7 +50,7 @@ setup(
         'django-girders',
         'django-material',
         'django-oauth-toolkit',
-        'djangorestframework',
+        'djangorestframework<3.12',
         'drf-extensions',
         'drf-yasg',
         'passlib[bcrypt]',
