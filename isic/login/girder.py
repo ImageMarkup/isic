@@ -38,6 +38,12 @@ class GirderBackend(ModelBackend):
     def authenticate(
         self, request: Optional[HttpRequest], username: str = None, password: str = None, **kwargs
     ) -> Optional[User]:
+        # let the django auth backend deal with non-girder users and existing users that
+        # have a usable password
+        existing_user = User.objects.get(username=username)
+        if not existing_user or existing_user.has_usable_password():
+            return None
+
         girder_user = Profile.fetch_girder_user(username)
         if not girder_user:
             return None
@@ -66,7 +72,7 @@ class GirderBackend(ModelBackend):
             return None
 
         if not user.check_password(password):
-            user.set_password(password)
+            user.set_password(password)  # Note this makes the user have a 'usable' password
             user.save()
 
         return user

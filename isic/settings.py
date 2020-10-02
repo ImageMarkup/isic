@@ -47,18 +47,17 @@ class IsicConfig(ConfigMixin):
     PKCE_REQUIRED = True
     ALLOWED_REDIRECT_URI_SCHEMES = ['https']
 
-    AUTHENTICATION_BACKENDS = ['isic.login.girder.GirderBackend']
-    LOGIN_URL = '/accounts/login'
+    AUTHENTICATION_BACKENDS = [
+        'isic.login.girder.GirderBackend',
+        'django.contrib.auth.backends.ModelBackend',
+    ]
+    LOGIN_URL = '/accounts/login/'
 
     ISIC_DISCOURSE_SSO_SECRET = values.SecretValue()
     ISIC_MONGO_URI = values.SecretValue()
 
 
 class DevelopmentConfiguration(IsicConfig, DevelopmentBaseConfiguration):
-    AUTHENTICATION_BACKENDS = [
-        'isic.login.girder.GirderBackend',
-        'django.contrib.auth.backends.ModelBackend',
-    ]
     ALLOWED_REDIRECT_URI_SCHEMES = ['http', 'https']
 
     ISIC_DISCOURSE_SSO_SECRET = values.Value('discourse_secret')
