@@ -28,7 +28,11 @@ class Profile(models.Model):
     def sync_from_girder(self):
         changed = False
 
-        girder_user = fetch_girder_user_by_email(self.user.email)
+        # TODO: document guardian
+        if self.user.username == settings.ANONYMOUS_USER_NAME:
+            return False
+
+        girder_user = self.fetch_girder_user(self.user.email)
         if not girder_user:
             raise Exception(f'Cannot retrieve girder_user for {self.user.email}.')
 

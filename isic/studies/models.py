@@ -104,3 +104,15 @@ class Markup(TimeStampedModel):
     present = models.BooleanField()
 
     objects = DeferredFieldsManager('mask')
+
+
+@receiver(post_save, sender=Study)
+def study_post_save(sender, **kwargs):
+    for permission in ['add', 'change', 'delete', 'view']:
+        assign_perm(f'studies.{permission}_study', kwargs['instance'].creator, kwargs['instance'])
+
+
+@receiver(post_save, sender=Annotation)
+def annotation_post_save(sender, **kwargs):
+    assign_perm('studies.view_annotation', kwargs['instance'].study.creator, kwargs['instance'])
+    assign_perm('studies.view_annotation', kwargs['instance'].annotator, kwargs['instance'])

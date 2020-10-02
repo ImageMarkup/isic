@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from isic.studies.models import *
+from isic.studies.models import Annotation, Feature, Question, QuestionChoice, Study, StudyTask
 
 
 class StudyTaskSerializer(serializers.ModelSerializer):

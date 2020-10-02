@@ -25,6 +25,7 @@ class IsicConfig(ConfigMixin):
             'isic.studies.apps.StudiesConfig',
             'oauth2_provider',
             'material',
+            'guardian',
         ]
 
         # Insert before the allauth app, to ensure our base.html is found first
@@ -61,7 +62,9 @@ class IsicConfig(ConfigMixin):
 
     AUTHENTICATION_BACKENDS = [
         'isic.login.backends.GirderBackend',
+        'guardian.backends.ObjectPermissionBackend',
         'allauth.account.auth_backends.AuthenticationBackend',
+        'django.contrib.auth.backends.ModelBackend',
     ]
 
     ISIC_DISCOURSE_SSO_SECRET = values.Value(
@@ -74,14 +77,20 @@ class IsicConfig(ConfigMixin):
     )
     ISIC_MONGO_URI = values.SecretValue()
 
+    ANONYMOUS_USER_NAME = 'AnonymousUser'
+
 
 class DevelopmentConfiguration(IsicConfig, DevelopmentBaseConfiguration):
     AUTHENTICATION_BACKENDS = [
         'allauth.account.auth_backends.AuthenticationBackend',
+        'django.contrib.auth.backends.ModelBackend',
+        'guardian.backends.ObjectPermissionBackend',
     ]
     ALLOWED_REDIRECT_URI_SCHEMES = ['http', 'https']
 
     ISIC_MONGO_URI = values.Value('mongodb://localhost:27017/girder')
+
+    SHELL_PLUS_IMPORTS = ['from guardian.shortcuts import *']
 
 
 class TestingConfiguration(IsicConfig, TestingBaseConfiguration):

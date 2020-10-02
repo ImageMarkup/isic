@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}{{ object.study.name }} | ISIC{% endblock %}
+{% block title %}{{ annotation.study.name }} | ISIC{% endblock %}
 
 {% block content %}
   <div>
-    <h2>{{ object.study.name }}</h2>
-    {{ object.annotator }}
+    <h2>{{ annotation.study.name }}</h2>
+    {{ annotation.annotator }}
     <br>
-    {{ object.image.object_id }}
+    {{ annotation.image.object_id }}
   </div>
 
 
@@ -21,7 +21,7 @@
       </tr>
     </thead>
 
-    {% for markup in object.markups.all %}
+    {% for markup in annotation.markups.all %}
       <tr>
         <td>{{ markup.feature.label }}</td>
         <td>{% if markup.present %}Present{% else %}-{% endif %}</td>
@@ -39,7 +39,7 @@
       </tr>
     </thead>
 
-    {% for response in object.responses.all %}
+    {% for response in annotation.responses.all %}
       <tr>
         <td>{{ response.question.prompt }}</td>
         <td>{{ response.choice.text }}</td>

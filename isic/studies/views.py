@@ -1,86 +1,70 @@
-from django.contrib.auth.models import User
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
-from django.views.generic.list import ListView
-from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView
-from rest_framework import viewsets
 from django.core.paginator import Paginator
+from django.http import HttpResponse
+from django.http.response import Http404
+from django.shortcuts import get_object_or_404, render
+from django.urls.base import reverse
+from django.views.generic.edit import CreateView
+from guardian.decorators import permission_required_or_404
+from guardian.shortcuts import get_objects_for_user
 
-from isic.studies.models import *
-from isic.studies.serializers import *
-
-
-class StudyTaskViewSet(viewsets.ModelViewSet):
-    serializer_class = StudyTaskSerializer
-    queryset = StudyTask.objects.all()
-
-
-class StudyViewSet(viewsets.ModelViewSet):
-    serializer_class = StudySerializer
-    queryset = Study.objects.all()
-
-
-class AnnotationViewSet(viewsets.ModelViewSet):
-    serializer_class = AnnotationSerializer
-    queryset = Annotation.objects.all()
+from isic.studies.models import Annotation, Markup, Study
 
 
 def study_list(request):
-    studies = get_objects_for_user(
-        request.user, 'studies.view_study'
-    )
+    studies = get_objects_for_user(request.user, 'studies.view_study')
     return render(request, 'studies/study_list.html', {'studies': studies})
 
 
 def view_mask(request, markup_id):
     markup = get_object_or_404(Markup, pk=markup_id)
+
+    if not request.user.has_perm('studies.view_annotation', markup.annotation):
+        return Http404()
+
     return HttpResponse(markup.mask, content_type='image/png')
 
 
-class AnnotationDetailView(DetailView):
-    def get_queryset(self):
-        return (
-            Annotation.objects.select_related('image', 'study', 'annotator')
+@permission_required_or_404(
+    'studies.view_annotation', (Annotation, 'pk', 'pk'), accept_global_perms=True
+)
+def annotation_detail(request, pk):
+    return render(
+        request,
+        'studies/annotation_detail.html',
+        {
+            'annotation': Annotation.objects.select_related('image', 'study', 'annotator')
             .prefetch_related('markups__feature')
             .prefetch_related('responses__choice')
             .prefetch_related('responses__question')
-            .filter(pk=self.kwargs.get('pk'))
-        )
+            .get(pk=pk)
+        },
+    )
 
 
-class StudyDetailView(DetailView):
-    model = Study
+# TODO: email anonymization
+@permission_required_or_404('studies.view_study', (Study, 'pk', 'pk'), accept_global_perms=True)
+def study_detail(request, pk):
+    study = get_object_or_404(Study, pk=pk)
+    responses = (
+        Annotation.objects.filter(study=study)
+        .select_related('annotator', 'image')
+        .order_by('created')
+    )
+    paginator = Paginator(responses, 50)
+    responses_page = paginator.get_page(request.GET.get('page'))
+    context = {
+        'study': study,
+        'features': study.features.order_by('name').all(),
+        'questions': study.questions.all(),
+        'num_images': study.tasks.values('image').distinct().count(),
+        'num_annotators': study.tasks.values('annotator').distinct().count(),
+        'num_tasks': study.tasks.count(),
+        'responses': responses_page,
+        'num_responses': responses.count(),
+    }
 
-    def get_context_data(self, **kwargs):
-        responses = (
-            Annotation.objects.filter(study=self.object)
-            .select_related('annotator', 'image')
-            .order_by('created')
-        )
-        paginator = Paginator(responses, 50)
-        responses_page = paginator.get_page(self.request.GET.get('page'))
-        context = super().get_context_data(**kwargs)
-        context.update(
-            {
-                'features': self.object.features.order_by('name').all(),
-                'questions': self.object.questions.all(),
-                'num_images': self.object.tasks.values('image').distinct().count(),
-                'num_annotators': self.object.tasks.values('annotator').distinct().count(),
-                'num_tasks': self.object.tasks.count(),
-                'responses': responses_page,
-                'num_responses': Annotation.objects.filter(study=self.object).count(),
-            }
-        )
-        return context
+    return render(request, 'studies/study_detail.html', context)
 
-
-class QuestionListView(ListView):
-    model = Question
-
-
-class FeatureListView(ListView):
-    model = Feature
 
 class CreateStudyView(CreateView):
     model = Study

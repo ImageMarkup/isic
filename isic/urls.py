@@ -9,6 +9,14 @@ from rest_framework import permissions, routers
 
 from isic.discourse_sso.views import discourse_sso_login
 from isic.login.views import IsicLoginView, get_girder_token
+from isic.studies.api import AnnotationViewSet, StudyTaskViewSet, StudyViewSet
+from isic.studies.views import (
+    CreateStudyView,
+    annotation_detail,
+    study_detail,
+    study_list,
+    view_mask,
+)
 
 router = routers.SimpleRouter()
 router.register('studies', StudyViewSet)
@@ -34,7 +42,7 @@ urlpatterns = [
     path('studies/', study_list),
     path('studies/create/', CreateStudyView.as_view()),
     path('studies/<pk>/', study_detail, name='study-detail'),
-    path('study-annotations/<pk>/', AnnotationDetailView.as_view(), name='study-annotation-detail'),
+    path('study-annotations/<pk>/', annotation_detail, name='study-annotation-detail'),
     path('mask/<markup_id>/', view_mask, name='view-mask'),
 ]
 
