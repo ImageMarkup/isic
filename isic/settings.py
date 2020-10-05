@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from configurations import values
-from django_girders.configuration import (
+from composed_configuration import (
     ComposedConfiguration,
     ConfigMixin,
     DevelopmentBaseConfiguration,
@@ -11,13 +10,14 @@ from django_girders.configuration import (
     ProductionBaseConfiguration,
     TestingBaseConfiguration,
 )
+from configurations import values
 
 
 class IsicConfig(ConfigMixin):
     WSGI_APPLICATION = 'isic.wsgi.application'
     ROOT_URLCONF = 'isic.urls'
 
-    BASE_DIR = str(Path(__file__).absolute().parent.parent)
+    BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:

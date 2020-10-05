@@ -6,7 +6,7 @@ from passlib.hash import bcrypt
 class GirderUserFactory(factory.DictFactory):
     name = 'foo'
     _id = factory.LazyFunction(ObjectId)
-    login = factory.Faker('user_name')
+    username = factory.SelfAttribute('email')
     email = factory.Faker('safe_email')
     firstName = factory.Faker('first_name')  # noqa: N815
     lastName = factory.Faker('last_name')  # noqa: N815
