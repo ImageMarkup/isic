@@ -7,7 +7,6 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from passlib.hash import bcrypt
 from pymongo import MongoClient
 from pymongo.collection import Collection
 
@@ -22,6 +21,8 @@ class Profile(models.Model):
         null=True,
         validators=[RegexValidator(r'^[0-9a-f]{24}$')],
     )
+    # this may be identical to user.password, but it needs to be retained to
+    # check if the user password has changed.
     girder_salt = models.CharField(max_length=60, blank=True, null=True)
     email_verified = models.BooleanField(blank=True, null=True)
 
@@ -32,14 +33,7 @@ class Profile(models.Model):
         if not girder_user:
             raise Exception(f'Cannot retrieve girder_user for {self.user.email}.')
 
-        if self.girder_id != str(girder_user['_id']):
-            self.girder_id = str(girder_user['_id'])
-            changed = True
-
         if self.girder_salt != girder_user['salt']:
-            # Add compatibility for users created with py3
-            if isinstance(girder_user['salt'], bytes):
-                girder_user['salt'] = girder_user['salt'].decode('utf-8')
             self.girder_salt = girder_user['salt']
             changed = True
 
@@ -49,19 +43,17 @@ class Profile(models.Model):
 
         return changed
 
-    def validate_girder_password(self, password: str) -> None:
+    def can_login(self) -> bool:
         # Handle users with no password
         if not self.girder_salt:
             raise ValidationError(
                 'This user does not have a password. You must reset your password to obtain one.'
             )
 
-        # Verify password
-        if not bcrypt.verify(password, self.girder_salt):
-            raise ValidationError('Login failed.')
-
         if not self.user.is_active:
             raise ValidationError('Account is disabled.')
+
+        return True
 
     @classmethod
     def _girder_db(cls) -> Collection:
@@ -70,7 +62,13 @@ class Profile(models.Model):
 
     @classmethod
     def fetch_girder_user(cls, email: str) -> Optional[Dict]:
-        return cls._girder_db()['user'].find_one({'email': email.lower()})
+        girder_user = cls._girder_db()['user'].find_one({'email': email.lower()})
+
+        # coerce password to string
+        if isinstance(girder_user['salt'], bytes):
+            girder_user['salt'] = girder_user['salt'].decode('utf-8')
+
+        return girder_user
 
 
 @receiver(post_save, sender=User)
