@@ -4,10 +4,13 @@ import pytest
 from isic.login.girder import GirderBackend
 from isic.login.models import Profile
 
+# A girder compatible hashed version of 'testpassword'
+TEST_PASSWORD_HASH = '$2b$12$BBLKZbXl/nEbjwSLwqJeJ.2tIsAbVfGoe.FWNCNLgppXIKSEJh.7e'
+
 
 @pytest.fixture
 def mocked_girder_user(mocker, girder_user_factory):
-    girder_user = girder_user_factory(raw_password='testpassword')
+    girder_user = girder_user_factory(salt=TEST_PASSWORD_HASH)
     mocker.patch.object(Profile, 'fetch_girder_user', return_value=girder_user)
     yield girder_user
 
@@ -17,7 +20,9 @@ def mocked_girder_user(mocker, girder_user_factory):
 def test_authenticate_correct(existent, mocker, mocked_girder_user, user_factory):
     if existent:
         # Don't set a password here, we'll expect it to be changed
-        user = user_factory(email=mocked_girder_user['email'])
+        user = user_factory(
+            email=mocked_girder_user['email'], password=f'bcrypt_girder${TEST_PASSWORD_HASH}'
+        )
     set_password_spy = mocker.spy(User, 'set_password')
 
     authenticated_user = GirderBackend().authenticate(
