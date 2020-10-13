@@ -1,3 +1,4 @@
+from django.apps import apps
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
@@ -23,11 +24,13 @@ urlpatterns = [
     path('api/v1/token/legacy/', get_girder_token),
     path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),
     path('api/docs/swagger/', schema_view.with_ui('swagger'), name='docs-swagger'),
-    path('discourse-sso/login/', discourse_sso_login, name='discourse-sso-login'),
     path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('accounts/login/', IsicLoginView.as_view()),
     path('accounts/', include('django.contrib.auth.urls')),
 ]
+
+if apps.is_installed('isic.discourse_sso'):
+    urlpatterns += [path('discourse-sso/login/', discourse_sso_login, name='discourse-sso-login')]
 
 if settings.DEBUG:
     import debug_toolbar
