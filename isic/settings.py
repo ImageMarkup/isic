@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 from composed_configuration import (
@@ -29,11 +28,9 @@ class IsicConfig(ConfigMixin):
         ]
 
         if configuration.ISIC_DISCOURSE_SSO_SECRET:
-            print('loading discourse sso')
             configuration.INSTALLED_APPS += [
                 'isic.discourse_sso.apps.DiscourseSSOConfig',
             ]
-
 
     REST_FRAMEWORK = {
         'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -57,8 +54,14 @@ class IsicConfig(ConfigMixin):
     AUTHENTICATION_BACKENDS = ['isic.login.girder.GirderBackend']
     LOGIN_URL = '/accounts/login'
 
-    # late binding = false so we can optionally check in before_binding
-    ISIC_DISCOURSE_SSO_SECRET = values.Value(None, late_binding=False)
+    ISIC_DISCOURSE_SSO_SECRET = values.Value(
+        None,
+        # Don't bind late, so the value can be examined in before_binding
+        late_binding=False,
+        # Without late_binding, environ_name must be explicitly set for the setting to know its
+        # own name early enough
+        environ_name='ISIC_DISCOURSE_SSO_SECRET',
+    )
     ISIC_MONGO_URI = values.SecretValue()
 
 
@@ -69,7 +72,6 @@ class DevelopmentConfiguration(IsicConfig, DevelopmentBaseConfiguration):
     ]
     ALLOWED_REDIRECT_URI_SCHEMES = ['http', 'https']
 
-    # ISIC_DISCOURSE_SSO_SECRET = values.Value('discourse_secret', late_binding=False)
     ISIC_MONGO_URI = values.Value('mongodb://localhost:27017/girder')
 
 
