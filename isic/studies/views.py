@@ -1,12 +1,11 @@
 from django.core.paginator import Paginator
 from django.http import HttpResponse
-from django.http.response import Http404
+from django.http.response import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
-from django.urls.base import reverse
-from django.views.generic.edit import CreateView
 from guardian.decorators import permission_required_or_404
 from guardian.shortcuts import get_objects_for_user
 
+from isic.studies.forms import StudyForm
 from isic.studies.models import Annotation, Markup, Study
 
 
@@ -66,14 +65,14 @@ def study_detail(request, pk):
     return render(request, 'studies/study_detail.html', context)
 
 
-class CreateStudyView(CreateView):
-    model = Study
-    fields = ['name', 'description', 'features', 'questions']
-    template_name = 'studies/study_create.html'
+def create_study(request):
+    if request.method == 'POST':
+        form = StudyForm(request.POST)
+        if form.is_valid():
+            form.instance.creator = request.user
+            form.save(commit=True)
+            return HttpResponseRedirect('/thanks/')
+    else:
+        form = StudyForm()
 
-    def get_success_url(self):
-        return reverse('study-detail', args=[self.object.id])
-
-    def form_valid(self, form):
-        form.instance.creator = self.request.user
-        return super().form_valid(form)
+    return render(request, 'studies/study_create.html', {'form': form})
