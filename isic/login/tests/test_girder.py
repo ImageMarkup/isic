@@ -1,14 +1,14 @@
 from django.contrib.auth.models import User
 import pytest
 
-from isic.login.girder import GirderBackend
-from isic.login.models import Profile
+from isic.login.backends import GirderBackend
+import isic.login.girder
 
 
 @pytest.fixture
 def mocked_girder_user(mocker, girder_user_factory):
     girder_user = girder_user_factory(raw_password='testpassword')
-    mocker.patch.object(Profile, 'fetch_girder_user', return_value=girder_user)
+    mocker.patch.object(isic.login.girder, '_fetch_girder_user', return_value=girder_user)
     yield girder_user
 
 
@@ -52,7 +52,7 @@ def test_authenticate_incorrect(existent, mocked_girder_user, user_factory):
 
 @pytest.mark.django_db
 def test_authenticate_not_found(mocker):
-    mocker.patch.object(Profile, 'fetch_girder_user', return_value=None)
+    mocker.patch.object(isic.login.girder, '_fetch_girder_user', return_value=None)
 
     authenticated_user = GirderBackend().authenticate(None, 'foo@bar.test', 'testpassword')
 
