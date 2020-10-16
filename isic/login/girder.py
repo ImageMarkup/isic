@@ -28,7 +28,7 @@ class GirderPasswordHasher(BasePasswordHasher):
         # we shouldn't be encrypting passwords with Girder hasher
         raise NotImplementedError
 
-    def safe_summary(self, encoded):
+    def safe_summary(self, encoded: str):
         return {
             _('algorithm'): self.algorithm,
             _('checksum'): mask_hash(encoded),
