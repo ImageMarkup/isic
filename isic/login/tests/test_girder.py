@@ -21,7 +21,7 @@ def test_authenticate_correct(existent, mocker, mocked_girder_user, user_factory
     if existent:
         # Don't set a password here, we'll expect it to be changed
         user = user_factory(
-            email=mocked_girder_user['email'], password=f'bcrypt_girder${TEST_PASSWORD_HASH}'
+            email=mocked_girder_user['email'], password=f'bcrypt_girder${mocked_girder_user["salt"]}'
         )
     set_password_spy = mocker.spy(User, 'set_password')
 
