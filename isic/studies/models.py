@@ -21,7 +21,7 @@ class Question(TimeStampedModel):
     official = models.BooleanField()
     # TODO: maybe add a default field
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.prompt
 
 
@@ -29,7 +29,7 @@ class QuestionChoice(TimeStampedModel):
     question = models.ForeignKey(Question, related_name='choices', on_delete=models.CASCADE)
     text = models.CharField(max_length=100)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.text
 
 
@@ -42,10 +42,10 @@ class Feature(TimeStampedModel):
     official = models.BooleanField()
 
     @property
-    def label(self):
+    def label(self) -> str:
         return ' : '.join(self.name)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.label
 
 
@@ -61,7 +61,7 @@ class Study(TimeStampedModel):
     features = models.ManyToManyField(Feature)
     questions = models.ManyToManyField(Question)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
@@ -75,7 +75,7 @@ class StudyTask(TimeStampedModel):
     image = models.ForeignKey(Image, on_delete=models.PROTECT)
 
     @property
-    def complete(self):
+    def complete(self) -> bool:
         return hasattr(self, 'annotation')
 
 
