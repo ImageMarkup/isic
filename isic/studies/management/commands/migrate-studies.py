@@ -44,6 +44,7 @@ def import_user(id):
             date_joined=girder_user['created'].replace(tzinfo=datetime.timezone.utc),
             username=girder_user['email'],
             email=girder_user['email'],
+            password=f'bcrypt_girder${girder_user["salt"]}',
             first_name=girder_user['firstName'],
             last_name=girder_user['lastName'],
             is_active=girder_user.get('status', 'enabled') == 'enabled',
@@ -54,8 +55,6 @@ def import_user(id):
         profile_changed = user.profile.sync_from_girder()
         if profile_changed:
             user.profile.save()
-
-    # TODO: password hashing.
 
     user.save()
     return user
