@@ -1,14 +1,13 @@
-from typing import Dict, Optional, Type
+from typing import Type
 
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from pymongo import MongoClient
-from pymongo.collection import Collection
+
+from isic.login.girder import fetch_girder_user_by_email
 
 
 class Profile(models.Model):
@@ -29,7 +28,7 @@ class Profile(models.Model):
     def sync_from_girder(self):
         changed = False
 
-        girder_user = self.fetch_girder_user(self.user.email)
+        girder_user = fetch_girder_user_by_email(self.user.email)
         if not girder_user:
             raise Exception(f'Cannot retrieve girder_user for {self.user.email}.')
 
@@ -54,21 +53,6 @@ class Profile(models.Model):
             raise ValidationError('Account is disabled.')
 
         return True
-
-    @classmethod
-    def _girder_db(cls) -> Collection:
-        # Default database name is specified within ISIC_MONGO_URI
-        return MongoClient(settings.ISIC_MONGO_URI).get_database()
-
-    @classmethod
-    def fetch_girder_user(cls, email: str) -> Optional[Dict]:
-        girder_user = cls._girder_db()['user'].find_one({'email': email.lower()})
-
-        # coerce password to string
-        if isinstance(girder_user['salt'], bytes):
-            girder_user['salt'] = girder_user['salt'].decode('utf-8')
-
-        return girder_user
 
 
 @receiver(post_save, sender=User)

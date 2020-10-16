@@ -34,7 +34,7 @@ class IsicConfig(ConfigMixin):
 
         # PASSWORD_HASHERS are ordered "best" to "worst", appending Girder last means
         # it will be upgraded on login.
-        configuration.PASSWORD_HASHERS += ['isic.login.girder.GirderPasswordHasher']
+        configuration.PASSWORD_HASHERS += ['isic.login.backends.GirderPasswordHasher']
 
     REST_FRAMEWORK = {
         'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -56,7 +56,7 @@ class IsicConfig(ConfigMixin):
     ALLOWED_REDIRECT_URI_SCHEMES = ['https']
 
     AUTHENTICATION_BACKENDS = [
-        'isic.login.girder.GirderBackend',
+        'isic.login.backends.GirderBackend',
         'allauth.account.auth_backends.AuthenticationBackend',
     ]
 
