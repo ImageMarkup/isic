@@ -32,6 +32,10 @@ class IsicConfig(ConfigMixin):
                 'isic.discourse_sso.apps.DiscourseSSOConfig',
             ]
 
+        # PASSWORD_HASHERS are ordered "best" to "worst", appending Girder last means
+        # it will be upgraded on login.
+        configuration.PASSWORD_HASHERS += ['isic.login.girder.GirderPasswordHasher']
+
     REST_FRAMEWORK = {
         'DEFAULT_AUTHENTICATION_CLASSES': [
             'rest_framework.authentication.BasicAuthentication',
@@ -51,8 +55,10 @@ class IsicConfig(ConfigMixin):
     PKCE_REQUIRED = True
     ALLOWED_REDIRECT_URI_SCHEMES = ['https']
 
-    AUTHENTICATION_BACKENDS = ['isic.login.girder.GirderBackend']
-    LOGIN_URL = '/accounts/login'
+    AUTHENTICATION_BACKENDS = [
+        'isic.login.girder.GirderBackend',
+        'django.contrib.auth.backends.ModelBackend',
+    ]
 
     ISIC_DISCOURSE_SSO_SECRET = values.Value(
         None,
@@ -67,7 +73,6 @@ class IsicConfig(ConfigMixin):
 
 class DevelopmentConfiguration(IsicConfig, DevelopmentBaseConfiguration):
     AUTHENTICATION_BACKENDS = [
-        'isic.login.girder.GirderBackend',
         'django.contrib.auth.backends.ModelBackend',
     ]
     ALLOWED_REDIRECT_URI_SCHEMES = ['http', 'https']
