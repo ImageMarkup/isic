@@ -19,7 +19,7 @@ from isic.login.models import Profile
 class GirderPasswordHasher(BasePasswordHasher):
     algorithm = 'bcrypt_girder'
 
-    def verify(self, password, encoded):
+    def verify(self, password: str, encoded: str) -> bool:
         return bcrypt.checkpw(
             password.encode('utf8'), encoded.replace('bcrypt_girder$', '').encode('utf8')
         )
