@@ -2,15 +2,7 @@ from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
-
-
-class DeferredFieldsManager(models.Manager):
-    def __init__(self, *deferred_fields):
-        self.deferred_fields = deferred_fields
-        super().__init__()
-
-    def get_queryset(self):
-        return super().get_queryset().defer(*self.deferred_fields)
+from girder_utils.models import DeferredFieldsManager
 
 
 class Image(TimeStampedModel):
