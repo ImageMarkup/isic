@@ -22,7 +22,7 @@ class IsicConfig(ConfigMixin):
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:
         configuration.INSTALLED_APPS += [
-            'isic.login',
+            'isic.login.apps.LoginConfig',
             'oauth2_provider',
             'material',
         ]
