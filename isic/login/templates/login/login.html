@@ -1,42 +1,37 @@
+{% extends "account/base.html" %}
+
 {% load material_form %}
 
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>ISIC Login</title>
+{% block head_title %}ISIC Login{% endblock %}
 
-    {% include 'material/includes/material_css.html' %}
-    {% include 'material/includes/material_js.html' %}
+{% block extra_head %}
+  <style type="text/css" media="screen">
+    #login-card {
+      width: 500px;
+      margin: 20px auto;
+    }
+  </style>
+{% endblock %}
 
-    <style type="text/css" media="screen">
-      #login-card {
-        width: 500px;
-        margin: 20px auto;
-      }
-    </style>
+{% block content %}
+  <div id="login-card" class="card">
+    <div class="card-content">
 
-  </head>
-  <body>
-    <div id="login-card" class="card">
-      <div class="card-content">
-
-        {% if app_name %}
-          <h5>Login to {{ app_name }} with ISIC</h5>
-        {% else %}
-          <h5>Login to ISIC</h5>
-        {% endif %}
-        <form method="POST" action="">
-          {% csrf_token %}
-          {% form form=form %}
-            {% part form.username prefix %}<i class='material-icons prefix'>email</i>{% endpart%}
-            {% part form.password prefix %}<i class='material-icons prefix'>lock_open</i>{% endpart%}
-          {% endform %}
-          <p class="right-align">
-            <button type="submit" name="_submit" class="btn">Submit</button>
-          </p>
-        </form>
-      </div>
+      {% if app_name %}
+        <h5>Login to {{ app_name }} with ISIC</h5>
+      {% else %}
+        <h5>Login to ISIC</h5>
+      {% endif %}
+      <form method="POST" action="">
+        {% csrf_token %}
+        {% form form=form %}
+          {% part form.username prefix %}<i class='material-icons prefix'>email</i>{% endpart%}
+          {% part form.password prefix %}<i class='material-icons prefix'>lock_open</i>{% endpart%}
+        {% endform %}
+        <p class="right-align">
+          <button type="submit" name="_submit" class="btn">Submit</button>
+        </p>
+      </form>
     </div>
-  </body>
-</html>
+  </div>
+{% endblock %}
