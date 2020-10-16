@@ -13,7 +13,8 @@ from isic.login.girder import create_girder_token
 @api_view(['POST'])
 @protected_resource(scopes=['identity'])
 def get_girder_token(request):
-    return JsonResponse({'token': create_girder_token(request.user.profile.girder_id)})
+    token = create_girder_token(request.user.profile.girder_id)
+    return JsonResponse({'token': token})
 
 
 class IsicLoginView(LoginView):
