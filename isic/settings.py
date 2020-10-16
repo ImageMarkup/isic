@@ -59,7 +59,6 @@ class IsicConfig(ConfigMixin):
         'isic.login.girder.GirderBackend',
         'django.contrib.auth.backends.ModelBackend',
     ]
-    LOGIN_URL = '/accounts/login/'
 
     ISIC_DISCOURSE_SSO_SECRET = values.Value(
         None,
