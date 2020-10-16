@@ -57,7 +57,7 @@ class IsicConfig(ConfigMixin):
 
     AUTHENTICATION_BACKENDS = [
         'isic.login.girder.GirderBackend',
-        'django.contrib.auth.backends.ModelBackend',
+        'allauth.account.auth_backends.AuthenticationBackend',
     ]
 
     ISIC_DISCOURSE_SSO_SECRET = values.Value(
@@ -73,7 +73,7 @@ class IsicConfig(ConfigMixin):
 
 class DevelopmentConfiguration(IsicConfig, DevelopmentBaseConfiguration):
     AUTHENTICATION_BACKENDS = [
-        'django.contrib.auth.backends.ModelBackend',
+        'allauth.account.auth_backends.AuthenticationBackend',
     ]
     ALLOWED_REDIRECT_URI_SCHEMES = ['http', 'https']
 
