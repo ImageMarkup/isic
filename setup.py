@@ -41,7 +41,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'bcrypt',
-        'celery<5',
+        'celery',
         'django',
         'django-admin-display',
         'django-allauth',
