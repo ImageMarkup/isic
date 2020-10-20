@@ -22,10 +22,13 @@ class IsicConfig(ConfigMixin):
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:
         configuration.INSTALLED_APPS += [
-            'isic.login.apps.LoginConfig',
             'oauth2_provider',
             'material',
         ]
+
+        # Insert before the allauth app, to ensure our base.html is found first
+        allauth_index = configuration.INSTALLED_APPS.index('allauth')
+        configuration.INSTALLED_APPS.insert(allauth_index, 'isic.login.apps.LoginConfig')
 
         if configuration.ISIC_DISCOURSE_SSO_SECRET:
             configuration.INSTALLED_APPS += [
