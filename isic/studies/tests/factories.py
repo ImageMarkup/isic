@@ -29,7 +29,7 @@ class QuestionFactory(factory.django.DjangoModelFactory):
 
     required = factory.Faker('boolean')
     prompt = factory.Faker('sentence')
-    type = factory.Faker('random_element', elements=[e[0] for e in Question.TYPE_CHOICES])
+    type = factory.Faker('random_element', elements=[e[0] for e in Question.QuestionType.choices])
     official = factory.Faker('boolean')
 
 
