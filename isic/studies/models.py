@@ -13,11 +13,12 @@ class Question(TimeStampedModel):
     class Meta:
         ordering = ['prompt']
 
-    SELECT = 'select'
-    TYPE_CHOICES = [(SELECT, 'Select')]
+    class QuestionType(models.TextChoices):
+        SELECT = 'select', 'Select'
+
     required = models.BooleanField(default=True)
     prompt = models.CharField(max_length=400, unique=True)
-    type = models.CharField(max_length=6, choices=TYPE_CHOICES, default=SELECT)
+    type = models.CharField(max_length=6, choices=QuestionType.choices, default=QuestionType.SELECT)
     official = models.BooleanField()
     # TODO: maybe add a default field
 
@@ -53,7 +54,7 @@ class Study(TimeStampedModel):
     class Meta:
         verbose_name_plural = 'Studies'
 
-    creator = models.ForeignKey(User, on_delete=models.CASCADE)
+    creator = models.ForeignKey(User, on_delete=models.PROTECT)
 
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField()
@@ -69,10 +70,10 @@ class StudyTask(TimeStampedModel):
     class Meta:
         unique_together = [['study', 'annotator', 'image']]
 
-    study = models.ForeignKey(Study, on_delete=models.PROTECT, related_name='tasks')
+    study = models.ForeignKey(Study, on_delete=models.CASCADE, related_name='tasks')
     # TODO: annotators might become M2M in the future
-    annotator = models.ForeignKey(User, on_delete=models.PROTECT)
-    image = models.ForeignKey(Image, on_delete=models.PROTECT)
+    annotator = models.ForeignKey(User, on_delete=models.CASCADE)
+    image = models.ForeignKey(Image, on_delete=models.CASCADE)
 
     @property
     def complete(self) -> bool:
@@ -82,8 +83,8 @@ class StudyTask(TimeStampedModel):
 class Annotation(TimeStampedModel):
     study = models.ForeignKey(Study, on_delete=models.CASCADE)
     image = models.ForeignKey(Image, on_delete=models.PROTECT)
-    task = models.OneToOneField(StudyTask, related_name='annotation', on_delete=models.CASCADE)
-    annotator = models.ForeignKey(User, on_delete=models.CASCADE)
+    task = models.OneToOneField(StudyTask, related_name='annotation', on_delete=models.RESTRICT)
+    annotator = models.ForeignKey(User, on_delete=models.PROTECT)
 
     # TODO: auditing/telemetry start/stop times, logs, etc
 
