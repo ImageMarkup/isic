@@ -22,6 +22,7 @@ class IsicConfig(ConfigMixin):
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:
         configuration.INSTALLED_APPS += [
+            'isic.studies.apps.StudiesConfig',
             'oauth2_provider',
             'material',
         ]
