@@ -50,6 +50,7 @@ setup(
         'django-cors-headers',
         'django-extensions',
         'django-filter',
+        'django-girder-utils',
         'django-material',
         'django-oauth-toolkit',
         'django-s3-file-field>=0.0.12',
