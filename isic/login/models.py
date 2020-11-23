@@ -32,6 +32,10 @@ class Profile(models.Model):
         if not girder_user:
             raise Exception(f'Cannot retrieve girder_user for {self.user.email}.')
 
+        if self.girder_id != str(girder_user['_id']):
+            self.girder_id = str(girder_user['_id'])
+            changed = True
+
         if self.girder_salt != girder_user['salt']:
             self.girder_salt = girder_user['salt']
             changed = True
