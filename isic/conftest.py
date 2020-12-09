@@ -4,11 +4,18 @@ from rest_framework.test import APIClient
 
 from .factories import ProfileFactory, UserFactory
 
-# Can't use the register decorators with circular factory references
-register(ProfileFactory)
-register(UserFactory)
+
+@pytest.fixture
+def api_client() -> APIClient:
+    return APIClient()
 
 
 @pytest.fixture
-def api_client():
-    return APIClient()
+def authenticated_api_client(user) -> APIClient:
+    client = APIClient()
+    client.force_authenticate(user=user)
+    return client
+
+
+register(ProfileFactory)
+register(UserFactory)
