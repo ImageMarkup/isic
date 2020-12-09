@@ -53,7 +53,7 @@ setup(
         'django-girder-utils',
         'django-material',
         'django-oauth-toolkit',
-        'django-s3-file-field>=0.0.12',
+        'django-s3-file-field',
         'djangorestframework',
         'drf-extensions',
         'drf-yasg2',
@@ -69,6 +69,7 @@ setup(
         # Development-only
         'django-debug-toolbar',
         'django-minio-storage',
+        'minio<7',
     ],
     extras_require={'dev': ['ipython', 'tox']},
 )
