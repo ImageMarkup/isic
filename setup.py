@@ -52,7 +52,7 @@ setup(
         'django-filter',
         'django-girder-utils',
         'django-material',
-        'django-oauth-toolkit',
+        'django-oauth-toolkit==1.3.2',
         'django-s3-file-field',
         'djangorestframework',
         'drf-extensions',
