@@ -24,7 +24,6 @@ class IsicConfig(ConfigMixin):
         configuration.INSTALLED_APPS += [
             'isic.studies.apps.StudiesConfig',
             's3_file_field',
-            'oauth2_provider',
             'material',
         ]
 
@@ -41,24 +40,19 @@ class IsicConfig(ConfigMixin):
         # it will be upgraded on login.
         configuration.PASSWORD_HASHERS += ['isic.login.backends.GirderPasswordHasher']
 
-    REST_FRAMEWORK = {
-        'DEFAULT_AUTHENTICATION_CLASSES': [
-            'rest_framework.authentication.BasicAuthentication',
-            'rest_framework.authentication.TokenAuthentication',
-            'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
-        ],
-        'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
-    }
-    OAUTH2_PROVIDER = {
-        'SCOPES': {
-            'identity': 'Access to your basic profile information',
-            'image:read': 'Read access to images',
-            'image:write': 'Write access to images',
-        },
-        'DEFAULT_SCOPES': ['identity'],
-    }
-    PKCE_REQUIRED = True
-    ALLOWED_REDIRECT_URI_SCHEMES = ['https']
+        configuration.REST_FRAMEWORK.update(
+            {'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated']}
+        )
+        configuration.OAUTH2_PROVIDER.update(
+            {
+                'SCOPES': {
+                    'identity': 'Access to your basic profile information',
+                    'image:read': 'Read access to images',
+                    'image:write': 'Write access to images',
+                },
+                'DEFAULT_SCOPES': ['identity'],
+            }
+        )
 
     AUTHENTICATION_BACKENDS = [
         'isic.login.backends.GirderBackend',
@@ -80,7 +74,6 @@ class DevelopmentConfiguration(IsicConfig, DevelopmentBaseConfiguration):
     AUTHENTICATION_BACKENDS = [
         'allauth.account.auth_backends.AuthenticationBackend',
     ]
-    ALLOWED_REDIRECT_URI_SCHEMES = ['http', 'https']
 
     ISIC_MONGO_URI = values.Value('mongodb://localhost:27017/girder')
 
