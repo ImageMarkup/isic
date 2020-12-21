@@ -27,9 +27,11 @@ class IsicConfig(ConfigMixin):
             'material',
         ]
 
-        # Insert before the allauth app, to ensure our base.html is found first
-        allauth_index = configuration.INSTALLED_APPS.index('allauth')
-        configuration.INSTALLED_APPS.insert(allauth_index, 'isic.login.apps.LoginConfig')
+        # Insert before other apps with allauth templates
+        auth_app_index = configuration.INSTALLED_APPS.index(
+            'composed_configuration.authentication.apps.AuthenticationConfig'
+        )
+        configuration.INSTALLED_APPS.insert(auth_app_index, 'isic.login.apps.LoginConfig')
 
         if configuration.ISIC_DISCOURSE_SSO_SECRET:
             configuration.INSTALLED_APPS += [
