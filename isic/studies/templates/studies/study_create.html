@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load material_form %}
+
+{% block extra_head %}
+  <script type="text/javascript">
+    $(function() {
+      $("#{{ form.annotators.auto_id }}").select2();
+    });
+  </script>
+{% endblock %}
+
+{% block content %}
+  <form method="post">{% csrf_token %}
+    {% form form=form %}
+    {% endform %}
+    {{ form.media  }}
+    <input type="submit" value="Create study">
+  </form>
+{% endblock %}
