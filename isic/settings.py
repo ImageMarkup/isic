@@ -25,6 +25,7 @@ class IsicConfig(ConfigMixin):
             'isic.studies.apps.StudiesConfig',
             's3_file_field',
             'material',
+            'nested_admin',
         ]
 
         # Insert before other apps with allauth templates
