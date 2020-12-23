@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h3>Studies</h3>
+  <ul class="collection">
+    {% for study in studies %}
+      <a class="collection-item" href="{{ study.get_absolute_url }}">{{ study.name }}</a>
+    {% endfor %}
+  </ul>
+{% endblock %}
