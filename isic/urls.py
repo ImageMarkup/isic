@@ -9,6 +9,7 @@ from rest_framework import permissions, routers
 from isic.discourse_sso.views import discourse_sso_login
 from isic.login.views import IsicLoginView, get_girder_token
 from isic.studies.api import AnnotationViewSet, StudyTaskViewSet, StudyViewSet
+from isic.studies.views import annotation_detail, study_detail, study_list, view_mask
 
 router = routers.SimpleRouter()
 router.register('annotations', AnnotationViewSet)
@@ -33,6 +34,11 @@ urlpatterns = [
     path('api/v1/', include(router.urls)),
     path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),
     path('api/docs/swagger/', schema_view.with_ui('swagger'), name='docs-swagger'),
+    # Studies app
+    path('staff/studies/', study_list, name='study-list'),
+    path('staff/studies/<pk>/', study_detail, name='study-detail'),
+    path('staff/masks/<markup_id>/', view_mask, name='view-mask'),
+    path('staff/annotations/<pk>/', annotation_detail, name='annotation-detail'),
 ]
 
 if apps.is_installed('isic.discourse_sso'):

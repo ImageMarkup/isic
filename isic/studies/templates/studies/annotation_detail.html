@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}{{ annotation.study.name }} | ISIC{% endblock %}
+
+{% block content %}
+  <div>
+    <h2>{{ annotation.study.name }}</h2>
+    {{ annotation.annotator }}
+    <br>
+    {{ annotation.image.object_id }}
+  </div>
+
+
+  <h4>Markups</h4>
+  <table>
+    <thead>
+      <tr>
+        <th>Feature</th>
+        <th>Present</th>
+        <th></th>
+      </tr>
+    </thead>
+
+    {% for markup in annotation.markups.all %}
+      <tr>
+        <td>{{ markup.feature.label }}</td>
+        <td>{% if markup.present %}Present{% else %}-{% endif %}</td>
+        <td>{% if markup.present %}<a href="{% url 'view-mask' markup.id %}">View Mask</a>{% else %}-{% endif %}</td>
+      </tr>
+    {% endfor %}
+  </table>
+
+  <h4>Responses</h4>
+  <table>
+    <thead>
+      <tr>
+        <th>Prompt</th>
+        <th>Response</th>
+      </tr>
+    </thead>
+
+    {% for response in annotation.responses.all %}
+      <tr>
+        <td>{{ response.question.prompt }}</td>
+        <td>{{ response.choice.text }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+
+{% endblock %}

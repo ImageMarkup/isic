@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
+from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 from girder_utils.models import DeferredFieldsManager
 
@@ -65,6 +66,9 @@ class Study(TimeStampedModel):
     def __str__(self) -> str:
         return self.name
 
+    def get_absolute_url(self) -> str:
+        return reverse('study-detail', args=[self.pk])
+
 
 class StudyTask(TimeStampedModel):
     class Meta:
@@ -87,6 +91,9 @@ class Annotation(TimeStampedModel):
     annotator = models.ForeignKey(User, on_delete=models.PROTECT)
 
     # TODO: auditing/telemetry start/stop times, logs, etc
+
+    def get_absolute_url(self) -> str:
+        return reverse('annotation-detail', args=[self.pk])
 
 
 class Response(TimeStampedModel):
