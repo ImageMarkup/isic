@@ -2,6 +2,7 @@
 
 {% block content %}
   <h3>Studies</h3>
+  <a href="{% url 'study-create' %}" class="waves-effect waves-light btn-small">Add new</a>
   <ul class="collection">
     {% for study in studies %}
       <a class="collection-item" href="{{ study.get_absolute_url }}">{{ study.name }}</a>
