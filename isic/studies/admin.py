@@ -16,6 +16,25 @@ from isic.studies.models import (
 )
 
 
+class IsStudyTaskCompleteFilter(admin.SimpleListFilter):
+    title = 'complete'
+    parameter_name = 'complete'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'Yes'),
+            ('no', 'No'),
+        )
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value == 'yes':
+            return queryset.filter(has_annotation=True)
+        elif value == 'no':
+            return queryset.exclude(has_annotation=True)
+        return queryset
+
+
 class FeatureInline(ReadonlyTabularInline):
     model = Study.features.through
 
@@ -85,7 +104,7 @@ class AnnotationAdmin(admin.ModelAdmin):
 @admin.register(StudyTask)
 class StudyTaskAdmin(nested_admin.NestedModelAdmin):
     list_display = ['study', 'annotator', 'image', 'complete']
-    list_filter = ['study']
+    list_filter = ['study', IsStudyTaskCompleteFilter]
     search_fields = ['annotator__email', 'image__object_id', 'study__name']
     inlines = [AnnotationInline]
 
@@ -97,6 +116,7 @@ class StudyTaskAdmin(nested_admin.NestedModelAdmin):
         return obj.has_annotation
 
     complete.admin_order_field = 'has_annotation'
+    complete.boolean = True
 
 
 @admin.register(Study)
