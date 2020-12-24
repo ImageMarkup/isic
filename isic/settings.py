@@ -23,6 +23,7 @@ class IsicConfig(ConfigMixin):
     def before_binding(configuration: ComposedConfiguration) -> None:
         configuration.INSTALLED_APPS += [
             'isic.studies.apps.StudiesConfig',
+            'isic.core.apps.CoreConfig',
             's3_file_field',
             'material',
             'nested_admin',
