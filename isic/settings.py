@@ -55,6 +55,17 @@ class IsicConfig(ConfigMixin):
                     'image:write': 'Write access to images',
                 },
                 'DEFAULT_SCOPES': ['identity'],
+                # Allow setting DJANGO_OAUTH_ALLOWED_REDIRECT_URI_SCHEMES to override this on the
+                # sandbox instance.
+                'ALLOWED_REDIRECT_URI_SCHEMES': values.ListValue(
+                    ['http', 'https'] if configuration.DEBUG else ['https'],
+                    environ_name='OAUTH_ALLOWED_REDIRECT_URI_SCHEMES',
+                    environ_prefix='DJANGO',
+                    environ_required=False,
+                    # Disable late_binding, to make this return a usable value (which is a list)
+                    # immediately.
+                    late_binding=False,
+                ),
             }
         )
 
