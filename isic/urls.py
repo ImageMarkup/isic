@@ -30,9 +30,9 @@ urlpatterns = [
     # TODO: Make this only "oauth/"
     re_path('o(?:auth)?/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('admin/', admin.site.urls),
-    path('api/v1/s3-upload/', include('s3_file_field.urls')),
-    path('api/v1/token/legacy/', get_girder_token),
-    path('api/v1/', include(router.urls)),
+    path('api/v2/s3-upload/', include('s3_file_field.urls')),
+    path('api/v2/token/legacy/', get_girder_token),
+    path('api/v2/', include(router.urls)),
     path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),
     path('api/docs/swagger/', schema_view.with_ui('swagger'), name='docs-swagger'),
     # Core app
