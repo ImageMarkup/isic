@@ -2,7 +2,7 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path, re_path, reverse_lazy
-from django.views.generic.base import RedirectView
+from django.views.generic.base import RedirectView, TemplateView
 from drf_yasg2 import openapi
 from drf_yasg2.views import get_schema_view
 from rest_framework import permissions, routers
@@ -35,9 +35,12 @@ urlpatterns = [
     path('api/v1/', include(router.urls)),
     path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),
     path('api/docs/swagger/', schema_view.with_ui('swagger'), name='docs-swagger'),
-    # Studies app
+    # Core app
     path('', RedirectView.as_view(url=reverse_lazy('staff-index')), name='index'),
-    path('staff/', study_list, name='staff-index'),
+    path(
+        'staff/', TemplateView.as_view(template_name='core/staff_landing.html'), name='staff-index'
+    ),
+    # Studies app
     path('staff/studies/create/', study_create, name='study-create'),
     path('staff/studies/', study_list, name='study-list'),
     path('staff/studies/<pk>/', study_detail, name='study-detail'),
