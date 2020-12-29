@@ -2,6 +2,7 @@ from urllib.parse import parse_qs, urlparse
 
 from django.contrib.auth.views import LoginView
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from oauth2_provider.decorators import protected_resource
 from oauth2_provider.models import Application
 from rest_framework.decorators import api_view
@@ -27,7 +28,7 @@ class IsicLoginView(LoginView):
         qs = parse_qs(redirect_to.query)
 
         if qs.get('client_id'):
-            app = Application.objects.filter(client_id=qs['client_id'][0]).first()
+            app = get_object_or_404(Application, client_id=qs['client_id'][0])
             context['app_name'] = app.name
 
         return context
