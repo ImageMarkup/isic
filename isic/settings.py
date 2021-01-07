@@ -13,7 +13,7 @@ from composed_configuration import (
 from configurations import values
 
 
-class IsicConfig(ConfigMixin):
+class IsicMixin(ConfigMixin):
     WSGI_APPLICATION = 'isic.wsgi.application'
     ROOT_URLCONF = 'isic.urls'
 
@@ -85,7 +85,7 @@ class IsicConfig(ConfigMixin):
     ISIC_MONGO_URI = values.SecretValue()
 
 
-class DevelopmentConfiguration(IsicConfig, DevelopmentBaseConfiguration):
+class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
     AUTHENTICATION_BACKENDS = [
         'allauth.account.auth_backends.AuthenticationBackend',
     ]
@@ -93,14 +93,14 @@ class DevelopmentConfiguration(IsicConfig, DevelopmentBaseConfiguration):
     ISIC_MONGO_URI = values.Value('mongodb://localhost:27017/girder')
 
 
-class TestingConfiguration(IsicConfig, TestingBaseConfiguration):
+class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
     ISIC_DISCOURSE_SSO_SECRET = 'discourse_secret'
     ISIC_MONGO_URI = 'mongodb://localhost:27017/girder'
 
 
-class ProductionConfiguration(IsicConfig, ProductionBaseConfiguration):
+class ProductionConfiguration(IsicMixin, ProductionBaseConfiguration):
     pass
 
 
-class HerokuProductionConfiguration(IsicConfig, HerokuProductionBaseConfiguration):
+class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration):
     pass
