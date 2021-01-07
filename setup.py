@@ -7,7 +7,7 @@ if readme_file.exists():
     with readme_file.open() as f:
         long_description = f.read()
 else:
-    # WHen this is first installed in development Docker, README.md is not available
+    # When this is first installed in development Docker, README.md is not available
     long_description = ''
 
 setup(
@@ -47,7 +47,7 @@ setup(
         'django-admin-display',
         'django-allauth',
         'django-composed-configuration[dev,prod]>=0.10.0',
-        'django-configurations',
+        'django-configurations[database,email]',
         'django-extensions',
         'django-filter',
         'django-girder-utils',
