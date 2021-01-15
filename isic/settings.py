@@ -86,6 +86,12 @@ class IsicMixin(ConfigMixin):
 
 
 class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
+    # Development-only settings
+    SHELL_PLUS_IMPORTS = [
+        'from isic.studies.tasks import *',
+    ]
+
+    # Development-specific overrides
     AUTHENTICATION_BACKENDS = [
         'allauth.account.auth_backends.AuthenticationBackend',
     ]
