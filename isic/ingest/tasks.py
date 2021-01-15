@@ -11,7 +11,7 @@ from django.utils import timezone
 from girder_utils.files import field_file_to_local_path
 
 from isic.studies.models import Image
-from isic.ingest.models import Zip, UploadBlob, UploadStatus
+from isic.ingest.models import Zip#, UploadBlob, UploadStatus
 from isic.ingest.zip_utils import ZipFileOpener
 
 

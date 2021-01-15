@@ -8,19 +8,27 @@ from django_extensions.db.models import TimeStampedModel
 from s3_file_field import S3FileField
 
 
-class Cohort:
-    @property
-    def is_complete(self):
-        if self.status == Zip.Status.CREATED:
-            return False
-        elif self.status == Zip.Status.COMPLETED:
-            return True
-        else:
-            return self.blobs.filter(completed__isnull=True).count() == 0
+class Cohort(TimeStampedModel):
+    girder_id = models.CharField(blank=True, max_length=24, help_text='The dataset_id from Girder.')
 
-    @property
-    def num_failed_images(self):
-        return self.records.filter(succeeded=False).count()
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+
+    def __str__(self) -> str:
+        return self.name
+
+    # @property
+    # def is_complete(self):
+    #     if self.status == Zip.Status.CREATED:
+    #         return False
+    #     elif self.status == Zip.Status.COMPLETED:
+    #         return True
+    #     else:
+    #         return self.blobs.filter(completed__isnull=True).count() == 0
+    #
+    # @property
+    # def num_failed_images(self):
+    #     return self.records.filter(succeeded=False).count()
 
 
 class Zip(TimeStampedModel):
@@ -29,17 +37,20 @@ class Zip(TimeStampedModel):
         STARTED = 'extracting', 'Extracting'
         COMPLETED = 'extracted', 'Extracted'
 
-    creator = models.ForeignKey(User, on_delete=models.PROTECT)
-    # last_updated = models.DateTimeField(default=timezone.now)  # TODO: use "modified" instead?
-    status = models.CharField(
-        max_length=9, choices=Status.choices, default=Status.CREATED
-    )
-    blob = S3FileField()
-    blob_name = models.CharField(max_length=255)
-    blob_size = models.PositiveBigIntegerField()
+    # creator = models.ForeignKey(User, on_delete=models.PROTECT)
+    # status = models.CharField(
+    #     max_length=10, choices=Status.choices, default=Status.CREATED
+    # )
+    girder_id = models.CharField(blank=True, max_length=24, help_text='The batch_id from Girder.')
+
+    cohort = models.ForeignKey(Cohort, null=True, on_delete=models.CASCADE, related_name='zips')
+
+    blob = S3FileField(blank=True)
+    blob_name = models.CharField(blank=True, max_length=255)
+    blob_size = models.PositiveBigIntegerField(null=True)
 
     def __str__(self) -> str:
-        return f'<Zip: {self.creator.email} - {self.status}>'
+        return self.blob_name
 
     def get_absolute_url(self):
         return reverse('zip-detail', args=[self.id])
@@ -54,64 +65,64 @@ class Zip(TimeStampedModel):
     #         self.save(update_fields=['last_updated', 'status'])
 
 
-class UploadBlob(TimeStampedModel):
-    upload = models.ForeignKey(Zip, related_name='blobs', on_delete=models.CASCADE)
-    blob_name = models.CharField(max_length=255)
-    blob = S3FileField()
-
-    completed = models.DateTimeField(blank=True, null=True)
-    succeeded = models.BooleanField(blank=True, null=True)
-    fail_reason = models.TextField(blank=True, null=True)
-
-    def reset(self):
-        from isic.studies.models import Image
-
-        with transaction.atomic():
-            try:
-                self.image.delete()
-            except Image.DoesNotExist:
-                pass
-
-            self.completed = None
-            self.succeeded = None
-            self.fail_reason = None
-            self.upload.status = UploadStatus.STARTED
-            self.upload.save(update_fields=['status'])
-            self.save()
-
-    def get_status_display(self):
-        if not self.completed:
-            return 'Pending'
-        elif self.succeeded:
-            return 'Succeeded'
-        else:
-            return 'Failed'
-
-
-    def is_stuck(self, threshold=120):
-        threshold = timedelta(threshold)
-
-        if self.status == UploadStatus.COMPLETED:
-            return False
-
-        age: timedelta = timezone.now() - self.last_updated
-        return age > threshold
-
-
-    def succeed(self):
-        self.upload.last_updated = timezone.now()
-        self.completed = timezone.now()
-        self.succeeded = True
-        self.save(update_fields=['completed', 'succeeded'])
-        self.upload.save(update_fields=['last_updated'])
-
-    def fail(self, reason=None):
-        self.upload.last_updated = timezone.now()
-        self.completed = timezone.now()
-        self.succeeded = False
-
-        if reason:
-            self.fail_reason = reason
-
-        self.save(update_fields=['completed', 'succeeded', 'fail_reason'])
-        self.upload.save(update_fields=['last_updated'])
+# class UploadBlob(TimeStampedModel):
+#     upload = models.ForeignKey(Zip, related_name='blobs', on_delete=models.CASCADE)
+#     blob_name = models.CharField(max_length=255)
+#     blob = S3FileField()
+#
+#     completed = models.DateTimeField(blank=True, null=True)
+#     succeeded = models.BooleanField(blank=True, null=True)
+#     fail_reason = models.TextField(blank=True, null=True)
+#
+#     def reset(self):
+#         from isic.studies.models import Image
+#
+#         with transaction.atomic():
+#             try:
+#                 self.image.delete()
+#             except Image.DoesNotExist:
+#                 pass
+#
+#             self.completed = None
+#             self.succeeded = None
+#             self.fail_reason = None
+#             self.upload.status = UploadStatus.STARTED
+#             self.upload.save(update_fields=['status'])
+#             self.save()
+#
+#     def get_status_display(self):
+#         if not self.completed:
+#             return 'Pending'
+#         elif self.succeeded:
+#             return 'Succeeded'
+#         else:
+#             return 'Failed'
+#
+#
+#     def is_stuck(self, threshold=120):
+#         threshold = timedelta(threshold)
+#
+#         if self.status == UploadStatus.COMPLETED:
+#             return False
+#
+#         age: timedelta = timezone.now() - self.last_updated
+#         return age > threshold
+#
+#
+#     def succeed(self):
+#         self.upload.last_updated = timezone.now()
+#         self.completed = timezone.now()
+#         self.succeeded = True
+#         self.save(update_fields=['completed', 'succeeded'])
+#         self.upload.save(update_fields=['last_updated'])
+#
+#     def fail(self, reason=None):
+#         self.upload.last_updated = timezone.now()
+#         self.completed = timezone.now()
+#         self.succeeded = False
+#
+#         if reason:
+#             self.fail_reason = reason
+#
+#         self.save(update_fields=['completed', 'succeeded', 'fail_reason'])
+#         self.upload.save(update_fields=['last_updated'])
