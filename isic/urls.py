@@ -11,6 +11,7 @@ from isic.discourse_sso.views import discourse_sso_login
 from isic.login.views import IsicLoginView, get_girder_token
 from isic.studies.api import AnnotationViewSet, StudyTaskViewSet, StudyViewSet
 from isic.studies.views import annotation_detail, study_create, study_detail, study_list, view_mask
+from isic.ingest.views import zip_create
 
 router = routers.SimpleRouter()
 router.register('annotations', AnnotationViewSet)
@@ -46,6 +47,8 @@ urlpatterns = [
     path('staff/studies/<pk>/', study_detail, name='study-detail'),
     path('staff/masks/<markup_id>/', view_mask, name='view-mask'),
     path('staff/annotations/<pk>/', annotation_detail, name='annotation-detail'),
+    # Ingest app
+    path('staff/upload/create/', zip_create, name='zip-create'),
 ]
 
 if apps.is_installed('isic.discourse_sso'):
