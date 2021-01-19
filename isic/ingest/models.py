@@ -16,6 +16,8 @@ class Cohort(TimeStampedModel):
 
 class Accession(TimeStampedModel):
     class Status(models.TextChoices):
+        CREATING = 'creating', 'Creating'
+        CREATED = 'created', 'Created'
         SKIPPED = 'skipped', 'Skipped'
         FAILED = 'failed', 'Failed'
         SUCCEEDED = 'succeeded', 'Succeeded'
@@ -33,7 +35,7 @@ class Accession(TimeStampedModel):
     blob_name = models.CharField(max_length=255)
     blob_size = models.PositiveBigIntegerField()
 
-    status = models.CharField(choices=Status.choices, max_length=20, null=True, blank=True)
+    status = models.CharField(choices=Status.choices, max_length=20, default=Status.CREATING)
     review_status = models.CharField(
         choices=ReviewStatus.choices, max_length=20, null=True, blank=True
     )
