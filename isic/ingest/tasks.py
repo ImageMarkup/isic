@@ -24,7 +24,7 @@ def extract_zip(zip_id):
                 with open(original_file_path, 'rb') as original_file_stream:
                     zip.accessions.create(
                         blob_name=original_file_name,
-                        blob_size=1,
+                        blob_size=1,  # TODO: use tell to get size
                         blob=SimpleUploadedFile(
                             original_file_name,
                             original_file_stream.read(),
