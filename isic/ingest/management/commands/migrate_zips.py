@@ -1,12 +1,9 @@
 import datetime
 
 import djclick as click
-import requests
-from django.core.files import File
-from django.core.files.uploadedfile import UploadedFile
 
-from isic.login.girder import get_girder_db
 from isic.ingest.models import Cohort, Zip
+from isic.login.girder import get_girder_db
 
 
 @click.command(help='Migrate uploaded zips from Girder ISIC')
@@ -14,7 +11,7 @@ def migrate_zips():
     girder_db = get_girder_db()
 
     for girder_dataset in girder_db['dataset'].find():
-        girder_batch_folder = girder_db['folder'].find_one({'_id': girder_dataset['folderId']})
+        # girder_batch_folder = girder_db['folder'].find_one({'_id': girder_dataset['folderId']})
 
         Cohort.objects.update_or_create(
             girder_id=str(girder_dataset['_id']),
@@ -30,9 +27,11 @@ def migrate_zips():
         girder_file_id = girder_batch.get('uploadFileId')
         if girder_file_id:
             girder_file = girder_db['file'].find_one({'_id': girder_file_id})
+            print(girder_file)
 
-            girder_batch_name = girder_batch.get('originalFilename') or \
-                                girder_file['name'].split('/')[-1]
+            girder_batch_name = (
+                girder_batch.get('originalFilename') or girder_file['name'].split('/')[-1]
+            )
 
             # TODO: Do not trust Girder for an accurate size
             girder_batch_size = girder_file['size']

@@ -8,10 +8,10 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
 from isic.discourse_sso.views import discourse_sso_login
+from isic.ingest.views import zip_create
 from isic.login.views import IsicLoginView, get_girder_token
 from isic.studies.api import AnnotationViewSet, StudyTaskViewSet, StudyViewSet
 from isic.studies.views import annotation_detail, study_create, study_detail, study_list, view_mask
-from isic.ingest.views import zip_create
 
 router = routers.SimpleRouter()
 router.register('annotations', AnnotationViewSet)

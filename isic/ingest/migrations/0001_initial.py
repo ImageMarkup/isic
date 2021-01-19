@@ -10,17 +10,36 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
             name='Cohort',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
-                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
-                ('girder_id', models.CharField(blank=True, help_text='The dataset_id from Girder.', max_length=24)),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
+                (
+                    'created',
+                    django_extensions.db.fields.CreationDateTimeField(
+                        auto_now_add=True, verbose_name='created'
+                    ),
+                ),
+                (
+                    'modified',
+                    django_extensions.db.fields.ModificationDateTimeField(
+                        auto_now=True, verbose_name='modified'
+                    ),
+                ),
+                (
+                    'girder_id',
+                    models.CharField(
+                        blank=True, help_text='The dataset_id from Girder.', max_length=24
+                    ),
+                ),
                 ('name', models.CharField(max_length=255)),
                 ('description', models.TextField(blank=True)),
             ],
@@ -32,14 +51,49 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Zip',
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
-                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
-                ('girder_id', models.CharField(blank=True, help_text='The batch_id from Girder.', max_length=24)),
-                ('blob', s3_file_field.fields.S3FileField(blank=True, max_length=2000, upload_to=s3_file_field.fields.S3FileField.uuid_prefix_filename)),
+                (
+                    'id',
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                    ),
+                ),
+                (
+                    'created',
+                    django_extensions.db.fields.CreationDateTimeField(
+                        auto_now_add=True, verbose_name='created'
+                    ),
+                ),
+                (
+                    'modified',
+                    django_extensions.db.fields.ModificationDateTimeField(
+                        auto_now=True, verbose_name='modified'
+                    ),
+                ),
+                (
+                    'girder_id',
+                    models.CharField(
+                        blank=True, help_text='The batch_id from Girder.', max_length=24
+                    ),
+                ),
+                (
+                    'blob',
+                    s3_file_field.fields.S3FileField(
+                        blank=True,
+                        max_length=2000,
+                        upload_to=s3_file_field.fields.S3FileField.uuid_prefix_filename,
+                    ),
+                ),
                 ('blob_name', models.CharField(blank=True, max_length=255)),
                 ('blob_size', models.PositiveBigIntegerField(null=True)),
-                ('cohort', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='zips', to='ingest.cohort')),
+                (
+                    'cohort',
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='zips',
+                        to='ingest.cohort',
+                    ),
+                ),
             ],
             options={
                 'get_latest_by': 'modified',

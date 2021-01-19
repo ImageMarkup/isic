@@ -1,14 +1,21 @@
 from django.contrib import admin
 from django.db.models import Count
-from django.utils.safestring import mark_safe
 from django_admin_display import admin_display
 
-from isic.ingest.models import Zip, Cohort  # , UploadBlob
+from isic.ingest.models import Accession, Cohort, Zip  # , UploadBlob
 
+
+@admin_display(short_description='Extract zip')
+def extract_zip(modeladmin, request, queryset):
+    from isic.ingest.tasks import extract_zip as extract_zip_task
+
+    for zip in queryset:
+        zip.reset()
+        extract_zip_task.delay(zip.id)
 
 
 @admin.register(Cohort)
-class ZipAdmin(admin.ModelAdmin):
+class CohortAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'created', 'zips_count']
 
     def get_queryset(self, request):
@@ -21,10 +28,25 @@ class ZipAdmin(admin.ModelAdmin):
         return obj.zips_count
 
 
+@admin.register(Accession)
+class AccessionAdmin(admin.ModelAdmin):
+    list_display = ['id', 'blob_name', 'blob_size', 'created', 'cohort', 'status', 'review_status']
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        qs = qs.select_related('upload__cohort')
+        return qs
+
+    @admin_display(short_description='Cohort')
+    def cohort(self, obj):
+        return obj.upload.cohort
+
+
 @admin.register(Zip)
 class ZipAdmin(admin.ModelAdmin):
-    list_display = ['id', 'blob_name', 'blob_size', 'created', 'cohort']
+    list_display = ['id', 'blob_name', 'blob_size', 'created', 'cohort', 'status']
     list_select_related = ['cohort']
+    actions = [extract_zip]
 
 
 # @admin.register(UploadBlob)
