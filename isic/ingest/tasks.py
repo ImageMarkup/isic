@@ -35,6 +35,8 @@ def extract_zip(zip_id):
                         ),
                     )
 
+    zip.accessions.update(status=Zip.Status.CREATED)
+
     for accession_id in zip.accessions.values_list('id', flat=True):
         process_accession.delay(accession_id)
 
