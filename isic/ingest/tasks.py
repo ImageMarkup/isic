@@ -17,6 +17,9 @@ from isic.ingest.zip_utils import ZipFileOpener
 def extract_zip(zip_id):
     zip = Zip.objects.get(pk=zip_id)
 
+    zip.status = Zip.Status.STARTED
+    zip.save(update_fields=['status'])
+
     with field_file_to_local_path(zip.blob) as zip_path:
         with ZipFileOpener(zip_path) as (file_list, _):
             for original_file_path, original_file_relpath in file_list:
@@ -32,20 +35,15 @@ def extract_zip(zip_id):
                         ),
                     )
 
-    zip.status = Zip.Status.STARTED
-    zip.save(update_fields=['status'])
-
     for accession_id in zip.accessions.values_list('id', flat=True):
         process_accession.delay(accession_id)
+
+    zip.status = Zip.Status.COMPLETED
+    zip.save(update_fields=['status'])
 
 
 @shared_task
 def process_accession(accession_id):
-    def maybe_complete_upload(upload: Zip):
-        if upload.is_complete:
-            upload.status = Zip.Status.COMPLETED
-            upload.save(update_fields=['status'])
-
     accession = Accession.objects.get(pk=accession_id)
 
     try:
@@ -60,14 +58,11 @@ def process_accession(accession_id):
 
         accession.status = Accession.Status.SUCCEEDED
         accession.save(update_fields=['status', 'checksum'])
-        maybe_complete_upload(accession.upload)
     except SoftTimeLimitExceeded:
         accession.status = Accession.Status.FAILED
         accession.save(update_fields=['status'])
-        maybe_complete_upload(accession.upload)
         raise
     except Exception:
         accession.status = Accession.Status.FAILED
         accession.save(update_fields=['status'])
-        maybe_complete_upload(accession.upload)
         raise

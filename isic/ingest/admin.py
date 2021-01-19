@@ -25,6 +25,8 @@ class AccessionAdmin(admin.ModelAdmin):
     list_display = ['id', 'blob_name', 'blob_size', 'created', 'cohort', 'status', 'review_status']
     readonly_fields = ['thumbnail']
 
+    list_filter = ['status', 'review_status']
+
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         qs = qs.select_related('upload__cohort')

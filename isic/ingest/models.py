@@ -38,7 +38,6 @@ class Accession(TimeStampedModel):
         choices=ReviewStatus.choices, max_length=20, null=True, blank=True
     )
 
-    # todo regex
     checksum = models.CharField(
         max_length=64, validators=[RegexValidator(r'^[0-9a-f]{64}$')], null=True, blank=True
     )
@@ -60,15 +59,6 @@ class Zip(TimeStampedModel):
     blob_size = models.PositiveBigIntegerField(null=True)
 
     status = models.CharField(choices=Status.choices, max_length=20, default=Status.CREATED)
-
-    @property
-    def is_complete(self):
-        if self.status == Zip.Status.CREATED:
-            return False
-        elif self.status == Zip.Status.COMPLETED:
-            return True
-        else:
-            return self.accessions.filter(status__isnull=True).count() == 0
 
     def __str__(self) -> str:
         return self.blob_name
