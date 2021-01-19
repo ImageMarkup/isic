@@ -49,16 +49,17 @@ def process_accession(accession_id):
     accession = Accession.objects.get(pk=accession_id)
 
     try:
-        sha1 = hashlib.sha1(accession.blob.open().read()).hexdigest()
-        accession.sha1 = sha1
+        content = accession.blob.open().read()
+        checksum = hashlib.sha256(content).hexdigest()
+        accession.checksum = checksum
 
         # TODO: strip exif?
 
         # done just to determine the image is readable by PIL
-        PIL.Image.open(io.BytesIO(accession.blob.open().read()))
+        PIL.Image.open(io.BytesIO(content))
 
         accession.status = Accession.Status.SUCCEEDED
-        accession.save(update_fields=['status', 'sha1'])
+        accession.save(update_fields=['status', 'checksum'])
         maybe_complete_upload(accession.upload)
     except SoftTimeLimitExceeded:
         accession.status = Accession.Status.FAILED

@@ -1,3 +1,4 @@
+from django.core.validators import RegexValidator
 from django.db import models, transaction
 from django_extensions.db.models import TimeStampedModel
 from s3_file_field import S3FileField
@@ -38,7 +39,9 @@ class Accession(TimeStampedModel):
     )
 
     # todo regex
-    sha1 = models.CharField(max_length=40)
+    checksum = models.CharField(
+        max_length=64, validators=[RegexValidator(r'^[0-9a-f]{64}$')], null=True, blank=True
+    )
 
 
 class Zip(TimeStampedModel):

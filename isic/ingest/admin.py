@@ -6,15 +6,6 @@ from django_admin_display import admin_display
 from isic.ingest.models import Accession, Cohort, Zip  # , UploadBlob
 
 
-@admin_display(short_description='Extract zip')
-def extract_zip(modeladmin, request, queryset):
-    from isic.ingest.tasks import extract_zip as extract_zip_task
-
-    for zip in queryset:
-        zip.reset()
-        extract_zip_task.delay(zip.id)
-
-
 @admin.register(Cohort)
 class CohortAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'created', 'zips_count']
@@ -51,7 +42,15 @@ class AccessionAdmin(admin.ModelAdmin):
 class ZipAdmin(admin.ModelAdmin):
     list_display = ['id', 'blob_name', 'blob_size', 'created', 'cohort', 'status']
     list_select_related = ['cohort']
-    actions = [extract_zip]
+    actions = ['extract_zip']
+
+    @admin_display(short_description='Extract zip')
+    def extract_zip(self, request, queryset):
+        from isic.ingest.tasks import extract_zip as extract_zip_task
+
+        for zip in queryset:
+            zip.reset()
+            extract_zip_task.delay(zip.id)
 
 
 # @admin.register(UploadBlob)
