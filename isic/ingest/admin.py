@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.db.models import Count
+from django.utils.safestring import mark_safe
 from django_admin_display import admin_display
 
 from isic.ingest.models import Accession, Cohort, Zip  # , UploadBlob
@@ -31,6 +32,7 @@ class CohortAdmin(admin.ModelAdmin):
 @admin.register(Accession)
 class AccessionAdmin(admin.ModelAdmin):
     list_display = ['id', 'blob_name', 'blob_size', 'created', 'cohort', 'status', 'review_status']
+    readonly_fields = ['thumbnail']
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -40,6 +42,9 @@ class AccessionAdmin(admin.ModelAdmin):
     @admin_display(short_description='Cohort')
     def cohort(self, obj):
         return obj.upload.cohort
+
+    def thumbnail(self, obj):
+        return mark_safe(f'<img src="{obj.blob.url}" width="300" height="300" />')
 
 
 @admin.register(Zip)
