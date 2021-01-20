@@ -1,23 +1,77 @@
 from django.contrib import admin
 from django.db.models import Count
+from django.db.models.query_utils import Q
 from django.utils.safestring import mark_safe
 from django_admin_display import admin_display
+from girder_utils.admin import ReadonlyTabularInline
 
 from isic.ingest.models import Accession, Cohort, Zip  # , UploadBlob
 
 
+class ZipInline(ReadonlyTabularInline):
+    model = Zip
+
+
 @admin.register(Cohort)
 class CohortAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'created', 'zips_count']
+    list_display = [
+        'id',
+        'created',
+        'name',
+        'zips_count',
+        'pending_accessions',
+        'skipped_accessions',
+        'failed_accessions',
+        'successful_accessions',
+        'accessions',
+    ]
+    inlines = [ZipInline]
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        qs = qs.annotate(zips_count=Count('zips'))
+        qs = qs.annotate(
+            zips_count=Count('zips', distinct=True),
+            pending_accessions=Count(
+                'zips__accessions',
+                filter=Q(zips__accessions__status=Accession.Status.CREATING)
+                | Q(zips__accessions__status=Accession.Status.CREATED),
+            ),
+            skipped_accessions=Count(
+                'zips__accessions', filter=Q(zips__accessions__status=Accession.Status.SKIPPED)
+            ),
+            failed_accessions=Count(
+                'zips__accessions', filter=Q(zips__accessions__status=Accession.Status.FAILED)
+            ),
+            successful_accessions=Count(
+                'zips__accessions', filter=Q(zips__accessions__status=Accession.Status.SUCCEEDED)
+            ),
+            accessions=Count('zips__accessions'),
+        )
         return qs
 
     @admin_display(admin_order_field='zips_count')
     def zips_count(self, obj):
         return obj.zips_count
+
+    @admin_display(admin_order_field='pending_accessions')
+    def pending_accessions(self, obj):
+        return obj.pending_accessions
+
+    @admin_display(admin_order_field='skipped_accessions')
+    def skipped_accessions(self, obj):
+        return obj.skipped_accessions
+
+    @admin_display(admin_order_field='failed_accessions')
+    def failed_accessions(self, obj):
+        return obj.failed_accessions
+
+    @admin_display(admin_order_field='successful_accessions')
+    def successful_accessions(self, obj):
+        return obj.successful_accessions
+
+    @admin_display(admin_order_field='accessions')
+    def accessions(self, obj):
+        return obj.accessions
 
 
 @admin.register(Accession)
