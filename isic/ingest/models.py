@@ -44,6 +44,9 @@ class Accession(TimeStampedModel):
         choices=ReviewStatus.choices, max_length=20, null=True, blank=True
     )
 
+
+class DistinctnessMeasure(TimeStampedModel):
+    accession = models.OneToOneField(Accession, on_delete=models.CASCADE)
     checksum = models.CharField(
         max_length=64, validators=[RegexValidator(r'^[0-9a-f]{64}$')], null=True, blank=True
     )

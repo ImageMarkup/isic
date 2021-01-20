@@ -20,8 +20,10 @@
     {% for accession in page_obj %}
       <tr>
         <td>
-          <img src="{{ accession.blob.url }}" width="300" height="300" />
-          <span>{{ accession.blob_name }}</span>
+          {% if accession.status != 'skipped' %}
+            <img src="{{ accession.blob.url }}" width="300" height="300" />
+          {% endif %}
+          <span><a href="{{ accession.blob.url }}">{{ accession.blob_name }}</a></span>
         </td>
         <td>{{ accession.get_status_display }}</td>
         <td>{{ accession.get_review_status_display }}</td>

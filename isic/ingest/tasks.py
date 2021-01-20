@@ -1,3 +1,4 @@
+import hashlib
 import io
 from mimetypes import guess_type
 import os
@@ -8,7 +9,7 @@ from celery.exceptions import SoftTimeLimitExceeded
 from django.core.files.uploadedfile import SimpleUploadedFile
 import magic
 
-from isic.ingest.models import Accession, Zip
+from isic.ingest.models import Accession, DistinctnessMeasure, Zip
 from isic.ingest.zip_utils import ZipFileOpener
 
 
@@ -50,18 +51,17 @@ def process_accession(accession_id):
     try:
         content = accession.blob.open().read()
 
-        # TODO: thumbs.db
-        if accession.blob_name.startswith('._'):
+        if accession.blob_name.startswith('._') or accession.blob_name == 'Thumbs.db':
             # file is probably a macOS resource fork, skip
             accession.status = Accession.Status.SKIPPED
             accession.save(update_fields=['status'])
             return
 
         m = magic.Magic(mime=True)
-        mime_type = m.from_buffer(content)
+        major_mime_type, _ = m.from_buffer(content).split('/')
 
-        if mime_type != 'image/jpeg':
-            print(mime_type)
+        if major_mime_type != 'image':
+            print(major_mime_type, _)
             accession.status = Accession.Status.SKIPPED
             accession.save(update_fields=['status'])
             return
@@ -73,8 +73,8 @@ def process_accession(accession_id):
 
         accession.status = Accession.Status.SUCCEEDED
         accession.save(update_fields=['status'])
-        # todo: post processing checksum
-        # DistinctnessMeasure
+
+        process_distinctness_measure.delay(accession.id)
     except SoftTimeLimitExceeded:
         accession.status = Accession.Status.FAILED
         accession.save(update_fields=['status'])
@@ -83,3 +83,13 @@ def process_accession(accession_id):
         accession.status = Accession.Status.FAILED
         accession.save(update_fields=['status'])
         raise
+
+
+@shared_task
+def process_distinctness_measure(accession_id):
+    accession = Accession.objects.get(pk=accession_id)
+
+    content = accession.blob.open().read()
+    checksum = hashlib.sha256(content).hexdigest()
+
+    DistinctnessMeasure.objects.create(accession=accession, checksum=checksum)
