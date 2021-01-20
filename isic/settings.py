@@ -91,6 +91,7 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
     SHELL_PLUS_IMPORTS = [
         'from isic.ingest.tasks import *',
         'from isic.studies.tasks import *',
+        'from django.core.files.uploadedfile import UploadedFile',
     ]
 
     # Development-specific overrides
