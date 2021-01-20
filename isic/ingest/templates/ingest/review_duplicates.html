@@ -5,14 +5,7 @@
     <span>{{cohort.description}}</span>
   </div>
 
-  <h4>Accessions</h4>
-  {{ filter.form.as_p }}
-
-  <div>
-    <a href="{% url 'review-duplicates' cohort.id %}">Review Duplicates ({{ num_duplicates }})</a>
-  </div>
-
-  {% include 'studies/partials/pagination.html' with page_obj=page_obj %}
+  <h4>Duplicate Accessions</h4>
 
   <table>
     <thead>
@@ -22,7 +15,7 @@
         <th>Review Status</th>
       </tr>
     </thead>
-    {% for accession in page_obj %}
+    {% for accession in duplicates %}
       <tr>
         <td>
           {% if accession.status != 'skipped' %}
@@ -35,6 +28,4 @@
       </tr>
     {% endfor %}
   </table>
-
-  {% include 'studies/partials/pagination.html' with page_obj=page_obj %}
 {% endblock %}

@@ -1,12 +1,13 @@
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
+from django.db.models.aggregates import Count
 from django.forms.models import ModelForm
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
 from isic.ingest.filters import AccessionFilter
-from isic.ingest.models import Accession, Cohort, Zip
+from isic.ingest.models import Accession, Cohort, DistinctnessMeasure, Zip
 from isic.ingest.tasks import extract_zip
 
 
@@ -45,13 +46,48 @@ def cohort_detail(request, pk):
         Cohort,
         pk=pk,
     )
-    filter_ = AccessionFilter(
-        request.GET, queryset=Accession.objects.filter(upload__cohort=cohort).order_by('created')
-    )
+    accession_qs = Accession.objects.filter(upload__cohort=cohort).order_by('created')
+    filter_ = AccessionFilter(request.GET, queryset=accession_qs)
+    num_duplicates = accession_qs.filter(
+        distinctnessmeasure__checksum__in=DistinctnessMeasure.objects.values('checksum')
+        .annotate(is_duplicate=Count('checksum'))
+        .filter(is_duplicate__gt=1)
+        .values('checksum')
+    ).count()
+
     paginator = Paginator(filter_.qs, 50)
     page_obj = paginator.get_page(request.GET.get('page'))
     return render(
         request,
         'ingest/cohort_detail.html',
-        {'cohort': cohort, 'page_obj': page_obj, 'filter': filter_},
+        {
+            'cohort': cohort,
+            'page_obj': page_obj,
+            'filter': filter_,
+            'num_duplicates': num_duplicates,
+        },
+    )
+
+
+@staff_member_required
+def review_duplicates(request, cohort_pk):
+    cohort = get_object_or_404(
+        Cohort,
+        pk=cohort_pk,
+    )
+    duplicates = (
+        Accession.objects.filter(upload__cohort=cohort)
+        .order_by('created')
+        .filter(
+            distinctnessmeasure__checksum__in=DistinctnessMeasure.objects.values('checksum')
+            .annotate(is_duplicate=Count('checksum'))
+            .filter(is_duplicate__gt=1)
+            .values('checksum')
+        )
+    )
+
+    return render(
+        request,
+        'ingest/review_duplicates.html',
+        {'cohort': cohort, 'duplicates': duplicates},
     )
