@@ -1,10 +1,12 @@
 from django.contrib.admin.views.decorators import staff_member_required
+from django.core.paginator import Paginator
 from django.forms.models import ModelForm
 from django.http import HttpResponseRedirect
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
-from isic.ingest.models import Zip
+from isic.ingest.filters import AccessionFilter
+from isic.ingest.models import Accession, Cohort, Zip
 from isic.ingest.tasks import extract_zip
 
 
@@ -35,3 +37,21 @@ def zip_create(request):
         form = ZipForm()
 
     return render(request, 'ingest/zip_create.html', {'form': form})
+
+
+@staff_member_required
+def cohort_detail(request, pk):
+    cohort = get_object_or_404(
+        Cohort,
+        pk=pk,
+    )
+    filter_ = AccessionFilter(
+        request.GET, queryset=Accession.objects.filter(upload__cohort=cohort).order_by('created')
+    )
+    paginator = Paginator(filter_.qs, 50)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    return render(
+        request,
+        'ingest/cohort_detail.html',
+        {'cohort': cohort, 'page_obj': page_obj, 'filter': filter_},
+    )

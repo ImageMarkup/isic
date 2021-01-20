@@ -1,5 +1,6 @@
 from django.core.validators import RegexValidator
 from django.db import models, transaction
+from django.urls.base import reverse
 from django_extensions.db.models import TimeStampedModel
 from s3_file_field import S3FileField
 
@@ -12,6 +13,9 @@ class Cohort(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.name
+
+    def get_absolute_url(self):
+        return reverse('cohort-detail', args=[self.id])
 
 
 class Accession(TimeStampedModel):

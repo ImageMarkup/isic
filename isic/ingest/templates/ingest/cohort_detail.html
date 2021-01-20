@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div><h2>{{ cohort.name }}</h2>
+    <span>{{cohort.description}}</span>
+  </div>
+
+  <h4>Accessions</h4>
+  {{ filter.form.as_p }}
+  {% include 'studies/partials/pagination.html' with page_obj=page_obj %}
+
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Status</th>
+        <th>Review Status</th>
+      </tr>
+    </thead>
+    {% for accession in page_obj %}
+      <tr>
+        <td>
+          <img src="{{ accession.blob.url }}" width="300" height="300" />
+          <span>{{ accession.blob_name }}</span>
+        </td>
+        <td>{{ accession.get_status_display }}</td>
+        <td>{{ accession.get_review_status_display }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+
+  {% include 'studies/partials/pagination.html' with page_obj=page_obj %}
+{% endblock %}
