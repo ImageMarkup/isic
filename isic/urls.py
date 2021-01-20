@@ -8,7 +8,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
 from isic.discourse_sso.views import discourse_sso_login
-from isic.ingest.views import cohort_detail, zip_create
+from isic.ingest.views import cohort_detail, review_duplicates, zip_create
 from isic.login.views import IsicLoginView, get_girder_token
 from isic.studies.api import AnnotationViewSet, StudyTaskViewSet, StudyViewSet
 from isic.studies.views import annotation_detail, study_create, study_detail, study_list, view_mask
@@ -50,6 +50,7 @@ urlpatterns = [
     # Ingest app
     path('staff/upload/create/', zip_create, name='zip-create'),
     path('staff/cohort/<pk>/', cohort_detail, name='cohort-detail'),
+    path('staff/review-duplicates/<cohort_pk>/', review_duplicates, name='review-duplicates'),
 ]
 
 if apps.is_installed('isic.discourse_sso'):
