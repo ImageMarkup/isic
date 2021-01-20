@@ -49,9 +49,6 @@ class ZipFileOpener(object):
             if not original_file_name or not original_file.file_size:
                 # file is probably a directory, skip
                 continue
-            if original_file_name.startswith('._'):
-                # file is probably a macOS resource fork, skip
-                continue
             file_list.append((original_file, original_file_relpath))
         # Test whether the archive uses a compression type that the zip_file module supports. For
         # example, extracting from an archive that uses Deflate64 raises the following exception:

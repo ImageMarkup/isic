@@ -60,6 +60,7 @@ setup(
         'passlib[bcrypt]',
         'Pillow',
         'pymongo',
+        'python-magic',
         # Production-only
         'gunicorn',
         # Development-only
