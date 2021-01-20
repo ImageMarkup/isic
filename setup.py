@@ -58,11 +58,12 @@ setup(
         'djangorestframework',
         'drf-yasg',
         'passlib[bcrypt]',
+        'Pillow',
         'pymongo',
         # Production-only
         'gunicorn',
         # Development-only
         'django-debug-toolbar',
     ],
-    extras_require={'dev': ['ipython', 'tox']},
+    extras_require={'dev': ['django-click', 'ipython', 'tox']},
 )
