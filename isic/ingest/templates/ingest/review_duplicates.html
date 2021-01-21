@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 
 {% block content %}
+  <nav>
+    <div class="nav-wrapper">
+      <div class="col s12">
+        <a href="{% url 'cohort-list' %}" class="breadcrumb">Cohorts</a>
+        <a href="{% url 'cohort-detail' cohort.id %}" class="breadcrumb">{{ cohort.name }}</a>
+        <a class="breadcrumb">Duplicate Review</a>
+      </div>
+    </div>
+  </nav>
+
   <div>
     <h2>{{ cohort.name }}</h2>
     <span>{{cohort.description}}</span>
@@ -9,12 +19,11 @@
   <h4>
     Duplicate Accessions
   </h4>
-  <span><a href="{% url 'cohort-detail' cohort.id %}">back to cohort</a></span>
 
   {% for duplicate_group in duplicate_groups %}
-    <div>
+    <div class="row">
       {% for accession in duplicate_group %}
-        <div>
+        <div class="col s4">
           <p>
             <img src="{{ accession.blob.url }}" width="300" height="300" />
             <span><a href="{{ accession.blob.url }}">{{ accession.blob_name }}</a></span>

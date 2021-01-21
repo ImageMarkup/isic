@@ -1,6 +1,15 @@
 {% extends "base.html" %}
 
 {% block content %}
+  <nav>
+    <div class="nav-wrapper">
+      <div class="col s12">
+        <a href="{% url 'cohort-list' %}" class="breadcrumb">Cohorts</a>
+        <a class="breadcrumb">{{ cohort.name }}</a>
+      </div>
+    </div>
+  </nav>
+
   <div><h2>{{ cohort.name }}</h2>
     <span>{{cohort.description}}</span>
   </div>
