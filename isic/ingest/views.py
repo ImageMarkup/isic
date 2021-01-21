@@ -1,3 +1,5 @@
+from itertools import groupby
+
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
 from django.db.models.aggregates import Count
@@ -89,7 +91,8 @@ def review_duplicates(request, cohort_pk):
     )
     duplicates = (
         Accession.objects.filter(upload__cohort=cohort)
-        .order_by('created')
+        .select_related('distinctnessmeasure')
+        .order_by('distinctnessmeasure__checksum')  # ordering by checksum is necessary for groupby
         .filter(
             distinctnessmeasure__checksum__in=DistinctnessMeasure.objects.values('checksum')
             .annotate(is_duplicate=Count('checksum'))
@@ -98,8 +101,15 @@ def review_duplicates(request, cohort_pk):
         )
     )
 
+    # TODO: investigate regroup template tag
+    # TODO: if performance becomes an issue (too many duplicates), look into
+    # windowing functions with postgres
+    duplicate_groups = []
+    for _, accession in groupby(duplicates, key=lambda a: a.distinctnessmeasure.checksum):
+        duplicate_groups.append(list(accession))
+
     return render(
         request,
         'ingest/review_duplicates.html',
-        {'cohort': cohort, 'duplicates': duplicates},
+        {'cohort': cohort, 'duplicate_groups': duplicate_groups},
     )

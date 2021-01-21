@@ -1,31 +1,28 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <div><h2>{{ cohort.name }}</h2>
+  <div>
+    <h2>{{ cohort.name }}</h2>
     <span>{{cohort.description}}</span>
   </div>
 
-  <h4>Duplicate Accessions</h4>
+  <h4>
+    Duplicate Accessions
+  </h4>
+  <span><a href="{% url 'cohort-detail' cohort.id %}">back to cohort</a></span>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Status</th>
-        <th>Review Status</th>
-      </tr>
-    </thead>
-    {% for accession in duplicates %}
-      <tr>
-        <td>
-          {% if accession.status != 'skipped' %}
+  {% for duplicate_group in duplicate_groups %}
+    <div>
+      {% for accession in duplicate_group %}
+        <div>
+          <p>
             <img src="{{ accession.blob.url }}" width="300" height="300" />
-          {% endif %}
-          <span><a href="{{ accession.blob.url }}">{{ accession.blob_name }}</a></span>
-        </td>
-        <td>{{ accession.get_status_display }}</td>
-        <td>{{ accession.get_review_status_display }}</td>
-      </tr>
-    {% endfor %}
-  </table>
+            <span><a href="{{ accession.blob.url }}">{{ accession.blob_name }}</a></span>
+          </p>
+          <span>{{ accession.get_review_status_display }}</span>
+        </div>
+      {% endfor %}
+    </div>
+    <hr />
+  {% endfor %}
 {% endblock %}
