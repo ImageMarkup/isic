@@ -41,6 +41,18 @@ def zip_create(request):
 
 
 @staff_member_required
+def cohort_list(request):
+    cohorts = Cohort.objects.all().order_by('-created')
+    return render(
+        request,
+        'ingest/cohort_list.html',
+        {
+            'cohorts': cohorts,
+        },
+    )
+
+
+@staff_member_required
 def cohort_detail(request, pk):
     cohort = get_object_or_404(
         Cohort,
