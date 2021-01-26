@@ -1,5 +1,6 @@
 from django.core.validators import RegexValidator
 from django.db import models, transaction
+from django.db.models import JSONField
 from django.urls.base import reverse
 from django_extensions.db.models import TimeStampedModel
 from s3_file_field import S3FileField
@@ -36,13 +37,16 @@ class Accession(TimeStampedModel):
     upload = models.ForeignKey('Zip', on_delete=models.CASCADE, related_name='accessions')
 
     blob = S3FileField()
-    blob_name = models.CharField(max_length=255)
+    blob_name = models.CharField(max_length=255, db_index=True)
     blob_size = models.PositiveBigIntegerField()
 
     status = models.CharField(choices=Status.choices, max_length=20, default=Status.CREATING)
     review_status = models.CharField(
         choices=ReviewStatus.choices, max_length=20, null=True, blank=True
     )
+
+    metadata = JSONField(default=dict)
+    unstructured_metadata = JSONField(default=dict)
 
 
 class DistinctnessMeasure(TimeStampedModel):
