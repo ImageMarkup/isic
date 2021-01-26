@@ -1,5 +1,8 @@
+from collections import Counter, defaultdict
 from itertools import groupby
+from typing import Optional
 
+from django import forms
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
 from django.db.models.aggregates import Count
@@ -7,9 +10,13 @@ from django.forms.models import ModelForm
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
+import numpy as np
+import pandas as pd
+from pydantic.main import BaseModel
 
 from isic.ingest.filters import AccessionFilter
 from isic.ingest.models import Accession, Cohort, DistinctnessMeasure, Zip
+from isic.ingest.serializers import MetadataRow
 from isic.ingest.tasks import extract_zip
 
 
@@ -17,9 +24,6 @@ class ZipForm(ModelForm):
     class Meta:
         model = Zip
         fields = ['blob']
-
-    # def clean(self):
-    #     cleaned_data = super().clean()
 
     def save(self, commit):
         super().save(commit)
@@ -80,6 +84,156 @@ def cohort_detail(request, pk):
             'filter': filter_,
             'num_duplicates': num_duplicates,
         },
+    )
+
+
+class MetadataForm(forms.Form):
+    cohort_id = forms.IntegerField(widget=forms.HiddenInput())
+    csv = forms.FileField()
+
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
+        super().__init__(*args, **kwargs)
+
+
+class Problem(BaseModel):
+    message: Optional[str]
+    context: Optional[list]
+    type: Optional[str] = 'error'
+
+
+def validate_csv_format_and_filenames(df, cohort):
+    problems = []
+
+    if 'filename' not in df.columns:
+        problems.append(Problem(message='Unable to find a filename column in CSV.'))
+        return problems
+
+    # todo: upload__cohort=cohort,
+    matching_accessions = Accession.objects.filter(blob_name__in=df['filename']).values_list(
+        'blob_name', 'metadata'
+    )
+
+    duplicate_filenames = df[df['filename'].duplicated()].filename.values
+    if duplicate_filenames.size:
+        problems.append(
+            Problem(message='Duplicate filenames found.', context=list(duplicate_filenames))
+        )
+
+    multiple_accessions = Counter(x[0] for x in matching_accessions)
+    duplicate_accessions = [k for k, count in multiple_accessions.items() if count > 1]
+    if duplicate_accessions:
+        problems.append(
+            Problem(
+                message='These images matched more than 1 accession.', context=duplicate_accessions
+            )
+        )
+
+    existing_df = pd.DataFrame((x[0] for x in matching_accessions), columns=['filename'])
+    unknown_images = set(df.filename.values) - set(existing_df.filename.values)
+    if unknown_images:
+        problems.append(
+            Problem(
+                message='Encountered unknown images in the CSV.',
+                context=list(unknown_images),
+                type='warning',
+            )
+        )
+
+    return problems
+
+
+def validate_internal_consistency(df):
+    # keyed by column, message
+    column_problems: dict[tuple[str, str], list[int]] = defaultdict(list)
+
+    for i, (_, row) in enumerate(df.iterrows(), start=2):
+        try:
+            MetadataRow.parse_obj(row)
+        except Exception as e:
+            for error in e.errors():
+                column = error['loc'][0]
+                column_problems[(column, error['msg'])].append(i)
+
+    # TODO: defaultdict doesn't work in django templates?
+    return dict(column_problems)
+
+
+def validate_archive_consistency(df, cohort):
+    # keyed by column, message
+    column_problems: dict[tuple[str, str], list[int]] = defaultdict(list)
+    accessions = Accession.objects.filter(blob_name__in=df['filename']).values_list(
+        'blob_name', 'metadata'
+    )
+    # TODO: easier way to do this?
+    accessions_dict = {x[0]: x[1] for x in accessions}
+
+    for i, (_, row) in enumerate(df.iterrows(), start=2):
+        existing = accessions_dict[row['filename']]
+        row = {**existing, **row}
+
+        try:
+            MetadataRow.parse_obj(row)
+        except Exception as e:
+            for error in e.errors():
+                column = error['loc'][0]
+
+                column_problems[(column, error['msg'])].append(i)
+
+    # TODO: defaultdict doesn't work in django templates?
+    return dict(column_problems)
+
+
+@staff_member_required
+def apply_metadata(request, cohort_pk):
+    cohort = get_object_or_404(
+        Cohort,
+        pk=cohort_pk,
+    )
+
+    checkpoints = {
+        1: {
+            'title': 'Filename checks',
+            'run': False,
+            'problems': [],
+        },
+        2: {
+            'title': 'Internal consistency',
+            'run': False,
+            'problems': [],
+        },
+        3: {
+            'title': 'Archive consistency',
+            'run': False,
+            'problems': [],
+        },
+    }
+
+    if request.method == 'POST':
+        form = MetadataForm(request.POST, request.FILES, request=request)
+        if form.is_valid():
+            df = pd.read_csv(request.FILES['csv'], header=0)
+            checkpoints[1]['problems'] = validate_csv_format_and_filenames(df, cohort)
+            checkpoints[1]['run'] = True
+
+            # pydantic expects None for the absence of a value, not NaN
+            df = df.replace({np.nan: None})
+
+            if not checkpoints[1]['problems']:
+                checkpoints[2]['problems'] = validate_internal_consistency(df)
+                checkpoints[2]['run'] = True
+
+                if not checkpoints[2]['problems']:
+                    checkpoints[3]['problems'] = validate_archive_consistency(df, cohort)
+                    checkpoints[3]['run'] = True
+
+    else:
+        form = MetadataForm(initial={'cohort_id': cohort_pk}, request=request)
+
+    return render(
+        request,
+        'ingest/apply_metadata.html',
+        {'cohort': cohort, 'form': form, 'checkpoint': checkpoints},
     )
 
 
