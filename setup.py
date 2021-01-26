@@ -57,8 +57,10 @@ setup(
         'django-s3-file-field[minio,boto3]',
         'djangorestframework',
         'drf-yasg',
+        'pandas',
         'passlib[bcrypt]',
         'Pillow',
+        'pydantic',
         'pymongo',
         'python-magic',
         # Production-only

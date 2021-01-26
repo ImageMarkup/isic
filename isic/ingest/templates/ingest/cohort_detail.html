@@ -19,6 +19,7 @@
 
   <div>
     <a href="{% url 'review-duplicates' cohort.id %}">Review Duplicates ({{ num_duplicates }})</a>
+    <a href="{% url 'apply-metadata' cohort.id %}">Apply metadata</a>
   </div>
 
   {% include 'studies/partials/pagination.html' with page_obj=page_obj %}
