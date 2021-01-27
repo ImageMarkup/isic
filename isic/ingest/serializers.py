@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from enum import Enum
 import re
 from typing import Optional
@@ -311,6 +313,11 @@ class Age(BaseStr):
 
         return value
 
+
+PatientIdType = constr(regex=r'^IP_[0-9]{7}$')
+LesionIdType = constr(regex=r'^IL_[0-9]{7}$')
+
+
 # TODO: support unstructured metadata
 # TODO: exif_* headers
 class MetadataRow(BaseModel):
@@ -323,8 +330,8 @@ class MetadataRow(BaseModel):
     family_hx_mm: Optional[bool]
     clin_size_long_diam_mm: Optional[ClinicalSize]
     melanocytic: Optional[bool]
-    patient_id: constr(regex=r'^IP_[0-9]{7}$') = None
-    lesion_id: constr(regex=r'^IL_[0-9]{7}$') = None
+    patient_id: PatientIdType = None
+    lesion_id: LesionIdType = None
     acquisition_day: Optional[int]  # TODO: metadata dictionary
     marker_pen: Optional[bool]
     hairy: Optional[bool]
@@ -340,6 +347,7 @@ class MetadataRow(BaseModel):
     mel_thick_mm: Optional[MelThickMm]
 
     @validator('*', pre=True)
+    @classmethod
     def strip(cls, v):
         if isinstance(v, str):
             v = v.strip()
@@ -355,12 +363,14 @@ class MetadataRow(BaseModel):
         'sex',
         pre=True,
     )
+    @classmethod
     def lower(cls, v):
         if isinstance(v, str):
             v = v.lower()
         return v
 
     @validator('diagnosis')
+    @classmethod
     def validate_no_benign_melanoma(cls, v, values):
         if 'benign_malignant' in values:
 
@@ -377,6 +387,7 @@ class MetadataRow(BaseModel):
         return v
 
     @validator('diagnosis_confirm_type')
+    @classmethod
     def validate_non_histopathology_diagnoses(cls, v, values):
         if 'benign_malignant' in values:
             if v != 'histopathology' and values['benign_malignant'] in [
