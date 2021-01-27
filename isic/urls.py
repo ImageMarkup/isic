@@ -10,6 +10,7 @@ from rest_framework import permissions, routers
 from isic.discourse_sso.views import discourse_sso_login
 from isic.ingest.views import (
     apply_metadata,
+    cohort_create,
     cohort_detail,
     cohort_list,
     review_duplicates,
@@ -54,7 +55,8 @@ urlpatterns = [
     path('staff/masks/<markup_id>/', view_mask, name='view-mask'),
     path('staff/annotations/<pk>/', annotation_detail, name='annotation-detail'),
     # Ingest app
-    path('staff/upload/create/', zip_create, name='zip-create'),
+    path('staff/upload/create/<cohort_pk>/', zip_create, name='zip-create'),
+    path('staff/cohorts/create/', cohort_create, name='cohort-create'),
     path('staff/cohorts/', cohort_list, name='cohort-list'),
     path('staff/cohort/<pk>/', cohort_detail, name='cohort-detail'),
     path('staff/review-duplicates/<cohort_pk>/', review_duplicates, name='review-duplicates'),

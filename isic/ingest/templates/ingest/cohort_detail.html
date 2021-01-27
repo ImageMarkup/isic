@@ -17,8 +17,11 @@
   <h4>Accessions</h4>
   {{ filter.form.as_p }}
 
+  <hr />
+
   <div>
-    <a href="{% url 'review-duplicates' cohort.id %}">Review Duplicates ({{ num_duplicates }})</a>
+    <a href="{% url 'zip-create' cohort.id %}">Upload zip</a><br />
+    <a href="{% url 'review-duplicates' cohort.id %}">Review Duplicates ({{ num_duplicates }})</a><br />
     <a href="{% url 'apply-metadata' cohort.id %}">Apply metadata</a>
   </div>
 

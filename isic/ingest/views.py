@@ -5,7 +5,7 @@ from typing import Optional
 from django import forms
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
-from django.db.models.aggregates import Count
+from django.db.models import Count
 from django.forms.models import ModelForm
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
@@ -15,6 +15,7 @@ import pandas as pd
 from pydantic.main import BaseModel
 
 from isic.ingest.filters import AccessionFilter
+from isic.ingest.forms import CohortForm
 from isic.ingest.models import Accession, Cohort, DistinctnessMeasure, Zip
 from isic.ingest.serializers import MetadataRow
 from isic.ingest.tasks import extract_zip
@@ -25,21 +26,23 @@ class ZipForm(ModelForm):
         model = Zip
         fields = ['blob']
 
-    def save(self, commit):
-        super().save(commit)
-
 
 @staff_member_required
-def zip_create(request):
+def zip_create(request, cohort_pk):
+    cohort = get_object_or_404(
+        Cohort,
+        pk=cohort_pk,
+    )
     if request.method == 'POST':
         form = ZipForm(request.POST)
         if form.is_valid():
             form.instance.creator = request.user
-            form.instance.blob_size = form.instance.blob.blob_size
+            form.instance.blob_size = form.instance.blob.size
             form.instance.blob_name = form.instance.blob.name
+            form.instance.cohort = cohort
             form.save(commit=True)
             extract_zip.delay(form.instance.id)
-            return HttpResponseRedirect(reverse('zip-detail', args=[form.instance.pk]))
+            return HttpResponseRedirect(reverse('cohort-detail', args=[cohort.pk]))
     else:
         form = ZipForm()
 
@@ -267,3 +270,17 @@ def review_duplicates(request, cohort_pk):
         'ingest/review_duplicates.html',
         {'cohort': cohort, 'duplicate_groups': duplicate_groups},
     )
+
+
+@staff_member_required
+def cohort_create(request):
+    if request.method == 'POST':
+        form = CohortForm(request.POST)
+        if form.is_valid():
+            form.instance.creator = request.user
+            form.save(commit=True)
+            return HttpResponseRedirect(reverse('cohort-detail', args=[form.instance.pk]))
+    else:
+        form = CohortForm()
+
+    return render(request, 'ingest/cohort_create.html', {'form': form})
