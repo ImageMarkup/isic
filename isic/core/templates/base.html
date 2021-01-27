@@ -18,7 +18,6 @@
       <ul id="nav-mobile" class="right hide-on-med-and-down">
         <li><a href="{% url 'cohort-list' %}">Cohorts</a></li>
         <li><a href="{% url 'study-list' %}">Studies</a></li>
-        <li><a href="{% url 'zip-create' %}">Upload</a></li>
         <li><a href="{% url 'docs-swagger' %}">API</a></li>
         {% if request.user.is_superuser %}
           <li><a href="{% url 'admin:index' %}">Admin</a></li>
