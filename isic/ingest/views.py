@@ -2,7 +2,6 @@ from collections import Counter, defaultdict
 from itertools import groupby
 from typing import Optional
 
-from django import forms
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
 from django.db.models import Count
@@ -16,7 +15,7 @@ from pydantic.main import BaseModel
 
 from isic.ingest.filters import AccessionFilter
 from isic.ingest.forms import CohortForm
-from isic.ingest.models import Accession, Cohort, DistinctnessMeasure, Zip
+from isic.ingest.models import Accession, Cohort, DistinctnessMeasure, MetadataFile, Zip
 from isic.ingest.serializers import MetadataRow
 from isic.ingest.tasks import extract_zip
 
@@ -90,13 +89,10 @@ def cohort_detail(request, pk):
     )
 
 
-class MetadataForm(forms.Form):
-    cohort_id = forms.IntegerField(widget=forms.HiddenInput())
-    csv = forms.FileField()
-
-    def __init__(self, *args, **kwargs):
-        self.request = kwargs.pop('request', None)
-        super().__init__(*args, **kwargs)
+class MetadataForm(ModelForm):
+    class Meta:
+        model = MetadataFile
+        fields = ['blob']
 
 
 class Problem(BaseModel):
@@ -113,9 +109,9 @@ def validate_csv_format_and_filenames(df, cohort):
         return problems
 
     # todo: upload__cohort=cohort,
-    matching_accessions = Accession.objects.filter(blob_name__in=df['filename']).values_list(
-        'blob_name', 'metadata'
-    )
+    matching_accessions = Accession.objects.filter(
+        upload__cohort=cohort, blob_name__in=df['filename']
+    ).values_list('blob_name', 'metadata')
 
     duplicate_filenames = df[df['filename'].duplicated()].filename.values
     if duplicate_filenames.size:
@@ -165,9 +161,9 @@ def validate_internal_consistency(df):
 def validate_archive_consistency(df, cohort):
     # keyed by column, message
     column_problems: dict[tuple[str, str], list[int]] = defaultdict(list)
-    accessions = Accession.objects.filter(blob_name__in=df['filename']).values_list(
-        'blob_name', 'metadata'
-    )
+    accessions = Accession.objects.filter(
+        upload__cohort=cohort, blob_name__in=df['filename']
+    ).values_list('blob_name', 'metadata')
     # TODO: easier way to do this?
     accessions_dict = {x[0]: x[1] for x in accessions}
 
@@ -213,9 +209,16 @@ def apply_metadata(request, cohort_pk):
     }
 
     if request.method == 'POST':
-        form = MetadataForm(request.POST, request.FILES, request=request)
+        form = MetadataForm(request.POST, request.FILES)
         if form.is_valid():
-            df = pd.read_csv(request.FILES['csv'], header=0)
+            form.instance.creator = request.user
+            form.instance.cohort = cohort
+            form.instance.blob_size = form.instance.blob.size
+            form.instance.blob_name = form.instance.blob.name
+            form.instance.save()
+            with form.instance.blob.open() as csv:
+                df = pd.read_csv(csv, header=0)
+
             checkpoints[1]['problems'] = validate_csv_format_and_filenames(df, cohort)
             checkpoints[1]['run'] = True
 
@@ -231,7 +234,7 @@ def apply_metadata(request, cohort_pk):
                     checkpoints[3]['run'] = True
 
     else:
-        form = MetadataForm(initial={'cohort_id': cohort_pk}, request=request)
+        form = MetadataForm()
 
     return render(
         request,

@@ -79,6 +79,8 @@ class AccessionAdmin(admin.ModelAdmin):
     list_display = ['id', 'blob_name', 'blob_size', 'created', 'cohort', 'status', 'review_status']
     readonly_fields = ['thumbnail']
 
+    search_fields = ['blob_name']
+
     list_filter = ['status', 'review_status']
 
     def get_queryset(self, request):
