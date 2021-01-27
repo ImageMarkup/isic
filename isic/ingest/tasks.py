@@ -31,7 +31,7 @@ def extract_zip(zip_id):
                     blob=SimpleUploadedFile(
                         original_file_name,
                         original_file_stream.read(),
-                        guess_type(original_file_name),
+                        guess_type(original_file_name)[0],
                     ),
                 )
 
