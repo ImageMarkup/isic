@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <nav>
+    <div class="nav-wrapper">
+      <div class="col s12">
+        <a href="{% url 'cohort-list' %}" class="breadcrumb">Cohorts</a>
+        <a href="{% url 'cohort-detail' cohort.id %}" class="breadcrumb">{{ cohort.name }}</a>
+        <a class="breadcrumb">Apply Metadata</a>
+      </div>
+    </div>
+  </nav>
+
+  {% if request.method == 'POST' %}
+    <div>
+      <h4>Checkpoint 1 - {{ checkpoint.1.title }}</h4>
+    </div>
+    {% if checkpoint.1.run %}
+      {% for problem in checkpoint.1.problems %}
+        <div>
+          {{ problem.message  }}
+          {% if problem.context %}
+            <div>
+              {{ problem.context }}
+            </div>
+          {% endif %}
+        </div>
+      {% empty %}
+        passed.
+      {% endfor %}
+    {% endif %}
+
+    <div>
+      <h4>Checkpoint 2 - {{ checkpoint.2.title }}</h4>
+    </div>
+    {% if checkpoint.2.run %}
+      {% if checkpoint.2.problems %}
+        <ul>
+          {% for key, values in checkpoint.2.problems.items %}
+            <li>
+              <strong>{{ key.0 }}</strong> - {{ key.1 }} - lines: {{ values|slice:"5"|join:", " }}
+              {% if values|length > 5 %}(and {{ values|length|add:"-5" }} more){% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        passed.
+      {% endif %}
+    {% else %}
+      skipped.
+    {% endif %}
+
+    <div>
+      <h4>Checkpoint 3 - {{ checkpoint.3.title }}</h4>
+    </div>
+    {% if checkpoint.3.run %}
+      {% if checkpoint.3.problems %}
+        <ul>
+          {% for key, values in checkpoint.3.problems.items %}
+            <li>
+              <strong>{{ key.0 }}</strong> - {{ key.1 }} - lines: {{ values|slice:"5"|join:", " }}
+              {% if values|length > 5 %}(and {{ values|length|add:"-5" }} more){% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        passed.
+      {% endif %}
+    {% else %}
+      skipped.
+    {% endif %}
+  {% endif %}
+  {{ form.media  }}
+  <form method="post" enctype="multipart/form-data">{% csrf_token %}
+    {{ form.as_p  }}
+    <input type="submit" value="Apply">
+  </form>
+{% endblock %}
