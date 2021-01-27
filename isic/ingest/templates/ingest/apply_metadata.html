@@ -11,6 +11,14 @@
     </div>
   </nav>
 
+  {{ form.media  }}
+  <form method="post" enctype="multipart/form-data">{% csrf_token %}
+    {{ form.as_p  }}
+    <input type="submit" value="Apply">
+  </form>
+
+  <hr />
+
   {% if request.method == 'POST' %}
     <div>
       <h4>Checkpoint 1 - {{ checkpoint.1.title }}</h4>
@@ -70,9 +78,4 @@
       skipped.
     {% endif %}
   {% endif %}
-  {{ form.media  }}
-  <form method="post" enctype="multipart/form-data">{% csrf_token %}
-    {{ form.as_p  }}
-    <input type="submit" value="Apply">
-  </form>
 {% endblock %}
