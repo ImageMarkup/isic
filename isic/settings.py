@@ -24,6 +24,7 @@ class IsicMixin(ConfigMixin):
         configuration.INSTALLED_APPS += [
             'isic.studies.apps.StudiesConfig',
             'isic.core.apps.CoreConfig',
+            'isic.ingest.apps.IngestConfig',
             's3_file_field',
             'material',
             'nested_admin',
@@ -88,7 +89,11 @@ class IsicMixin(ConfigMixin):
 class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
     # Development-only settings
     SHELL_PLUS_IMPORTS = [
+        'from isic.ingest.tasks import *',
         'from isic.studies.tasks import *',
+        'from django.core.files.uploadedfile import UploadedFile',
+        'import pandas as pd',
+        'from isic.ingest.serializers import *',
     ]
 
     # Development-specific overrides

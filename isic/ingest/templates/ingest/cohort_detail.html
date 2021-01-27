@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <nav>
+    <div class="nav-wrapper">
+      <div class="col s12">
+        <a href="{% url 'cohort-list' %}" class="breadcrumb">Cohorts</a>
+        <a class="breadcrumb">{{ cohort.name }}</a>
+      </div>
+    </div>
+  </nav>
+
+  <div><h2>{{ cohort.name }}</h2>
+    <span>{{cohort.description}}</span>
+  </div>
+
+  <h4>Accessions</h4>
+  {{ filter.form.as_p }}
+
+  <div>
+    <a href="{% url 'review-duplicates' cohort.id %}">Review Duplicates ({{ num_duplicates }})</a>
+    <a href="{% url 'apply-metadata' cohort.id %}">Apply metadata</a>
+  </div>
+
+  {% include 'studies/partials/pagination.html' with page_obj=page_obj %}
+
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Status</th>
+        <th>Review Status</th>
+      </tr>
+    </thead>
+    {% for accession in page_obj %}
+      <tr>
+        <td>
+          {% if accession.status != 'skipped' %}
+            <img src="{{ accession.blob.url }}" width="300" height="300" />
+          {% endif %}
+          <span><a href="{{ accession.blob.url }}">{{ accession.blob_name }}</a></span>
+        </td>
+        <td>{{ accession.get_status_display }}</td>
+        <td>{{ accession.get_review_status_display }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+
+  {% include 'studies/partials/pagination.html' with page_obj=page_obj %}
+{% endblock %}

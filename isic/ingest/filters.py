@@ -1,0 +1,12 @@
+import django_filters
+from django_filters.widgets import LinkWidget
+
+from isic.ingest.models import Accession
+
+
+class AccessionFilter(django_filters.FilterSet):
+    class Meta:
+        model = Accession
+        fields = ['status']
+
+    status = django_filters.ChoiceFilter(choices=Accession.Status.choices, widget=LinkWidget())

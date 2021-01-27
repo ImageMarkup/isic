@@ -57,12 +57,16 @@ setup(
         'django-s3-file-field[minio,boto3]',
         'djangorestframework',
         'drf-yasg',
+        'pandas',
         'passlib[bcrypt]',
+        'Pillow',
+        'pydantic',
         'pymongo',
+        'python-magic',
         # Production-only
         'gunicorn',
         # Development-only
         'django-debug-toolbar',
     ],
-    extras_require={'dev': ['ipython', 'tox']},
+    extras_require={'dev': ['django-click', 'ipython', 'tox']},
 )

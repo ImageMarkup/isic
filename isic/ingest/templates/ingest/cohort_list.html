@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h3>Cohorts</h3>
+  <a href="{% url 'study-create' %}" class="waves-effect waves-light btn-small">Add new</a>
+  <ul class="collection">
+    {% for cohort in cohorts %}
+      <a class="collection-item" href="{{ cohort.get_absolute_url }}">{{ cohort.name }}</a>
+    {% endfor %}
+  </ul>
+{% endblock %}
