@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models, transaction
 from django.db.models import JSONField
@@ -7,6 +8,7 @@ from s3_file_field import S3FileField
 
 
 class Cohort(TimeStampedModel):
+    creator = models.ForeignKey(User, null=True, on_delete=models.PROTECT)
     girder_id = models.CharField(blank=True, max_length=24, help_text='The dataset_id from Girder.')
 
     name = models.CharField(max_length=255)
@@ -17,6 +19,15 @@ class Cohort(TimeStampedModel):
 
     def get_absolute_url(self):
         return reverse('cohort-detail', args=[self.id])
+
+
+class MetadataFile(TimeStampedModel):
+    creator = models.ForeignKey(User, on_delete=models.CASCADE)
+    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name='metadata_files')
+
+    blob = S3FileField()
+    blob_name = models.CharField(max_length=255)
+    blob_size = models.PositiveBigIntegerField()
 
 
 class Accession(TimeStampedModel):
@@ -62,7 +73,7 @@ class Zip(TimeStampedModel):
         STARTED = 'extracting', 'Extracting'
         COMPLETED = 'extracted', 'Extracted'
 
-    # creator = models.ForeignKey(User, on_delete=models.PROTECT)
+    creator = models.ForeignKey(User, null=True, on_delete=models.PROTECT)
     girder_id = models.CharField(blank=True, max_length=24, help_text='The batch_id from Girder.')
 
     cohort = models.ForeignKey(Cohort, null=True, on_delete=models.CASCADE, related_name='zips')
