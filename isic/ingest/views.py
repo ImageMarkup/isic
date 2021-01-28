@@ -16,8 +16,8 @@ from pydantic.main import BaseModel
 from isic.ingest.filters import AccessionFilter
 from isic.ingest.forms import CohortForm
 from isic.ingest.models import Accession, Cohort, DistinctnessMeasure, MetadataFile, Zip
-from isic.ingest.serializers import MetadataRow
 from isic.ingest.tasks import extract_zip
+from isic.ingest.validators import MetadataRow
 
 
 class ZipForm(ModelForm):
