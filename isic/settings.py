@@ -30,11 +30,9 @@ class IsicMixin(ConfigMixin):
             'nested_admin',
         ]
 
-        # Insert before other apps with allauth templates
-        auth_app_index = configuration.INSTALLED_APPS.index(
-            'composed_configuration.authentication.apps.AuthenticationConfig'
-        )
-        configuration.INSTALLED_APPS.insert(auth_app_index, 'isic.login.apps.LoginConfig')
+        # Insert before other apps with styled templates
+        style_app_index = configuration.INSTALLED_APPS.index('girder_style')
+        configuration.INSTALLED_APPS.insert(style_app_index, 'isic.login.apps.LoginConfig')
 
         if configuration.ISIC_DISCOURSE_SSO_SECRET:
             configuration.INSTALLED_APPS += [
