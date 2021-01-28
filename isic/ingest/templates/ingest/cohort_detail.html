@@ -74,19 +74,21 @@
   {% for accessions in page_obj|chunks:3 %}
     <div class="row">
       {% for accession in accessions %}
-        {% if accession.status != 'skipped' %}
-          <div class="col" data-accession-id="{{ accession.id }}">
+        <div class="col" data-accession-id="{{ accession.id }}">
+          {% if accession.status != 'skipped' %}
             <img src="{{ accession.blob.url }}" class="materialboxed" width="300" height="300" title="{{ accession.blob_name }}" />
-            <div>
-              <a data-review-status="rejected" class="waves-effect waves-light btn-small red review-button
-                {% if accession.review_status and accession.review_status != 'rejected' %}dim{% endif %}">Reject</a>
-              <a data-review-status="ignored" class="waves-effect waves-light btn-small review-button
-                {% if accession.review_status and accession.review_status != 'ignored' %}dim{% endif %}">Ignore</a>
-              <a data-review-status="accepted" class="waves-effect waves-light btn-small green review-button
-                {% if accession.review_status and accession.review_status != 'accepted' %}dim{% endif %}">Accept</a>
-            </div>
+          {% else  %}
+            <img src="https://via.placeholder.com/300x300.png?text={{ accession.blob_name }}" />
+          {% endif %}
+          <div>
+            <a data-review-status="rejected" class="waves-effect waves-light btn-small red review-button
+              {% if accession.review_status and accession.review_status != 'rejected' %}dim{% endif %}">Reject</a>
+            <a data-review-status="ignored" class="waves-effect waves-light btn-small review-button
+              {% if accession.review_status and accession.review_status != 'ignored' %}dim{% endif %}">Ignore</a>
+            <a data-review-status="accepted" class="waves-effect waves-light btn-small green review-button
+              {% if accession.review_status and accession.review_status != 'accepted' %}dim{% endif %}">Accept</a>
           </div>
-        {% endif %}
+        </div>
       {% endfor %}
     </div>
   {% endfor %}
