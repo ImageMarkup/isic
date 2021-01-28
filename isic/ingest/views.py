@@ -71,8 +71,14 @@ def cohort_detail(request, pk):
     num_duplicates = accession_qs.filter(
         distinctnessmeasure__checksum__in=DistinctnessMeasure.objects.values('checksum')
         .annotate(is_duplicate=Count('checksum'))
-        .filter(is_duplicate__gt=1)
+        .filter(accession__upload__cohort=cohort, is_duplicate__gt=1)
         .values('checksum')
+    ).count()
+    num_duplicate_filenames = accession_qs.filter(
+        blob_name__in=Accession.objects.values('blob_name')
+        .annotate(is_duplicate=Count('blob_name'))
+        .filter(upload__cohort=cohort, is_duplicate__gt=1)
+        .values('blob_name')
     ).count()
 
     paginator = Paginator(filter_.qs, 50)
@@ -85,6 +91,7 @@ def cohort_detail(request, pk):
             'page_obj': page_obj,
             'filter': filter_,
             'num_duplicates': num_duplicates,
+            'num_duplicate_filenames': num_duplicate_filenames,
         },
     )
 
@@ -256,7 +263,7 @@ def review_duplicates(request, cohort_pk):
         .filter(
             distinctnessmeasure__checksum__in=DistinctnessMeasure.objects.values('checksum')
             .annotate(is_duplicate=Count('checksum'))
-            .filter(is_duplicate__gt=1)
+            .filter(accession__upload__cohort=cohort, is_duplicate__gt=1)
             .values('checksum')
         )
     )
@@ -271,6 +278,37 @@ def review_duplicates(request, cohort_pk):
     return render(
         request,
         'ingest/review_duplicates.html',
+        {'cohort': cohort, 'duplicate_groups': duplicate_groups},
+    )
+
+
+@staff_member_required
+def review_duplicate_filenames(request, cohort_pk):
+    cohort = get_object_or_404(
+        Cohort,
+        pk=cohort_pk,
+    )
+    duplicates = (
+        Accession.objects.filter(upload__cohort=cohort)
+        .order_by('created')
+        .filter(
+            blob_name__in=Accession.objects.values('blob_name')
+            .annotate(is_duplicate=Count('blob_name'))
+            .filter(upload__cohort=cohort, is_duplicate__gt=1)
+            .values('blob_name')
+        )
+    )
+
+    # TODO: investigate regroup template tag
+    # TODO: if performance becomes an issue (too many duplicates), look into
+    # windowing functions with postgres
+    duplicate_groups = []
+    for _, accession in groupby(duplicates, key=lambda a: a.blob_name):
+        duplicate_groups.append(list(accession))
+
+    return render(
+        request,
+        'ingest/review_duplicate_filenames.html',
         {'cohort': cohort, 'duplicate_groups': duplicate_groups},
     )
 
