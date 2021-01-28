@@ -93,7 +93,7 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
         'from isic.studies.tasks import *',
         'from django.core.files.uploadedfile import UploadedFile',
         'import pandas as pd',
-        'from isic.ingest.serializers import *',
+        'from isic.ingest.validators import *',
     ]
 
     # Development-specific overrides

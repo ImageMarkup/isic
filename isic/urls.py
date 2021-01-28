@@ -8,6 +8,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
 from isic.discourse_sso.views import discourse_sso_login
+from isic.ingest.api import AccessionViewSet
 from isic.ingest.views import (
     apply_metadata,
     cohort_create,
@@ -22,6 +23,7 @@ from isic.studies.api import AnnotationViewSet, StudyTaskViewSet, StudyViewSet
 from isic.studies.views import annotation_detail, study_create, study_detail, study_list, view_mask
 
 router = routers.SimpleRouter()
+router.register('accessions', AccessionViewSet)
 router.register('annotations', AnnotationViewSet)
 router.register('studies', StudyViewSet)
 router.register('study-tasks', StudyTaskViewSet)
