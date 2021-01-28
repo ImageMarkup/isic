@@ -1,6 +1,6 @@
 from pydantic import ValidationError
 
-from isic.ingest.serializers import MetadataRow
+from isic.ingest.validators import MetadataRow
 
 
 def test_melanoma_fields():
