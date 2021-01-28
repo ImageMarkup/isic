@@ -218,7 +218,7 @@ class MelClass(BaseStr):
     @classmethod
     def validate(cls, value: str) -> Optional[str]:
         if value not in MelClassEnum._value2member_map_:
-            raise ValueError(f'Invalid mel type of: {value}.')
+            raise ValueError(f'Invalid mel class of: {value}.')
         return value
 
 
@@ -339,12 +339,13 @@ class MetadataRow(BaseModel):
     nevus_type: Optional[NevusType]
     image_type: Optional[ImageType]
     dermoscopic_type: Optional[DermoscopicType]
-    mel_class: Optional[MelClass]
-    mel_ulcer: Optional[bool]
     anatom_site_general: Optional[GeneralAnatomicSite]
     color_tint: Optional[ColorTint]
+    mel_class: Optional[MelClass]
     mel_mitotic_index: Optional[ColorTint]
     mel_thick_mm: Optional[MelThickMm]
+    mel_type: Optional[MelType]
+    mel_ulcer: Optional[bool]
 
     @validator('*', pre=True)
     @classmethod
@@ -386,6 +387,24 @@ class MetadataRow(BaseModel):
 
         return v
 
+    @validator('nevus_type')
+    @classmethod
+    def validate_non_nevus_diagnoses(cls, v, values):
+        if (
+            v
+            and values.get('diagnosis')
+            and values['diagnosis'] not in [DiagnosisEnum.nevus, DiagnosisEnum.nevus_spilus]
+        ):
+            raise ValueError(f'Nevus type is inconsistent with {values["diagnosis"]}.')
+        return v
+
+    @validator('mel_class', 'mel_mitotic_index', 'mel_thick_mm', 'mel_type', 'mel_ulcer')
+    @classmethod
+    def validate_melanoma_fields(cls, v, values, config, field):
+        if v and 'diagnosis' in values and values['diagnosis'] != 'melanoma':
+            raise ValueError(f'A non-melanoma {field} cannot exist.')
+        return v
+
     @validator('diagnosis_confirm_type')
     @classmethod
     def validate_non_histopathology_diagnoses(cls, v, values):
@@ -400,3 +419,11 @@ class MetadataRow(BaseModel):
                 raise ValueError(f'A {values["benign_malignant"]} ...')
 
         return v
+
+    @validator('dermoscopic_type')
+    @classmethod
+    def validate_dermoscopic_fields(cls, v, values):
+        if values.get('image_type') == ImageTypeEnum.dermoscopic and v:
+            raise ValueError(
+                f'Image type {values["image_type"]} inconsistent with dermoscopic type {v}.'
+            )
