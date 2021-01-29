@@ -7,6 +7,8 @@
     $(document).ready(function(){
       $('.materialboxed').materialbox();
 
+      $('select').formSelect();
+
       $('a.review-button').click(function(e) {
         let accessionDiv = $(this).parent('div').parent('div');
         let accessionId = accessionDiv.data('accession-id');
@@ -58,7 +60,10 @@
   </div>
 
   <h4>Accessions</h4>
-  {{ filter.form.as_p }}
+  <form method="get" action="">
+    {{ filter.form.as_p }}
+    <input type="submit" name="" value="filter" />
+  </form>
 
   <hr />
 
@@ -76,7 +81,11 @@
       {% for accession in accessions %}
         <div class="col" data-accession-id="{{ accession.id }}">
           {% if accession.status != 'skipped' %}
-            <img src="{{ accession.blob.url }}" class="materialboxed" width="300" height="300" title="{{ accession.blob_name }}" />
+            {% if debug %}
+              <img src="https://picsum.photos/seed/{{accession.id}}/300">
+            {% else %}
+              <img src="{{ accession.blob.url }}" class="materialboxed" width="300" height="300" title="{{ accession.blob_name }}" />
+            {% endif %}
           {% else  %}
             <img src="https://via.placeholder.com/300x300.png?text={{ accession.blob_name }}" />
           {% endif %}
