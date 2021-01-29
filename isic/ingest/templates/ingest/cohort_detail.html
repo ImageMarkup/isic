@@ -83,8 +83,6 @@
           <div>
             <a data-review-status="rejected" class="waves-effect waves-light btn-small red review-button
               {% if accession.review_status and accession.review_status != 'rejected' %}dim{% endif %}">Reject</a>
-            <a data-review-status="ignored" class="waves-effect waves-light btn-small review-button
-              {% if accession.review_status and accession.review_status != 'ignored' %}dim{% endif %}">Ignore</a>
             <a data-review-status="accepted" class="waves-effect waves-light btn-small green review-button
               {% if accession.review_status and accession.review_status != 'accepted' %}dim{% endif %}">Accept</a>
           </div>
