@@ -12,20 +12,34 @@
   </head>
   <body>
 
-  <nav>
-    <div class="nav-wrapper" style="width:70%;margin:0 auto;">
-      <a href="{% url 'staff-index' %}" class="brand-logo">ISIC</a>
-      <ul id="nav-mobile" class="right hide-on-med-and-down">
-        <li><a href="{% url 'cohort-list' %}">Cohorts</a></li>
-        <li><a href="{% url 'study-list' %}">Studies</a></li>
-        <li><a href="{% url 'docs-swagger' %}">API</a></li>
-        {% if request.user.is_superuser %}
-          <li><a href="{% url 'admin:index' %}">Admin</a></li>
-        {% endif %}
-      </ul>
-    </div>
-  </nav>
+    <nav>
+      <div class="nav-wrapper" style="width:70%;margin:0 auto;">
+        <a href="{% url 'staff-index' %}" class="brand-logo">ISIC</a>
+        <ul id="nav-mobile" class="right hide-on-med-and-down">
+          <li><a href="{% url 'cohort-list' %}">Cohorts</a></li>
+          <li><a href="{% url 'study-list' %}">Studies</a></li>
+          <li><a href="{% url 'docs-swagger' %}">API</a></li>
+          {% if request.user.is_superuser %}
+            <li><a href="{% url 'admin:index' %}">Admin</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </nav>
     <div class="container">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="col s12 m7">
+            <div class="card horizontal">
+              <div class="card-stacked">
+                <div class="card-content">
+                  <p>{{ message }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      {% endif %}
+
       {% block content %}{% endblock %}
     </div>
   </body>
