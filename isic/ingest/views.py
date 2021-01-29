@@ -80,6 +80,12 @@ def cohort_detail(request, pk):
         .filter(upload__cohort=cohort, is_duplicate__gt=1)
         .values('blob_name')
     ).count()
+    num_unique_lesions = (
+        Accession.objects.filter(metadata__lesion_id__isnull=False, upload__cohort=cohort)
+        .values('metadata__lesion_id')
+        .distinct()
+        .count()
+    )
 
     paginator = Paginator(filter_.qs, 50)
     page_obj = paginator.get_page(request.GET.get('page'))
@@ -91,6 +97,7 @@ def cohort_detail(request, pk):
             'page_obj': page_obj,
             'filter': filter_,
             'num_duplicates': num_duplicates,
+            'num_unique_lesions': num_unique_lesions,
             'num_duplicate_filenames': num_duplicate_filenames,
         },
     )
@@ -111,11 +118,12 @@ class Problem(BaseModel):
 def validate_csv_format_and_filenames(df, cohort):
     problems = []
 
+    # TODO: duplicate columns
+
     if 'filename' not in df.columns:
         problems.append(Problem(message='Unable to find a filename column in CSV.'))
         return problems
 
-    # todo: upload__cohort=cohort,
     matching_accessions = Accession.objects.filter(
         upload__cohort=cohort, blob_name__in=df['filename']
     ).values_list('blob_name', 'metadata')
@@ -300,6 +308,23 @@ def review_duplicate_filenames(request, cohort_pk):
         request,
         'ingest/review_duplicate_filenames.html',
         {'cohort': cohort, 'duplicates': duplicates},
+    )
+
+
+@staff_member_required
+def review_lesion_groups(request, cohort_pk):
+    cohort = get_object_or_404(
+        Cohort,
+        pk=cohort_pk,
+    )
+    lesions = Accession.objects.filter(
+        upload__cohort=cohort, metadata__lesion_id__isnull=False
+    ).order_by('metadata__lesion_id')
+
+    return render(
+        request,
+        'ingest/review_lesion_groups.html',
+        {'cohort': cohort, 'lesions': lesions},
     )
 
 
