@@ -8,8 +8,11 @@ from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
 from django.core.files.uploadedfile import SimpleUploadedFile
 import magic
+import numpy as np
+import pandas as pd
 
-from isic.ingest.models import Accession, DistinctnessMeasure, Zip
+from isic.ingest.models import Accession, DistinctnessMeasure, MetadataFile, Zip
+from isic.ingest.validators import MetadataRow
 from isic.ingest.zip_utils import ZipFileOpener
 
 
@@ -93,3 +96,24 @@ def process_distinctness_measure(accession_id):
     checksum = hashlib.sha256(content).hexdigest()
 
     DistinctnessMeasure.objects.create(accession=accession, checksum=checksum)
+
+
+@shared_task
+def apply_metadata(metadatafile_id):
+    metadata_file = MetadataFile.objects.get(pk=metadatafile_id)
+    with metadata_file.blob.open() as csv:
+        df = pd.read_csv(csv, header=0)
+
+    # pydantic expects None for the absence of a value, not NaN
+    df = df.replace({np.nan: None})
+
+    for _, row in df.iterrows():
+        accession = Accession.objects.get(
+            blob_name=row['filename'], upload__cohort=metadata_file.cohort
+        )
+        existing_metadata = accession.metadata
+        existing_metadata.update(
+            MetadataRow.parse_obj(row).dict(exclude_unset=True, exclude_none=True)
+        )
+        accession.metadata = existing_metadata
+        accession.save(update_fields=['metadata'])
