@@ -1,6 +1,7 @@
 from collections import Counter, defaultdict
 from typing import Optional
 
+from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
 from django.db.models import Count
@@ -15,7 +16,7 @@ from pydantic.main import BaseModel
 from isic.ingest.filters import AccessionFilter
 from isic.ingest.forms import CohortForm
 from isic.ingest.models import Accession, Cohort, DistinctnessMeasure, MetadataFile, Zip
-from isic.ingest.tasks import extract_zip
+from isic.ingest.tasks import apply_metadata as apply_metadata_task, extract_zip
 from isic.ingest.validators import MetadataRow
 
 
@@ -175,7 +176,7 @@ def validate_archive_consistency(df, cohort):
 
     for i, (_, row) in enumerate(df.iterrows(), start=2):
         existing = accessions_dict[row['filename']]
-        row = {**existing, **row}
+        row = {**existing, **{k: v for k, v in row.items() if v is not None}}
 
         try:
             MetadataRow.parse_obj(row)
@@ -238,6 +239,10 @@ def apply_metadata(request, cohort_pk):
                 if not checkpoints[2]['problems']:
                     checkpoints[3]['problems'] = validate_archive_consistency(df, cohort)
                     checkpoints[3]['run'] = True
+
+                    if not checkpoints[3]['problems']:
+                        apply_metadata_task.delay(form.instance.id)
+                        messages.info(request, 'Metadata is being applied.')
 
     else:
         form = MetadataForm()
