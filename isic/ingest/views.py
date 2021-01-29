@@ -1,5 +1,4 @@
 from collections import Counter, defaultdict
-from itertools import groupby
 from typing import Optional
 
 from django.contrib.admin.views.decorators import staff_member_required
@@ -268,17 +267,10 @@ def review_duplicates(request, cohort_pk):
         )
     )
 
-    # TODO: investigate regroup template tag
-    # TODO: if performance becomes an issue (too many duplicates), look into
-    # windowing functions with postgres
-    duplicate_groups = []
-    for _, accession in groupby(duplicates, key=lambda a: a.distinctnessmeasure.checksum):
-        duplicate_groups.append(list(accession))
-
     return render(
         request,
         'ingest/review_duplicates.html',
-        {'cohort': cohort, 'duplicate_groups': duplicate_groups},
+        {'cohort': cohort, 'duplicates': duplicates},
     )
 
 
@@ -290,7 +282,7 @@ def review_duplicate_filenames(request, cohort_pk):
     )
     duplicates = (
         Accession.objects.filter(upload__cohort=cohort)
-        .order_by('created')
+        .order_by('blob_name')  # ordering must be done for group by
         .filter(
             blob_name__in=Accession.objects.values('blob_name')
             .annotate(is_duplicate=Count('blob_name'))
@@ -299,17 +291,10 @@ def review_duplicate_filenames(request, cohort_pk):
         )
     )
 
-    # TODO: investigate regroup template tag
-    # TODO: if performance becomes an issue (too many duplicates), look into
-    # windowing functions with postgres
-    duplicate_groups = []
-    for _, accession in groupby(duplicates, key=lambda a: a.blob_name):
-        duplicate_groups.append(list(accession))
-
     return render(
         request,
         'ingest/review_duplicate_filenames.html',
-        {'cohort': cohort, 'duplicate_groups': duplicate_groups},
+        {'cohort': cohort, 'duplicates': duplicates},
     )
 
 
