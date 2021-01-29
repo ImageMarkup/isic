@@ -39,7 +39,6 @@ class Accession(TimeStampedModel):
         SUCCEEDED = 'succeeded', 'Succeeded'
 
     class ReviewStatus(models.TextChoices):
-        IGNORED = 'ignored', 'Ignored'
         REJECTED = 'rejected', 'Rejected'
         ACCEPTED = 'accepted', 'Accepted'
 
