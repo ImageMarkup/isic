@@ -20,9 +20,11 @@
     Accessions with duplicate filenames
   </h4>
 
-  {% for duplicate_group in duplicate_groups %}
+  {% regroup duplicates by blob_name as duplicate_list %}
+  {% for blob_name in duplicate_list %}
+    {{ blob_name.grouper  }}
     <div class="row">
-      {% for accession in duplicate_group %}
+      {% for accession in blob_name.list %}
         <div class="col s4">
           <p>
             <img src="{{ accession.blob.url }}" width="300" height="300" />
