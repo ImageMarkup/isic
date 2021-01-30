@@ -1,0 +1,37 @@
+<script type="text/javascript">
+  $(document).ready(function(){
+    $('.materialboxed').materialbox();
+    $('a.review-button').click(function(e) {
+      let accessionDiv = $(this).parent('div').parent('div');
+      let accessionId = accessionDiv.data('accession-id');
+      let reviewStatus = $(this).data('review-status');
+
+      fetch(`/api/v2/accessions/${accessionId}/`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(
+          {'review_status':reviewStatus}
+        ),
+      }).then(response => response.json())
+        .then(data => {
+          accessionDiv.find('a.review-button').each(function() {
+            if ($(this).data('review-status') === reviewStatus) {
+              $(this).removeClass('dim');
+            } else {
+              $(this).addClass('dim');
+            }
+          });
+        });
+    });
+
+  });
+</script>
+
+<style type="text/css" media="screen">
+  .dim {
+    opacity: 40%;
+  }
+</style>
