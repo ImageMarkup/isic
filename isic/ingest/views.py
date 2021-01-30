@@ -61,6 +61,14 @@ def cohort_list(request):
 
 
 @staff_member_required
+def reset_metadata(request, cohort_pk):
+    cohort = get_object_or_404(Cohort, pk=cohort_pk)
+    Accession.objects.filter(upload__cohort=cohort).update(metadata={})
+    messages.info(request, 'Metadata has been reset.')
+    return HttpResponseRedirect(reverse('cohort-detail', args=[cohort_pk]))
+
+
+@staff_member_required
 def cohort_detail(request, pk):
     cohort = get_object_or_404(
         Cohort,
@@ -99,6 +107,7 @@ def cohort_detail(request, pk):
             'num_duplicates': num_duplicates,
             'num_unique_lesions': num_unique_lesions,
             'num_duplicate_filenames': num_duplicate_filenames,
+            'total_accessions': filter_.qs.count(),
         },
     )
 
