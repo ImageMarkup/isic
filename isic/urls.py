@@ -14,6 +14,7 @@ from isic.ingest.views import (
     cohort_create,
     cohort_detail,
     cohort_list,
+    reset_metadata,
     review_duplicate_filenames,
     review_duplicates,
     review_lesion_groups,
@@ -73,6 +74,7 @@ urlpatterns = [
         'staff/review-lesion-groups/<cohort_pk>/', review_lesion_groups, name='review-lesion-groups'
     ),
     path('staff/apply-metadata/<cohort_pk>/', apply_metadata, name='apply-metadata'),
+    path('staff/reset-metadata/<cohort_pk>/', reset_metadata, name='reset-metadata'),
 ]
 
 if apps.is_installed('isic.discourse_sso'):

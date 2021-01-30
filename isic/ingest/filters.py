@@ -12,7 +12,9 @@ class AccessionFilter(django_filters.FilterSet):
 
     status = django_filters.ChoiceFilter(choices=Accession.Status.choices, widget=LinkWidget())
     review_status = django_filters.ChoiceFilter(
-        choices=Accession.ReviewStatus.choices, widget=LinkWidget()
+        choices=Accession.ReviewStatus.choices,
+        widget=LinkWidget(),
+        null_label='Unreviewed',
     )
     diagnosis = django_filters.ChoiceFilter(
         choices=sorted([(x.value, x.value) for x in DiagnosisEnum]),
