@@ -100,6 +100,9 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
     ]
 
     ISIC_MONGO_URI = values.Value('mongodb://localhost:27017/girder')
+    # Allow developers to run tasks synchronously for easy debugging
+    CELERY_TASK_ALWAYS_EAGER = values.BooleanValue(False)
+    CELERY_TASK_EAGER_PROPAGATES = values.BooleanValue(False)
 
 
 class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
