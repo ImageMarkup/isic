@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block extra_head %}
+  {% include 'ingest/partials/review_header.html' %}
+{% endblock %}
+
 {% block content %}
   <nav>
     <div class="nav-wrapper">
@@ -13,7 +17,7 @@
 
   <div>
     <h2>{{ cohort.name }}</h2>
-    <span>{{cohort.description}}</span>
+    <span>{{ cohort.description }}</span>
   </div>
 
   <h4>
@@ -25,13 +29,7 @@
     {{ blob_name.grouper  }}
     <div class="row">
       {% for accession in blob_name.list %}
-        <div class="col s4">
-          <p>
-            <img src="{{ accession.blob.url }}" width="300" height="300" />
-            <span><a href="{{ accession.blob.url }}">{{ accession.blob_name }} {{ accession.metadata.lesion_id }}</a></span>
-          </p>
-          <span>{{ accession.get_review_status_display }}</span>
-        </div>
+        {% include 'ingest/partials/accession.html' %}
       {% endfor %}
     </div>
     <hr />
