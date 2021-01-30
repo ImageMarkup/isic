@@ -1,0 +1,17 @@
+<div class="col" data-accession-id="{{ accession.id }}">
+  {% if accession.status != 'skipped' %}
+    {% if debug %}
+      <img src="https://picsum.photos/seed/{{accession.id}}/300" class="materialboxed">
+    {% else %}
+      <img src="{{ accession.blob.url }}" class="materialboxed" width="300" height="300" title="{{ accession.blob_name }}" />
+    {% endif %}
+  {% else  %}
+    <img src="https://via.placeholder.com/300x300.png?text={{ accession.blob_name }}" />
+  {% endif %}
+  <div>
+    <a data-review-status="rejected" class="waves-effect waves-light btn-small red review-button
+      {% if accession.review_status and accession.review_status != 'rejected' %}dim{% endif %}">Reject</a>
+    <a data-review-status="accepted" class="waves-effect waves-light btn-small green review-button
+      {% if accession.review_status and accession.review_status != 'accepted' %}dim{% endif %}">Accept</a>
+  </div>
+</div>
