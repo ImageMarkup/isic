@@ -18,6 +18,7 @@ from isic.ingest.views import (
     review_duplicate_filenames,
     review_duplicates,
     review_lesion_groups,
+    review_skipped_accessions,
     zip_create,
 )
 from isic.login.views import IsicLoginView, get_girder_token
@@ -72,6 +73,11 @@ urlpatterns = [
     ),
     path(
         'staff/review-lesion-groups/<cohort_pk>/', review_lesion_groups, name='review-lesion-groups'
+    ),
+    path(
+        'staff/review-skipped-accessions/<cohort_pk>/',
+        review_skipped_accessions,
+        name='review-skipped-accessions',
     ),
     path('staff/apply-metadata/<cohort_pk>/', apply_metadata, name='apply-metadata'),
     path('staff/reset-metadata/<cohort_pk>/', reset_metadata, name='reset-metadata'),
