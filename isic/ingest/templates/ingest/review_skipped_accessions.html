@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load chunks %}
+
+{% block extra_head %}
+  {% include 'ingest/partials/review_header.html' %}
+{% endblock %}
+
+{% block content %}
+  <nav>
+    <div class="nav-wrapper">
+      <div class="col s12">
+        <a href="{% url 'cohort-list' %}" class="breadcrumb">Cohorts</a>
+        <a href="{% url 'cohort-detail' cohort.id %}" class="breadcrumb">{{ cohort.name }}</a>
+        <a class="breadcrumb">Skipped Accessions</a>
+      </div>
+    </div>
+  </nav>
+
+  <div>
+    <h2>{{ cohort.name }}</h2>
+    <span>{{ cohort.description }}</span>
+  </div>
+
+  <h4>
+    Skipped Accessions
+  </h4>
+
+  {% for accession_chunk in accessions|chunks:4 %}
+    <div class="row">
+      {% for accession in accession_chunk %}
+        {% include 'ingest/partials/accession.html' %}
+      {% endfor %}
+    </div>
+  {% endfor %}
+{% endblock %}
