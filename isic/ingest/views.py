@@ -62,6 +62,7 @@ def cohort_list(request):
 
 @staff_member_required
 def reset_metadata(request, cohort_pk):
+    # TODO: GET request to mutate?
     cohort = get_object_or_404(Cohort, pk=cohort_pk)
     Accession.objects.filter(upload__cohort=cohort).update(metadata={})
     messages.info(request, 'Metadata has been reset.')
@@ -94,6 +95,7 @@ def cohort_detail(request, pk):
         .distinct()
         .count()
     )
+    num_skipped_accessions = accession_qs.filter(status=Accession.Status.SKIPPED).count()
 
     paginator = Paginator(filter_.qs, 50)
     page_obj = paginator.get_page(request.GET.get('page'))
@@ -107,6 +109,7 @@ def cohort_detail(request, pk):
             'num_duplicates': num_duplicates,
             'num_unique_lesions': num_unique_lesions,
             'num_duplicate_filenames': num_duplicate_filenames,
+            'num_skipped_accessions': num_skipped_accessions,
             'total_accessions': filter_.qs.count(),
         },
     )
@@ -317,6 +320,23 @@ def review_duplicate_filenames(request, cohort_pk):
         request,
         'ingest/review_duplicate_filenames.html',
         {'cohort': cohort, 'duplicates': duplicates},
+    )
+
+
+@staff_member_required
+def review_skipped_accessions(request, cohort_pk):
+    cohort = get_object_or_404(
+        Cohort,
+        pk=cohort_pk,
+    )
+    accessions = Accession.objects.filter(
+        upload__cohort=cohort, status=Accession.Status.SKIPPED
+    ).order_by('created')
+
+    return render(
+        request,
+        'ingest/review_skipped_accessions.html',
+        {'cohort': cohort, 'accessions': accessions},
     )
 
 
