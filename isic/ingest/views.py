@@ -76,7 +76,7 @@ def cohort_detail(request, pk):
         pk=pk,
     )
     accession_qs = Accession.objects.filter(upload__cohort=cohort).order_by('created')
-    filter_ = AccessionFilter(request.GET, queryset=accession_qs)
+    filter_ = AccessionFilter(request.GET, queryset=accession_qs, cohort=cohort)
     num_duplicates = accession_qs.filter(
         distinctnessmeasure__checksum__in=DistinctnessMeasure.objects.values('checksum')
         .annotate(is_duplicate=Count('checksum'))
