@@ -12,7 +12,11 @@
     {% firstof accession.metadata.age "-" %}/{% firstof accession.metadata.sex "-" %}/{% firstof accession.metadata.diagnosis "-" %}
   </div>
   <div>
-    <a data-review-status="rejected" class="waves-effect waves-light btn-small red review-button
-      {% if accession.review_status and accession.review_status != 'rejected' %}dim{% endif %}">Reject</a>
+    <a data-reject-reason="low_quality" class="waves-effect waves-light btn-small red review-button
+      {% if accession.review_status == 'rejected' and accession.reject_reason != 'low_quality' %}dim{% endif %}">Low Quality</a>
+    <a data-reject-reason="has_phi" class="waves-effect waves-light btn-small red review-button
+      {% if accession.review_status == 'rejected' and accession.reject_reason != 'has_phi' %}dim{% endif %}">PHI</a>
+    <a data-reject-reason="duplicate" class="waves-effect waves-light btn-small red review-button
+      {% if accession.review_status == 'rejected' and accession.reject_reason != 'duplicate' %}dim{% endif %}">Duplicate</a>
   </div>
 </div>
