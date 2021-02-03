@@ -320,7 +320,7 @@ def review_lesion_groups(request, cohort_pk):
     )
     lesion_ids = (
         Accession.objects.filter(upload__cohort=cohort, metadata__lesion_id__isnull=False)
-        .order_by('metadata__lesion_id')
+        .order_by('metadata__lesion_id', 'metadata__acquisition_day')
         .distinct('metadata__lesion_id')
         .values_list('metadata__lesion_id', flat=True)
     )
