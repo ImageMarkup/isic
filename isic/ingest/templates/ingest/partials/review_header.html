@@ -4,7 +4,7 @@
     $('a.review-button').click(function(e) {
       let accessionDiv = $(this).parent('div').parent('div');
       let accessionId = accessionDiv.data('accession-id');
-      let reviewStatus = $(this).data('review-status');
+      let rejectReason = $(this).data('reject-reason');
 
       fetch(`/api/v2/accessions/${accessionId}/`, {
         method: 'PATCH',
@@ -13,12 +13,13 @@
           'X-CSRFToken': '{{ csrf_token }}'
         },
         body: JSON.stringify(
-          {'review_status':reviewStatus}
+          {'review_status':'rejected',
+           'reject_reason': rejectReason}
         ),
       }).then(response => response.json())
         .then(data => {
           accessionDiv.find('a.review-button').each(function() {
-            if ($(this).data('review-status') === reviewStatus) {
+            if ($(this).data('reject-reason') === rejectReason) {
               $(this).removeClass('dim');
             } else {
               $(this).addClass('dim');

@@ -42,6 +42,11 @@ class Accession(TimeStampedModel):
         REJECTED = 'rejected', 'Rejected'
         ACCEPTED = 'accepted', 'Accepted'
 
+    class RejectReason(models.TextChoices):
+        LOW_QUALITY = 'low_quality', 'Low Quality'
+        DUPLICATE = 'duplicate', 'Duplicate'
+        HAS_PHI = 'has_phi', 'Has PHI'
+
     class Meta:
         # A blob_name is unique at the *cohort* level, but that's not possible to enforce at the
         # database layer. At least enforce the blob_name being unique at the zip level.
@@ -57,6 +62,9 @@ class Accession(TimeStampedModel):
     status = models.CharField(choices=Status.choices, max_length=20, default=Status.CREATING)
     review_status = models.CharField(
         choices=ReviewStatus.choices, max_length=20, null=True, blank=True
+    )
+    reject_reason = models.CharField(
+        choices=RejectReason.choices, max_length=20, null=True, blank=True
     )
 
     metadata = JSONField(default=dict)
