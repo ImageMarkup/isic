@@ -296,24 +296,6 @@ class ColorTint(BaseStr):
         return value
 
 
-class Age(BaseStr):
-    @classmethod
-    def validate(cls, value: str) -> Optional[int]:
-        if not value:
-            return None
-        elif value == '85+':
-            value = 85
-
-        value: int = int(value)
-
-        # clip to 85
-        value = min(value, 85)
-
-        value = int(round(value / 5.0) * 5)
-
-        return value
-
-
 PatientIdType = constr(regex=r'^IP_[0-9]{7}$')
 LesionIdType = constr(regex=r'^IL_[0-9]{7}$')
 
@@ -321,7 +303,7 @@ LesionIdType = constr(regex=r'^IL_[0-9]{7}$')
 # TODO: support unstructured metadata
 # TODO: exif_* headers
 class MetadataRow(BaseModel):
-    age: Optional[Age]
+    age: Optional[int]
     sex: Optional[Sex]
     benign_malignant: Optional[BenignMalignant]
     diagnosis: Optional[Diagnosis]
