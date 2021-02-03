@@ -15,7 +15,6 @@ from isic.ingest.views import (
     cohort_detail,
     cohort_list,
     reset_metadata,
-    review_duplicate_filenames,
     review_duplicates,
     review_lesion_groups,
     review_skipped_accessions,
@@ -66,11 +65,6 @@ urlpatterns = [
     path('staff/cohorts/', cohort_list, name='cohort-list'),
     path('staff/cohort/<pk>/', cohort_detail, name='cohort-detail'),
     path('staff/review-duplicates/<cohort_pk>/', review_duplicates, name='review-duplicates'),
-    path(
-        'staff/review-duplicate-filenames/<cohort_pk>/',
-        review_duplicate_filenames,
-        name='review-duplicate-filenames',
-    ),
     path(
         'staff/review-lesion-groups/<cohort_pk>/', review_lesion_groups, name='review-lesion-groups'
     ),
