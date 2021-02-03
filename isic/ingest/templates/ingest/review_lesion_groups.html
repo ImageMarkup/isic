@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load get_key %}
 
 {% block extra_head %}
   {% include 'ingest/partials/review_header.html' %}
@@ -24,14 +25,17 @@
     Lesion Groups
   </h4>
 
-  {% regroup lesions by metadata.lesion_id as lesion_group %}
-  {% for blob_name in lesion_group %}
-    {{ blob_name.grouper  }}
+  {% include 'studies/partials/pagination.html' with page_obj=page_obj %}
+
+  {% for lesion_id in page_obj %}
+    {{ lesion_id  }}
     <div class="row">
-      {% for accession in blob_name.list %}
+      {% for accession in related_accessions|get_key:lesion_id %}
         {% include 'ingest/partials/accession.html' %}
       {% endfor %}
     </div>
     <hr />
   {% endfor %}
+
+  {% include 'studies/partials/pagination.html' with page_obj=page_obj %}
 {% endblock %}
