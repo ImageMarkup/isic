@@ -1,30 +1,52 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mousetrap/1.6.5/mousetrap.min.js" integrity="sha512-+Jg3Ynmj9hse704K48H6rBBI3jdNBjReRGBCxUWFfOz3yVurnJFWtAWssDAsGtzWYw89xFWPxShuj2T6E9EOpg==" crossorigin="anonymous"></script>
+
 <script type="text/javascript">
+  let binds = {
+    '1': 'low_quality',
+    '2': 'has_phi',
+    '3': 'duplicate',
+  };
+
+  function rejectAccession(accessionDiv, rejectReason) {
+    let accessionId = $(accessionDiv).data('accession-id');
+
+    fetch(`/api/v2/accessions/${accessionId}/`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token }}'
+      },
+      body: JSON.stringify(
+        {'review_status':'rejected',
+         'reject_reason': rejectReason}
+      ),
+    }).then(response => response.json())
+      .then(data => {
+        $(accessionDiv).find('a.review-button').each(function() {
+          if ($(this).data('reject-reason') === rejectReason) {
+            $(this).removeClass('dim');
+          } else {
+            $(this).addClass('dim');
+          }
+        });
+      });
+  }
+
   $(document).ready(function(){
     $('.materialboxed').materialbox();
+
+    Mousetrap.bind(Object.keys(binds), (event) => {
+      if (document.querySelectorAll(".accession-col:hover").length != 0) {
+        let rejectReason = binds[event.key];
+        rejectAccession($('.accession-col:hover').get(0), rejectReason);
+      }
+    });
+
     $('a.review-button').click(function(e) {
       let accessionDiv = $(this).parent('div').parent('div');
-      let accessionId = accessionDiv.data('accession-id');
-      let reviewStatus = $(this).data('review-status');
+      let rejectReason = $(this).data('reject-reason');
 
-      fetch(`/api/v2/accessions/${accessionId}/`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': '{{ csrf_token }}'
-        },
-        body: JSON.stringify(
-          {'review_status':reviewStatus}
-        ),
-      }).then(response => response.json())
-        .then(data => {
-          accessionDiv.find('a.review-button').each(function() {
-            if ($(this).data('review-status') === reviewStatus) {
-              $(this).removeClass('dim');
-            } else {
-              $(this).addClass('dim');
-            }
-          });
-        });
+      rejectAccession(accessionDiv, rejectReason);
     });
 
   });
