@@ -25,11 +25,17 @@
     Skipped Accessions
   </h4>
 
-  {% for accession_chunk in accessions|chunks:4 %}
+  {{ total_accessions  }} total
+
+  {% include 'studies/partials/pagination.html' with page_obj=page_obj %}
+
+  {% for accession_chunk in page_obj|chunks:4 %}
     <div class="row">
       {% for accession in accession_chunk %}
         {% include 'ingest/partials/accession.html' %}
       {% endfor %}
     </div>
   {% endfor %}
+
+  {% include 'studies/partials/pagination.html' with page_obj=page_obj %}
 {% endblock %}
