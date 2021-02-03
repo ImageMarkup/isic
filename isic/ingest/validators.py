@@ -41,6 +41,20 @@ class ClinicalSize(BaseStr):
         return float_value
 
 
+class Age(BaseStr):
+    @classmethod
+    def validate(cls, value: str) -> Optional[int]:
+        if not value:
+            return None
+        elif value == '85+':
+            value = 85
+
+        value: int = int(value)
+        # clip to 85
+        value = min(value, 85)
+        return value
+
+
 class Sex(BaseStr):
     @classmethod
     def validate(cls, value: str) -> Optional[str]:
@@ -303,7 +317,7 @@ LesionIdType = constr(regex=r'^IL_[0-9]{7}$')
 # TODO: support unstructured metadata
 # TODO: exif_* headers
 class MetadataRow(BaseModel):
-    age: Optional[int]
+    age: Optional[Age]
     sex: Optional[Sex]
     benign_malignant: Optional[BenignMalignant]
     diagnosis: Optional[Diagnosis]
