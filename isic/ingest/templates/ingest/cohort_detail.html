@@ -37,7 +37,6 @@
   <div>
     <a href="{% url 'zip-create' cohort.id %}">Upload zip</a><br />
     <a href="{% url 'review-duplicates' cohort.id %}">Review Duplicates ({{ num_duplicates }})</a><br />
-    <a href="{% url 'review-duplicate-filenames' cohort.id %}">Review Duplicate filenames ({{ num_duplicate_filenames }})</a><br />
     <a href="{% url 'review-lesion-groups' cohort.id %}">Review Lesion Groups ({{ num_unique_lesions }})</a><br />
     <a href="{% url 'review-skipped-accessions' cohort.id %}">Review Skipped Accessions ({{ num_skipped_accessions }})</a><br />
     <a href="{% url 'apply-metadata' cohort.id %}">Apply metadata</a><br />
