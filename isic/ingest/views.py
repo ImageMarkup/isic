@@ -264,22 +264,32 @@ def review_duplicates(request, cohort_pk):
         Cohort,
         pk=cohort_pk,
     )
-    duplicates = (
-        Accession.objects.filter(upload__cohort=cohort)
-        .select_related('distinctnessmeasure')
-        .order_by('distinctnessmeasure__checksum')  # ordering by checksum is necessary for groupby
-        .filter(
-            distinctnessmeasure__checksum__in=DistinctnessMeasure.objects.values('checksum')
+    duplicate_checksums = (
+        DistinctnessMeasure.objects.filter(
+            accession__upload__cohort=cohort,
+            checksum__in=DistinctnessMeasure.objects.values('checksum')
             .annotate(is_duplicate=Count('checksum'))
             .filter(accession__upload__cohort=cohort, is_duplicate__gt=1)
-            .values('checksum')
+            .values_list('checksum', flat=True),
         )
+        .order_by('checksum')
+        .distinct('checksum')
+        .values_list('checksum', flat=True)
     )
+
+    paginator = Paginator(duplicate_checksums, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    related_accessions: dict[str, list] = defaultdict(list)
+    for accession in Accession.objects.select_related('distinctnessmeasure').filter(
+        upload__cohort=cohort, distinctnessmeasure__checksum__in=duplicate_checksums
+    ):
+        related_accessions[accession.distinctnessmeasure.checksum].append(accession)
 
     return render(
         request,
         'ingest/review_duplicates.html',
-        {'cohort': cohort, 'duplicates': duplicates},
+        {'cohort': cohort, 'page_obj': page_obj, 'related_accessions': related_accessions},
     )
 
 
@@ -293,10 +303,12 @@ def review_skipped_accessions(request, cohort_pk):
         upload__cohort=cohort, status=Accession.Status.SKIPPED
     ).order_by('created')
 
+    paginator = Paginator(accessions, 50)
+    page_obj = paginator.get_page(request.GET.get('page'))
     return render(
         request,
         'ingest/review_skipped_accessions.html',
-        {'cohort': cohort, 'accessions': accessions},
+        {'cohort': cohort, 'page_obj': page_obj, 'total_accessions': accessions.count()},
     )
 
 
@@ -306,14 +318,26 @@ def review_lesion_groups(request, cohort_pk):
         Cohort,
         pk=cohort_pk,
     )
-    lesions = Accession.objects.filter(
-        upload__cohort=cohort, metadata__lesion_id__isnull=False
-    ).order_by('metadata__lesion_id')
+    lesion_ids = (
+        Accession.objects.filter(upload__cohort=cohort, metadata__lesion_id__isnull=False)
+        .order_by('metadata__lesion_id')
+        .distinct('metadata__lesion_id')
+        .values_list('metadata__lesion_id', flat=True)
+    )
+
+    paginator = Paginator(lesion_ids, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    related_accessions: dict[str, list] = defaultdict(list)
+    for accession in Accession.objects.filter(
+        upload__cohort=cohort, metadata__lesion_id__in=lesion_ids
+    ):
+        related_accessions[accession.metadata['lesion_id']].append(accession)
 
     return render(
         request,
         'ingest/review_lesion_groups.html',
-        {'cohort': cohort, 'lesions': lesions},
+        {'cohort': cohort, 'page_obj': page_obj, 'related_accessions': related_accessions},
     )
 
 
