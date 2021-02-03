@@ -6,7 +6,10 @@ import os
 import PIL.Image
 from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
+from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.mail import send_mail
+from django.db import transaction
 import magic
 import numpy as np
 import pandas as pd
@@ -18,33 +21,54 @@ from isic.ingest.zip_utils import ZipFileOpener
 
 @shared_task
 def extract_zip(zip_id):
-    zip = Zip.objects.get(pk=zip_id)
+    zip = Zip.objects.select_related('creator').get(pk=zip_id)
 
-    zip.status = Zip.Status.STARTED
-    zip.save(update_fields=['status'])
+    with transaction.atomic():
+        zip.status = Zip.Status.STARTED
+        zip.save(update_fields=['status'])
 
-    with ZipFileOpener(zip.blob) as (file_list, _):
-        for original_file_path, original_file_relpath in file_list:
-            original_file_name = os.path.basename(original_file_relpath)
+        blob_names_in_zip = set()
 
-            with open(original_file_path, 'rb') as original_file_stream:
-                zip.accessions.create(
-                    blob_name=original_file_name,
-                    blob_size=1,  # TODO: use tell to get size
-                    blob=SimpleUploadedFile(
-                        original_file_name,
-                        original_file_stream.read(),
-                        guess_type(original_file_name)[0],
-                    ),
-                )
+        with ZipFileOpener(zip.blob) as (file_list, _):
+            for _, original_file_relpath in file_list:
+                blob_names_in_zip.add(os.path.basename(original_file_relpath))
 
-    zip.accessions.update(status=Zip.Status.CREATED)
+        blob_name_conflicts = Accession.objects.filter(
+            upload__cohort=zip.cohort, blob_name__in=blob_names_in_zip
+        ).values_list('blob_name', flat=True)
 
-    for accession_id in zip.accessions.values_list('id', flat=True):
-        process_accession.delay(accession_id)
+        if blob_name_conflicts:
+            transaction.set_rollback(True)
+            send_mail(
+                'A problem processing your zip file',
+                'The following files must be renamed: ' + '\n'.join(blob_name_conflicts),
+                settings.DEFAULT_FROM_EMAIL,
+                [zip.creator.email],
+            )
+            return
 
-    zip.status = Zip.Status.COMPLETED
-    zip.save(update_fields=['status'])
+        with ZipFileOpener(zip.blob) as (file_list, _):
+            for original_file_path, original_file_relpath in file_list:
+                original_file_name = os.path.basename(original_file_relpath)
+
+                with open(original_file_path, 'rb') as original_file_stream:
+                    zip.accessions.create(
+                        blob_name=original_file_name,
+                        blob_size=1,  # TODO: use tell to get size
+                        blob=SimpleUploadedFile(
+                            original_file_name,
+                            original_file_stream.read(),
+                            guess_type(original_file_name)[0],
+                        ),
+                    )
+
+        zip.accessions.update(status=Zip.Status.CREATED)
+
+        for accession_id in zip.accessions.values_list('id', flat=True):
+            process_accession.delay(accession_id)
+
+        zip.status = Zip.Status.COMPLETED
+        zip.save(update_fields=['status'])
 
 
 @shared_task

@@ -42,7 +42,11 @@ class Accession(TimeStampedModel):
         REJECTED = 'rejected', 'Rejected'
         ACCEPTED = 'accepted', 'Accepted'
 
-    # TODO: unique constraint on blob_name/zip/cohort?
+    class Meta:
+        # A blob_name is unique at the *cohort* level, but that's not possible to enforce at the
+        # database layer. At least enforce the blob_name being unique at the zip level.
+        # TODO: How to properly enforce cohort, blob_name uniqueness at the app layer.
+        unique_together = [['upload', 'blob_name']]
 
     upload = models.ForeignKey('Zip', on_delete=models.CASCADE, related_name='accessions')
 

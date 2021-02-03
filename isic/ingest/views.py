@@ -1,4 +1,4 @@
-from collections import Counter, defaultdict
+from collections import defaultdict
 from typing import Optional
 
 from django.contrib import messages
@@ -83,12 +83,6 @@ def cohort_detail(request, pk):
         .filter(accession__upload__cohort=cohort, is_duplicate__gt=1)
         .values('checksum')
     ).count()
-    num_duplicate_filenames = accession_qs.filter(
-        blob_name__in=Accession.objects.values('blob_name')
-        .annotate(is_duplicate=Count('blob_name'))
-        .filter(upload__cohort=cohort, is_duplicate__gt=1)
-        .values('blob_name')
-    ).count()
     num_unique_lesions = (
         Accession.objects.filter(metadata__lesion_id__isnull=False, upload__cohort=cohort)
         .values('metadata__lesion_id')
@@ -108,7 +102,6 @@ def cohort_detail(request, pk):
             'filter': filter_,
             'num_duplicates': num_duplicates,
             'num_unique_lesions': num_unique_lesions,
-            'num_duplicate_filenames': num_duplicate_filenames,
             'num_skipped_accessions': num_skipped_accessions,
             'total_accessions': filter_.qs.count(),
         },
@@ -144,15 +137,6 @@ def validate_csv_format_and_filenames(df, cohort):
     if duplicate_filenames.size:
         problems.append(
             Problem(message='Duplicate filenames found.', context=list(duplicate_filenames))
-        )
-
-    multiple_accessions = Counter(x[0] for x in matching_accessions)
-    duplicate_accessions = [k for k, count in multiple_accessions.items() if count > 1]
-    if duplicate_accessions:
-        problems.append(
-            Problem(
-                message='These images matched more than 1 accession.', context=duplicate_accessions
-            )
         )
 
     existing_df = pd.DataFrame((x[0] for x in matching_accessions), columns=['filename'])
@@ -295,30 +279,6 @@ def review_duplicates(request, cohort_pk):
     return render(
         request,
         'ingest/review_duplicates.html',
-        {'cohort': cohort, 'duplicates': duplicates},
-    )
-
-
-@staff_member_required
-def review_duplicate_filenames(request, cohort_pk):
-    cohort = get_object_or_404(
-        Cohort,
-        pk=cohort_pk,
-    )
-    duplicates = (
-        Accession.objects.filter(upload__cohort=cohort)
-        .order_by('blob_name')  # ordering must be done for group by
-        .filter(
-            blob_name__in=Accession.objects.values('blob_name')
-            .annotate(is_duplicate=Count('blob_name'))
-            .filter(upload__cohort=cohort, is_duplicate__gt=1)
-            .values('blob_name')
-        )
-    )
-
-    return render(
-        request,
-        'ingest/review_duplicate_filenames.html',
         {'cohort': cohort, 'duplicates': duplicates},
     )
 
