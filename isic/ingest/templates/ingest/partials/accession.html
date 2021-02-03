@@ -9,6 +9,9 @@
     <img src="https://via.placeholder.com/300x300.png?text={{ accession.blob_name }}" />
   {% endif %}
   <div>
+    {% firstof accession.metadata.age "-" %}/{% firstof accession.metadata.sex "-" %}/{% firstof accession.metadata.diagnosis "-" %}
+  </div>
+  <div>
     <a data-review-status="rejected" class="waves-effect waves-light btn-small red review-button
       {% if accession.review_status and accession.review_status != 'rejected' %}dim{% endif %}">Reject</a>
     <a data-review-status="accepted" class="waves-effect waves-light btn-small green review-button
