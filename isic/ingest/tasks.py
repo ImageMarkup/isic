@@ -28,20 +28,25 @@ def extract_zip(zip_id):
         zip.save(update_fields=['status'])
 
         blob_names_in_zip = set()
+        duplicate_blob_names_in_zip = set()
 
         with ZipFileOpener(zip.blob) as (file_list, _):
             for _, original_file_relpath in file_list:
-                blob_names_in_zip.add(os.path.basename(original_file_relpath))
+                original_file_name = os.path.basename(original_file_relpath)
+                if original_file_name in blob_names_in_zip:
+                    duplicate_blob_names_in_zip.add(original_file_name)
+                blob_names_in_zip.add(original_file_name)
 
         blob_name_conflicts = Accession.objects.filter(
             upload__cohort=zip.cohort, blob_name__in=blob_names_in_zip
         ).values_list('blob_name', flat=True)
 
-        if blob_name_conflicts:
+        if blob_name_conflicts or duplicate_blob_names_in_zip:
             transaction.set_rollback(True)
             send_mail(
                 'A problem processing your zip file',
-                'The following files must be renamed: ' + '\n'.join(blob_name_conflicts),
+                'The following files must be renamed: '
+                + '\n'.join(set(blob_name_conflicts).union(duplicate_blob_names_in_zip)),
                 settings.DEFAULT_FROM_EMAIL,
                 [zip.creator.email],
             )
