@@ -3,6 +3,8 @@ from django.db.models import Count
 from django.db.models.query_utils import Q
 from django.utils.safestring import mark_safe
 from django_admin_display import admin_display
+from django_object_actions import DjangoObjectActions
+from django_object_actions.utils import takes_instance_or_queryset
 from girder_utils.admin import ReadonlyTabularInline
 
 from isic.ingest.models import Accession, Cohort, Zip  # , UploadBlob
@@ -97,12 +99,14 @@ class AccessionAdmin(admin.ModelAdmin):
 
 
 @admin.register(Zip)
-class ZipAdmin(admin.ModelAdmin):
+class ZipAdmin(DjangoObjectActions, admin.ModelAdmin):
     list_display = ['id', 'blob_name', 'blob_size', 'created', 'cohort', 'status']
     list_select_related = ['cohort']
     actions = ['extract_zip']
+    change_actions = ['extract_zip']
 
     @admin_display(short_description='Extract zip')
+    @takes_instance_or_queryset
     def extract_zip(self, request, queryset):
         from isic.ingest.tasks import extract_zip as extract_zip_task
 
