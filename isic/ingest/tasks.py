@@ -57,9 +57,12 @@ def extract_zip(zip_id):
                 original_file_name = os.path.basename(original_file_relpath)
 
                 with open(original_file_path, 'rb') as original_file_stream:
+                    blob_size = len(original_file_stream.read())
+                    original_file_stream.seek(0)
+
                     zip.accessions.create(
                         blob_name=original_file_name,
-                        blob_size=1,  # TODO: use tell to get size
+                        blob_size=blob_size,
                         blob=SimpleUploadedFile(
                             original_file_name,
                             original_file_stream.read(),
@@ -93,15 +96,21 @@ def process_accession(accession_id):
         major_mime_type, _ = m.from_buffer(content).split('/')
 
         if major_mime_type != 'image':
-            print(major_mime_type, _)
             accession.status = Accession.Status.SKIPPED
             accession.save(update_fields=['status'])
             return
 
-        # TODO: strip exif?
-
-        # done just to determine the image is readable by PIL
-        PIL.Image.open(io.BytesIO(content))
+        # determines image is readable, and strips exif tags
+        img = PIL.Image.open(io.BytesIO(content))
+        img_bytes = io.BytesIO()
+        img.save(img_bytes, format='JPEG')
+        accession.blob = SimpleUploadedFile(
+            accession.blob_name,
+            img_bytes.getvalue(),
+            'image/jpeg',
+        )
+        accession.blob_size = len(img_bytes.getvalue())
+        accession.save(update_fields=['blob', 'blob_size'])
 
         accession.status = Accession.Status.SUCCEEDED
         accession.save(update_fields=['status'])
