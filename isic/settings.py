@@ -28,6 +28,7 @@ class IsicMixin(ConfigMixin):
             's3_file_field',
             'material',
             'nested_admin',
+            'django_object_actions',
         ]
 
         # Insert before other apps with styled templates
