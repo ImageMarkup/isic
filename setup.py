@@ -54,6 +54,7 @@ setup(
         'django-material',
         'django-nested-admin',
         'django-oauth-toolkit==1.3.2',
+        'django-object-actions',
         'django-s3-file-field[minio,boto3]',
         'djangorestframework',
         'drf-yasg',
