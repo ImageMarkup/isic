@@ -30,6 +30,10 @@ class IsicMixin(ConfigMixin):
             'nested_admin',
         ]
 
+        configuration.TEMPLATES[0]['DIRS'] = [
+            Path(__file__).resolve(strict=True).parent.parent / 'isic/core/templates'
+        ]
+
         # Insert before other apps with styled templates
         style_app_index = configuration.INSTALLED_APPS.index('girder_style')
         configuration.INSTALLED_APPS.insert(style_app_index, 'isic.login.apps.LoginConfig')

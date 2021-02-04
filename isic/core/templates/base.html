@@ -9,6 +9,24 @@
     {% include 'material/includes/material_js.html' %}
 
     {% block extra_head %}{% endblock %}
+
+    {% if debug %}
+      <style type="text/css">
+        body:before {
+          background-color: #f3ff52;
+          color: #2e2e2e;
+          content: "DEVELOPMENT";
+          display: block;
+          font-weight: bold;
+          line-height: 35px;
+          position: sticky;
+          text-align: center;
+          text-transform: uppercase;
+          top: 0;
+          z-index: 1000;
+        }
+      </style>
+    {% endif %}
   </head>
   <body>
 
