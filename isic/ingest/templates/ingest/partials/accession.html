@@ -9,7 +9,7 @@
     <img src="https://via.placeholder.com/300x300.png?text={{ accession.blob_name }}" />
   {% endif %}
   <div>
-    {% firstof accession.metadata.age "-" %}/{% firstof accession.metadata.sex "-" %}/{% firstof accession.metadata.diagnosis "-" %}
+    {{ accession.metadata.age|default:"-" }} / {{ accession.metadata.sex|default:"-" }} / {{ accession.metadata.diagnosis|default:"-" }}
   </div>
   <div>
     <a data-reject-reason="low_quality" class="waves-effect waves-light btn-small red review-button
