@@ -22,7 +22,7 @@ setup(
         'Bug Reports': 'https://github.com/ImageMarkup/isic/issues',
         'Source': 'https://github.com/ImageMarkup/isic',
     },
-    author='Kitware, Inc',
+    author='Kitware, Inc.',
     author_email='kitware@kitware.com',
     keywords='',
     classifiers=[
