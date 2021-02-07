@@ -3,33 +3,39 @@
 <script type="text/javascript">
   let binds = {
     '1': 'low_quality',
-    '2': 'has_phi',
-    '3': 'duplicate',
+    '2': 'duplicate',
+    '3': 'has_phi',
   };
 
-  function rejectAccession(accessionDiv, rejectReason) {
-    let accessionId = $(accessionDiv).data('accession-id');
+  function accession(id, reviewStatus, rejectReason) {
+    return {
+      id: id,
+      reviewStatus: reviewStatus,
+      rejectReason: rejectReason,
+      reject(reason) {
+        let body = {'review_status':'rejected',
+                    'reject_reason': reason};
 
-    fetch(`/api/v2/accessions/${accessionId}/`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': '{{ csrf_token }}'
+        // if re-selecting the same reason, act as a de-select
+        if (reason == this.rejectReason) {
+          body = {'review_status': '',
+                  'reject_reason': ''};
+        }
+
+        fetch(`/api/v2/accessions/${this.id}/`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: JSON.stringify(body),
+        }).then(response => response.json())
+          .then(data => {
+            this.reviewStatus = data.review_status;
+            this.rejectReason = data.reject_reason;
+          });
       },
-      body: JSON.stringify(
-        {'review_status':'rejected',
-         'reject_reason': rejectReason}
-      ),
-    }).then(response => response.json())
-      .then(data => {
-        $(accessionDiv).find('a.review-button').each(function() {
-          if ($(this).data('reject-reason') === rejectReason) {
-            $(this).removeClass('dim');
-          } else {
-            $(this).addClass('dim');
-          }
-        });
-      });
+    };
   }
 
   $(document).ready(function(){
@@ -37,18 +43,9 @@
 
     Mousetrap.bind(Object.keys(binds), (event) => {
       if (document.querySelectorAll(".accession-col:hover").length != 0) {
-        let rejectReason = binds[event.key];
-        rejectAccession($('.accession-col:hover').get(0), rejectReason);
+        $('.accession-col:hover').get(0).__x.$data.reject(binds[event.key]);
       }
     });
-
-    $('a.review-button').click(function(e) {
-      let accessionDiv = $(this).parent('div').parent('div');
-      let rejectReason = $(this).data('reject-reason');
-
-      rejectAccession(accessionDiv, rejectReason);
-    });
-
   });
 </script>
 
