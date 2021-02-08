@@ -62,8 +62,10 @@ def extract_zip(zip_id):
 
                     zip.accessions.create(
                         blob_name=original_file_name,
+                        # TODO: we're setting blob_size since it's required, but
+                        # it actually indicates the stripped blob size, not the original
                         blob_size=blob_size,
-                        blob=SimpleUploadedFile(
+                        original_blob=SimpleUploadedFile(
                             original_file_name,
                             original_file_stream.read(),
                             guess_type(original_file_name)[0],
@@ -84,7 +86,7 @@ def process_accession(accession_id):
     accession = Accession.objects.get(pk=accession_id)
 
     try:
-        content = accession.blob.open().read()
+        content = accession.original_blob.open().read()
 
         if accession.blob_name.startswith('._') or accession.blob_name == 'Thumbs.db':
             # file is probably a macOS resource fork, skip
@@ -145,13 +147,14 @@ def apply_metadata(metadatafile_id):
     # pydantic expects None for the absence of a value, not NaN
     df = df.replace({np.nan: None})
 
-    for _, row in df.iterrows():
-        accession = Accession.objects.get(
-            blob_name=row['filename'], upload__cohort=metadata_file.cohort
-        )
-        existing_metadata = accession.metadata
-        existing_metadata.update(
-            MetadataRow.parse_obj(row).dict(exclude_unset=True, exclude_none=True)
-        )
-        accession.metadata = existing_metadata
-        accession.save(update_fields=['metadata'])
+    with transaction.atomic():
+        for _, row in df.iterrows():
+            accession = Accession.objects.get(
+                blob_name=row['filename'], upload__cohort=metadata_file.cohort
+            )
+            existing_metadata = accession.metadata
+            existing_metadata.update(
+                MetadataRow.parse_obj(row).dict(exclude_unset=True, exclude_none=True)
+            )
+            accession.metadata = existing_metadata
+            accession.save(update_fields=['metadata'])
