@@ -55,7 +55,13 @@ class Accession(TimeStampedModel):
 
     upload = models.ForeignKey('Zip', on_delete=models.CASCADE, related_name='accessions')
 
+    # the original blob is stored in case blobs need to be reprocessed
+    original_blob = S3FileField(null=True)
+    # TODO: remove null after database on production is reset
+
     blob = S3FileField()
+    # blob_name has to be indexed because metadata selection does large
+    # WHERE blob_name IN (...) queries
     blob_name = models.CharField(max_length=255, db_index=True)
     blob_size = models.PositiveBigIntegerField()
 

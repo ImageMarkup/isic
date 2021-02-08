@@ -78,8 +78,16 @@ class CohortAdmin(admin.ModelAdmin):
 
 @admin.register(Accession)
 class AccessionAdmin(admin.ModelAdmin):
-    list_display = ['id', 'blob_name', 'blob_size', 'created', 'cohort', 'status', 'review_status']
-    readonly_fields = ['thumbnail']
+    list_display = [
+        'id',
+        'blob_name',
+        'blob_size',
+        'created',
+        'cohort',
+        'status',
+        'review_status',
+    ]
+    readonly_fields = ['original_blob', 'thumbnail']
 
     search_fields = ['blob_name']
 
