@@ -1,4 +1,5 @@
-<div class="col accession-col" data-accession-id="{{ accession.id }}">
+<div class="col accession-col"
+  x-data="accession('{{ accession.id }}', '{{ accession.review_status }}', '{{ accession.reject_reason }}')">
   {% if accession.status != 'skipped' %}
     {% if debug %}
       <img src="https://picsum.photos/seed/{{accession.id}}/300" class="materialboxed">
@@ -12,11 +13,11 @@
     {{ accession.metadata.age|default:"-" }} / {{ accession.metadata.sex|default:"-" }} / {{ accession.metadata.diagnosis|default:"-" }}
   </div>
   <div>
-    <a data-reject-reason="low_quality" class="waves-effect waves-light btn-small red review-button
-      {% if accession.review_status == 'rejected' and accession.reject_reason != 'low_quality' %}dim{% endif %}">Low Quality</a>
-    <a data-reject-reason="has_phi" class="waves-effect waves-light btn-small red review-button
-      {% if accession.review_status == 'rejected' and accession.reject_reason != 'has_phi' %}dim{% endif %}">PHI</a>
-    <a data-reject-reason="duplicate" class="waves-effect waves-light btn-small red review-button
-      {% if accession.review_status == 'rejected' and accession.reject_reason != 'duplicate' %}dim{% endif %}">Duplicate</a>
+    {% for choice, label in accession.RejectReason.choices %}
+      <a :class="{ 'dim': rejectReason != '{{ choice  }}'}"
+        class="waves-effect waves-light btn-small red review-button"
+        @click="reject('{{ choice }}')"
+      >{{ label }}</a>
+    {% endfor %}
   </div>
 </div>
