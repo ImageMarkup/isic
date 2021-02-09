@@ -11,7 +11,7 @@
       <div class="col s12">
         <a href="{% url 'cohort-list' %}" class="breadcrumb">Cohorts</a>
         <a href="{% url 'cohort-detail' cohort.id %}" class="breadcrumb">{{ cohort.name }}</a>
-        <a class="breadcrumb">Lesion IDs</a>
+        <a class="breadcrumb">{{ title }}</a>
       </div>
     </div>
   </nav>
@@ -22,15 +22,14 @@
   </div>
 
   <h4>
-    Lesion IDs ({{ remaining }} remaining)
+    {{ title }} ({{ remaining }} remaining)
   </h4>
 
   {% include 'studies/partials/pagination.html' with page_obj=page_obj %}
 
-  {% for lesion_id in page_obj %}
-    {{ lesion_id  }}
+  {% for group in page_obj %}
     <div class="row">
-      {% for accession in related_accessions|get_key:lesion_id %}
+      {% for accession in grouped_accessions|get_key:group %}
         {% include 'ingest/partials/accession.html' %}
       {% endfor %}
     </div>

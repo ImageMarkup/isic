@@ -2,6 +2,8 @@ from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models, transaction
 from django.db.models import JSONField
+from django.db.models.aggregates import Count
+from django.db.models.query_utils import Q
 from django.urls.base import reverse
 from django_extensions.db.models import TimeStampedModel
 from s3_file_field import S3FileField
@@ -38,15 +40,6 @@ class Accession(TimeStampedModel):
         FAILED = 'failed', 'Failed'
         SUCCEEDED = 'succeeded', 'Succeeded'
 
-    class ReviewStatus(models.TextChoices):
-        REJECTED = 'rejected', 'Rejected'
-        ACCEPTED = 'accepted', 'Accepted'
-
-    class RejectReason(models.TextChoices):
-        LOW_QUALITY = 'low_quality', 'Low Quality'
-        DUPLICATE = 'duplicate', 'Duplicate'
-        HAS_PHI = 'has_phi', 'Has PHI'
-
     class Meta:
         # A blob_name is unique at the *cohort* level, but that's not possible to enforce at the
         # database layer. At least enforce the blob_name being unique at the zip level.
@@ -66,15 +59,72 @@ class Accession(TimeStampedModel):
     blob_size = models.PositiveBigIntegerField()
 
     status = models.CharField(choices=Status.choices, max_length=20, default=Status.CREATING)
-    review_status = models.CharField(
-        choices=ReviewStatus.choices, max_length=20, null=True, blank=True
-    )
-    reject_reason = models.CharField(
-        choices=RejectReason.choices, max_length=20, null=True, blank=True
-    )
+
+    # required checks
+    quality_check = models.BooleanField(null=True)
+    diagnosis_check = models.BooleanField(null=True)
+    phi_check = models.BooleanField(null=True)
+
+    # checks that are only applicable to a subset of a cohort
+    duplicate_check = models.BooleanField(null=True)
+    lesion_check = models.BooleanField(null=True)
 
     metadata = JSONField(default=dict)
     unstructured_metadata = JSONField(default=dict)
+
+    @staticmethod
+    def checks():
+        return {
+            'quality_check': 'Quality',
+            'diagnosis_check': 'Diagnosis',
+            'phi_check': 'PHI',
+            'duplicate_check': 'Duplicate',
+            'lesion_check': 'Lesion IDs',
+        }
+
+    @staticmethod
+    def check_counts(cohort):
+        aggregates = {}
+        ret = {}
+        for check in Accession.checks():
+            filters = Q(upload__cohort=cohort)
+
+            if check == 'duplicate_check':
+                duplicate_checksums = (
+                    DistinctnessMeasure.objects.filter(
+                        accession__upload__cohort=cohort,
+                        checksum__in=DistinctnessMeasure.objects.values('checksum')
+                        .annotate(is_duplicate=Count('checksum'))
+                        .filter(accession__upload__cohort=cohort, is_duplicate__gt=1)
+                        .values_list('checksum', flat=True),
+                    )
+                    .order_by('checksum')
+                    .distinct('checksum')
+                    .values_list('checksum', flat=True)
+                )
+                filters &= Q(distinctnessmeasure__checksum__in=duplicate_checksums)
+            elif check == 'lesion_check':
+                filters &= Q(metadata__lesion_id__isnull=False)
+
+            aggregates.update(
+                {
+                    f'{check}_unreviewed': Count(
+                        1, filter=filters & Q(**{f'{check}__isnull': True})
+                    ),
+                    f'{check}_rejected': Count(1, filter=filters & Q(**{check: False})),
+                    f'{check}_accepted': Count(1, filter=filters & Q(**{check: True})),
+                }
+            )
+
+        result = Accession.objects.aggregate(**aggregates)
+        for check in Accession.checks():
+            ret[check] = [
+                result[f'{check}_unreviewed'],
+                result[f'{check}_rejected'],
+                result[f'{check}_accepted'],
+            ]
+
+        return ret
 
 
 class DistinctnessMeasure(TimeStampedModel):

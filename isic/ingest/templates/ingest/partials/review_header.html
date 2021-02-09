@@ -1,49 +1,51 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mousetrap/1.6.5/mousetrap.min.js" integrity="sha512-+Jg3Ynmj9hse704K48H6rBBI3jdNBjReRGBCxUWFfOz3yVurnJFWtAWssDAsGtzWYw89xFWPxShuj2T6E9EOpg==" crossorigin="anonymous"></script>
 
 <script type="text/javascript">
-  let binds = {
-    '1': 'low_quality',
-    '2': 'duplicate',
-    '3': 'has_phi',
-  };
+  function review(check, pass) {
+    let body = {}
+    body[check] =  pass;
 
-  function accession(id, reviewStatus, rejectReason) {
-    return {
-      id: id,
-      reviewStatus: reviewStatus,
-      rejectReason: rejectReason,
-      reject(reason) {
-        let body = {'review_status':'rejected',
-                    'reject_reason': reason};
+    // if re-selecting the same reason, act as a de-select
+    if (this[check] === pass) {
+      body[check] = null;
+    }
 
-        // if re-selecting the same reason, act as a de-select
-        if (reason == this.rejectReason) {
-          body = {'review_status': '',
-                  'reject_reason': ''};
-        }
-
-        fetch(`/api/v2/accessions/${this.id}/`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
-          },
-          body: JSON.stringify(body),
-        }).then(response => response.json())
-          .then(data => {
-            this.reviewStatus = data.review_status;
-            this.rejectReason = data.reject_reason;
-          });
+    fetch(`/api/v2/accessions/${this.id}/`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token }}'
       },
-    };
+      body: JSON.stringify(body),
+    }).then(response => response.json())
+      .then(data => {
+        this[check] = data[check];
+      });
+  }
+
+  function accession(id) {
+    let value = JSON.parse(document.getElementById(id).textContent);
+    value['accept'] = function(check) {
+      review.bind(this)(check, true);
+    }
+    value['reject'] = function(check) {
+      review.bind(this)(check, false);
+    }
+    return value;
   }
 
   $(document).ready(function(){
     $('.materialboxed').materialbox();
 
-    Mousetrap.bind(Object.keys(binds), (event) => {
+    // just bind 1-5 for now
+    Mousetrap.bind(['1', '2', '3', '4', '5'], (event) => {
       if (document.querySelectorAll(".accession-col:hover").length != 0) {
-        $('.accession-col:hover').get(0).__x.$data.reject(binds[event.key]);
+        let button = $('.accession-col:hover').find('.review-button');
+        button = button.get(parseInt(event.key) - 1);
+
+        if (button) {
+          button.click();
+        }
       }
     });
   });
