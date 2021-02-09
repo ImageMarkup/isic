@@ -85,13 +85,12 @@ class AccessionAdmin(admin.ModelAdmin):
         'created',
         'cohort',
         'status',
-        'review_status',
     ]
     readonly_fields = ['original_blob', 'thumbnail']
 
     search_fields = ['blob_name']
 
-    list_filter = ['status', 'review_status']
+    list_filter = ['status']
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)

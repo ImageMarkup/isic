@@ -13,7 +13,6 @@ import numpy as np
 import pandas as pd
 from pydantic.main import BaseModel
 
-from isic.ingest.filters import AccessionFilter
 from isic.ingest.forms import CohortForm
 from isic.ingest.models import Accession, Cohort, DistinctnessMeasure, MetadataFile, Zip
 from isic.ingest.tasks import apply_metadata as apply_metadata_task, extract_zip
@@ -76,7 +75,7 @@ def cohort_detail(request, pk):
         pk=pk,
     )
     accession_qs = Accession.objects.filter(upload__cohort=cohort).order_by('created')
-    filter_ = AccessionFilter(request.GET, queryset=accession_qs, cohort=cohort)
+
     num_duplicates = accession_qs.filter(
         distinctnessmeasure__checksum__in=DistinctnessMeasure.objects.values('checksum')
         .annotate(is_duplicate=Count('checksum'))
@@ -91,19 +90,17 @@ def cohort_detail(request, pk):
     )
     num_skipped_accessions = accession_qs.filter(status=Accession.Status.SKIPPED).count()
 
-    paginator = Paginator(filter_.qs, 50)
-    page_obj = paginator.get_page(request.GET.get('page'))
     return render(
         request,
         'ingest/cohort_detail.html',
         {
             'cohort': cohort,
-            'page_obj': page_obj,
-            'filter': filter_,
             'num_duplicates': num_duplicates,
             'num_unique_lesions': num_unique_lesions,
             'num_skipped_accessions': num_skipped_accessions,
-            'total_accessions': filter_.qs.count(),
+            'total_accessions': accession_qs.count(),
+            'check_counts': Accession.check_counts(cohort),
+            'checks': Accession.checks(),
         },
     )
 
@@ -259,41 +256,6 @@ def apply_metadata(request, cohort_pk):
 
 
 @staff_member_required
-def review_duplicates(request, cohort_pk):
-    cohort = get_object_or_404(
-        Cohort,
-        pk=cohort_pk,
-    )
-    duplicate_checksums = (
-        DistinctnessMeasure.objects.filter(
-            accession__upload__cohort=cohort,
-            checksum__in=DistinctnessMeasure.objects.values('checksum')
-            .annotate(is_duplicate=Count('checksum'))
-            .filter(accession__upload__cohort=cohort, is_duplicate__gt=1)
-            .values_list('checksum', flat=True),
-        )
-        .order_by('checksum')
-        .distinct('checksum')
-        .values_list('checksum', flat=True)
-    )
-
-    paginator = Paginator(duplicate_checksums, 10)
-    page_obj = paginator.get_page(request.GET.get('page'))
-
-    related_accessions: dict[str, list] = defaultdict(list)
-    for accession in Accession.objects.select_related('distinctnessmeasure').filter(
-        upload__cohort=cohort, distinctnessmeasure__checksum__in=duplicate_checksums
-    ):
-        related_accessions[accession.distinctnessmeasure.checksum].append(accession)
-
-    return render(
-        request,
-        'ingest/review_duplicates.html',
-        {'cohort': cohort, 'page_obj': page_obj, 'related_accessions': related_accessions},
-    )
-
-
-@staff_member_required
 def review_skipped_accessions(request, cohort_pk):
     cohort = get_object_or_404(
         Cohort,
@@ -309,35 +271,6 @@ def review_skipped_accessions(request, cohort_pk):
         request,
         'ingest/review_skipped_accessions.html',
         {'cohort': cohort, 'page_obj': page_obj, 'total_accessions': accessions.count()},
-    )
-
-
-@staff_member_required
-def review_lesion_groups(request, cohort_pk):
-    cohort = get_object_or_404(
-        Cohort,
-        pk=cohort_pk,
-    )
-    lesion_ids = (
-        Accession.objects.filter(upload__cohort=cohort, metadata__lesion_id__isnull=False)
-        .order_by('metadata__lesion_id', 'metadata__acquisition_day')
-        .distinct('metadata__lesion_id')
-        .values_list('metadata__lesion_id', flat=True)
-    )
-
-    paginator = Paginator(lesion_ids, 10)
-    page_obj = paginator.get_page(request.GET.get('page'))
-
-    related_accessions: dict[str, list] = defaultdict(list)
-    for accession in Accession.objects.filter(
-        upload__cohort=cohort, metadata__lesion_id__in=lesion_ids
-    ):
-        related_accessions[accession.metadata['lesion_id']].append(accession)
-
-    return render(
-        request,
-        'ingest/review_lesion_groups.html',
-        {'cohort': cohort, 'page_obj': page_obj, 'related_accessions': related_accessions},
     )
 
 

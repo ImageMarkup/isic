@@ -1,7 +1,6 @@
 from django.db.models.aggregates import Count
 import django_filters
 from django_filters.filters import ChoiceFilter
-from django_filters.widgets import LinkWidget
 
 from isic.ingest.models import Accession
 
@@ -23,25 +22,10 @@ class DynamicChoiceFilter(ChoiceFilter):
 class AccessionFilter(django_filters.FilterSet):
     class Meta:
         model = Accession
-        fields = ['review_status', 'diagnosis']
+        fields = ['diagnosis']
 
     def __init__(self, data=None, queryset=None, *, cohort, request=None, prefix=None):
         super().__init__(data=data, queryset=queryset, request=request, prefix=prefix)
-
-        review_status_frequencies = dict(
-            Accession.objects.filter(upload__cohort=cohort)
-            .values('review_status')
-            .order_by('review_status')
-            .annotate(count=Count('*'))
-            .values_list('review_status', 'count')
-        )
-        review_status_frequencies.setdefault(None, 0)
-
-        self.review_status_choices = [('null', f'Unreviewed ({review_status_frequencies[None]})')]
-        for key, label in Accession.ReviewStatus.choices:
-            self.review_status_choices.append(
-                (key, f'{label} ({review_status_frequencies.get(key, 0)})')
-            )
 
         diagnosis_frequencies = (
             Accession.objects.filter(upload__cohort=cohort, metadata__diagnosis__isnull=False)
@@ -54,11 +38,6 @@ class AccessionFilter(django_filters.FilterSet):
             (diagnosis, f'{diagnosis} ({count})') for diagnosis, count in diagnosis_frequencies
         ]
 
-    review_status = DynamicChoiceFilter(
-        choices_from='review_status_choices',
-        widget=LinkWidget(),
-        # null_label='Unreviewed',
-    )
     diagnosis = DynamicChoiceFilter(
         label='Diagnosis', method='filter_metadata_value', choices_from='diagnosis_choices'
     )
