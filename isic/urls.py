@@ -9,14 +9,18 @@ from rest_framework import permissions, routers
 
 from isic.discourse_sso.views import discourse_sso_login
 from isic.ingest.api import AccessionViewSet
+from isic.ingest.review_views import (
+    DiagnosisReviewAppView,
+    DuplicateReviewAppView,
+    LesionReviewAppView,
+    QualityPhiReviewAppView,
+)
 from isic.ingest.views import (
     apply_metadata,
     cohort_create,
     cohort_detail,
     cohort_list,
     reset_metadata,
-    review_duplicates,
-    review_lesion_groups,
     review_skipped_accessions,
     zip_create,
 )
@@ -64,9 +68,25 @@ urlpatterns = [
     path('staff/cohorts/create/', cohort_create, name='cohort-create'),
     path('staff/cohorts/', cohort_list, name='cohort-list'),
     path('staff/cohort/<pk>/', cohort_detail, name='cohort-detail'),
-    path('staff/review-duplicates/<cohort_pk>/', review_duplicates, name='review-duplicates'),
     path(
-        'staff/review-lesion-groups/<cohort_pk>/', review_lesion_groups, name='review-lesion-groups'
+        'staff/review/diagnosis/<cohort_pk>/',
+        DiagnosisReviewAppView.as_view(),
+        name='cohort-review-diagnosis',
+    ),
+    path(
+        'staff/review/quality-and-phi/<cohort_pk>/',
+        QualityPhiReviewAppView.as_view(),
+        name='cohort-review-quality-and-phi',
+    ),
+    path(
+        'staff/review/duplicate/<cohort_pk>/',
+        DuplicateReviewAppView.as_view(),
+        name='cohort-review-duplicate',
+    ),
+    path(
+        'staff/review/lesion/<cohort_pk>/',
+        LesionReviewAppView.as_view(),
+        name='cohort-review-lesion',
     ),
     path(
         'staff/review-skipped-accessions/<cohort_pk>/',

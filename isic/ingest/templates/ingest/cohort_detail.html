@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load get_key %}
 
 {% load chunks %}
 
@@ -26,35 +27,72 @@
     <span>{{ cohort.description }}</span>
   </div>
 
-  <h4>Accessions</h4>
-  <form method="get" action="">
-    {{ filter.form.as_p }}
-    <input type="submit" name="" value="filter" />
-  </form>
-
-  <hr />
+  <h4>Accessions ({{ total_accessions }})</h4>
 
   <div>
+    <h6>Actions</h6>
     <a href="{% url 'zip-create' cohort.id %}">Upload zip</a><br />
-    <a href="{% url 'review-duplicates' cohort.id %}">Review Duplicates ({{ num_duplicates }})</a><br />
-    <a href="{% url 'review-lesion-groups' cohort.id %}">Review Lesion Groups ({{ num_unique_lesions }})</a><br />
-    <a href="{% url 'review-skipped-accessions' cohort.id %}">Review Skipped Accessions ({{ num_skipped_accessions }})</a><br />
     <a href="{% url 'apply-metadata' cohort.id %}">Apply metadata</a><br />
-    <a href="#">------</a><br />
     <a href="{% url 'reset-metadata' cohort.id %}" onclick="return confirm('Are you sure you want to reset metadata for the entire cohort?')">Reset metadata</a><br />
   </div>
+  <hr />
 
-  {{ total_accessions  }} total
+  <table class="centered">
+    <thead>
+      <tr>
+        <th>Check</th>
+        <th>Unreviewed</th>
+        <th>Rejected</th>
+        <th>Accepted</th>
+        <th></th>
+      </tr>
+    </thead>
 
-  {% include 'studies/partials/pagination.html' with page_obj=page_obj %}
-
-  {% for accessions in page_obj|chunks:3 %}
-    <div class="row">
-      {% for accession in accessions %}
-        {% include 'ingest/partials/accession.html' %}
-      {% endfor %}
-    </div>
-  {% endfor %}
-
-  {% include 'studies/partials/pagination.html' with page_obj=page_obj %}
+    <tbody>
+      {% with counts=check_counts|get_key:"diagnosis_check" %}
+        <tr>
+          <td>Diagnosis</td>
+          <td>{{ counts.0 }}</td>
+          <td>{{ counts.1 }}</td>
+          <td>{{ counts.2 }}</td>
+          <td><a href="{% url 'cohort-review-diagnosis' cohort.id %}">Review</a></td>
+        </tr>
+      {% endwith %}
+      {% with counts=check_counts|get_key:"quality_check" %}
+        <tr>
+          <td>Quality</td>
+          <td>{{ counts.0 }}</td>
+          <td>{{ counts.1 }}</td>
+          <td>{{ counts.2 }}</td>
+          <td rowspan="2"><a href="{% url 'cohort-review-quality-and-phi' cohort.id %}">Review</a></td>
+        </tr>
+      {% endwith %}
+      {% with counts=check_counts|get_key:"phi_check" %}
+        <tr>
+          <td>PHI</td>
+          <td>{{ counts.0 }}</td>
+          <td>{{ counts.1 }}</td>
+          <td>{{ counts.2 }}</td>
+        </tr>
+      {% endwith %}
+      {% with counts=check_counts|get_key:"duplicate_check" %}
+        <tr>
+          <td>Duplicate</td>
+          <td>{{ counts.0 }}</td>
+          <td>{{ counts.1 }}</td>
+          <td>{{ counts.2 }}</td>
+          <td><a href="{% url 'cohort-review-duplicate' cohort.id %}">Review</a></td>
+        </tr>
+      {% endwith %}
+      {% with counts=check_counts|get_key:"lesion_check" %}
+        <tr>
+          <td>Lesion</td>
+          <td>{{ counts.0 }}</td>
+          <td>{{ counts.1 }}</td>
+          <td>{{ counts.2 }}</td>
+          <td><a href="{% url 'cohort-review-lesion' cohort.id %}">Review</a></td>
+        </tr>
+      {% endwith %}
+    </tbody>
+  </table>
 {% endblock %}
