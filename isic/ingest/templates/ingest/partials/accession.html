@@ -1,5 +1,8 @@
-<div class="col accession-col"
-  x-data="accession('{{ accession.id }}', '{{ accession.review_status }}', '{{ accession.reject_reason }}')">
+{% load get_key %}
+{% load accession %}
+
+{{ accession|to_js|json_script:accession.id }}
+<div class="col accession-col" x-data="accession('{{ accession.id }}');">
   {% if accession.status != 'skipped' %}
     {% if debug %}
       <img src="https://picsum.photos/seed/{{accession.id}}/300" class="materialboxed">
@@ -10,13 +13,23 @@
     <img src="https://via.placeholder.com/300x300.png?text={{ accession.blob_name }}" />
   {% endif %}
   <div>
-    {{ accession.metadata.age|default:"-" }} / {{ accession.metadata.sex|default:"-" }} / {{ accession.metadata.diagnosis|default:"-" }}
+    {{ accession.metadata.age|default:"-" }} /
+    {{ accession.metadata.sex|default:"-" }} /
+    {{ accession.metadata.diagnosis|default:"-" }}
+    {% if title == 'Lesion Review' %} / {{ accession.metadata.lesion_id }}{% endif %}
   </div>
   <div>
-    {% for choice, label in accession.RejectReason.choices %}
-      <a :class="{ 'dim': rejectReason != '{{ choice  }}'}"
+    {% for key, label in buttons.reject.items %}
+      <a :class="{ 'dim': {{ key }} === null || {{ key }} !== false }"
         class="waves-effect waves-light btn-small red review-button"
-        @click="reject('{{ choice }}')"
+        @click="reject('{{ key }}')"
+      >{{ label }}</a>
+    {% endfor %}
+
+    {% for key, label in buttons.accept.items %}
+      <a :class="{ 'dim': {{ key }}  === null || {{ key }} !== true }"
+        class="waves-effect waves-light btn-small green review-button"
+        @click="accept('{{ key }}')"
       >{{ label }}</a>
     {% endfor %}
   </div>
