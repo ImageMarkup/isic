@@ -1,7 +1,7 @@
 from django.apps import apps
 from django.conf import settings
 from django.contrib import admin
-from django.urls import include, path, re_path, reverse_lazy
+from django.urls import include, path, reverse_lazy
 from django.views.generic.base import RedirectView, TemplateView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
@@ -44,8 +44,7 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('accounts/login/', IsicLoginView.as_view()),
     path('accounts/', include('allauth.urls')),
-    # TODO: Make this only "oauth/"
-    re_path('o(?:auth)?/', include('oauth2_provider.urls', namespace='oauth2_provider')),
+    path('oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('admin/', admin.site.urls),
     path('api/v2/s3-upload/', include('s3_file_field.urls')),
     path('api/v2/token/legacy/', get_girder_token),
