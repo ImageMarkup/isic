@@ -46,7 +46,7 @@ setup(
         'django',
         'django-admin-display',
         'django-allauth',
-        'django-configurations',
+        'django-configurations[database,email]',
         'django-extensions',
         'django-filter',
         'django-girder-utils',
