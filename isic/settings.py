@@ -21,24 +21,26 @@ class IsicMixin(ConfigMixin):
 
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:
-        configuration.INSTALLED_APPS += [
-            'isic.studies.apps.StudiesConfig',
+        # Install local apps first, to ensure any overridden resources are found first
+        configuration.INSTALLED_APPS = [
             'isic.core.apps.CoreConfig',
+            'isic.login.apps.LoginConfig',
             'isic.ingest.apps.IngestConfig',
-            's3_file_field',
-            'material',
-            'nested_admin',
-            'django_object_actions',
-        ]
-
-        # Insert before other apps with styled templates
-        style_app_index = configuration.INSTALLED_APPS.index('girder_style')
-        configuration.INSTALLED_APPS.insert(style_app_index, 'isic.login.apps.LoginConfig')
+            'isic.studies.apps.StudiesConfig',
+        ] + configuration.INSTALLED_APPS
 
         if configuration.ISIC_DISCOURSE_SSO_SECRET:
             configuration.INSTALLED_APPS += [
                 'isic.discourse_sso.apps.DiscourseSSOConfig',
             ]
+
+        # Install additional apps
+        configuration.INSTALLED_APPS += [
+            's3_file_field',
+            'material',
+            'nested_admin',
+            'django_object_actions',
+        ]
 
         # PASSWORD_HASHERS are ordered "best" to "worst", appending Girder last means
         # it will be upgraded on login.
