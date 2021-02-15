@@ -30,7 +30,14 @@ class ReviewAppView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update({'title': self.title, 'cohort': self.cohort, 'buttons': self.buttons})
+        context.update(
+            {
+                'title': self.title,
+                'cohort': self.cohort,
+                'buttons': self.buttons,
+                'checks': self.checks,
+            }
+        )
         return context
 
 
@@ -42,6 +49,7 @@ class GroupedReviewAppView(ReviewAppView):
 class DiagnosisReviewAppView(ReviewAppView):
     title = 'Diagnosis Review'
     buttons = {'reject': {'diagnosis_check': 'Reject Diagnosis'}}
+    checks = ['diagnosis_check']
 
     def get_unreviewed_filter(self):
         return Q(diagnosis_check__isnull=True)
@@ -55,6 +63,7 @@ class QualityPhiReviewAppView(ReviewAppView):
             'phi_check': 'Reject PHI',
         }
     }
+    checks = ['quality_check', 'phi_check']
 
     def get_unreviewed_filter(self):
         return Q(quality_check__isnull=True) | Q(phi_check__isnull=True)
@@ -63,6 +72,7 @@ class QualityPhiReviewAppView(ReviewAppView):
 class DuplicateReviewAppView(GroupedReviewAppView):
     title = 'Duplicate Review'
     buttons = {'reject': {'duplicate_check': 'Reject Duplicate'}}
+    checks = ['duplicate_check']
 
     def get_queryset(self):
         self.cohort = get_object_or_404(Cohort, pk=self.kwargs['cohort_pk'])
@@ -104,6 +114,7 @@ class LesionReviewAppView(GroupedReviewAppView):
         'reject': {'lesion_check': 'Reject Lesion'},
         'accept': {'lesion_check': 'Accept Lesion'},
     }
+    checks = ['lesion_check']
 
     def get_queryset(self):
         self.cohort = get_object_or_404(Cohort, pk=self.kwargs['cohort_pk'])
