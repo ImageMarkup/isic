@@ -86,7 +86,7 @@ class IsicMixin(ConfigMixin):
     )
     ISIC_MONGO_URI = values.SecretValue()
 
-    CELERY_WORKER_MAX_TASKS_PER_CHILD = 1
+    CELERY_WORKER_MAX_MEMORY_PER_CHILD = 256 * 1024
 
 
 class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
