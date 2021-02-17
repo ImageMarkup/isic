@@ -71,17 +71,17 @@ def extract_zip(zip_id):
                             guess_type(original_file_name)[0],
                         ),
                     )
-
         zip.accessions.update(status=Zip.Status.CREATED)
 
-        for accession_id in zip.accessions.values_list('id', flat=True):
-            process_accession.delay(accession_id)
+    # tasks should be delayed after the accessions are committed to the database
+    for accession_id in zip.accessions.values_list('id', flat=True):
+        process_accession.delay(accession_id)
 
-        zip.status = Zip.Status.COMPLETED
-        zip.save(update_fields=['status'])
+    zip.status = Zip.Status.COMPLETED
+    zip.save(update_fields=['status'])
 
 
-@shared_task
+@shared_task(soft_time_limit=60, time_limit=90)
 def process_accession(accession_id):
     accession = Accession.objects.get(pk=accession_id)
 
@@ -128,7 +128,7 @@ def process_accession(accession_id):
         raise
 
 
-@shared_task
+@shared_task(soft_time_limit=60, time_limit=90)
 def process_distinctness_measure(accession_id):
     accession = Accession.objects.get(pk=accession_id)
 
