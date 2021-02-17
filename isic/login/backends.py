@@ -1,7 +1,9 @@
 import datetime
+import logging
 from typing import Dict, Optional
 
 import bcrypt
+from django.conf import settings
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.hashers import BasePasswordHasher, mask_hash
 from django.contrib.auth.models import User
@@ -9,6 +11,8 @@ from django.http import HttpRequest
 from django.utils.translation import gettext_noop as _
 
 from isic.login.girder import fetch_girder_user_by_email
+
+logger = logging.getLogger(__name__)
 
 
 class GirderPasswordHasher(BasePasswordHasher):
@@ -34,6 +38,10 @@ class GirderBackend(ModelBackend):
     def authenticate(
         self, request: Optional[HttpRequest], username: str = None, password: str = None, **kwargs
     ) -> Optional[User]:
+        if not settings.ISIC_MONGO_URI:
+            logger.warning('No ISIC_MONGO_URI configured; cannot authenticate from Girder.')
+            return None
+
         girder_user = fetch_girder_user_by_email(username)
         if not girder_user:
             return None
