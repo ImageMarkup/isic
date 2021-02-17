@@ -99,12 +99,7 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
         'from isic.ingest.validators import *',
     ]
 
-    # Development-specific overrides
-    AUTHENTICATION_BACKENDS = [
-        'allauth.account.auth_backends.AuthenticationBackend',
-    ]
-
-    ISIC_MONGO_URI = values.Value('mongodb://localhost:27017/girder')
+    ISIC_MONGO_URI = values.Value(None)
     # Allow developers to run tasks synchronously for easy debugging
     CELERY_TASK_ALWAYS_EAGER = values.BooleanValue(False)
     CELERY_TASK_EAGER_PROPAGATES = values.BooleanValue(False)
