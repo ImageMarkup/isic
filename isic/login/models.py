@@ -1,5 +1,7 @@
+import logging
 from typing import Type
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
@@ -8,6 +10,8 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from isic.login.girder import fetch_girder_user_by_email
+
+logger = logging.getLogger(__name__)
 
 
 class Profile(models.Model):
@@ -25,7 +29,11 @@ class Profile(models.Model):
     girder_salt = models.CharField(max_length=60, blank=True, null=True)
     email_verified = models.BooleanField(blank=True, null=True)
 
-    def sync_from_girder(self):
+    def sync_from_girder(self) -> bool:
+        if not settings.ISIC_MONGO_URI:
+            logger.warning('No ISIC_MONGO_URI configured; cannot sync from Girder.')
+            return False
+
         changed = False
 
         girder_user = fetch_girder_user_by_email(self.user.email)
