@@ -1,8 +1,14 @@
-{% extends 'core/material_base.html' %}
+{% extends 'core/base.html' %}
 
 {% block content %}
+
+<header class="border-b border-gray-100 flex items-center justify-between py-2">
   <h3>Studies</h3>
-  <a href="{% url 'study-create' %}" class="waves-effect waves-light btn-small">Add new</a>
+  <a href="{% url 'study-create' %}" class="button inline-flex items-center is-primary is-sm">
+    Add new
+    <i class="ri-add-circle-line ml-2"></i>
+  </a>
+</header>
   <ul class="collection">
     {% for study in studies %}
       <a class="collection-item" href="{{ study.get_absolute_url }}">{{ study.name }}</a>
