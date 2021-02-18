@@ -1,8 +1,13 @@
-{% extends 'core/material_base.html' %}
+{% extends 'core/base.html' %}
 
 {% block content %}
-  <h3>Cohorts</h3>
-  <a href="{% url 'cohort-create' %}" class="waves-effect waves-light btn-small">Add new</a>
+  <header class="border-b border-gray-100 flex items-center justify-between py-2">
+    <h3>Cohorts</h3>
+    <a href="{% url 'cohort-create' %}" class="button inline-flex items-center is-primary is-sm">
+      Add new
+      <i class="ri-add-circle-line ml-2"></i>
+    </a>
+  </header>
   <ul class="collection">
     {% for cohort in cohorts %}
       <a class="collection-item" href="{{ cohort.get_absolute_url }}">{{ cohort.name }}</a>
