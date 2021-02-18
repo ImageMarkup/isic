@@ -9,20 +9,47 @@
 
 {% block body %}
 <body>
-  <nav>
-    <div class="nav-wrapper" style="width:70%;margin:0 auto;">
-      <a href="{% url 'staff-index' %}" class="brand-logo">ISIC</a>
-      <ul id="nav-mobile" class="right hide-on-med-and-down">
-        <li><a href="{% url 'cohort-list' %}">Cohorts</a></li>
-        <li><a href="{% url 'study-list' %}">Studies</a></li>
-        <li><a href="{% url 'docs-swagger' %}">API</a></li>
+  <nav class="bg-white shadow">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+      <div class="relative flex justify-between h-16">
+        <div class="flex-1 flex items-stretch justify-start">
+          <div class="flex-shrink-0 flex items-center">
+            <h1 class="font-semibold text-2xl">
+              <a href="{% url 'staff-index' %}">ISIC</a>
+            </h1>
+          </div>
+          <div class="ml-6 flex space-x-8">
+            <!--
+            Current: "border-secondary-500 text-gray-900",
+            Default: "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+            -->
+            <a href="{% url 'cohort-list' %}" class="{% if request.resolver_match.url_name == 'cohort-list' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              Cohorts
+            </a>
+            <a href="{% url 'study-list' %}" class="{% if request.resolver_match.url_name == 'study-list' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              Studies
+            </a>
+            <a href="{% url 'docs-swagger' %}" class="{% if request.resolver_match.url_name == 'docs-swagger' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              API
+            </a>
+          </div>
+        </div>
+
+        <!-- Admin Link -->
         {% if request.user.is_superuser %}
-          <li><a href="{% url 'admin:index' %}">Admin</a></li>
+        <div class="flex">
+          <a href="{% url 'admin:index' %}" class="text-gray-900 inline-flex items-center px-1 text-sm font-medium">
+            <i class="ri-admin-line mr-2 text-lg"></i>
+            Admin
+          </a>
+        </div>
         {% endif %}
-      </ul>
+
+      </div>
     </div>
   </nav>
-  <div class="container">
+
+  <div class="container max-w-7xl mx-auto p-8">
     {% if messages %}
       {% for message in messages %}
         <div class="col s12 m7">
