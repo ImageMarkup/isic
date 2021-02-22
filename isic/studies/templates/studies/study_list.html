@@ -11,7 +11,9 @@
 </header>
   <ul class="collection">
     {% for study in studies %}
-      <a class="collection-item" href="{{ study.get_absolute_url }}">{{ study.name }}</a>
+      <li>
+        <a class="collection-item" href="{{ study.get_absolute_url }}">{{ study.name }}</a>
+      </li>
     {% endfor %}
   </ul>
 {% endblock %}
