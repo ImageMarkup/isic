@@ -10,7 +10,9 @@
   </header>
   <ul class="collection">
     {% for cohort in cohorts %}
-      <a class="collection-item" href="{{ cohort.get_absolute_url }}">{{ cohort.name }}</a>
+      <li>
+        <a class="collection-item" href="{{ cohort.get_absolute_url }}">{{ cohort.name }}</a>
+      </li>
     {% endfor %}
   </ul>
 {% endblock %}
