@@ -9,12 +9,34 @@ from django_extensions.db.models import TimeStampedModel
 from s3_file_field import S3FileField
 
 
+class CopyrightLicense(models.TextChoices):
+    CC_0 = ('CC-0', 'CC-0')
+    CC_BY = ('CC-BY', 'CC-BY')
+    CC_BY_NC = ('CC-BY-NC', 'CC-BY-NC')
+
+
+class Contributor(TimeStampedModel):
+    creator = models.ForeignKey(User, on_delete=models.PROTECT)
+    institution_name = models.CharField(max_length=255)
+    institution_url = models.URLField()
+    legal_contact_info = models.TextField()
+    default_copyright_license = models.CharField(choices=CopyrightLicense.choices, max_length=255)
+    default_attribution = models.CharField(max_length=255)
+
+    def __str__(self) -> str:
+        return self.institution_name
+
+
 class Cohort(TimeStampedModel):
     creator = models.ForeignKey(User, null=True, on_delete=models.PROTECT)
+    contributor = models.ForeignKey(Contributor, on_delete=models.PROTECT)
     girder_id = models.CharField(blank=True, max_length=24, help_text='The dataset_id from Girder.')
 
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
+
+    copyright_license = models.CharField(choices=CopyrightLicense.choices, max_length=255)
+    attribution = models.CharField(max_length=255)
 
     def __str__(self) -> str:
         return self.name
