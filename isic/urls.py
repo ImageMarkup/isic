@@ -19,9 +19,12 @@ from isic.ingest.views import (
     apply_metadata,
     cohort_create,
     cohort_detail,
+    cohort_files,
     cohort_list,
     reset_metadata,
     review_skipped_accessions,
+    upload_cohort_create,
+    upload_contributor_create,
     zip_create,
 )
 from isic.login.views import IsicLoginView, get_girder_token
@@ -63,6 +66,13 @@ urlpatterns = [
     path('staff/masks/<markup_id>/', view_mask, name='view-mask'),
     path('staff/annotations/<pk>/', annotation_detail, name='annotation-detail'),
     # Ingest app
+    path('upload/create-contributor/', upload_contributor_create, name='upload-contributor-create'),
+    path(
+        'upload/create-cohort/<contributor_pk>', upload_cohort_create, name='upload-cohort-create'
+    ),
+    path('cohort/<pk>/', cohort_detail, name='upload-cohort-detail'),
+    path('cohort/<pk>/files', cohort_files, name='upload-cohort-files'),
+    # Staff pges
     path('staff/upload/create/<cohort_pk>/', zip_create, name='zip-create'),
     path('staff/cohorts/create/', cohort_create, name='cohort-create'),
     path('staff/cohorts/', cohort_list, name='cohort-list'),
