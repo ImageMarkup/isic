@@ -1,7 +1,6 @@
 import hashlib
 import io
 from mimetypes import guess_type
-import os
 
 import PIL.Image
 from celery import shared_task
@@ -16,7 +15,7 @@ import pandas as pd
 
 from isic.ingest.models import Accession, DistinctnessMeasure, MetadataFile, Zip
 from isic.ingest.validators import MetadataRow
-from isic.ingest.zip_utils import ZipFileOpener
+from isic.ingest.zip_utils import files_in_zip, unzip
 
 
 @shared_task
@@ -30,12 +29,10 @@ def extract_zip(zip_id):
         blob_names_in_zip = set()
         duplicate_blob_names_in_zip = set()
 
-        with ZipFileOpener(zip.blob) as (file_list, _):
-            for _, original_file_relpath in file_list:
-                original_file_name = os.path.basename(original_file_relpath)
-                if original_file_name in blob_names_in_zip:
-                    duplicate_blob_names_in_zip.add(original_file_name)
-                blob_names_in_zip.add(original_file_name)
+        for _, original_filename in files_in_zip(zip.blob):
+            if original_filename in blob_names_in_zip:
+                duplicate_blob_names_in_zip.add(original_filename)
+            blob_names_in_zip.add(original_filename)
 
         blob_name_conflicts = Accession.objects.filter(
             upload__cohort=zip.cohort, blob_name__in=blob_names_in_zip
@@ -52,25 +49,22 @@ def extract_zip(zip_id):
             )
             return
 
-        with ZipFileOpener(zip.blob) as (file_list, _):
-            for original_file_path, original_file_relpath in file_list:
-                original_file_name = os.path.basename(original_file_relpath)
+        for file_path, original_filename in unzip(zip.blob):
+            with open(file_path, 'rb') as original_file_stream:
+                blob_size = len(original_file_stream.read())
+                original_file_stream.seek(0)
 
-                with open(original_file_path, 'rb') as original_file_stream:
-                    blob_size = len(original_file_stream.read())
-                    original_file_stream.seek(0)
-
-                    zip.accessions.create(
-                        blob_name=original_file_name,
-                        # TODO: we're setting blob_size since it's required, but
-                        # it actually indicates the stripped blob size, not the original
-                        blob_size=blob_size,
-                        original_blob=SimpleUploadedFile(
-                            original_file_name,
-                            original_file_stream.read(),
-                            guess_type(original_file_name)[0],
-                        ),
-                    )
+                zip.accessions.create(
+                    blob_name=original_filename,
+                    # TODO: we're setting blob_size since it's required, but
+                    # it actually indicates the stripped blob size, not the original
+                    blob_size=blob_size,
+                    original_blob=SimpleUploadedFile(
+                        original_filename,
+                        original_file_stream.read(),
+                        guess_type(original_filename)[0],
+                    ),
+                )
         zip.accessions.update(status=Zip.Status.CREATED)
 
     # tasks should be delayed after the accessions are committed to the database
