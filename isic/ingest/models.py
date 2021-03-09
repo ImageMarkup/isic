@@ -5,23 +5,59 @@ from django.db.models import JSONField
 from django.db.models.aggregates import Count
 from django.db.models.query_utils import Q
 from django.urls.base import reverse
+from django.utils.safestring import mark_safe
 from django_extensions.db.models import TimeStampedModel
 from s3_file_field import S3FileField
 
 
 class CopyrightLicense(models.TextChoices):
     CC_0 = ('CC-0', 'CC-0')
+
+    # These 2 require attribution
     CC_BY = ('CC-BY', 'CC-BY')
     CC_BY_NC = ('CC-BY-NC', 'CC-BY-NC')
 
 
 class Contributor(TimeStampedModel):
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
-    institution_name = models.CharField(max_length=255)
-    institution_url = models.URLField()
-    legal_contact_info = models.TextField()
-    default_copyright_license = models.CharField(choices=CopyrightLicense.choices, max_length=255)
-    default_attribution = models.CharField(max_length=255)
+    institution_name = models.CharField(
+        max_length=255,
+        verbose_name='Institution Name',
+        help_text=mark_safe(
+            'The full name of your affiliated institution. <strong>This is private</strong>, '
+            'and will not be published along with your images.'
+        ),
+    )
+    institution_url = models.URLField(
+        blank=True,
+        verbose_name='Institution URL',
+        help_text=mark_safe(
+            'The URL of your affiliated institution. <strong>This is private</strong>, and '
+            'will not be published along with your images.'
+        ),
+    )
+    legal_contact_info = models.TextField(
+        verbose_name='Legal Contact Information',
+        help_text=mark_safe(
+            'The person or institution responsible for legal inquiries about your data. '
+            '<strong> This is private</strong>, and will not be published along with your images.'
+        ),
+    )
+    default_copyright_license = models.CharField(
+        choices=CopyrightLicense.choices,
+        max_length=255,
+        blank=True,
+        verbose_name='Default Copyright License',
+    )
+    default_attribution = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name='Default Attribution',
+        help_text=mark_safe(
+            'Text which must be reproduced by users of your images, to comply with Creative'
+            'Commons Attribution requirements.'
+        ),
+    )
 
     def __str__(self) -> str:
         return self.institution_name
@@ -33,9 +69,11 @@ class Cohort(TimeStampedModel):
     girder_id = models.CharField(blank=True, max_length=24, help_text='The dataset_id from Girder.')
 
     name = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
+    description = models.TextField()
 
     copyright_license = models.CharField(choices=CopyrightLicense.choices, max_length=255)
+
+    # required if copyright_license is CC-BY-*
     attribution = models.CharField(max_length=255)
 
     def __str__(self) -> str:

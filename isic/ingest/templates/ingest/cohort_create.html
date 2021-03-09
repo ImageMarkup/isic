@@ -1,11 +1,86 @@
-{% extends 'core/material_base.html' %}
-{% load material_form %}
+{% extends 'core/base.html' %}
 
 {% block content %}
-  <form method="post">{% csrf_token %}
-    {% form form=form %}
-    {% endform %}
-    {{ form.media  }}
-    <input type="submit" value="Create cohort">
+  <form class="space-y-8 divide-y divide-gray-200" method="post">
+    {% csrf_token %}
+
+    {{ form.non_field_errors }}
+
+    <div class="space-y-8 divide-y divide-gray-200 sm:space-y-5">
+      <div>
+        <div>
+          <h3 class="text-lg leading-6 font-medium text-gray-900">
+            Create a Cohort
+          </h3>
+          <p class="mt-1 max-w-2xl text-sm text-gray-500">
+            This is information about your Cohort.
+            <p>A cohort is your place to upload images and metadata about a particular segment of your data. An example cohort might be named 'Longitudinal Melanomas'.
+              Think of the cohort as a staging area for uploading your data and curating it to be ready for introduction into the ISIC Archive.
+            </p>
+          </p>
+        </div>
+
+        <div class="mt-6 sm:mt-5 space-y-6 sm:space-y-5">
+          <div class="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start sm:border-t sm:border-gray-200 sm:pt-5">
+            {{ form.name.errors }}
+
+            <label for="{{ form.name.html_name }}" class="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2">
+              {{ form.name.label }}
+            </label>
+            <div class="mt-1 sm:mt-0 sm:col-span-2">
+              <div class="max-w-lg flex rounded-md shadow-sm">
+                <input type="text" value="{{ form.name.value|default:'' }}" name="{{ form.name.html_name }}" id="{{ form.name.html_name }}" class="flex-1 block w-full focus:ring-indigo-500 focus:border-indigo-500 min-w-0 rounded-none rounded-r-md sm:text-sm border-gray-300">
+              </div>
+              <p class="mt-2 text-sm text-gray-500" id="email-description">{{ form.name.help_text }}</p>
+            </div>
+          </div>
+
+          <div class="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start sm:border-t sm:border-gray-200 sm:pt-5">
+            {{ form.description.errors }}
+            <label for="{{ form.description.html_name }}" class="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2">
+              {{ form.description.label }}
+            </label>
+            <div class="mt-1 sm:mt-0 sm:col-span-2">
+              <textarea id="{{ form.description.html_name }}" name="{{ form.description.html_name }}" rows="3" class="max-w-lg shadow-sm block w-full focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border-gray-300 rounded-md">{{ form.description.value|default:'' }}</textarea>
+              <p class="mt-2 text-sm text-gray-500">{{ form.description.help_text }}</p>
+            </div>
+          </div>
+
+
+          <div class="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start sm:border-t sm:border-gray-200 sm:pt-5">
+            {{ form.copyright_license.errors }}
+            <label for="{{ form.copyright_license.html_name }}" class="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2">
+              {{ form.copyright_license.label }}
+              <span>help me choose</span>
+            </label>
+            <div class="mt-1 sm:mt-0 sm:col-span-2">
+              <select id="{{ form.copyright_license.html_name }}" name="{{ form.copyright_license.html_name }}"  class="max-w-lg block focus:ring-indigo-500 focus:border-indigo-500 w-full shadow-sm sm:max-w-xs sm:text-sm border-gray-300 rounded-md">
+                <option value="">--</option>
+                <option value="CC-0" {% if form.copyright_license.value == "CC-0" %}selected="selected"{% endif %}>CC-0</option>
+                <option value="CC-BY" {% if form.copyright_license.value == "CC-BY" %}selected="selected"{% endif %}>CC-BY</option>
+                <option value="CC-BY-NA" {% if form.copyright_license.value == "CC-BY-NA" %}selected="selected"{% endif %}>CC-BY-NA</option>
+              </select>
+            </div>
+          </div>
+
+
+          <div class="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start sm:border-t sm:border-gray-200 sm:pt-5">
+            {{ form.attribution.errors }}
+            <label for="{{ form.attribution.html_name }}" class="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2">
+              {{ form.attribution.label }}
+            </label>
+            <div class="mt-1 sm:mt-0 sm:col-span-2">
+              <textarea id="{{ form.attribution.html_name }}" name="{{ form.attribution.html_name }}" rows="3" class="max-w-lg shadow-sm block w-full focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border-gray-300 rounded-md">{{ form.attribution.value|default:'' }}</textarea>
+              <p class="mt-2 text-sm text-gray-500">Text which must be reproduced by users of your images, to comply with Creative Commons Attribution requirements.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-5">
+          <div class="flex justify-end">
+            <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              Create
+            </button>
+          </div>
   </form>
 {% endblock %}

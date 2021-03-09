@@ -1,11 +1,98 @@
-{% extends 'core/material_base.html' %}
-{% load material_form %}
+{% extends 'core/base.html' %}
 
 {% block content %}
-  <form method="post">{% csrf_token %}
-    {% form form=form %}
-    {% endform %}
-    {{ form.media  }}
-    <input type="submit" value="Create contributor">
+  <form class="space-y-8 divide-y divide-gray-200" method="post">
+    {% csrf_token %}
+
+    {{ form.non_field_errors }}
+
+    <div class="space-y-8 divide-y divide-gray-200 sm:space-y-5">
+      <div>
+        <div>
+          <h3 class="text-lg leading-6 font-medium text-gray-900">
+            Create a Contributor
+          </h3>
+          <p class="mt-1 max-w-2xl text-sm text-gray-500">
+            This is information about the institution contributing to the Archive.
+          </p>
+        </div>
+
+        <div class="mt-6 sm:mt-5 space-y-6 sm:space-y-5">
+          <div class="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start sm:border-t sm:border-gray-200 sm:pt-5">
+
+            <label for="{{ form.institution_name.html_name }}" class="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2">
+              {{ form.institution_name.label }}
+            </label>
+            <div class="mt-1 sm:mt-0 sm:col-span-2">
+              <div class="max-w-lg flex rounded-md shadow-sm">
+                <input type="text" value="{{ form.institution_name.value|default:'' }}" name="{{ form.institution_name.html_name }}" id="{{ form.institution_name.html_name }}" class="flex-1 block w-full focus:ring-indigo-500 focus:border-indigo-500 min-w-0 rounded-none rounded-r-md sm:text-sm border-gray-300">
+              </div>
+              <p class="mt-2 text-sm text-gray-500" id="{{ form.institution_name.html_name }}-description">{{ form.institution_name.help_text }}</p>
+              {{ form.institution_name.errors }}
+            </div>
+          </div>
+
+          <div class="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start sm:border-t sm:border-gray-200 sm:pt-5">
+
+            <label for="{{ form.institution_url.html_name }}" class="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2">
+              {{ form.institution_url.label }}
+            </label>
+            <div class="mt-1 sm:mt-0 sm:col-span-2">
+              <div class="max-w-lg flex rounded-md shadow-sm">
+                <input type="text" value="{{ form.institution_url.value|default:'' }}" name="{{ form.institution_url.html_name }}" id="{{ form.institution_url.html_name }}" class="flex-1 block w-full focus:ring-indigo-500 focus:border-indigo-500 min-w-0 rounded-none rounded-r-md sm:text-sm border-gray-300">
+              </div>
+              <p class="mt-2 text-sm text-gray-500" id="{{ form.institution_url.html_name }}-description">{{ form.institution_url.help_text }}</p>
+              {{ form.institution_url.errors }}
+            </div>
+          </div>
+
+          <div class="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start sm:border-t sm:border-gray-200 sm:pt-5">
+            <label for="{{ form.legal_contact_info.html_name }}" class="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2">
+              {{ form.legal_contact_info.label }}
+            </label>
+            <div class="mt-1 sm:mt-0 sm:col-span-2">
+              <textarea id="{{ form.legal_contact_info.html_name }}" name="{{ form.legal_contact_info.html_name }}" rows="3" class="max-w-lg shadow-sm block w-full focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border-gray-300 rounded-md">{{ form.legal_contact_info.value|default:'' }}</textarea>
+              <p class="mt-2 text-sm text-gray-500">{{ form.legal_contact_info.help_text }}</div>
+                {{ form.legal_contact_info.errors }}
+          </div>
+
+          <div>
+            Cohort defaults
+            <p>If accepted, <strong>these will be public</strong>, and published along with your images.</p>
+
+            <div class="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start sm:border-t sm:border-gray-200 sm:pt-5">
+              <label for="{{ form.default_copyright_license.html_name }}" class="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2">
+                {{ form.default_copyright_license.label }}
+                <span>help me choose</span>
+              </label>
+              <div class="mt-1 sm:mt-0 sm:col-span-2">
+                <select id="{{ form.default_copyright_license.html_name }}" name="{{ form.default_copyright_license.html_name }}" class="max-w-lg block focus:ring-indigo-500 focus:border-indigo-500 w-full shadow-sm sm:max-w-xs sm:text-sm border-gray-300 rounded-md">
+                  {% for choice in form.default_copyright_license.field.choices %}
+                    <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+                  {% endfor %}
+                </select>
+
+                {{ form.default_copyright_license.errors }}
+              </div>
+            </div>
+
+            <div class="sm:grid sm:grid-cols-3 sm:gap-4 sm:items-start sm:border-t sm:border-gray-200 sm:pt-5">
+              <label for="{{ form.default_attribution.html_name }}" class="block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2">
+                {{ form.default_attribution.label }}
+              </label>
+              <div class="mt-1 sm:mt-0 sm:col-span-2">
+                <textarea id="{{ form.default_attribution.html_name }}" name="{{ form.default_attribution.html_name }}" rows="3" class="max-w-lg shadow-sm block w-full focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border-gray-300 rounded-md"></textarea>
+                <p class="mt-2 text-sm text-gray-500">{{ form.default_attribution.help_text }}</div>
+                  {{ form.default_attribution.errors  }}
+            </div>
+          </div>
+
+          <div class="pt-5">
+            <div class="flex justify-end">
+              <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Create
+              </button>
+            </div>
+          </div>
   </form>
 {% endblock %}
