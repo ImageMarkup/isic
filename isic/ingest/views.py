@@ -304,7 +304,7 @@ def upload_contributor_create(request):
         if form.is_valid():
             form.instance.creator = request.user
             form.save(commit=True)
-            return HttpResponseRedirect(reverse('upload-cohort-create', args=[form.instance.pk]))
+            return HttpResponseRedirect(reverse('cohort-create', args=[form.instance.pk]))
     else:
         form = ContributorForm()
 
@@ -321,8 +321,9 @@ def upload_cohort_create(request, contributor_pk):
         form = CohortForm(request.POST)
         if form.is_valid():
             form.instance.creator = request.user
+            form.instance.contributor = contributor
             form.save(commit=True)
-            return HttpResponseRedirect(reverse('upload-cohort-detail', args=[form.instance.pk]))
+            return HttpResponseRedirect(reverse('cohort-detail', args=[form.instance.pk]))
     else:
         form = CohortForm(
             initial={
@@ -331,19 +332,5 @@ def upload_cohort_create(request, contributor_pk):
                 'attribution': contributor.default_attribution,
             }
         )
-
-    return render(request, 'ingest/cohort_create.html', {'form': form})
-
-
-@staff_member_required
-def cohort_create(request):
-    if request.method == 'POST':
-        form = CohortForm(request.POST)
-        if form.is_valid():
-            form.instance.creator = request.user
-            form.save(commit=True)
-            return HttpResponseRedirect(reverse('cohort-detail', args=[form.instance.pk]))
-    else:
-        form = CohortForm()
 
     return render(request, 'ingest/cohort_create.html', {'form': form})
