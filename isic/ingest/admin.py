@@ -7,11 +7,16 @@ from django_object_actions import DjangoObjectActions
 from django_object_actions.utils import takes_instance_or_queryset
 from girder_utils.admin import ReadonlyTabularInline
 
-from isic.ingest.models import Accession, Cohort, Zip  # , UploadBlob
+from isic.ingest.models import Accession, Cohort, Contributor, Zip  # , UploadBlob
 
 
 class ZipInline(ReadonlyTabularInline):
     model = Zip
+
+
+@admin.register(Contributor)
+class ContributorAdmin(admin.ModelAdmin):
+    list_display = ['creator', 'institution_name']
 
 
 @admin.register(Cohort)
@@ -86,7 +91,7 @@ class AccessionAdmin(admin.ModelAdmin):
         'cohort',
         'status',
     ]
-    readonly_fields = ['original_blob', 'thumbnail']
+    readonly_fields = ['thumbnail']
 
     search_fields = ['blob_name']
 

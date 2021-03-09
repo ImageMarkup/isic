@@ -6,7 +6,7 @@ from isic.ingest.models import Cohort, Contributor
 class CohortForm(ModelForm):
     class Meta:
         model = Cohort
-        fields = ['contributor', 'name', 'description', 'copyright_license', 'attribution']
+        fields = ['name', 'description', 'copyright_license', 'attribution']
 
 
 class ContributorForm(ModelForm):
