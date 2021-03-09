@@ -62,6 +62,7 @@ setup(
         'pydantic',
         'pymongo',
         'python-magic',
+        'zipfile-deflate64',
         # Production-only
         'django-composed-configuration[prod]',
         'django-s3-file-field[boto3]',
