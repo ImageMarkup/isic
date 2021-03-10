@@ -359,7 +359,7 @@ def upload_cohort_create(request, contributor_pk):
             form.instance.creator = request.user
             form.instance.contributor = contributor
             form.save(commit=True)
-            return HttpResponseRedirect(reverse('cohort-detail', args=[form.instance.pk]))
+            return HttpResponseRedirect(reverse('cohort-files', args=[form.instance.pk]))
     else:
         form = CohortForm(
             initial={
