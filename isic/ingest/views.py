@@ -48,7 +48,7 @@ def zip_create(request, cohort_pk):
             form.instance.cohort = cohort
             form.save(commit=True)
             extract_zip.delay(form.instance.id)
-            return HttpResponseRedirect(reverse('cohort-detail', args=[cohort.pk]))
+            return HttpResponseRedirect(reverse('cohort-files', args=[cohort.pk]))
     else:
         form = ZipForm()
 

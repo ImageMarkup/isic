@@ -1,3 +1,5 @@
+import os
+
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models, transaction
@@ -213,6 +215,10 @@ class Zip(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.blob_name
+
+    @property
+    def blob_basename(self) -> str:
+        return os.path.basename(self.blob_name)
 
     def succeed(self):
         self.status = Zip.Status.COMPLETED
