@@ -1,0 +1,33 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+  <h2>Select a contributor</h2>
+  <p>A contributor is the institution which will be contributing the images. Either </p>
+  <div class="flow-root max-w-2xl mt-6">
+    <ul class="-my-5 divide-y divide-gray-200">
+      {% for contributor in contributors %}
+        <li class="py-4">
+          <div class="flex items-center space-x-4">
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-gray-900 truncate">
+                {{ contributor.institution_name }}
+              </p>
+              <p class="text-sm text-gray-500 truncate">
+                {{ contributor.institution_url }}
+              </p>
+            </div>
+            <div>
+              <a href="{% url 'select-or-create-cohort' contributor.id %}" class="inline-flex items-center shadow-sm px-2.5 py-0.5 border border-gray-300 text-sm leading-5 font-medium rounded-full text-gray-700 bg-white hover:bg-gray-50">
+                Use
+              </a>
+            </div>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div>
+    or <a href="{% url 'contributor-create' %}">create a new one</a>
+  </div>
+{% endblock %}
