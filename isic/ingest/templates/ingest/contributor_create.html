@@ -71,7 +71,12 @@
                   <option value="{{ choice.0 }}">{{ choice.1 }}</option>
                 {% endfor %}
               </select>
-              <span class="block my-3 text-xs text-primary-500">help me choose</span>
+              <div x-data="{ open: false }" class="pb-4">
+                <span @click="open = true" class="cursor-pointer my-3 text-xs text-primary-500">help me choose</span>
+                <div x-show="open" @click.away="open = false">
+                  {% include 'ingest/partials/help_me_choose_modal.html' %}
+                </div>
+              </div>
 
               {{ form.default_copyright_license.errors }}
             </div>
