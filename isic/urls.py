@@ -21,6 +21,7 @@ from isic.ingest.views import (
     cohort_files,
     cohort_list,
     ingest_review,
+    metadata_file_create,
     reset_metadata,
     review_skipped_accessions,
     select_or_create_cohort,
@@ -83,6 +84,7 @@ urlpatterns = [
     path('cohort/<pk>/', cohort_detail, name='cohort-detail'),
     path('cohort/<pk>/files/', cohort_files, name='cohort-files'),
     path('cohort/<cohort_pk>/upload-zip/', zip_create, name='upload-zip'),
+    path('cohort/<cohort_pk>/upload-metadata/', metadata_file_create, name='upload-metadata'),
     # Staff pges
     path('staff/ingest-review/', ingest_review, name='ingest-review'),
     path('staff/cohorts/', cohort_list, name='cohort-list'),

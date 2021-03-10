@@ -27,13 +27,19 @@ from isic.ingest.tasks import apply_metadata as apply_metadata_task, extract_zip
 from isic.ingest.validators import MetadataRow
 
 
+class MetadataFileForm(ModelForm):
+    class Meta:
+        model = MetadataFile
+        fields = ['blob']
+
+
 class ZipForm(ModelForm):
     class Meta:
         model = Zip
         fields = ['blob']
 
 
-@staff_member_required
+@login_required
 def zip_create(request, cohort_pk):
     cohort = get_object_or_404(
         Cohort,
@@ -53,6 +59,27 @@ def zip_create(request, cohort_pk):
         form = ZipForm()
 
     return render(request, 'ingest/zip_create.html', {'form': form})
+
+
+@staff_member_required
+def metadata_file_create(request, cohort_pk):
+    cohort = get_object_or_404(
+        Cohort,
+        pk=cohort_pk,
+    )
+    if request.method == 'POST':
+        form = MetadataFileForm(request.POST)
+        if form.is_valid():
+            form.instance.creator = request.user
+            form.instance.blob_size = form.instance.blob.size
+            form.instance.blob_name = form.instance.blob.name
+            form.instance.cohort = cohort
+            form.save(commit=True)
+            return HttpResponseRedirect(reverse('cohort-files', args=[cohort.pk]))
+    else:
+        form = MetadataFileForm()
+
+    return render(request, 'ingest/metadata_file_create.html', {'form': form})
 
 
 @staff_member_required
