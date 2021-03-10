@@ -6,7 +6,7 @@ import PIL.Image
 from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
 from django.conf import settings
-from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.files.uploadedfile import InMemoryUploadedFile, SimpleUploadedFile
 from django.core.mail import send_mail
 from django.db import transaction
 import magic
@@ -15,11 +15,11 @@ import pandas as pd
 
 from isic.ingest.models import Accession, DistinctnessMeasure, MetadataFile, Zip
 from isic.ingest.validators import MetadataRow
-from isic.ingest.zip_utils import files_in_zip, unzip
+from isic.ingest.zip_utils import file_names_in_zip, items_in_zip
 
 
 @shared_task
-def extract_zip(zip_id):
+def extract_zip(zip_id: int):
     zip = Zip.objects.select_related('creator').get(pk=zip_id)
 
     with transaction.atomic():
@@ -29,10 +29,11 @@ def extract_zip(zip_id):
         blob_names_in_zip = set()
         duplicate_blob_names_in_zip = set()
 
-        for _, original_filename in files_in_zip(zip.blob):
-            if original_filename in blob_names_in_zip:
-                duplicate_blob_names_in_zip.add(original_filename)
-            blob_names_in_zip.add(original_filename)
+        with zip.blob.open('rb') as zip_blob_stream:
+            for original_filename in file_names_in_zip(zip_blob_stream):
+                if original_filename in blob_names_in_zip:
+                    duplicate_blob_names_in_zip.add(original_filename)
+                blob_names_in_zip.add(original_filename)
 
         blob_name_conflicts = Accession.objects.filter(
             upload__cohort=zip.cohort, blob_name__in=blob_names_in_zip
@@ -49,20 +50,23 @@ def extract_zip(zip_id):
             )
             return
 
-        for file_path, original_filename in unzip(zip.blob):
-            with open(file_path, 'rb') as original_file_stream:
-                blob_size = len(original_file_stream.read())
-                original_file_stream.seek(0)
-
+        with zip.blob.open('rb') as zip_blob_stream:
+            for zip_item in items_in_zip(zip_blob_stream):
+                zip_item_content_type = guess_type(zip_item.name)[0]
                 zip.accessions.create(
-                    blob_name=original_filename,
+                    blob_name=zip_item.name,
                     # TODO: we're setting blob_size since it's required, but
                     # it actually indicates the stripped blob size, not the original
-                    blob_size=blob_size,
-                    original_blob=SimpleUploadedFile(
-                        original_filename,
-                        original_file_stream.read(),
-                        guess_type(original_filename)[0],
+                    blob_size=zip_item.size,
+                    # Use an InMemoryUploadedFile instead of a SimpleUploadedFile, since
+                    # we can explicitly know the size and don't need the stream to be wrapped
+                    original_blob=InMemoryUploadedFile(
+                        file=zip_item.stream,
+                        field_name=None,
+                        name=zip_item.name,
+                        content_type=zip_item_content_type,
+                        size=zip_item.size,
+                        charset=None,
                     ),
                 )
         zip.accessions.update(status=Zip.Status.CREATED)
@@ -76,7 +80,7 @@ def extract_zip(zip_id):
 
 
 @shared_task(soft_time_limit=60, time_limit=90)
-def process_accession(accession_id):
+def process_accession(accession_id: int):
     accession = Accession.objects.get(pk=accession_id)
 
     try:
@@ -123,7 +127,7 @@ def process_accession(accession_id):
 
 
 @shared_task(soft_time_limit=60, time_limit=90)
-def process_distinctness_measure(accession_id):
+def process_distinctness_measure(accession_id: int):
     accession = Accession.objects.get(pk=accession_id)
 
     content = accession.blob.open().read()
@@ -133,7 +137,7 @@ def process_distinctness_measure(accession_id):
 
 
 @shared_task
-def apply_metadata(metadatafile_id):
+def apply_metadata(metadatafile_id: int):
     metadata_file = MetadataFile.objects.get(pk=metadatafile_id)
     with metadata_file.blob.open() as csv:
         df = pd.read_csv(csv, header=0)
