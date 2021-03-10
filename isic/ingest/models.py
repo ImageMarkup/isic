@@ -106,6 +106,10 @@ class MetadataFile(TimeStampedModel):
     blob_name = models.CharField(max_length=255)
     blob_size = models.PositiveBigIntegerField()
 
+    @property
+    def blob_basename(self) -> str:
+        return os.path.basename(self.blob_name)
+
 
 class Accession(TimeStampedModel):
     class Status(models.TextChoices):
