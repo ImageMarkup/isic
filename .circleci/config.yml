@@ -14,6 +14,11 @@ jobs:
           MINIO_ACCESS_KEY: minioAccessKey
           MINIO_SECRET_KEY: minioSecretKey
     steps:
+      - run:
+          name: Install Git LFS
+          command: |
+            curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+            sudo apt-get install git-lfs
       - checkout
       - run:
           name: Install tox
