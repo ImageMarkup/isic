@@ -26,56 +26,48 @@
          From: "opacity-100 translate-y-0 sm:scale-100"
          To: "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
     -->
-    <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm sm:w-full sm:p-6" role="dialog" aria-modal="true" aria-labelledby="modal-headline">
+    <div class="inline-block align-top bg-white rounded-lg p-8 text-left overflow-hidden shadow-xl transform transition-all my-8 align-middle max-w-2xl p-6" role="dialog" aria-modal="true" aria-labelledby="modal-headline">
       <div>
-        <h4>Licenses</h4>
-        <span>The ISIC recommends that dataset contributors choose the <span class="font-bold">CC-0</span> or <span class="font-bold">CC-BY</span> licenses whenever possible.</span>
+        <h3>Licenses</h3>
+
         <ul class="divide-y divide-gray-200">
           <li class="py-4 flex">
-            <img class="h-10 w-10 rounded-full" src="https://licensebuttons.net/l/zero/1.0/88x31.png" alt="">
-            <div class="ml-3">
-              <p class="text-sm font-medium text-gray-900">CC-0 (No restrictions)</p>
+            <div class="pt-2">
+              <img class="h-auto w-full" src="https://licensebuttons.net/l/zero/1.0/88x31.png" alt="">
+            </div>
+            <div class="ml-3 w-3/4">
+              <p class="text-sm font-medium text-gray-900">CC-0 (No restrictions) <span class="border border-green-500 bg-green-50 rounded ml-2 px-2 py-1 text-green-500 text-2xs uppercase tracking-wider">recommended</span></p>
               <p class="text-sm text-gray-500">
-                CC-0 enables scientists, educators, artists and other creators and
-                owners of copyright- or database-protected content to waive those
-                interests in their works and thereby place them as completely as
-                possible in the public domain, so that others may freely build upon,
-                enhance and reuse the works for any purposes without restriction under
-                copyright or database law.
-
-                <a href="https://creativecommons.org/publicdomain/zero/1.0/">view</a>
+                CC-0 enables scientists, educators, artists and other creators and owners of copyright- or database-protected content to waive those interests in their works and thereby place them as completely as possible in the public domain, so that others may freely build upon, enhance and reuse the works for any purposes without restriction under copyright or database law. <a href="https://creativecommons.org/publicdomain/zero/1.0/" class="button is-xs uppercase tracking-wide text-secondary-500 hover:bg-secondary-100 hover:text-secondary-700">view license</a>
               </p>
             </div>
           </li>
           <li class="py-4 flex">
-            <img class="h-10 w-10 rounded-full" src="https://licensebuttons.net/l/by/4.0/88x31.png" alt="">
-            <div class="ml-3">
-              <p class="text-sm font-medium text-gray-900">CC-BY (Attribution)</p>
+            <div class="pt-2">
+              <img class="h-auto w-full" src="https://licensebuttons.net/l/by/4.0/88x31.png" alt="">
+            </div>
+            <div class="ml-3 w-3/4">
+              <p class="text-sm font-medium text-gray-900">CC-BY (Attribution) <span class="border border-green-500 bg-green-50 rounded ml-2 px-2 py-1 text-green-500 text-2xs uppercase tracking-wider">recommended</span></p>
               <p class="text-sm text-gray-500">
-                This license lets others distribute, remix, tweak, and build upon your
-                work, even commercially, as long as they credit you for the original
-                creation.
-                <a href="https://creativecommons.org/licenses/by/4.0">view</a>
+                This license lets others distribute, remix, tweak, and build upon your work, even commercially, as long as they credit you for the original creation. <a href="https://creativecommons.org/licenses/by/4.0" class="button is-xs uppercase tracking-wide text-secondary-500 hover:bg-secondary-100 hover:text-secondary-700">view license</a>
               </p>
             </div>
           </li>
           <li class="py-4 flex">
-            <img class="h-10 w-10 rounded-full" src="https://licensebuttons.net/l/by-nc/4.0/88x31.png" alt="">
-            <div class="ml-3">
-              <p class="text-sm font-medium text-gray-900">CC-BY-NC (Attribution-NonCommercial)</p>
+            <div class="pt-2">
+              <img class="h-auto w-full" src="https://licensebuttons.net/l/by-nc/4.0/88x31.png" alt="">
+            </div>
+            <div class="ml-3 w-3/4">
+              <p class="text-sm font-medium text-gray-900">CC-BY-NC (Attribution-NonCommercial) </p>
               <p class="text-sm text-gray-500">
-                This license lets others remix, tweak, and build upon your work
-                non-commercially, and although their new works must also acknowledge
-                you and be non-commercial, they don’t have to license their derivative
-                works on the same terms.
-                <a href="https://creativecommons.org/licenses/by-nc/4.0">view</a>
+                This license lets others remix, tweak, and build upon your work non-commercially, and although their new works must also acknowledge you and be non-commercial, they don’t have to license their derivative works on the same terms. <a href="https://creativecommons.org/licenses/by-nc/4.0" class="button is-xs uppercase tracking-wide text-secondary-500 hover:bg-secondary-100 hover:text-secondary-700">view license</a>
               </p>
             </div>
           </li>
         </ul>
       </div>
       <div class="mt-5 sm:mt-6">
-        <button @click="open = false" type="button" class="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm">
+        <button @click="open = false" type="button" class="block button is-primary w-full">
           Close
         </button>
       </div>
