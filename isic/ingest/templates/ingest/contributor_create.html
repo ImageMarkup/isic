@@ -51,7 +51,7 @@
             {{ form.legal_contact_info.label }}
           </label>
           <div class="mt-1 mt-0 col-span-2">
-            <textarea id="{{ form.legal_contact_info.html_name }}" name="{{ form.legal_contact_info.html_name }}" rows="3" class="border max-w-lg outline-none shadow-sm block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md" required>{{ form.legal_contact_info.value|default:'' }}</textarea>
+            <textarea id="{{ form.legal_contact_info.html_name }}" name="{{ form.legal_contact_info.html_name }}" rows="3" class="border max-w-lg outline-none shadow-sm p-4 block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md" required>{{ form.legal_contact_info.value|default:'' }}</textarea>
             <p class="mt-2 text-sm text-gray-500">{{ form.legal_contact_info.help_text }}</p>
               {{ form.legal_contact_info.errors }}
           </div>
@@ -87,7 +87,7 @@
               {{ form.default_attribution.label }}
             </label>
             <div class="mt-1 mt-0 col-span-2">
-              <textarea id="{{ form.default_attribution.html_name }}" name="{{ form.default_attribution.html_name }}" rows="3" class="border max-w-lg outline-none shadow-sm block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md"></textarea>
+              <textarea id="{{ form.default_attribution.html_name }}" name="{{ form.default_attribution.html_name }}" rows="3" class="border max-w-lg outline-none shadow-sm p-4 block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md"></textarea>
               <p class="mt-2 text-sm text-gray-500">{{ form.default_attribution.help_text }}</div>
                 {{ form.default_attribution.errors  }}
           </div>
@@ -95,10 +95,10 @@
 
       </div>
 
-      <div class="pt-5">
+      <div class="border-t border-gray-200 py-5">
         <div class="flex justify-end">
           <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-500 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
-            Create
+            Create Contributor
           </button>
         </div>
       </div>
