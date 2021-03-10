@@ -279,6 +279,19 @@ def apply_metadata(request, cohort_pk):
 
 
 @staff_member_required
+def ingest_review(request):
+    return render(
+        request,
+        'ingest/ingest_review.html',
+        {
+            'cohorts': Cohort.objects.select_related('contributor').order_by(
+                'contributor', 'created'
+            )
+        },
+    )
+
+
+@staff_member_required
 def review_skipped_accessions(request, cohort_pk):
     cohort = get_object_or_404(
         Cohort,
@@ -295,6 +308,29 @@ def review_skipped_accessions(request, cohort_pk):
         'ingest/review_skipped_accessions.html',
         {'cohort': cohort, 'page_obj': page_obj, 'total_accessions': accessions.count()},
     )
+
+
+@login_required
+def select_or_create_contributor(request):
+    ctx = {'contributors': Contributor.objects.filter(creator=request.user)}
+    if ctx['contributors'].count() == 0:
+        return HttpResponseRedirect(reverse('contributor-create'))
+
+    return render(request, 'ingest/contributor_select_or_create.html', ctx)
+
+
+@login_required
+def select_or_create_cohort(request, contributor_pk):
+    ctx = {
+        'cohorts': Cohort.objects.filter(
+            contributor__creator=request.user, contributor__pk=contributor_pk
+        ),
+        'contributor_pk': contributor_pk,
+    }
+    if ctx['cohorts'].count() == 0:
+        return HttpResponseRedirect(reverse('cohort-create', args=[contributor_pk]))
+
+    return render(request, 'ingest/cohort_select_or_create.html', ctx)
 
 
 @login_required
