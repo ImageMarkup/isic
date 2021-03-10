@@ -1,8 +1,8 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-  <h2>Select a contributor</h2>
-  <p>A contributor is the institution which will be contributing the images. Choose a collaborator from the list below.</p>
+  <h2>Select a Contributor</h2>
+  <p>A contributor is the institution which will be contributing the images. Choose a contributor from the list below.</p>
 
   <div class="mt-6">
     <ul class="bg-gray-50 border border-gray-200 rounded-md divide-y divide-gray-200">
@@ -34,8 +34,8 @@
       <hr class="absolute inset-x-0 top-1/2 z-10">
     </div>
     <div class="text-center">
-      You may also create a new contributor.
-      <a href="{% url 'contributor-create' %}" class="button is-secondary ml-6">New contributor</a>
+      If you don't see your contributor in the list, you can create a new one.
+      <a href="{% url 'contributor-create' %}" class="button is-secondary ml-6">New Contributor</a>
     </div>
   </div>
 {% endblock %}

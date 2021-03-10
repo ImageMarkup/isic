@@ -56,7 +56,7 @@ class Contributor(TimeStampedModel):
         blank=True,
         verbose_name='Default Attribution',
         help_text=mark_safe(
-            'Text which must be reproduced by users of your images, to comply with Creative'
+            'Text which must be reproduced by users of your images, to comply with Creative '
             'Commons Attribution requirements.'
         ),
     )
@@ -70,8 +70,21 @@ class Cohort(TimeStampedModel):
     contributor = models.ForeignKey(Contributor, on_delete=models.PROTECT)
     girder_id = models.CharField(blank=True, max_length=24, help_text='The dataset_id from Girder.')
 
-    name = models.CharField(max_length=255)
-    description = models.TextField()
+    name = models.CharField(
+        max_length=255,
+        help_text=mark_safe(
+            'The name of your Cohort. '
+            '<strong>This is private</strong>, and will '
+            'not be published along with your images.'
+        ),
+    )
+    description = models.TextField(
+        help_text=mark_safe(
+            'The description of your Cohort.'
+            '<strong>This is private</strong>, and will not be published along '
+            'with your images.'
+        )
+    )
 
     copyright_license = models.CharField(choices=CopyrightLicense.choices, max_length=255)
 

@@ -12,7 +12,7 @@
           <h2 class="leading-6 text-gray-900">
             Create a Cohort
           </h2>
-          <p class="mt-1 max-w-2xl text-sm text-gray-500">This is information about your Cohort. A cohort is your place to upload images and metadata about a particular segment of your data. An example cohort might be named 'Longitudinal Melanomas'. Think of the cohort as a staging area for uploading your data and curating it to be ready for introduction into the ISIC Archive.</p>
+          <p class="mt-1 max-w-2xl text-sm text-gray-500">This is information about your Cohort, a group of images which share common licensing and metadata. An example Cohort might be named 'Longitudinal Melanomas'. Think of the Cohort as a staging area for uploading your data and curating it to be ready for introduction into the ISIC Archive.</p>
         </div>
 
         <div class="mt-6 mt-5 space-y-6 space-y-5">
@@ -24,7 +24,7 @@
               <div class="max-w-lg flex rounded-md shadow-sm">
                 <input type="text" value="{{ form.name.value|default:'' }}" name="{{ form.name.html_name }}" id="{{ form.name.html_name }}" class="flex-1 block w-full focus:ring-primary-500 focus:border-primary-500 min-w-0 rounded-none rounded-r-md text-sm border-gray-300">
               </div>
-              <p class="mt-2 text-sm text-gray-500" id="email-description">{% lorem 16 w %}{{ form.name.help_text }}</p>
+              <p class="mt-2 text-sm text-gray-500" id="email-description">{{ form.name.help_text }}</p>
               {{ form.name.errors }}
             </div>
           </div>
@@ -35,11 +35,10 @@
             </label>
             <div class="mt-1 mt-0 col-span-2">
               <textarea id="{{ form.description.html_name }}" name="{{ form.description.html_name }}" rows="3" class="border max-w-lg outline-none shadow-sm p-4 block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ form.description.value|default:'' }}</textarea>
-              <p class="mt-2 text-sm text-gray-500">{% lorem 16 w %}{{ form.description.help_text }}</p>
+              <p class="mt-2 text-sm text-gray-500">{{ form.description.help_text }}</p>
               {{ form.description.errors }}
             </div>
           </div>
-
 
           <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
             <label for="{{ form.copyright_license.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
@@ -54,7 +53,7 @@
               </select>
               <div x-data="{ open: false }" class="pb-4">
                 <span @click="open = true" class="cursor-pointer my-3 text-xs text-primary-500">help me choose</span>
-                <div x-show="open" @click.away="open = false">
+                <div x-show="open">
                   {% include 'ingest/partials/help_me_choose_modal.html' %}
                 </div>
               </div>
