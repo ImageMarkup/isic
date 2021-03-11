@@ -1,3 +1,5 @@
+import os
+
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models, transaction
@@ -54,7 +56,7 @@ class Contributor(TimeStampedModel):
         blank=True,
         verbose_name='Default Attribution',
         help_text=mark_safe(
-            'Text which must be reproduced by users of your images, to comply with Creative'
+            'Text which must be reproduced by users of your images, to comply with Creative '
             'Commons Attribution requirements.'
         ),
     )
@@ -68,8 +70,21 @@ class Cohort(TimeStampedModel):
     contributor = models.ForeignKey(Contributor, on_delete=models.PROTECT)
     girder_id = models.CharField(blank=True, max_length=24, help_text='The dataset_id from Girder.')
 
-    name = models.CharField(max_length=255)
-    description = models.TextField()
+    name = models.CharField(
+        max_length=255,
+        help_text=mark_safe(
+            'The name of your Cohort. '
+            '<strong>This is private</strong>, and will '
+            'not be published along with your images.'
+        ),
+    )
+    description = models.TextField(
+        help_text=mark_safe(
+            'The description of your Cohort.'
+            '<strong>This is private</strong>, and will not be published along '
+            'with your images.'
+        )
+    )
 
     copyright_license = models.CharField(choices=CopyrightLicense.choices, max_length=255)
 
@@ -90,6 +105,10 @@ class MetadataFile(TimeStampedModel):
     blob = S3FileField()
     blob_name = models.CharField(max_length=255)
     blob_size = models.PositiveBigIntegerField()
+
+    @property
+    def blob_basename(self) -> str:
+        return os.path.basename(self.blob_name)
 
 
 class Accession(TimeStampedModel):
@@ -213,6 +232,10 @@ class Zip(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.blob_name
+
+    @property
+    def blob_basename(self) -> str:
+        return os.path.basename(self.blob_name)
 
     def succeed(self):
         self.status = Zip.Status.COMPLETED

@@ -1,12 +1,13 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-  <h2>Select a cohort</h2>
-  <p>A cohort is a group of images which share common metadata.</p>
-  <div class="flow-root max-w-2xl mt-6">
-    <ul class="-my-5 divide-y divide-gray-200">
+  <h2>Select a Cohort</h2>
+  <p>A Cohort is a group of images which share common licensing and metadata.</p>
+
+  <div class="mt-6">
+    <ul class="bg-gray-50 border border-gray-200 rounded-md divide-y divide-gray-200">
       {% for cohort in cohorts %}
-        <li class="py-4">
+        <li class="py-4 px-6">
           <div class="flex items-center space-x-4">
             <div class="flex-1 min-w-0">
               <p class="text-sm font-medium text-gray-900 truncate">
@@ -17,7 +18,7 @@
               </p>
             </div>
             <div>
-              <a href="{% url 'cohort-files' cohort.id %}" class="inline-flex items-center shadow-sm px-2.5 py-0.5 border border-gray-300 text-sm leading-5 font-medium rounded-full text-gray-700 bg-white hover:bg-gray-50">
+              <a href="{% url 'cohort-files' cohort.id %}" class="button is-primary is-sm">
                 Use
               </a>
             </div>
@@ -28,6 +29,13 @@
   </div>
 
   <div>
-    or <a href="{% url 'cohort-create' contributor_pk %}">create a new one</a>
+    <div class="h-12 my-8 relative">
+      <span class="absolute flex font-bold text-lg items-center inset-y-0 left-1/2 -translate-x-1/2 py-2 px-3 bg-white z-20">OR</span>
+      <hr class="absolute inset-x-0 top-1/2 z-10">
+    </div>
+    <div class="text-center">
+      If you're not updating an existing Cohort, you should create a new one.
+      <a href="{% url 'cohort-create' contributor_pk %}" class="button is-secondary ml-6">New Cohort</a>
+    </div>
   </div>
 {% endblock %}

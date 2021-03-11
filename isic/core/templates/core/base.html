@@ -26,11 +26,6 @@
             <a href="{% url 'select-or-create-contributor' %}" class="{% if request.resolver_match.url_name == 'select-or-create-contributor' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
               Upload
             </a>
-            {% if request.user.is_staff %}
-            <a href="{% url 'ingest-review' %}" class="{% if request.resolver_match.url_name == 'ingest-review' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-              Ingest Review*
-            </a>
-            {% endif %}
             <a href="{% url 'study-list' %}" class="{% if request.resolver_match.url_name == 'study-list' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
               Studies
             </a>
@@ -46,6 +41,19 @@
           <a href="{% url 'admin:index' %}" class="text-gray-900 inline-flex items-center px-1 text-sm font-medium">
             <i class="ri-admin-line mr-2 text-lg"></i>
             Admin
+          </a>
+        </div>
+
+        <div class="flex items-center px-4">
+          <i class="ri-arrow-right-s-line text-gray-300"></i>
+        </div>
+        {% endif %}
+
+        {% if request.user.is_staff %}
+
+        <div class="flex">
+          <a href="{% url 'ingest-review' %}" class="text-gray-900 inline-flex items-center px-1 text-sm font-medium">
+            Ingest Review
           </a>
         </div>
         {% endif %}

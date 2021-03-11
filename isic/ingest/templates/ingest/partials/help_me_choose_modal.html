@@ -26,13 +26,13 @@
          From: "opacity-100 translate-y-0 sm:scale-100"
          To: "opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
     -->
-    <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm sm:w-full sm:p-6" role="dialog" aria-modal="true" aria-labelledby="modal-headline">
+    <div @click.away="open = false" class="inline-block align-top bg-white rounded-lg p-8 text-left overflow-hidden shadow-xl transform transition-all my-8 align-middle max-w-2xl p-6" role="dialog" aria-modal="true" aria-labelledby="modal-headline">
       <div>
         <h4>Licenses</h4>
         <span>The ISIC recommends that dataset contributors choose the <span class="font-bold">CC-0</span> or <span class="font-bold">CC-BY</span> licenses whenever possible.</span>
         <ul class="divide-y divide-gray-200">
           <li class="py-4 flex">
-            <img class="h-10 w-10 rounded-full" src="https://licensebuttons.net/l/zero/1.0/88x31.png" alt="">
+            <img class="h-10 w-25" src="https://licensebuttons.net/l/zero/1.0/88x31.png" alt="">
             <div class="ml-3">
               <p class="text-sm font-medium text-gray-900">CC-0 (No restrictions)</p>
               <p class="text-sm text-gray-500">
@@ -48,7 +48,7 @@
             </div>
           </li>
           <li class="py-4 flex">
-            <img class="h-10 w-10 rounded-full" src="https://licensebuttons.net/l/by/4.0/88x31.png" alt="">
+            <img class="h-10 w-25" src="https://licensebuttons.net/l/by/4.0/88x31.png" alt="">
             <div class="ml-3">
               <p class="text-sm font-medium text-gray-900">CC-BY (Attribution)</p>
               <p class="text-sm text-gray-500">
@@ -60,7 +60,7 @@
             </div>
           </li>
           <li class="py-4 flex">
-            <img class="h-10 w-10 rounded-full" src="https://licensebuttons.net/l/by-nc/4.0/88x31.png" alt="">
+            <img class="h-10 w-25" src="https://licensebuttons.net/l/by-nc/4.0/88x31.png" alt="">
             <div class="ml-3">
               <p class="text-sm font-medium text-gray-900">CC-BY-NC (Attribution-NonCommercial)</p>
               <p class="text-sm text-gray-500">
