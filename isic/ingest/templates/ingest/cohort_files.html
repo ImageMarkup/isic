@@ -9,96 +9,96 @@
   </div>
 
   <div>
-    <h2>Zip Files</h2>
-    A zip file is a set of images with unique filenames that will be uploaded to the Archive.
-    <button type="button" class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-      Add file
-    </button>
-    <div class="flex flex-col">
-      <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-        <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-          <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Filename
-                  </th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Size
-                  </th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for zip in cohort.zips.all %}
-                  <tr class="{% cycle 'bg-white' 'bg-gray-50' %}">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {{ zip.blob_name  }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {{ zip.blob_size|filesizeformat  }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {{ zip.get_status_display  }}
-                    </td>
+    <div class="mt-5">
+      <h2>Zip Files</h2>
+      <p>A zip file should contain a set of images with unique filenames across the cohort that will be uploaded to the Archive.</p>
+      <div class="flex flex-col">
+        <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+          <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+            <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Filename
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Size
+                    </th>
                   </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {% comment %}
+                    TODO: put in a status for rejected zips
+                    {% endcomment %}
+                  {% for zip in cohort.zips.all %}
+                    <tr class="{% cycle 'bg-white' 'bg-gray-50' %}">
+                      <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {{ zip.blob_basename  }}
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ zip.blob_size|filesizeformat  }}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
+      <a href="{% url 'upload-zip' cohort.id %}">
+        <button type="button" class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+          Add file
+        </button>
+      </a>
     </div>
 
-    <h2>Metadata Files</h2>
-
-    <button type="button" class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-      Add file
-    </button>
-    <div class="flex flex-col">
-      <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-        <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-          <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Filename
-                  </th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Size
-                  </th>
-                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th scope="col" class="relative px-6 py-3">
-                    <span class="sr-only">Download</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for file in cohort.metadata_files.all %}
-                  <tr class="{% cycle 'bg-white' 'bg-gray-50' %}">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {{ file.blob_name  }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {{ file.blob_size|filesizeformat  }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <a href="{{ file.blob.url }}" class="text-indigo-600 hover:text-indigo-900">Download</a>
-                    </td>
+    <div class="mt-5">
+      <h2>Metadata Files</h2>
+      <p>A metadata file should be a CSV containing an image name along with metadata compliant with the <a href="https://github.com/ImageMarkup/isic-archive/wiki/Image#metadata">metadata dictionary</a>.</p>
+      <div class="flex flex-col">
+        <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+          <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+            <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Filename
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Size
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
                   </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {% for file in cohort.metadata_files.all %}
+                    <tr class="{% cycle 'bg-white' 'bg-gray-50' %}">
+                      <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {{ file.blob_basename  }}
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ file.blob_size|filesizeformat  }}
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">-</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
+
+      <a href="{% url 'upload-metadata' cohort.id %}">
+        <button type="button" class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+          Add file
+        </button>
+      </a>
     </div>
   </div>
 
