@@ -23,6 +23,7 @@ def _base_file_name(path: str) -> str:
 
 
 def file_names_in_zip(stream: IO[bytes]) -> Generator[str, None, None]:
+    """Yield the base file names in a zip stream."""
     with zipfile.ZipFile(stream) as zip_file:
         for file_info in _filtered_infolist(zip_file):
             yield _base_file_name(file_info.filename)
@@ -36,6 +37,7 @@ class ZipItem:
 
 
 def items_in_zip(stream: IO[bytes]) -> Generator[ZipItem, None, None]:
+    """Yield the items in a zip stream."""
     with zipfile.ZipFile(stream) as zip_file:
         for file_info in _filtered_infolist(zip_file):
             with zip_file.open(file_info) as zip_file_stream:
