@@ -3,6 +3,8 @@
 {% load chunks %}
 
 {% block content %}
+  {% include 'ingest/partials/upload_progress_bar.html' with step=3 %}
+
   <div>
     <h2>{{ cohort.name }}</h2>
     <span>{{ cohort.description }}</span>

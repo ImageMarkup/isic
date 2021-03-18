@@ -1,6 +1,8 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
+  {% include 'ingest/partials/upload_progress_bar.html' with step=2 %}
+
   <h2>Select a Cohort</h2>
   <p>A Cohort is a group of images which share common licensing and metadata.</p>
 
