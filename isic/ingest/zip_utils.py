@@ -1,27 +1,48 @@
+from dataclasses import dataclass
 import os
-import shutil
-import tempfile
+from typing import IO, Generator
 
 import zipfile_deflate64 as zipfile
 
 
-def files_in_zip(path):
-    with zipfile.ZipFile(path) as zip_file:
-        for original_file in zip_file.infolist():
-            original_file_relpath = original_file.filename
-            original_file_relpath.replace('\\', '/')
-            original_filename = os.path.basename(original_file_relpath)
-            # ignore likely directories
-            if original_filename and original_file.file_size:
-                yield original_file_relpath, original_filename
+def _filtered_infolist(zip_file: zipfile.ZipFile) -> Generator[zipfile.ZipInfo, None, None]:
+    """Filter a ZipFile infolist to only include actual files."""
+    for file_info in zip_file.infolist():
+        if file_info.is_dir() or not file_info.filename:
+            # Skip likely directories
+            continue
+        if not file_info.file_size:
+            # Skip empty files
+            continue
+        yield file_info
 
 
-def unzip(path):
-    with tempfile.TemporaryDirectory() as temp_dir:
-        with zipfile.ZipFile(path) as zip_file:
-            for filepath, filename in files_in_zip(path):
-                temp_file_path = os.path.join(temp_dir, filename)
-                with open(temp_file_path, 'wb') as temp_file_stream:
-                    shutil.copyfileobj(zip_file.open(filepath), temp_file_stream)
-                yield temp_file_path, filename
-                os.remove(temp_file_path)
+def _base_file_name(path: str) -> str:
+    """Return the base name of a path."""
+    return os.path.basename(path.replace('\\', '/'))
+
+
+def file_names_in_zip(stream: IO[bytes]) -> Generator[str, None, None]:
+    """Yield the base file names in a zip stream."""
+    with zipfile.ZipFile(stream) as zip_file:
+        for file_info in _filtered_infolist(zip_file):
+            yield _base_file_name(file_info.filename)
+
+
+@dataclass
+class ZipItem:
+    name: str
+    stream: IO[bytes]
+    size: int
+
+
+def items_in_zip(stream: IO[bytes]) -> Generator[ZipItem, None, None]:
+    """Yield the items in a zip stream."""
+    with zipfile.ZipFile(stream) as zip_file:
+        for file_info in _filtered_infolist(zip_file):
+            with zip_file.open(file_info) as zip_file_stream:
+                yield ZipItem(
+                    name=_base_file_name(file_info.filename),
+                    stream=zip_file_stream,
+                    size=file_info.file_size,
+                )
