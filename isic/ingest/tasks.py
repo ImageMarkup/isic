@@ -86,12 +86,6 @@ def process_accession(accession_id: int):
     try:
         content = accession.original_blob.open().read()
 
-        if accession.blob_name.startswith('._') or accession.blob_name == 'Thumbs.db':
-            # file is probably a macOS resource fork, skip
-            accession.status = Accession.Status.SKIPPED
-            accession.save(update_fields=['status'])
-            return
-
         m = magic.Magic(mime=True)
         major_mime_type, _ = m.from_buffer(content).split('/')
 
