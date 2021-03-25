@@ -1,3 +1,4 @@
+import base64
 import urllib.parse
 
 from django.urls import reverse
@@ -5,15 +6,18 @@ import pytest
 
 
 @pytest.mark.parametrize(
-    'login_url',
+    'query_string',
     [
-        reverse('discourse-sso-login') + '?sso=ZmFrZQo=&sig=fake',  # 'fake' in base64
-        reverse('discourse-sso-login'),
+        {
+            'sso': base64.b64encode(b'fake').decode(),
+            'sig': 'fake',
+        },
+        {},
     ],
     ids=['bad_credentials', 'no_credentials'],
 )
-def test_sso_login_get(client, login_url):
-    resp = client.get(login_url)
+def test_sso_login_get(client, query_string):
+    resp = client.get(reverse('discourse-sso-login'), data=query_string)
 
     assert resp.status_code == 302
     assert resp['Location'] == 'https://forum.isic-archive.com'
