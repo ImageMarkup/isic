@@ -14,10 +14,10 @@ def _filtered_infolist(zip_file: zipfile.ZipFile) -> Generator[zipfile.ZipInfo, 
         if not file_info.file_size:
             # Skip empty files
             continue
-        if file_info.filename in {'Thumbs.db', '.DS_Store'}:
+        if _base_file_name(file_info.filename) in {'Thumbs.db', '.DS_Store'}:
             # Skip OS-generated files
             continue
-        if file_info.filename.startswith('._'):
+        if _base_file_name(file_info.filename).startswith('._'):
             # File is probably a macOS resource fork, skip
             continue
 
