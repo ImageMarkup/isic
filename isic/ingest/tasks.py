@@ -5,6 +5,7 @@ from mimetypes import guess_type
 import PIL.Image
 from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
+from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.core.files.uploadedfile import InMemoryUploadedFile, SimpleUploadedFile
 from django.core.mail import send_mail
@@ -16,6 +17,8 @@ import pandas as pd
 from isic.ingest.models import Accession, DistinctnessMeasure, MetadataFile, Zip
 from isic.ingest.validators import MetadataRow
 from isic.ingest.zip_utils import file_names_in_zip, items_in_zip
+
+logger = get_task_logger(__name__)
 
 
 @shared_task
@@ -41,6 +44,7 @@ def extract_zip(zip_id: int):
 
         if blob_name_conflicts or duplicate_blob_names_in_zip:
             transaction.set_rollback(True)
+            logger.info('Reject zip due to duplicate names.')
             send_mail(
                 'A problem processing your zip file',
                 'The following files must be renamed: '
