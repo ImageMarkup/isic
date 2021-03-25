@@ -11,22 +11,6 @@ def zip_stream(data_dir):
         yield stream
 
 
-@pytest.mark.parametrize(
-    'path,expected',
-    [
-        ('', ''),
-        ('foo.txt', 'foo.txt'),
-        ('foo/bar.txt', 'bar.txt'),
-        ('foo/bar/baz', 'baz'),
-        ('foo\\bar.txt', 'bar.txt'),
-    ],
-    ids=['empty', 'root', 'nested', 'nested_2', 'windows'],
-)
-def test_base_file_name(path, expected):
-    file_name = zip_utils._base_file_name(path)
-    assert file_name == expected
-
-
 def test_file_names_in_zip(zip_stream):
     file_names = zip_utils.file_names_in_zip(zip_stream)
 
