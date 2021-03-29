@@ -49,6 +49,7 @@ setup(
         'django-configurations[database,email]',
         'django-extensions',
         'django-filter',
+        'django-girder-style>=0.3.0',
         'django-girder-utils',
         'django-material',
         'django-nested-admin',
