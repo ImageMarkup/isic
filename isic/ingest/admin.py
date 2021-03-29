@@ -7,11 +7,20 @@ from django_object_actions import DjangoObjectActions
 from django_object_actions.utils import takes_instance_or_queryset
 from girder_utils.admin import ReadonlyTabularInline
 
-from isic.ingest.models import Accession, Cohort, Contributor, Zip  # , UploadBlob
+from isic.ingest.models import Accession, Cohort, Contributor, MetadataFile, Zip
+
+
+class MetadataFileInline(ReadonlyTabularInline):
+    model = MetadataFile
 
 
 class ZipInline(ReadonlyTabularInline):
     model = Zip
+
+
+@admin.register(MetadataFile)
+class MetadataFileAdmin(admin.ModelAdmin):
+    list_display = ['created', 'creator', 'cohort', 'blob_name']
 
 
 @admin.register(Contributor)
@@ -32,7 +41,7 @@ class CohortAdmin(admin.ModelAdmin):
         'successful_accessions',
         'accessions',
     ]
-    inlines = [ZipInline]
+    inlines = [ZipInline, MetadataFileInline]
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
