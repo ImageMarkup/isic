@@ -20,7 +20,7 @@
               </p>
             </div>
             <div>
-              <a href="{% url 'select-or-create-cohort' contributor.id %}" class="button is-primary is-sm">
+              <a href="{% url 'upload/select-or-create-cohort' contributor.id %}" class="button is-primary is-sm">
                 Use
               </a>
             </div>
@@ -37,7 +37,7 @@
     </div>
     <div class="text-center">
       If you don't see your contributor in the list, you can create a new one.
-      <a href="{% url 'contributor-create' %}" class="button is-secondary ml-6">New Contributor</a>
+      <a href="{% url 'upload/create-contributor' %}" class="button is-secondary ml-6">New Contributor</a>
     </div>
   </div>
 {% endblock %}
