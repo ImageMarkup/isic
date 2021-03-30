@@ -9,13 +9,11 @@ from rest_framework import permissions, routers
 
 from isic.discourse_sso.views import discourse_sso_login
 from isic.ingest.api import AccessionViewSet
-from isic.ingest.review_views import (
+from isic.ingest.views import (
     DiagnosisReviewAppView,
     DuplicateReviewAppView,
     LesionReviewAppView,
     QualityPhiReviewAppView,
-)
-from isic.ingest.views import (
     apply_metadata,
     cohort_detail,
     cohort_files,
@@ -72,17 +70,19 @@ urlpatterns = [
     path(
         'upload/select-or-create-contributor/',
         select_or_create_contributor,
-        name='select-or-create-contributor',
+        name='upload/select-or-create-contributor',
     ),
-    path('upload/create-contributor/', upload_contributor_create, name='contributor-create'),
+    path('upload/create-contributor/', upload_contributor_create, name='upload/create-contributor'),
     path(
         'upload/select-or-create-cohort/<contributor_pk>/',
         select_or_create_cohort,
-        name='select-or-create-cohort',
+        name='upload/select-or-create-cohort',
     ),
-    path('upload/create-cohort/<contributor_pk>', upload_cohort_create, name='cohort-create'),
+    path(
+        'upload/create-cohort/<contributor_pk>', upload_cohort_create, name='upload/create-cohort'
+    ),
+    path('upload/<pk>/files/', cohort_files, name='upload/cohort-files'),
     path('cohort/<pk>/', cohort_detail, name='cohort-detail'),
-    path('cohort/<pk>/files/', cohort_files, name='cohort-files'),
     path('cohort/<cohort_pk>/upload-zip/', zip_create, name='upload-zip'),
     path('cohort/<cohort_pk>/upload-metadata/', metadata_file_create, name='upload-metadata'),
     # Staff pges
