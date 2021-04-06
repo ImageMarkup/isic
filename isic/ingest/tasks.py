@@ -17,7 +17,12 @@ from isic.ingest.validators import MetadataRow
 @shared_task
 def extract_zip(zip_id: int):
     zip = Zip.objects.select_related('creator').get(pk=zip_id)
+
     zip.extract()
+
+    # tasks should be delayed after the accessions are committed to the database
+    for accession_id in zip.accessions.values_list('id', flat=True):
+        process_accession.delay(accession_id)
 
 
 @shared_task(soft_time_limit=60, time_limit=90)
