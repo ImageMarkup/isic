@@ -1,14 +1,10 @@
 import hashlib
 import io
-from mimetypes import guess_type
 
 import PIL.Image
 from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
-from celery.utils.log import get_task_logger
-from django.conf import settings
-from django.core.files.uploadedfile import InMemoryUploadedFile, SimpleUploadedFile
-from django.core.mail import send_mail
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
 import magic
 import numpy as np
@@ -16,71 +12,17 @@ import pandas as pd
 
 from isic.ingest.models import Accession, DistinctnessMeasure, MetadataFile, Zip
 from isic.ingest.validators import MetadataRow
-from isic.ingest.zip_utils import file_names_in_zip, items_in_zip
-
-logger = get_task_logger(__name__)
 
 
 @shared_task
 def extract_zip(zip_id: int):
     zip = Zip.objects.select_related('creator').get(pk=zip_id)
 
-    with transaction.atomic():
-        zip.status = Zip.Status.STARTED
-        zip.save(update_fields=['status'])
-
-        blob_names_in_zip = set()
-        duplicate_blob_names_in_zip = set()
-
-        with zip.blob.open('rb') as zip_blob_stream:
-            for original_filename in file_names_in_zip(zip_blob_stream):
-                if original_filename in blob_names_in_zip:
-                    duplicate_blob_names_in_zip.add(original_filename)
-                blob_names_in_zip.add(original_filename)
-
-        blob_name_conflicts = Accession.objects.filter(
-            upload__cohort=zip.cohort, blob_name__in=blob_names_in_zip
-        ).values_list('blob_name', flat=True)
-
-        if blob_name_conflicts or duplicate_blob_names_in_zip:
-            transaction.set_rollback(True)
-            logger.info('Reject zip due to duplicate names.')
-            send_mail(
-                'A problem processing your zip file',
-                'The following files must be renamed: '
-                + '\n'.join(set(blob_name_conflicts).union(duplicate_blob_names_in_zip)),
-                settings.DEFAULT_FROM_EMAIL,
-                [zip.creator.email],
-            )
-            return
-
-        with zip.blob.open('rb') as zip_blob_stream:
-            for zip_item in items_in_zip(zip_blob_stream):
-                zip_item_content_type = guess_type(zip_item.name)[0]
-                zip.accessions.create(
-                    blob_name=zip_item.name,
-                    # TODO: we're setting blob_size since it's required, but
-                    # it actually indicates the stripped blob size, not the original
-                    blob_size=zip_item.size,
-                    # Use an InMemoryUploadedFile instead of a SimpleUploadedFile, since
-                    # we can explicitly know the size and don't need the stream to be wrapped
-                    original_blob=InMemoryUploadedFile(
-                        file=zip_item.stream,
-                        field_name=None,
-                        name=zip_item.name,
-                        content_type=zip_item_content_type,
-                        size=zip_item.size,
-                        charset=None,
-                    ),
-                )
-        zip.accessions.update(status=Zip.Status.CREATED)
+    zip.extract()
 
     # tasks should be delayed after the accessions are committed to the database
     for accession_id in zip.accessions.values_list('id', flat=True):
         process_accession.delay(accession_id)
-
-    zip.status = Zip.Status.COMPLETED
-    zip.save(update_fields=['status'])
 
 
 @shared_task(soft_time_limit=60, time_limit=90)
