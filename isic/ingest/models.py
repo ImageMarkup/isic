@@ -321,9 +321,5 @@ class Zip(TimeStampedModel):
                     )
             self.accessions.update(status=Accession.Status.CREATED)
 
-        # tasks should be delayed after the accessions are committed to the database
-        for accession_id in self.accessions.values_list('id', flat=True):
-            process_accession.delay(accession_id)
-
         self.status = Zip.Status.EXTRACTED
         self.save(update_fields=['status'])
