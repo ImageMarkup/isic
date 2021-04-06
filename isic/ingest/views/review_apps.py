@@ -4,11 +4,11 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Count
 from django.db.models.query_utils import Q
 from django.shortcuts import get_object_or_404
-from django.urls.base import reverse
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView
 
 from isic.ingest.models import Accession, Cohort, DistinctnessMeasure
+from isic.ingest.util import make_breadcrumbs
 
 
 @method_decorator(staff_member_required, name='dispatch')
@@ -37,11 +37,7 @@ class ReviewAppView(ListView):
                 'cohort': self.cohort,
                 'buttons': self.buttons,
                 'checks': self.checks,
-                'breadcrumbs': [
-                    ['#', 'Ingest Review'],
-                    [reverse('cohort-detail', args=[self.cohort.pk]), self.cohort.name],
-                    ['#', self.title],
-                ],
+                'breadcrumbs': make_breadcrumbs(self.cohort) + [['#', self.title]],
             }
         )
         return context

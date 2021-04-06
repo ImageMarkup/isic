@@ -17,6 +17,7 @@ from pydantic.main import BaseModel
 
 from isic.ingest.models import Accession, Cohort, DistinctnessMeasure, MetadataFile, Zip
 from isic.ingest.tasks import extract_zip
+from isic.ingest.util import make_breadcrumbs
 from isic.ingest.validators import MetadataRow
 
 from .review_apps import *  # noqa
@@ -132,7 +133,7 @@ def cohort_detail(request, pk):
             'total_accessions': accession_qs.count(),
             'check_counts': Accession.check_counts(cohort),
             'checks': Accession.checks(),
-            'breadcrumbs': [['#', 'Ingest Review'], ['#', cohort.name]],
+            'breadcrumbs': make_breadcrumbs(cohort),
         },
     )
 
@@ -289,11 +290,7 @@ def apply_metadata(request, cohort_pk):
             'cohort': cohort,
             'form': form,
             'checkpoint': checkpoints,
-            'breadcrumbs': [
-                ['#', 'Ingest Review'],
-                ['#', cohort.name],
-                ['#', 'Metadata Application'],
-            ],
+            'breadcrumbs': make_breadcrumbs(cohort) + [['#', 'Metadata Application']],
         },
     )
 
