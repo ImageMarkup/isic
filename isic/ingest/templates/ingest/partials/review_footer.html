@@ -55,7 +55,10 @@
 
         Promise.all(submissions).then((values) => {
           this.submitted = true;
-           this.submitting = false;
+          this.submitting = false;
+          // reload the page. use this instead of .reload() since this
+          // version won't keep users at the bottom of the page.
+          window.location.href = window.location.href;
         });
       }
     }

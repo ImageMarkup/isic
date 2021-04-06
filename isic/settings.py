@@ -23,6 +23,7 @@ class IsicMixin(ConfigMixin):
     def before_binding(configuration: ComposedConfiguration) -> None:
         # Install local apps first, to ensure any overridden resources are found first
         configuration.INSTALLED_APPS = [
+            'django.contrib.humanize',
             'isic.core.apps.CoreConfig',
             'isic.login.apps.LoginConfig',
             'isic.ingest.apps.IngestConfig',

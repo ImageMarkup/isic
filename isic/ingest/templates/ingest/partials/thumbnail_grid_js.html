@@ -1,0 +1,16 @@
+<script type="text/javascript">
+  function thumbnailGrid() {
+    // allow between 4-6 columns
+    return {
+      numCols: localStorage.getItem('numCols') || 6,
+      increase() {
+        this.numCols = Math.min(6, this.numCols + 1);
+        localStorage.setItem('numCols', this.numCols);
+      },
+      decrease() {
+        this.numCols = Math.max(4, this.numCols - 1);
+        localStorage.setItem('numCols', this.numCols);
+      }
+    }
+  }
+</script>
