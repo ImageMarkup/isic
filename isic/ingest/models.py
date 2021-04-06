@@ -1,15 +1,26 @@
+import logging
+from mimetypes import guess_type
 import os
+from typing import List, Tuple
 
+from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.core.mail import send_mail
 from django.core.validators import RegexValidator
 from django.db import models, transaction
 from django.db.models import JSONField
 from django.db.models.aggregates import Count
 from django.db.models.query_utils import Q
+from django.template.loader import render_to_string
 from django.urls.base import reverse
 from django.utils.safestring import mark_safe
 from django_extensions.db.models import TimeStampedModel
 from s3_file_field import S3FileField
+
+from isic.ingest.zip_utils import file_names_in_zip, items_in_zip
+
+logger = logging.getLogger(__name__)
 
 
 class CopyrightLicense(models.TextChoices):
@@ -66,8 +77,8 @@ class Contributor(TimeStampedModel):
 
 
 class Cohort(TimeStampedModel):
-    creator = models.ForeignKey(User, null=True, on_delete=models.PROTECT)
     contributor = models.ForeignKey(Contributor, on_delete=models.PROTECT)
+    creator = models.ForeignKey(User, on_delete=models.PROTECT)
     girder_id = models.CharField(blank=True, max_length=24, help_text='The dataset_id from Girder.')
 
     name = models.CharField(
@@ -89,7 +100,7 @@ class Cohort(TimeStampedModel):
     copyright_license = models.CharField(choices=CopyrightLicense.choices, max_length=255)
 
     # required if copyright_license is CC-BY-*
-    attribution = models.CharField(max_length=255)
+    attribution = models.TextField()
 
     def __str__(self) -> str:
         return self.name
@@ -128,14 +139,15 @@ class Accession(TimeStampedModel):
     upload = models.ForeignKey('Zip', on_delete=models.CASCADE, related_name='accessions')
 
     # the original blob is stored in case blobs need to be reprocessed
-    original_blob = S3FileField(null=True)
-    # TODO: remove null after database on production is reset
+    original_blob = S3FileField()
 
-    blob = S3FileField()
     # blob_name has to be indexed because metadata selection does large
     # WHERE blob_name IN (...) queries
     blob_name = models.CharField(max_length=255, db_index=True)
-    blob_size = models.PositiveBigIntegerField()
+
+    # When instantiated, blob is empty, as it holds the EXIF-stripped image
+    blob = S3FileField(blank=True)
+    blob_size = models.PositiveBigIntegerField(null=True, default=None)
 
     status = models.CharField(choices=Status.choices, max_length=20, default=Status.CREATING)
 
@@ -216,17 +228,17 @@ class DistinctnessMeasure(TimeStampedModel):
 class Zip(TimeStampedModel):
     class Status(models.TextChoices):
         CREATED = 'created', 'Created'
-        STARTED = 'extracting', 'Extracting'
-        COMPLETED = 'extracted', 'Extracted'
+        EXTRACTING = 'extracting', 'Extracting'
+        EXTRACTED = 'extracted', 'Extracted'
 
-    creator = models.ForeignKey(User, null=True, on_delete=models.PROTECT)
+    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name='zips')
+
+    creator = models.ForeignKey(User, on_delete=models.PROTECT)
     girder_id = models.CharField(blank=True, max_length=24, help_text='The batch_id from Girder.')
 
-    cohort = models.ForeignKey(Cohort, null=True, on_delete=models.CASCADE, related_name='zips')
-
-    blob = S3FileField(blank=True)
-    blob_name = models.CharField(blank=True, max_length=255)
-    blob_size = models.PositiveBigIntegerField(null=True)
+    blob = S3FileField()
+    blob_name = models.CharField(max_length=255)
+    blob_size = models.PositiveBigIntegerField()
 
     status = models.CharField(choices=Status.choices, max_length=20, default=Status.CREATED)
 
@@ -238,7 +250,7 @@ class Zip(TimeStampedModel):
         return os.path.basename(self.blob_name)
 
     def succeed(self):
-        self.status = Zip.Status.COMPLETED
+        self.status = Zip.Status.EXTRACTED
         self.save(update_fields=['status'])
 
     def reset(self):
@@ -246,3 +258,68 @@ class Zip(TimeStampedModel):
             self.accessions.all().delete()
             self.status = Zip.Status.CREATED
             self.save(update_fields=['status'])
+
+    def _get_preexisting_and_duplicates(self) -> Tuple[List[str], List[str]]:
+        blob_names_in_zip = set()
+
+        blob_name_duplicates = set()
+        with self.blob.open('rb') as zip_blob_stream:
+            for original_filename in file_names_in_zip(zip_blob_stream):
+                if original_filename in blob_names_in_zip:
+                    blob_name_duplicates.add(original_filename)
+                blob_names_in_zip.add(original_filename)
+
+        blob_name_preexisting = Accession.objects.filter(
+            upload__cohort=self.cohort, blob_name__in=blob_names_in_zip
+        ).values_list('blob_name', flat=True)
+
+        return sorted(blob_name_preexisting), sorted(blob_name_duplicates)
+
+    def extract(self):
+        if self.status != Zip.Status.CREATED:
+            raise Exception('Can not extract zip %d with status %s', self.pk, self.status)
+
+        with transaction.atomic():
+            self.status = Zip.Status.EXTRACTING
+            self.save(update_fields=['status'])
+
+            blob_name_preexisting, blob_name_duplicates = self._get_preexisting_and_duplicates()
+            if blob_name_preexisting or blob_name_duplicates:
+                logger.warning('Failed zip extraction: %d <%s>', self.pk, str(self))
+                transaction.set_rollback(True)
+                send_mail(
+                    'A problem processing your zip file',
+                    render_to_string(
+                        'ingest/duplicates_email.txt',
+                        {
+                            'zip': self,
+                            'blob_name_preexisting': blob_name_preexisting,
+                            'blob_name_duplicates': blob_name_duplicates,
+                        },
+                    ),
+                    settings.DEFAULT_FROM_EMAIL,
+                    [self.creator.email],
+                )
+                return
+
+            with self.blob.open('rb') as zip_blob_stream:
+                for zip_item in items_in_zip(zip_blob_stream):
+                    zip_item_content_type = guess_type(zip_item.name)[0]
+                    # TODO: Store content_type in the DB?
+                    self.accessions.create(
+                        blob_name=zip_item.name,
+                        # Use an InMemoryUploadedFile instead of a SimpleUploadedFile, since
+                        # we can explicitly know the size and don't need the stream to be wrapped
+                        original_blob=InMemoryUploadedFile(
+                            file=zip_item.stream,
+                            field_name=None,
+                            name=zip_item.name,
+                            content_type=zip_item_content_type,
+                            size=zip_item.size,
+                            charset=None,
+                        ),
+                    )
+            self.accessions.update(status=Accession.Status.CREATED)
+
+        self.status = Zip.Status.EXTRACTED
+        self.save(update_fields=['status'])
