@@ -6,6 +6,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count
+from django.db.models.query import Prefetch
 from django.forms.models import ModelForm
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
@@ -15,7 +16,7 @@ import pandas as pd
 from pydantic.main import BaseModel
 
 from isic.ingest.models import Accession, Cohort, DistinctnessMeasure, MetadataFile, Zip
-from isic.ingest.tasks import apply_metadata as apply_metadata_task, extract_zip
+from isic.ingest.tasks import extract_zip
 from isic.ingest.validators import MetadataRow
 
 from .review_apps import *  # noqa
@@ -98,21 +99,6 @@ def reset_metadata(request, cohort_pk):
     return HttpResponseRedirect(reverse('cohort-detail', args=[cohort_pk]))
 
 
-@login_required
-def cohort_files(request, pk):
-    cohort = get_object_or_404(
-        Cohort.objects.prefetch_related('metadata_files').prefetch_related('zips'),
-        pk=pk,
-    )
-    return render(
-        request,
-        'ingest/cohort_files.html',
-        {
-            'cohort': cohort,
-        },
-    )
-
-
 @staff_member_required
 def cohort_detail(request, pk):
     cohort = get_object_or_404(
@@ -146,6 +132,7 @@ def cohort_detail(request, pk):
             'total_accessions': accession_qs.count(),
             'check_counts': Accession.check_counts(cohort),
             'checks': Accession.checks(),
+            'breadcrumbs': [['#', 'Ingest Review'], ['#', cohort.name]],
         },
     )
 
@@ -239,7 +226,9 @@ def validate_archive_consistency(df, cohort):
 @staff_member_required
 def apply_metadata(request, cohort_pk):
     cohort = get_object_or_404(
-        Cohort,
+        Cohort.objects.prefetch_related(
+            Prefetch('metadata_files', queryset=MetadataFile.objects.order_by('-created'))
+        ),
         pk=cohort_pk,
     )
 
@@ -287,7 +276,7 @@ def apply_metadata(request, cohort_pk):
                     checkpoints[3]['run'] = True
 
                     if not checkpoints[3]['problems']:
-                        apply_metadata_task.delay(form.instance.id)
+                        # apply_metadata_task.delay(form.instance.id)
                         messages.info(request, 'Metadata is being applied.')
 
     else:
@@ -296,7 +285,16 @@ def apply_metadata(request, cohort_pk):
     return render(
         request,
         'ingest/apply_metadata.html',
-        {'cohort': cohort, 'form': form, 'checkpoint': checkpoints},
+        {
+            'cohort': cohort,
+            'form': form,
+            'checkpoint': checkpoints,
+            'breadcrumbs': [
+                ['#', 'Ingest Review'],
+                ['#', cohort.name],
+                ['#', 'Metadata Application'],
+            ],
+        },
     )
 
 
@@ -306,9 +304,7 @@ def ingest_review(request):
         request,
         'ingest/ingest_review.html',
         {
-            'cohorts': Cohort.objects.select_related('contributor').order_by(
-                'contributor', 'created'
-            )
+            'cohorts': Cohort.objects.select_related('contributor').order_by('-created'),
         },
     )
 
@@ -328,5 +324,9 @@ def review_skipped_accessions(request, cohort_pk):
     return render(
         request,
         'ingest/review_skipped_accessions.html',
-        {'cohort': cohort, 'page_obj': page_obj, 'total_accessions': accessions.count()},
+        {
+            'cohort': cohort,
+            'page_obj': page_obj,
+            'total_accessions': accessions.count(),
+        },
     )
