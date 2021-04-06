@@ -276,7 +276,8 @@ class Zip(TimeStampedModel):
         return sorted(blob_name_preexisting), sorted(blob_name_duplicates)
 
     def extract(self):
-        from isic.ingest.tasks import process_accession
+        if self.status != Zip.Status.CREATED:
+            raise Exception('Can not extract zip %d with status %s', self.pk, self.status)
 
         with transaction.atomic():
             self.status = Zip.Status.EXTRACTING
