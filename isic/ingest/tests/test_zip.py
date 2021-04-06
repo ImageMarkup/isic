@@ -53,7 +53,7 @@ def test_zip_extract(zip):
     zip.extract()
 
     zip.refresh_from_db()
-    assert zip.status == Zip.Status.COMPLETED
+    assert zip.status == Zip.Status.EXTRACTED
     assert Accession.objects.count() == 5
 
 

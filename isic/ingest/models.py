@@ -228,8 +228,8 @@ class DistinctnessMeasure(TimeStampedModel):
 class Zip(TimeStampedModel):
     class Status(models.TextChoices):
         CREATED = 'created', 'Created'
-        STARTED = 'extracting', 'Extracting'
-        COMPLETED = 'extracted', 'Extracted'
+        EXTRACTING = 'extracting', 'Extracting'
+        EXTRACTED = 'extracted', 'Extracted'
 
     cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name='zips')
 
@@ -250,7 +250,7 @@ class Zip(TimeStampedModel):
         return os.path.basename(self.blob_name)
 
     def succeed(self):
-        self.status = Zip.Status.COMPLETED
+        self.status = Zip.Status.EXTRACTED
         self.save(update_fields=['status'])
 
     def reset(self):
@@ -279,7 +279,7 @@ class Zip(TimeStampedModel):
         from isic.ingest.tasks import process_accession
 
         with transaction.atomic():
-            self.status = Zip.Status.STARTED
+            self.status = Zip.Status.EXTRACTING
             self.save(update_fields=['status'])
 
             blob_name_preexisting, blob_name_duplicates = self._get_preexisting_and_duplicates()
@@ -324,5 +324,5 @@ class Zip(TimeStampedModel):
         for accession_id in self.accessions.values_list('id', flat=True):
             process_accession.delay(accession_id)
 
-        self.status = Zip.Status.COMPLETED
+        self.status = Zip.Status.EXTRACTED
         self.save(update_fields=['status'])
