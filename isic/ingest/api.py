@@ -3,8 +3,9 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
-from isic.ingest.models import Accession
-from isic.ingest.serializers import AccessionSerializer
+from isic.ingest.models import Accession, MetadataFile
+from isic.ingest.serializers import AccessionSerializer, MetadataFileSerializer
+from isic.ingest.tasks import apply_metadata
 
 
 class AccessionViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
@@ -21,3 +22,15 @@ class AccessionViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
                 setattr(accession, key, value)
                 accession.save(update_fields=[key])
         return Response(serializer.data)
+
+
+class MetadataFileViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
+    serializer_class = MetadataFileSerializer
+    queryset = MetadataFile.objects.all()
+    permission_classes = [IsAdminUser]
+
+    @action(detail=True, methods=['post'])
+    def apply_metadata(self, request, pk=None):
+        metadata_file = self.get_object()
+        apply_metadata.delay(metadata_file.id)
+        return Response()

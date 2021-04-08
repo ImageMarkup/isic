@@ -8,7 +8,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
 from isic.discourse_sso.views import discourse_sso_login
-from isic.ingest.api import AccessionViewSet
+from isic.ingest.api import AccessionViewSet, MetadataFileViewSet
 from isic.ingest.views import (
     DiagnosisReviewAppView,
     DuplicateReviewAppView,
@@ -35,6 +35,7 @@ from isic.studies.views import annotation_detail, study_create, study_detail, st
 router = routers.SimpleRouter()
 router.register('accessions', AccessionViewSet)
 router.register('annotations', AnnotationViewSet)
+router.register('metadata-files', MetadataFileViewSet)
 router.register('studies', StudyViewSet)
 router.register('study-tasks', StudyTaskViewSet)
 
@@ -82,13 +83,12 @@ urlpatterns = [
         'upload/create-cohort/<contributor_pk>', upload_cohort_create, name='upload/create-cohort'
     ),
     path('upload/<pk>/files/', cohort_files, name='upload/cohort-files'),
-    path('cohort/<pk>/', cohort_detail, name='cohort-detail'),
     path('cohort/<cohort_pk>/upload-zip/', zip_create, name='upload-zip'),
     path('cohort/<cohort_pk>/upload-metadata/', metadata_file_create, name='upload-metadata'),
     # Staff pges
     path('staff/ingest-review/', ingest_review, name='ingest-review'),
     path('staff/cohorts/', cohort_list, name='cohort-list'),
-    path('staff/cohort/<pk>/', cohort_detail, name='cohort-detail'),
+    path('staff/ingest-review/<pk>/', cohort_detail, name='cohort-detail'),
     path(
         'staff/ingest-review/diagnosis/<cohort_pk>/',
         DiagnosisReviewAppView.as_view(),
@@ -114,7 +114,11 @@ urlpatterns = [
         review_skipped_accessions,
         name='review-skipped-accessions',
     ),
-    path('staff/apply-metadata/<cohort_pk>/', apply_metadata, name='apply-metadata'),
+    path(
+        'staff/ingest-review/<cohort_pk>/validate-metadata/',
+        apply_metadata,
+        name='validate-metadata',
+    ),
     path('staff/reset-metadata/<cohort_pk>/', reset_metadata, name='reset-metadata'),
 ]
 

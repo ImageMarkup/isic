@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from isic.ingest.models import Accession
+from isic.ingest.models import Accession, MetadataFile
 
 
 class AccessionSerializer(serializers.ModelSerializer):
@@ -14,4 +14,12 @@ class AccessionSerializer(serializers.ModelSerializer):
             'phi_check',
             'duplicate_check',
             'lesion_check',
+        ]
+
+
+class MetadataFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetadataFile
+        fields = [
+            'id',
         ]

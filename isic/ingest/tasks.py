@@ -91,8 +91,10 @@ def apply_metadata(metadatafile_id: int):
                 blob_name=row['filename'], upload__cohort=metadata_file.cohort
             )
             existing_metadata = accession.metadata
+            existing_unstructured_metadata = accession.unstructured_metadata
             existing_metadata.update(
                 MetadataRow.parse_obj(row).dict(exclude_unset=True, exclude_none=True)
             )
             accession.metadata = existing_metadata
-            accession.save(update_fields=['metadata'])
+            existing_unstructured_metadata.update(MetadataRow.parse_obj(row).unstructured)
+            accession.save(update_fields=['metadata', 'unstructured_metadata'])

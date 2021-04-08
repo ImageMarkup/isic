@@ -16,6 +16,8 @@ from django.template.loader import render_to_string
 from django.urls.base import reverse
 from django.utils.safestring import mark_safe
 from django_extensions.db.models import TimeStampedModel
+import numpy as np
+import pandas as pd
 from s3_file_field import S3FileField
 
 from isic.ingest.zip_utils import file_names_in_zip, items_in_zip
@@ -120,6 +122,15 @@ class MetadataFile(TimeStampedModel):
     @property
     def blob_basename(self) -> str:
         return os.path.basename(self.blob_name)
+
+    def to_df(self):
+        with self.blob.open() as csv:
+            df = pd.read_csv(csv, header=0)
+
+        # pydantic expects None for the absence of a value, not NaN
+        df = df.replace({np.nan: None})
+
+        return df
 
 
 class Accession(TimeStampedModel):

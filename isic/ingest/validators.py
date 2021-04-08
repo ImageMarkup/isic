@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from enum import Enum
 import re
-from typing import Optional
+from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, root_validator, validator
 from pydantic.types import constr
 
 
@@ -314,7 +314,6 @@ PatientIdType = constr(regex=r'^IP_[0-9]{7}$')
 LesionIdType = constr(regex=r'^IL_[0-9]{7}$')
 
 
-# TODO: support unstructured metadata
 # TODO: exif_* headers
 class MetadataRow(BaseModel):
     age: Optional[Age]
@@ -342,6 +341,22 @@ class MetadataRow(BaseModel):
     mel_thick_mm: Optional[MelThickMm]
     mel_type: Optional[MelType]
     mel_ulcer: Optional[bool]
+
+    unstructured: Dict[str, Any]
+
+    # See https://github.com/samuelcolvin/pydantic/issues/2285 for more detail
+    @root_validator(pre=True)
+    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:  # noqa: N805
+        all_required_field_names = {
+            field.alias for field in cls.__fields__.values() if field.alias != 'unstructured'
+        }  # to support alias
+
+        unstructured: Dict[str, Any] = {}
+        for field_name in list(values):
+            if field_name not in all_required_field_names:
+                unstructured[field_name] = values.pop(field_name)
+        values['unstructured'] = unstructured
+        return values
 
     @validator('*', pre=True)
     @classmethod
