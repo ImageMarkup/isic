@@ -21,6 +21,20 @@ class Problem(BaseModel):
     type: Optional[str] = 'error'
 
 
+def get_unstructured_columns(df):
+    unstructured_columns = set()
+
+    for _, (_, row) in enumerate(df.iterrows(), start=2):
+        try:
+            m = MetadataRow.parse_obj(row)
+        except Exception:
+            pass
+        else:
+            unstructured_columns |= set(m.unstructured.keys())
+
+    return sorted(list(unstructured_columns))
+
+
 def validate_csv_format_and_filenames(df, cohort):
     problems = []
 

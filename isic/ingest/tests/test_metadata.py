@@ -1,7 +1,8 @@
+import pandas as pd
 from pydantic import ValidationError
 import pytest
 
-from isic.ingest.util.metadata import validate_csv_format_and_filenames
+from isic.ingest.util.metadata import get_unstructured_columns, validate_csv_format_and_filenames
 from isic.ingest.validators import MetadataRow
 
 
@@ -57,3 +58,11 @@ def test_validate_metadata_step1_has_duplicate_filenames(metadatafile_duplicate_
     )
     assert len(problems) == 2
     assert 'Duplicate filenames' in problems[0].message
+
+
+def test_get_unstructured_columns():
+    data = [{'age': 25, 'foo': 'bar'}, {'age': 25}, {'age': 25, 'foo': 'bar'}]
+
+    df = pd.DataFrame.from_records(data)
+
+    assert get_unstructured_columns(df) == ['foo']
