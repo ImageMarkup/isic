@@ -3,21 +3,24 @@
 {% load chunks %}
 
 {% block content %}
+  <div class="mb-4">
+
+    <h2>Ingest Review</h2>
+    <p>Cohorts for review</p>
+  </div>
   <div class="bg-white shadow overflow-hidden sm:rounded-md">
     <ul class="divide-y divide-gray-200">
       {% for cohort in cohorts %}
         <li>
           <a href="{% url 'cohort-detail' cohort.id %}" class="block hover:bg-gray-50">
             <div class="px-4 py-4 sm:px-6">
-              <div class="flex items-center justify-between">
+              <div class="flex items-center">
                 <p class="text-sm font-medium text-indigo-600 truncate">
                   {{ cohort.name }}
-                </p>
-                <div class="ml-2 flex-shrink-0 flex">
-                  <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                  <p class="px-2 ml-2 text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                     {{ cohort.copyright_license  }}
                   </p>
-                </div>
+                </p>
               </div>
               <div class="mt-2 sm:flex sm:justify-between">
                 <div class="sm:flex">
@@ -28,11 +31,16 @@
                     </svg>
                     {{cohort.contributor.institution_name}}
                   </p>
+
                 </div>
                 <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
                   <p>
                     Created on
                     <time datetime="2020-01-07">{{ cohort.created }}</time>
+                  </p>
+                  <p>
+                    Created by
+                    {{ cohort.creator }}
                   </p>
                 </div>
               </div>

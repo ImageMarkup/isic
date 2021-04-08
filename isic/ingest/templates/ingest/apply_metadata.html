@@ -1,81 +1,27 @@
-{% extends 'core/material_base.html' %}
+{% extends 'core/base.html' %}
 
 {% block content %}
-  <nav>
-    <div class="nav-wrapper">
-      <div class="col s12">
-        <a href="{% url 'cohort-list' %}" class="breadcrumb">Cohorts</a>
-        <a href="{% url 'cohort-detail' cohort.id %}" class="breadcrumb">{{ cohort.name }}</a>
-        <a class="breadcrumb">Apply Metadata</a>
+  {% include 'ingest/partials/breadcrumbs.html' %}
+
+  {% if request.method == 'GET' %}
+    <div class="mt-6 w-3/4 mx-auto flex-row">
+      {% include 'ingest/partials/metadata_file_select.html' %}
+    </div>
+
+    <div>
+      <div class="h-12 my-8 relative">
+        <span class="absolute flex font-bold text-lg items-center inset-y-0 left-1/2 -translate-x-1/2 py-2 px-3 bg-white z-20">OR</span>
+        <hr class="absolute inset-x-0 top-1/2 z-10">
+      </div>
+      <div class="flex justify-center">
+        <a href="{% url 'upload-metadata' cohort.id %}?ingest_review_redirect=1">
+          <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            Upload New File
+          </button>
+        </a>
       </div>
     </div>
-  </nav>
-
-  {{ form.media  }}
-  <form method="post" enctype="multipart/form-data">{% csrf_token %}
-    {{ form.as_p  }}
-    <input type="submit" value="Apply">
-  </form>
-
-  <hr />
-
-  {% if request.method == 'POST' %}
-    <div>
-      <h4>Checkpoint 1 - {{ checkpoint.1.title }}</h4>
-    </div>
-    {% if checkpoint.1.run %}
-      {% for problem in checkpoint.1.problems %}
-        <div>
-          {{ problem.message  }}
-          {% if problem.context %}
-            <div>
-              {{ problem.context }}
-            </div>
-          {% endif %}
-        </div>
-      {% empty %}
-        passed.
-      {% endfor %}
-    {% endif %}
-
-    <div>
-      <h4>Checkpoint 2 - {{ checkpoint.2.title }}</h4>
-    </div>
-    {% if checkpoint.2.run %}
-      {% if checkpoint.2.problems %}
-        <ul>
-          {% for key, values in checkpoint.2.problems.items %}
-            <li>
-              <strong>{{ key.0 }}</strong> - {{ key.1 }} - lines: {{ values|slice:"5"|join:", " }}
-              {% if values|length > 5 %}(and {{ values|length|add:"-5" }} more){% endif %}
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        passed.
-      {% endif %}
-    {% else %}
-      skipped.
-    {% endif %}
-
-    <div>
-      <h4>Checkpoint 3 - {{ checkpoint.3.title }}</h4>
-    </div>
-    {% if checkpoint.3.run %}
-      {% if checkpoint.3.problems %}
-        <ul>
-          {% for key, values in checkpoint.3.problems.items %}
-            <li>
-              <strong>{{ key.0 }}</strong> - {{ key.1 }} - lines: {{ values|slice:"5"|join:", " }}
-              {% if values|length > 5 %}(and {{ values|length|add:"-5" }} more){% endif %}
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        passed.
-      {% endif %}
-    {% else %}
-      skipped.
-    {% endif %}
+  {% elif request.method == 'POST' %}
+    {% include 'ingest/partials/metadata_validation_output.html' %}
   {% endif %}
 {% endblock %}

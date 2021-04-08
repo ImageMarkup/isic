@@ -4,11 +4,11 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Count
 from django.db.models.query_utils import Q
 from django.shortcuts import get_object_or_404
-from django.urls.base import reverse
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView
 
 from isic.ingest.models import Accession, Cohort, DistinctnessMeasure
+from isic.ingest.util import make_breadcrumbs
 
 
 @method_decorator(staff_member_required, name='dispatch')
@@ -37,10 +37,7 @@ class ReviewAppView(ListView):
                 'cohort': self.cohort,
                 'buttons': self.buttons,
                 'checks': self.checks,
-                'breadcrumbs': [
-                    [reverse('cohort-detail', args=[self.cohort.pk]), self.cohort.name],
-                    ['#', self.title],
-                ],
+                'breadcrumbs': make_breadcrumbs(self.cohort) + [['#', self.title]],
             }
         )
         return context
@@ -48,7 +45,11 @@ class ReviewAppView(ListView):
 
 class GroupedReviewAppView(ReviewAppView):
     paginate_by = 10
-    template_name = 'ingest/grouped_review_app.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['grouped_review_app'] = True
+        return context
 
 
 class DiagnosisReviewAppView(ReviewAppView):
@@ -71,13 +72,32 @@ class QualityPhiReviewAppView(ReviewAppView):
     checks = ['quality_check', 'phi_check']
 
     def get_unreviewed_filter(self):
-        return Q(quality_check__isnull=True) | Q(phi_check__isnull=True)
+        return Q(quality_check__isnull=True) & Q(phi_check__isnull=True)
 
 
 class DuplicateReviewAppView(GroupedReviewAppView):
     title = 'Duplicate Review'
     buttons = {'reject': {'duplicate_check': 'Reject Duplicate'}}
     checks = ['duplicate_check']
+
+    def get_unreviewed_filter(self):
+        """
+        Filter out the unreviewed duplicates.
+
+        This is a little tricky because we only want to filter the GROUP (aka checksum) if
+        any accessions in the group are still unreviewed (for duplicates).
+        """
+        checksums_with_any_unreviewed_accessions = (
+            DistinctnessMeasure.objects.values('checksum')
+            .annotate(
+                num_unreviewed_accessions=Count(
+                    'accession', filter=Q(accession__duplicate_check=None)
+                )
+            )
+            .filter(num_unreviewed_accessions__gt=0)
+            .values('checksum')
+        )
+        return Q(checksum__in=checksums_with_any_unreviewed_accessions)
 
     def get_queryset(self):
         self.cohort = get_object_or_404(Cohort, pk=self.kwargs['cohort_pk'])
@@ -87,6 +107,7 @@ class DuplicateReviewAppView(GroupedReviewAppView):
                 checksum__in=DistinctnessMeasure.objects.values('checksum')
                 .annotate(is_duplicate=Count('checksum'))
                 .filter(accession__upload__cohort=self.cohort, is_duplicate__gt=1)
+                .filter(self.get_unreviewed_filter())
                 .values_list('checksum', flat=True),
             )
             .order_by('checksum')
@@ -117,7 +138,6 @@ class LesionReviewAppView(GroupedReviewAppView):
     title = 'Lesion Review'
     buttons = {
         'reject': {'lesion_check': 'Reject Lesion'},
-        'accept': {'lesion_check': 'Accept Lesion'},
     }
     checks = ['lesion_check']
 

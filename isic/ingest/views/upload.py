@@ -1,10 +1,11 @@
 from django.contrib.auth.decorators import login_required
+from django.db.models.query import Prefetch
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
 from isic.ingest.forms import CohortForm, ContributorForm
-from isic.ingest.models import Cohort, Contributor
+from isic.ingest.models import Cohort, Contributor, MetadataFile
 
 
 @login_required
@@ -29,7 +30,7 @@ def select_or_create_cohort(request, contributor_pk):
         filters['contributor__creator'] = request.user
 
     ctx = {
-        'cohorts': Cohort.objects.filter(**filters),
+        'cohorts': Cohort.objects.filter(**filters).order_by('-created'),
         'contributor_pk': contributor_pk,
     }
     if ctx['cohorts'].count() == 0:
@@ -54,8 +55,12 @@ def upload_contributor_create(request):
 
 @login_required
 def upload_cohort_create(request, contributor_pk):
+    filters = {}
+    if not request.user.is_staff:
+        filters['creator'] = request.user
+
     contributor: Contributor = get_object_or_404(
-        Contributor.objects.filter(creator=request.user), pk=contributor_pk
+        Contributor.objects.filter(**filters), pk=contributor_pk
     )
 
     if request.method == 'POST':
@@ -75,3 +80,20 @@ def upload_cohort_create(request, contributor_pk):
         )
 
     return render(request, 'ingest/cohort_create.html', {'form': form})
+
+
+@login_required
+def cohort_files(request, pk):
+    cohort = get_object_or_404(
+        Cohort.objects.prefetch_related(
+            Prefetch('metadata_files', queryset=MetadataFile.objects.order_by('-created'))
+        ).prefetch_related('zips'),
+        pk=pk,
+    )
+    return render(
+        request,
+        'ingest/cohort_files.html',
+        {
+            'cohort': cohort,
+        },
+    )
