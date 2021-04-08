@@ -127,8 +127,8 @@
   </div>
 
   <div class="mt-4">
-    <a href="{% url 'apply-metadata' cohort.id %}">Apply metadata</a> |
-    <a href="{% url 'reset-metadata' cohort.id %}" onclick="return confirm('Are you sure you want to reset metadata for the entire Cohort?')">Reset metadata</a><br />
+    <a href="{% url 'validate-metadata' cohort.id %}">Validate & Apply Metadata</a> |
+    <a href="{% url 'reset-metadata' cohort.id %}" onclick="return confirm('Are you sure you want to reset metadata for the entire Cohort?')">Reset Metadata</a><br />
   </div>
 
 {% endblock %}
