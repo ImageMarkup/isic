@@ -1,33 +1,19 @@
-from collections import defaultdict
-from typing import Optional
-
-from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count
-from django.db.models.query import Prefetch
 from django.forms.models import ModelForm
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
-import numpy as np
-import pandas as pd
-from pydantic.main import BaseModel
 
-from isic.ingest.models import Accession, Cohort, DistinctnessMeasure, MetadataFile, Zip
+from isic.ingest.models import Accession, Cohort, DistinctnessMeasure, Zip
 from isic.ingest.tasks import extract_zip
-from isic.ingest.util import make_breadcrumbs
-from isic.ingest.validators import MetadataRow
+from isic.ingest.util import make_breadcrumbs, staff_or_creator_filter
 
+from .metadata import *  # noqa
 from .review_apps import *  # noqa
 from .upload import *  # noqa
-
-
-class MetadataFileForm(ModelForm):
-    class Meta:
-        model = MetadataFile
-        fields = ['blob']
 
 
 class ZipForm(ModelForm):
@@ -39,7 +25,7 @@ class ZipForm(ModelForm):
 @login_required
 def zip_create(request, cohort_pk):
     cohort = get_object_or_404(
-        Cohort,
+        Cohort.objects.filter(**staff_or_creator_filter(request.user)),
         pk=cohort_pk,
     )
     if request.method == 'POST':
@@ -59,27 +45,6 @@ def zip_create(request, cohort_pk):
 
 
 @staff_member_required
-def metadata_file_create(request, cohort_pk):
-    cohort = get_object_or_404(
-        Cohort,
-        pk=cohort_pk,
-    )
-    if request.method == 'POST':
-        form = MetadataFileForm(request.POST)
-        if form.is_valid():
-            form.instance.creator = request.user
-            form.instance.blob_size = form.instance.blob.size
-            form.instance.blob_name = form.instance.blob.name
-            form.instance.cohort = cohort
-            form.save(commit=True)
-            return HttpResponseRedirect(reverse('upload/cohort-files', args=[cohort.pk]))
-    else:
-        form = MetadataFileForm()
-
-    return render(request, 'ingest/metadata_file_create.html', {'form': form})
-
-
-@staff_member_required
 def cohort_list(request):
     cohorts = Cohort.objects.all().order_by('-created')
     return render(
@@ -89,15 +54,6 @@ def cohort_list(request):
             'cohorts': cohorts,
         },
     )
-
-
-@staff_member_required
-def reset_metadata(request, cohort_pk):
-    # TODO: GET request to mutate?
-    cohort = get_object_or_404(Cohort, pk=cohort_pk)
-    Accession.objects.filter(upload__cohort=cohort).update(metadata={})
-    messages.info(request, 'Metadata has been reset.')
-    return HttpResponseRedirect(reverse('cohort-detail', args=[cohort_pk]))
 
 
 @staff_member_required
@@ -134,163 +90,6 @@ def cohort_detail(request, pk):
             'check_counts': Accession.check_counts(cohort),
             'checks': Accession.checks(),
             'breadcrumbs': make_breadcrumbs(cohort),
-        },
-    )
-
-
-class MetadataForm(ModelForm):
-    class Meta:
-        model = MetadataFile
-        fields = ['blob']
-
-
-class Problem(BaseModel):
-    message: Optional[str]
-    context: Optional[list]
-    type: Optional[str] = 'error'
-
-
-def validate_csv_format_and_filenames(df, cohort):
-    problems = []
-
-    # TODO: duplicate columns
-
-    if 'filename' not in df.columns:
-        problems.append(Problem(message='Unable to find a filename column in CSV.'))
-        return problems
-
-    matching_accessions = Accession.objects.filter(
-        upload__cohort=cohort, blob_name__in=df['filename']
-    ).values_list('blob_name', 'metadata')
-
-    duplicate_filenames = df[df['filename'].duplicated()].filename.values
-    if duplicate_filenames.size:
-        problems.append(
-            Problem(message='Duplicate filenames found.', context=list(duplicate_filenames))
-        )
-
-    existing_df = pd.DataFrame((x[0] for x in matching_accessions), columns=['filename'])
-    unknown_images = set(df.filename.values) - set(existing_df.filename.values)
-    if unknown_images:
-        problems.append(
-            Problem(
-                message='Encountered unknown images in the CSV.',
-                context=list(unknown_images),
-                type='warning',
-            )
-        )
-
-    return problems
-
-
-def validate_internal_consistency(df):
-    # keyed by column, message
-    column_problems: dict[tuple[str, str], list[int]] = defaultdict(list)
-
-    for i, (_, row) in enumerate(df.iterrows(), start=2):
-        try:
-            MetadataRow.parse_obj(row)
-        except Exception as e:
-            for error in e.errors():
-                column = error['loc'][0]
-                column_problems[(column, error['msg'])].append(i)
-
-    # TODO: defaultdict doesn't work in django templates?
-    return dict(column_problems)
-
-
-def validate_archive_consistency(df, cohort):
-    # keyed by column, message
-    column_problems: dict[tuple[str, str], list[int]] = defaultdict(list)
-    accessions = Accession.objects.filter(
-        upload__cohort=cohort, blob_name__in=df['filename']
-    ).values_list('blob_name', 'metadata')
-    # TODO: easier way to do this?
-    accessions_dict = {x[0]: x[1] for x in accessions}
-
-    for i, (_, row) in enumerate(df.iterrows(), start=2):
-        existing = accessions_dict[row['filename']]
-        row = {**existing, **{k: v for k, v in row.items() if v is not None}}
-
-        try:
-            MetadataRow.parse_obj(row)
-        except Exception as e:
-            for error in e.errors():
-                column = error['loc'][0]
-
-                column_problems[(column, error['msg'])].append(i)
-
-    # TODO: defaultdict doesn't work in django templates?
-    return dict(column_problems)
-
-
-@staff_member_required
-def apply_metadata(request, cohort_pk):
-    cohort = get_object_or_404(
-        Cohort.objects.prefetch_related(
-            Prefetch('metadata_files', queryset=MetadataFile.objects.order_by('-created'))
-        ),
-        pk=cohort_pk,
-    )
-
-    checkpoints = {
-        1: {
-            'title': 'Filename checks',
-            'run': False,
-            'problems': [],
-        },
-        2: {
-            'title': 'Internal consistency',
-            'run': False,
-            'problems': [],
-        },
-        3: {
-            'title': 'Archive consistency',
-            'run': False,
-            'problems': [],
-        },
-    }
-
-    if request.method == 'POST':
-        form = MetadataForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.instance.creator = request.user
-            form.instance.cohort = cohort
-            form.instance.blob_size = form.instance.blob.size
-            form.instance.blob_name = form.instance.blob.name
-            form.instance.save()
-            with form.instance.blob.open() as csv:
-                df = pd.read_csv(csv, header=0)
-
-            checkpoints[1]['problems'] = validate_csv_format_and_filenames(df, cohort)
-            checkpoints[1]['run'] = True
-
-            # pydantic expects None for the absence of a value, not NaN
-            df = df.replace({np.nan: None})
-
-            if not checkpoints[1]['problems']:
-                checkpoints[2]['problems'] = validate_internal_consistency(df)
-                checkpoints[2]['run'] = True
-
-                if not checkpoints[2]['problems']:
-                    checkpoints[3]['problems'] = validate_archive_consistency(df, cohort)
-                    checkpoints[3]['run'] = True
-
-                    if not checkpoints[3]['problems']:
-                        # apply_metadata_task.delay(form.instance.id)
-                        messages.info(request, 'Metadata is being applied.')
-
-    else:
-        form = MetadataForm()
-
-    return render(
-        request,
-        'ingest/apply_metadata.html',
-        {
-            'cohort': cohort,
-            'form': form,
-            'checkpoint': checkpoints,
-            'breadcrumbs': make_breadcrumbs(cohort) + [['#', 'Metadata Application']],
         },
     )
 

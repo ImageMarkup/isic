@@ -8,7 +8,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
 from isic.discourse_sso.views import discourse_sso_login
-from isic.ingest.api import AccessionViewSet
+from isic.ingest.api import AccessionViewSet, MetadataFileViewSet
 from isic.ingest.views import (
     DiagnosisReviewAppView,
     DuplicateReviewAppView,
@@ -35,6 +35,7 @@ from isic.studies.views import annotation_detail, study_create, study_detail, st
 router = routers.SimpleRouter()
 router.register('accessions', AccessionViewSet)
 router.register('annotations', AnnotationViewSet)
+router.register('metadata-files', MetadataFileViewSet)
 router.register('studies', StudyViewSet)
 router.register('study-tasks', StudyTaskViewSet)
 
@@ -113,7 +114,11 @@ urlpatterns = [
         review_skipped_accessions,
         name='review-skipped-accessions',
     ),
-    path('staff/ingest-review/<cohort_pk>/apply-metadata/', apply_metadata, name='apply-metadata'),
+    path(
+        'staff/ingest-review/<cohort_pk>/validate-metadata/',
+        apply_metadata,
+        name='validate-metadata',
+    ),
     path('staff/reset-metadata/<cohort_pk>/', reset_metadata, name='reset-metadata'),
 ]
 
