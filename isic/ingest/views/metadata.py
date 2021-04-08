@@ -16,6 +16,7 @@ from isic.ingest.util import (
     validate_csv_format_and_filenames,
     validate_internal_consistency,
 )
+from isic.ingest.util.metadata import get_unstructured_columns
 
 
 class MetadataFileForm(ModelForm):
@@ -111,6 +112,7 @@ def apply_metadata(request, cohort_pk):
             metadata_file = MetadataFile.objects.get(id=int(form.cleaned_data['metadata_file']))
             ctx['metadata_file_id'] = metadata_file.id
             df = metadata_file.to_df()
+            ctx['unstructured_columns'] = get_unstructured_columns(df)
 
             checkpoints[1]['problems'] = validate_csv_format_and_filenames(df, cohort)
             checkpoints[1]['run'] = True
