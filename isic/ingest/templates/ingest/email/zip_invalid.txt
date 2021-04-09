@@ -1,0 +1,3 @@
+There was a problem uploading the ZIP file "{{ zip.blob_name }}", in the Cohort "{{ zip.cohort.name }}".
+
+The ZIP file could not be extracted. It may be corrupt or encoded with an unrecognised format.

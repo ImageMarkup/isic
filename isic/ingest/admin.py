@@ -132,7 +132,7 @@ class ZipAdmin(DjangoObjectActions, admin.ModelAdmin):
 
         for zip in queryset:
             zip.reset()
-            extract_zip_task.delay(zip.id)
+            extract_zip_task.delay(zip.pk)
 
 
 # @admin.register(UploadBlob)
