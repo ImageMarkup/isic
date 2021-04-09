@@ -2,7 +2,6 @@ from django.contrib import admin
 from django.db.models import Count
 from django.db.models.query_utils import Q
 from django.utils.safestring import mark_safe
-from django_admin_display import admin_display
 from django_object_actions import DjangoObjectActions
 from django_object_actions.utils import takes_instance_or_queryset
 from girder_utils.admin import ReadonlyTabularInline
@@ -65,27 +64,27 @@ class CohortAdmin(admin.ModelAdmin):
         )
         return qs
 
-    @admin_display(admin_order_field='zips_count')
+    @admin.display(ordering='zips_count')
     def zips_count(self, obj):
         return obj.zips_count
 
-    @admin_display(admin_order_field='pending_accessions')
+    @admin.display(ordering='pending_accessions')
     def pending_accessions(self, obj):
         return obj.pending_accessions
 
-    @admin_display(admin_order_field='skipped_accessions')
+    @admin.display(ordering='skipped_accessions')
     def skipped_accessions(self, obj):
         return obj.skipped_accessions
 
-    @admin_display(admin_order_field='failed_accessions')
+    @admin.display(ordering='failed_accessions')
     def failed_accessions(self, obj):
         return obj.failed_accessions
 
-    @admin_display(admin_order_field='successful_accessions')
+    @admin.display(ordering='successful_accessions')
     def successful_accessions(self, obj):
         return obj.successful_accessions
 
-    @admin_display(admin_order_field='accessions')
+    @admin.display(ordering='accessions')
     def accessions(self, obj):
         return obj.accessions
 
@@ -111,7 +110,7 @@ class AccessionAdmin(admin.ModelAdmin):
         qs = qs.select_related('upload__cohort')
         return qs
 
-    @admin_display(short_description='Cohort')
+    @admin.display(description='Cohort')
     def cohort(self, obj):
         return obj.upload.cohort
 
@@ -126,7 +125,7 @@ class ZipAdmin(DjangoObjectActions, admin.ModelAdmin):
     actions = ['extract_zip']
     change_actions = ['extract_zip']
 
-    @admin_display(short_description='Extract zip')
+    @admin.action(description='Extract zip')
     @takes_instance_or_queryset
     def extract_zip(self, request, queryset):
         from isic.ingest.tasks import extract_zip as extract_zip_task
@@ -146,7 +145,7 @@ class ZipAdmin(DjangoObjectActions, admin.ModelAdmin):
 #     def thumbnail(self, obj):
 #         return mark_safe(f'<img src="{obj.blob.url}" width="300" height="300" />')
 #
-#     @admin_display(short_description='Restart blob upload')
+#     @admin.action(description='Restart blob upload')
 #     def restart_blob_upload(self, request, queryset):
 #         from isic.ingest.tasks import maybe_upload_blob
 #
