@@ -36,7 +36,7 @@ def zip_create(request, cohort_pk):
             form.instance.blob_name = form.instance.blob.name
             form.instance.cohort = cohort
             form.save(commit=True)
-            extract_zip.delay(form.instance.id)
+            extract_zip.delay(form.instance.pk)
             return HttpResponseRedirect(reverse('upload/cohort-files', args=[cohort.pk]))
     else:
         form = ZipForm()
