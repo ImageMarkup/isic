@@ -2,6 +2,7 @@ import logging
 from mimetypes import guess_type
 import os
 from typing import List, Tuple
+import zipfile
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -241,6 +242,7 @@ class Zip(TimeStampedModel):
         CREATED = 'created', 'Created'
         EXTRACTING = 'extracting', 'Extracting'
         EXTRACTED = 'extracted', 'Extracted'
+        FAILED = 'failed', 'Failed'
 
     cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name='zips')
 
@@ -260,16 +262,6 @@ class Zip(TimeStampedModel):
     def blob_basename(self) -> str:
         return os.path.basename(self.blob_name)
 
-    def succeed(self):
-        self.status = Zip.Status.EXTRACTED
-        self.save(update_fields=['status'])
-
-    def reset(self):
-        with transaction.atomic():
-            self.accessions.all().delete()
-            self.status = Zip.Status.CREATED
-            self.save(update_fields=['status'])
-
     def _get_preexisting_and_duplicates(self) -> Tuple[List[str], List[str]]:
         blob_names_in_zip = set()
 
@@ -286,51 +278,109 @@ class Zip(TimeStampedModel):
 
         return sorted(blob_name_preexisting), sorted(blob_name_duplicates)
 
+    class ExtractException(Exception):
+        pass
+
+    class InvalidExtractException(ExtractException):
+        pass
+
+    class DuplicateExtractException(ExtractException):
+        pass
+
     def extract(self):
         if self.status != Zip.Status.CREATED:
             raise Exception('Can not extract zip %d with status %s', self.pk, self.status)
 
-        with transaction.atomic():
-            self.status = Zip.Status.EXTRACTING
+        try:
+            with transaction.atomic():
+                self.status = Zip.Status.EXTRACTING
+                self.save(update_fields=['status'])
+
+                blob_name_preexisting, blob_name_duplicates = self._get_preexisting_and_duplicates()
+                if blob_name_preexisting or blob_name_duplicates:
+                    raise Zip.DuplicateExtractException(blob_name_preexisting, blob_name_duplicates)
+
+                with self.blob.open('rb') as zip_blob_stream:
+                    for zip_item in items_in_zip(zip_blob_stream):
+                        zip_item_content_type = guess_type(zip_item.name)[0]
+                        # TODO: Store content_type in the DB?
+                        self.accessions.create(
+                            blob_name=zip_item.name,
+                            # Use an InMemoryUploadedFile instead of a SimpleUploadedFile, since
+                            # we can explicitly know the size and don't need the stream to be
+                            # wrapped
+                            original_blob=InMemoryUploadedFile(
+                                file=zip_item.stream,
+                                field_name=None,
+                                name=zip_item.name,
+                                content_type=zip_item_content_type,
+                                size=zip_item.size,
+                                charset=None,
+                            ),
+                        )
+
+                self.accessions.update(status=Accession.Status.CREATED)
+
+        except zipfile.BadZipFile:
+            logger.warning('Failed zip extraction: %d <%s>: invalid zip', self.pk, str(self))
+            self.status = Zip.Status.FAILED
+            raise Zip.InvalidExtractException
+        except Zip.DuplicateExtractException:
+            logger.warning('Failed zip extraction: %d <%s>: duplicates', self.pk, str(self))
+            self.status = Zip.Status.FAILED
+            raise
+        else:
+            self.status = Zip.Status.EXTRACTED
+        finally:
             self.save(update_fields=['status'])
 
-            blob_name_preexisting, blob_name_duplicates = self._get_preexisting_and_duplicates()
-            if blob_name_preexisting or blob_name_duplicates:
-                logger.warning('Failed zip extraction: %d <%s>', self.pk, str(self))
-                transaction.set_rollback(True)
-                send_mail(
-                    'A problem processing your zip file',
-                    render_to_string(
-                        'ingest/duplicates_email.txt',
-                        {
-                            'zip': self,
-                            'blob_name_preexisting': blob_name_preexisting,
-                            'blob_name_duplicates': blob_name_duplicates,
-                        },
-                    ),
-                    settings.DEFAULT_FROM_EMAIL,
-                    [self.creator.email],
-                )
-                return
+    def extract_and_notify(self):
+        try:
+            self.extract()
+        except Zip.InvalidExtractException:
+            send_mail(
+                'A problem processing your zip file',
+                render_to_string(
+                    'ingest/email/zip_invalid.txt',
+                    {
+                        'zip': self,
+                    },
+                ),
+                settings.DEFAULT_FROM_EMAIL,
+                [self.creator.email],
+            )
+            raise
+        except Zip.DuplicateExtractException as e:
+            blob_name_preexisting, blob_name_duplicates = e.args
+            send_mail(
+                'A problem processing your zip file',
+                render_to_string(
+                    'ingest/email/zip_duplicates.txt',
+                    {
+                        'zip': self,
+                        'blob_name_preexisting': blob_name_preexisting,
+                        'blob_name_duplicates': blob_name_duplicates,
+                    },
+                ),
+                settings.DEFAULT_FROM_EMAIL,
+                [self.creator.email],
+            )
+            raise
+        else:
+            send_mail(
+                'Zip file extracted',
+                render_to_string(
+                    'ingest/email/zip_success.txt',
+                    {
+                        'zip': self,
+                    },
+                ),
+                settings.DEFAULT_FROM_EMAIL,
+                [self.creator.email],
+            )
 
-            with self.blob.open('rb') as zip_blob_stream:
-                for zip_item in items_in_zip(zip_blob_stream):
-                    zip_item_content_type = guess_type(zip_item.name)[0]
-                    # TODO: Store content_type in the DB?
-                    self.accessions.create(
-                        blob_name=zip_item.name,
-                        # Use an InMemoryUploadedFile instead of a SimpleUploadedFile, since
-                        # we can explicitly know the size and don't need the stream to be wrapped
-                        original_blob=InMemoryUploadedFile(
-                            file=zip_item.stream,
-                            field_name=None,
-                            name=zip_item.name,
-                            content_type=zip_item_content_type,
-                            size=zip_item.size,
-                            charset=None,
-                        ),
-                    )
-            self.accessions.update(status=Accession.Status.CREATED)
-
-        self.status = Zip.Status.EXTRACTED
-        self.save(update_fields=['status'])
+    def reset(self):
+        with transaction.atomic():
+            self.accessions.all().delete()
+            self.status = Zip.Status.CREATED
+            self.save(update_fields=['status'])
