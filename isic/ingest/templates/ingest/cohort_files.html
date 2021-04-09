@@ -47,10 +47,10 @@
                 {% for zip in cohort.zips.all %}
                   <tr class="{% cycle 'bg-white' 'bg-gray-50' %}">
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {{ zip.blob_basename  }}
+                      {{ zip.blob_name }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {{ zip.blob_size|filesizeformat  }}
+                      {{ zip.blob_size|filesizeformat }}
                     </td>
                   </tr>
                 {% endfor %}
@@ -95,10 +95,10 @@
               {% for file in cohort.metadata_files.all %}
                 <tr class="{% if forloop.first %}bg-white{% else %}bg-gray-300{% endif %}">
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {{ file.blob_basename  }}
+                    {{ file.blob_name }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ file.blob_size|filesizeformat  }}
+                    {{ file.blob_size|filesizeformat }}
                   </td>
                 </tr>
               {% endfor %}
