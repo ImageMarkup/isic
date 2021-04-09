@@ -43,8 +43,7 @@ setup(
     install_requires=[
         'bcrypt',
         'celery',
-        'django',
-        'django-admin-display',
+        'django>=3.2',
         'django-allauth',
         'django-configurations[database,email]',
         'django-extensions',

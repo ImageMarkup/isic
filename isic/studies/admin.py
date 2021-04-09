@@ -1,6 +1,5 @@
 from django.contrib import admin
 from django.db.models import Count, Exists, OuterRef
-from django_admin_display import admin_display
 from girder_utils.admin import ReadonlyInlineMixin, ReadonlyTabularInline
 import nested_admin
 
@@ -77,7 +76,7 @@ class QuestionChoiceAdmin(admin.ModelAdmin):
         qs = qs.annotate(responded=Count('response'))
         return qs
 
-    @admin_display(admin_order_field='responded')
+    @admin.display(ordering='responded')
     def responded(self, obj):
         return obj.responded
 
@@ -112,7 +111,7 @@ class StudyTaskAdmin(nested_admin.NestedModelAdmin):
         qs = super().get_queryset(request)
         return qs.annotate(has_annotation=Exists(Annotation.objects.filter(task=OuterRef('pk'))))
 
-    @admin_display(admin_order_field='has_annotation', boolean=True)
+    @admin.display(ordering='has_annotation', boolean=True)
     def complete(self, obj):
         return obj.has_annot
 
@@ -142,23 +141,23 @@ class StudyAdmin(admin.ModelAdmin):
             num_responded=Count('tasks__annotation', distinct=True),
         )
 
-    @admin_display(admin_order_field='num_responded')
+    @admin.display(ordering='num_responded')
     def num_responded(self, obj):
         return obj.num_responded
 
-    @admin_display(admin_order_field='num_tasks')
+    @admin.display(ordering='num_tasks')
     def num_tasks(self, obj):
         return obj.num_tasks
 
-    @admin_display(admin_order_field='num_images')
+    @admin.display(ordering='num_images')
     def num_images(self, obj):
         return obj.num_images
 
-    @admin_display(admin_order_field='num_features')
+    @admin.display(ordering='num_features')
     def num_features(self, obj):
         return obj.num_features
 
-    @admin_display(admin_order_field='num_questions')
+    @admin.display(ordering='num_questions')
     def num_questions(self, obj):
         return obj.num_questions
 
@@ -190,10 +189,10 @@ class QuestionAdmin(admin.ModelAdmin):
             num_choices=Count('choices'), used_in=Count('study', distinct=True)
         )
 
-    @admin_display(admin_order_field='num_choices')
+    @admin.display(ordering='num_choices')
     def num_choices(self, obj):
         return obj.num_choices
 
-    @admin_display(admin_order_field='used_in')
+    @admin.display(ordering='used_in')
     def used_in(self, obj):
         return obj.used_in
