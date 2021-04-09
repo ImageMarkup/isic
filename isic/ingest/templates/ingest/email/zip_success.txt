@@ -1,0 +1,3 @@
+The ZIP file "{{ zip.blob_name }}", in the Cohort "{{ zip.cohort.name }}" was successfully received and extracted.
+
+The images within the ZIP file are now being processed. You should recieve an additional email once this proesss completes.

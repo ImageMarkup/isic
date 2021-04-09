@@ -15,14 +15,22 @@ from isic.ingest.validators import MetadataRow
 
 
 @shared_task
-def extract_zip(zip_id: int):
-    zip = Zip.objects.select_related('creator').get(pk=zip_id)
+def extract_zip(zip_pk: int):
+    zip = Zip.objects.get(pk=zip_pk)
 
-    zip.extract()
-
-    # tasks should be delayed after the accessions are committed to the database
-    for accession_id in zip.accessions.values_list('id', flat=True):
-        process_accession.delay(accession_id)
+    try:
+        zip.extract_and_notify()
+    except Zip.ExtractException:
+        # Errors from bad input; these will be logged, but the task is not a failure
+        pass
+    except SoftTimeLimitExceeded:
+        zip.status = Zip.Status.FAILED
+        zip.save(update_fields=['status'])
+        raise
+    else:
+        # tasks should be delayed after the accessions are committed to the database
+        for accession_id in zip.accessions.values_list('id', flat=True):
+            process_accession.delay(accession_id)
 
 
 @shared_task(soft_time_limit=60, time_limit=90)

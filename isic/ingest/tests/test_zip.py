@@ -1,8 +1,15 @@
 # from isic.ingest.models import Zip
+import io
+
 import pytest
 import requests
 
 from isic.ingest.models import Accession, Zip
+
+
+@pytest.fixture(params=[b'', b'corrupt_zip'], ids=['empty', 'corrupt'])
+def invalid_zip(request, zip_factory):
+    return zip_factory(blob__from_func=lambda: io.BytesIO(request.param))
 
 
 @pytest.fixture
@@ -49,7 +56,7 @@ def test_zip_get_preexisting_and_duplicates_duplicates(duplicates_zip):
 
 
 @pytest.mark.django_db
-def test_zip_extract(zip):
+def test_zip_extract_success(zip):
     zip.extract()
 
     zip.refresh_from_db()
@@ -57,19 +64,94 @@ def test_zip_extract(zip):
     assert Accession.objects.count() == 5
 
 
-@pytest.mark.xfail
 @pytest.mark.django_db
-def test_zip_extract_preexisting_and_duplicates_rollback(caplog, preexisting_and_duplicates_zip):
-    preexisting_and_duplicates_zip.extract()
+def test_zip_extract_success_accession_status(zip):
+    zip.extract()
+
+    accession = Accession.objects.get(blob_name='ISIC_0000000.jpg')
+    assert accession.status == Accession.Status.CREATED
+
+
+@pytest.mark.django_db
+def test_zip_extract_success_accession_original_blob_content(zip):
+    zip.extract()
+
+    accession = Accession.objects.get(blob_name='ISIC_0000000.jpg')
+    with accession.original_blob.open('rb') as original_blob_stream:
+        original_blob_content = original_blob_stream.read()
+        # JFIF files start with FF D8 and end with FF D9
+        assert original_blob_content.startswith(b'\xff\xd8')
+        assert original_blob_content.endswith(b'\xff\xd9')
+
+
+@pytest.mark.django_db
+def test_zip_extract_success_accession_original_blob_content_type(zip):
+    # Ensure that when an accession's original_blob is created, its content type is stored
+    zip.extract()
+
+    accession = Accession.objects.get(blob_name='ISIC_0000000.jpg')
+    original_blob_url = accession.original_blob.url
+    original_blob_content_type = requests.get(original_blob_url).headers.get('Content-Type')
+    assert original_blob_content_type == 'image/jpeg'
+
+
+@pytest.mark.django_db
+def test_zip_extract_success_accession_original_blob_size(zip):
+    # Ensure that when an accession's original_blob is created, its size is stored
+    zip.extract()
+
+    accession = Accession.objects.get(blob_name='ISIC_0000000.jpg')
+    assert accession.original_blob.size == 49982
+
+
+@pytest.mark.django_db
+def test_zip_extract_invalid(caplog, invalid_zip):
+    with pytest.raises(Zip.InvalidExtractException):
+        invalid_zip.extract()
 
     assert any('Failed zip extraction' in message for message in caplog.messages)
-    assert preexisting_and_duplicates_zip.status == Zip.Status.CREATED
+    invalid_zip.refresh_from_db()
+    assert invalid_zip.status == Zip.Status.FAILED
     assert Accession.objects.count() == 0
 
 
 @pytest.mark.django_db
-def test_zip_extract_preexisting_and_duplicates_email(mailoutbox, preexisting_and_duplicates_zip):
-    preexisting_and_duplicates_zip.extract()
+def test_zip_extract_duplicate(caplog, preexisting_and_duplicates_zip):
+    with pytest.raises(Zip.DuplicateExtractException):
+        preexisting_and_duplicates_zip.extract()
+
+    assert any('Failed zip extraction' in message for message in caplog.messages)
+    preexisting_and_duplicates_zip.refresh_from_db()
+    assert preexisting_and_duplicates_zip.status == Zip.Status.FAILED
+    # preexisting_and_duplicates_zip saves 1 accession
+    assert Accession.objects.count() == 1
+
+
+@pytest.mark.django_db
+def test_zip_extract_and_notify_success(mailoutbox, zip):
+    zip.extract_and_notify()
+
+    assert len(mailoutbox) == 1
+    assert mailoutbox[0].subject == 'Zip file extracted'
+    assert 'successfully received' in mailoutbox[0].body
+    assert zip.creator.email in mailoutbox[0].to
+
+
+@pytest.mark.django_db
+def test_zip_extract_and_notify_invalid(mailoutbox, invalid_zip):
+    with pytest.raises(Zip.InvalidExtractException):
+        invalid_zip.extract_and_notify()
+
+    assert len(mailoutbox) == 1
+    assert mailoutbox[0].subject == 'A problem processing your zip file'
+    assert 'corrupt' in mailoutbox[0].body
+    assert invalid_zip.creator.email in mailoutbox[0].to
+
+
+@pytest.mark.django_db
+def test_zip_extract_and_notify_duplicate(mailoutbox, preexisting_and_duplicates_zip):
+    with pytest.raises(Zip.DuplicateExtractException):
+        preexisting_and_duplicates_zip.extract_and_notify()
 
     assert len(mailoutbox) == 1
     assert mailoutbox[0].subject == 'A problem processing your zip file'
@@ -82,40 +164,11 @@ def test_zip_extract_preexisting_and_duplicates_email(mailoutbox, preexisting_an
 
 
 @pytest.mark.django_db
-def test_zip_extract_accession_status(zip):
+def test_zip_reset(zip):
     zip.extract()
 
-    accession = Accession.objects.get(blob_name='ISIC_0000000.jpg')
-    assert accession.status == Accession.Status.CREATED
+    zip.reset()
 
-
-@pytest.mark.django_db
-def test_zip_extract_accession_original_blob_content(zip):
-    zip.extract()
-
-    accession = Accession.objects.get(blob_name='ISIC_0000000.jpg')
-    with accession.original_blob.open('rb') as original_blob_stream:
-        original_blob_content = original_blob_stream.read()
-        # JFIF files start with FF D8 and end with FF D9
-        assert original_blob_content.startswith(b'\xff\xd8')
-        assert original_blob_content.endswith(b'\xff\xd9')
-
-
-@pytest.mark.django_db
-def test_zip_extract_accession_original_blob_content_type(zip):
-    # Ensure that when an accession's original_blob is created, its content type is stored
-    zip.extract()
-
-    accession = Accession.objects.get(blob_name='ISIC_0000000.jpg')
-    original_blob_url = accession.original_blob.url
-    original_blob_content_type = requests.get(original_blob_url).headers.get('Content-Type')
-    assert original_blob_content_type == 'image/jpeg'
-
-
-@pytest.mark.django_db
-def test_zip_extract_accession_original_blob_size(zip):
-    # Ensure that when an accession's original_blob is created, its size is stored
-    zip.extract()
-
-    accession = Accession.objects.get(blob_name='ISIC_0000000.jpg')
-    assert accession.original_blob.size == 49982
+    zip.refresh_from_db()
+    assert zip.status == Zip.Status.CREATED
+    assert Accession.objects.count() == 0
