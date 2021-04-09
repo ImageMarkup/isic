@@ -1,6 +1,5 @@
 import logging
 from mimetypes import guess_type
-import os
 from typing import List, Tuple
 import zipfile
 
@@ -119,10 +118,6 @@ class MetadataFile(TimeStampedModel):
     blob = S3FileField()
     blob_name = models.CharField(max_length=255)
     blob_size = models.PositiveBigIntegerField()
-
-    @property
-    def blob_basename(self) -> str:
-        return os.path.basename(self.blob_name)
 
     def to_df(self):
         with self.blob.open() as csv:
@@ -257,10 +252,6 @@ class Zip(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.blob_name
-
-    @property
-    def blob_basename(self) -> str:
-        return os.path.basename(self.blob_name)
 
     def _get_preexisting_and_duplicates(self) -> Tuple[List[str], List[str]]:
         blob_names_in_zip = set()

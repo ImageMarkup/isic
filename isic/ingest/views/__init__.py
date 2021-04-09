@@ -1,3 +1,5 @@
+import os
+
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -33,7 +35,7 @@ def zip_create(request, cohort_pk):
         if form.is_valid():
             form.instance.creator = request.user
             form.instance.blob_size = form.instance.blob.size
-            form.instance.blob_name = form.instance.blob.name
+            form.instance.blob_name = os.path.basename(form.instance.blob.name)
             form.instance.cohort = cohort
             form.save(commit=True)
             extract_zip.delay(form.instance.pk)

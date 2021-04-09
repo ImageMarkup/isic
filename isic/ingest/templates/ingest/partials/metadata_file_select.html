@@ -12,7 +12,7 @@
           'bg-indigo-50 border-indigo-200 z-10': checked === {{ forloop.counter }}}"
           class="{% if forloop.first or forloop.last %}rounded-tl-md rounded-tr-md{% endif %} relative border p-4 flex cursor-pointer">
           <input type="radio"
-            name="{{ form.metadata_file.html_name  }}"
+            name="{{ form.metadata_file.html_name }}"
             class="h-4 w-4 mt-0.5 cursor-pointer text-indigo-600 border-gray-300 focus:ring-indigo-500"
             :checked="checked === {{ metadata_file.id }}"
             value="{{ metadata_file.id }}">
@@ -20,7 +20,7 @@
             <span
               :class="{'text-gray-900': checked !== {{ forloop.counter }},
               'text-indigo-900': checked === {{ forloop.counter }}}" class="block text-sm font-medium">
-              {{ metadata_file.blob_basename }}
+              {{ metadata_file.blob_name }}
             </span>
             <span
               :class="{'text-gray-500': checked !== {{ forloop.counter }},
