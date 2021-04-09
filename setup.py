@@ -64,7 +64,7 @@ setup(
         'python-magic',
         'zipfile-deflate64',
         # Production-only
-        'django-composed-configuration[prod]',
+        'django-composed-configuration[prod]>=0.16',
         'django-s3-file-field[boto3]',
         'gunicorn',
     ],
