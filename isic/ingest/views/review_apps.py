@@ -141,6 +141,22 @@ class LesionReviewAppView(GroupedReviewAppView):
     }
     checks = ['lesion_check']
 
+    def get_unreviewed_filter(self):
+        """
+        Filter out the unreviewed lesion IDs.
+
+        This is similar to DuplicateReviewAppView.get_unreviewed_filter.
+        """
+        lesion_ids_with_any_unreviewed_accessions = (
+            Accession.objects.values('metadata__lesion_id')
+            .annotate(
+                num_unreviewed_accessions=Count('accession', filter=Q(accession__lesion_check=None))
+            )
+            .filter(num_unreviewed_accessions__gt=0)
+            .values('metadata__lesion_id')
+        )
+        return Q(metadata__lesion_id__in=lesion_ids_with_any_unreviewed_accessions)
+
     def get_queryset(self):
         self.cohort = get_object_or_404(Cohort, pk=self.kwargs['cohort_pk'])
         return (
