@@ -32,6 +32,10 @@ def get_unstructured_columns(df):
         else:
             unstructured_columns |= set(m.unstructured.keys())
 
+    # unstructured columns are any columns that aren't part of the core
+    # columns (filename) and aren't defined in MetadataRow
+    unstructured_columns -= set(['filename'])
+
     return sorted(list(unstructured_columns))
 
 
