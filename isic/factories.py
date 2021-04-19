@@ -49,5 +49,7 @@ class UserFactory(factory.django.DjangoModelFactory):
         raw_password=factory.SelfAttribute('..raw_password'),
     )
 
+    is_superuser = False
+
     class Params:
         raw_password = factory.Faker('password')
