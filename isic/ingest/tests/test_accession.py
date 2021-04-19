@@ -21,7 +21,7 @@ def test_accession_soft_accept_bulk(accessions, admin_client):
         [{'id': x.id, 'checks': ['quality_check']} for x in accessions],
         'application/json',
     )
-    assert r.status_code == 200, r.json()
+    assert r.status_code == 200, r.data
 
     # The original 2 false quality accessions should remain unchanged
     assert Accession.objects.filter(quality_check=True).count() == 2

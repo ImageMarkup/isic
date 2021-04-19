@@ -22,6 +22,7 @@ class AccessionViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
 
     @swagger_auto_schema(
         operation_description="Set a check to true if it isn't already set",
+        auto_schema=None,
     )
     @action(detail=False, methods=['patch'])
     def soft_accept_check_bulk(self, request, *args, **kwargs):
