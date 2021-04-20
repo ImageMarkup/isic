@@ -6,7 +6,7 @@ from isic.ingest.tests.factories import AccessionFactory
 
 @pytest.fixture
 def accessions():
-    yield [
+    return [
         AccessionFactory(quality_check=False),
         AccessionFactory(quality_check=False),
         AccessionFactory(quality_check=None),
