@@ -20,6 +20,17 @@ class AccessionViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
     queryset = Accession.objects.all()
     permission_classes = [IsAdminUser]
 
+    def perform_update(self, serializer):
+        with transaction.atomic():
+            serializer.save()
+            for field, value in serializer.validated_data.items():
+                if field.endswith('_check'):
+                    serializer.instance.checklogs.create(
+                        creator=serializer.context['request'].user,
+                        change_field=field,
+                        change_to=value,
+                    )
+
     @swagger_auto_schema(
         operation_description="Set a check to true if it isn't already set",
         auto_schema=None,
@@ -37,6 +48,9 @@ class AccessionViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
                         if getattr(accession, check) is None:
                             setattr(accession, check, True)
                             accession.save(update_fields=[check])
+                            accession.checklogs.create(
+                                creator=request.user, change_field=check, change_to=True
+                            )
 
             return Response({})
         else:
