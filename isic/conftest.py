@@ -6,8 +6,8 @@ from .factories import ProfileFactory, UserFactory
 
 
 @pytest.fixture
-def staff_user():
-    return UserFactory(is_staff=True)
+def staff_user(user_factory):
+    return user_factory(is_staff=True)
 
 
 @pytest.fixture
