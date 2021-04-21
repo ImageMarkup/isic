@@ -149,9 +149,7 @@ class LesionReviewAppView(GroupedReviewAppView):
         """
         lesion_ids_with_any_unreviewed_accessions = (
             Accession.objects.values('metadata__lesion_id')
-            .annotate(
-                num_unreviewed_accessions=Count('accession', filter=Q(accession__lesion_check=None))
-            )
+            .annotate(num_unreviewed_accessions=Count(1, filter=Q(lesion_check=None)))
             .filter(num_unreviewed_accessions__gt=0)
             .values('metadata__lesion_id')
         )
@@ -161,6 +159,7 @@ class LesionReviewAppView(GroupedReviewAppView):
         self.cohort = get_object_or_404(Cohort, pk=self.kwargs['cohort_pk'])
         return (
             Accession.objects.filter(upload__cohort=self.cohort, metadata__lesion_id__isnull=False)
+            .filter(self.get_unreviewed_filter())
             .order_by('metadata__lesion_id', 'metadata__acquisition_day')
             .distinct('metadata__lesion_id')
             .values_list('metadata__lesion_id', flat=True)
