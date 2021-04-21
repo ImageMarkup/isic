@@ -15,7 +15,7 @@ def accessions():
 
 
 @pytest.mark.django_db
-def test_accession_soft_accept_bulk(accessions, staff_api_client):
+def test_api_accession_soft_accept_bulk(accessions, staff_api_client):
     r = staff_api_client.patch(
         '/api/v2/accessions/soft_accept_check_bulk/',
         [{'id': x.id, 'checks': ['quality_check']} for x in accessions],
@@ -28,7 +28,7 @@ def test_accession_soft_accept_bulk(accessions, staff_api_client):
 
 
 @pytest.mark.django_db
-def test_accession_soft_accept_bulk_adds_checklogs(accessions, staff_user, staff_api_client):
+def test_api_accession_soft_accept_bulk_adds_checklogs(accessions, staff_user, staff_api_client):
     r = staff_api_client.patch(
         '/api/v2/accessions/soft_accept_check_bulk/',
         [{'id': x.id, 'checks': ['quality_check']} for x in accessions],
@@ -45,7 +45,7 @@ def test_accession_soft_accept_bulk_adds_checklogs(accessions, staff_user, staff
 
 
 @pytest.mark.django_db
-def test_accession_soft_accept_adds_checklogs(staff_user, staff_api_client):
+def test_api_accession_soft_accept_adds_checklogs(staff_user, staff_api_client):
     accession = AccessionFactory(quality_check=None)
     r = staff_api_client.patch(
         f'/api/v2/accessions/{accession.pk}/',
