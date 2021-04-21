@@ -41,7 +41,7 @@ def test_api_accession_soft_accept_bulk_adds_checklogs(accessions, staff_user, s
     assert checklog.accession.pk == accessions[2].pk
     assert checklog.creator.pk == staff_user.pk
     assert checklog.change_field == 'quality_check'
-    assert checklog.change_to == True  # noqa: E712
+    assert checklog.change_to is True
 
 
 @pytest.mark.django_db
@@ -54,7 +54,7 @@ def test_api_accession_soft_accept_adds_checklogs(staff_user, staff_api_client):
     assert r.status_code == 200, r.data
 
     accession.refresh_from_db()
-    assert accession.quality_check == False  # noqa: E712
+    assert accession.quality_check is False
 
     assert CheckLog.objects.count() == 1
     checklog = CheckLog.objects.first()
@@ -62,4 +62,4 @@ def test_api_accession_soft_accept_adds_checklogs(staff_user, staff_api_client):
     assert checklog.accession.pk == accession.pk
     assert checklog.creator.pk == staff_user.pk
     assert checklog.change_field == 'quality_check'
-    assert checklog.change_to == False  # noqa: E712
+    assert checklog.change_to is False
