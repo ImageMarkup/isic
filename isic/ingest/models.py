@@ -232,6 +232,13 @@ class DistinctnessMeasure(TimeStampedModel):
     )
 
 
+class CheckLog(TimeStampedModel):
+    accession = models.ForeignKey(Accession, on_delete=models.PROTECT, related_name='checklogs')
+    creator = models.ForeignKey(User, on_delete=models.DO_NOTHING)
+    change_field = models.CharField(max_length=255)
+    change_to = models.BooleanField(null=True)
+
+
 class Zip(TimeStampedModel):
     class Status(models.TextChoices):
         CREATED = 'created', 'Created'
