@@ -6,6 +6,11 @@ from .factories import ProfileFactory, UserFactory
 
 
 @pytest.fixture
+def staff_user(user_factory):
+    return user_factory(is_staff=True)
+
+
+@pytest.fixture
 def api_client() -> APIClient:
     return APIClient()
 
@@ -14,6 +19,13 @@ def api_client() -> APIClient:
 def authenticated_api_client(user) -> APIClient:
     client = APIClient()
     client.force_authenticate(user=user)
+    return client
+
+
+@pytest.fixture
+def staff_api_client(staff_user) -> APIClient:
+    client = APIClient()
+    client.force_authenticate(user=staff_user)
     return client
 
 
