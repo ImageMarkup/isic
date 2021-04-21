@@ -21,9 +21,9 @@
     </div>
   </div>
   <div class="flex justify-around">
-    <span>{{ accession.metadata.age|default:"-" }}</span>
-    <span>{{ accession.metadata.sex|default:"-" }}</span>
-    <span>{{ accession.metadata.diagnosis|default:"-" }}</span>
+    {% if accession.metadata.diagnosis %}
+      <span>{{ accession.metadata.diagnosis }}</span>
+    {% endif %}
     {% if title == 'Lesion Review' %}
       <span>
         {{ accession.metadata.lesion_id }}
