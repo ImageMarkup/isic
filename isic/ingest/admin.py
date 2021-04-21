@@ -6,7 +6,7 @@ from django_object_actions import DjangoObjectActions
 from django_object_actions.utils import takes_instance_or_queryset
 from girder_utils.admin import ReadonlyTabularInline
 
-from isic.ingest.models import Accession, Cohort, Contributor, MetadataFile, Zip
+from isic.ingest.models import Accession, CheckLog, Cohort, Contributor, MetadataFile, Zip
 
 
 class MetadataFileInline(ReadonlyTabularInline):
@@ -116,6 +116,15 @@ class AccessionAdmin(admin.ModelAdmin):
 
     def thumbnail(self, obj):
         return mark_safe(f'<img src="{obj.blob.url}" width="300" height="300" />')
+
+
+@admin.register(CheckLog)
+class CheckLogAdmin(admin.ModelAdmin):
+    list_display = ['created', 'accession_name', 'creator', 'change_field', 'change_to']
+
+    @admin.display(description='Accession')
+    def accession_name(self, obj):
+        return obj.accession.blob_name
 
 
 @admin.register(Zip)
