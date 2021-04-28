@@ -6,7 +6,7 @@ from django_extensions.db.models import TimeStampedModel
 
 class DuplicateImage(TimeStampedModel):
     accession = models.ForeignKey(
-        'ingest.Accession', on_delete=models.CASCADE, related_name='duplicates'
+        'ingest.Accession', on_delete=models.CASCADE, related_name='duplicates', null=True
     )
     girder_id = models.CharField(
         max_length=24,
