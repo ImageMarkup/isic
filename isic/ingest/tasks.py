@@ -50,6 +50,7 @@ def process_accession(accession_id: int):
 
         # determines image is readable, and strips exif tags
         img = PIL.Image.open(io.BytesIO(content))
+        img = img.convert('RGB')
         img_bytes = io.BytesIO()
         img.save(img_bytes, format='JPEG')
         accession.blob = SimpleUploadedFile(
