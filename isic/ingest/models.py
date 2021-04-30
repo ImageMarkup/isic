@@ -143,6 +143,7 @@ class Accession(TimeStampedModel):
         # TODO: How to properly enforce cohort, blob_name uniqueness at the app layer.
         unique_together = [['upload', 'blob_name']]
 
+    girder_id = models.CharField(blank=True, max_length=24, help_text='The image_id from Girder.')
     upload = models.ForeignKey('Zip', on_delete=models.CASCADE, related_name='accessions')
 
     # the original blob is stored in case blobs need to be reprocessed
@@ -249,7 +250,6 @@ class Zip(TimeStampedModel):
     cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name='zips')
 
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
-    girder_id = models.CharField(blank=True, max_length=24, help_text='The batch_id from Girder.')
 
     blob = S3FileField()
     blob_name = models.CharField(max_length=255)
