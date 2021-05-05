@@ -109,7 +109,10 @@ def test_zip_extract_invalid(caplog, invalid_zip):
     with pytest.raises(Zip.InvalidExtractException):
         invalid_zip.extract()
 
-    assert any('Failed zip extraction' in message for message in caplog.messages)
+    message = next((msg for msg in caplog.messages if 'Failed zip extraction' in msg), None)
+    assert message
+    assert 'invalid zip' in message
+    assert 'File is not a zip file' in message
     invalid_zip.refresh_from_db()
     assert invalid_zip.status == Zip.Status.FAILED
     assert Accession.objects.count() == 0
@@ -120,7 +123,9 @@ def test_zip_extract_duplicate(caplog, preexisting_and_duplicates_zip):
     with pytest.raises(Zip.DuplicateExtractException):
         preexisting_and_duplicates_zip.extract()
 
-    assert any('Failed zip extraction' in message for message in caplog.messages)
+    message = next((msg for msg in caplog.messages if 'Failed zip extraction' in msg), None)
+    assert message
+    assert 'duplicates' in message
     preexisting_and_duplicates_zip.refresh_from_db()
     assert preexisting_and_duplicates_zip.status == Zip.Status.FAILED
     # preexisting_and_duplicates_zip saves 1 accession
