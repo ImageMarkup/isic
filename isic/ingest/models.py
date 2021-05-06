@@ -319,12 +319,12 @@ class Zip(TimeStampedModel):
 
                 self.accessions.update(status=Accession.Status.CREATED)
 
-        except zipfile.BadZipFile:
-            logger.warning('Failed zip extraction: %d <%s>: invalid zip', self.pk, str(self))
+        except zipfile.BadZipFile as e:
+            logger.warning('Failed zip extraction: %d <%s>: invalid zip: %s', self.pk, self, e)
             self.status = Zip.Status.FAILED
             raise Zip.InvalidExtractException
         except Zip.DuplicateExtractException:
-            logger.warning('Failed zip extraction: %d <%s>: duplicates', self.pk, str(self))
+            logger.warning('Failed zip extraction: %d <%s>: duplicates', self.pk, self)
             self.status = Zip.Status.FAILED
             raise
         else:
