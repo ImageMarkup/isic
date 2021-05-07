@@ -15,6 +15,7 @@ from django.db.models.query_utils import Q
 from django.template.loader import render_to_string
 from django.urls.base import reverse
 from django.utils.safestring import mark_safe
+from django_extensions.db.fields import CreationDateTimeField
 from django_extensions.db.models import TimeStampedModel
 import numpy as np
 import pandas as pd
@@ -25,6 +26,15 @@ from isic.ingest.zip_utils import file_names_in_zip, items_in_zip
 logger = logging.getLogger(__name__)
 
 
+class CreationSortedTimeStampedModel(TimeStampedModel):
+    class Meta:
+        abstract = True
+        ordering = ['created']
+        get_latest_by = 'created'
+
+    created = CreationDateTimeField(db_index=True)
+
+
 class CopyrightLicense(models.TextChoices):
     CC_0 = ('CC-0', 'CC-0')
 
@@ -33,10 +43,7 @@ class CopyrightLicense(models.TextChoices):
     CC_BY_NC = ('CC-BY-NC', 'CC-BY-NC')
 
 
-class Contributor(TimeStampedModel):
-    class Meta:
-        ordering = ['created']
-
+class Contributor(CreationSortedTimeStampedModel):
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
     institution_name = models.CharField(
         max_length=255,
@@ -81,10 +88,7 @@ class Contributor(TimeStampedModel):
         return self.institution_name
 
 
-class Cohort(TimeStampedModel):
-    class Meta:
-        ordering = ['created']
-
+class Cohort(CreationSortedTimeStampedModel):
     contributor = models.ForeignKey(Contributor, on_delete=models.PROTECT, related_name='cohorts')
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
     girder_id = models.CharField(blank=True, max_length=24, help_text='The dataset_id from Girder.')
@@ -117,10 +121,7 @@ class Cohort(TimeStampedModel):
         return reverse('cohort-detail', args=[self.id])
 
 
-class MetadataFile(TimeStampedModel):
-    class Meta:
-        ordering = ['created']
-
+class MetadataFile(CreationSortedTimeStampedModel):
     creator = models.ForeignKey(User, on_delete=models.CASCADE)
     cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name='metadata_files')
 
@@ -141,7 +142,7 @@ class MetadataFile(TimeStampedModel):
         return df
 
 
-class Accession(TimeStampedModel):
+class Accession(CreationSortedTimeStampedModel):
     class Status(models.TextChoices):
         CREATING = 'creating', 'Creating'
         CREATED = 'created', 'Created'
@@ -150,7 +151,6 @@ class Accession(TimeStampedModel):
         SUCCEEDED = 'succeeded', 'Succeeded'
 
     class Meta:
-        ordering = ['created']
         # A blob_name is unique at the *cohort* level, but that's not possible to enforce at the
         # database layer. At least enforce the blob_name being unique at the zip level.
         # TODO: How to properly enforce cohort, blob_name uniqueness at the app layer.
@@ -256,20 +256,14 @@ class DistinctnessMeasure(TimeStampedModel):
         return self.checksum
 
 
-class CheckLog(TimeStampedModel):
-    class Meta:
-        ordering = ['created']
-
+class CheckLog(CreationSortedTimeStampedModel):
     accession = models.ForeignKey(Accession, on_delete=models.PROTECT, related_name='checklogs')
     creator = models.ForeignKey(User, on_delete=models.DO_NOTHING)
     change_field = models.CharField(max_length=255)
     change_to = models.BooleanField(null=True)
 
 
-class Zip(TimeStampedModel):
-    class Meta:
-        ordering = ['created']
-
+class Zip(CreationSortedTimeStampedModel):
     class Status(models.TextChoices):
         CREATED = 'created', 'Created'
         EXTRACTING = 'extracting', 'Extracting'
