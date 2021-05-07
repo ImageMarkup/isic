@@ -1,11 +1,12 @@
 from django.contrib import admin
+from django.contrib.humanize.templatetags.humanize import intcomma
 from django.db.models import Count
 from django.db.models.query_utils import Q
+from django.template.defaultfilters import filesizeformat
 from django.utils.safestring import mark_safe
 from django_object_actions import DjangoObjectActions
 from django_object_actions.utils import takes_instance_or_queryset
 from girder_utils.admin import ReadonlyTabularInline
-import humanize
 
 from isic.ingest.models import Accession, CheckLog, Cohort, Contributor, MetadataFile, Zip
 
@@ -42,11 +43,11 @@ class ContributorAdmin(admin.ModelAdmin):
 
     @admin.display(ordering='cohorts_count')
     def cohorts(self, obj):
-        return obj.cohorts_count
+        return intcomma(obj.cohorts_count)
 
     @admin.display(ordering='accessions_count')
     def accessions(self, obj):
-        return obj.accessions_count
+        return intcomma(obj.accessions_count)
 
 
 @admin.register(Cohort)
@@ -103,31 +104,31 @@ class CohortAdmin(admin.ModelAdmin):
 
     @admin.display(ordering='zips_count')
     def zips(self, obj):
-        return obj.zips_count
+        return intcomma(obj.zips_count)
 
     @admin.display(ordering='metadata_files_count')
     def metadata_files(self, obj):
-        return obj.metadata_files_count
+        return intcomma(obj.metadata_files_count)
 
     @admin.display(ordering='accessions_count')
     def accessions(self, obj):
-        return obj.accessions_count
+        return intcomma(obj.accessions_count)
 
     @admin.display(ordering='pending_accessions_count')
     def pending_accessions(self, obj):
-        return obj.pending_accessions_count
+        return intcomma(obj.pending_accessions_count)
 
     @admin.display(ordering='skipped_accessions_count')
     def skipped_accessions(self, obj):
-        return obj.skipped_accessions_count
+        return intcomma(obj.skipped_accessions_count)
 
     @admin.display(ordering='failed_accessions_count')
     def failed_accessions(self, obj):
-        return obj.failed_accessions_count
+        return intcomma(obj.failed_accessions_count)
 
     @admin.display(ordering='successful_accessions_count')
     def successful_accessions(self, obj):
-        return obj.successful_accessions_count
+        return intcomma(obj.successful_accessions_count)
 
 
 @admin.register(MetadataFile)
@@ -140,7 +141,7 @@ class MetadataFileAdmin(admin.ModelAdmin):
 
     @admin.display(description='Blob Size', ordering='blob_size')
     def human_blob_size(self, obj):
-        return humanize.naturalsize(obj.blob_size, binary=True)
+        return filesizeformat(obj.blob_size)
 
 
 @admin.register(Accession)
@@ -154,7 +155,7 @@ class AccessionAdmin(admin.ModelAdmin):
 
     @admin.display(description='Blob Size', ordering='blob_size')
     def human_blob_size(self, obj):
-        return humanize.naturalsize(obj.blob_size, binary=True)
+        return filesizeformat(obj.blob_size)
 
     @admin.display(ordering='upload__cohort')
     def cohort(self, obj):
@@ -185,7 +186,7 @@ class ZipAdmin(DjangoObjectActions, admin.ModelAdmin):
 
     @admin.display(description='Blob Size', ordering='blob_size')
     def human_blob_size(self, obj):
-        return humanize.naturalsize(obj.blob_size, binary=True)
+        return filesizeformat(obj.blob_size)
 
     @admin.action(description='Extract zip')
     @takes_instance_or_queryset

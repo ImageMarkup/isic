@@ -56,7 +56,6 @@ setup(
         'django-object-actions',
         'djangorestframework',
         'drf-yasg',
-        'humanize',
         'pandas',
         'passlib[bcrypt]',
         'Pillow',
