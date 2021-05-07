@@ -8,6 +8,7 @@ from django.core.validators import FileExtensionValidator
 from django.db import models, transaction
 from django.template.loader import render_to_string
 from s3_file_field import S3FileField
+import sentry_sdk
 
 from isic.core.models import CreationSortedTimeStampedModel
 from isic.ingest.utils.zip import file_names_in_zip, items_in_zip
@@ -92,10 +93,11 @@ class ZipUpload(CreationSortedTimeStampedModel):
 
         except zipfile.BadZipFile as e:
             logger.warning('Failed zip extraction: %d <%s>: invalid zip: %s', self.pk, self, e)
+            sentry_sdk.capture_exception(e)
             self.status = ZipUpload.Status.FAILED
             raise ZipUpload.InvalidExtractError
         except ZipUpload.DuplicateExtractError:
-            logger.warning('Failed zip extraction: %d <%s>: duplicates', self.pk, self)
+            logger.info('Failed zip extraction: %d <%s>: duplicates', self.pk, self)
             self.status = ZipUpload.Status.FAILED
             raise
         else:
