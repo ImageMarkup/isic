@@ -34,6 +34,9 @@ class CopyrightLicense(models.TextChoices):
 
 
 class Contributor(TimeStampedModel):
+    class Meta:
+        ordering = ['created']
+
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
     institution_name = models.CharField(
         max_length=255,
@@ -79,7 +82,10 @@ class Contributor(TimeStampedModel):
 
 
 class Cohort(TimeStampedModel):
-    contributor = models.ForeignKey(Contributor, on_delete=models.PROTECT)
+    class Meta:
+        ordering = ['created']
+
+    contributor = models.ForeignKey(Contributor, on_delete=models.PROTECT, related_name='cohorts')
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
     girder_id = models.CharField(blank=True, max_length=24, help_text='The dataset_id from Girder.')
 
@@ -112,12 +118,18 @@ class Cohort(TimeStampedModel):
 
 
 class MetadataFile(TimeStampedModel):
+    class Meta:
+        ordering = ['created']
+
     creator = models.ForeignKey(User, on_delete=models.CASCADE)
     cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name='metadata_files')
 
     blob = S3FileField()
-    blob_name = models.CharField(max_length=255)
-    blob_size = models.PositiveBigIntegerField()
+    blob_name = models.CharField(max_length=255, editable=False)
+    blob_size = models.PositiveBigIntegerField(editable=False)
+
+    def __str__(self) -> str:
+        return self.blob_name
 
     def to_df(self):
         with self.blob.open() as csv:
@@ -138,6 +150,7 @@ class Accession(TimeStampedModel):
         SUCCEEDED = 'succeeded', 'Succeeded'
 
     class Meta:
+        ordering = ['created']
         # A blob_name is unique at the *cohort* level, but that's not possible to enforce at the
         # database layer. At least enforce the blob_name being unique at the zip level.
         # TODO: How to properly enforce cohort, blob_name uniqueness at the app layer.
@@ -151,11 +164,11 @@ class Accession(TimeStampedModel):
 
     # blob_name has to be indexed because metadata selection does large
     # WHERE blob_name IN (...) queries
-    blob_name = models.CharField(max_length=255, db_index=True)
+    blob_name = models.CharField(max_length=255, db_index=True, editable=False)
 
     # When instantiated, blob is empty, as it holds the EXIF-stripped image
     blob = S3FileField(blank=True)
-    blob_size = models.PositiveBigIntegerField(null=True, default=None)
+    blob_size = models.PositiveBigIntegerField(null=True, default=None, editable=False)
 
     status = models.CharField(choices=Status.choices, max_length=20, default=Status.CREATING)
 
@@ -170,6 +183,9 @@ class Accession(TimeStampedModel):
 
     metadata = JSONField(default=dict)
     unstructured_metadata = JSONField(default=dict)
+
+    def __str__(self) -> str:
+        return self.blob_name
 
     @staticmethod
     def checks():
@@ -229,11 +245,21 @@ class Accession(TimeStampedModel):
 class DistinctnessMeasure(TimeStampedModel):
     accession = models.OneToOneField(Accession, on_delete=models.CASCADE)
     checksum = models.CharField(
-        max_length=64, validators=[RegexValidator(r'^[0-9a-f]{64}$')], null=True, blank=True
+        max_length=64,
+        validators=[RegexValidator(r'^[0-9a-f]{64}$')],
+        null=True,
+        blank=True,
+        editable=False,
     )
+
+    def __str__(self) -> str:
+        return self.checksum
 
 
 class CheckLog(TimeStampedModel):
+    class Meta:
+        ordering = ['created']
+
     accession = models.ForeignKey(Accession, on_delete=models.PROTECT, related_name='checklogs')
     creator = models.ForeignKey(User, on_delete=models.DO_NOTHING)
     change_field = models.CharField(max_length=255)
@@ -241,6 +267,9 @@ class CheckLog(TimeStampedModel):
 
 
 class Zip(TimeStampedModel):
+    class Meta:
+        ordering = ['created']
+
     class Status(models.TextChoices):
         CREATED = 'created', 'Created'
         EXTRACTING = 'extracting', 'Extracting'
@@ -252,8 +281,8 @@ class Zip(TimeStampedModel):
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
 
     blob = S3FileField()
-    blob_name = models.CharField(max_length=255)
-    blob_size = models.PositiveBigIntegerField()
+    blob_name = models.CharField(max_length=255, editable=False)
+    blob_size = models.PositiveBigIntegerField(editable=False)
 
     status = models.CharField(choices=Status.choices, max_length=20, default=Status.CREATED)
 
