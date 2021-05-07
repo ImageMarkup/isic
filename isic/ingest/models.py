@@ -15,6 +15,7 @@ from django.db.models.query_utils import Q
 from django.template.loader import render_to_string
 from django.urls.base import reverse
 from django.utils.safestring import mark_safe
+from django_extensions.db.fields import CreationDateTimeField
 from django_extensions.db.models import TimeStampedModel
 import numpy as np
 import pandas as pd
@@ -25,6 +26,15 @@ from isic.ingest.zip_utils import file_names_in_zip, items_in_zip
 logger = logging.getLogger(__name__)
 
 
+class CreationSortedTimeStampedModel(TimeStampedModel):
+    class Meta:
+        abstract = True
+        ordering = ['created']
+        get_latest_by = 'created'
+
+    created = CreationDateTimeField(db_index=True)
+
+
 class CopyrightLicense(models.TextChoices):
     CC_0 = ('CC-0', 'CC-0')
 
@@ -33,7 +43,7 @@ class CopyrightLicense(models.TextChoices):
     CC_BY_NC = ('CC-BY-NC', 'CC-BY-NC')
 
 
-class Contributor(TimeStampedModel):
+class Contributor(CreationSortedTimeStampedModel):
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
     institution_name = models.CharField(
         max_length=255,
@@ -78,8 +88,8 @@ class Contributor(TimeStampedModel):
         return self.institution_name
 
 
-class Cohort(TimeStampedModel):
-    contributor = models.ForeignKey(Contributor, on_delete=models.PROTECT)
+class Cohort(CreationSortedTimeStampedModel):
+    contributor = models.ForeignKey(Contributor, on_delete=models.PROTECT, related_name='cohorts')
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
     girder_id = models.CharField(blank=True, max_length=24, help_text='The dataset_id from Girder.')
 
@@ -111,13 +121,16 @@ class Cohort(TimeStampedModel):
         return reverse('cohort-detail', args=[self.id])
 
 
-class MetadataFile(TimeStampedModel):
+class MetadataFile(CreationSortedTimeStampedModel):
     creator = models.ForeignKey(User, on_delete=models.CASCADE)
     cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name='metadata_files')
 
     blob = S3FileField()
-    blob_name = models.CharField(max_length=255)
-    blob_size = models.PositiveBigIntegerField()
+    blob_name = models.CharField(max_length=255, editable=False)
+    blob_size = models.PositiveBigIntegerField(editable=False)
+
+    def __str__(self) -> str:
+        return self.blob_name
 
     def to_df(self):
         with self.blob.open() as csv:
@@ -129,7 +142,7 @@ class MetadataFile(TimeStampedModel):
         return df
 
 
-class Accession(TimeStampedModel):
+class Accession(CreationSortedTimeStampedModel):
     class Status(models.TextChoices):
         CREATING = 'creating', 'Creating'
         CREATED = 'created', 'Created'
@@ -151,11 +164,11 @@ class Accession(TimeStampedModel):
 
     # blob_name has to be indexed because metadata selection does large
     # WHERE blob_name IN (...) queries
-    blob_name = models.CharField(max_length=255, db_index=True)
+    blob_name = models.CharField(max_length=255, db_index=True, editable=False)
 
     # When instantiated, blob is empty, as it holds the EXIF-stripped image
     blob = S3FileField(blank=True)
-    blob_size = models.PositiveBigIntegerField(null=True, default=None)
+    blob_size = models.PositiveBigIntegerField(null=True, default=None, editable=False)
 
     status = models.CharField(choices=Status.choices, max_length=20, default=Status.CREATING)
 
@@ -170,6 +183,9 @@ class Accession(TimeStampedModel):
 
     metadata = JSONField(default=dict)
     unstructured_metadata = JSONField(default=dict)
+
+    def __str__(self) -> str:
+        return self.blob_name
 
     @staticmethod
     def checks():
@@ -229,18 +245,25 @@ class Accession(TimeStampedModel):
 class DistinctnessMeasure(TimeStampedModel):
     accession = models.OneToOneField(Accession, on_delete=models.CASCADE)
     checksum = models.CharField(
-        max_length=64, validators=[RegexValidator(r'^[0-9a-f]{64}$')], null=True, blank=True
+        max_length=64,
+        validators=[RegexValidator(r'^[0-9a-f]{64}$')],
+        null=True,
+        blank=True,
+        editable=False,
     )
 
+    def __str__(self) -> str:
+        return self.checksum
 
-class CheckLog(TimeStampedModel):
+
+class CheckLog(CreationSortedTimeStampedModel):
     accession = models.ForeignKey(Accession, on_delete=models.PROTECT, related_name='checklogs')
     creator = models.ForeignKey(User, on_delete=models.DO_NOTHING)
     change_field = models.CharField(max_length=255)
     change_to = models.BooleanField(null=True)
 
 
-class Zip(TimeStampedModel):
+class Zip(CreationSortedTimeStampedModel):
     class Status(models.TextChoices):
         CREATED = 'created', 'Created'
         EXTRACTING = 'extracting', 'Extracting'
@@ -252,8 +275,8 @@ class Zip(TimeStampedModel):
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
 
     blob = S3FileField()
-    blob_name = models.CharField(max_length=255)
-    blob_size = models.PositiveBigIntegerField()
+    blob_name = models.CharField(max_length=255, editable=False)
+    blob_size = models.PositiveBigIntegerField(editable=False)
 
     status = models.CharField(choices=Status.choices, max_length=20, default=Status.CREATED)
 
