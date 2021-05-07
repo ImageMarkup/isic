@@ -9,4 +9,4 @@ docker-compose exec postgres bash -c \
 "pg_dump --format=custom --no-privileges $(heroku config:get DATABASE_URL)\
  | PGPASSWORD=postgres pg_restore --host localhost --username postgres --format=custom --no-privileges --no-owner --dbname=django"
 
-docker-compose restart
+docker-compose restart postgres
