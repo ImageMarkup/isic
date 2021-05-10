@@ -20,9 +20,12 @@ class BaseStr(str):
 
 class ClinicalSize(BaseStr):
     @classmethod
-    def validate(cls, value: str) -> Optional[float]:
+    def validate(cls, value) -> Optional[float]:
         if not value:
             return None
+
+        if isinstance(value, float):
+            return value
 
         match = re.match('(.+)(um|mm|cm)$', value)
 
@@ -247,7 +250,9 @@ class MelThickMm(BaseStr):
     )
 
     @classmethod
-    def validate(cls, value: str) -> Optional[float]:
+    def validate(cls, value) -> Optional[float]:
+        if isinstance(value, float):
+            return value
         # Parse value into floating point component and units
         result = re.match(cls._regex, value)
         if not result:
@@ -272,7 +277,7 @@ class MelMitoticIndexEnum(str, Enum):
 class MelMitoticIndex(BaseStr):
     @classmethod
     def validate(cls, value: str) -> Optional[str]:
-        if value not in GeneralAnatomicSiteEnum._value2member_map_:
+        if value not in MelMitoticIndexEnum._value2member_map_:
             raise ValueError(f'Invalid mel mitotic index of: {value}.')
         return value
 
@@ -314,7 +319,6 @@ PatientIdType = constr(regex=r'^IP_[0-9]{7}$')
 LesionIdType = constr(regex=r'^IL_[0-9]{7}$')
 
 
-# TODO: exif_* headers
 class MetadataRow(BaseModel):
     age: Optional[Age]
     sex: Optional[Sex]
@@ -337,7 +341,7 @@ class MetadataRow(BaseModel):
     anatom_site_general: Optional[GeneralAnatomicSite]
     color_tint: Optional[ColorTint]
     mel_class: Optional[MelClass]
-    mel_mitotic_index: Optional[ColorTint]
+    mel_mitotic_index: Optional[MelMitoticIndex]
     mel_thick_mm: Optional[MelThickMm]
     mel_type: Optional[MelType]
     mel_ulcer: Optional[bool]
@@ -434,7 +438,7 @@ class MetadataRow(BaseModel):
     @validator('dermoscopic_type')
     @classmethod
     def validate_dermoscopic_fields(cls, v, values):
-        if values.get('image_type') == ImageTypeEnum.dermoscopic and v:
+        if values.get('image_type') != ImageTypeEnum.dermoscopic and v:
             raise ValueError(
                 f'Image type {values["image_type"]} inconsistent with dermoscopic type {v}.'
             )
