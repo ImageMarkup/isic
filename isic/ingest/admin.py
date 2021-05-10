@@ -148,7 +148,7 @@ class MetadataFileAdmin(admin.ModelAdmin):
 class AccessionAdmin(admin.ModelAdmin):
     list_display = ['id', 'blob_name', 'human_blob_size', 'created', 'status', 'cohort']
     list_select_related = ['upload__cohort']
-    search_fields = ['blob_name']
+    search_fields = ['blob_name', 'girder_id']
     list_filter = ['status']
 
     readonly_fields = ['created', 'modified', 'thumbnail', 'distinctnessmeasure']
