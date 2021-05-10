@@ -62,7 +62,10 @@
         {% if request.user.is_staff %}
 
         <div class="flex">
-          <a href="{% url 'ingest-review' %}" class="text-gray-900 inline-flex items-center px-1 text-sm font-medium">
+          <a href="{% url 'staff-list' %}" class="text-gray-900 inline-flex items-center px-4 text-sm font-medium">
+            Staff Listing
+          </a>
+          <a href="{% url 'ingest-review' %}" class="text-gray-900 inline-flex items-center px-4 text-sm font-medium">
             Ingest Review
           </a>
         </div>
