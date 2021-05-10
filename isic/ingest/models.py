@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.core.mail import send_mail
-from django.core.validators import RegexValidator
+from django.core.validators import FileExtensionValidator, RegexValidator
 from django.db import models, transaction
 from django.db.models import JSONField
 from django.db.models.aggregates import Count
@@ -125,7 +125,7 @@ class MetadataFile(CreationSortedTimeStampedModel):
     creator = models.ForeignKey(User, on_delete=models.CASCADE)
     cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name='metadata_files')
 
-    blob = S3FileField()
+    blob = S3FileField(validators=[FileExtensionValidator(allowed_extensions=['csv'])])
     blob_name = models.CharField(max_length=255, editable=False)
     blob_size = models.PositiveBigIntegerField(editable=False)
 
