@@ -7,6 +7,7 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
+from isic.core.views import staff_list
 from isic.discourse_sso.views import discourse_sso_login
 from isic.ingest.api import AccessionViewSet, MetadataFileViewSet
 from isic.ingest.views import (
@@ -61,6 +62,7 @@ urlpatterns = [
     path(
         'staff/', TemplateView.as_view(template_name='core/staff_landing.html'), name='staff-index'
     ),
+    path('staff/users/', staff_list, name='staff-list'),
     # Studies app
     path('staff/studies/create/', study_create, name='study-create'),
     path('staff/studies/', study_list, name='study-list'),
