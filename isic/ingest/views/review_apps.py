@@ -80,34 +80,22 @@ class DuplicateReviewAppView(GroupedReviewAppView):
     buttons = {'reject': {'duplicate_check': 'Reject Duplicate'}}
     checks = ['duplicate_check']
 
-    def get_unreviewed_filter(self):
-        """
-        Filter out the unreviewed duplicates.
-
-        This is a little tricky because we only want to filter the GROUP (aka checksum) if
-        any accessions in the group are still unreviewed (for duplicates).
-        """
-        checksums_with_any_unreviewed_accessions = (
-            DistinctnessMeasure.objects.values('checksum')
-            .annotate(
-                num_unreviewed_accessions=Count(
-                    'accession', filter=Q(accession__duplicate_check=None)
-                )
-            )
-            .filter(num_unreviewed_accessions__gt=0)
-            .values('checksum')
-        )
-        return Q(checksum__in=checksums_with_any_unreviewed_accessions)
-
     def get_queryset(self):
         self.cohort = get_object_or_404(Cohort, pk=self.kwargs['cohort_pk'])
         return (
             DistinctnessMeasure.objects.filter(
-                accession__upload__cohort=self.cohort,
                 checksum__in=DistinctnessMeasure.objects.values('checksum')
                 .annotate(is_duplicate=Count('checksum'))
-                .filter(accession__upload__cohort=self.cohort, is_duplicate__gt=1)
-                .filter(self.get_unreviewed_filter())
+                .annotate(
+                    num_unreviewed_accessions=Count(
+                        'accession', filter=Q(accession__duplicate_check=None)
+                    )
+                )
+                .filter(
+                    accession__upload__cohort=self.cohort,
+                    is_duplicate__gt=1,
+                    num_unreviewed_accessions__gt=0,
+                )
                 .values_list('checksum', flat=True),
             )
             .order_by('checksum')
