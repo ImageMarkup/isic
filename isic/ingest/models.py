@@ -250,6 +250,7 @@ class DistinctnessMeasure(TimeStampedModel):
         null=True,
         blank=True,
         editable=False,
+        db_index=True,
     )
 
     def __str__(self) -> str:
