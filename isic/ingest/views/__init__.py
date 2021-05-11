@@ -2,7 +2,6 @@ import os
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator
 from django.db.models import Count
 from django.forms.models import ModelForm
 from django.http import HttpResponseRedirect
@@ -103,28 +102,5 @@ def ingest_review(request):
         'ingest/ingest_review.html',
         {
             'cohorts': Cohort.objects.select_related('contributor').order_by('-created'),
-        },
-    )
-
-
-@staff_member_required
-def review_skipped_accessions(request, cohort_pk):
-    cohort = get_object_or_404(
-        Cohort,
-        pk=cohort_pk,
-    )
-    accessions = Accession.objects.filter(
-        upload__cohort=cohort, status=Accession.Status.SKIPPED
-    ).order_by('created')
-
-    paginator = Paginator(accessions, 50)
-    page_obj = paginator.get_page(request.GET.get('page'))
-    return render(
-        request,
-        'ingest/review_skipped_accessions.html',
-        {
-            'cohort': cohort,
-            'page_obj': page_obj,
-            'total_accessions': accessions.count(),
         },
     )
