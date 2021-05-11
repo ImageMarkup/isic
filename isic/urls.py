@@ -22,7 +22,6 @@ from isic.ingest.views import (
     ingest_review,
     metadata_file_create,
     reset_metadata,
-    review_skipped_accessions,
     select_or_create_cohort,
     select_or_create_contributor,
     upload_cohort_create,
@@ -110,11 +109,6 @@ urlpatterns = [
         'staff/ingest-review/lesion/<cohort_pk>/',
         LesionReviewAppView.as_view(),
         name='cohort-review-lesion',
-    ),
-    path(
-        'staff/ingest-review-skipped-accessions/<cohort_pk>/',
-        review_skipped_accessions,
-        name='review-skipped-accessions',
     ),
     path(
         'staff/ingest-review/<cohort_pk>/validate-metadata/',
