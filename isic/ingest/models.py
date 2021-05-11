@@ -275,7 +275,7 @@ class Zip(CreationSortedTimeStampedModel):
 
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
 
-    blob = S3FileField()
+    blob = S3FileField(validators=[FileExtensionValidator(allowed_extensions=['zip'])])
     blob_name = models.CharField(max_length=255, editable=False)
     blob_size = models.PositiveBigIntegerField(editable=False)
 
