@@ -52,13 +52,13 @@
                     Quality
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.0 }}
+                    {{ counts.unreviewed|intcomma }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.1 }}
+                    {{ counts.rejected|intcomma }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.2  }}
+                    {{ counts.accepted|intcomma  }}
                   </td>
                   <td rowspan="2" class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <a href="{% url 'cohort-review-quality-and-phi' cohort.id %}" class="text-indigo-600 hover:text-indigo-900">Review</a>
@@ -71,13 +71,32 @@
                     PHI
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.0 }}
+                    {{ counts.unreviewed|intcomma }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.1 }}
+                    {{ counts.rejected|intcomma }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.2  }}
+                    {{ counts.accepted|intcomma  }}
+                  </td>
+                </tr>
+              {% endwith %}
+              {% with counts=check_counts|get_key:"diagnosis_check" %}
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    Diagnosis
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{ counts.unreviewed|intcomma }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{ counts.rejected|intcomma }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{ counts.accepted|intcomma  }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <a href="{% url 'cohort-review-diagnosis' cohort.id %}" class="text-indigo-600 hover:text-indigo-900">Review</a>
                   </td>
                 </tr>
               {% endwith %}
@@ -87,13 +106,13 @@
                     Duplicate
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.0 }}
+                    {{ counts.unreviewed|intcomma }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.1 }}
+                    {{ counts.rejected|intcomma }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.2  }}
+                    {{ counts.accepted|intcomma  }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <a href="{% url 'cohort-review-duplicate' cohort.id %}" class="text-indigo-600 hover:text-indigo-900">Review</a>
@@ -106,13 +125,13 @@
                     Lesion
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.0 }}
+                    {{ counts.unreviewed|intcomma }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.1 }}
+                    {{ counts.rejected|intcomma }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.2  }}
+                    {{ counts.accepted|intcomma  }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <a href="{% url 'cohort-review-lesion' cohort.id %}" class="text-indigo-600 hover:text-indigo-900">Review</a>
