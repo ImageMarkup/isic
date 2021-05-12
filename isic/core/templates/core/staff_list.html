@@ -2,7 +2,10 @@
 
 {% block content %}
   <header class="border-b border-gray-100 flex items-center justify-between py-2 pb-4">
-    <h3>Users ({{ users.count }})</h3>
+    <div class="flex-col">
+      <h3>Users</h3>
+      <h4>Staff ({{ users.count }})</h4>
+    </div>
   </header>
 
   <div class="flex flex-col">
@@ -42,5 +45,10 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <div class="flex-col mt-4">
+    <h4>Migrated Users ({{ total_users.count }})</h4>
+    <h4>Total Users (?)</h4>
   </div>
 {% endblock %}
