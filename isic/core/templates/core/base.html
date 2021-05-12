@@ -28,46 +28,36 @@
               <a href="{% url 'staff-index' %}">ISIC</a>
             </h1>
           </div>
-          <div class="ml-6 flex space-x-8">
-            <!--
-            Current: "border-secondary-500 text-gray-900",
-            Default: "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-            -->
-            <a href="{% url 'upload/select-or-create-contributor' %}" class="{% if request.resolver_match.url_name == 'select-or-create-contributor' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-              Upload
-            </a>
-            <a href="{% url 'study-list' %}" class="{% if request.resolver_match.url_name == 'study-list' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-              Studies
-            </a>
-            <a href="{% url 'docs-swagger' %}" class="{% if request.resolver_match.url_name == 'docs-swagger' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-              API
-            </a>
-          </div>
-        </div>
-
-        <!-- Admin Link -->
-        {% if request.user.is_staff %}
-        <div class="flex">
-          <a href="{% url 'admin:index' %}" class="text-gray-900 inline-flex items-center px-1 text-sm font-medium">
-            <i class="ri-admin-line mr-2 text-lg"></i>
-            Admin
-          </a>
-        </div>
-
-        <div class="flex items-center px-4">
-          <i class="ri-arrow-right-s-line text-gray-300"></i>
-        </div>
-
-        <div class="flex">
-          <a href="{% url 'staff-list' %}" class="text-gray-900 inline-flex items-center px-4 text-sm font-medium">
-            Staff Listing
-          </a>
-          <a href="{% url 'ingest-review' %}" class="text-gray-900 inline-flex items-center px-4 text-sm font-medium">
-            Ingest Review
-          </a>
-        </div>
-        {% endif %}
-
+            <div class="ml-6 flex space-x-8">
+              <a href="{% url 'upload/select-or-create-contributor' %}" class="{% if request.resolver_match.url_name == 'upload/select-or-create-contributor' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                Upload
+              </a>
+              {% if request.user.is_staff %}
+              <a href="{% url 'ingest-review' %}" class="{% if request.resolver_match.url_name == 'ingest-review' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                Ingest Review
+              </a>
+              <a href="{% url 'study-list' %}" class="{% if request.resolver_match.url_name == 'study-list' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                Studies
+              </a>
+              <a href="{% url 'staff-list' %}" class="{% if request.resolver_match.url_name == 'staff-list' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                Users
+              </a>
+              <a target="blank" href="{% url 'admin:index' %}" class="{% if request.resolver_match.url_name == 'admin:index' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                Admin
+                <!-- heroicon external-link -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 pl-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+              {% endif %}
+              <a target="blank" href="{% url 'docs-swagger' %}" class="{% if request.resolver_match.url_name == 'docs-swagger' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                API
+                <!-- heroicon external-link -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 pl-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            </div>
       </div>
     </div>
   </nav>
