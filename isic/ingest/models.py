@@ -173,13 +173,13 @@ class Accession(CreationSortedTimeStampedModel):
     status = models.CharField(choices=Status.choices, max_length=20, default=Status.CREATING)
 
     # required checks
-    quality_check = models.BooleanField(null=True)
-    diagnosis_check = models.BooleanField(null=True)
-    phi_check = models.BooleanField(null=True)
+    quality_check = models.BooleanField(null=True, db_index=True)
+    diagnosis_check = models.BooleanField(null=True, db_index=True)
+    phi_check = models.BooleanField(null=True, db_index=True)
 
     # checks that are only applicable to a subset of a cohort
-    duplicate_check = models.BooleanField(null=True)
-    lesion_check = models.BooleanField(null=True)
+    duplicate_check = models.BooleanField(null=True, db_index=True)
+    lesion_check = models.BooleanField(null=True, db_index=True)
 
     metadata = JSONField(default=dict)
     unstructured_metadata = JSONField(default=dict)
@@ -199,47 +199,48 @@ class Accession(CreationSortedTimeStampedModel):
 
     @staticmethod
     def check_counts(cohort):
-        aggregates = {}
-        ret = {}
-        for check in Accession.checks():
-            filters = Q(upload__cohort=cohort)
-
-            if check == 'duplicate_check':
-                duplicate_checksums = (
-                    DistinctnessMeasure.objects.filter(
-                        accession__upload__cohort=cohort,
-                        checksum__in=DistinctnessMeasure.objects.values('checksum')
-                        .annotate(is_duplicate=Count('checksum'))
-                        .filter(accession__upload__cohort=cohort, is_duplicate__gt=1)
-                        .values_list('checksum', flat=True),
-                    )
-                    .order_by('checksum')
-                    .distinct('checksum')
-                    .values_list('checksum', flat=True)
-                )
-                filters &= Q(distinctnessmeasure__checksum__in=duplicate_checksums)
-            elif check == 'lesion_check':
-                filters &= Q(metadata__lesion_id__isnull=False)
-
-            aggregates.update(
-                {
-                    f'{check}_unreviewed': Count(
-                        1, filter=filters & Q(**{f'{check}__isnull': True})
-                    ),
-                    f'{check}_rejected': Count(1, filter=filters & Q(**{check: False})),
-                    f'{check}_accepted': Count(1, filter=filters & Q(**{check: True})),
-                }
+        duplicate_checksums = (
+            DistinctnessMeasure.objects.filter(
+                accession__upload__cohort=cohort,
+                checksum__in=DistinctnessMeasure.objects.values('checksum')
+                .annotate(is_duplicate=Count('checksum'))
+                .filter(accession__upload__cohort=cohort, is_duplicate__gt=1)
+                .values_list('checksum', flat=True),
             )
-
-        result = Accession.objects.aggregate(**aggregates)
-        for check in Accession.checks():
-            ret[check] = [
-                result[f'{check}_unreviewed'],
-                result[f'{check}_rejected'],
-                result[f'{check}_accepted'],
-            ]
-
-        return ret
+            .order_by('checksum')
+            .values_list('checksum', flat=True)
+        )
+        return {
+            'phi_check': Accession.objects.filter(upload__cohort=cohort).aggregate(
+                unreviewed=Count('pk', filter=Q(phi_check=None), distinct=True),
+                accepted=Count('pk', filter=Q(phi_check=True), distinct=True),
+                rejected=Count('pk', filter=Q(phi_check=False), distinct=True),
+            ),
+            'quality_check': Accession.objects.filter(upload__cohort=cohort).aggregate(
+                unreviewed=Count('pk', filter=Q(quality_check=None), distinct=True),
+                accepted=Count('pk', filter=Q(quality_check=True), distinct=True),
+                rejected=Count('pk', filter=Q(quality_check=False), distinct=True),
+            ),
+            'diagnosis_check': Accession.objects.filter(upload__cohort=cohort).aggregate(
+                unreviewed=Count('pk', filter=Q(diagnosis_check=None), distinct=True),
+                accepted=Count('pk', filter=Q(diagnosis_check=True), distinct=True),
+                rejected=Count('pk', filter=Q(diagnosis_check=False), distinct=True),
+            ),
+            'duplicate_check': Accession.objects.filter(
+                upload__cohort=cohort, distinctnessmeasure__checksum__in=duplicate_checksums
+            ).aggregate(
+                unreviewed=Count('pk', filter=Q(duplicate_check=None), distinct=True),
+                accepted=Count('pk', filter=Q(duplicate_check=True), distinct=True),
+                rejected=Count('pk', filter=Q(duplicate_check=False), distinct=True),
+            ),
+            'lesion_check': Accession.objects.filter(
+                upload__cohort=cohort, metadata__lesion_id__isnull=False
+            ).aggregate(
+                unreviewed=Count('pk', filter=Q(lesion_check=None), distinct=True),
+                accepted=Count('pk', filter=Q(lesion_check=True), distinct=True),
+                rejected=Count('pk', filter=Q(lesion_check=False), distinct=True),
+            ),
+        }
 
 
 class DistinctnessMeasure(TimeStampedModel):
