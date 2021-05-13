@@ -45,7 +45,7 @@ class ValidateMetadataForm(forms.Form):
 @login_required
 def metadata_file_create(request, cohort_pk):
     cohort = get_object_or_404(
-        Cohort.objects.filter(**staff_or_creator_filter(request.user)),
+        Cohort.objects.filter(**staff_or_creator_filter(request.user, 'contributor__creator')),
         pk=cohort_pk,
     )
     if request.method == 'POST':
@@ -81,7 +81,7 @@ def apply_metadata(request, cohort_pk):
     cohort = get_object_or_404(
         Cohort.objects.prefetch_related(
             Prefetch('metadata_files', queryset=MetadataFile.objects.order_by('-created'))
-        ).filter(**staff_or_creator_filter(request.user)),
+        ).filter(**staff_or_creator_filter(request.user, 'contributor__creator')),
         pk=cohort_pk,
     )
 

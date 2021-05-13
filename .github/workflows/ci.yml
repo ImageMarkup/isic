@@ -41,6 +41,8 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install tox
+          # Needed to run django tests that call views
+          ./manage.py collectstatic
       - name: Run tests
         run: |
           tox
