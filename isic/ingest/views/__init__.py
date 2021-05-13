@@ -27,7 +27,7 @@ class ZipForm(ModelForm):
 @login_required
 def zip_create(request, cohort_pk):
     cohort = get_object_or_404(
-        Cohort.objects.filter(**staff_or_creator_filter(request.user)),
+        Cohort.objects.filter(**staff_or_creator_filter(request.user, 'contributor__creator')),
         pk=cohort_pk,
     )
     if request.method == 'POST':
