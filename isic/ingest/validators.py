@@ -442,3 +442,4 @@ class MetadataRow(BaseModel):
             raise ValueError(
                 f'Image type {values["image_type"]} inconsistent with dermoscopic type {v}.'
             )
+        return v
