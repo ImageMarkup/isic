@@ -1,9 +1,11 @@
 from django.contrib import admin
 from django.contrib.humanize.templatetags.humanize import intcomma
+from django.db import models
 from django.db.models import Count
 from django.db.models.query_utils import Q
 from django.template.defaultfilters import filesizeformat
 from django.utils.safestring import mark_safe
+from django_json_widget.widgets import JSONEditorWidget
 from django_object_actions import DjangoObjectActions
 from django_object_actions.utils import takes_instance_or_queryset
 from girder_utils.admin import ReadonlyTabularInline
@@ -40,6 +42,7 @@ class ContributorAdmin(admin.ModelAdmin):
     list_select_related = ['creator']
     search_fields = ['institution_name', 'creator__username']
 
+    autocomplete_fields = ['creator']
     readonly_fields = ['created', 'modified']
     inlines = [CohortInline]
 
@@ -79,6 +82,7 @@ class CohortAdmin(admin.ModelAdmin):
     list_select_related = ['creator', 'contributor']
     search_fields = ['name', 'creator__username']
 
+    autocomplete_fields = ['creator', 'contributor']
     readonly_fields = ['created', 'modified']
     inlines = [ZipInline, MetadataFileInline]
 
@@ -147,6 +151,7 @@ class MetadataFileAdmin(admin.ModelAdmin):
     list_select_related = ['creator', 'cohort']
     search_fields = ['blob_name', 'creator__username']
 
+    autocomplete_fields = ['creator', 'cohort']
     readonly_fields = ['created', 'modified', 'blob_name', 'human_blob_size']
 
     @admin.display(description='Blob Size', ordering='blob_size')
@@ -163,6 +168,10 @@ class AccessionAdmin(admin.ModelAdmin):
 
     readonly_fields = ['created', 'modified', 'thumbnail', 'distinctnessmeasure']
     inlines = [CheckLogInline]
+
+    formfield_overrides = {
+        models.JSONField: {'widget': JSONEditorWidget},
+    }
 
     @admin.display(description='Blob Size', ordering='blob_size')
     def human_blob_size(self, obj):
@@ -197,6 +206,7 @@ class ZipAdmin(DjangoObjectActions, admin.ModelAdmin):
     list_filter = ['status']
     actions = ['extract_zip']
 
+    autocomplete_fields = ['creator', 'cohort']
     readonly_fields = ['created', 'modified', 'blob_name', 'human_blob_size']
     change_actions = ['extract_zip']
 

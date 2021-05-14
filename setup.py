@@ -50,6 +50,7 @@ setup(
         'django-filter',
         'django-girder-style>=0.5.0',
         'django-girder-utils',
+        'django-json-widget',
         'django-material',
         'django-nested-admin',
         'django-oauth-toolkit',
