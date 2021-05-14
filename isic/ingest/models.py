@@ -12,6 +12,7 @@ from django.core.validators import FileExtensionValidator, RegexValidator
 from django.db import models, transaction
 from django.db.models import JSONField
 from django.db.models.aggregates import Count
+from django.db.models.constraints import UniqueConstraint
 from django.db.models.query_utils import Q
 from django.template.loader import render_to_string
 from django.urls.base import reverse
@@ -90,6 +91,13 @@ class Contributor(CreationSortedTimeStampedModel):
 
 
 class Cohort(CreationSortedTimeStampedModel):
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                name='cohort_unique_girder_id', fields=['girder_id'], condition=~Q(girder_id='')
+            )
+        ]
+
     contributor = models.ForeignKey(Contributor, on_delete=models.PROTECT, related_name='cohorts')
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
     girder_id = models.CharField(blank=True, max_length=24, help_text='The dataset_id from Girder.')
@@ -156,6 +164,12 @@ class Accession(CreationSortedTimeStampedModel):
         # database layer. At least enforce the blob_name being unique at the zip level.
         # TODO: How to properly enforce cohort, blob_name uniqueness at the app layer.
         unique_together = [['upload', 'blob_name']]
+
+        constraints = [
+            UniqueConstraint(
+                name='accession_unique_girder_id', fields=['girder_id'], condition=~Q(girder_id='')
+            )
+        ]
 
     girder_id = models.CharField(blank=True, max_length=24, help_text='The image_id from Girder.')
     upload = models.ForeignKey('Zip', on_delete=models.CASCADE, related_name='accessions')
