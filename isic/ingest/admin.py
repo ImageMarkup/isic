@@ -20,6 +20,12 @@ class AccessionInline(ReadonlyTabularInline):
     model = Accession
 
 
+class CheckLogInline(ReadonlyTabularInline):
+    model = CheckLog
+    fields = ['created', 'creator', 'change_field', 'change_to']
+    ordering = ['-created']
+
+
 class MetadataFileInline(ReadonlyTabularInline):
     model = MetadataFile
 
@@ -156,6 +162,7 @@ class AccessionAdmin(admin.ModelAdmin):
     list_filter = ['status']
 
     readonly_fields = ['created', 'modified', 'thumbnail', 'distinctnessmeasure']
+    inlines = [CheckLogInline]
 
     @admin.display(description='Blob Size', ordering='blob_size')
     def human_blob_size(self, obj):
