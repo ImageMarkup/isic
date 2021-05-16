@@ -57,10 +57,17 @@ class AccessionViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class MetadataFileViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
+class MetadataFileViewSet(
+    mixins.UpdateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet
+):
     serializer_class = MetadataFileSerializer
     queryset = MetadataFile.objects.all()
     permission_classes = [IsAdminUser]
+
+    def perform_destroy(self, instance):
+        # Delete the blob from S3
+        instance.blob.delete()
+        super().perform_destroy(instance)
 
     @action(detail=True, methods=['post'])
     def apply_metadata(self, request, pk=None):
