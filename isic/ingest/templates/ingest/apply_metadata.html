@@ -21,6 +21,27 @@
         </a>
       </div>
     </div>
+
+    <script type="text/javascript">
+      function deleteMetadataFile(pk, e) {
+        e.preventDefault();
+
+        if (confirm('Are you sure you want to delete this file?')) {
+          fetch(`/api/v2/metadata-files/${pk}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': '{{ csrf_token }}'
+            },
+          }).then(() => {
+            window.location.reload();
+          }).catch((error) => {
+            alert('There was a problem deleting the file.');
+          });
+        }
+      }
+    </script>
+
   {% elif request.method == 'POST' %}
     {% include 'ingest/partials/metadata_validation_output.html' %}
   {% endif %}
