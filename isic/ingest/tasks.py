@@ -10,7 +10,7 @@ import magic
 import numpy as np
 import pandas as pd
 
-from isic.ingest.models import Accession, DistinctnessMeasure, MetadataFile, Zip
+from isic.ingest.models import Accession, AccessionStatus, DistinctnessMeasure, MetadataFile, Zip
 from isic.ingest.validators import MetadataRow
 
 
@@ -44,7 +44,7 @@ def process_accession(accession_id: int):
         major_mime_type, _ = m.from_buffer(content).split('/')
 
         if major_mime_type != 'image':
-            accession.status = Accession.Status.SKIPPED
+            accession.status = AccessionStatus.SKIPPED
             accession.save(update_fields=['status'])
             return
 
@@ -59,18 +59,20 @@ def process_accession(accession_id: int):
             'image/jpeg',
         )
         accession.blob_size = len(img_bytes.getvalue())
-        accession.save(update_fields=['blob', 'blob_size'])
+        accession.height = img.height
+        accession.width = img.width
+        accession.save(update_fields=['blob', 'blob_size', 'height', 'width'])
 
-        accession.status = Accession.Status.SUCCEEDED
+        accession.status = AccessionStatus.SUCCEEDED
         accession.save(update_fields=['status'])
 
         process_distinctness_measure.delay(accession.id)
     except SoftTimeLimitExceeded:
-        accession.status = Accession.Status.FAILED
+        accession.status = AccessionStatus.FAILED
         accession.save(update_fields=['status'])
         raise
     except Exception:
-        accession.status = Accession.Status.FAILED
+        accession.status = AccessionStatus.FAILED
         accession.save(update_fields=['status'])
         raise
 
@@ -107,3 +109,13 @@ def apply_metadata(metadatafile_id: int):
             accession.metadata = existing_metadata
             existing_unstructured_metadata.update(MetadataRow.parse_obj(row).unstructured)
             accession.save(update_fields=['metadata', 'unstructured_metadata'])
+
+
+@shared_task(soft_time_limit=60, time_limit=90)
+def migration_set_width_height(accession_id: int):
+    accession = Accession.objects.get(pk=accession_id)
+    content = accession.original_blob.open().read()
+    img = PIL.Image.open(io.BytesIO(content))
+    accession.height = img.height
+    accession.width = img.width
+    accession.save(update_fields=['width', 'height'])
