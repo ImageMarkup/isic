@@ -170,14 +170,15 @@ class MetadataFile(CreationSortedTimeStampedModel):
         return df
 
 
-class Accession(CreationSortedTimeStampedModel):
-    class Status(models.TextChoices):
-        CREATING = 'creating', 'Creating'
-        CREATED = 'created', 'Created'
-        SKIPPED = 'skipped', 'Skipped'
-        FAILED = 'failed', 'Failed'
-        SUCCEEDED = 'succeeded', 'Succeeded'
+class AccessionStatus(models.TextChoices):
+    CREATING = 'creating', 'Creating'
+    CREATED = 'created', 'Created'
+    SKIPPED = 'skipped', 'Skipped'
+    FAILED = 'failed', 'Failed'
+    SUCCEEDED = 'succeeded', 'Succeeded'
 
+
+class Accession(CreationSortedTimeStampedModel):
     class Meta:
         # A blob_name is unique at the *cohort* level, but that's not possible to enforce at the
         # database layer. At least enforce the blob_name being unique at the zip level.
@@ -204,7 +205,13 @@ class Accession(CreationSortedTimeStampedModel):
     blob = S3FileField(blank=True)
     blob_size = models.PositiveBigIntegerField(null=True, default=None, editable=False)
 
-    status = models.CharField(choices=Status.choices, max_length=20, default=Status.CREATING)
+    status = models.CharField(
+        choices=AccessionStatus.choices, max_length=20, default=AccessionStatus.CREATING
+    )
+
+    # nullable unless status is succeeded
+    width = models.PositiveIntegerField(null=True)
+    height = models.PositiveIntegerField(null=True)
 
     # required checks
     quality_check = models.BooleanField(null=True, db_index=True)
@@ -379,7 +386,7 @@ class Zip(CreationSortedTimeStampedModel):
                             ),
                         )
 
-                self.accessions.update(status=Accession.Status.CREATED)
+                self.accessions.update(status=AccessionStatus.CREATED)
 
         except zipfile.BadZipFile as e:
             logger.warning('Failed zip extraction: %d <%s>: invalid zip: %s', self.pk, self, e)
