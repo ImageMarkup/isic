@@ -12,7 +12,7 @@ from django.core.validators import FileExtensionValidator, RegexValidator
 from django.db import models, transaction
 from django.db.models import JSONField
 from django.db.models.aggregates import Count
-from django.db.models.constraints import UniqueConstraint
+from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.query_utils import Q
 from django.template.loader import render_to_string
 from django.urls.base import reverse
@@ -186,9 +186,16 @@ class Accession(CreationSortedTimeStampedModel):
         unique_together = [['upload', 'blob_name']]
 
         constraints = [
+            # girder_id should be unique among nonempty girder_id values
             UniqueConstraint(
                 name='accession_unique_girder_id', fields=['girder_id'], condition=~Q(girder_id='')
-            )
+            ),
+            # require width/height for succeeded accessions
+            CheckConstraint(
+                name='accession_wh_status_check',
+                check=Q(status=AccessionStatus.SUCCEEDED, width__isnull=False, height__isnull=False)
+                | ~Q(status=AccessionStatus.SUCCEEDED),
+            ),
         ]
 
     girder_id = models.CharField(blank=True, max_length=24, help_text='The image_id from Girder.')
