@@ -423,6 +423,9 @@ class MetadataRow(BaseModel):
     @validator('diagnosis_confirm_type')
     @classmethod
     def validate_non_histopathology_diagnoses(cls, v, values):
+        if 'diagnosis' not in values:
+            raise ValueError('Diagnosis confirm type requires a diagnosis.')
+
         if 'benign_malignant' in values:
             if v != 'histopathology' and values['benign_malignant'] in [
                 BenignMalignantEnum.malignant,
