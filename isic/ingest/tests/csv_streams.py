@@ -11,6 +11,14 @@ data_dir = pathlib.Path(__file__).parent / 'data'
 StreamWriter = codecs.getwriter('utf-8')
 
 
+def csv_stream_valid() -> BinaryIO:
+    file_stream = StreamWriter(io.BytesIO())
+    writer = csv.DictWriter(file_stream, fieldnames=['filename', 'benign_malignant', 'foo'])
+    writer.writeheader()
+    writer.writerow({'filename': 'filename.jpg', 'benign_malignant': 'benign', 'foo': 'bar'})
+    return file_stream
+
+
 def csv_stream_without_filename_column() -> BinaryIO:
     file_stream = StreamWriter(io.BytesIO())
     writer = csv.DictWriter(file_stream, fieldnames=['foo'])
