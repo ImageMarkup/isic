@@ -10,7 +10,15 @@ from django_object_actions import DjangoObjectActions
 from django_object_actions.utils import takes_instance_or_queryset
 from girder_utils.admin import ReadonlyTabularInline
 
-from isic.ingest.models import Accession, CheckLog, Cohort, Contributor, MetadataFile, Zip
+from isic.ingest.models import (
+    Accession,
+    AccessionStatus,
+    CheckLog,
+    Cohort,
+    Contributor,
+    MetadataFile,
+    Zip,
+)
 
 
 class CohortInline(ReadonlyTabularInline):
@@ -94,23 +102,23 @@ class CohortAdmin(admin.ModelAdmin):
             accessions_count=Count('zips__accessions', distinct=True),
             pending_accessions_count=Count(
                 'zips__accessions',
-                filter=Q(zips__accessions__status=Accession.Status.CREATING)
-                | Q(zips__accessions__status=Accession.Status.CREATED),
+                filter=Q(zips__accessions__status=AccessionStatus.CREATING)
+                | Q(zips__accessions__status=AccessionStatus.CREATED),
                 distinct=True,
             ),
             skipped_accessions_count=Count(
                 'zips__accessions',
-                filter=Q(zips__accessions__status=Accession.Status.SKIPPED),
+                filter=Q(zips__accessions__status=AccessionStatus.SKIPPED),
                 distinct=True,
             ),
             failed_accessions_count=Count(
                 'zips__accessions',
-                filter=Q(zips__accessions__status=Accession.Status.FAILED),
+                filter=Q(zips__accessions__status=AccessionStatus.FAILED),
                 distinct=True,
             ),
             successful_accessions_count=Count(
                 'zips__accessions',
-                filter=Q(zips__accessions__status=Accession.Status.SUCCEEDED),
+                filter=Q(zips__accessions__status=AccessionStatus.SUCCEEDED),
                 distinct=True,
             ),
         )

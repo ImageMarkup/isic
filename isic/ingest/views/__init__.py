@@ -9,7 +9,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
-from isic.ingest.models import Accession, Cohort, DistinctnessMeasure, Zip
+from isic.ingest.models import Accession, AccessionStatus, Cohort, DistinctnessMeasure, Zip
 from isic.ingest.tasks import extract_zip
 from isic.ingest.util import make_breadcrumbs, staff_or_creator_filter
 
@@ -78,7 +78,7 @@ def cohort_detail(request, pk):
         .distinct()
         .count()
     )
-    num_skipped_accessions = accession_qs.filter(status=Accession.Status.SKIPPED).count()
+    num_skipped_accessions = accession_qs.filter(status=AccessionStatus.SKIPPED).count()
 
     return render(
         request,

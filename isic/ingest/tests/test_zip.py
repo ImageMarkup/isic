@@ -4,7 +4,7 @@ import io
 import pytest
 import requests
 
-from isic.ingest.models import Accession, Zip
+from isic.ingest.models import Accession, AccessionStatus, Zip
 
 
 @pytest.fixture(params=[b'', b'corrupt_zip'], ids=['empty', 'corrupt'])
@@ -69,7 +69,7 @@ def test_zip_extract_success_accession_status(zip):
     zip.extract()
 
     accession = Accession.objects.get(blob_name='ISIC_0000000.jpg')
-    assert accession.status == Accession.Status.CREATED
+    assert accession.status == AccessionStatus.CREATED
 
 
 @pytest.mark.django_db
