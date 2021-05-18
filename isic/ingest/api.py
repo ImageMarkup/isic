@@ -73,4 +73,4 @@ class MetadataFileViewSet(
     def apply_metadata(self, request, pk=None):
         metadata_file = self.get_object()
         apply_metadata.delay(metadata_file.id)
-        return Response()
+        return Response(status=status.HTTP_202_ACCEPTED)
