@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load humanize %}
 {% load get_key %}
 {% load chunks %}
 
@@ -7,6 +8,8 @@
 
     <h2>Ingest Review</h2>
     <p>Cohorts for review</p>
+
+    {% include 'studies/partials/pagination.html' with page_obj=cohorts %}
   </div>
   <div class="bg-white shadow overflow-hidden sm:rounded-md">
     <ul class="divide-y divide-gray-200">
@@ -18,9 +21,22 @@
                 <div class="flex">
                   <p class="text-sm font-medium text-indigo-600 truncate">
                     {{ cohort.name }}
-                    <p class="px-2 ml-2 text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                      {{ cohort.copyright_license  }}
-                    </p>
+                    {% with unreviewed_count=cohort.unreviewed.count %}
+                      {% if unreviewed_count %}
+                        <p class="px-2 ml-2 text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                          {{ unreviewed_count|intcomma }} unreviewed
+                        </p>
+                      {%endif%}
+                    {% endwith %}
+                  </p>
+                </div>
+                <div class="sm:flex">
+                  <p class="flex items-center text-sm text-gray-500">
+                    <!-- Heroicon name: badge-check -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                    </svg>
+                    {{cohort.copyright_license}}
                   </p>
                 </div>
                 <div class="sm:flex">

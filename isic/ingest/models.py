@@ -129,6 +129,25 @@ class Cohort(CreationSortedTimeStampedModel):
     def get_absolute_url(self):
         return reverse('cohort-detail', args=[self.id])
 
+    def unreviewed(self):
+        duplicate_cohort_checksums = (
+            DistinctnessMeasure.objects.values('checksum')
+            .annotate(is_duplicate=Count('checksum'))
+            .filter(is_duplicate__gt=1, accession__upload__cohort=self)
+            .values_list('checksum')
+        )
+
+        return Accession.objects.filter(upload__cohort=self).filter(
+            Q(quality_check=None)
+            | Q(diagnosis_check=None)
+            | Q(phi_check=None)
+            | (Q(lesion_check=None) & Q(metadata__lesion_id__isnull=False))
+            | (
+                Q(duplicate_check=None)
+                & Q(distinctnessmeasure__checksum__in=duplicate_cohort_checksums)
+            ),
+        )
+
 
 class MetadataFile(CreationSortedTimeStampedModel):
     creator = models.ForeignKey(User, on_delete=models.CASCADE)

@@ -2,6 +2,7 @@ import os
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.db.models import Count
 from django.forms.models import ModelForm
 from django.http import HttpResponseRedirect
@@ -97,10 +98,12 @@ def cohort_detail(request, pk):
 
 @staff_member_required
 def ingest_review(request):
+    cohorts = Cohort.objects.select_related('contributor', 'creator').order_by('-created')
+    paginator = Paginator(cohorts, 10)
+    cohorts_page = paginator.get_page(request.GET.get('page'))
+
     return render(
         request,
         'ingest/ingest_review.html',
-        {
-            'cohorts': Cohort.objects.select_related('contributor').order_by('-created'),
-        },
+        {'cohorts': cohorts_page, 'num_cohorts': cohorts.count(), 'paginator': paginator},
     )
