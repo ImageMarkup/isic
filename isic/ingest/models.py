@@ -209,6 +209,10 @@ class Accession(CreationSortedTimeStampedModel):
         choices=AccessionStatus.choices, max_length=20, default=AccessionStatus.CREATING
     )
 
+    # nullable unless status is succeeded
+    width = models.PositiveIntegerField(null=True)
+    height = models.PositiveIntegerField(null=True)
+
     # required checks
     quality_check = models.BooleanField(null=True, db_index=True)
     diagnosis_check = models.BooleanField(null=True, db_index=True)
