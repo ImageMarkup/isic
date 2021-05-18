@@ -2,6 +2,8 @@ import pandas as pd
 from pydantic import ValidationError
 import pytest
 
+from isic.ingest.tasks import apply_metadata
+from isic.ingest.tests.factories import AccessionFactory
 from isic.ingest.util.metadata import get_unstructured_columns, validate_csv_format_and_filenames
 from isic.ingest.validators import MetadataRow
 
@@ -24,6 +26,20 @@ def test_no_benign_melanoma():
     except ValidationError as e:
         assert len(e.errors()) == 1
         assert e.errors()[0]['loc'][0] == 'diagnosis'
+
+
+@pytest.fixture
+def valid_metadatafile(cohort, metadata_file_factory, csv_stream_valid):
+    return metadata_file_factory(blob__from_func=lambda: csv_stream_valid, cohort=cohort)
+
+
+@pytest.mark.django_db
+def test_apply_metadata(valid_metadatafile, cohort):
+    accession = AccessionFactory(upload__cohort=cohort, blob_name='filename.jpg')
+    apply_metadata(valid_metadatafile.pk)
+    accession.refresh_from_db()
+    assert accession.metadata == {'benign_malignant': 'benign'}
+    assert accession.unstructured_metadata == {'foo': 'bar'}
 
 
 @pytest.fixture
