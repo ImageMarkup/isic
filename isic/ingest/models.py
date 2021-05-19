@@ -239,6 +239,16 @@ class Accession(CreationSortedTimeStampedModel):
         return self.blob_name
 
     @staticmethod
+    def rejected_filter():
+        return (
+            Q(quality_check=False)
+            | Q(diagnosis_check=False)
+            | Q(phi_check=False)
+            | Q(duplicate_check=False)
+            | Q(lesion_check=False)
+        )
+
+    @staticmethod
     def checks():
         return {
             'quality_check': 'Quality',
