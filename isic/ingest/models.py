@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 class CreationSortedTimeStampedModel(TimeStampedModel):
     class Meta:
         abstract = True
-        ordering = ['created']
+        ordering = ['-created']
         get_latest_by = 'created'
 
     created = CreationDateTimeField(db_index=True)
