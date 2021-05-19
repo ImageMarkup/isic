@@ -196,10 +196,11 @@ class AccessionAdmin(admin.ModelAdmin):
 
 @admin.register(CheckLog)
 class CheckLogAdmin(admin.ModelAdmin):
-    autocomplete_fields = ['accession', 'creator']
     list_display = ['id', 'cohort', 'accession', 'creator', 'created', 'change_field', 'change_to']
     list_select_related = ['accession', 'creator', 'accession__upload__cohort']
     list_filter = ['change_field', 'change_to']
+
+    autocomplete_fields = ['accession', 'creator']
 
     @admin.display(description='Cohort')
     def cohort(self, obj):
