@@ -63,6 +63,7 @@ setup(
         'pydantic',
         'pymongo',
         'python-magic',
+        'tenacity',
         'zipfile-deflate64',
         # Production-only
         'django-composed-configuration[prod]>=0.16',
