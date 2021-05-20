@@ -1,11 +1,9 @@
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
 from django.db.models import Count
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
-from django.urls.base import reverse
 
-from isic.studies.forms import StudyForm
 from isic.studies.models import Annotation, Markup, Study
 
 
@@ -63,17 +61,3 @@ def study_detail(request, pk):
     }
 
     return render(request, 'studies/study_detail.html', context)
-
-
-@staff_member_required
-def study_create(request):
-    if request.method == 'POST':
-        form = StudyForm(request.POST)
-        if form.is_valid():
-            form.instance.creator = request.user
-            form.save(commit=True)
-            return HttpResponseRedirect(reverse('study-detail', args=[form.instance.pk]))
-    else:
-        form = StudyForm()
-
-    return render(request, 'studies/study_create.html', {'form': form})

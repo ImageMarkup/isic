@@ -1,4 +1,3 @@
-from bson import ObjectId
 import factory
 import factory.django
 
@@ -6,7 +5,6 @@ from isic.factories import UserFactory
 from isic.studies.models import (
     Annotation,
     Feature,
-    Image,
     Markup,
     Question,
     QuestionChoice,
@@ -14,13 +12,6 @@ from isic.studies.models import (
     Study,
     StudyTask,
 )
-
-
-class ImageFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = Image
-
-    object_id = factory.LazyFunction(ObjectId)
 
 
 class QuestionFactory(factory.django.DjangoModelFactory):
@@ -89,7 +80,7 @@ class StudyTaskFactory(factory.django.DjangoModelFactory):
     study = factory.SubFactory(StudyFactory)
     # TODO: annotators might become M2M in the future
     annotator = factory.SubFactory(UserFactory)
-    image = factory.SubFactory(ImageFactory)
+    image = factory.SubFactory('isic.factories.ImageFactory')
 
 
 class AnnotationFactory(factory.django.DjangoModelFactory):

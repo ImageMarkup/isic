@@ -3,7 +3,6 @@ from pytest_factoryboy import register
 from .factories import (
     AnnotationFactory,
     FeatureFactory,
-    ImageFactory,
     MarkupFactory,
     QuestionChoiceFactory,
     QuestionFactory,
@@ -12,7 +11,6 @@ from .factories import (
     StudyTaskFactory,
 )
 
-register(ImageFactory, 'image')
 register(QuestionFactory, 'question')
 register(QuestionChoiceFactory, 'questionchoice')
 register(FeatureFactory, 'feature')
