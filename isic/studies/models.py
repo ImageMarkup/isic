@@ -6,10 +6,6 @@ from django_extensions.db.models import TimeStampedModel
 from girder_utils.models import DeferredFieldsManager
 
 
-class Image(TimeStampedModel):
-    object_id = models.CharField(unique=True, max_length=24)
-
-
 class Question(TimeStampedModel):
     class Meta:
         ordering = ['prompt']

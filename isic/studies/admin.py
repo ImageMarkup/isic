@@ -6,7 +6,6 @@ import nested_admin
 from isic.studies.models import (
     Annotation,
     Feature,
-    Image,
     Markup,
     Question,
     QuestionChoice,
@@ -56,11 +55,6 @@ class AnnotationInline(ReadonlyInlineMixin, nested_admin.NestedTabularInline):
     extra = 0
     inlines = [ResponseInline, MarkupInline]
     autocomplete_fields = ['annotator', 'image2']
-
-
-@admin.register(Image)
-class ImageAdmin(admin.ModelAdmin):
-    search_fields = ['object_id']
 
 
 @admin.register(Markup)
