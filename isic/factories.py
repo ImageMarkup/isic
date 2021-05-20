@@ -2,9 +2,11 @@ from bson import ObjectId
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
+import factory
 import factory.django
 from passlib.hash import bcrypt
 
+from isic.core.models import Image
 from isic.login.models import Profile
 
 
@@ -51,3 +53,11 @@ class UserFactory(factory.django.DjangoModelFactory):
 
     class Params:
         raw_password = factory.Faker('password')
+
+
+class ImageFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Image
+
+    accession = factory.SubFactory('isic.ingest.tests.factories.AccessionFactory')
+    public = factory.Faker('boolean')
