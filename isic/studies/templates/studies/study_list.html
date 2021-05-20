@@ -4,10 +4,6 @@
 
 <header class="border-b border-gray-100 flex items-center justify-between py-2">
   <h3>Studies</h3>
-  <a href="{% url 'study-create' %}" class="button inline-flex items-center is-primary is-sm">
-    Add new
-    <i class="ri-add-circle-line ml-2"></i>
-  </a>
 </header>
   <ul class="collection">
     {% for study in studies %}
