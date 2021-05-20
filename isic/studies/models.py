@@ -72,13 +72,12 @@ class Study(TimeStampedModel):
 
 class StudyTask(TimeStampedModel):
     class Meta:
-        unique_together = [['study', 'annotator', 'image']]
+        unique_together = [['study', 'annotator', 'image2']]
 
     study = models.ForeignKey(Study, on_delete=models.CASCADE, related_name='tasks')
     # TODO: annotators might become M2M in the future
     annotator = models.ForeignKey(User, on_delete=models.CASCADE)
-    image = models.ForeignKey(Image, on_delete=models.CASCADE)
-    image2 = models.ForeignKey('core.Image', on_delete=models.CASCADE, null=True)
+    image2 = models.ForeignKey('core.Image', on_delete=models.CASCADE)
 
     @property
     def complete(self) -> bool:
@@ -87,8 +86,7 @@ class StudyTask(TimeStampedModel):
 
 class Annotation(TimeStampedModel):
     study = models.ForeignKey(Study, on_delete=models.CASCADE)
-    image = models.ForeignKey(Image, on_delete=models.PROTECT)
-    image2 = models.ForeignKey('core.Image', on_delete=models.PROTECT, null=True)
+    image2 = models.ForeignKey('core.Image', on_delete=models.PROTECT)
     task = models.OneToOneField(StudyTask, related_name='annotation', on_delete=models.RESTRICT)
     annotator = models.ForeignKey(User, on_delete=models.PROTECT)
 

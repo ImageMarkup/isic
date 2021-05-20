@@ -55,6 +55,7 @@ class AnnotationInline(ReadonlyInlineMixin, nested_admin.NestedTabularInline):
     model = Annotation
     extra = 0
     inlines = [ResponseInline, MarkupInline]
+    autocomplete_fields = ['annotator', 'image2']
 
 
 @admin.register(Image)
@@ -95,16 +96,19 @@ class ResponseAdmin(admin.ModelAdmin):
 @admin.register(Annotation)
 class AnnotationAdmin(admin.ModelAdmin):
     inlines = [ResponseInline, MarkupInline]
-    list_display = ['study', 'annotator', 'image']
+    list_display = ['study', 'annotator', 'image2']
     list_filter = ['study']
     search_fields = ['annotator__email', 'image__object_id']
+    autocomplete_fields = ['image2', 'annotator', 'image2', 'task']
 
 
 @admin.register(StudyTask)
 class StudyTaskAdmin(nested_admin.NestedModelAdmin):
-    list_display = ['study', 'annotator', 'image', 'complete']
+    list_display = ['study', 'annotator', 'image2', 'complete', 'created']
+    readonly_fields = ['created']
     list_filter = ['study', IsStudyTaskCompleteFilter]
     search_fields = ['annotator__email', 'image__object_id', 'study__name']
+    autocomplete_fields = ['image2', 'annotator', 'image2']
     inlines = [AnnotationInline]
 
     def get_queryset(self, request):
@@ -113,7 +117,7 @@ class StudyTaskAdmin(nested_admin.NestedModelAdmin):
 
     @admin.display(ordering='has_annotation', boolean=True)
     def complete(self, obj):
-        return obj.has_annot
+        return obj.has_annotation
 
 
 @admin.register(Study)
