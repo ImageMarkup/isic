@@ -34,7 +34,8 @@ class DuplicateImageAdmin(admin.ModelAdmin):
 class ImageAdmin(admin.ModelAdmin):
     autocomplete_fields = ['accession']
     search_fields = ['isic_id']
-    list_display = ['isic_id', 'created']
+    list_display = ['isic_id', 'created', 'public']
+    list_filter = ['public']
     readonly_fields = ['created', 'modified', 'thumbnail']
 
     @admin.display()
