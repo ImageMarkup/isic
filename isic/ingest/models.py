@@ -198,7 +198,9 @@ class Accession(CreationSortedTimeStampedModel):
             ),
         ]
 
-    girder_id = models.CharField(blank=True, max_length=24, help_text='The image_id from Girder.')
+    girder_id = models.CharField(
+        blank=True, max_length=24, help_text='The image_id from Girder.', db_index=True
+    )
     upload = models.ForeignKey('Zip', on_delete=models.CASCADE, related_name='accessions')
 
     # the original blob is stored in case blobs need to be reprocessed
