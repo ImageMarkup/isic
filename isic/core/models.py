@@ -1,6 +1,7 @@
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import JSONField
+from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
 from isic.core.fields import IsicIdField
@@ -35,3 +36,6 @@ class Image(TimeStampedModel):
 
     def __str__(self):
         return self.isic_id
+
+    def get_absolute_url(self):
+        return reverse('core/image-detail', args=[self.pk])
