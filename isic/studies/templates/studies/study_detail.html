@@ -40,7 +40,7 @@
     {% for annotation in annotations %}
       <tr>
         <td>{{ annotation.annotator  }}</td>
-        <td>{{ annotation.image.object_id  }}</td>
+        <td>{{ annotation.image.isic_id  }}</td>
         <td>
           <a href="{{annotation.get_absolute_url}}">View Annotation</a>
         </td>
