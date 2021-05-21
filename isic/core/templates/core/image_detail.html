@@ -238,7 +238,7 @@
                             {{ log.change_field }}
                           </td>
                           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {{ log.change_to }}
+                            {{ log.change_to|yesno }}
                           </td>
                         </tr>
                       {% endfor %}
