@@ -39,3 +39,14 @@ class Image(TimeStampedModel):
 
     def get_absolute_url(self):
         return reverse('core/image-detail', args=[self.pk])
+
+
+class Collection(TimeStampedModel):
+    images = models.ManyToManyField(Image)
+
+    # TODO: probably make it unique per user, or unique for official collections
+    name = models.CharField(max_length=200, unique=True)
+    description = models.TextField(blank=True)
+
+    def __str__(self):
+        return self.name
