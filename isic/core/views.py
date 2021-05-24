@@ -66,7 +66,7 @@ def image_detail(request, id_or_gid_or_isicid):
             'sections': {
                 'metadata': 'Metadata',
                 'studies': f'Studies ({studies.count()})',
-                'publishing': 'Publishing',
+                'ingest-review': 'Ingest Review',
             },
         },
     )
