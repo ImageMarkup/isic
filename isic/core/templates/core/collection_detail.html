@@ -1,0 +1,29 @@
+{% extends 'core/base.html' %}
+{% load get_key %}
+
+{% block content %}
+  <h1>{{collection.name}}</h1>
+  {% if collection.description %}
+    <p>{{ collection.description }}</p>
+  {% endif %}
+
+  <div class="flex justify-between">
+    {% include 'studies/partials/pagination.html' with page_obj=images %}
+  </div>
+
+  <div class="mb-4" x-data="thumbnailGrid();">
+    <div class="flex flex-row justify-end pb-3">
+      <a class="px-1" href="#" @click="decrease();">fewer columns</a> |
+      <a class="px-1" href="#" @click="increase();">more columns</a>
+    </div>
+    <div class="grid gap-4" :class="`grid-cols-${numCols}`">
+      {% for image in images %}
+        {% include 'core/partials/image.html' %}
+      {% endfor %}
+    </div>
+  </div>
+
+  {% include 'studies/partials/pagination.html' with page_obj=images %}
+
+  {% include 'ingest/partials/thumbnail_grid_js.html' %}
+{% endblock %}
