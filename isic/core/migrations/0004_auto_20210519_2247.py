@@ -5,8 +5,6 @@ from django.db import migrations, models
 import django.db.models.deletion
 import django_extensions.db.fields
 
-import isic.core.models.image
-
 
 class Migration(migrations.Migration):
 
@@ -39,7 +37,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     'isic_id',
-                    isic.core.models.image.IsicIdField(
+                    models.CharField(
                         max_length=12,
                         unique=True,
                         validators=[django.core.validators.RegexValidator('^ISIC_[0-9]{7}$')],
@@ -62,7 +60,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='duplicateimage',
             name='isic_id',
-            field=isic.core.models.image.IsicIdField(
+            field=models.CharField(
                 max_length=12,
                 unique=True,
                 validators=[django.core.validators.RegexValidator('^ISIC_[0-9]{7}$')],
@@ -92,7 +90,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     'isic_id',
-                    isic.core.models.image.IsicIdField(
+                    models.CharField(
                         max_length=12,
                         unique=True,
                         validators=[django.core.validators.RegexValidator('^ISIC_[0-9]{7}$')],
