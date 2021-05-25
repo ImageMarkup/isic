@@ -1,15 +1,15 @@
 {% extends 'core/base.html' %}
 {% load get_key %}
+{% load humanize %}
 
 {% block content %}
   <h1>{{collection.name}}</h1>
+  <span>{{ num_images|intcomma }} images</span>
   {% if collection.description %}
     <p>{{ collection.description }}</p>
   {% endif %}
 
-  <div class="flex justify-between">
     {% include 'studies/partials/pagination.html' with page_obj=images %}
-  </div>
 
   <div class="mb-4" x-data="thumbnailGrid();">
     <div class="flex flex-row justify-end pb-3">

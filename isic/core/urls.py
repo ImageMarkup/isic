@@ -1,6 +1,6 @@
 from django.urls import path
 
-from isic.core.views import collection_detail, image_detail
+from isic.core.views import collection_detail, collection_list, image_detail
 
 urlpatterns = [
     path(
@@ -9,7 +9,12 @@ urlpatterns = [
         name='core/image-detail',
     ),
     path(
-        'collections/<pk>/',
+        'staff/collections/',
+        collection_list,
+        name='core/collection-list',
+    ),
+    path(
+        'staff/collections/<pk>/',
         collection_detail,
         name='core/collection-detail',
     ),
