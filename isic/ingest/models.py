@@ -5,7 +5,6 @@ import zipfile
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.contrib.postgres.fields.array import ArrayField
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.core.mail import send_mail
 from django.core.validators import FileExtensionValidator, RegexValidator
@@ -233,9 +232,6 @@ class Accession(CreationSortedTimeStampedModel):
 
     metadata = JSONField(default=dict)
     unstructured_metadata = JSONField(default=dict)
-
-    # temporary field for storing tags from the old archive
-    tags = ArrayField(models.CharField(max_length=255), default=list)
 
     def __str__(self) -> str:
         return self.blob_name

@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404, render
 
-from isic.core.models import Image
+from isic.core.models import Collection, Image
 from isic.ingest.models import CheckLog
 from isic.studies.models import Markup, Response, Study
 
@@ -33,9 +33,11 @@ def image_detail(request, id_or_gid_or_isicid):
     image = get_object_or_404(
         Image.objects.select_related(
             'accession__upload__cohort__contributor__creator',
-        ).prefetch_related(
+        )
+        .prefetch_related(
             Prefetch('accession__checklogs', queryset=CheckLog.objects.select_related('creator'))
-        ),
+        )
+        .prefetch_related(Prefetch('collections', queryset=Collection.objects.order_by('name'))),
         filters,
     )
 
@@ -57,7 +59,6 @@ def image_detail(request, id_or_gid_or_isicid):
         'core/image_detail.html',
         {
             'image': image,
-            'tags': sorted(image.accession.tags),
             'studies': studies,
             'responses': key_by(responses, lambda r: r.annotation.task.study.pk),
             'markups': key_by(markups, lambda r: r.annotation.task.study.pk),
