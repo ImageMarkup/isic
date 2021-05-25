@@ -1,9 +1,11 @@
 from django.contrib import admin
+from django.contrib.humanize.templatetags.humanize import intcomma
 from django.db import models
+from django.db.models import Count
 from django.utils.safestring import mark_safe
 from django_json_widget.widgets import JSONEditorWidget
 
-from isic.core.models import DuplicateImage, Image, ImageRedirect
+from isic.core.models import Collection, DuplicateImage, Image, ImageRedirect
 
 # general admin settings
 # https://docs.djangoproject.com/en/3.1/ref/contrib/admin/#adminsite-objects
@@ -48,3 +50,20 @@ class ImageRedirectAdmin(admin.ModelAdmin):
     autocomplete_fields = ['image']
     search_fields = ['isic_id']
     list_display = ['isic_id', 'image']
+
+
+@admin.register(Collection)
+class CollectionAdmin(admin.ModelAdmin):
+    exclude = ['images']
+    list_display = ['name', 'num_images']
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        qs = qs.annotate(
+            num_images=Count('images', distinct=True),
+        )
+        return qs
+
+    @admin.display()
+    def num_images(self, obj):
+        return intcomma(obj.num_images)
