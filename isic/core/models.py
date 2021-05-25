@@ -42,7 +42,7 @@ class Image(TimeStampedModel):
 
 
 class Collection(TimeStampedModel):
-    images = models.ManyToManyField(Image)
+    images = models.ManyToManyField(Image, related_name='collections')
 
     # TODO: probably make it unique per user, or unique for official collections
     name = models.CharField(max_length=200, unique=True)
