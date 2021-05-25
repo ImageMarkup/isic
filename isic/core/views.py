@@ -8,7 +8,7 @@ from django.db.models import Count, Prefetch, Q
 from django.shortcuts import get_object_or_404, render
 
 from isic.core.models import Collection, Image
-from isic.ingest.models import CheckLog
+from isic.ingest.models import CheckLog, Contributor
 from isic.studies.models import Markup, Response, Study
 
 
@@ -46,11 +46,19 @@ def collection_detail(request, pk):
     images = collection.images.order_by('created')
     paginator = Paginator(images, 30)
     page = paginator.get_page(request.GET.get('page'))
+    contributors = Contributor.objects.filter(
+        pk__in=collection.images.values('accession__upload__cohort__contributor__pk').distinct()
+    ).order_by('institution_name')
 
     return render(
         request,
         'core/collection_detail.html',
-        {'collection': collection, 'images': page, 'num_images': images.count()},
+        {
+            'collection': collection,
+            'contributors': contributors,
+            'images': page,
+            'num_images': paginator.count,
+        },
     )
 
 
