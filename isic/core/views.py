@@ -4,7 +4,7 @@ import json
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
-from django.db.models import Prefetch, Q
+from django.db.models import Count, Prefetch, Q
 from django.shortcuts import get_object_or_404, render
 
 from isic.core.models import Collection, Image
@@ -23,6 +23,21 @@ def key_by(sequence, f):
 def staff_list(request):
     users = User.objects.filter(is_staff=True).order_by('email')
     return render(request, 'core/staff_list.html', {'users': users, 'total_users': User.objects})
+
+
+@staff_member_required
+def collection_list(request):
+    collections = Collection.objects.annotate(num_images=Count('images', distinct=True)).order_by(
+        '-name'
+    )
+    paginator = Paginator(collections, 25)
+    page = paginator.get_page(request.GET.get('page'))
+
+    return render(
+        request,
+        'core/collection_list.html',
+        {'collections': page},
+    )
 
 
 @staff_member_required
