@@ -7,7 +7,7 @@ from girder_utils.models import DeferredFieldsManager
 
 
 class Question(TimeStampedModel):
-    class Meta:
+    class Meta(TimeStampedModel.Meta):
         ordering = ['prompt']
 
     class QuestionType(models.TextChoices):
@@ -32,7 +32,7 @@ class QuestionChoice(TimeStampedModel):
 
 
 class Feature(TimeStampedModel):
-    class Meta:
+    class Meta(TimeStampedModel.Meta):
         ordering = ['name']
 
     required = models.BooleanField(default=False)
@@ -48,7 +48,7 @@ class Feature(TimeStampedModel):
 
 
 class Study(TimeStampedModel):
-    class Meta:
+    class Meta(TimeStampedModel.Meta):
         verbose_name_plural = 'Studies'
 
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
@@ -67,7 +67,7 @@ class Study(TimeStampedModel):
 
 
 class StudyTask(TimeStampedModel):
-    class Meta:
+    class Meta(TimeStampedModel.Meta):
         unique_together = [['study', 'annotator', 'image']]
 
     study = models.ForeignKey(Study, on_delete=models.CASCADE, related_name='tasks')

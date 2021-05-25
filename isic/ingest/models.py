@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 class CreationSortedTimeStampedModel(TimeStampedModel):
-    class Meta:
+    class Meta(TimeStampedModel.Meta):
         abstract = True
         ordering = ['-created']
         get_latest_by = 'created'
@@ -90,7 +90,7 @@ class Contributor(CreationSortedTimeStampedModel):
 
 
 class Cohort(CreationSortedTimeStampedModel):
-    class Meta:
+    class Meta(CreationSortedTimeStampedModel.Meta):
         constraints = [
             UniqueConstraint(
                 name='cohort_unique_girder_id', fields=['girder_id'], condition=~Q(girder_id='')
@@ -178,7 +178,7 @@ class AccessionStatus(models.TextChoices):
 
 
 class Accession(CreationSortedTimeStampedModel):
-    class Meta:
+    class Meta(CreationSortedTimeStampedModel.Meta):
         # A blob_name is unique at the *cohort* level, but that's not possible to enforce at the
         # database layer. At least enforce the blob_name being unique at the zip level.
         # TODO: How to properly enforce cohort, blob_name uniqueness at the app layer.
