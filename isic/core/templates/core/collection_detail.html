@@ -4,12 +4,25 @@
 
 {% block content %}
   <h1>{{collection.name}}</h1>
-  <span>{{ num_images|intcomma }} images</span>
+  <div class="my-4 bg-gray-50 p-2 rounded-sm border-gray-200 border">
+    <ul>
+      <li><span class="font-bold">Name:</span> {{ collection.name }}</li>
+      <li><span class="font-bold">Contributors:</span>
+        <ul>
+          {% for contributor in contributors %}
+            <li><a href="{% url 'admin:ingest_contributor_change' contributor.pk %}">{{ contributor.institution_name }}</a></li>
+          {% endfor %}
+        </ul>
+      </li>
+      <li><span class="font-bold">Number of images:</span> {{ num_images|intcomma }}</li>
+    </ul>
+  </div>
+
   {% if collection.description %}
     <p>{{ collection.description }}</p>
   {% endif %}
 
-    {% include 'studies/partials/pagination.html' with page_obj=images %}
+  {% include 'studies/partials/pagination.html' with page_obj=images %}
 
   <div class="mb-4" x-data="thumbnailGrid();">
     <div class="flex flex-row justify-end pb-3">

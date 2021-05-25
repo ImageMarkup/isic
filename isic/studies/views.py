@@ -57,7 +57,7 @@ def study_detail(request, pk):
     context = {
         'study': study,
         'annotations': annotations_page,
-        'num_annotations': annotations.count(),
+        'num_annotations': paginator.count,
     }
 
     return render(request, 'studies/study_detail.html', context)
