@@ -36,6 +36,9 @@
               <a href="{% url 'ingest-review' %}" class="{% if request.resolver_match.url_name == 'ingest-review' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                 Ingest Review
               </a>
+              <a href="{% url 'core/collection-list' %}" class="{% if request.resolver_match.url_name == 'core/collection-list' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                Collections
+              </a>
               <a href="{% url 'study-list' %}" class="{% if request.resolver_match.url_name == 'study-list' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                 Studies
               </a>
