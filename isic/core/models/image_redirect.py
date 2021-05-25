@@ -3,7 +3,7 @@ from django.db import models
 from django.db.models import JSONField
 from django_extensions.db.models import TimeStampedModel
 
-from .image import IsicIdField
+from .isic_id import IsicId
 
 
 class DuplicateImage(TimeStampedModel):
@@ -15,10 +15,12 @@ class DuplicateImage(TimeStampedModel):
         unique=True,
         validators=[RegexValidator(r'^[0-9a-f]{24}$')],
     )
-    isic_id = IsicIdField()
+    # This should typically be referenced as ".isic_id"
+    isic = models.OneToOneField(IsicId, on_delete=models.PROTECT)
     metadata = JSONField(default=dict)
 
 
 class ImageRedirect(TimeStampedModel):
-    isic_id = IsicIdField()
+    # This should typically be referenced as ".isic_id"
+    isic = models.OneToOneField(IsicId, on_delete=models.PROTECT)
     image = models.ForeignKey('Image', on_delete=models.PROTECT, related_name='redirects')
