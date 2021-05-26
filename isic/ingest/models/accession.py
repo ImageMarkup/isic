@@ -1,3 +1,4 @@
+from auditlog.registry import auditlog
 from django.db import models
 from django.db.models import JSONField
 from django.db.models.aggregates import Count
@@ -71,8 +72,8 @@ class Accession(CreationSortedTimeStampedModel):
     duplicate_check = models.BooleanField(null=True, db_index=True)
     lesion_check = models.BooleanField(null=True, db_index=True)
 
-    metadata = JSONField(default=dict)
-    unstructured_metadata = JSONField(default=dict)
+    metadata = JSONField(default=dict, verbose_name='Clinical Metadata')
+    unstructured_metadata = JSONField(default=dict, verbose_name='Unstructured Metadata')
 
     def __str__(self) -> str:
         return self.blob_name
@@ -143,3 +144,6 @@ class Accession(CreationSortedTimeStampedModel):
                 rejected=Count('pk', filter=Q(lesion_check=False), distinct=True),
             ),
         }
+
+
+auditlog.register(Accession, include_fields=['metadata', 'unstructured_metadata'])

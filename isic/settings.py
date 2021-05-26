@@ -36,12 +36,17 @@ class IsicMixin(ConfigMixin):
 
         # Install additional apps
         configuration.INSTALLED_APPS += [
+            'auditlog',
             's3_file_field',
             'material',
             'nested_admin',
             'django_object_actions',
             'django_json_widget',
         ]
+
+        # This doesn't need to be dead last, it just needs to be after any middleware that alters
+        # the request object since it uses the user from it.
+        configuration.MIDDLEWARE.append('auditlog.middleware.AuditlogMiddleware')
 
         # PASSWORD_HASHERS are ordered "best" to "worst", appending Girder last means
         # it will be upgraded on login.
