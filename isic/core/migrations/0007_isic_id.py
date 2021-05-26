@@ -92,7 +92,7 @@ class Migration(migrations.Migration):
             ),
         ),
         # Copy from the old field to the new field
-        migrations.RunPython(copy_isic_id, None),
+        migrations.RunPython(copy_isic_id),
         # Make the new field non-nullable
         migrations.AlterField(
             model_name='image',

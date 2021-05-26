@@ -17,9 +17,16 @@ class ContributorFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Contributor
 
-    creator = factory.SubFactory(UserFactory)
+    institution_name = factory.Faker('sentence', nb_words=5, variable_nb_words=True)
     institution_url = factory.Faker('url')
     legal_contact_info = factory.Faker('address')
+    creator = factory.SubFactory(UserFactory)
+
+    @factory.post_generation
+    def owners(self, create, extracted, **kwargs):
+        owners = [self.creator] if extracted is None else extracted
+        for owner in owners:
+            self.owners.add(owner)
 
 
 class CohortFactory(factory.django.DjangoModelFactory):
