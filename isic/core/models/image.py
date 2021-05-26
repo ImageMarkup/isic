@@ -2,12 +2,14 @@ from django.db import models
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
+from isic.ingest.models import Accession
+
 from .isic_id import IsicId
 
 
 class Image(TimeStampedModel):
     accession = models.OneToOneField(
-        'ingest.Accession',
+        Accession,
         on_delete=models.PROTECT,
     )
     # This should typically be referenced as ".isic_id"
