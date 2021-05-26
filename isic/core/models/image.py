@@ -13,7 +13,9 @@ class Image(TimeStampedModel):
         on_delete=models.PROTECT,
     )
     # This should typically be referenced as ".isic_id"
-    isic = models.OneToOneField(IsicId, on_delete=models.PROTECT, default=IsicId.safe_create)
+    isic = models.OneToOneField(
+        IsicId, on_delete=models.PROTECT, default=IsicId.safe_create, editable=False
+    )
 
     public = models.BooleanField(default=False)
 

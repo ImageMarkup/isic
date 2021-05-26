@@ -17,11 +17,11 @@ class DuplicateImage(TimeStampedModel):
         validators=[RegexValidator(r'^[0-9a-f]{24}$')],
     )
     # This should typically be referenced as ".isic_id"
-    isic = models.OneToOneField(IsicId, on_delete=models.PROTECT)
+    isic = models.OneToOneField(IsicId, on_delete=models.PROTECT, editable=False)
     metadata = JSONField(default=dict)
 
 
 class ImageRedirect(TimeStampedModel):
     # This should typically be referenced as ".isic_id"
-    isic = models.OneToOneField(IsicId, on_delete=models.PROTECT)
+    isic = models.OneToOneField(IsicId, on_delete=models.PROTECT, editable=False)
     image = models.ForeignKey(Image, on_delete=models.PROTECT, related_name='redirects')
