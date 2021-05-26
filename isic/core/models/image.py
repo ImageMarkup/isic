@@ -1,28 +1,21 @@
-from django.core.validators import RegexValidator
 from django.db import models
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
-ISIC_ID_VALIDATOR = RegexValidator(r'^ISIC_[0-9]{7}$')
+from isic.ingest.models import Accession
 
-
-class IsicIdField(models.CharField):
-    description = 'An isic identifier (e.g. ISIC_0123456)'
-
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault('max_length', 12)
-        kwargs.setdefault('unique', True)
-        kwargs.setdefault('verbose_name', 'ISIC ID')
-        kwargs.setdefault('validators', [ISIC_ID_VALIDATOR])
-        super().__init__(*args, **kwargs)
+from .isic_id import IsicId
 
 
 class Image(TimeStampedModel):
     accession = models.OneToOneField(
-        'ingest.Accession',
+        Accession,
         on_delete=models.PROTECT,
     )
-    isic_id = IsicIdField()
+    # This should typically be referenced as ".isic_id"
+    isic = models.OneToOneField(
+        IsicId, on_delete=models.PROTECT, default=IsicId.safe_create, editable=False
+    )
 
     public = models.BooleanField(default=False)
 
