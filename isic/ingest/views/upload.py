@@ -45,6 +45,7 @@ def upload_contributor_create(request):
         form = ContributorForm(request.POST)
         if form.is_valid():
             form.instance.creator = request.user
+            form.instance.owners.add(request.user)
             form.save(commit=True)
             return HttpResponseRedirect(reverse('upload/create-cohort', args=[form.instance.pk]))
     else:

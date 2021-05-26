@@ -6,7 +6,6 @@ from isic.core.models import CopyrightLicense, CreationSortedTimeStampedModel
 
 
 class Contributor(CreationSortedTimeStampedModel):
-    creator = models.ForeignKey(User, on_delete=models.PROTECT)
     institution_name = models.CharField(
         max_length=255,
         verbose_name='Institution Name',
@@ -30,6 +29,8 @@ class Contributor(CreationSortedTimeStampedModel):
             '<strong> This is private</strong>, and will not be published along with your images.'
         ),
     )
+    creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name='created_contributors')
+    owners = models.ManyToManyField(User, related_name='owned_contributors')
     default_copyright_license = models.CharField(
         choices=CopyrightLicense.choices,
         max_length=255,
