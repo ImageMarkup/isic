@@ -7,6 +7,8 @@ from s3_file_field import S3FileField
 
 from isic.core.models import CreationSortedTimeStampedModel
 
+from .zip import Zip
+
 
 class AccessionStatus(models.TextChoices):
     CREATING = 'creating', 'Creating'
@@ -39,7 +41,7 @@ class Accession(CreationSortedTimeStampedModel):
     girder_id = models.CharField(
         blank=True, max_length=24, help_text='The image_id from Girder.', db_index=True
     )
-    upload = models.ForeignKey('Zip', on_delete=models.CASCADE, related_name='accessions')
+    upload = models.ForeignKey(Zip, on_delete=models.CASCADE, related_name='accessions')
 
     # the original blob is stored in case blobs need to be reprocessed
     original_blob = S3FileField()

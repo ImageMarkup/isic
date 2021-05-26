@@ -1,19 +1,16 @@
 import hashlib
 import io
-import random
 
 import PIL.Image
 from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
-from django.db.utils import IntegrityError
 import magic
 import numpy as np
 import pandas as pd
-from tenacity import retry, retry_if_exception_type, stop_after_attempt
 
-from isic.core.models import Image, ImageRedirect
+from isic.core.models import Image
 from isic.ingest.models import (
     Accession,
     AccessionStatus,
@@ -128,25 +125,10 @@ def apply_metadata(metadatafile_id: int):
 def publish_accession(accession_id: int, public: bool):
     accession = Accession.objects.get(pk=accession_id)
 
-    isic_id = None
-
-    @retry(reraise=True, retry=retry_if_exception_type(IntegrityError), stop=stop_after_attempt(10))
-    def _make_accession(isic_id):
-        if not isic_id:
-            while True:
-                isic_id = f'ISIC_{random.randint(0, 9999999):07}'
-                # Technically a race condition could exist, but ImageRedirect should be practically
-                # immutable.
-                if not ImageRedirect.objects.filter(isic_id=isic_id).exists():
-                    break
-
-        Image.objects.create(
-            accession=accession,
-            isic_id=isic_id,
-            public=public,
-        )
-
-    _make_accession(isic_id)
+    Image.objects.create(
+        accession=accession,
+        public=public,
+    )
 
 
 @shared_task

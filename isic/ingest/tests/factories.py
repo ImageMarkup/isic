@@ -3,8 +3,9 @@ import pathlib
 import factory
 import factory.django
 
+from isic.core.models import CopyrightLicense
 from isic.factories import UserFactory
-from isic.ingest.models import Accession, Cohort, Contributor, CopyrightLicense, MetadataFile, Zip
+from isic.ingest.models import Accession, Cohort, Contributor, MetadataFile, Zip
 
 from .csv_streams import csv_stream_without_filename_column
 from .zip_streams import zip_stream_only_images
