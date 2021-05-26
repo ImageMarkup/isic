@@ -89,20 +89,22 @@ class ResponseAdmin(admin.ModelAdmin):
 
 @admin.register(Annotation)
 class AnnotationAdmin(admin.ModelAdmin):
-    inlines = [ResponseInline, MarkupInline]
     list_display = ['study', 'annotator', 'image']
     list_filter = ['study']
     search_fields = ['annotator__email', 'image__object_id']
+
+    inlines = [ResponseInline, MarkupInline]
     autocomplete_fields = ['image', 'annotator', 'image', 'task']
 
 
 @admin.register(StudyTask)
 class StudyTaskAdmin(nested_admin.NestedModelAdmin):
     list_display = ['study', 'annotator', 'image', 'complete', 'created']
-    readonly_fields = ['created']
     list_filter = ['study', IsStudyTaskCompleteFilter]
     search_fields = ['annotator__email', 'image__object_id', 'study__name']
+
     autocomplete_fields = ['image', 'annotator', 'image']
+    readonly_fields = ['created']
     inlines = [AnnotationInline]
 
     def get_queryset(self, request):
@@ -126,8 +128,9 @@ class StudyAdmin(admin.ModelAdmin):
         'num_features',
         'num_questions',
     ]
-    inlines = [QuestionInline, FeatureInline]
+
     exclude = ['questions', 'features']
+    inlines = [QuestionInline, FeatureInline]
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -179,6 +182,7 @@ class ReferencedStudyInline(ReadonlyTabularInline):
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
     list_display = ['prompt', 'type', 'required', 'official', 'num_choices', 'used_in']
+
     inlines = [QuestionChoiceInline, ReferencedStudyInline]
 
     def get_queryset(self, request):
