@@ -15,7 +15,6 @@ from s3_file_field import S3FileField
 from isic.core.models import CreationSortedTimeStampedModel
 from isic.ingest.zip_utils import file_names_in_zip, items_in_zip
 
-from .accession import Accession, AccessionStatus
 from .cohort import Cohort
 
 logger = logging.getLogger(__name__)
@@ -42,6 +41,8 @@ class Zip(CreationSortedTimeStampedModel):
         return self.blob_name
 
     def _get_preexisting_and_duplicates(self) -> Tuple[List[str], List[str]]:
+        from .accession import Accession
+
         blob_names_in_zip = set()
 
         blob_name_duplicates = set()
@@ -67,6 +68,8 @@ class Zip(CreationSortedTimeStampedModel):
         pass
 
     def extract(self):
+        from .accession import AccessionStatus
+
         if self.status != Zip.Status.CREATED:
             raise Exception('Can not extract zip %d with status %s', self.pk, self.status)
 

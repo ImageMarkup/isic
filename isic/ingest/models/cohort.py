@@ -6,9 +6,7 @@ from django.utils.safestring import mark_safe
 
 from isic.core.models import CopyrightLicense, CreationSortedTimeStampedModel
 
-from .accession import Accession
 from .contributor import Contributor
-from .distinctness_measure import DistinctnessMeasure
 
 
 class Cohort(CreationSortedTimeStampedModel):
@@ -51,6 +49,9 @@ class Cohort(CreationSortedTimeStampedModel):
         return reverse('cohort-detail', args=[self.id])
 
     def unreviewed(self):
+        from .accession import Accession
+        from .distinctness_measure import DistinctnessMeasure
+
         duplicate_cohort_checksums = (
             DistinctnessMeasure.objects.values('checksum')
             .annotate(is_duplicate=Count('checksum'))
