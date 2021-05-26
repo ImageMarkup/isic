@@ -18,8 +18,8 @@ admin.site.index_title = ''
 
 @admin.register(DuplicateImage)
 class DuplicateImageAdmin(admin.ModelAdmin):
-    list_display = ['id', 'isic_id', 'girder_id', 'accession', 'accession_distinctnessmeasure']
     list_select_related = ['accession', 'accession__distinctnessmeasure']
+    list_display = ['id', 'isic_id', 'girder_id', 'accession', 'accession_distinctnessmeasure']
     search_fields = ['isic_id', 'girder_id']
 
     autocomplete_fields = ['accession']
@@ -34,10 +34,11 @@ class DuplicateImageAdmin(admin.ModelAdmin):
 
 @admin.register(Image)
 class ImageAdmin(admin.ModelAdmin):
-    autocomplete_fields = ['accession']
-    search_fields = ['isic_id']
     list_display = ['isic_id', 'created', 'public']
     list_filter = ['public']
+    search_fields = ['isic_id']
+
+    autocomplete_fields = ['accession']
     readonly_fields = ['created', 'modified', 'thumbnail']
 
     @admin.display()
@@ -47,15 +48,17 @@ class ImageAdmin(admin.ModelAdmin):
 
 @admin.register(ImageRedirect)
 class ImageRedirectAdmin(admin.ModelAdmin):
-    autocomplete_fields = ['image']
-    search_fields = ['isic_id']
     list_display = ['isic_id', 'image']
+    search_fields = ['isic_id']
+
+    autocomplete_fields = ['image']
 
 
 @admin.register(Collection)
 class CollectionAdmin(admin.ModelAdmin):
-    exclude = ['images']
     list_display = ['name', 'num_images']
+
+    exclude = ['images']
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
