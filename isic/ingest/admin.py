@@ -50,7 +50,7 @@ class ContributorAdmin(admin.ModelAdmin):
     list_display = ['id', 'institution_name', 'creator', 'created', 'cohorts', 'accessions']
     search_fields = ['institution_name', 'creator__username']
 
-    autocomplete_fields = ['creator']
+    autocomplete_fields = ['creator', 'owners']
     readonly_fields = ['created', 'modified']
     inlines = [CohortInline]
 
