@@ -35,9 +35,9 @@ urlpatterns = [
         'upload/create-cohort/<contributor_pk>', upload_cohort_create, name='upload/create-cohort'
     ),
     path('upload/<pk>/files/', cohort_files, name='upload/cohort-files'),
-    path('cohort/<cohort_pk>/upload-zip/', zip_create, name='upload-zip'),
-    path('cohort/<cohort_pk>/upload-metadata/', metadata_file_create, name='upload-metadata'),
-    # Staff pges
+    path('upload/<cohort_pk>/upload-zip/', zip_create, name='upload-zip'),
+    path('upload/<cohort_pk>/upload-metadata/', metadata_file_create, name='upload-metadata'),
+    # Staff pages
     path('staff/ingest-review/', ingest_review, name='ingest-review'),
     path('staff/cohorts/', cohort_list, name='cohort-list'),
     path('staff/ingest-review/<pk>/', cohort_detail, name='cohort-detail'),
