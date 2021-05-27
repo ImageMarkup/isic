@@ -13,7 +13,7 @@ def select_or_create_contributor(request):
     if request.user.is_staff:
         contributors = Contributor.objects.all()
     else:
-        contributors = Contributor.objects.filter(creator=request.user)
+        contributors = Contributor.objects.filter(owners=request.user)
 
     ctx = {'contributors': contributors}
     if ctx['contributors'].count() == 0:
@@ -27,7 +27,7 @@ def select_or_create_cohort(request, contributor_pk):
     filters = {'contributor__pk': contributor_pk}
 
     if not request.user.is_staff:
-        filters['contributor__creator'] = request.user
+        filters['contributor__owners'] = request.user
 
     ctx = {
         'cohorts': Cohort.objects.filter(**filters).order_by('-created'),
@@ -58,7 +58,7 @@ def upload_contributor_create(request):
 def upload_cohort_create(request, contributor_pk):
     filters = {}
     if not request.user.is_staff:
-        filters['creator'] = request.user
+        filters['owners'] = request.user
 
     contributor: Contributor = get_object_or_404(
         Contributor.objects.filter(**filters), pk=contributor_pk

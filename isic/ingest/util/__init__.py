@@ -16,7 +16,7 @@ def make_breadcrumbs(cohort: Optional[Cohort] = None) -> List:
     return ret
 
 
-def staff_or_creator_filter(user, creator_field='creator'):
+def staff_or_owner_filter(user, creator_field='owner'):
     if user.is_staff:
         return {}
     else:

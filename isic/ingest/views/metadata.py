@@ -13,7 +13,7 @@ from django.urls.base import reverse
 from isic.ingest.models import Accession, Cohort, MetadataFile
 from isic.ingest.util import (
     make_breadcrumbs,
-    staff_or_creator_filter,
+    staff_or_owner_filter,
     validate_archive_consistency,
     validate_csv_format_and_filenames,
     validate_internal_consistency,
@@ -35,7 +35,7 @@ class ValidateMetadataForm(forms.Form):
             choices=[
                 (m.id, m.id)
                 for m in MetadataFile.objects.filter(cohort=cohort).filter(
-                    **staff_or_creator_filter(user)
+                    **staff_or_owner_filter(user)
                 )
             ],
             widget=forms.RadioSelect,
@@ -45,7 +45,7 @@ class ValidateMetadataForm(forms.Form):
 @login_required
 def metadata_file_create(request, cohort_pk):
     cohort = get_object_or_404(
-        Cohort.objects.filter(**staff_or_creator_filter(request.user, 'contributor__creator')),
+        Cohort.objects.filter(**staff_or_owner_filter(request.user, 'contributor__owners')),
         pk=cohort_pk,
     )
     if request.method == 'POST':
@@ -81,7 +81,7 @@ def apply_metadata(request, cohort_pk):
     cohort = get_object_or_404(
         Cohort.objects.prefetch_related(
             Prefetch('metadata_files', queryset=MetadataFile.objects.order_by('-created'))
-        ).filter(**staff_or_creator_filter(request.user, 'contributor__creator')),
+        ).filter(**staff_or_owner_filter(request.user, 'contributor__owners')),
         pk=cohort_pk,
     )
 
