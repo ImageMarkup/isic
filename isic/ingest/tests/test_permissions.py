@@ -15,11 +15,11 @@ def test_upload_select_contributor_permissions(client, staff_client):
     client.force_login(c1.creator)
     r = client.get(reverse('upload/select-or-create-contributor'))
     assert r.status_code == 200
-    assert list(r.context['contributors'].values_list('pk', flat=True)) == [c1.pk]
+    assert set(r.context['contributors'].values_list('pk', flat=True)) == {c1.pk}
 
     r = staff_client.get(reverse('upload/select-or-create-contributor'))
     assert r.status_code == 200
-    assert list(r.context['contributors'].values_list('pk', flat=True)) == [c1.pk, c2.pk, c3.pk]
+    assert set(r.context['contributors'].values_list('pk', flat=True)) == {c1.pk, c2.pk, c3.pk}
 
 
 @pytest.mark.django_db
