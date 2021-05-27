@@ -2,7 +2,7 @@ from django.contrib.auth.models import Group, Permission, User
 from django.contrib.contenttypes.models import ContentType
 import djclick as click
 
-from isic.core.models import DuplicateImage
+from isic.core.models import Collection, DuplicateImage, Image, ImageRedirect
 from isic.ingest.models import (
     Accession,
     CheckLog,
@@ -33,10 +33,13 @@ def add_staff_group():
         Annotation,
         CheckLog,
         Cohort,
+        Collection,
         Contributor,
         DistinctnessMeasure,
         DuplicateImage,
         Feature,
+        Image,
+        ImageRedirect,
         Markup,
         MetadataFile,
         Question,

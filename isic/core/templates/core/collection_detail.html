@@ -1,0 +1,42 @@
+{% extends 'core/base.html' %}
+{% load get_key %}
+{% load humanize %}
+
+{% block content %}
+  <h1>{{collection.name}}</h1>
+  <div class="my-4 bg-gray-50 p-2 rounded-sm border-gray-200 border">
+    <ul>
+      <li><span class="font-bold">Name:</span> {{ collection.name }}</li>
+      <li><span class="font-bold">Contributors:</span>
+        <ul>
+          {% for contributor in contributors %}
+            <li><a href="{% url 'admin:ingest_contributor_change' contributor.pk %}">{{ contributor.institution_name }}</a></li>
+          {% endfor %}
+        </ul>
+      </li>
+      <li><span class="font-bold">Number of images:</span> {{ num_images|intcomma }}</li>
+    </ul>
+  </div>
+
+  {% if collection.description %}
+    <p>{{ collection.description }}</p>
+  {% endif %}
+
+  {% include 'studies/partials/pagination.html' with page_obj=images %}
+
+  <div class="mb-4" x-data="thumbnailGrid();">
+    <div class="flex flex-row justify-end pb-3">
+      <a class="px-1" href="#" @click="decrease();">fewer columns</a> |
+      <a class="px-1" href="#" @click="increase();">more columns</a>
+    </div>
+    <div class="grid gap-4" :class="`grid-cols-${numCols}`">
+      {% for image in images %}
+        {% include 'core/partials/image.html' %}
+      {% endfor %}
+    </div>
+  </div>
+
+  {% include 'studies/partials/pagination.html' with page_obj=images %}
+
+  {% include 'ingest/partials/thumbnail_grid_js.html' %}
+{% endblock %}

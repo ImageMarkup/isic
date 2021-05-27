@@ -3,8 +3,9 @@ import pathlib
 import factory
 import factory.django
 
+from isic.core.models import CopyrightLicense
 from isic.factories import UserFactory
-from isic.ingest.models import Accession, Cohort, Contributor, CopyrightLicense, MetadataFile, Zip
+from isic.ingest.models import Accession, Cohort, Contributor, MetadataFile, Zip
 
 from .csv_streams import csv_stream_without_filename_column
 from .zip_streams import zip_stream_only_images
@@ -16,9 +17,16 @@ class ContributorFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Contributor
 
-    creator = factory.SubFactory(UserFactory)
+    institution_name = factory.Faker('sentence', nb_words=5, variable_nb_words=True)
     institution_url = factory.Faker('url')
     legal_contact_info = factory.Faker('address')
+    creator = factory.SubFactory(UserFactory)
+
+    @factory.post_generation
+    def owners(self, create, extracted, **kwargs):
+        owners = [self.creator] if extracted is None else extracted
+        for owner in owners:
+            self.owners.add(owner)
 
 
 class CohortFactory(factory.django.DjangoModelFactory):

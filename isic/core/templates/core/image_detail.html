@@ -1,0 +1,258 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+{% load get_key %}
+
+{% load chunks %}
+
+{% block head_extra %}
+  {{ block.super }}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/highlight.min.js"></script>
+{% endblock %}
+
+{% block content %}
+  <div  x-data="{selectedTab: 'metadata'}">
+    <div class="pb-5 border-b border-gray-200 sm:pb-0">
+      <div class="text-lg leading-6 font-medium text-gray-900 flex-col">
+        <div>
+          {{image.isic_id}}
+        </div>
+
+        <div>
+          {% if image.public %}
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-green-100 text-green-800">
+              Public
+            </span>
+          {% else %}
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-red-100 text-red-800">
+              <svg xmlns="http://www.w3.org/2000/svg" class="-ml-0.5 mr-1.5 h-4 w-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              Private
+            </span>
+          {% endif %}
+        </p>
+      </h1>
+
+      <div class="flex justify-between pt-4">
+        <div>
+          <img src="{{image.accession.blob.url}}" style="object-fit: cover; width: 500px; height: 100%;" />
+        </div>
+
+        <div class="mt-4" style="min-width: 300px">
+          <h3 class="font-medium text-gray-900">Information</h3>
+          <dl class="mt-2 border-t border-b border-gray-200 divide-y divide-gray-200">
+            <div class="py-3 flex justify-between text-sm font-medium">
+              <dt class="text-gray-500">Created</dt>
+              <dd class="text-gray-900">{{image.accession.created}}</dd>
+            </div>
+
+            <div class="py-3 flex justify-between text-sm font-medium">
+              <dt class="text-gray-500">Contributor</dt>
+              <dd class="text-gray-900">
+                <a href="{% url 'admin:ingest_contributor_change' image.accession.upload.cohort.contributor.pk %}">
+                  {{image.accession.upload.cohort.contributor.institution_name}}
+                </a></dd>
+            </div>
+
+            <div class="py-3 flex justify-between text-sm font-medium">
+              <dt class="text-gray-500">Cohort</dt>
+              <dd class="text-gray-900">{{image.accession.upload.cohort.name}}</dd>
+            </div>
+
+            <div class="py-3 flex justify-between text-sm font-medium">
+              <dt class="text-gray-500">Dimensions</dt>
+              <dd class="text-gray-900">{{image.accession.width}} x {{image.accession.height}}</dd>
+            </div>
+          </dl>
+
+          <div class="my-4">
+            {% for collection in image.collections.all %}
+              <span class="inline-flex items-center px-2.5 py-0.5 my-0.5 rounded-md text-sm font-medium bg-blue-100 text-blue-800">
+                <a href="{{ collection.get_absolute_url }}">{{ collection }}</a>
+              </span>
+              <br />
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      <div  class="mt-3 sm:mt-4">
+        <div class="hidden sm:block">
+          <nav class="-mb-px flex space-x-8">
+            {% for k,v in sections.items %}
+              <a @click="selectedTab = '{{k}}'; e.preventDefault()"  :class="{'border-indigo-500 text-indigo-600 whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm': selectedTab == '{{k}}',
+                'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm': selectedTab != '{{k}}'}">
+                {{v}}
+              </a>
+            {% endfor %}
+          </nav>
+        </div>
+      </div>
+
+      <div style="min-height: 500px">
+        <div x-show="selectedTab == 'metadata'" class="flex mt-2">
+          <div class="flex-col mr-4">
+            <h3>Clinical</h3>
+            <pre>
+              <code class="language-json">{{meta}}</code>
+            </pre>
+          </div>
+          <div class="flex-col">
+            <h3>Unstructured</h3>
+            <pre>
+              <code class="language-json">{{unstructured}}</code>
+            </pre>
+          </div>
+        </div>
+
+        <div x-show="selectedTab == 'studies'">
+          {% for study in studies %}
+            <h3>{{study.name}}</h3>
+            {% if responses|get_key:study.pk %}
+              <div class="flex flex-col my-2">
+                <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                  <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                    <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                      <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                          <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Question
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Annotator
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Choice
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for response in responses|get_key:study.pk %}
+                            <tr class="{% cycle 'bg-white' 'bg-gray-50' %}">
+                              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {{ response.question.prompt  }}
+                              </td>
+                              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ response.annotation.annotator  }}
+                              </td>
+                              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ response.choice.text  }}
+                              </td>
+                            </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+
+            {% if markups|get_key:study.pk %}
+              <div class="flex flex-col my-2">
+                <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                  <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                    <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                      <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                          <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Feature
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Annotator
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Present
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              View
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for markup in markups|get_key:study.pk %}
+                            <tr class="{% cycle 'bg-white' 'bg-gray-50' %}">
+                              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {{ markup.feature.label  }}
+                              </td>
+                              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ markup.annotation.annotator  }}
+                              </td>
+                              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ markup.present|yesno  }}
+                              </td>
+                              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {% if markup.present %}
+                                  <a href="{% url 'view-mask' markup.pk %}">View Mask</a>
+                                {% else %}
+                                  -
+                                {% endif %}
+                              </td>
+                            </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+
+        <div x-show="selectedTab == 'ingest-review'">
+          <div class="my-4">
+            Published {{ image.created }}
+          </div>
+          <h3>Reviews</h3>
+          <div class="flex flex-col">
+            <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+              <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                  <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                      <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Reviewed
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Reviewer
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Check
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Approved
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                      {% for log in image.accession.checklogs.all %}
+                        <tr>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ log.created }}
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ log.creator }}
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ log.change_field }}
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ log.change_to|yesno }}
+                          </td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script>hljs.highlightAll();</script>
+{% endblock %}

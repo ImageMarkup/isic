@@ -10,7 +10,15 @@ import magic
 import numpy as np
 import pandas as pd
 
-from isic.ingest.models import Accession, AccessionStatus, DistinctnessMeasure, MetadataFile, Zip
+from isic.core.models import Image
+from isic.ingest.models import (
+    Accession,
+    AccessionStatus,
+    Cohort,
+    DistinctnessMeasure,
+    MetadataFile,
+    Zip,
+)
 from isic.ingest.validators import MetadataRow
 
 
@@ -111,3 +119,25 @@ def apply_metadata(metadatafile_id: int):
             )
 
             accession.save(update_fields=['metadata', 'unstructured_metadata'])
+
+
+@shared_task
+def publish_accession(accession_id: int, public: bool):
+    accession = Accession.objects.get(pk=accession_id)
+
+    Image.objects.create(
+        accession=accession,
+        public=public,
+    )
+
+
+@shared_task
+def publish_cohort(cohort_id: int, public: bool):
+    cohort = Cohort.objects.get(pk=cohort_id)
+    for accession in (
+        Accession.objects.filter(status=AccessionStatus.SUCCEEDED)
+        .exclude(Accession.rejected_filter())
+        .filter(image__isnull=True, upload__cohort=cohort)
+        .values_list('pk', flat=True)
+    ):
+        publish_accession.delay(accession, public)

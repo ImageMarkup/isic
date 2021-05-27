@@ -45,6 +45,7 @@ urlpatterns = [
     path('staff/users/', staff_list, name='staff-list'),
     path('', include('isic.ingest.urls')),
     path('', include('isic.studies.urls')),
+    path('', include('isic.core.urls')),
 ]
 
 if apps.is_installed('isic.discourse_sso'):

@@ -46,11 +46,11 @@ class ZipInline(ReadonlyTabularInline):
 
 @admin.register(Contributor)
 class ContributorAdmin(admin.ModelAdmin):
-    list_display = ['id', 'institution_name', 'creator', 'created', 'cohorts', 'accessions']
     list_select_related = ['creator']
+    list_display = ['id', 'institution_name', 'creator', 'created', 'cohorts', 'accessions']
     search_fields = ['institution_name', 'creator__username']
 
-    autocomplete_fields = ['creator']
+    autocomplete_fields = ['creator', 'owners']
     readonly_fields = ['created', 'modified']
     inlines = [CohortInline]
 
@@ -73,6 +73,7 @@ class ContributorAdmin(admin.ModelAdmin):
 
 @admin.register(Cohort)
 class CohortAdmin(admin.ModelAdmin):
+    list_select_related = ['creator', 'contributor']
     list_display = [
         'id',
         'name',
@@ -87,7 +88,6 @@ class CohortAdmin(admin.ModelAdmin):
         'successful_accessions',
         'contributor',
     ]
-    list_select_related = ['creator', 'contributor']
     search_fields = ['name', 'creator__username']
 
     autocomplete_fields = ['creator', 'contributor']
@@ -155,8 +155,8 @@ class CohortAdmin(admin.ModelAdmin):
 
 @admin.register(MetadataFile)
 class MetadataFileAdmin(admin.ModelAdmin):
-    list_display = ['id', 'blob_name', 'human_blob_size', 'creator', 'created', 'cohort']
     list_select_related = ['creator', 'cohort']
+    list_display = ['id', 'blob_name', 'human_blob_size', 'creator', 'created', 'cohort']
     search_fields = ['blob_name', 'creator__username']
 
     autocomplete_fields = ['creator', 'cohort']
@@ -169,14 +169,13 @@ class MetadataFileAdmin(admin.ModelAdmin):
 
 @admin.register(Accession)
 class AccessionAdmin(admin.ModelAdmin):
-    list_display = ['id', 'blob_name', 'human_blob_size', 'created', 'status', 'cohort']
     list_select_related = ['upload__cohort']
-    search_fields = ['blob_name', 'girder_id']
+    list_display = ['id', 'blob_name', 'human_blob_size', 'created', 'status', 'cohort']
     list_filter = ['status']
+    search_fields = ['blob_name', 'girder_id']
 
     readonly_fields = ['created', 'modified', 'thumbnail', 'distinctnessmeasure']
     inlines = [CheckLogInline]
-
     formfield_overrides = {
         models.JSONField: {'widget': JSONEditorWidget},
     }
@@ -196,10 +195,11 @@ class AccessionAdmin(admin.ModelAdmin):
 
 @admin.register(CheckLog)
 class CheckLogAdmin(admin.ModelAdmin):
-    autocomplete_fields = ['accession', 'creator']
-    list_display = ['id', 'cohort', 'accession', 'creator', 'created', 'change_field', 'change_to']
     list_select_related = ['accession', 'creator', 'accession__upload__cohort']
+    list_display = ['id', 'cohort', 'accession', 'creator', 'created', 'change_field', 'change_to']
     list_filter = ['change_field', 'change_to']
+
+    autocomplete_fields = ['accession', 'creator']
 
     @admin.display(description='Cohort')
     def cohort(self, obj):
@@ -208,10 +208,10 @@ class CheckLogAdmin(admin.ModelAdmin):
 
 @admin.register(Zip)
 class ZipAdmin(DjangoObjectActions, admin.ModelAdmin):
-    list_display = ['id', 'blob_name', 'human_blob_size', 'creator', 'created', 'status', 'cohort']
     list_select_related = ['creator', 'cohort']
-    search_fields = ['blob_name', 'creator__username']
+    list_display = ['id', 'blob_name', 'human_blob_size', 'creator', 'created', 'status', 'cohort']
     list_filter = ['status']
+    search_fields = ['blob_name', 'creator__username']
     actions = ['extract_zip']
 
     autocomplete_fields = ['creator', 'cohort']
