@@ -5,12 +5,11 @@ from isic.studies.tests.factories import AnnotationFactory, MarkupFactory
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize('url_name', ['study-create', 'study-list'])
-def test_staff_page_permissions(url_name, client, staff_client):
-    r = client.get(reverse(url_name))
+def test_study_list_permissions(client, staff_client):
+    r = client.get(reverse('study-list'))
     assert r.status_code == 302
 
-    r = staff_client.get(reverse(url_name))
+    r = staff_client.get(reverse('study-list'))
     assert r.status_code == 200
 
 
