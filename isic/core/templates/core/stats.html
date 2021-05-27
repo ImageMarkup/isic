@@ -1,0 +1,68 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+{% load get_key %}
+{% load chunks %}
+
+{% block content %}
+  <h1>Archive Statistics</h1>
+  <div class="mt-10 pb-12 bg-white sm:pb-16">
+    <div class="relative">
+      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-4xl mx-auto">
+          <dl class="rounded-lg bg-white shadow-lg sm:grid sm:grid-cols-3">
+            <div class="flex flex-col border-b border-gray-100 p-6 text-center sm:border-0 sm:border-r">
+              <dt class="order-2 mt-2 text-lg leading-6 font-medium text-gray-500">
+                Users
+              </dt>
+              <dd class="order-1 text-5xl font-extrabold text-indigo-600">
+                {{ num_users|intcomma }}
+              </dd>
+            </div>
+            <div class="flex flex-col border-t border-b border-gray-100 p-6 text-center sm:border-0 sm:border-l sm:border-r">
+              <dt class="order-2 mt-2 text-lg leading-6 font-medium text-gray-500">
+                Images
+              </dt>
+              <dd class="order-1 text-5xl font-extrabold text-indigo-600">
+                {{ num_images|intcomma }}
+              </dd>
+            </div>
+            <div class="flex flex-col border-t border-gray-100 p-6 text-center sm:border-0 sm:border-l">
+              <dt class="order-2 mt-2 text-lg leading-6 font-medium text-gray-500">
+                Collections
+              </dt>
+              <dd class="order-1 text-5xl font-extrabold text-indigo-600">
+                {{ num_collections|intcomma }}
+              </dd>
+            </div>
+          </dl>
+          <dl class="rounded-lg bg-white shadow-lg sm:grid sm:grid-cols-3 mt-3">
+            <div class="flex flex-col border-b border-gray-100 p-6 text-center sm:border-0 sm:border-r">
+              <dt class="order-2 mt-2 text-lg leading-6 font-medium text-gray-500">
+                Studies
+              </dt>
+              <dd class="order-1 text-5xl font-extrabold text-indigo-600">
+                {{ num_studies|intcomma }}
+              </dd>
+            </div>
+            <div class="flex flex-col border-t border-b border-gray-100 p-6 text-center sm:border-0 sm:border-l sm:border-r">
+              <dt class="order-2 mt-2 text-lg leading-6 font-medium text-gray-500">
+                Images Studied
+              </dt>
+              <dd class="order-1 text-5xl font-extrabold text-indigo-600">
+                {{ num_study_images|intcomma }}
+              </dd>
+            </div>
+            <div class="flex flex-col border-t border-gray-100 p-6 text-center sm:border-0 sm:border-l">
+              <dt class="order-2 mt-2 text-lg leading-6 font-medium text-gray-500">
+                Responses Gathered
+              </dt>
+              <dd class="order-1 text-5xl font-extrabold text-indigo-600">
+                {{ num_responses|intcomma }}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

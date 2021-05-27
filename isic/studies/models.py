@@ -6,12 +6,8 @@ from django_extensions.db.models import TimeStampedModel
 from girder_utils.models import DeferredFieldsManager
 
 
-class Image(TimeStampedModel):
-    object_id = models.CharField(unique=True, max_length=24)
-
-
 class Question(TimeStampedModel):
-    class Meta:
+    class Meta(TimeStampedModel.Meta):
         ordering = ['prompt']
 
     class QuestionType(models.TextChoices):
@@ -36,7 +32,7 @@ class QuestionChoice(TimeStampedModel):
 
 
 class Feature(TimeStampedModel):
-    class Meta:
+    class Meta(TimeStampedModel.Meta):
         ordering = ['name']
 
     required = models.BooleanField(default=False)
@@ -52,7 +48,7 @@ class Feature(TimeStampedModel):
 
 
 class Study(TimeStampedModel):
-    class Meta:
+    class Meta(TimeStampedModel.Meta):
         verbose_name_plural = 'Studies'
 
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
@@ -71,13 +67,13 @@ class Study(TimeStampedModel):
 
 
 class StudyTask(TimeStampedModel):
-    class Meta:
+    class Meta(TimeStampedModel.Meta):
         unique_together = [['study', 'annotator', 'image']]
 
     study = models.ForeignKey(Study, on_delete=models.CASCADE, related_name='tasks')
     # TODO: annotators might become M2M in the future
     annotator = models.ForeignKey(User, on_delete=models.CASCADE)
-    image = models.ForeignKey(Image, on_delete=models.CASCADE)
+    image = models.ForeignKey('core.Image', on_delete=models.CASCADE)
 
     @property
     def complete(self) -> bool:
@@ -86,7 +82,7 @@ class StudyTask(TimeStampedModel):
 
 class Annotation(TimeStampedModel):
     study = models.ForeignKey(Study, on_delete=models.CASCADE)
-    image = models.ForeignKey(Image, on_delete=models.PROTECT)
+    image = models.ForeignKey('core.Image', on_delete=models.PROTECT)
     task = models.OneToOneField(StudyTask, related_name='annotation', on_delete=models.RESTRICT)
     annotator = models.ForeignKey(User, on_delete=models.PROTECT)
 
