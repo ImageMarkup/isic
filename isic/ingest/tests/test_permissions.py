@@ -21,11 +21,11 @@ def test_upload_select_contributor_permissions(client, staff_client, contributor
 
 @pytest.mark.django_db
 @pytest.mark.parametrize('url_name', ['ingest-review', 'cohort-list'])
-def test_staff_page_permissions(url_name, client, user_client, staff_client):
+def test_staff_page_permissions(url_name, client, authenticated_client, staff_client):
     r = client.get(reverse(url_name))
     assert r.status_code == 302
 
-    r = user_client.get(reverse(url_name))
+    r = authenticated_client.get(reverse(url_name))
     assert r.status_code == 302
 
     r = staff_client.get(reverse(url_name))
@@ -35,7 +35,7 @@ def test_staff_page_permissions(url_name, client, user_client, staff_client):
 @pytest.mark.django_db
 @pytest.mark.parametrize('url_name', ['upload/cohort-files', 'upload-zip', 'upload-metadata'])
 def test_cohort_pages_permissions(
-    url_name, client, user_client, staff_client, cohort_factory, user_factory
+    url_name, client, authenticated_client, staff_client, cohort_factory, user_factory
 ):
     # forcibly set the cohort creator to be different than the contributor creator,
     # since cohort permissions should be based on the contributor creator
@@ -43,7 +43,7 @@ def test_cohort_pages_permissions(
     r = client.get(reverse(url_name, args=[cohort.pk]))
     assert r.status_code == 302
 
-    r = user_client.get(reverse(url_name, args=[cohort.pk]))
+    r = authenticated_client.get(reverse(url_name, args=[cohort.pk]))
     assert r.status_code == 404
 
     # scope permissions to the contributor, not the cohort creator
@@ -70,11 +70,11 @@ def test_cohort_pages_permissions(
         'cohort-review-lesion',
     ],
 )
-def test_cohort_review_permissions(url_name, client, user_client, staff_client, cohort):
+def test_cohort_review_permissions(url_name, client, authenticated_client, staff_client, cohort):
     r = client.get(reverse(url_name, args=[cohort.pk]))
     assert r.status_code == 302
 
-    r = user_client.get(reverse(url_name, args=[cohort.pk]))
+    r = authenticated_client.get(reverse(url_name, args=[cohort.pk]))
     assert r.status_code == 302
 
     client.force_login(cohort.contributor.creator)
