@@ -1,8 +1,6 @@
 from django.urls.base import reverse
 import pytest
 
-from isic.studies.tests.factories import AnnotationFactory, MarkupFactory
-
 
 @pytest.mark.django_db
 def test_study_list_permissions(client, staff_client):
@@ -28,8 +26,7 @@ def test_study_detail_permissions(study, client, staff_client):
 
 
 @pytest.mark.django_db
-def test_view_mask_permissions(client, staff_client):
-    markup = MarkupFactory()
+def test_view_mask_permissions(client, staff_client, markup):
     r = client.get(reverse('view-mask', args=[markup.pk]))
     assert r.status_code == 302
 
@@ -43,8 +40,7 @@ def test_view_mask_permissions(client, staff_client):
 
 
 @pytest.mark.django_db
-def test_annotation_detail_permissions(client, staff_client):
-    annotation = AnnotationFactory()
+def test_annotation_detail_permissions(client, staff_client, annotation):
     r = client.get(reverse('annotation-detail', args=[annotation.pk]))
     assert r.status_code == 302
 

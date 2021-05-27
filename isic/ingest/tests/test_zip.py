@@ -1,4 +1,3 @@
-# from isic.ingest.models import Zip
 import io
 
 import pytest

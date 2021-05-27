@@ -1,16 +1,15 @@
 import pytest
 
 from isic.ingest.models import Accession, CheckLog
-from isic.ingest.tests.factories import AccessionFactory
 
 
 @pytest.fixture
-def accessions():
+def accessions(accession_factory):
     return [
-        AccessionFactory(quality_check=False),
-        AccessionFactory(quality_check=False),
-        AccessionFactory(quality_check=None),
-        AccessionFactory(quality_check=True),
+        accession_factory(quality_check=False),
+        accession_factory(quality_check=False),
+        accession_factory(quality_check=None),
+        accession_factory(quality_check=True),
     ]
 
 
@@ -45,8 +44,8 @@ def test_api_accession_soft_accept_bulk_adds_checklogs(accessions, staff_user, s
 
 
 @pytest.mark.django_db
-def test_api_accession_soft_accept_adds_checklogs(staff_user, staff_api_client):
-    accession = AccessionFactory(quality_check=None)
+def test_api_accession_soft_accept_adds_checklogs(accession_factory, staff_user, staff_api_client):
+    accession = accession_factory(quality_check=None)
     r = staff_api_client.patch(
         f'/api/v2/accessions/{accession.pk}/',
         {'quality_check': False, 'metadata': {}},  # ensure it doesn't care about non-check fields

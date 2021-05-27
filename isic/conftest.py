@@ -1,4 +1,3 @@
-from django.test.client import Client
 import pytest
 from pytest_factoryboy import register
 from rest_framework.test import APIClient
@@ -7,10 +6,8 @@ from .factories import ProfileFactory, UserFactory
 
 
 @pytest.fixture
-def user_client(user_factory):
-    u = user_factory()
-    client = Client()
-    client.force_login(u)
+def user_client(client, user):
+    client.force_login(user)
     return client
 
 
@@ -20,8 +17,7 @@ def staff_user(user_factory):
 
 
 @pytest.fixture
-def staff_client(staff_user):
-    client = Client()
+def staff_client(client, staff_user):
     client.force_login(staff_user)
     return client
 
