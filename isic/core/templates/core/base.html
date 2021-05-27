@@ -45,6 +45,9 @@
               <a href="{% url 'staff-list' %}" class="{% if request.resolver_match.url_name == 'staff-list' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                 Users
               </a>
+              <a href="{% url 'core/stats' %}" class="{% if request.resolver_match.url_name == 'core/stats' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                Stats
+              </a>
               <a target="blank" href="{% url 'admin:index' %}" class="{% if request.resolver_match.url_name == 'admin:index' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                 Admin
                 <!-- heroicon external-link -->
