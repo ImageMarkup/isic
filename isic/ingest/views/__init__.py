@@ -11,7 +11,7 @@ from django.urls.base import reverse
 
 from isic.ingest.models import Accession, AccessionStatus, Cohort, DistinctnessMeasure, Zip
 from isic.ingest.tasks import extract_zip
-from isic.ingest.util import make_breadcrumbs, staff_or_creator_filter
+from isic.ingest.util import make_breadcrumbs, staff_or_owner_filter
 
 from .metadata import *  # noqa
 from .review_apps import *  # noqa
@@ -27,7 +27,7 @@ class ZipForm(ModelForm):
 @login_required
 def zip_create(request, cohort_pk):
     cohort = get_object_or_404(
-        Cohort.objects.filter(**staff_or_creator_filter(request.user, 'contributor__creator')),
+        Cohort.objects.filter(**staff_or_owner_filter(request.user, 'contributor__owners')),
         pk=cohort_pk,
     )
     if request.method == 'POST':
