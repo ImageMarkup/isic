@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, render
 
 from isic.core.models import Collection, Image
 from isic.ingest.models import CheckLog, Contributor
-from isic.studies.models import Markup, Response, Study
+from isic.studies.models import Markup, Response, Study, StudyTask
 
 
 def key_by(sequence, f):
@@ -17,6 +17,19 @@ def key_by(sequence, f):
     for item in sequence:
         r[f(item)].append(item)
     return dict(r)
+
+
+@staff_member_required
+def stats(request):
+    ctx = {
+        'num_studies': Study.objects.count(),
+        'num_study_images': StudyTask.objects.values('image').distinct().count(),
+        'num_responses': Response.objects.count() + Markup.objects.count(),
+        'num_images': Image.objects.count(),
+        'num_collections': Collection.objects.count(),
+        'num_users': User.objects.count(),
+    }
+    return render(request, 'core/stats.html', ctx)
 
 
 @staff_member_required
