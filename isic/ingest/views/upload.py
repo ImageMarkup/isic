@@ -85,10 +85,16 @@ def upload_cohort_create(request, contributor_pk):
 
 @login_required
 def cohort_files(request, pk):
+    filters = {}
+    if not request.user.is_staff:
+        filters['contributor__creator'] = request.user
+
     cohort = get_object_or_404(
-        Cohort.objects.prefetch_related(
+        Cohort.objects.filter(**filters)
+        .prefetch_related(
             Prefetch('metadata_files', queryset=MetadataFile.objects.order_by('-created'))
-        ).prefetch_related('zips'),
+        )
+        .prefetch_related('zips'),
         pk=pk,
     )
     return render(
