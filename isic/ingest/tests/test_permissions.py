@@ -1,13 +1,10 @@
 from django.urls.base import reverse
 import pytest
 
-from isic.factories import UserFactory
-from isic.ingest.tests.factories import CohortFactory, ContributorFactory
-
 
 @pytest.mark.django_db
-def test_upload_select_contributor_permissions(client, staff_client):
-    c1, c2, c3 = ContributorFactory(), ContributorFactory(), ContributorFactory()
+def test_upload_select_contributor_permissions(client, staff_client, contributor_factory):
+    c1, c2, c3 = contributor_factory(), contributor_factory(), contributor_factory()
 
     r = client.get(reverse('upload/select-or-create-contributor'))
     assert r.status_code == 302
@@ -37,10 +34,12 @@ def test_staff_page_permissions(url_name, client, user_client, staff_client):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize('url_name', ['upload/cohort-files', 'upload-zip', 'upload-metadata'])
-def test_cohort_pages_permissions(url_name, client, user_client, staff_client):
+def test_cohort_pages_permissions(
+    url_name, client, user_client, staff_client, cohort_factory, user_factory
+):
     # forcibly set the cohort creator to be different than the contributor creator,
     # since cohort permissions should be based on the contributor creator
-    cohort = CohortFactory(creator=UserFactory())
+    cohort = cohort_factory(creator=user_factory())
     r = client.get(reverse(url_name, args=[cohort.pk]))
     assert r.status_code == 302
 
@@ -71,8 +70,7 @@ def test_cohort_pages_permissions(url_name, client, user_client, staff_client):
         'cohort-review-lesion',
     ],
 )
-def test_cohort_review_permissions(url_name, client, user_client, staff_client):
-    cohort = CohortFactory()
+def test_cohort_review_permissions(url_name, client, user_client, staff_client, cohort):
     r = client.get(reverse(url_name, args=[cohort.pk]))
     assert r.status_code == 302
 
