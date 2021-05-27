@@ -19,7 +19,7 @@ urlpatterns = [
         name='core/collection-detail',
     ),
     path(
-        'staff/stats/',
+        'stats/',
         stats,
         name='core/stats',
     ),
