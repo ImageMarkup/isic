@@ -3,6 +3,25 @@ import pytest
 from pytest_factoryboy import register
 from rest_framework.test import APIClient
 
+from isic.core.tests.factories import ImageFactory
+from isic.ingest.tests.factories import (
+    AccessionFactory,
+    CohortFactory,
+    ContributorFactory,
+    MetadataFileFactory,
+    ZipFactory,
+)
+from isic.studies.tests.factories import (
+    AnnotationFactory,
+    FeatureFactory,
+    MarkupFactory,
+    QuestionChoiceFactory,
+    QuestionFactory,
+    ResponseFactory,
+    StudyFactory,
+    StudyTaskFactory,
+)
+
 from .factories import ProfileFactory, UserFactory
 
 
@@ -46,5 +65,29 @@ def staff_api_client(staff_user) -> APIClient:
     return api_client
 
 
+# To make pytest-factoryboy fixture creation work properly, all factories must be registered at
+# this top-level conftest, since the factories have inter-app references.
+
+# Top-level factories
 register(ProfileFactory)
 register(UserFactory)
+
+# ingest factories
+register(AccessionFactory)
+register(CohortFactory)
+register(ContributorFactory)
+register(MetadataFileFactory)
+register(ZipFactory)
+
+# core factories
+register(ImageFactory)
+
+# studies factories
+register(QuestionFactory)
+register(QuestionChoiceFactory)
+register(FeatureFactory)
+register(StudyFactory)
+register(StudyTaskFactory)
+register(AnnotationFactory)
+register(ResponseFactory)
+register(MarkupFactory)
