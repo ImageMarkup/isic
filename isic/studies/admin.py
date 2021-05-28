@@ -122,12 +122,14 @@ class StudyAdmin(admin.ModelAdmin):
         'created',
         'creator',
         'name',
+        'public',
         'num_tasks',
         'num_responded',
         'num_images',
         'num_features',
         'num_questions',
     ]
+    list_filter = ['public']
 
     exclude = ['questions', 'features']
     inlines = [QuestionInline, FeatureInline]
