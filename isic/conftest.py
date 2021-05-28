@@ -3,15 +3,47 @@ import pytest
 from pytest_factoryboy import register
 from rest_framework.test import APIClient
 
+from isic.core.tests.factories import ImageFactory
+from isic.ingest.tests.factories import (
+    AccessionFactory,
+    CohortFactory,
+    ContributorFactory,
+    MetadataFileFactory,
+    ZipFactory,
+)
+from isic.studies.tests.factories import (
+    AnnotationFactory,
+    FeatureFactory,
+    MarkupFactory,
+    QuestionChoiceFactory,
+    QuestionFactory,
+    ResponseFactory,
+    StudyFactory,
+    StudyTaskFactory,
+)
+
 from .factories import ProfileFactory, UserFactory
 
 
 @pytest.fixture
-def user_client(user_factory):
-    u = user_factory()
+def api_client() -> APIClient:
+    return APIClient()
+
+
+@pytest.fixture
+def authenticated_client(user):
+    # Do not use the client fixture, to prevent mutating its state
     client = Client()
-    client.force_login(u)
+    # Do use the user fixture, to allow tests to easily access this user
+    client.force_login(user)
     return client
+
+
+@pytest.fixture
+def authenticated_api_client(user) -> APIClient:
+    api_client = APIClient()
+    api_client.force_authenticate(user=user)
+    return api_client
 
 
 @pytest.fixture
@@ -27,23 +59,35 @@ def staff_client(staff_user):
 
 
 @pytest.fixture
-def api_client() -> APIClient:
-    return APIClient()
-
-
-@pytest.fixture
-def authenticated_api_client(user) -> APIClient:
-    client = APIClient()
-    client.force_authenticate(user=user)
-    return client
-
-
-@pytest.fixture
 def staff_api_client(staff_user) -> APIClient:
-    client = APIClient()
-    client.force_authenticate(user=staff_user)
-    return client
+    api_client = APIClient()
+    api_client.force_authenticate(user=staff_user)
+    return api_client
 
 
+# To make pytest-factoryboy fixture creation work properly, all factories must be registered at
+# this top-level conftest, since the factories have inter-app references.
+
+# Top-level factories
 register(ProfileFactory)
 register(UserFactory)
+
+# ingest factories
+register(AccessionFactory)
+register(CohortFactory)
+register(ContributorFactory)
+register(MetadataFileFactory)
+register(ZipFactory)
+
+# core factories
+register(ImageFactory)
+
+# studies factories
+register(QuestionFactory)
+register(QuestionChoiceFactory)
+register(FeatureFactory)
+register(StudyFactory)
+register(StudyTaskFactory)
+register(AnnotationFactory)
+register(ResponseFactory)
+register(MarkupFactory)
