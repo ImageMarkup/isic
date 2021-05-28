@@ -59,6 +59,8 @@ class Study(TimeStampedModel):
     features = models.ManyToManyField(Feature)
     questions = models.ManyToManyField(Question)
 
+    public = models.BooleanField(default=False)
+
     def __str__(self) -> str:
         return self.name
 
