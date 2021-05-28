@@ -51,6 +51,8 @@ class StudyFactory(factory.django.DjangoModelFactory):
     name = factory.Faker('text', max_nb_chars=100)
     description = factory.Faker('sentences')
 
+    public = factory.Faker('boolean')
+
     @factory.post_generation
     def features(self, create, extracted, **kwargs):
         if not create:
