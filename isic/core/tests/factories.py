@@ -10,3 +10,4 @@ class ImageFactory(factory.django.DjangoModelFactory):
         model = Image
 
     accession = factory.SubFactory(AccessionFactory)
+    public = factory.Faker('boolean')
