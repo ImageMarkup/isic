@@ -18,45 +18,54 @@
 {% endblock %}
 
 {% block body %}
-<body>
-  <nav class="bg-white shadow">
-    <div class="max-w-7xl mx-auto px-6 lg:px-8">
-      <div class="relative flex justify-between h-16">
-        <div class="flex-1 flex items-stretch justify-start">
-          <div class="flex-shrink-0 flex items-center">
-            <h1 class="font-semibold text-2xl">
-              <a href="{% url 'staff-index' %}">ISIC</a>
-            </h1>
-          </div>
+  <body>
+    <nav class="bg-white shadow">
+      <div class="max-w-7xl mx-auto px-6 lg:px-8">
+        <div class="relative flex justify-between h-16">
+          <div class="flex-1 flex items-stretch justify-start">
+            <div class="flex-shrink-0 flex items-center">
+              <a class="text-primary-500" href="{% url 'staff-index' %}">
+                <h1 class="font-semibold text-2xl text-primary-500">ISIC Archive</h1>
+                <div class="text-sm text-center text-primary-500">Admin Interface</div>
+              </a>
+
+            </div>
             <div class="ml-6 flex space-x-8">
-              <a href="{% url 'upload/select-or-create-contributor' %}" class="{% if request.resolver_match.url_name == 'upload/select-or-create-contributor' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                Upload
-              </a>
-              <a href="{% url 'core/stats' %}" class="{% if request.resolver_match.url_name == 'core/stats' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                Stats
-              </a>
-              {% if request.user.is_staff %}
-              <a href="{% url 'ingest-review' %}" class="{% if request.resolver_match.url_name == 'ingest-review' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                Ingest Review
-              </a>
-              <a href="{% url 'core/collection-list' %}" class="{% if request.resolver_match.url_name == 'core/collection-list' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                Collections
-              </a>
-              <a href="{% url 'study-list' %}" class="{% if request.resolver_match.url_name == 'study-list' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                Studies
-              </a>
-              <a href="{% url 'staff-list' %}" class="{% if request.resolver_match.url_name == 'staff-list' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                Users
-              </a>
-              <a target="blank" href="{% url 'admin:index' %}" class="{% if request.resolver_match.url_name == 'admin:index' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                Admin
+              <a target="blank" href="https://www.isic-archive.com" class="text-center border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                Archive
                 <!-- heroicon external-link -->
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 pl-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
               </a>
+              <a href="{% url 'upload/select-or-create-contributor' %}" class="text-center {% if request.resolver_match.url_name == 'upload/select-or-create-contributor' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                Upload
+              </a>
+              <a href="{% url 'core/stats' %}" class="text-center {% if request.resolver_match.url_name == 'core/stats' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                Stats
+              </a>
+              {% if request.user.is_staff %}
+                <a href="{% url 'ingest-review' %}" class="text-center {% if request.resolver_match.url_name == 'ingest-review' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                  Ingest <br /> Review
+                </a>
+                <a href="{% url 'core/collection-list' %}" class="text-center {% if request.resolver_match.url_name == 'core/collection-list' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                  Collections
+                </a>
+                <a href="{% url 'study-list' %}" class="text-center {% if request.resolver_match.url_name == 'study-list' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                  Studies
+                </a>
+                <a href="{% url 'staff-list' %}" class="text-center {% if request.resolver_match.url_name == 'staff-list' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                  Users
+                </a>
+                <a target="blank" href="{% url 'admin:index' %}" class="text-center {% if request.resolver_match.url_name == 'admin:index' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                  Django <br /> Admin
+                  <!-- heroicon external-link -->
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 pl-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
               {% endif %}
-              <a target="blank" href="{% url 'docs-swagger' %}" class="{% if request.resolver_match.url_name == 'docs-swagger' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              <a target="blank" href="{% url 'docs-swagger' %}" class="text-center {% if request.resolver_match.url_name == 'docs-swagger' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                 API
                 <!-- heroicon external-link -->
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 pl-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -64,26 +73,26 @@
                 </svg>
               </a>
             </div>
-      </div>
-    </div>
-  </nav>
+          </div>
+        </div>
+    </nav>
 
-  <div class="container max-w-7xl mx-auto p-8">
-    {% if messages %}
-      {% for message in messages %}
-        <div class="col s12 m7">
-          <div class="card horizontal">
-            <div class="card-stacked">
-              <div class="card-content">
-                <p>{{ message }}</p>
+    <div class="container max-w-7xl mx-auto p-8">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="col s12 m7">
+            <div class="card horizontal">
+              <div class="card-stacked">
+                <div class="card-content">
+                  <p>{{ message }}</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      {% endfor %}
-    {% endif %}
+        {% endfor %}
+      {% endif %}
 
-    {% block content %}{% endblock %}
-  </div>
-</body>
+      {% block content %}{% endblock %}
+    </div>
+  </body>
 {% endblock %}
