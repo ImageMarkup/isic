@@ -11,7 +11,7 @@ from django.shortcuts import get_object_or_404, render
 from isic.core.models import Collection, Image
 from isic.ingest.models import CheckLog, Contributor, Zip
 from isic.login.girder import get_girder_db
-from isic.studies.models import Annotation, Markup, Response, Study, StudyTask
+from isic.studies.models import Annotation, Markup, Response, Study
 
 
 def key_by(sequence, f):
@@ -32,7 +32,7 @@ def stats(request):
         'num_public_studies': Study.objects.filter(public=True).count(),
         'num_responses': Response.objects.count(),
         'num_studies': Study.objects.count(),
-        'num_study_images': StudyTask.objects.values('image').distinct().count(),
+        'num_annotated_images': Annotation.objects.values('image').distinct().count(),
         'num_uploaders': Zip.objects.values('creator').distinct().count(),
         'num_annotating_users': Annotation.objects.values('annotator').distinct().count(),
     }
@@ -56,11 +56,11 @@ def stats(request):
         [
             ('Images', ctx['num_images']),
             ('Public Images', ctx['num_public_images']),
-            ('Images Studied', ctx['num_study_images']),
+            ('Annotated Images', ctx['num_annotated_images']),
         ],
         [('Studies', ctx['num_studies']), ('Public Studies', ctx['num_public_studies']), ('', '')],
         [
-            ('Annotation', ctx['num_annotations']),
+            ('Annotations', ctx['num_annotations']),
             ('Markups', ctx['num_markups']),
             ('Responses', ctx['num_responses']),
         ],
