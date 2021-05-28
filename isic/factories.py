@@ -6,7 +6,6 @@ import factory
 import factory.django
 from passlib.hash import bcrypt
 
-from isic.core.models import Image
 from isic.login.models import Profile
 
 
@@ -53,11 +52,3 @@ class UserFactory(factory.django.DjangoModelFactory):
 
     class Params:
         raw_password = factory.Faker('password')
-
-
-class ImageFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = Image
-
-    accession = factory.SubFactory('isic.ingest.tests.factories.AccessionFactory')
-    public = factory.Faker('boolean')
