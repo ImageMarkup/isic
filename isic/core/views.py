@@ -29,7 +29,7 @@ def stats(request):
         'num_images': Image.objects.count(),
         'num_markups': Markup.objects.count(),
         'num_public_images': Image.objects.filter(public=True).count(),
-        'num_public_studies': '-',
+        'num_public_studies': Study.objects.filter(public=True).count(),
         'num_responses': Response.objects.count(),
         'num_studies': Study.objects.count(),
         'num_study_images': StudyTask.objects.values('image').distinct().count(),
