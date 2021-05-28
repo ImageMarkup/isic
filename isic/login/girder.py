@@ -1,7 +1,7 @@
 import datetime
 import random
 import string
-from typing import Dict, Optional
+from typing import Optional
 
 from bson import ObjectId
 from django.conf import settings
@@ -15,7 +15,7 @@ def get_girder_db() -> Database:
 
 
 # Making this function private also makes it easier to mock in testing
-def _fetch_girder_user(query: Dict) -> Optional[Dict]:
+def _fetch_girder_user(query: dict) -> Optional[dict]:
     girder_user = get_girder_db()['user'].find_one(query)
 
     # coerce password to string
@@ -25,11 +25,11 @@ def _fetch_girder_user(query: Dict) -> Optional[Dict]:
     return girder_user
 
 
-def fetch_girder_user_by_id(girder_user_id: str) -> Optional[Dict]:
+def fetch_girder_user_by_id(girder_user_id: str) -> Optional[dict]:
     return _fetch_girder_user({'_id': ObjectId(girder_user_id)})
 
 
-def fetch_girder_user_by_email(email: str) -> Optional[Dict]:
+def fetch_girder_user_by_email(email: str) -> Optional[dict]:
     return _fetch_girder_user({'email': email.lower()})
 
 

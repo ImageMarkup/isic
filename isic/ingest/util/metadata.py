@@ -99,7 +99,7 @@ def validate_archive_consistency(df, cohort):
 
     for i, (_, row) in enumerate(df.iterrows(), start=2):
         existing = accessions_dict[row['filename']]
-        row = {**existing, **{k: v for k, v in row.items() if v is not None}}
+        row = existing | {k: v for k, v in row.items() if v is not None}
 
         try:
             MetadataRow.parse_obj(row)

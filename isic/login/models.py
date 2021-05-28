@@ -1,5 +1,4 @@
 import logging
-from typing import Type
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -68,7 +67,7 @@ class Profile(models.Model):
 
 
 @receiver(post_save, sender=User)
-def create_or_save_user_profile(sender: Type[User], instance: User, created: bool, **kwargs):
+def create_or_save_user_profile(sender: type[User], instance: User, created: bool, **kwargs):
     if created:
         profile = Profile(user=instance)
         profile.sync_from_girder()
