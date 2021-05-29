@@ -1,104 +1,47 @@
-import base64
-from dataclasses import dataclass
-import hashlib
-import hmac
-import urllib.parse
-
+from allauth.account.views import LoginView
 from django.conf import settings
-from django.contrib.auth import login
-from django.contrib.auth.models import User
-from django.shortcuts import redirect, render
+from django.http.response import HttpResponseRedirectBase
+from django.shortcuts import redirect
 
-from isic.login.forms import LoginForm
-
-
-@dataclass
-class SSOParamSet:
-    sso: bytes
-    sig: str
-    nonce: str
-    return_url: str
+from isic.discourse_sso.utils import SSOException, _get_sso_parameters, _get_sso_redirect_url
 
 
-class SSOException(Exception):
-    pass
+class DiscourseSsoLoginView(LoginView):
+    def _get_sso_redirect_url(self):
+        try:
+            sso_params = _get_sso_parameters(self.request)
+        except SSOException:
+            return settings.ISIC_DISCOURSE_SSO_FAIL_URL
 
+        return _get_sso_redirect_url(self.request.user, sso_params)
 
-def _get_sso_parameters(request) -> SSOParamSet:
-    sso = request.GET.get('sso')
-    sig = request.GET.get('sig')
+    def get_authenticated_redirect_url(self):
+        # Called when the user is already authenticated
+        return self._get_sso_redirect_url()
 
-    if not sig or not sso:
-        raise SSOException('Invalid SSO parameters.')
+    def get_success_url(self):
+        # Called when a form submission was successful, but before the user is actually logged in.
+        # The real redirect URL can't be known now, since it requires the user to construct.
+        # Return a sentinel value, so the login flow will proceed and construct a redirect to this
+        # "location".
+        # There are other reasons the login flow could fail and redirect to a different location
+        # (e.g. email validation required).
+        # Use ISIC_DISCOURSE_SSO_FAIL_URL as the sentinel in case something goes very wrong,
+        # so the redirect should send the user somewhere sane.
+        return settings.ISIC_DISCOURSE_SSO_FAIL_URL
 
-    sso = sso.encode('utf-8')
+    def form_valid(self, form):
+        # Start the whole normal login flow
+        response = super().form_valid(form)
 
-    # Extract nonce and return URL
-    qs = base64.b64decode(sso)
-    qs = qs.decode('utf-8')
-    parsed = urllib.parse.parse_qs(qs)
+        # Check if this made it through the login flow successfully and the response is primed
+        # to redirect the user to the sentinel value.
+        if (
+            self.request.user.is_authenticated
+            and isinstance(response, HttpResponseRedirectBase)
+            and response.url == settings.ISIC_DISCOURSE_SSO_FAIL_URL
+        ):
+            # Validate SSO and redirect to the actual appropriate location
+            response = redirect(self._get_sso_redirect_url(), permanent=False)
 
-    if 'nonce' not in parsed or 'return_sso_url' not in parsed:
-        raise SSOException('Invalid SSO parameters.')
-    else:
-        nonce = parsed['nonce'][0]
-        return_url = parsed['return_sso_url'][0]
-
-    # Ensure HMAC-SHA256 digest matches provided signature
-    expected_signature = hmac.new(
-        key=settings.ISIC_DISCOURSE_SSO_SECRET.encode('utf-8'),
-        msg=sso,
-        digestmod=hashlib.sha256,
-    ).hexdigest()
-    if sig != expected_signature:
-        # TODO: log forged sso
-        raise SSOException('Invalid SSO parameters.')
-
-    return SSOParamSet(sso, sig, nonce, return_url)
-
-
-def _get_redirect_url(user: User, sso_params: SSOParamSet) -> str:
-    payload = {
-        'nonce': sso_params.nonce,
-        'email': user.email,
-        'external_id': user.profile.girder_id,
-        'username': user.username,
-        'name': f'{user.first_name} {user.last_name}',
-        'require_activation': 'false' if user.profile.email_verified else 'true',
-        'admin': 'true' if user.is_superuser else 'false',
-    }
-    payload = urllib.parse.urlencode(payload)
-    payload = payload.encode('utf-8')
-    payload = base64.b64encode(payload)
-
-    digest = hmac.new(
-        key=settings.ISIC_DISCOURSE_SSO_SECRET.encode('utf-8'),
-        msg=payload,
-        digestmod=hashlib.sha256,
-    ).hexdigest()
-    args = urllib.parse.urlencode({'sso': payload, 'sig': digest})
-
-    return f'{sso_params.return_url}?{args}'
-
-
-def discourse_sso_login(request):
-    try:
-        sso_params = _get_sso_parameters(request)
-    except SSOException:
-        return redirect('https://forum.isic-archive.com')
-
-    if request.user.is_authenticated:
-        return redirect(_get_redirect_url(request.user, sso_params))
-    elif request.method == 'POST':
-        # Note: unlike other django forms, the first argument is not data, see:
-        # https://stackoverflow.com/a/21504550
-        form = LoginForm(data=request.POST)
-
-        if form.is_valid():
-            user = form.get_user()
-            login(request, user)
-            return redirect(_get_redirect_url(user, sso_params))
-    else:
-        form = LoginForm()
-
-    return render(request, 'login/login.html', {'form': form, 'app_name': 'Discourse Forum'})
+        return response

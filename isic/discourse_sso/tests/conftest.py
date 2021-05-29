@@ -3,12 +3,11 @@ import hashlib
 import hmac
 import urllib.parse
 
-from django.conf import settings
 import pytest
 
 
 @pytest.fixture
-def discourse_sso_credentials():
+def discourse_sso_credentials(settings):
     # returns a discourse sso payload, and a signature
     sso_payload = {
         'nonce': 'some-fake-nonce',
@@ -22,3 +21,36 @@ def discourse_sso_credentials():
         digestmod=hashlib.sha256,
     ).hexdigest()
     return {'sso': sso_payload.decode('utf-8'), 'sig': signature}
+
+
+@pytest.fixture(
+    params=[
+        {
+            'sso': base64.b64encode(b'fake').decode('utf-8'),
+            'sig': 'fake',
+        },
+        {
+            'sso': '',
+            'sig': '',
+        },
+        {},
+    ],
+    ids=['invalid', 'empty', 'nonexistent'],
+)
+def bad_discourse_sso_credentials(request):
+    return request.param
+
+
+@pytest.fixture
+def valid_user(settings, user_factory):
+    """Provide a user who's ready to login."""
+    # Disable email verification, which will make a new user able to login
+    settings.ACCOUNT_EMAIL_VERIFICATION = 'none'
+    return user_factory(raw_password='testpassword')
+
+
+@pytest.fixture
+def invalid_user(user_factory):
+    """Provide a user who's not ready to login."""
+    # Email verification is already required, but new users will not have it
+    return user_factory(raw_password='testpassword')
