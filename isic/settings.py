@@ -35,7 +35,6 @@ class IsicMixin(ConfigMixin):
         # Install additional apps
         configuration.INSTALLED_APPS += [
             's3_file_field',
-            'material',
             'nested_admin',
             'django_object_actions',
             'django_json_widget',
