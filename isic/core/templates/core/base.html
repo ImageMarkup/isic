@@ -74,7 +74,31 @@
               </a>
             </div>
           </div>
+
+          <div class="flex items-center">
+            {% if not request.user.is_authenticated %}
+              <div class="flex-shrink-0">
+                <a href="{% url 'account_signup' %}">
+                  <button type="button" class="relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <span>Sign Up</span>
+                  </button>
+                </a>
+                <a href="{% url 'account_login' %}">
+                  <button type="button" class="relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <span>Sign In</span>
+                  </button>
+                </a>
+              </div>
+            {% else %}
+              <div class="hidden md:ml-4 md:flex-shrink-0 md:flex md:items-center">
+                <div class="ml-3 relative">
+                  {{request.user.email}}
+                </div>
+              </div>
+            {% endif %}
+          </div>
         </div>
+      </div>
     </nav>
 
     <div class="container max-w-7xl mx-auto p-8">
