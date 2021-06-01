@@ -6,7 +6,10 @@ import isic.login.girder
 
 
 @pytest.fixture
-def mocked_girder_user(mocker, girder_user_factory):
+def mocked_girder_user(settings, mocker, girder_user_factory):
+    # Setting this will enable GirderBackend
+    settings.ISIC_MONGO_URI = 'mongodb://localhost:27017/girder'
+
     girder_user = girder_user_factory(raw_password='testpassword')
     mocker.patch.object(isic.login.girder, '_fetch_girder_user', return_value=girder_user)
     yield girder_user
