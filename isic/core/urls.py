@@ -1,5 +1,6 @@
 from django.urls import path
 
+from isic.core.api import stats as api_stats
 from isic.core.views import collection_detail, collection_list, image_detail, stats
 
 urlpatterns = [
@@ -23,4 +24,5 @@ urlpatterns = [
         stats,
         name='core/stats',
     ),
+    path('api/v2/stats/', api_stats, name='core/api/stats'),
 ]

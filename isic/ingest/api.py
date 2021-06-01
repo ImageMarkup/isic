@@ -69,6 +69,7 @@ class MetadataFileViewSet(
         instance.blob.delete()
         super().perform_destroy(instance)
 
+    @swagger_auto_schema(auto_schema=None)
     @action(detail=True, methods=['post'])
     def apply_metadata(self, request, pk=None):
         metadata_file = self.get_object()
