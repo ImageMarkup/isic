@@ -8,9 +8,8 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
 from isic.core.views import staff_list
-from isic.discourse_sso.views import discourse_sso_login
 from isic.ingest.api import AccessionViewSet, MetadataFileViewSet
-from isic.login.views import IsicLoginView, get_girder_token
+from isic.login.views import get_girder_token
 from isic.studies.api import AnnotationViewSet, StudyTaskViewSet, StudyViewSet
 
 router = routers.SimpleRouter()
@@ -28,7 +27,6 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    path('accounts/login/', IsicLoginView.as_view()),
     path('accounts/', include('allauth.urls')),
     path('oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('admin/', admin.site.urls),
@@ -43,13 +41,15 @@ urlpatterns = [
         'staff/', TemplateView.as_view(template_name='core/staff_landing.html'), name='staff-index'
     ),
     path('staff/users/', staff_list, name='staff-list'),
+    path('', include('isic.core.urls')),
     path('', include('isic.ingest.urls')),
     path('', include('isic.studies.urls')),
-    path('', include('isic.core.urls')),
 ]
 
 if apps.is_installed('isic.discourse_sso'):
-    urlpatterns += [path('discourse-sso/login/', discourse_sso_login, name='discourse-sso-login')]
+    urlpatterns += [
+        path('', include('isic.discourse_sso.urls')),
+    ]
 
 if settings.DEBUG:
     import debug_toolbar
