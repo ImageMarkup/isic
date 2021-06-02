@@ -8,7 +8,7 @@ from django.utils.decorators import method_decorator
 from django.views.generic import ListView
 
 from isic.ingest.models import Accession, Cohort, DistinctnessMeasure
-from isic.ingest.util import make_breadcrumbs
+from isic.ingest.utils import make_breadcrumbs
 
 
 @method_decorator(staff_member_required, name='dispatch')

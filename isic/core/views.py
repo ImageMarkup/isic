@@ -1,7 +1,6 @@
 from collections import defaultdict
 import json
 
-from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
@@ -9,9 +8,9 @@ from django.db.models import Count, Prefetch, Q
 from django.shortcuts import get_object_or_404, render
 
 from isic.core.models import Collection, Image
-from isic.ingest.models import CheckLog, Contributor, Zip
-from isic.login.girder import get_girder_db
-from isic.studies.models import Annotation, Markup, Response, Study
+from isic.core.stats import get_archive_stats
+from isic.ingest.models import CheckLog, Contributor
+from isic.studies.models import Markup, Response, Study
 
 
 def key_by(sequence, f):
@@ -22,50 +21,36 @@ def key_by(sequence, f):
 
 
 def stats(request):
-    ctx = {
-        'num_annotations': Annotation.objects.count(),
-        'num_collections': Collection.objects.count(),
-        'num_contributors': Contributor.objects.count(),
-        'num_images': Image.objects.count(),
-        'num_markups': Markup.objects.count(),
-        'num_public_images': Image.objects.filter(public=True).count(),
-        'num_public_studies': Study.objects.filter(public=True).count(),
-        'num_responses': Response.objects.count(),
-        'num_studies': Study.objects.count(),
-        'num_annotated_images': Annotation.objects.values('image').distinct().count(),
-        'num_uploaders': Zip.objects.values('creator').distinct().count(),
-        'num_annotating_users': Annotation.objects.values('annotator').distinct().count(),
-    }
-
-    if settings.ISIC_MONGO_URI:
-        ctx['num_total_users'] = get_girder_db()['user'].count()
-    else:
-        ctx['num_total_users'] = 0
+    ctx = {}
+    archive_stats = get_archive_stats()
 
     ctx['stats'] = [
         [
-            ('Users', ctx['num_total_users']),
-            ('Uploading Users', ctx['num_uploaders']),
-            ('Annotating Users', ctx['num_annotating_users']),
+            ('Users', archive_stats['total_users_count']),
+            ('Uploading Users', archive_stats['uploaders_count']),
+            ('Annotating Users', archive_stats['annotating_users_count']),
         ],
         [
-            ('Contributors', ctx['num_contributors']),
+            ('Contributors', archive_stats['contributors_count']),
             ('', ''),
-            ('Collections', ctx['num_collections']),
+            ('Collections', archive_stats['collections_count']),
         ],
         [
-            ('Images', ctx['num_images']),
-            ('Public Images', ctx['num_public_images']),
-            ('Annotated Images', ctx['num_annotated_images']),
+            ('Images', archive_stats['images_count']),
+            ('Public Images', archive_stats['public_images_count']),
+            ('Annotated Images', archive_stats['annotated_images_count']),
         ],
-        [('Studies', ctx['num_studies']), ('Public Studies', ctx['num_public_studies']), ('', '')],
         [
-            ('Annotations', ctx['num_annotations']),
-            ('Markups', ctx['num_markups']),
-            ('Responses', ctx['num_responses']),
+            ('Studies', archive_stats['studies_count']),
+            ('Public Studies', archive_stats['public_studies_count']),
+            ('', ''),
+        ],
+        [
+            ('Annotations', archive_stats['annotations_count']),
+            ('Markups', archive_stats['markups_count']),
+            ('Responses', archive_stats['responses_count']),
         ],
     ]
-
     return render(request, 'core/stats.html', ctx)
 
 

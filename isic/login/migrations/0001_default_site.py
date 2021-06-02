@@ -13,7 +13,7 @@ def update_default_site(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor
     # If this is an existing database, the sites app will likely have created an default site
     # object already.
     Site.objects.update_or_create(
-        pk=settings.SITE_ID, defaults={'domain': 'api.isic-archive.com', 'name': 'ISIC'}
+        pk=settings.SITE_ID, defaults={'domain': 'api.isic-archive.com', 'name': 'ISIC Archive'}
     )
 
 

@@ -2,9 +2,9 @@ import datetime
 import logging
 from typing import Optional
 
+from allauth.account.auth_backends import AuthenticationBackend
 import bcrypt
 from django.conf import settings
-from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.hashers import BasePasswordHasher, mask_hash
 from django.contrib.auth.models import User
 from django.http import HttpRequest
@@ -34,45 +34,45 @@ class GirderPasswordHasher(BasePasswordHasher):
         }
 
 
-class GirderBackend(ModelBackend):
-    def authenticate(
-        self, request: Optional[HttpRequest], username: str = None, password: str = None, **kwargs
-    ) -> Optional[User]:
+class GirderBackend(AuthenticationBackend):
+    def authenticate(self, request: Optional[HttpRequest], **credentials) -> Optional[User]:
         if not settings.ISIC_MONGO_URI:
             logger.warning('No ISIC_MONGO_URI configured; cannot authenticate from Girder.')
             return None
 
-        girder_user = fetch_girder_user_by_email(username)
+        email = credentials.get('email', credentials.get('username'))
+        if not email:
+            return None
+
+        girder_user = fetch_girder_user_by_email(email)
         if not girder_user:
             return None
 
-        user = self.get_or_create_user_from_girder(girder_user)
+        self.get_or_create_user_from_girder(girder_user)
 
-        # TODO: consider overriding user_can_authenticate
-        if user.profile.can_login():
-            return super().authenticate(request, username, password, **kwargs)
+        return super().authenticate(request, **credentials)
 
     @staticmethod
     def get_or_create_user_from_girder(girder_user: dict) -> User:
         try:
             user = User.objects.get(username=girder_user['email'])
         except User.DoesNotExist:
-            user = User.objects.create(
+            user = User(
                 date_joined=girder_user['created'].replace(tzinfo=datetime.timezone.utc),
                 username=girder_user['email'],
                 email=girder_user['email'],
-                password=f'bcrypt_girder${girder_user["salt"]}',
                 first_name=girder_user['firstName'],
                 last_name=girder_user['lastName'],
                 is_active=girder_user.get('status', 'enabled') == 'enabled',
                 is_staff=girder_user['admin'],
                 is_superuser=girder_user['admin'],
             )
+            if girder_user['salt'] is None:
+                user.set_unusable_password()
+            else:
+                user.password = (f'bcrypt_girder${girder_user["salt"]}',)
+            user.save()
         else:
-            profile_changed = user.profile.sync_from_girder()
-            if profile_changed:
-                user.password = f'bcrypt_girder${user.profile.girder_salt}'
-                user.profile.save()
-                user.save()
+            user.profile.sync_from_girder()
 
         return user
