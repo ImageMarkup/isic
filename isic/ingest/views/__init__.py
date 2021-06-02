@@ -11,7 +11,7 @@ from django.urls.base import reverse
 
 from isic.ingest.models import Accession, AccessionStatus, Cohort, DistinctnessMeasure, Zip
 from isic.ingest.tasks import extract_zip
-from isic.ingest.util import make_breadcrumbs, staff_or_owner_filter
+from isic.ingest.utils import make_breadcrumbs, staff_or_owner_filter
 
 from .metadata import *  # noqa
 from .review_apps import *  # noqa
