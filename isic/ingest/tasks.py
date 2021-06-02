@@ -1,4 +1,3 @@
-import hashlib
 import io
 
 import PIL.Image
@@ -89,8 +88,8 @@ def process_accession(accession_id: int):
 def process_distinctness_measure(accession_id: int):
     accession = Accession.objects.get(pk=accession_id)
 
-    content = accession.blob.open().read()
-    checksum = hashlib.sha256(content).hexdigest()
+    with accession.blob.open() as blob_stream:
+        checksum = DistinctnessMeasure.compute_checksum(blob_stream)
 
     DistinctnessMeasure.objects.create(accession=accession, checksum=checksum)
 
