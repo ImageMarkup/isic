@@ -26,7 +26,6 @@ class Profile(models.Model):
     # this may be identical to user.password, but it needs to be retained to
     # check if the user password has changed.
     girder_salt = models.CharField(max_length=60, blank=True, null=True)
-    email_verified = models.BooleanField(blank=True, null=True)
 
     def sync_from_girder(self) -> None:
         if not settings.ISIC_MONGO_URI:
@@ -53,10 +52,6 @@ class Profile(models.Model):
                 self.user.set_unusable_password()
             else:
                 self.user.password = f'bcrypt_girder${self.girder_salt}'
-            changed = True
-
-        if self.email_verified != girder_user['emailVerified']:
-            self.email_verified = girder_user['emailVerified']
             changed = True
 
         if changed:

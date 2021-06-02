@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import urllib.parse
 
+from allauth.account.models import EmailAddress
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.http import HttpRequest
@@ -55,13 +56,14 @@ def _get_sso_parameters(request: HttpRequest) -> SSOParamSet:
 
 
 def _get_sso_redirect_url(user: User, sso_params: SSOParamSet) -> str:
+    email_verified = EmailAddress.objects.filter(user=user, verified=True).exists()
     payload = {
         'nonce': sso_params.nonce,
         'email': user.email,
         'external_id': user.profile.girder_id,
         'username': user.username,
         'name': f'{user.first_name} {user.last_name}',
-        'require_activation': 'false' if user.profile.email_verified else 'true',
+        'require_activation': 'false' if email_verified else 'true',
         'admin': 'true' if user.is_superuser else 'false',
     }
     payload = urllib.parse.urlencode(payload)
