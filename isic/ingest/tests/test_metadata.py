@@ -3,7 +3,7 @@ from pydantic import ValidationError
 import pytest
 
 from isic.ingest.tasks import apply_metadata
-from isic.ingest.util.metadata import get_unstructured_columns, validate_csv_format_and_filenames
+from isic.ingest.utils.metadata import get_unstructured_columns, validate_csv_format_and_filenames
 from isic.ingest.validators import MetadataRow
 
 
