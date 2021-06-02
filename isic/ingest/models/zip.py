@@ -1,6 +1,5 @@
 import logging
 from mimetypes import guess_type
-from typing import List, Tuple
 import zipfile
 
 from django.conf import settings
@@ -40,7 +39,7 @@ class Zip(CreationSortedTimeStampedModel):
     def __str__(self) -> str:
         return self.blob_name
 
-    def _get_preexisting_and_duplicates(self) -> Tuple[List[str], List[str]]:
+    def _get_preexisting_and_duplicates(self) -> tuple[list[str], list[str]]:
         from .accession import Accession
 
         blob_names_in_zip = set()
