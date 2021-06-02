@@ -1,6 +1,5 @@
 from django.core.validators import RegexValidator
 from django.db import models
-from django.db.models import JSONField
 from django_extensions.db.models import TimeStampedModel
 
 from isic.ingest.models import Accession
@@ -18,7 +17,7 @@ class DuplicateImage(TimeStampedModel):
     )
     # This should typically be referenced as ".isic_id"
     isic = models.OneToOneField(IsicId, on_delete=models.PROTECT, editable=False)
-    metadata = JSONField(default=dict)
+    metadata = models.JSONField(default=dict)
 
 
 class ImageRedirect(TimeStampedModel):
