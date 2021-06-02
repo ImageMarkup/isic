@@ -1,6 +1,6 @@
 import datetime
 import logging
-from typing import Dict, Optional
+from typing import Optional
 
 from allauth.account.auth_backends import AuthenticationBackend
 import bcrypt
@@ -53,7 +53,7 @@ class GirderBackend(AuthenticationBackend):
         return super().authenticate(request, **credentials)
 
     @staticmethod
-    def get_or_create_user_from_girder(girder_user: Dict) -> User:
+    def get_or_create_user_from_girder(girder_user: dict) -> User:
         try:
             user = User.objects.get(username=girder_user['email'])
         except User.DoesNotExist:
