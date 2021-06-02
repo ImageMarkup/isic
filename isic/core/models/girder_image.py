@@ -34,18 +34,16 @@ class GirderDataset(models.Model):
 
         return cls.objects.get_or_create(
             id=str(dataset['_id']), defaults={'name': dataset['name'], 'public': dataset['public']}
-        )
+        )[0]
 
 
 class GirderImage(models.Model):
     class Meta:
         # If status is not unknown, must have accession_id
         constraints = [
-            # girder_id should be unique among nonempty girder_id values
             models.CheckConstraint(
-                name='girder_id_notnull',
-                check=Q(status=GirderImageStatus.UNKNOWN, accession_id__isnull=True)
-                | ~Q(status=GirderImageStatus.UNKNOWN),
+                name='non_unknown_have_accession_id',
+                check=Q(status=GirderImageStatus.UNKNOWN) | Q(accession_id__isnull=False),
             ),
         ]
 

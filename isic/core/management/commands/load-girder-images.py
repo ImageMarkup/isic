@@ -1,6 +1,6 @@
 import io
 
-import PIL
+import PIL.Image
 from bson import ObjectId
 import djclick as click
 import requests
@@ -21,8 +21,7 @@ def load_girder_images():
     girder_token = create_girder_token(str(girder_admin_user['_id']))
 
     with click.progressbar(
-        girder_db['item'].find({'baseParentId': LESION_IMAGES_ID}),
-        length=girder_db['item'].count_documents({'baseParentId': LESION_IMAGES_ID}),
+        list(girder_db['item'].find({'baseParentId': LESION_IMAGES_ID}))
     ) as items:
         for item in items:
             # Skip existing rows
@@ -56,7 +55,7 @@ def load_girder_images():
             stripped_blob_stream.seek(0)
 
             girder_image = GirderImage(
-                isic_id=IsicId.objects.get_or_create(id=item['name'])[0],
+                isic=IsicId.objects.get_or_create(id=item['name'])[0],
                 item_id=str(item['_id']),
                 file_id=str(girder_file['_id']),
                 dataset=GirderDataset.get_or_create(item['meta']['datasetId']),
