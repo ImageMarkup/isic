@@ -1,9 +1,5 @@
 from django.urls import path
 
-from isic.discourse_sso.views import DiscourseSsoLoginView
+from isic.discourse_sso.views import DiscourseSsoRedirectView
 
-urlpatterns = [
-    path(
-        'accounts/login/discourse-sso/', DiscourseSsoLoginView.as_view(), name='discourse-sso-login'
-    )
-]
+urlpatterns = [path('discourse-sso/', DiscourseSsoRedirectView.as_view(), name='discourse-sso')]
