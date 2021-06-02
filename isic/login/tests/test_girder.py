@@ -2,14 +2,6 @@ from django.contrib.auth.models import User
 import pytest
 
 from isic.login.backends import GirderBackend
-import isic.login.girder
-
-
-@pytest.fixture
-def mocked_girder_user(mocker, girder_user_factory):
-    girder_user = girder_user_factory(raw_password='testpassword')
-    mocker.patch.object(isic.login.girder, '_fetch_girder_user', return_value=girder_user)
-    yield girder_user
 
 
 @pytest.mark.django_db
@@ -24,7 +16,7 @@ def test_authenticate_correct(existent, mocker, mocked_girder_user, user_factory
     set_password_spy = mocker.spy(User, 'set_password')
 
     authenticated_user = GirderBackend().authenticate(
-        None, mocked_girder_user['email'], 'testpassword'
+        None, email=mocked_girder_user['email'], password='testpassword'
     )
 
     assert authenticated_user
@@ -44,16 +36,34 @@ def test_authenticate_incorrect(existent, mocked_girder_user, user_factory):
         user_factory(email=mocked_girder_user['email'])
 
     authenticated_user = GirderBackend().authenticate(
-        None, mocked_girder_user['email'], 'wrongpassword'
+        None, email=mocked_girder_user['email'], password='wrongpassword'
     )
 
     assert authenticated_user is None
 
 
 @pytest.mark.django_db
-def test_authenticate_not_found(mocker):
-    mocker.patch.object(isic.login.girder, '_fetch_girder_user', return_value=None)
+def test_authenticate_disabled(disabled_girder_user):
+    authenticated_user = GirderBackend().authenticate(
+        None, email=disabled_girder_user['email'], password='testpassword'
+    )
 
-    authenticated_user = GirderBackend().authenticate(None, 'foo@bar.test', 'testpassword')
+    assert authenticated_user is None
+
+
+@pytest.mark.django_db
+def test_authenticate_passwordless(passwordless_girder_user):
+    authenticated_user = GirderBackend().authenticate(
+        None, email=passwordless_girder_user['email'], password='testpassword'
+    )
+
+    assert authenticated_user is None
+
+
+@pytest.mark.django_db
+def test_authenticate_missing(missing_girder_user):
+    authenticated_user = GirderBackend().authenticate(
+        None, email=missing_girder_user['email'], password='testpassword'
+    )
 
     assert authenticated_user is None

@@ -3,12 +3,11 @@ import hashlib
 import hmac
 import urllib.parse
 
-from django.conf import settings
 import pytest
 
 
 @pytest.fixture
-def discourse_sso_credentials():
+def discourse_sso_credentials(settings):
     # returns a discourse sso payload, and a signature
     sso_payload = {
         'nonce': 'some-fake-nonce',
@@ -22,3 +21,21 @@ def discourse_sso_credentials():
         digestmod=hashlib.sha256,
     ).hexdigest()
     return {'sso': sso_payload.decode('utf-8'), 'sig': signature}
+
+
+@pytest.fixture(
+    params=[
+        {
+            'sso': base64.b64encode(b'fake').decode('utf-8'),
+            'sig': 'fake',
+        },
+        {
+            'sso': '',
+            'sig': '',
+        },
+        {},
+    ],
+    ids=['invalid', 'empty', 'nonexistent'],
+)
+def bad_discourse_sso_credentials(request):
+    return request.param

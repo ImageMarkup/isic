@@ -5,7 +5,14 @@ from django.db.models import Count
 from django.utils.safestring import mark_safe
 from django_json_widget.widgets import JSONEditorWidget
 
-from isic.core.models import Collection, DuplicateImage, Image, ImageRedirect
+from isic.core.models import (
+    Collection,
+    DuplicateImage,
+    GirderDataset,
+    GirderImage,
+    Image,
+    ImageRedirect,
+)
 
 # general admin settings
 # https://docs.djangoproject.com/en/3.1/ref/contrib/admin/#adminsite-objects
@@ -14,6 +21,18 @@ admin.site.site_title = 'ISIC Admin'
 admin.site.index_title = ''
 
 # TODO: unregister unnecessary apps from admin site
+
+
+@admin.register(GirderDataset)
+class GirderDatasetAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name', 'public']
+
+
+@admin.register(GirderImage)
+class GirderImageAdmin(admin.ModelAdmin):
+    list_select_related = ['dataset']
+    list_display = ['id', 'isic_id', 'item_id', 'dataset', 'original_blob_dm', 'status']
+    list_filter = ['status']
 
 
 @admin.register(DuplicateImage)

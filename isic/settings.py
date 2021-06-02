@@ -27,17 +27,12 @@ class IsicMixin(ConfigMixin):
             'isic.login.apps.LoginConfig',
             'isic.ingest.apps.IngestConfig',
             'isic.studies.apps.StudiesConfig',
+            'isic.discourse_sso.apps.DiscourseSSOConfig',
         ] + configuration.INSTALLED_APPS
-
-        if configuration.ISIC_DISCOURSE_SSO_SECRET:
-            configuration.INSTALLED_APPS += [
-                'isic.discourse_sso.apps.DiscourseSSOConfig',
-            ]
 
         # Install additional apps
         configuration.INSTALLED_APPS += [
             's3_file_field',
-            'material',
             'nested_admin',
             'django_object_actions',
             'django_json_widget',
@@ -77,14 +72,8 @@ class IsicMixin(ConfigMixin):
         'allauth.account.auth_backends.AuthenticationBackend',
     ]
 
-    ISIC_DISCOURSE_SSO_SECRET = values.Value(
-        None,
-        # Don't bind late, so the value can be examined in before_binding
-        late_binding=False,
-        # Without late_binding, environ_name must be explicitly set for the setting to know its
-        # own name early enough
-        environ_name='ISIC_DISCOURSE_SSO_SECRET',
-    )
+    ISIC_DISCOURSE_SSO_SECRET = values.Value(None)
+    ISIC_DISCOURSE_SSO_FAIL_URL = 'https://forum.isic-archive.com'
     ISIC_MONGO_URI = values.SecretValue()
 
     CELERY_WORKER_MAX_MEMORY_PER_CHILD = 256 * 1024
@@ -108,7 +97,7 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
 
 class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
     ISIC_DISCOURSE_SSO_SECRET = 'discourse_secret'
-    ISIC_MONGO_URI = 'mongodb://localhost:27017/girder'
+    ISIC_MONGO_URI = None
 
 
 class ProductionConfiguration(IsicMixin, ProductionBaseConfiguration):
