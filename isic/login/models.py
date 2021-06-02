@@ -3,7 +3,6 @@ from typing import Type
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.signals import post_save
@@ -29,10 +28,10 @@ class Profile(models.Model):
     girder_salt = models.CharField(max_length=60, blank=True, null=True)
     email_verified = models.BooleanField(blank=True, null=True)
 
-    def sync_from_girder(self) -> bool:
+    def sync_from_girder(self) -> None:
         if not settings.ISIC_MONGO_URI:
             logger.warning('No ISIC_MONGO_URI configured; cannot sync from Girder.')
-            return False
+            return
 
         changed = False
 
@@ -44,27 +43,25 @@ class Profile(models.Model):
             self.girder_id = str(girder_user['_id'])
             changed = True
 
+        if self.user.is_active != (girder_user.get('status', 'enabled') == 'enabled'):
+            self.user.is_active = girder_user.get('status', 'enabled') == 'enabled'
+            changed = True
+
         if self.girder_salt != girder_user['salt']:
             self.girder_salt = girder_user['salt']
+            if self.girder_salt is None:
+                self.user.set_unusable_password()
+            else:
+                self.user.password = f'bcrypt_girder${self.girder_salt}'
             changed = True
 
         if self.email_verified != girder_user['emailVerified']:
             self.email_verified = girder_user['emailVerified']
             changed = True
 
-        return changed
-
-    def can_login(self) -> bool:
-        # Handle users with no password
-        if not self.girder_salt:
-            raise ValidationError(
-                'This user does not have a password. You must reset your password to obtain one.'
-            )
-
-        if not self.user.is_active:
-            raise ValidationError('Account is disabled.')
-
-        return True
+        if changed:
+            self.user.save()
+            self.save()
 
 
 @receiver(post_save, sender=User)
@@ -72,4 +69,3 @@ def create_or_save_user_profile(sender: Type[User], instance: User, created: boo
     if created:
         profile = Profile(user=instance)
         profile.sync_from_girder()
-        profile.save()
