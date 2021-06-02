@@ -11,14 +11,14 @@ from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
 from isic.ingest.models import Accession, Cohort, MetadataFile
-from isic.ingest.util import (
+from isic.ingest.utils import (
     make_breadcrumbs,
     staff_or_owner_filter,
     validate_archive_consistency,
     validate_csv_format_and_filenames,
     validate_internal_consistency,
 )
-from isic.ingest.util.metadata import get_unstructured_columns
+from isic.ingest.utils.metadata import get_unstructured_columns
 
 
 class MetadataFileForm(ModelForm):
