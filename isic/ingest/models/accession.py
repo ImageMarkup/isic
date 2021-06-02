@@ -1,5 +1,4 @@
 from django.db import models
-from django.db.models import JSONField
 from django.db.models.aggregates import Count
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.query_utils import Q
@@ -71,8 +70,8 @@ class Accession(CreationSortedTimeStampedModel):
     duplicate_check = models.BooleanField(null=True, db_index=True)
     lesion_check = models.BooleanField(null=True, db_index=True)
 
-    metadata = JSONField(default=dict)
-    unstructured_metadata = JSONField(default=dict)
+    metadata = models.JSONField(default=dict)
+    unstructured_metadata = models.JSONField(default=dict)
 
     def __str__(self) -> str:
         return self.blob_name

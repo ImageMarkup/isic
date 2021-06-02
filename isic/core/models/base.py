@@ -13,8 +13,8 @@ class CreationSortedTimeStampedModel(TimeStampedModel):
 
 
 class CopyrightLicense(models.TextChoices):
-    CC_0 = ('CC-0', 'CC-0')
+    CC_0 = 'CC-0', 'CC-0'
 
     # These 2 require attribution
-    CC_BY = ('CC-BY', 'CC-BY')
-    CC_BY_NC = ('CC-BY-NC', 'CC-BY-NC')
+    CC_BY = 'CC-BY', 'CC-BY'
+    CC_BY_NC = 'CC-BY-NC', 'CC-BY-NC'
