@@ -69,8 +69,8 @@ class GirderImage(models.Model):
     original_filename = models.CharField(max_length=255)
     original_file_relpath = models.CharField(max_length=255, blank=True)
 
-    metadata = models.JSONField(default=dict)
-    unstructured_metadata = models.JSONField(default=dict)
+    metadata = models.JSONField(default=dict, blank=True)
+    unstructured_metadata = models.JSONField(default=dict, blank=True)
 
     original_blob_dm = models.CharField(
         max_length=64,
