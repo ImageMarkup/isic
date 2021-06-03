@@ -24,6 +24,9 @@ class GirderDataset(models.Model):
     name = models.CharField(max_length=255)
     public = models.BooleanField()
 
+    def __str__(self) -> str:
+        return self.name
+
     @classmethod
     def get_or_create(cls, dataset_id: str):
         girder_db = get_girder_db()
@@ -54,32 +57,33 @@ class GirderImage(models.Model):
     # This should typically be referenced as ".isic_id"
     isic = models.OneToOneField(IsicId, on_delete=models.PROTECT, editable=False)
     item_id = models.CharField(
-        unique=True,
-        max_length=24,
-        validators=[RegexValidator(r'^[0-9a-f]{24}$')],
+        unique=True, max_length=24, validators=[RegexValidator(r'^[0-9a-f]{24}$')], editable=False
     )
     file_id = models.CharField(
-        unique=True,
-        max_length=24,
-        validators=[RegexValidator(r'^[0-9a-f]{24}$')],
+        unique=True, max_length=24, validators=[RegexValidator(r'^[0-9a-f]{24}$')], editable=False
     )
 
-    dataset = models.ForeignKey(GirderDataset, on_delete=models.PROTECT)
+    dataset = models.ForeignKey(
+        GirderDataset, on_delete=models.PROTECT, related_name='images', editable=False
+    )
 
-    original_filename = models.CharField(max_length=255)
-    original_file_relpath = models.CharField(max_length=255, blank=True)
+    original_filename = models.CharField(max_length=255, editable=False)
+    original_file_relpath = models.CharField(max_length=255, blank=True, editable=False)
 
-    metadata = models.JSONField(default=dict, blank=True)
-    unstructured_metadata = models.JSONField(default=dict, blank=True)
+    metadata = models.JSONField(default=dict, blank=True, editable=False)
+    unstructured_metadata = models.JSONField(default=dict, blank=True, editable=False)
 
     original_blob_dm = models.CharField(
-        max_length=64,
-        validators=[RegexValidator(r'^[0-9a-f]{64}$')],
+        max_length=64, validators=[RegexValidator(r'^[0-9a-f]{64}$')], editable=False
     )
     # stripped_blob_dm should match Django
     stripped_blob_dm = models.CharField(
-        max_length=64,
-        validators=[RegexValidator(r'^[0-9a-f]{64}$')],
+        max_length=64, validators=[RegexValidator(r'^[0-9a-f]{64}$')], editable=False
     )
 
-    accession_id = models.ForeignKey(Accession, null=True, blank=True, on_delete=models.CASCADE)
+    accession = models.ForeignKey(
+        Accession, null=True, blank=True, on_delete=models.CASCADE, editable=False
+    )
+
+    def __str__(self) -> str:
+        return self.isic_id

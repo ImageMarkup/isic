@@ -25,7 +25,19 @@ admin.site.index_title = ''
 
 @admin.register(GirderDataset)
 class GirderDatasetAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'public']
+    list_display = ['id', 'name', 'public', 'images']
+    search_fields = ['name']
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        qs = qs.annotate(
+            images_count=Count('images', distinct=True),
+        )
+        return qs
+
+    @admin.display(ordering='images_count')
+    def images(self, obj):
+        return intcomma(obj.images_count)
 
 
 @admin.register(GirderImage)
