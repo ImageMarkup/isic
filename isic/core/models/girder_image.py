@@ -82,4 +82,4 @@ class GirderImage(models.Model):
         validators=[RegexValidator(r'^[0-9a-f]{64}$')],
     )
 
-    accession_id = models.ForeignKey(Accession, null=True, on_delete=models.CASCADE)
+    accession_id = models.ForeignKey(Accession, null=True, blank=True, on_delete=models.CASCADE)
