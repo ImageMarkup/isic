@@ -48,6 +48,9 @@ def load_girder_images():
                 original_blob_stream.write(chunk)
             original_blob_stream.seek(0)
 
+            # Set a larger max size, to accommodate confocal images
+            # This uses ~1.1GB of memory
+            PIL.Image.MAX_IMAGE_PIXELS = 20_000 * 20_000 * 3
             img = PIL.Image.open(original_blob_stream)
             img = img.convert('RGB')
             stripped_blob_stream = io.BytesIO()
