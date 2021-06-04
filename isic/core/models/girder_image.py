@@ -9,8 +9,8 @@ from isic.login.girder import get_girder_db
 
 
 class GirderImageStatus(models.TextChoices):
-    UNKNOWN = 'unknown', 'Unknown`'
-    NON_IMAGE = 'non_image', 'Non-Image`'
+    UNKNOWN = 'unknown', 'Unknown'
+    NON_IMAGE = 'non_image', 'Non-Image'
     CORRUPT = 'corrupt', 'Corrupt'
     MIGRATED = 'migrated', 'Migrated'
     TRUE_DUPLICATE = 'true_duplicate', 'True Duplicate'
