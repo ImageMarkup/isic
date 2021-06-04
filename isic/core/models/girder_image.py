@@ -9,7 +9,8 @@ from isic.login.girder import get_girder_db
 
 
 class GirderImageStatus(models.TextChoices):
-    UNKNOWN = 'unknown', 'Unknown'
+    UNKNOWN = 'unknown', 'Unknown`'
+    NON_IMAGE = 'non_image', 'Non-Image`'
     CORRUPT = 'corrupt', 'Corrupt'
     MIGRATED = 'migrated', 'Migrated'
     TRUE_DUPLICATE = 'true_duplicate', 'True Duplicate'
@@ -48,6 +49,10 @@ class GirderImage(models.Model):
                 name='non_unknown_have_accession',
                 check=Q(status=GirderImageStatus.UNKNOWN) | Q(accession__isnull=False),
             ),
+            models.CheckConstraint(
+                name='non_non_image_have_stripped_blob_dm',
+                check=Q(status=GirderImageStatus.NON_IMAGE) | ~Q(stripped_blob_dm=''),
+            ),
         ]
 
     status = models.CharField(
@@ -78,7 +83,7 @@ class GirderImage(models.Model):
     )
     # stripped_blob_dm should match Django
     stripped_blob_dm = models.CharField(
-        max_length=64, validators=[RegexValidator(r'^[0-9a-f]{64}$')], editable=False
+        max_length=64, validators=[RegexValidator(r'^[0-9a-f]{64}$')], blank=True, editable=False
     )
 
     accession = models.ForeignKey(
