@@ -69,7 +69,7 @@ def load_girder_images():
                 | item['meta'].get('unstructuredExif', {}),
                 original_blob_dm=DistinctnessMeasure.compute_checksum(original_blob_stream),
                 stripped_blob_dm=DistinctnessMeasure.compute_checksum(stripped_blob_stream),
-                accession_id=Accession.objects.filter(girder_id=str(item['_id'])).first(),
+                accession=Accession.objects.filter(girder_id=str(item['_id'])).first(),
             )
             girder_image.full_clean()
             girder_image.save()
