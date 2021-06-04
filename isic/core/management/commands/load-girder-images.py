@@ -51,11 +51,16 @@ def load_girder_images():
             # Set a larger max size, to accommodate confocal images
             # This uses ~1.1GB of memory
             PIL.Image.MAX_IMAGE_PIXELS = 20_000 * 20_000 * 3
-            img = PIL.Image.open(original_blob_stream)
-            img = img.convert('RGB')
-            stripped_blob_stream = io.BytesIO()
-            img.save(stripped_blob_stream, format='JPEG')
-            stripped_blob_stream.seek(0)
+            try:
+                img = PIL.Image.open(original_blob_stream)
+            except PIL.Image.UnidentifiedImageError:
+                stripped_blob_dm = ''
+            else:
+                img = img.convert('RGB')
+                stripped_blob_stream = io.BytesIO()
+                img.save(stripped_blob_stream, format='JPEG')
+                stripped_blob_stream.seek(0)
+                stripped_blob_dm = DistinctnessMeasure.compute_checksum(stripped_blob_stream)
 
             girder_image = GirderImage(
                 isic=IsicId.objects.get_or_create(id=item['name'])[0],
@@ -68,7 +73,7 @@ def load_girder_images():
                 unstructured_metadata=item['meta']['unstructured']
                 | item['meta'].get('unstructuredExif', {}),
                 original_blob_dm=DistinctnessMeasure.compute_checksum(original_blob_stream),
-                stripped_blob_dm=DistinctnessMeasure.compute_checksum(stripped_blob_stream),
+                stripped_blob_dm=stripped_blob_dm,
                 accession=Accession.objects.filter(girder_id=str(item['_id'])).first(),
             )
             girder_image.full_clean()
