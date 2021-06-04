@@ -47,7 +47,9 @@ class GirderImage(models.Model):
         constraints = [
             models.CheckConstraint(
                 name='non_unknown_have_accession',
-                check=Q(status=GirderImageStatus.UNKNOWN) | Q(accession__isnull=False),
+                check=Q(status=GirderImageStatus.UNKNOWN)
+                | Q(status=GirderImageStatus.NON_IMAGE)
+                | Q(accession__isnull=False),
             ),
             models.CheckConstraint(
                 name='non_non_image_have_stripped_blob_dm',
