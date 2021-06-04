@@ -5,7 +5,7 @@ from bson import ObjectId
 import djclick as click
 import requests
 
-from isic.core.models.girder_image import GirderDataset, GirderImage
+from isic.core.models.girder_image import GirderDataset, GirderImage, GirderImageStatus
 from isic.core.models.isic_id import IsicId
 from isic.ingest.models import Accession, DistinctnessMeasure
 from isic.login.girder import create_girder_token, get_girder_db
@@ -63,6 +63,9 @@ def load_girder_images():
                 stripped_blob_dm = DistinctnessMeasure.compute_checksum(stripped_blob_stream)
 
             girder_image = GirderImage(
+                status=GirderImageStatus.NON_IMAGE
+                if stripped_blob_dm == ''
+                else GirderImageStatus.UNKNOWN,
                 isic=IsicId.objects.get_or_create(id=item['name'])[0],
                 item_id=str(item['_id']),
                 file_id=str(girder_file['_id']),
