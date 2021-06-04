@@ -42,11 +42,11 @@ class GirderDataset(models.Model):
 
 class GirderImage(models.Model):
     class Meta:
-        # If status is not unknown, must have accession_id
+        # If status is not unknown, must have accession
         constraints = [
             models.CheckConstraint(
-                name='non_unknown_have_accession_id',
-                check=Q(status=GirderImageStatus.UNKNOWN) | Q(accession_id__isnull=False),
+                name='non_unknown_have_accession',
+                check=Q(status=GirderImageStatus.UNKNOWN) | Q(accession__isnull=False),
             ),
         ]
 
