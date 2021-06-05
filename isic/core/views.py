@@ -4,7 +4,7 @@ import json
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
-from django.db.models import Count, Prefetch, Q
+from django.db.models import Count, Prefetch
 from django.shortcuts import get_object_or_404, render
 
 from isic.core.models import Collection, Image
@@ -98,11 +98,7 @@ def collection_detail(request, pk):
 
 
 @staff_member_required
-def image_detail(request, id_or_gid_or_isicid):
-    filters = Q(isic_id=id_or_gid_or_isicid) | Q(accession__girder_id=id_or_gid_or_isicid)
-    if id_or_gid_or_isicid.isnumeric():
-        filters |= Q(pk=id_or_gid_or_isicid)
-
+def image_detail(request, pk):
     image = get_object_or_404(
         Image.objects.select_related(
             'accession__upload__cohort__contributor__creator',
@@ -111,7 +107,7 @@ def image_detail(request, id_or_gid_or_isicid):
             Prefetch('accession__checklogs', queryset=CheckLog.objects.select_related('creator'))
         )
         .prefetch_related(Prefetch('collections', queryset=Collection.objects.order_by('name'))),
-        filters,
+        pk=pk,
     )
 
     studies = Study.objects.filter(tasks__image=image).distinct()
