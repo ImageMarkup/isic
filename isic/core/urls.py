@@ -1,11 +1,34 @@
-from django.urls import path
+from django.db.models.query_utils import Q
+from django.shortcuts import get_object_or_404
+from django.urls import path, register_converter
 
 from isic.core.api import stats as api_stats
-from isic.core.views import collection_detail, collection_list, image_detail, stats
+from isic.core.models.image import Image
+from isic.core.views import collection_detail, collection_list, image_detail, staff_list, stats
+
+
+class ImageIdentifierConverter:
+    regex = '([0-9]+|[0-9a-f]{24}|ISIC_[0-9]{7})'
+
+    def to_python(self, value):
+        if value.isnumeric():
+            return int(value)
+        else:
+            # TODO: image redirects
+            image = get_object_or_404(
+                Image.objects.filter(Q(isic_id=value) | Q(accession__girder_id=value)).values('pk')
+            )
+            return image['pk']
+
+    def to_url(self, value):
+        return int(value)
+
+
+register_converter(ImageIdentifierConverter, 'image-identifier')
 
 urlpatterns = [
     path(
-        'images/<id_or_gid_or_isicid>/',
+        'images/<image-identifier:pk>/',
         image_detail,
         name='core/image-detail',
     ),
@@ -19,6 +42,7 @@ urlpatterns = [
         collection_detail,
         name='core/collection-detail',
     ),
+    path('staff/users/', staff_list, name='core/staff-list'),
     path(
         'stats/',
         stats,
