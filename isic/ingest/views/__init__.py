@@ -9,9 +9,10 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
+from isic.core.permissions import permission_or_404
 from isic.ingest.models import Accession, AccessionStatus, Cohort, DistinctnessMeasure, Zip
 from isic.ingest.tasks import extract_zip
-from isic.ingest.utils import make_breadcrumbs, staff_or_owner_filter
+from isic.ingest.utils import make_breadcrumbs
 
 from .metadata import *  # noqa
 from .review_apps import *  # noqa
@@ -25,11 +26,9 @@ class ZipForm(ModelForm):
 
 
 @login_required
+@permission_or_404('ingest.view_cohort', (Cohort, 'pk', 'cohort_pk'))
 def zip_create(request, cohort_pk):
-    cohort = get_object_or_404(
-        Cohort.objects.filter(**staff_or_owner_filter(request.user, 'contributor__owners')),
-        pk=cohort_pk,
-    )
+    cohort = get_object_or_404(Cohort, pk=cohort_pk)
     if request.method == 'POST':
         form = ZipForm(request.POST)
         if form.is_valid():
@@ -44,18 +43,6 @@ def zip_create(request, cohort_pk):
         form = ZipForm()
 
     return render(request, 'ingest/zip_create.html', {'form': form})
-
-
-@staff_member_required
-def cohort_list(request):
-    cohorts = Cohort.objects.all().order_by('-created')
-    return render(
-        request,
-        'ingest/cohort_list.html',
-        {
-            'cohorts': cohorts,
-        },
-    )
 
 
 @staff_member_required

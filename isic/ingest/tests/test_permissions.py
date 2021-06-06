@@ -43,12 +43,12 @@ def test_upload_select_create_cohort_permissions(
 
     for contributor in [contributor1, contributor2]:
         r = client.get(reverse('upload/select-or-create-cohort', args=[contributor.pk]))
-        assert r.status_code == 302  # redirect to login page
+        assert r.status_code == 404
 
         r = authenticated_client.get(
             reverse('upload/select-or-create-cohort', args=[contributor.pk])
         )
-        assert r.status_code == 302  # redirect to create-cohort page
+        assert r.status_code == 404
 
         client.force_login(contributor.creator)
         r = client.get(reverse('upload/select-or-create-cohort', args=[contributor.pk]))
@@ -72,15 +72,14 @@ def test_upload_create_cohort_permissions(client, authenticated_client, contribu
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize('url_name', ['ingest-review', 'cohort-list'])
-def test_staff_page_permissions(url_name, client, authenticated_client, staff_client):
-    r = client.get(reverse(url_name))
+def test_staff_page_permissions(client, authenticated_client, staff_client):
+    r = client.get(reverse('ingest-review'))
     assert r.status_code == 302
 
-    r = authenticated_client.get(reverse(url_name))
+    r = authenticated_client.get(reverse('ingest-review'))
     assert r.status_code == 302
 
-    r = staff_client.get(reverse(url_name))
+    r = staff_client.get(reverse('ingest-review'))
     assert r.status_code == 200
 
 
