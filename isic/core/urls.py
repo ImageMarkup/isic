@@ -28,10 +28,12 @@ register_converter(ImageIdentifierConverter, 'image-identifier')
 
 urlpatterns = [
     path(
-        'images/<image-identifier:pk>/',
-        image_detail,
-        name='core/image-detail',
+        'stats/',
+        stats,
+        name='core/stats',
     ),
+    path('api/v2/stats/', api_stats, name='core/api/stats'),
+    path('staff/users/', staff_list, name='core/staff-list'),
     path(
         'staff/collections/',
         collection_list,
@@ -42,11 +44,9 @@ urlpatterns = [
         collection_detail,
         name='core/collection-detail',
     ),
-    path('staff/users/', staff_list, name='core/staff-list'),
     path(
-        'stats/',
-        stats,
-        name='core/stats',
+        'images/<image-identifier:pk>/',
+        image_detail,
+        name='core/image-detail',
     ),
-    path('api/v2/stats/', api_stats, name='core/api/stats'),
 ]

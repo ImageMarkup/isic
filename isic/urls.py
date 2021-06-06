@@ -7,7 +7,6 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
-from isic.core.views import staff_list
 from isic.ingest.api import AccessionViewSet, MetadataFileViewSet
 from isic.login.views import get_girder_token
 from isic.studies.api import AnnotationViewSet, StudyTaskViewSet, StudyViewSet
@@ -40,7 +39,6 @@ urlpatterns = [
     path(
         'staff/', TemplateView.as_view(template_name='core/staff_landing.html'), name='staff-index'
     ),
-    path('staff/users/', staff_list, name='staff-list'),
     path('', include('isic.core.urls')),
     path('', include('isic.ingest.urls')),
     path('', include('isic.studies.urls')),
