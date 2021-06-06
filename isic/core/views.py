@@ -8,6 +8,7 @@ from django.db.models import Count, Prefetch
 from django.shortcuts import get_object_or_404, render
 
 from isic.core.models import Collection, Image
+from isic.core.permissions import get_visible_objects, permission_or_404
 from isic.core.stats import get_archive_stats
 from isic.ingest.models import CheckLog, Contributor
 from isic.studies.models import Markup, Response, Study
@@ -54,16 +55,18 @@ def stats(request):
     return render(request, 'core/stats.html', ctx)
 
 
-@staff_member_required
+@permission_or_404('auth.view_staff')
 def staff_list(request):
     users = User.objects.filter(is_staff=True).order_by('email')
     return render(request, 'core/staff_list.html', {'users': users, 'total_users': User.objects})
 
 
-@staff_member_required
 def collection_list(request):
-    collections = Collection.objects.annotate(num_images=Count('images', distinct=True)).order_by(
-        '-name'
+    # TODO: should the image count be access controlled too?
+    collections = get_visible_objects(
+        request.user,
+        'core.view_collection',
+        Collection.objects.annotate(num_images=Count('images', distinct=True)).order_by('-name'),
     )
     paginator = Paginator(collections, 25)
     page = paginator.get_page(request.GET.get('page'))
@@ -75,7 +78,7 @@ def collection_list(request):
     )
 
 
-@staff_member_required
+@permission_or_404('core.view_collection', (Collection, 'pk', 'pk'))
 def collection_detail(request, pk):
     collection = get_object_or_404(Collection, pk=pk)
     images = collection.images.order_by('created')
@@ -97,6 +100,8 @@ def collection_detail(request, pk):
     )
 
 
+# TODO: refactor permissions in the future to use permission_or_404 and filtering
+# only visible studies/responses
 @staff_member_required
 def image_detail(request, pk):
     image = get_object_or_404(
