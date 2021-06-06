@@ -70,6 +70,7 @@ class IsicMixin(ConfigMixin):
     AUTHENTICATION_BACKENDS = [
         'isic.login.backends.GirderBackend',
         'allauth.account.auth_backends.AuthenticationBackend',
+        'isic.core.permissions.IsicObjectPermissionsBackend',
     ]
 
     ISIC_DISCOURSE_SSO_SECRET = values.Value(None)
