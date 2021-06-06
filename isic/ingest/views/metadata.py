@@ -10,10 +10,10 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
+from isic.core.permissions import get_visible_objects, permission_or_404
 from isic.ingest.models import Accession, Cohort, MetadataFile
 from isic.ingest.utils import (
     make_breadcrumbs,
-    staff_or_owner_filter,
     validate_archive_consistency,
     validate_csv_format_and_filenames,
     validate_internal_consistency,
@@ -34,8 +34,8 @@ class ValidateMetadataForm(forms.Form):
             required=True,
             choices=[
                 (m.id, m.id)
-                for m in MetadataFile.objects.filter(cohort=cohort).filter(
-                    **staff_or_owner_filter(user)
+                for m in get_visible_objects(
+                    user, 'ingest.view_metadatafile', MetadataFile.objects.filter(cohort=cohort)
                 )
             ],
             widget=forms.RadioSelect,
@@ -43,11 +43,10 @@ class ValidateMetadataForm(forms.Form):
 
 
 @login_required
+@permission_or_404('ingest.view_cohort', (Cohort, 'pk', 'cohort_pk'))
 def metadata_file_create(request, cohort_pk):
-    cohort = get_object_or_404(
-        Cohort.objects.filter(**staff_or_owner_filter(request.user, 'contributor__owners')),
-        pk=cohort_pk,
-    )
+    cohort = get_object_or_404(Cohort, pk=cohort_pk)
+
     if request.method == 'POST':
         form = MetadataFileForm(request.POST)
         if form.is_valid():
@@ -81,7 +80,7 @@ def apply_metadata(request, cohort_pk):
     cohort = get_object_or_404(
         Cohort.objects.prefetch_related(
             Prefetch('metadata_files', queryset=MetadataFile.objects.order_by('-created'))
-        ).filter(**staff_or_owner_filter(request.user, 'contributor__owners')),
+        ),
         pk=cohort_pk,
     )
 

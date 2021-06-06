@@ -48,6 +48,8 @@ def get_visible_objects(user, perm, qs=None):
 
     if filter:
         return filter(user, qs)
+    else:
+        raise Exception(f'No permission registered: {perm}')
 
 
 # This is a decorator adapted from django-guardian

@@ -4,33 +4,25 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
+from isic.core.permissions import get_visible_objects, permission_or_404
 from isic.ingest.forms import CohortForm, ContributorForm
 from isic.ingest.models import Cohort, Contributor, MetadataFile
 
 
 @login_required
 def select_or_create_contributor(request):
-    if request.user.is_staff:
-        contributors = Contributor.objects.all()
-    else:
-        contributors = Contributor.objects.filter(owners=request.user)
-
-    ctx = {'contributors': contributors}
+    ctx = {'contributors': get_visible_objects(request.user, 'ingest.view_contributor')}
     if ctx['contributors'].count() == 0:
         return HttpResponseRedirect(reverse('upload/create-contributor'))
 
     return render(request, 'ingest/contributor_select_or_create.html', ctx)
 
 
-@login_required
+@permission_or_404('ingest.view_contributor', (Contributor, 'pk', 'contributor_pk'))
 def select_or_create_cohort(request, contributor_pk):
-    filters = {'contributor__pk': contributor_pk}
-
-    if not request.user.is_staff:
-        filters['contributor__owners'] = request.user
-
+    contributor = Contributor.objects.get(pk=contributor_pk)
     ctx = {
-        'cohorts': Cohort.objects.filter(**filters).order_by('-created'),
+        'cohorts': contributor.cohorts.order_by('-created'),
         'contributor_pk': contributor_pk,
     }
     if ctx['cohorts'].count() == 0:
@@ -40,6 +32,7 @@ def select_or_create_cohort(request, contributor_pk):
 
 
 @login_required
+@permission_or_404('ingest.add_contributor')
 def upload_contributor_create(request):
     if request.method == 'POST':
         form = ContributorForm(request.POST)
@@ -55,14 +48,9 @@ def upload_contributor_create(request):
 
 
 @login_required
+@permission_or_404('ingest.view_contributor', (Contributor, 'pk', 'contributor_pk'))
 def upload_cohort_create(request, contributor_pk):
-    filters = {}
-    if not request.user.is_staff:
-        filters['owners'] = request.user
-
-    contributor: Contributor = get_object_or_404(
-        Contributor.objects.filter(**filters), pk=contributor_pk
-    )
+    contributor: Contributor = get_object_or_404(Contributor, pk=contributor_pk)
 
     if request.method == 'POST':
         form = CohortForm(request.POST)
@@ -84,17 +72,12 @@ def upload_cohort_create(request, contributor_pk):
 
 
 @login_required
+@permission_or_404('ingest.view_cohort', (Cohort, 'pk', 'pk'))
 def cohort_files(request, pk):
-    filters = {}
-    if not request.user.is_staff:
-        filters['contributor__creator'] = request.user
-
     cohort = get_object_or_404(
-        Cohort.objects.filter(**filters)
-        .prefetch_related(
+        Cohort.objects.prefetch_related(
             Prefetch('metadata_files', queryset=MetadataFile.objects.order_by('-created'))
-        )
-        .prefetch_related('zips'),
+        ).prefetch_related('zips'),
         pk=pk,
     )
     return render(

@@ -29,3 +29,28 @@ class MetadataFile(CreationSortedTimeStampedModel):
         df = df.replace({np.nan: None})
 
         return df
+
+
+class MetadataFilePermissions:
+    model = MetadataFile
+    perms = ['view_metadatafile']
+    filters = {'view_metadatafile': 'view_metadatafile_list'}
+
+    @staticmethod
+    def view_metadatafile_list(user_obj, qs=None):
+        qs = qs or MetadataFile._default_manager.all()
+
+        if not user_obj.is_active or not user_obj.is_authenticated:
+            return qs.none()
+        elif user_obj.is_staff:
+            return qs
+        else:
+            return qs.filter(cohort__contributor__owners__in=[user_obj])
+
+    @staticmethod
+    def view_metadatafile(user_obj, obj):
+        # TODO: use .contains in django 4
+        return MetadataFilePermissions.view_metadatafile_list(user_obj).filter(pk=obj.pk).exists()
+
+
+MetadataFile.perms_class = MetadataFilePermissions

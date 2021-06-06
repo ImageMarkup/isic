@@ -8,7 +8,6 @@ from isic.ingest.views import (
     apply_metadata,
     cohort_detail,
     cohort_files,
-    cohort_list,
     ingest_review,
     metadata_file_create,
     reset_metadata,
@@ -39,7 +38,6 @@ urlpatterns = [
     path('upload/<cohort_pk>/upload-metadata/', metadata_file_create, name='upload-metadata'),
     # Staff pages
     path('staff/ingest-review/', ingest_review, name='ingest-review'),
-    path('staff/cohorts/', cohort_list, name='cohort-list'),
     path('staff/ingest-review/<pk>/', cohort_detail, name='cohort-detail'),
     path(
         'staff/ingest-review/diagnosis/<cohort_pk>/',
