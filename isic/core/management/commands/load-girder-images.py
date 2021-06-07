@@ -53,8 +53,15 @@ def load_girder_images():
             PIL.Image.MAX_IMAGE_PIXELS = 20_000 * 20_000 * 3
             try:
                 img = PIL.Image.open(original_blob_stream)
+                # Explicitly load the image, so any decoding errors can be caught
+                img.load()
             except PIL.Image.UnidentifiedImageError:
                 stripped_blob_dm = ''
+            except OSError as e:
+                if 'image file is truncated' in str(e):
+                    stripped_blob_dm = ''
+                else:
+                    raise
             else:
                 img = img.convert('RGB')
                 stripped_blob_stream = io.BytesIO()
