@@ -42,9 +42,24 @@ class GirderDatasetAdmin(admin.ModelAdmin):
 
 @admin.register(GirderImage)
 class GirderImageAdmin(admin.ModelAdmin):
-    list_select_related = ['dataset']
-    list_display = ['id', 'isic_id', 'item_id', 'dataset', 'original_blob_dm', 'status']
+    list_select_related = ['isic', 'dataset']
+    list_display = ['id', 'isic', 'item_id', 'dataset', 'original_blob_dm', 'status']
     list_filter = ['status']
+    search_fields = ['isic__id', 'item_id']
+
+    readonly_fields = [
+        'isic',
+        'item_id',
+        'file_id',
+        'dataset',
+        'original_filename',
+        'original_file_relpath',
+        'metadata',
+        'unstructured_metadata',
+        'original_blob_dm',
+        'stripped_blob_dm',
+        'accession',
+    ]
 
 
 @admin.register(DuplicateImage)

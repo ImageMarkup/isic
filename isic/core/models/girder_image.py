@@ -17,6 +17,9 @@ class GirderImageStatus(models.TextChoices):
 
 
 class GirderDataset(models.Model):
+    class Meta:
+        ordering = ['id']
+
     id = models.CharField(
         primary_key=True,
         max_length=24,
@@ -43,6 +46,7 @@ class GirderDataset(models.Model):
 
 class GirderImage(models.Model):
     class Meta:
+        ordering = ['item_id']
         # If status is not unknown, must have accession
         constraints = [
             models.CheckConstraint(
@@ -64,7 +68,11 @@ class GirderImage(models.Model):
     # This should typically be referenced as ".isic_id"
     isic = models.OneToOneField(IsicId, on_delete=models.PROTECT, editable=False)
     item_id = models.CharField(
-        unique=True, max_length=24, validators=[RegexValidator(r'^[0-9a-f]{24}$')], editable=False
+        db_index=True,
+        unique=True,
+        max_length=24,
+        validators=[RegexValidator(r'^[0-9a-f]{24}$')],
+        editable=False,
     )
     file_id = models.CharField(
         unique=True, max_length=24, validators=[RegexValidator(r'^[0-9a-f]{24}$')], editable=False
