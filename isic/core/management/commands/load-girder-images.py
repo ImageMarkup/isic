@@ -25,14 +25,28 @@ def load_girder_images():
     ) as items:
         for item in items:
             # Skip existing rows
-            if GirderImage.objects.filter(item_id=str(item['_id'])).exists():
+            girder_image = GirderImage.objects.filter(item_id=str(item['_id'])).first()
+            if girder_image:
+                # Update existing pre-review images
+                girder_folder = girder_db['folder'].find_one({'_id': item['folderId']})
+                pre_review = girder_folder['name'] == 'Pre-review'
+                girder_image.pre_review = pre_review
+                girder_image.save(update_fields=['pre_review'])
+
                 continue
 
             girder_file = girder_db['file'].find_one(
                 {'itemId': item['_id'], 'imageRole': 'original'}
             )
             if not girder_file:
-                raise Exception(f'Could not find original file for item_id: {item["_id"]}')
+                # A few images were not ingested properly, but contain only the original file
+                if girder_db['file'].count_documents({'itemId': item['_id']}) == 1:
+                    girder_file = girder_db['file'].find_one({'itemId': item['_id']})
+                else:
+                    raise Exception(f'Could not find original file for item_id: {item["_id"]}')
+
+            girder_folder = girder_db['folder'].find_one({'_id': item['folderId']})
+            pre_review = girder_folder['name'] == 'Pre-review'
 
             original_blob_resp = requests.get(
                 f'https://isic-archive.com/api/v1/file/{girder_file["_id"]}/download',
@@ -73,6 +87,7 @@ def load_girder_images():
                 status=GirderImageStatus.NON_IMAGE
                 if stripped_blob_dm == ''
                 else GirderImageStatus.UNKNOWN,
+                pre_review=pre_review,
                 isic=IsicId.objects.get_or_create(id=item['name'])[0],
                 item_id=str(item['_id']),
                 file_id=str(girder_file['_id']),

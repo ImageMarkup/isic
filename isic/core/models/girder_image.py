@@ -64,6 +64,7 @@ class GirderImage(models.Model):
     status = models.CharField(
         choices=GirderImageStatus.choices, default=GirderImageStatus.UNKNOWN, max_length=30
     )
+    pre_review = models.BooleanField(null=True)
 
     # This should typically be referenced as ".isic_id"
     isic = models.OneToOneField(IsicId, on_delete=models.PROTECT, editable=False)
