@@ -22,6 +22,9 @@ class IsicId(models.Model):
         validators=[RegexValidator(r'^ISIC_[0-9]{7}$')],
     )
 
+    def __str__(self) -> str:
+        return self.id
+
     @classmethod
     @retry(reraise=True, retry=retry_if_exception_type(IntegrityError), stop=stop_after_attempt(10))
     def safe_create(cls):
