@@ -43,8 +43,8 @@ class GirderDatasetAdmin(admin.ModelAdmin):
 @admin.register(GirderImage)
 class GirderImageAdmin(admin.ModelAdmin):
     list_select_related = ['isic', 'dataset']
-    list_display = ['id', 'isic', 'item_id', 'dataset', 'original_blob_dm', 'status']
-    list_filter = ['status']
+    list_display = ['id', 'isic', 'item_id', 'dataset', 'original_blob_dm', 'status', 'pre_review']
+    list_filter = ['status', 'pre_review']
     search_fields = ['isic__id', 'item_id']
 
     readonly_fields = [
