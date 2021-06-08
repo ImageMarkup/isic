@@ -40,10 +40,18 @@ jobs:
       - name: Install tox
         run: |
           pip install --upgrade pip
-          pip install tox
+          pip install tox pre-commit
       - name: Run tests
         run: |
           tox
+        env:
+          DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+          DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
+          DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
+          DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
+      - name: Run pre-commit
+        run: |
+          pre-commit run --all-files
         env:
           DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
           DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
