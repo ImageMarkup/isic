@@ -3,7 +3,7 @@ import pytest
 from pytest_factoryboy import register
 from rest_framework.test import APIClient
 
-from isic.core.tests.factories import ImageFactory
+from isic.core.tests.factories import CollectionFactory, ImageFactory
 from isic.ingest.tests.factories import (
     AccessionFactory,
     CohortFactory,
@@ -81,6 +81,7 @@ register(ZipFactory)
 
 # core factories
 register(ImageFactory)
+register(CollectionFactory)
 
 # studies factories
 register(QuestionFactory)
