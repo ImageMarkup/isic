@@ -19,12 +19,13 @@ class Profile(models.Model):
         max_length=24,
         unique=True,
         blank=True,
+        # Make this nullable to allow a uniqueness constraint
         null=True,
         validators=[RegexValidator(r'^[0-9a-f]{24}$')],
     )
     # this may be identical to user.password, but it needs to be retained to
     # check if the user password has changed.
-    girder_salt = models.CharField(max_length=60, blank=True, null=True)
+    girder_salt = models.CharField(max_length=60, blank=True)
 
     def sync_from_girder(self) -> None:
         if not settings.ISIC_MONGO_URI:
@@ -46,8 +47,9 @@ class Profile(models.Model):
             changed = True
 
         if self.girder_salt != girder_user['salt']:
-            self.girder_salt = girder_user['salt']
-            if self.girder_salt is None:
+            # An empty salt is stored as None in MongoDB, but should be '' here
+            self.girder_salt = girder_user['salt'] or ''
+            if not self.girder_salt:
                 self.user.set_unusable_password()
             else:
                 self.user.password = f'bcrypt_girder${self.girder_salt}'
@@ -61,5 +63,5 @@ class Profile(models.Model):
 @receiver(post_save, sender=User)
 def create_or_save_user_profile(sender: type[User], instance: User, created: bool, **kwargs):
     if created:
-        profile = Profile(user=instance)
+        profile = Profile.objects.create(user=instance)
         profile.sync_from_girder()
