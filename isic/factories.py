@@ -16,7 +16,7 @@ class ProfileFactory(factory.django.DjangoModelFactory):
 
     girder_id = factory.LazyFunction(ObjectId)
     girder_salt = factory.LazyAttribute(
-        lambda o: bcrypt.using(rounds=4).hash(o.raw_password) if o.raw_password else None
+        lambda o: bcrypt.using(rounds=4).hash(o.raw_password) if o.raw_password else ''
     )
 
     # Pass in profile=None to prevent UserFactory from creating another profile this disables the
