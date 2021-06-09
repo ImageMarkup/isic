@@ -49,3 +49,33 @@ class Contributor(CreationSortedTimeStampedModel):
 
     def __str__(self) -> str:
         return self.institution_name
+
+
+class ContributorPermissions:
+    model = Contributor
+    perms = ['view_contributor', 'add_contributor']
+    filters = {'view_contributor': 'view_contributor_list'}
+
+    @staticmethod
+    def view_contributor_list(user_obj, qs=None):
+        qs = qs or Contributor._default_manager.all()
+
+        if not user_obj.is_active or not user_obj.is_authenticated:
+            return qs.none()
+
+        if user_obj.is_staff:
+            return qs
+
+        return qs.filter(owners__in=[user_obj])
+
+    @staticmethod
+    def view_contributor(user_obj, obj):
+        # TODO: use .contains in django 4
+        return ContributorPermissions.view_contributor_list(user_obj).filter(pk=obj.pk).exists()
+
+    @staticmethod
+    def add_contributor(user_obj, obj=None):
+        return user_obj.is_active and user_obj.is_authenticated
+
+
+Contributor.perms_class = ContributorPermissions

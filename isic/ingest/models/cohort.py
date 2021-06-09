@@ -69,3 +69,28 @@ class Cohort(CreationSortedTimeStampedModel):
                 & Q(distinctnessmeasure__checksum__in=duplicate_cohort_checksums)
             ),
         )
+
+
+class CohortPermissions:
+    model = Cohort
+    perms = ['view_cohort']
+    filters = {'view_cohort': 'view_cohort_list'}
+
+    @staticmethod
+    def view_cohort_list(user_obj, qs=None):
+        qs = qs or Cohort._default_manager.all()
+
+        if not user_obj.is_active or not user_obj.is_authenticated:
+            return qs.none()
+        elif user_obj.is_staff:
+            return qs
+        else:
+            return qs.filter(contributor__owners__in=[user_obj])
+
+    @staticmethod
+    def view_cohort(user_obj, obj):
+        # TODO: use .contains in django 4
+        return CohortPermissions.view_cohort_list(user_obj).filter(pk=obj.pk).exists()
+
+
+Cohort.perms_class = CohortPermissions

@@ -23,7 +23,7 @@ def get_archive_stats():
     }
 
     if settings.ISIC_MONGO_URI:
-        ctx['total_users_count'] = get_girder_db()['user'].count()
+        ctx['total_users_count'] = get_girder_db()['user'].count_documents({})
     else:
         ctx['total_users_count'] = 0
 

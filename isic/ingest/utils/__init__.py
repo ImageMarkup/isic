@@ -14,10 +14,3 @@ def make_breadcrumbs(cohort: Optional[Cohort] = None) -> list:
         ret.append([reverse('cohort-detail', args=[cohort.pk]), cohort.name])
 
     return ret
-
-
-def staff_or_owner_filter(user, creator_field='owner'):
-    if user.is_staff:
-        return {}
-    else:
-        return {creator_field: user}
