@@ -7,6 +7,7 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+from isic.core import MONGO_ID_REGEX
 from isic.login.girder import fetch_girder_user_by_email
 
 logger = logging.getLogger(__name__)
@@ -21,7 +22,7 @@ class Profile(models.Model):
         blank=True,
         # Make this nullable to allow a uniqueness constraint
         null=True,
-        validators=[RegexValidator(r'^[0-9a-f]{24}$')],
+        validators=[RegexValidator(f'^{MONGO_ID_REGEX}$')],
     )
     # this may be identical to user.password, but it needs to be retained to
     # check if the user password has changed.
