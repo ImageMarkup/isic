@@ -1,6 +1,7 @@
 from django.http.response import Http404
 from django.urls import path, register_converter
 
+from isic.core import ISIC_ID_REGEX, MONGO_ID_REGEX
 from isic.core.api import stats as api_stats
 from isic.core.models.image import Image
 from isic.core.models.image_redirect import ImageRedirect
@@ -9,7 +10,7 @@ from isic.ingest.models.accession import Accession
 
 
 class ImageIdentifierConverter:
-    regex = '([0-9]+|[0-9a-f]{24}|ISIC_[0-9]{7})'
+    regex = f'([0-9]+|{MONGO_ID_REGEX}|{ISIC_ID_REGEX})'
 
     def to_python(self, value):
         if value.isnumeric():
