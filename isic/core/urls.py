@@ -14,9 +14,10 @@ class ImageIdentifierConverter:
         if value.isnumeric():
             return int(value)
         else:
-            # TODO: image redirects
             image = get_object_or_404(
-                Image.objects.filter(Q(isic_id=value) | Q(accession__girder_id=value)).values('pk')
+                Image.objects.filter(
+                    Q(isic_id=value) | Q(accession__girder_id=value) | Q(redirects__isic_id=value)
+                ).values('pk')
             )
             return image['pk']
 
