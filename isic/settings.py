@@ -73,8 +73,9 @@ class IsicMixin(ConfigMixin):
         'isic.core.permissions.IsicObjectPermissionsBackend',
     ]
 
+    ISIC_LEGACY_SIGNUP_URL = 'https://www.isic-archive.com/'
     ISIC_DISCOURSE_SSO_SECRET = values.Value(None)
-    ISIC_DISCOURSE_SSO_FAIL_URL = 'https://forum.isic-archive.com'
+    ISIC_DISCOURSE_SSO_FAIL_URL = 'https://forum.isic-archive.com/'
     ISIC_MONGO_URI = values.SecretValue()
 
     CELERY_WORKER_MAX_MEMORY_PER_CHILD = 256 * 1024
