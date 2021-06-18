@@ -25,11 +25,9 @@ class ImageIdentifierConverter:
             if image:
                 return image.pk
 
-            image = Image.objects.filter(
-                redirects=ImageRedirect.objects.filter(isic_id=value).first()
-            ).first()
-            if image:
-                return image.pk
+            redirect = ImageRedirect.objects.filter(isic_id=value).first()
+            if redirect:
+                return redirect.image.pk
 
             raise Http404
 
