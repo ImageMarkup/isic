@@ -1,10 +1,11 @@
-from django.db.models.query_utils import Q
-from django.shortcuts import get_object_or_404
+from django.http.response import Http404
 from django.urls import path, register_converter
 
 from isic.core.api import stats as api_stats
 from isic.core.models.image import Image
+from isic.core.models.image_redirect import ImageRedirect
 from isic.core.views import collection_detail, collection_list, image_detail, staff_list, stats
+from isic.ingest.models.accession import Accession
 
 
 class ImageIdentifierConverter:
@@ -14,12 +15,23 @@ class ImageIdentifierConverter:
         if value.isnumeric():
             return int(value)
         else:
-            image = get_object_or_404(
-                Image.objects.filter(
-                    Q(isic_id=value) | Q(accession__girder_id=value) | Q(redirects__isic_id=value)
-                ).values('pk')
-            )
-            return image['pk']
+            image = Image.objects.filter(isic_id=value).first()
+            if image:
+                return image.pk
+
+            image = Image.objects.filter(
+                accession=Accession.objects.filter(girder_id=value).first()
+            ).first()
+            if image:
+                return image.pk
+
+            image = Image.objects.filter(
+                redirects=ImageRedirect.objects.filter(isic_id=value).first()
+            ).first()
+            if image:
+                return image.pk
+
+            raise Http404
 
     def to_url(self, value):
         return int(value)
