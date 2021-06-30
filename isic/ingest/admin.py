@@ -1,8 +1,13 @@
+import csv
+from datetime import datetime
+
 from django.contrib import admin
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.db import models
 from django.db.models import Count
+from django.db.models.query import Prefetch
 from django.db.models.query_utils import Q
+from django.http import HttpResponse
 from django.template.defaultfilters import filesizeformat
 from django.utils.safestring import mark_safe
 from django_json_widget.widgets import JSONEditorWidget
@@ -89,6 +94,7 @@ class CohortAdmin(admin.ModelAdmin):
         'contributor',
     ]
     search_fields = ['name', 'creator__username']
+    actions = ['export_file_mapping']
 
     autocomplete_fields = ['creator', 'contributor']
     readonly_fields = ['created', 'modified']
@@ -151,6 +157,36 @@ class CohortAdmin(admin.ModelAdmin):
     @admin.display(ordering='successful_accessions_count')
     def successful_accessions(self, obj):
         return intcomma(obj.successful_accessions_count)
+
+    @admin.action(description='Export file mapping')
+    @takes_instance_or_queryset
+    def export_file_mapping(self, request, queryset):
+        current_time = datetime.utcnow().strftime('%Y-%m-%d')
+        response = HttpResponse(content_type='text/csv')
+        response[
+            'Content-Disposition'
+        ] = f'attachment; filename="cohort_file_mapping_{current_time}.csv"'
+
+        writer = csv.DictWriter(
+            response, ['contributor', 'cohort', 'original_file_name', 'isic_id']
+        )
+
+        writer.writeheader()
+        for cohort in queryset.select_related('contributor').prefetch_related(
+            Prefetch('zips__accessions', queryset=Accession.objects.select_related('image'))
+        ):
+            for zip in cohort.zips.all():
+                for accession in zip.accessions.all():
+                    d = {
+                        'contributor': cohort.contributor.institution_name,
+                        'cohort': cohort.name,
+                        'original_file_name': accession.blob_name,
+                        'isic_id': '',
+                    }
+                    if hasattr(accession, 'image'):
+                        d['isic_id'] = accession.image.isic_id
+                    writer.writerow(d)
+        return response
 
 
 @admin.register(MetadataFile)
