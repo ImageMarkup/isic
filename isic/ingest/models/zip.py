@@ -57,13 +57,13 @@ class Zip(CreationSortedTimeStampedModel):
 
         return sorted(blob_name_preexisting), sorted(blob_name_duplicates)
 
-    class ExtractException(Exception):
+    class ExtractError(Exception):
         pass
 
-    class InvalidExtractException(ExtractException):
+    class InvalidExtractError(ExtractError):
         pass
 
-    class DuplicateExtractException(ExtractException):
+    class DuplicateExtractError(ExtractError):
         pass
 
     def extract(self):
@@ -79,7 +79,7 @@ class Zip(CreationSortedTimeStampedModel):
 
                 blob_name_preexisting, blob_name_duplicates = self._get_preexisting_and_duplicates()
                 if blob_name_preexisting or blob_name_duplicates:
-                    raise Zip.DuplicateExtractException(blob_name_preexisting, blob_name_duplicates)
+                    raise Zip.DuplicateExtractError(blob_name_preexisting, blob_name_duplicates)
 
                 with self.blob.open('rb') as zip_blob_stream:
                     for zip_item in items_in_zip(zip_blob_stream):
@@ -105,8 +105,8 @@ class Zip(CreationSortedTimeStampedModel):
         except zipfile.BadZipFile as e:
             logger.warning('Failed zip extraction: %d <%s>: invalid zip: %s', self.pk, self, e)
             self.status = Zip.Status.FAILED
-            raise Zip.InvalidExtractException
-        except Zip.DuplicateExtractException:
+            raise Zip.InvalidExtractError
+        except Zip.DuplicateExtractError:
             logger.warning('Failed zip extraction: %d <%s>: duplicates', self.pk, self)
             self.status = Zip.Status.FAILED
             raise
@@ -118,7 +118,7 @@ class Zip(CreationSortedTimeStampedModel):
     def extract_and_notify(self):
         try:
             self.extract()
-        except Zip.InvalidExtractException:
+        except Zip.InvalidExtractError:
             send_mail(
                 'A problem processing your zip file',
                 render_to_string(
@@ -131,7 +131,7 @@ class Zip(CreationSortedTimeStampedModel):
                 [self.creator.email],
             )
             raise
-        except Zip.DuplicateExtractException as e:
+        except Zip.DuplicateExtractError as e:
             blob_name_preexisting, blob_name_duplicates = e.args
             send_mail(
                 'A problem processing your zip file',
