@@ -73,7 +73,7 @@ class IsicMixin(ConfigMixin):
         'isic.core.permissions.IsicObjectPermissionsBackend',
     ]
 
-    ISIC_LEGACY_SIGNUP_URL = 'https://www.isic-archive.com/'
+    ISIC_LEGACY_SIGNUP_URL = values.Value(None)
     ISIC_DISCOURSE_SSO_SECRET = values.Value(None)
     ISIC_DISCOURSE_SSO_FAIL_URL = 'https://forum.isic-archive.com/'
     ISIC_MONGO_URI = values.SecretValue()
