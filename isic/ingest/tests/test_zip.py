@@ -105,7 +105,7 @@ def test_zip_extract_success_accession_original_blob_size(zip):
 
 @pytest.mark.django_db
 def test_zip_extract_invalid(caplog, invalid_zip):
-    with pytest.raises(Zip.InvalidExtractException):
+    with pytest.raises(Zip.InvalidExtractError):
         invalid_zip.extract()
 
     message = next((msg for msg in caplog.messages if 'Failed zip extraction' in msg), None)
@@ -119,7 +119,7 @@ def test_zip_extract_invalid(caplog, invalid_zip):
 
 @pytest.mark.django_db
 def test_zip_extract_duplicate(caplog, preexisting_and_duplicates_zip):
-    with pytest.raises(Zip.DuplicateExtractException):
+    with pytest.raises(Zip.DuplicateExtractError):
         preexisting_and_duplicates_zip.extract()
 
     message = next((msg for msg in caplog.messages if 'Failed zip extraction' in msg), None)
@@ -143,7 +143,7 @@ def test_zip_extract_and_notify_success(mailoutbox, zip):
 
 @pytest.mark.django_db
 def test_zip_extract_and_notify_invalid(mailoutbox, invalid_zip):
-    with pytest.raises(Zip.InvalidExtractException):
+    with pytest.raises(Zip.InvalidExtractError):
         invalid_zip.extract_and_notify()
 
     assert len(mailoutbox) == 1
@@ -154,7 +154,7 @@ def test_zip_extract_and_notify_invalid(mailoutbox, invalid_zip):
 
 @pytest.mark.django_db
 def test_zip_extract_and_notify_duplicate(mailoutbox, preexisting_and_duplicates_zip):
-    with pytest.raises(Zip.DuplicateExtractException):
+    with pytest.raises(Zip.DuplicateExtractError):
         preexisting_and_duplicates_zip.extract_and_notify()
 
     assert len(mailoutbox) == 1
