@@ -27,7 +27,7 @@ def extract_zip(zip_pk: int):
 
     try:
         zip.extract_and_notify()
-    except Zip.ExtractException:
+    except Zip.ExtractError:
         # Errors from bad input; these will be logged, but the task is not a failure
         pass
     except SoftTimeLimitExceeded:
