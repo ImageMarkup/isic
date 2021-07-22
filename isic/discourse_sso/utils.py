@@ -18,7 +18,7 @@ class SSOParamSet:
     return_url: str
 
 
-class SSOException(Exception):
+class SSOError(Exception):
     pass
 
 
@@ -27,7 +27,7 @@ def _get_sso_parameters(request: HttpRequest) -> SSOParamSet:
     sig = request.GET.get('sig')
 
     if not sig or not sso:
-        raise SSOException('Invalid SSO parameters.')
+        raise SSOError('Invalid SSO parameters.')
 
     sso = sso.encode('utf-8')
 
@@ -37,7 +37,7 @@ def _get_sso_parameters(request: HttpRequest) -> SSOParamSet:
     parsed = urllib.parse.parse_qs(qs)
 
     if 'nonce' not in parsed or 'return_sso_url' not in parsed:
-        raise SSOException('Invalid SSO parameters.')
+        raise SSOError('Invalid SSO parameters.')
     else:
         nonce = parsed['nonce'][0]
         return_url = parsed['return_sso_url'][0]
@@ -50,7 +50,7 @@ def _get_sso_parameters(request: HttpRequest) -> SSOParamSet:
     ).hexdigest()
     if sig != expected_signature:
         # TODO: log forged sso
-        raise SSOException('Invalid SSO parameters.')
+        raise SSOError('Invalid SSO parameters.')
 
     return SSOParamSet(sso, sig, nonce, return_url)
 
