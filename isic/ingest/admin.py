@@ -158,7 +158,7 @@ class CohortAdmin(admin.ModelAdmin):
     def successful_accessions(self, obj):
         return intcomma(obj.successful_accessions_count)
 
-    @admin.action(description='Export file mapping')
+    @admin.action(description='Export original file mapping')
     @takes_instance_or_queryset
     def export_file_mapping(self, request, queryset):
         current_time = datetime.utcnow().strftime('%Y-%m-%d')
@@ -167,9 +167,7 @@ class CohortAdmin(admin.ModelAdmin):
             'Content-Disposition'
         ] = f'attachment; filename="cohort_file_mapping_{current_time}.csv"'
 
-        writer = csv.DictWriter(
-            response, ['contributor', 'cohort', 'original_file_name', 'isic_id']
-        )
+        writer = csv.DictWriter(response, ['contributor', 'cohort', 'filename', 'isic_id'])
 
         writer.writeheader()
         for cohort in queryset.select_related('contributor').prefetch_related(
@@ -180,11 +178,9 @@ class CohortAdmin(admin.ModelAdmin):
                     d = {
                         'contributor': cohort.contributor.institution_name,
                         'cohort': cohort.name,
-                        'original_file_name': accession.blob_name,
-                        'isic_id': '',
+                        'filename': accession.blob_name,
+                        'isic_id': accession.image.isic_id if hasattr(accession, 'image') else '',
                     }
-                    if hasattr(accession, 'image'):
-                        d['isic_id'] = accession.image.isic_id
                     writer.writerow(d)
         return response
 
