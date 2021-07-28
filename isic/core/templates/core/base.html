@@ -20,7 +20,7 @@
 {% block body %}
   <body>
     <nav class="bg-white shadow">
-      <div class="max-w-7xl mx-auto px-6 lg:px-8">
+      <div class="mx-auto px-6 lg:px-8" style="max-width:1400px;">
         <div class="relative flex justify-between h-16">
           <div class="flex-1 flex items-stretch justify-start">
             <div class="flex-shrink-0 flex items-center">
@@ -90,10 +90,17 @@
                 </a>
               </div>
             {% else %}
-              <div class="hidden md:ml-4 md:flex-shrink-0 md:flex md:items-center">
-                <div class="ml-3 relative">
-                  {{request.user.email}}
+              <div class="flex justify-between">
+                <div class="hidden md:ml-4 mr-4 md:flex-shrink-0 md:flex md:items-center">
+                  <div class="ml-3 relative">
+                    {{request.user.email}}
+                  </div>
                 </div>
+                <a href="{% url 'account_logout' %}">
+                  <button type="button" class="relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <span>Sign Out</span>
+                  </button>
+                </a>
               </div>
             {% endif %}
           </div>
