@@ -43,7 +43,7 @@ class IsicMixin(ConfigMixin):
         configuration.PASSWORD_HASHERS += ['isic.login.backends.GirderPasswordHasher']
 
         configuration.REST_FRAMEWORK.update(
-            {'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated']}
+            {'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny']}
         )
         configuration.OAUTH2_PROVIDER.update(
             {
