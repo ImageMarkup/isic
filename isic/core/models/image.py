@@ -1,13 +1,13 @@
 from django.db import models
 from django.urls import reverse
-from django_extensions.db.models import TimeStampedModel
 
+from isic.core.models.base import CreationSortedTimeStampedModel
 from isic.ingest.models import Accession
 
 from .isic_id import IsicId
 
 
-class Image(TimeStampedModel):
+class Image(CreationSortedTimeStampedModel):
     accession = models.OneToOneField(
         Accession,
         on_delete=models.PROTECT,
@@ -24,3 +24,26 @@ class Image(TimeStampedModel):
 
     def get_absolute_url(self):
         return reverse('core/image-detail', args=[self.pk])
+
+
+class ImagePermissions:
+    model = Image
+    perms = ['view_image']
+    filters = {'view_image': 'view_image_list'}
+
+    @staticmethod
+    def view_image_list(user_obj, qs=None):
+        qs = qs if qs is not None else Image._default_manager.all()
+
+        if user_obj.is_staff:
+            return qs
+        else:
+            return qs.filter(public=True)
+
+    @staticmethod
+    def view_image(user_obj, obj):
+        # TODO: use .contains in django 4
+        return ImagePermissions.view_image_list(user_obj).filter(pk=obj.pk).exists()
+
+
+Image.perms_class = ImagePermissions

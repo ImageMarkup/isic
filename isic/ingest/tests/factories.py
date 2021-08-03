@@ -83,3 +83,5 @@ class AccessionFactory(factory.django.DjangoModelFactory):
     phi_check = factory.Faker('boolean')
     duplicate_check = factory.Faker('boolean')
     lesion_check = factory.Faker('boolean')
+
+    metadata = factory.DictFactory()
