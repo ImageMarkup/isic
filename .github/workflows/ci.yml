@@ -17,6 +17,12 @@ jobs:
           POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
+      elasticsearch:
+        image: elasticsearch:7.14.0
+        env:
+          discovery.type: single-node
+        ports:
+          - 9200:9200
       rabbitmq:
         image: rabbitmq:management
         ports:
@@ -46,6 +52,7 @@ jobs:
           tox
         env:
           DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+          DJANGO_ISIC_ELASTICSEARCH_URI: http://localhost:9200
           DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
           DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
           DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey

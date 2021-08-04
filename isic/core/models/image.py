@@ -25,6 +25,30 @@ class Image(CreationSortedTimeStampedModel):
     def get_absolute_url(self):
         return reverse('core/image-detail', args=[self.pk])
 
+    @property
+    def as_elasticsearch_document(self) -> dict:
+        m = dict(self.accession.metadata)
+
+        # The age has to be stored in the search index in rounded form, otherwise searches
+        # (e.g. 'age:47') could leak the true age.
+        if 'age' in m:
+            m['age_approx'] = self.accession.age_approx
+            del m['age']
+
+        for f in ['patient_id', 'lesion_id']:
+            if f in m:
+                del m[f]
+
+        return {
+            **{
+                'id': self.pk,
+                'created': self.created,
+                'isic_id': self.isic_id,
+                'public': self.public,
+            },
+            **m,
+        }
+
 
 class ImagePermissions:
     model = Image
