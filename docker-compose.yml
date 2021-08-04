@@ -8,6 +8,13 @@ services:
     ports:
       - ${DOCKER_POSTGRES_PORT-5432}:5432
 
+  elasticsearch:
+    image: elasticsearch:7.14.0
+    environment:
+      discovery.type: single-node
+    ports:
+      - 9200:9200
+
   rabbitmq:
     image: rabbitmq:management
     ports:

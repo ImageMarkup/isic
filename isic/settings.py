@@ -77,6 +77,8 @@ class IsicMixin(ConfigMixin):
     ISIC_DISCOURSE_SSO_SECRET = values.Value(None)
     ISIC_DISCOURSE_SSO_FAIL_URL = 'https://forum.isic-archive.com/'
     ISIC_MONGO_URI = values.SecretValue()
+    ISIC_ELASTICSEARCH_URI = values.SecretValue()
+    ISIC_ELASTICSEARCH_INDEX = 'isic'
 
     CELERY_WORKER_MAX_MEMORY_PER_CHILD = 256 * 1024
 
@@ -89,8 +91,9 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
         'from django.core.files.uploadedfile import UploadedFile',
         'import pandas as pd',
         'from isic.ingest.validators import *',
+        'from elasticsearch import Elasticsearch',
+        'from isic.core.search import *',
     ]
-
     ISIC_MONGO_URI = values.Value(None)
     # Allow developers to run tasks synchronously for easy debugging
     CELERY_TASK_ALWAYS_EAGER = values.BooleanValue(False)
@@ -100,6 +103,7 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
 class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
     ISIC_DISCOURSE_SSO_SECRET = 'discourse_secret'
     ISIC_MONGO_URI = None
+    ISIC_ELASTICSEARCH_INDEX = 'isic-testing'
 
 
 class ProductionConfiguration(IsicMixin, ProductionBaseConfiguration):
@@ -107,4 +111,6 @@ class ProductionConfiguration(IsicMixin, ProductionBaseConfiguration):
 
 
 class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration):
-    pass
+    ISIC_ELASTICSEARCH_URI = values.SecretValue(
+        environ_name='FOUNDELASTICSEARCH_URL', environ_prefix=None
+    )

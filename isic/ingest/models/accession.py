@@ -1,3 +1,5 @@
+from typing import Optional
+
 from django.db import models
 from django.db.models.aggregates import Count
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
@@ -142,3 +144,8 @@ class Accession(CreationSortedTimeStampedModel):
                 rejected=Count('pk', filter=Q(lesion_check=False), distinct=True),
             ),
         }
+
+    @property
+    def age_approx(self) -> Optional[int]:
+        if 'age' in self.metadata:
+            return int(round(self.metadata['age'] / 5.0) * 5)
