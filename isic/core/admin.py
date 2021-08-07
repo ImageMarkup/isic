@@ -85,11 +85,11 @@ class ImageAdmin(admin.ModelAdmin):
     search_fields = ['isic_id']
 
     autocomplete_fields = ['accession']
-    readonly_fields = ['created', 'modified', 'thumbnail']
+    readonly_fields = ['created', 'modified', 'thumbnail_image']
 
     @admin.display()
-    def thumbnail(self, obj):
-        return mark_safe(f'<img src="{obj.accession.blob.url}" width="300" height="300" />')
+    def thumbnail_image(self, obj):
+        return mark_safe(f'<img src="{obj.accession.thumbnail.url}" />')
 
 
 @admin.register(ImageRedirect)

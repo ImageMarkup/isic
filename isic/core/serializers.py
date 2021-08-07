@@ -11,12 +11,17 @@ class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
         fields = [
-            'public',
             'isic_id',
+            'public',
+            'thumbnail',
             'metadata',
         ]
 
     metadata = serializers.SerializerMethodField()
+    thumbnail = serializers.SerializerMethodField()
+
+    def get_thumbnail(self, obj) -> str:
+        return obj.accession.thumbnail.url
 
     def get_metadata(self, obj) -> dict:
         if 'age' in obj.accession.metadata:

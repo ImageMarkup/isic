@@ -206,7 +206,7 @@ class AccessionAdmin(admin.ModelAdmin):
     list_filter = ['status']
     search_fields = ['blob_name', 'girder_id']
 
-    readonly_fields = ['created', 'modified', 'thumbnail', 'distinctnessmeasure']
+    readonly_fields = ['created', 'modified', 'thumbnail_image', 'distinctnessmeasure']
     inlines = [CheckLogInline]
     formfield_overrides = {
         models.JSONField: {'widget': JSONEditorWidget},
@@ -221,8 +221,8 @@ class AccessionAdmin(admin.ModelAdmin):
         return obj.upload.cohort
 
     @admin.display()
-    def thumbnail(self, obj):
-        return mark_safe(f'<img src="{obj.blob.url}" width="300" height="300" />')
+    def thumbnail_image(self, obj):
+        return mark_safe(f'<img src="{obj.thumbnail.url}" />')
 
 
 @admin.register(CheckLog)

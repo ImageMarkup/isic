@@ -23,6 +23,22 @@ from isic.ingest.validators import MetadataRow
 
 
 @shared_task
+def create_thumbnail(accession_pk: int) -> None:
+    accession = Accession.objects.get(pk=accession_pk)
+
+    with accession.blob.open() as blob_stream:
+        img = PIL.Image.open(blob_stream)
+
+    img.thumbnail((256, 256))
+    img_bytes = io.BytesIO()
+    img.save(img_bytes, format='JPEG')
+    accession.thumbnail = SimpleUploadedFile(
+        accession.blob_name, img_bytes.getvalue(), 'image/jpeg'
+    )
+    accession.save(update_fields=['thumbnail'])
+
+
+@shared_task
 def extract_zip(zip_pk: int):
     zip = Zip.objects.get(pk=zip_pk)
 
@@ -75,6 +91,7 @@ def process_accession(accession_id: int):
         accession.save(update_fields=['status'])
 
         process_distinctness_measure.delay(accession.id)
+        create_thumbnail.delay(accession.id)
     except SoftTimeLimitExceeded:
         accession.status = AccessionStatus.FAILED
         accession.save(update_fields=['status'])
