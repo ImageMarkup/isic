@@ -63,6 +63,8 @@ class Accession(CreationSortedTimeStampedModel):
     width = models.PositiveIntegerField(null=True)
     height = models.PositiveIntegerField(null=True)
 
+    thumbnail = S3FileField(blank=True)
+
     # required checks
     quality_check = models.BooleanField(null=True, db_index=True)
     diagnosis_check = models.BooleanField(null=True, db_index=True)
