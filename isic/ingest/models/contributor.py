@@ -58,7 +58,7 @@ class ContributorPermissions:
 
     @staticmethod
     def view_contributor_list(user_obj, qs=None):
-        qs = qs or Contributor._default_manager.all()
+        qs = qs if qs is not None else Contributor._default_manager.all()
 
         if not user_obj.is_active or not user_obj.is_authenticated:
             return qs.none()

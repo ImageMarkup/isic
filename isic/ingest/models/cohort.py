@@ -78,7 +78,7 @@ class CohortPermissions:
 
     @staticmethod
     def view_cohort_list(user_obj, qs=None):
-        qs = qs or Cohort._default_manager.all()
+        qs = qs if qs is not None else Cohort._default_manager.all()
 
         if not user_obj.is_active or not user_obj.is_authenticated:
             return qs.none()
