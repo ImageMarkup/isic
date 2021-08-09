@@ -19,7 +19,7 @@ class GirderPasswordHasher(BasePasswordHasher):
     algorithm = 'bcrypt_girder'
 
     def verify(self, password: str, encoded: str) -> bool:
-        return bcrypt.verify(password, encoded.replace('bcrypt_girder$', ''))
+        return bcrypt.verify(password, encoded.split('$', 1)[1])
 
     def salt(self):
         return bcrypt._generate_salt()
