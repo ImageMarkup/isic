@@ -1,8 +1,8 @@
 from django.http.response import Http404
 from django.urls import path, register_converter
 
-from isic.core import ISIC_ID_REGEX, MONGO_ID_REGEX
 from isic.core.api import stats as api_stats
+from isic.core.constants import ISIC_ID_REGEX, MONGO_ID_REGEX
 from isic.core.models.image import Image
 from isic.core.models.image_redirect import ImageRedirect
 from isic.core.views import collection_detail, collection_list, image_detail, staff_list, stats

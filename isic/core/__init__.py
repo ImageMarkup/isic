@@ -1,2 +1,0 @@
-MONGO_ID_REGEX = '[0-9a-f]{24}'
-ISIC_ID_REGEX = 'ISIC_[0-9]{7}'

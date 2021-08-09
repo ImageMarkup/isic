@@ -2,7 +2,7 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 
-from isic.core import MONGO_ID_REGEX
+from isic.core.constants import MONGO_ID_REGEX
 from isic.ingest.models import Accession
 
 from .image import Image
