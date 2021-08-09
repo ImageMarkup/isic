@@ -3,7 +3,7 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Q
 
-from isic.core import MONGO_ID_REGEX
+from isic.core.constants import MONGO_ID_REGEX
 from isic.core.models.isic_id import IsicId
 from isic.ingest.models import Accession
 from isic.login.girder import get_girder_db

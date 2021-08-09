@@ -4,7 +4,7 @@ from django.core.validators import RegexValidator
 from django.db import IntegrityError, models
 from tenacity import retry, retry_if_exception_type, stop_after_attempt
 
-from isic.core import ISIC_ID_REGEX
+from isic.core.constants import ISIC_ID_REGEX
 
 
 def _default_id():

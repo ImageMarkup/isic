@@ -7,7 +7,7 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from isic.core import MONGO_ID_REGEX
+from isic.core.constants import MONGO_ID_REGEX
 from isic.login.girder import fetch_girder_user_by_email
 
 logger = logging.getLogger(__name__)
