@@ -4,6 +4,8 @@ from django.core.validators import RegexValidator
 from django.db import IntegrityError, models
 from tenacity import retry, retry_if_exception_type, stop_after_attempt
 
+from isic.core.constants import ISIC_ID_REGEX
+
 
 def _default_id():
     while True:
@@ -19,7 +21,7 @@ class IsicId(models.Model):
         default=_default_id,
         verbose_name='ISIC ID',
         max_length=12,
-        validators=[RegexValidator(r'^ISIC_[0-9]{7}$')],
+        validators=[RegexValidator(f'^{ISIC_ID_REGEX}$')],
     )
 
     def __str__(self) -> str:
