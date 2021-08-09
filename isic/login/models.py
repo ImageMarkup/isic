@@ -28,15 +28,13 @@ class Profile(models.Model):
     girder_salt = models.CharField(max_length=60, blank=True)
 
     def sync_from_girder(self) -> None:
-        if not settings.ISIC_MONGO_URI:
-            logger.warning('No ISIC_MONGO_URI configured; cannot sync from Girder.')
+        girder_user = fetch_girder_user_by_email(self.user.email)
+        if not girder_user:
+            # If this is a Django-native signup, the girder_user will not have been created yet
+            logger.info(f'Cannot retrieve girder_user for {self.user.email}.')
             return
 
         changed = False
-
-        girder_user = fetch_girder_user_by_email(self.user.email)
-        if not girder_user:
-            raise Exception(f'Cannot retrieve girder_user for {self.user.email}.')
 
         if self.girder_id != str(girder_user['_id']):
             self.girder_id = str(girder_user['_id'])
@@ -64,4 +62,5 @@ class Profile(models.Model):
 def create_or_save_user_profile(sender: type[User], instance: User, created: bool, **kwargs):
     if created:
         profile = Profile.objects.create(user=instance)
-        profile.sync_from_girder()
+        if settings.ISIC_MONGO_URI:
+            profile.sync_from_girder()
