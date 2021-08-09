@@ -73,6 +73,8 @@ class IsicMixin(ConfigMixin):
         'isic.core.permissions.IsicObjectPermissionsBackend',
     ]
 
+    ACCOUNT_SIGNUP_FORM_CLASS = 'isic.login.forms.RealNameSignupForm'
+
     ISIC_LEGACY_SIGNUP_URL = values.Value(None)
     ISIC_DISCOURSE_SSO_SECRET = values.Value(None)
     ISIC_DISCOURSE_SSO_FAIL_URL = 'https://forum.isic-archive.com/'
