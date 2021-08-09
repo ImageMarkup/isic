@@ -40,7 +40,7 @@ def create_girder_user(
     last_name: str,
     password: str,
 ) -> None:
-    get_girder_db()['user'].insert_one(
+    insert_result = get_girder_db()['user'].insert_one(
         {
             'login': email,
             'email': email,
@@ -53,9 +53,23 @@ def create_girder_user(
             'size': 0,
             'groups': [],
             'groupInvites': [],
+            'access': {'users': [], 'groups': []},
             'public': False,
             'salt': make_password(password, hasher='bcrypt_girder').split('$', 1)[1],
         }
+    )
+    # Grant the new user ADMIN access to itself
+    get_girder_db()['user'].update_one(
+        {'_id': insert_result.inserted_id},
+        {
+            '$addToSet': {
+                'access.users': {
+                    'id': insert_result.inserted_id,
+                    'level': 2,
+                    'flags': [],
+                }
+            }
+        },
     )
     # In Girder, the "Study Administrators" group receives read access to this new girder_user,
     # but that requirement is obsolete
