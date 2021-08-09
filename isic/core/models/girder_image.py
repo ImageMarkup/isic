@@ -3,6 +3,7 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Q
 
+from isic.core.constants import MONGO_ID_REGEX
 from isic.core.models.isic_id import IsicId
 from isic.ingest.models import Accession
 from isic.login.girder import get_girder_db
@@ -23,7 +24,7 @@ class GirderDataset(models.Model):
     id = models.CharField(
         primary_key=True,
         max_length=24,
-        validators=[RegexValidator(r'^[0-9a-f]{24}$')],
+        validators=[RegexValidator(f'^{MONGO_ID_REGEX}$')],
     )
     name = models.CharField(max_length=255)
     public = models.BooleanField()
@@ -72,11 +73,14 @@ class GirderImage(models.Model):
         db_index=True,
         unique=True,
         max_length=24,
-        validators=[RegexValidator(r'^[0-9a-f]{24}$')],
+        validators=[RegexValidator(f'^{MONGO_ID_REGEX}$')],
         editable=False,
     )
     file_id = models.CharField(
-        unique=True, max_length=24, validators=[RegexValidator(r'^[0-9a-f]{24}$')], editable=False
+        unique=True,
+        max_length=24,
+        validators=[RegexValidator(f'^{MONGO_ID_REGEX}$')],
+        editable=False,
     )
 
     dataset = models.ForeignKey(

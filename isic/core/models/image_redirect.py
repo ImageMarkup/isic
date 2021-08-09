@@ -2,6 +2,7 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 
+from isic.core.constants import MONGO_ID_REGEX
 from isic.ingest.models import Accession
 
 from .image import Image
@@ -13,7 +14,7 @@ class DuplicateImage(TimeStampedModel):
     girder_id = models.CharField(
         max_length=24,
         unique=True,
-        validators=[RegexValidator(r'^[0-9a-f]{24}$')],
+        validators=[RegexValidator(f'^{MONGO_ID_REGEX}$')],
     )
     # This should typically be referenced as ".isic_id"
     isic = models.OneToOneField(IsicId, on_delete=models.PROTECT, editable=False)
