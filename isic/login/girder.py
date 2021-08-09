@@ -5,6 +5,7 @@ from typing import Optional
 
 from bson import ObjectId
 from django.conf import settings
+from django.contrib.auth.hashers import make_password
 from pymongo import MongoClient
 from pymongo.database import Database
 
@@ -31,6 +32,33 @@ def fetch_girder_user_by_id(girder_user_id: str) -> Optional[dict]:
 
 def fetch_girder_user_by_email(email: str) -> Optional[dict]:
     return _fetch_girder_user({'email': email.lower()})
+
+
+def create_girder_user(
+    email: str,
+    first_name: str,
+    last_name: str,
+    password: str,
+) -> None:
+    get_girder_db()['user'].insert_one(
+        {
+            'login': email,
+            'email': email,
+            'firstName': first_name,
+            'lastName': last_name,
+            'created': datetime.datetime.utcnow(),
+            'emailVerified': False,
+            'status': 'enabled',
+            'admin': False,
+            'size': 0,
+            'groups': [],
+            'groupInvites': [],
+            'public': False,
+            'salt': make_password(password, hasher='bcrypt_girder').split('$', 1)[1],
+        }
+    )
+    # In Girder, the "Study Administrators" group receives read access to this new girder_user,
+    # but that requirement is obsolete
 
 
 def create_girder_token(girder_user_id: str) -> str:
