@@ -1,4 +1,5 @@
 import datetime
+import hashlib
 import random
 import string
 from typing import Optional
@@ -56,8 +57,13 @@ def create_girder_user(
             'access': {'users': [], 'groups': []},
             'public': False,
             'salt': make_password(password, hasher='bcrypt_girder').split('$', 1)[1],
+            'gravatar_baseUrl': (
+                'https://www.gravatar.com/avatar/'
+                f'{hashlib.md5(email.strip().lower().encode("utf-8")).hexdigest()}?d=identicon'
+            ),
         }
     )
+
     # Grant the new user ADMIN access to itself
     get_girder_db()['user'].update_one(
         {'_id': insert_result.inserted_id},
