@@ -83,3 +83,6 @@ class AccessionFactory(factory.django.DjangoModelFactory):
     phi_check = factory.Faker('boolean')
     duplicate_check = factory.Faker('boolean')
     lesion_check = factory.Faker('boolean')
+
+    # Using "metadata = factory.Dict" breaks pytest-factoryboy; see
+    # https://github.com/pytest-dev/pytest-factoryboy/issues/67
