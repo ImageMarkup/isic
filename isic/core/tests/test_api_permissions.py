@@ -11,13 +11,11 @@ def images(image_factory):
 
 @pytest.mark.django_db
 def test_core_api_image_list(images, api_client, authenticated_api_client, staff_api_client):
-    r = api_client.get('/api/v2/images/')
-    assert r.status_code == 200, r.data
-
-    r = authenticated_api_client.get('/api/v2/images/')
-    assert r.status_code == 200, r.data
-    assert r.data['count'] == 1
-    assert {x['public'] for x in r.data['results']} == {True}
+    for client in [api_client, authenticated_api_client]:
+        r = client.get('/api/v2/images/')
+        assert r.status_code == 200, r.data
+        assert r.data['count'] == 1
+        assert {x['public'] for x in r.data['results']} == {True}
 
     r = staff_api_client.get('/api/v2/images/')
     assert r.status_code == 200, r.data
