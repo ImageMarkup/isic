@@ -20,6 +20,7 @@ jobs:
       elasticsearch:
         image: elasticsearch:7.14.0
         env:
+          ES_JAVA_OPTS: "-Xms250m -Xmx750m"
           discovery.type: single-node
         ports:
           - 9200:9200
