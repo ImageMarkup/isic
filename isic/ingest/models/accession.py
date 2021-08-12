@@ -147,5 +147,4 @@ class Accession(CreationSortedTimeStampedModel):
 
     @property
     def age_approx(self) -> Optional[int]:
-        if 'age' in self.metadata:
-            return int(round(self.metadata['age'] / 5.0) * 5)
+        return int(round(self.metadata['age'] / 5.0) * 5) if 'age' in self.metadata else None
