@@ -6,9 +6,10 @@ from isic.core.search import bulk_add_to_search_index, get_elasticsearch_client,
 
 
 @click.command(help='Populate the Elasticsearch index')
-def populate_elasticsearch():
+@click.option('--chunk-size', default=500)
+def populate_elasticsearch(chunk_size):
     es = get_elasticsearch_client()
     es.indices.delete(index=settings.ISIC_ELASTICSEARCH_INDEX)
     maybe_create_index()
-    bulk_add_to_search_index(Image.objects.all())
+    bulk_add_to_search_index(Image.objects.all(), chunk_size=chunk_size)
     es.indices.refresh(index='_all')
