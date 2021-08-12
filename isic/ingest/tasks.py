@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 
 from isic.core.models import Image
+from isic.core.search import add_to_search_index
 from isic.ingest.models import (
     Accession,
     AccessionStatus,
@@ -124,10 +125,12 @@ def apply_metadata(metadatafile_id: int):
 def publish_accession(accession_id: int, public: bool):
     accession = Accession.objects.get(pk=accession_id)
 
-    Image.objects.create(
+    image = Image.objects.create(
         accession=accession,
         public=public,
     )
+
+    add_to_search_index(image)
 
 
 @shared_task
