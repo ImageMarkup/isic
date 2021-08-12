@@ -7,6 +7,8 @@ from django.db.models.query import QuerySet
 from elasticsearch.client import Elasticsearch
 from elasticsearch.helpers.actions import streaming_bulk
 
+from isic.core.models import Image
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_SEARCH_AGGREGATES = {
@@ -68,11 +70,11 @@ DEFAULT_SEARCH_AGGREGATES = {
 
 
 @lru_cache
-def get_elasticsearch_client():
+def get_elasticsearch_client() -> Elasticsearch:
     return Elasticsearch(settings.ISIC_ELASTICSEARCH_URI)
 
 
-def maybe_create_index():
+def maybe_create_index() -> None:
     # TODO: include private meta fields (e.g. patient/lesion id)
     get_elasticsearch_client().indices.create(
         index=settings.ISIC_ELASTICSEARCH_INDEX,
@@ -113,13 +115,13 @@ def maybe_create_index():
     )
 
 
-def add_to_search_index(image) -> None:
+def add_to_search_index(image: Image) -> None:
     get_elasticsearch_client().index(
         index=settings.ISIC_ELASTICSEARCH_INDEX, body=image.as_elasticsearch_document
     )
 
 
-def bulk_add_to_search_index(qs: QuerySet) -> None:
+def bulk_add_to_search_index(qs: QuerySet[Image]) -> None:
     # Use a generator for lazy evaluation
     image_documents = (
         image.as_elasticsearch_document for image in qs.select_related('accession').all()
