@@ -83,8 +83,7 @@ def maybe_create_index() -> None:
             'mappings': {
                 'properties': {
                     'created': {'type': 'date'},
-                    # TODO: unique index name?
-                    'name': {'type': 'text'},
+                    'isic_id': {'type': 'text'},
                     'public': {'type': 'boolean'},
                     'age_approx': {'type': 'integer'},
                     'sex': {'type': 'keyword'},
