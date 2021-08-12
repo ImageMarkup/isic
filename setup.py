@@ -55,6 +55,7 @@ setup(
         'django-object-actions',
         'djangorestframework',
         'drf-yasg',
+        'elasticsearch<7.14.0',
         'pandas',
         'passlib[bcrypt]',
         'Pillow',
