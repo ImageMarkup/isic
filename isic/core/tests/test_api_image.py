@@ -1,15 +1,14 @@
-from time import sleep
-
 import pytest
 
-from isic.core.search import add_to_search_index
+from isic.core.search import add_to_search_index, get_elasticsearch_client
 
 
 @pytest.fixture
 def searchable_image(search_index, image_factory):
     image = image_factory(accession__metadata={'age': 52}, public=True)
     add_to_search_index(image)
-    sleep(1)  # TODO: see flakiness issue in other tests.
+    # Ensure that the image is available in the index for search
+    get_elasticsearch_client().indices.refresh(index='_all')
     return image
 
 
