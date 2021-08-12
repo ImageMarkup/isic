@@ -113,6 +113,4 @@ class ProductionConfiguration(IsicMixin, ProductionBaseConfiguration):
 
 
 class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration):
-    ISIC_ELASTICSEARCH_URI = values.SecretValue(
-        environ_name='FOUNDELASTICSEARCH_URL', environ_prefix=None
-    )
+    ISIC_ELASTICSEARCH_URI = values.SecretValue(environ_name='SEARCHBOX_URL', environ_prefix=None)
