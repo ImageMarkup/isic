@@ -13,6 +13,8 @@ services:
     environment:
       ES_JAVA_OPTS: "-Xms250m -Xmx750m"
       discovery.type: single-node
+      xpack.security.enabled: "true"
+      ELASTIC_PASSWORD: elastic
     ports:
       - 9200:9200
 
