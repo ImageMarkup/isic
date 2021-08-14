@@ -1,5 +1,11 @@
+from typing import Optional
+
+from django.contrib.auth.models import User
 from django.db import models
+from django.db.models.query import QuerySet
+from django.db.models.query_utils import Q
 from django.urls import reverse
+from django_extensions.db.models import TimeStampedModel
 
 from isic.core.models.base import CreationSortedTimeStampedModel
 from isic.ingest.models import Accession
@@ -20,6 +26,10 @@ class Image(CreationSortedTimeStampedModel):
     )
 
     public = models.BooleanField(default=False)
+
+    shares = models.ManyToManyField(
+        User, through='ImageShare', through_fields=['image', 'recipient']
+    )
 
     def __str__(self):
         return self.isic_id
@@ -46,9 +56,20 @@ class Image(CreationSortedTimeStampedModel):
                 'created': self.created,
                 'isic_id': self.isic_id,
                 'public': self.public,
+                # TODO: make sure these fields can't be searched on
+                'contributor_owner_ids': [
+                    user.pk for user in self.accession.upload.cohort.contributor.owners.all()
+                ],
+                'shared_to': [user.pk for user in self.shares.all()],
             },
             **m,
         }
+
+
+class ImageShare(TimeStampedModel):
+    creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name='shares')
+    image = models.ForeignKey(Image, on_delete=models.CASCADE)
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
 class ImagePermissions:
@@ -57,16 +78,22 @@ class ImagePermissions:
     filters = {'view_image': 'view_image_list'}
 
     @staticmethod
-    def view_image_list(user_obj, qs=None):
-        qs = qs if qs is not None else Image._default_manager.all()
+    def view_image_list(user_obj: User, qs: Optional[QuerySet[Image]] = None) -> QuerySet[Image]:
+        qs: QuerySet = qs if qs is not None else Image._default_manager.all()
 
         if user_obj.is_staff:
             return qs
+        elif not user_obj.is_anonymous:
+            return qs.filter(
+                Q(public=True)
+                | Q(accession__upload__cohort__contributor__owners=user_obj)
+                | Q(shares=user_obj)
+            )
         else:
             return qs.filter(public=True)
 
     @staticmethod
-    def view_image(user_obj, obj):
+    def view_image(user_obj: User, obj: Image) -> bool:
         # TODO: use .contains in django 4
         return ImagePermissions.view_image_list(user_obj).filter(pk=obj.pk).exists()
 
