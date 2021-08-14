@@ -29,9 +29,16 @@ def build_filtered_query(user: User, query: Optional[str] = None) -> dict:
     if query:
         query_dict['bool']['must'] = {'query_string': {'query': query}}
 
-    if not user.is_staff:
-        # filter has the same conditions as must but can also cache the result of the filter.
-        query_dict['bool']['filter'] = {'term': {'public': 'true'}}
+    if user.is_anonymous:
+        query_dict['bool']['should'] = [{'term': {'public': 'true'}}]
+    elif not user.is_staff:
+        query_dict['bool']['should'] = [
+            {'term': {'public': 'true'}},
+            {'terms': {'shared_to': [user.pk]}},
+            {'terms': {'contributor_owner_ids': [user.pk]}},
+        ]
+        # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html#bool-min-should-match
+        query_dict['bool']['minimum_should_match'] = 1
 
     return query_dict
 
