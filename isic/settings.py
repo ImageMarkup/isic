@@ -42,9 +42,6 @@ class IsicMixin(ConfigMixin):
         # it will be upgraded on login.
         configuration.PASSWORD_HASHERS += ['isic.login.backends.GirderPasswordHasher']
 
-        configuration.REST_FRAMEWORK.update(
-            {'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny']}
-        )
         configuration.OAUTH2_PROVIDER.update(
             {
                 'SCOPES': {
