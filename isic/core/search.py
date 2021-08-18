@@ -120,7 +120,7 @@ def add_to_search_index(image: Image) -> None:
     )
 
 
-def bulk_add_to_search_index(qs: QuerySet[Image]) -> None:
+def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 500) -> None:
     # Use a generator for lazy evaluation
     image_documents = (
         image.as_elasticsearch_document for image in qs.select_related('accession').all()
@@ -130,6 +130,8 @@ def bulk_add_to_search_index(qs: QuerySet[Image]) -> None:
         client=get_elasticsearch_client(),
         index=settings.ISIC_ELASTICSEARCH_INDEX,
         actions=image_documents,
+        # The default chunk_size is 500, but that may be too many models to fit into memory
+        chunk_size=chunk_size,
     ):
         if not success:
             logger.error('Failed to insert document into elasticsearch', info)
