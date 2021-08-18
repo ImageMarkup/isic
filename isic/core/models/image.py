@@ -6,6 +6,8 @@ from isic.ingest.models import Accession
 
 from .isic_id import IsicId
 
+RESTRICTED_SEARCH_FIELDS = ['age', 'patient_id', 'lesion_id']
+
 
 class Image(CreationSortedTimeStampedModel):
     accession = models.OneToOneField(
@@ -33,9 +35,8 @@ class Image(CreationSortedTimeStampedModel):
         # (e.g. 'age:47') could leak the true age.
         if 'age' in m:
             m['age_approx'] = self.accession.age_approx
-            del m['age']
 
-        for f in ['patient_id', 'lesion_id']:
+        for f in RESTRICTED_SEARCH_FIELDS:
             if f in m:
                 del m[f]
 
