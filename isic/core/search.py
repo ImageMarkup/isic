@@ -33,8 +33,6 @@ DEFAULT_SEARCH_AGGREGATES = {
         }
     },
     'melanocytic': {'terms': {'field': 'melanocytic'}},
-    'patient_id': {'terms': {'field': 'patient_id'}},
-    'lesion_id': {'terms': {'field': 'lesion_id'}},
     'acquisition_day': {'terms': {'field': 'acquisition_day'}},
     'marker_pen': {'terms': {'field': 'marker_pen'}},
     'hairy': {'terms': {'field': 'hairy'}},
