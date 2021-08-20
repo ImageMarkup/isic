@@ -1,5 +1,8 @@
+import io
 from typing import Optional
 
+import PIL.Image
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models
 from django.db.models.aggregates import Count
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
@@ -79,6 +82,35 @@ class Accession(CreationSortedTimeStampedModel):
 
     def __str__(self) -> str:
         return self.blob_name
+
+    def generate_thumbnail(self) -> None:
+        with self.blob.open() as blob_stream:
+            img: PIL.Image.Image = PIL.Image.open(blob_stream)
+            # Load the image so the stream can be closed
+            img.load()
+
+        # LANCZOS provides the best anti-aliasing
+        img.thumbnail((256, 256), resample=PIL.Image.LANCZOS)
+
+        with io.BytesIO() as thumbnail_stream:
+            # 75 quality uses ~55% as much space as 90 quality, with only a very slight drop in
+            # perceptible quality
+            img.save(thumbnail_stream, format='JPEG', quality=75, optimize=True)
+            thumbnail_stream.seek(0)
+
+            self.thumbnail = InMemoryUploadedFile(
+                file=thumbnail_stream,
+                field_name=None,
+                name=(
+                    f'{self.image.isic_id}_thumbnail.jpg'
+                    if hasattr(self, 'image')
+                    else 'thumbnail.jpg'
+                ),
+                content_type='image/jpeg',
+                size=thumbnail_stream.getbuffer().nbytes,
+                charset=None,
+            )
+            self.save(update_fields=['thumbnail'])
 
     @staticmethod
     def rejected_filter():

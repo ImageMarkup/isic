@@ -13,14 +13,14 @@ class ImageSerializer(serializers.ModelSerializer):
         fields = [
             'isic_id',
             'public',
-            'thumbnail',
             'metadata',
+            'thumbnail_url',
         ]
 
     metadata = serializers.SerializerMethodField()
-    thumbnail = serializers.SerializerMethodField()
+    thumbnail_url = serializers.SerializerMethodField()
 
-    def get_thumbnail(self, obj) -> str:
+    def get_thumbnail_url(self, obj) -> str:
         return obj.accession.thumbnail.url
 
     def get_metadata(self, obj) -> dict:

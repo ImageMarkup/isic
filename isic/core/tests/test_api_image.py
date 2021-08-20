@@ -1,4 +1,5 @@
 import pytest
+import requests
 
 from isic.core.search import add_to_search_index, get_elasticsearch_client
 
@@ -35,3 +36,20 @@ def test_core_api_image_ages_are_always_rounded(
         r = client.get('/api/v2/images/search/', {'query': 'age_approx:52'})
         assert r.status_code == 200, r.data
         assert r.data['count'] == 0
+
+
+@pytest.mark.django_db
+def test_api_image_thumbnail_url(api_client, image_factory):
+    image = image_factory(public=True)
+
+    api_resp = api_client.get(f'/api/v2/images/{image.isic_id}/')
+    thumbnail_url = api_resp.data.get('thumbnail_url')
+    assert thumbnail_url
+    storage_resp = requests.get(thumbnail_url)
+
+    assert storage_resp.status_code == 200
+    # TODO: MinioStorage doesn't respect FieldFile.content_type, so there's no point to this
+    # assertion, even though it succeeds
+    # assert storage_resp.headers['Content-Type'] == 'image/jpeg'
+    # TODO: Fix Content-Disposition
+    # assert 'thumbnail' in storage_resp.headers['Content-Disposition']
