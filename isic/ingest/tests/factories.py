@@ -77,6 +77,7 @@ class AccessionFactory(factory.django.DjangoModelFactory):
     original_blob = factory.django.FileField(from_path=data_dir / 'ISIC_0000000.jpg')
     blob = factory.django.FileField(from_path=data_dir / 'ISIC_0000000.jpg')
     blob_name = factory.SelfAttribute('original_blob.name')
+    thumbnail_256 = factory.django.FileField(from_path=data_dir / 'ISIC_0000000_thumbnail_256.jpg')
 
     quality_check = factory.Faker('boolean')
     diagnosis_check = factory.Faker('boolean')
