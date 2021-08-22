@@ -23,6 +23,12 @@ from isic.ingest.validators import MetadataRow
 
 
 @shared_task
+def generate_thumbnail_task(accession_pk: int) -> None:
+    accession = Accession.objects.get(pk=accession_pk)
+    accession.generate_thumbnail()
+
+
+@shared_task
 def extract_zip(zip_pk: int):
     zip = Zip.objects.get(pk=zip_pk)
 
@@ -75,6 +81,7 @@ def process_accession(accession_id: int):
         accession.save(update_fields=['status'])
 
         process_distinctness_measure.delay(accession.id)
+        generate_thumbnail_task.delay(accession.pk)
     except SoftTimeLimitExceeded:
         accession.status = AccessionStatus.FAILED
         accession.save(update_fields=['status'])
