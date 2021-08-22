@@ -7,6 +7,10 @@ class SearchQuerySerializer(serializers.Serializer):
     query = serializers.CharField(required=False)
 
 
+class ImageUrlSerializer(serializers.Serializer):
+    thumbnail_256 = serializers.URLField(source='accession.thumbnail.url')
+
+
 class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
@@ -14,14 +18,11 @@ class ImageSerializer(serializers.ModelSerializer):
             'isic_id',
             'public',
             'metadata',
-            'thumbnail_url',
+            'urls',
         ]
 
     metadata = serializers.SerializerMethodField()
-    thumbnail_url = serializers.SerializerMethodField()
-
-    def get_thumbnail_url(self, obj) -> str:
-        return obj.accession.thumbnail.url
+    urls = ImageUrlSerializer(source='*', read_only=True)
 
     def get_metadata(self, obj) -> dict:
         if 'age' in obj.accession.metadata:

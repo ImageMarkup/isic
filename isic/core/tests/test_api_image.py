@@ -43,10 +43,13 @@ def test_api_image_thumbnail_url(api_client, image_factory):
     image = image_factory(public=True)
 
     api_resp = api_client.get(f'/api/v2/images/{image.isic_id}/')
-    thumbnail_url = api_resp.data.get('thumbnail_url')
-    assert thumbnail_url
-    storage_resp = requests.get(thumbnail_url)
 
+    assert isinstance(api_resp.data.get('urls'), dict)
+    assert isinstance(api_resp.data['urls'].get('thumbnail_256'), str)
+    thumbnail_url = api_resp.data['urls']['thumbnail_256']
+    assert thumbnail_url
+
+    storage_resp = requests.get(thumbnail_url)
     assert storage_resp.status_code == 200
     # TODO: MinioStorage doesn't respect FieldFile.content_type, so there's no point to this
     # assertion, even though it succeeds
