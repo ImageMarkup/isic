@@ -8,7 +8,7 @@ class SearchQuerySerializer(serializers.Serializer):
 
 
 class ImageUrlSerializer(serializers.Serializer):
-    thumbnail_256 = serializers.URLField(source='accession.thumbnail.url')
+    thumbnail_256 = serializers.URLField(source='accession.thumbnail_256.url')
 
 
 class ImageSerializer(serializers.ModelSerializer):
