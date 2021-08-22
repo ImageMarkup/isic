@@ -66,7 +66,7 @@ class Accession(CreationSortedTimeStampedModel):
     width = models.PositiveIntegerField(null=True)
     height = models.PositiveIntegerField(null=True)
 
-    thumbnail = S3FileField(blank=True)
+    thumbnail_256 = S3FileField(blank=True)
 
     # required checks
     quality_check = models.BooleanField(null=True, db_index=True)
@@ -98,19 +98,19 @@ class Accession(CreationSortedTimeStampedModel):
             img.save(thumbnail_stream, format='JPEG', quality=75, optimize=True)
             thumbnail_stream.seek(0)
 
-            self.thumbnail = InMemoryUploadedFile(
+            self.thumbnail_256 = InMemoryUploadedFile(
                 file=thumbnail_stream,
                 field_name=None,
                 name=(
-                    f'{self.image.isic_id}_thumbnail.jpg'
+                    f'{self.image.isic_id}_thumbnail_256.jpg'
                     if hasattr(self, 'image')
-                    else 'thumbnail.jpg'
+                    else 'thumbnail_256.jpg'
                 ),
                 content_type='image/jpeg',
                 size=thumbnail_stream.getbuffer().nbytes,
                 charset=None,
             )
-            self.save(update_fields=['thumbnail'])
+            self.save(update_fields=['thumbnail_256'])
 
     @staticmethod
     def rejected_filter():

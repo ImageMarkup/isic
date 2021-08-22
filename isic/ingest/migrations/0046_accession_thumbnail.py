@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='accession',
-            name='thumbnail',
+            name='thumbnail_256',
             field=s3_file_field.fields.S3FileField(blank=True),
         ),
     ]

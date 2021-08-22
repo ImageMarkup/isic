@@ -222,7 +222,7 @@ class AccessionAdmin(admin.ModelAdmin):
 
     @admin.display()
     def thumbnail_image(self, obj):
-        return mark_safe(f'<img src="{obj.thumbnail.url}" />')
+        return mark_safe(f'<img src="{obj.thumbnail_256.url}" />')
 
 
 @admin.register(CheckLog)

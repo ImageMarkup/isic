@@ -89,7 +89,7 @@ class ImageAdmin(admin.ModelAdmin):
 
     @admin.display()
     def thumbnail_image(self, obj):
-        return mark_safe(f'<img src="{obj.accession.thumbnail.url}" />')
+        return mark_safe(f'<img src="{obj.accession.thumbnail_256.url}" />')
 
 
 @admin.register(ImageRedirect)
