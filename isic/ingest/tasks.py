@@ -29,7 +29,7 @@ def generate_thumbnail_task(accession_pk: int) -> None:
 
 
 @shared_task
-def extract_zip(zip_pk: int):
+def extract_zip_task(zip_pk: int):
     zip = Zip.objects.get(pk=zip_pk)
 
     try:
@@ -44,12 +44,12 @@ def extract_zip(zip_pk: int):
     else:
         # tasks should be delayed after the accessions are committed to the database
         for accession_id in zip.accessions.values_list('id', flat=True):
-            process_accession.delay(accession_id)
+            process_accession_task.delay(accession_id)
 
 
 @shared_task(soft_time_limit=60, time_limit=90)
-def process_accession(accession_id: int):
-    accession = Accession.objects.get(pk=accession_id)
+def process_accession_task(accession_pk: int):
+    accession = Accession.objects.get(pk=accession_pk)
 
     try:
         content = accession.original_blob.open().read()
@@ -80,7 +80,7 @@ def process_accession(accession_id: int):
         accession.status = AccessionStatus.SUCCEEDED
         accession.save(update_fields=['status'])
 
-        process_distinctness_measure.delay(accession.id)
+        process_distinctness_measure_task.delay(accession.pk)
         generate_thumbnail_task.delay(accession.pk)
     except SoftTimeLimitExceeded:
         accession.status = AccessionStatus.FAILED
@@ -93,8 +93,8 @@ def process_accession(accession_id: int):
 
 
 @shared_task(soft_time_limit=60, time_limit=90)
-def process_distinctness_measure(accession_id: int):
-    accession = Accession.objects.get(pk=accession_id)
+def process_distinctness_measure_task(accession_pk: int):
+    accession = Accession.objects.get(pk=accession_pk)
 
     with accession.blob.open() as blob_stream:
         checksum = DistinctnessMeasure.compute_checksum(blob_stream)
@@ -103,8 +103,8 @@ def process_distinctness_measure(accession_id: int):
 
 
 @shared_task
-def apply_metadata(metadatafile_id: int):
-    metadata_file = MetadataFile.objects.get(pk=metadatafile_id)
+def apply_metadata_task(metadata_file_pk: int):
+    metadata_file = MetadataFile.objects.get(pk=metadata_file_pk)
     with metadata_file.blob.open() as csv:
         df = pd.read_csv(csv, header=0)
 
@@ -129,8 +129,8 @@ def apply_metadata(metadatafile_id: int):
 
 
 @shared_task
-def publish_accession(accession_id: int, public: bool):
-    accession = Accession.objects.get(pk=accession_id)
+def publish_accession_task(accession_pk: int, public: bool):
+    accession = Accession.objects.get(pk=accession_pk)
 
     image = Image.objects.create(
         accession=accession,
@@ -141,12 +141,12 @@ def publish_accession(accession_id: int, public: bool):
 
 
 @shared_task
-def publish_cohort(cohort_id: int, public: bool):
-    cohort = Cohort.objects.get(pk=cohort_id)
+def publish_cohort_task(cohort_pk: int, public: bool):
+    cohort = Cohort.objects.get(pk=cohort_pk)
     for accession in (
         Accession.objects.filter(status=AccessionStatus.SUCCEEDED)
         .exclude(Accession.rejected_filter())
         .filter(image__isnull=True, upload__cohort=cohort)
         .values_list('pk', flat=True)
     ):
-        publish_accession.delay(accession, public)
+        publish_accession_task.delay(accession.pk, public)
