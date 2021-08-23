@@ -39,7 +39,7 @@ def test_core_api_image_ages_are_always_rounded(
 
 
 @pytest.mark.django_db
-def test_api_image_thumbnail_url(api_client, image_factory):
+def test_api_image_urls_thumbnail_256(api_client, image_factory):
     image = image_factory(public=True)
 
     api_resp = api_client.get(f'/api/v2/images/{image.isic_id}/')
@@ -49,10 +49,27 @@ def test_api_image_thumbnail_url(api_client, image_factory):
     thumbnail_url = api_resp.data['urls']['thumbnail_256']
     assert thumbnail_url
 
-    storage_resp = requests.get(thumbnail_url)
+    # "stream=True", as there's no need to download the actual response body
+    storage_resp = requests.get(thumbnail_url, stream=True)
     assert storage_resp.status_code == 200
     # TODO: MinioStorage doesn't respect FieldFile.content_type, so there's no point to this
     # assertion, even though it succeeds
     # assert storage_resp.headers['Content-Type'] == 'image/jpeg'
     # TODO: Fix Content-Disposition
     # assert 'thumbnail' in storage_resp.headers['Content-Disposition']
+
+
+@pytest.mark.django_db
+def test_api_image_urls_full(api_client, image_factory):
+    image = image_factory(public=True)
+
+    api_resp = api_client.get(f'/api/v2/images/{image.isic_id}/')
+
+    assert isinstance(api_resp.data.get('urls'), dict)
+    assert isinstance(api_resp.data['urls'].get('full'), str)
+    full_url = api_resp.data['urls']['full']
+    assert full_url
+
+    # "stream=True", as there's no need to download the actual response body
+    storage_resp = requests.get(full_url, stream=True)
+    assert storage_resp.status_code == 200
