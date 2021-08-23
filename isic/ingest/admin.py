@@ -24,6 +24,7 @@ from isic.ingest.models import (
     MetadataFile,
     Zip,
 )
+from isic.ingest.tasks import extract_zip_task
 
 
 class CohortInline(ReadonlyTabularInline):
@@ -257,8 +258,6 @@ class ZipAdmin(DjangoObjectActions, admin.ModelAdmin):
     @admin.action(description='Extract zip')
     @takes_instance_or_queryset
     def extract_zip(self, request, queryset):
-        from isic.ingest.tasks import extract_zip as extract_zip_task
-
         for zip in queryset:
             zip.reset()
             extract_zip_task.delay(zip.pk)

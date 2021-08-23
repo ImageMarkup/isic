@@ -11,7 +11,7 @@ from django.urls.base import reverse
 
 from isic.core.permissions import permission_or_404
 from isic.ingest.models import Accession, AccessionStatus, Cohort, DistinctnessMeasure, Zip
-from isic.ingest.tasks import extract_zip
+from isic.ingest.tasks import extract_zip_task
 from isic.ingest.utils import make_breadcrumbs
 
 from .metadata import *  # noqa
@@ -37,7 +37,7 @@ def zip_create(request, cohort_pk):
             form.instance.blob_name = os.path.basename(form.instance.blob.name)
             form.instance.cohort = cohort
             form.save(commit=True)
-            extract_zip.delay(form.instance.pk)
+            extract_zip_task.delay(form.instance.pk)
             return HttpResponseRedirect(reverse('upload/cohort-files', args=[cohort.pk]))
     else:
         form = ZipForm()
