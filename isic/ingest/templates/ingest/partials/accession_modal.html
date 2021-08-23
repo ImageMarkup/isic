@@ -9,12 +9,12 @@
     <div @click.away="open = false" class="inline-block align-top bg-white rounded-lg p-8 text-left overflow-hidden shadow-xl transform transition-all my-8 align-middle max-w-2xl p-6" role="dialog" aria-modal="true" aria-labelledby="modal-headline">
       {% if accession.status != 'skipped' %}
         {% if debug %}
-          <img @click="open = true" src="https://picsum.photos/seed/{{accession.id}}/600">
+          <img src="https://picsum.photos/seed/{{accession.id}}/1000">
         {% else %}
-          <img @click="open = true" src="{{ accession.blob.url }}" title="{{ accession.blob_name }}" />
+          <img src="{{ accession.blob.url }}" title="{{ accession.blob_name }}" />
         {% endif %}
       {% else  %}
-        <img @click="open = true" src="https://via.placeholder.com/600x600.png?text={{ accession.blob_name }}" />
+        <img src="https://via.placeholder.com/1000x1000.png?text={{ accession.blob_name }}" />
       {% endif %}
       <div class="mt-5 sm:mt-6">
         <button @click="open = false" type="button" class="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm">

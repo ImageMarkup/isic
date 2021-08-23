@@ -5,9 +5,9 @@
   <div x-data="{ open: false }" class="pb-4">
     <a class="cursor-pointer">
       {% if debug %}
-        <img @click="open = true" src="https://picsum.photos/seed/{{image.id}}/300">
+        <img @click="open = true" src="https://picsum.photos/seed/{{image.id}}/256">
       {% else %}
-        <img @click="open = true" src="{{ image.accession.blob.url }}"  width="300" height="300" title="{{ image.accession.blob_name }}" />
+        <img @click="open = true" src="{{ image.accession.thumbnail_256.url }}" title="{{ image.accession.blob_name }}" />
       {% endif %}
     </a>
 
