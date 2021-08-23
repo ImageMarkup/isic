@@ -11,7 +11,7 @@
         {% if debug %}
           <img @click="open = true" src="https://picsum.photos/seed/{{accession.id}}/600">
         {% else %}
-          <img @click="open = true" src="{{ accession.blob.url }}" title="{{ accession.blob_name }}" />
+          <img @click="open = true" src="{{ accession.thumbnail_256.url }}" title="{{ accession.blob_name }}" />
         {% endif %}
       {% else  %}
         <img @click="open = true" src="https://via.placeholder.com/600x600.png?text={{ accession.blob_name }}" />
