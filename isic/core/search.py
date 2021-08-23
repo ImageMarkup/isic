@@ -110,9 +110,7 @@ def maybe_create_index() -> None:
     except NotFoundError:
         # Need to create
         get_elasticsearch_client().indices.create(
-            index=settings.ISIC_ELASTICSEARCH_INDEX,
-            ignore=400,  # ignore status code 400 (index already exists)
-            body={'mappings': INDEX_MAPPINGS},
+            index=settings.ISIC_ELASTICSEARCH_INDEX, body={'mappings': INDEX_MAPPINGS}
         )
     else:
         # "indices" also contains "settings", which are unspecified by us, so only compare
