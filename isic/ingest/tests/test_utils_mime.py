@@ -5,7 +5,7 @@ from isic.ingest.utils.mime import guess_mime_type
 data_dir = pathlib.Path(__file__).parent / 'data'
 
 
-def test_utils_mime_guess_mime_type_consistant(caplog):
+def test_utils_mime_guess_mime_type_consistent(caplog):
     file_path = data_dir / 'ISIC_0000000.jpg'
 
     with file_path.open('rb') as stream:
@@ -15,7 +15,7 @@ def test_utils_mime_guess_mime_type_consistant(caplog):
     assert not any('Inconsistent MIME types' in msg for msg in caplog.messages)
 
 
-def test_utils_mime_guess_mime_type_inconsistant(caplog):
+def test_utils_mime_guess_mime_type_inconsistent(caplog):
     file_path = data_dir / 'ISIC_0000000.jpg'
 
     with file_path.open('rb') as stream:
