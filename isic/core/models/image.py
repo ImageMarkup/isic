@@ -39,19 +39,20 @@ class Image(CreationSortedTimeStampedModel):
 
     @property
     def as_elasticsearch_document(self) -> dict:
-        m = dict(self.accession.metadata)
+        # This dict's values should all be immutable, otherwise a deep copy would be necessary
+        document = dict(self.accession.metadata)
 
         # The age has to be stored in the search index in rounded form, otherwise searches
         # (e.g. 'age:47') could leak the true age.
-        if 'age' in m:
-            m['age_approx'] = self.accession.age_approx
+        if 'age' in document:
+            document['age_approx'] = self.accession.age_approx
 
         for f in RESTRICTED_SEARCH_FIELDS:
-            if f in m:
-                del m[f]
+            if f in document:
+                del document[f]
 
-        return {
-            **{
+        document.update(
+            {
                 'id': self.pk,
                 'created': self.created,
                 'isic_id': self.isic_id,
@@ -61,9 +62,10 @@ class Image(CreationSortedTimeStampedModel):
                     user.pk for user in self.accession.upload.cohort.contributor.owners.all()
                 ],
                 'shared_to': [user.pk for user in self.shares.all()],
-            },
-            **m,
-        }
+            }
+        )
+
+        return document
 
 
 class ImageShare(TimeStampedModel):
