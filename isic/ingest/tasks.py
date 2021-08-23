@@ -5,7 +5,6 @@ from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
-import magic
 import numpy as np
 import pandas as pd
 
@@ -19,6 +18,7 @@ from isic.ingest.models import (
     MetadataFile,
     Zip,
 )
+from isic.ingest.utils.mime import guess_mime_type
 from isic.ingest.validators import MetadataRow
 
 
@@ -52,15 +52,15 @@ def process_accession_task(accession_pk: int):
     accession = Accession.objects.get(pk=accession_pk)
 
     try:
-        content = accession.original_blob.open().read()
-
-        m = magic.Magic(mime=True)
-        major_mime_type, _ = m.from_buffer(content).split('/')
-
-        if major_mime_type != 'image':
+        with accession.original_blob.open('rb') as original_blob_stream:
+            blob_mime_type = guess_mime_type(original_blob_stream, accession.blob_name)
+        blob_major_mime_type = blob_mime_type.partition('/')[0]
+        if blob_major_mime_type != 'image':
             accession.status = AccessionStatus.SKIPPED
             accession.save(update_fields=['status'])
             return
+
+        content = accession.original_blob.open().read()
 
         # determines image is readable, and strips exif tags
         img = PIL.Image.open(io.BytesIO(content))
