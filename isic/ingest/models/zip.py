@@ -12,7 +12,7 @@ from django.template.loader import render_to_string
 from s3_file_field import S3FileField
 
 from isic.core.models import CreationSortedTimeStampedModel
-from isic.ingest.zip_utils import file_names_in_zip, items_in_zip
+from isic.ingest.utils.zip import file_names_in_zip, items_in_zip
 
 from .cohort import Cohort
 
