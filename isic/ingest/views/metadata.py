@@ -127,7 +127,7 @@ def apply_metadata(request, cohort_pk):
                     checkpoints[3]['run'] = True
 
                     if not checkpoints[3]['problems']:
-                        # apply_metadata_task.delay(form.instance.id)
+                        # apply_metadata_task.delay(form.instance.pk)
                         ctx['successful'] = True
 
     else:

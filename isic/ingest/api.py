@@ -7,7 +7,7 @@ from rest_framework.response import Response
 
 from isic.ingest.models import Accession, MetadataFile
 from isic.ingest.serializers import AccessionSerializer, MetadataFileSerializer
-from isic.ingest.tasks import apply_metadata
+from isic.ingest.tasks import apply_metadata_task
 
 
 class AccessionSoftAcceptCheckSerializer(serializers.Serializer):
@@ -73,5 +73,5 @@ class MetadataFileViewSet(
     @action(detail=True, methods=['post'])
     def apply_metadata(self, request, pk=None):
         metadata_file = self.get_object()
-        apply_metadata.delay(metadata_file.id)
+        apply_metadata_task.delay(metadata_file.pk)
         return Response(status=status.HTTP_202_ACCEPTED)

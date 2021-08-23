@@ -2,7 +2,7 @@ import pandas as pd
 from pydantic import ValidationError
 import pytest
 
-from isic.ingest.tasks import apply_metadata
+from isic.ingest.tasks import apply_metadata_task
 from isic.ingest.utils.metadata import get_unstructured_columns, validate_csv_format_and_filenames
 from isic.ingest.validators import MetadataRow
 
@@ -35,7 +35,7 @@ def valid_metadatafile(cohort, metadata_file_factory, csv_stream_valid):
 @pytest.mark.django_db
 def test_apply_metadata(accession_factory, valid_metadatafile, cohort):
     accession = accession_factory(upload__cohort=cohort, blob_name='filename.jpg')
-    apply_metadata(valid_metadatafile.pk)
+    apply_metadata_task(valid_metadatafile.pk)
     accession.refresh_from_db()
     assert accession.metadata == {'benign_malignant': 'benign'}
     assert accession.unstructured_metadata == {'foo': 'bar'}
