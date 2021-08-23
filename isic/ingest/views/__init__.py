@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
@@ -12,11 +13,15 @@ from django.urls.base import reverse
 from isic.core.permissions import permission_or_404
 from isic.ingest.models import Accession, AccessionStatus, Cohort, DistinctnessMeasure, Zip
 from isic.ingest.tasks import extract_zip_task
-from isic.ingest.utils import make_breadcrumbs
 
-from .metadata import *  # noqa
-from .review_apps import *  # noqa
-from .upload import *  # noqa
+
+def make_breadcrumbs(cohort: Optional[Cohort] = None) -> list:
+    ret = [[reverse('ingest-review'), 'Ingest Review']]
+
+    if cohort:
+        ret.append([reverse('cohort-detail', args=[cohort.pk]), cohort.name])
+
+    return ret
 
 
 class ZipForm(ModelForm):
