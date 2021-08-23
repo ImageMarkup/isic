@@ -37,7 +37,7 @@
       <div class="flex justify-between pt-4">
         <div>
           {% if debug %}
-            <img src="https://picsum.photos/seed/{{image.accession.id}}/256/256" style="object-fit: cover;" />
+            <img src="https://picsum.photos/seed/{{image.accession.id}}/256" style="object-fit: cover;" />
           {% else %}
             <img src="{{ image.accession.thumbnail_256.url }}" style="object-fit: cover;" />
           {% endif %}
