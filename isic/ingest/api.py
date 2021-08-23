@@ -20,7 +20,7 @@ from isic.ingest.serializers import (
     ContributorSerializer,
     MetadataFileSerializer,
 )
-from isic.ingest.tasks import apply_metadata_task, process_accession_task
+from isic.ingest.tasks import accession_generate_blob_task, apply_metadata_task
 
 
 class AccessionPermissions(BasePermission):
@@ -57,7 +57,7 @@ To create an Accession you must provide an "original_blob" which comports to an 
 
     def perform_create(self, serializer):
         accession = serializer.save(creator=self.request.user)
-        process_accession_task.delay(accession.pk)
+        accession_generate_blob_task.delay(accession.pk)
 
     # override method just to disable the auto-schema for it
     @swagger_auto_schema(auto_schema=None)

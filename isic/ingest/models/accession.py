@@ -1,5 +1,6 @@
 import io
 from mimetypes import guess_type
+import tempfile
 
 import PIL.Image
 from django.contrib.auth.models import User
@@ -15,6 +16,7 @@ from s3_file_field import S3FileField
 
 from isic.core.models import CreationSortedTimeStampedModel
 from isic.ingest.models.cohort import Cohort
+from isic.ingest.utils.mime import guess_mime_type
 from isic.ingest.utils.zip import Blob
 
 from .zip_upload import ZipUpload
@@ -42,6 +44,10 @@ class Approx(Transform):
 JSONField.register_lookup(Approx)
 
 
+class InvalidBlobError(Exception):
+    pass
+
+
 class AccessionStatus(models.TextChoices):
     CREATING = 'creating', 'Creating'
     CREATED = 'created', 'Created'
@@ -61,10 +67,15 @@ class Accession(CreationSortedTimeStampedModel):
             UniqueConstraint(
                 name='accession_unique_girder_id', fields=['girder_id'], condition=~Q(girder_id='')
             ),
-            # require width/height for succeeded accessions
+            # require blob_size / width / height for succeeded accessions
             CheckConstraint(
-                name='accession_wh_status_check',
-                check=Q(status=AccessionStatus.SUCCEEDED, width__isnull=False, height__isnull=False)
+                name='accession_succeeded_blob_fields',
+                check=Q(
+                    status=AccessionStatus.SUCCEEDED,
+                    blob_size__isnull=False,
+                    width__isnull=False,
+                    height__isnull=False,
+                )
                 | ~Q(status=AccessionStatus.SUCCEEDED),
             ),
         ]
@@ -89,15 +100,14 @@ class Accession(CreationSortedTimeStampedModel):
 
     # When instantiated, blob is empty, as it holds the EXIF-stripped image
     blob = S3FileField(blank=True)
+    # nullable unless status is succeeded
     blob_size = models.PositiveBigIntegerField(null=True, default=None, editable=False)
+    width = models.PositiveIntegerField(null=True)
+    height = models.PositiveIntegerField(null=True)
 
     status = models.CharField(
         choices=AccessionStatus.choices, max_length=20, default=AccessionStatus.CREATING
     )
-
-    # nullable unless status is succeeded
-    width = models.PositiveIntegerField(null=True)
-    height = models.PositiveIntegerField(null=True)
 
     thumbnail_256 = S3FileField(blank=True)
 
@@ -115,6 +125,75 @@ class Accession(CreationSortedTimeStampedModel):
 
     def __str__(self) -> str:
         return self.blob_name
+
+    def generate_blob(self):
+        """
+        Generate `blob` and set `blob_size`, `height`, `width`.
+
+        This is idempotent.
+        The Accession will be saved and `status` will be updated appropriately.
+        """
+        try:
+            with self.original_blob.open('rb') as original_blob_stream:
+                blob_mime_type = guess_mime_type(original_blob_stream, self.blob_name)
+            blob_major_mime_type = blob_mime_type.partition('/')[0]
+            if blob_major_mime_type != 'image':
+                raise InvalidBlobError(f'Blob has a non-image MIME type: "{blob_mime_type}"')
+
+            # Set a larger max size, to accommodate confocal images
+            # This uses ~1.1GB of memory
+            PIL.Image.MAX_IMAGE_PIXELS = 20_000 * 20_000 * 3
+            try:
+                img = PIL.Image.open(original_blob_stream)
+            except PIL.Image.UnidentifiedImageError:
+                raise InvalidBlobError('Blob cannot be recognized by PIL.')
+
+            # Explicitly load the image, so any decoding errors can be caught
+            try:
+                img.load()
+            except OSError as e:
+                if 'image file is truncated' in str(e):
+                    raise InvalidBlobError('Blob appears truncated.')
+                else:
+                    # Any other errors are not expected, so re-raise them natively
+                    raise
+
+            # Strip any alpha channel
+            img = img.convert('RGB')
+
+            with tempfile.SpooledTemporaryFile() as stripped_blob_stream:
+                img.save(stripped_blob_stream, format='JPEG')
+
+                stripped_blob_stream.seek(0, io.SEEK_END)
+                stripped_blob_size = stripped_blob_stream.tell()
+                stripped_blob_stream.seek(0)
+
+                self.blob = InMemoryUploadedFile(
+                    file=stripped_blob_stream,
+                    field_name=None,
+                    name=self.blob_name,
+                    content_type='image/jpeg',
+                    size=stripped_blob_size,
+                    charset=None,
+                )
+                self.blob_size = stripped_blob_size
+                self.height = img.height
+                self.width = img.width
+
+                self.save(update_fields=['blob', 'blob_size', 'height', 'width'])
+
+        except InvalidBlobError:
+            self.status = AccessionStatus.SKIPPED
+            self.save(update_fields=['status'])
+            # Expected failure, so return cleanly
+        except Exception:
+            self.status = AccessionStatus.FAILED
+            self.save(update_fields=['status'])
+            # Unexpected failure, so re-raise
+            raise
+        else:
+            self.status = AccessionStatus.SUCCEEDED
+            self.save(update_fields=['status'])
 
     def generate_thumbnail(self) -> None:
         with self.blob.open() as blob_stream:
