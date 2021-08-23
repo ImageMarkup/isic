@@ -4,12 +4,44 @@ from typing import Optional
 
 from django.conf import settings
 from django.db.models.query import QuerySet
-from elasticsearch.client import Elasticsearch
-from elasticsearch.helpers.actions import streaming_bulk
+from elasticsearch import Elasticsearch, NotFoundError
+from elasticsearch.helpers import streaming_bulk
 
 from isic.core.models import Image
 
 logger = logging.getLogger(__name__)
+
+# TODO: include private meta fields (e.g. patient/lesion id)
+INDEX_MAPPINGS = {
+    'properties': {
+        'created': {'type': 'date'},
+        'isic_id': {'type': 'text'},
+        'public': {'type': 'boolean'},
+        'age_approx': {'type': 'integer'},
+        'sex': {'type': 'keyword'},
+        'benign_malignant': {'type': 'keyword'},
+        'diagnosis': {'type': 'keyword'},
+        'diagnosis_confirm_type': {'type': 'keyword'},
+        'personal_hx_mm': {'type': 'boolean'},
+        'family_hx_mm': {'type': 'boolean'},
+        'clin_size_long_diam_mm': {'type': 'float'},
+        'melanocytic': {'type': 'boolean'},
+        'acquisition_day': {'type': 'float'},
+        'marker_pen': {'type': 'boolean'},
+        'hairy': {'type': 'boolean'},
+        'blurry': {'type': 'boolean'},
+        'nevus_type': {'type': 'keyword'},
+        'image_type': {'type': 'keyword'},
+        'dermoscopic_type': {'type': 'keyword'},
+        'anatom_site_general': {'type': 'keyword'},
+        'color_tint': {'type': 'keyword'},
+        'mel_class': {'type': 'keyword'},
+        'mel_mitotic_index': {'type': 'keyword'},
+        'mel_thick_mm': {'type': 'float'},
+        'mel_type': {'type': 'keyword'},
+        'mel_ulcer': {'type': 'boolean'},
+    }
+}
 
 DEFAULT_SEARCH_AGGREGATES = {
     'diagnosis': {'terms': {'field': 'diagnosis'}},
@@ -73,43 +105,24 @@ def get_elasticsearch_client() -> Elasticsearch:
 
 
 def maybe_create_index() -> None:
-    # TODO: include private meta fields (e.g. patient/lesion id)
-    get_elasticsearch_client().indices.create(
-        index=settings.ISIC_ELASTICSEARCH_INDEX,
-        ignore=400,  # ignore status code 400 (index already exists)
-        body={
-            'mappings': {
-                'properties': {
-                    'created': {'type': 'date'},
-                    'isic_id': {'type': 'text'},
-                    'public': {'type': 'boolean'},
-                    'age_approx': {'type': 'integer'},
-                    'sex': {'type': 'keyword'},
-                    'benign_malignant': {'type': 'keyword'},
-                    'diagnosis': {'type': 'keyword'},
-                    'diagnosis_confirm_type': {'type': 'keyword'},
-                    'personal_hx_mm': {'type': 'boolean'},
-                    'family_hx_mm': {'type': 'boolean'},
-                    'clin_size_long_diam_mm': {'type': 'float'},
-                    'melanocytic': {'type': 'boolean'},
-                    'acquisition_day': {'type': 'float'},
-                    'marker_pen': {'type': 'boolean'},
-                    'hairy': {'type': 'boolean'},
-                    'blurry': {'type': 'boolean'},
-                    'nevus_type': {'type': 'keyword'},
-                    'image_type': {'type': 'keyword'},
-                    'dermoscopic_type': {'type': 'keyword'},
-                    'anatom_site_general': {'type': 'keyword'},
-                    'color_tint': {'type': 'keyword'},
-                    'mel_class': {'type': 'keyword'},
-                    'mel_mitotic_index': {'type': 'keyword'},
-                    'mel_thick_mm': {'type': 'float'},
-                    'mel_type': {'type': 'keyword'},
-                    'mel_ulcer': {'type': 'boolean'},
-                }
-            }
-        },
-    )
+    try:
+        indices = get_elasticsearch_client().indices.get(settings.ISIC_ELASTICSEARCH_INDEX)
+    except NotFoundError:
+        # Need to create
+        get_elasticsearch_client().indices.create(
+            index=settings.ISIC_ELASTICSEARCH_INDEX, body={'mappings': INDEX_MAPPINGS}
+        )
+    else:
+        # "indices" also contains "settings", which are unspecified by us, so only compare
+        # "mappings"
+        if indices[settings.ISIC_ELASTICSEARCH_INDEX]['mappings'] != INDEX_MAPPINGS:
+            # Existing fields cannot be mutated.
+            # TODO: It's possible to add new fields if none of the existing fields are modified.
+            # https://www.elastic.co/guide/en/elasticsearch/reference/7.14/indices-put-mapping.html
+            raise Exception(
+                f'Cannot safely update existing index "{settings.ISIC_ELASTICSEARCH_INDEX}".'
+            )
+        # Otherwise, the index is up to date; nothing to be done.
 
 
 def add_to_search_index(image: Image) -> None:
