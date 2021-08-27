@@ -1,4 +1,8 @@
+from typing import Optional
+
+from django.contrib.auth.models import User
 from django.db import models
+from django.db.models.query import QuerySet
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
@@ -11,6 +15,8 @@ class Collection(TimeStampedModel):
     # TODO: probably make it unique per user, or unique for official collections
     name = models.CharField(max_length=200, unique=True)
     description = models.TextField(blank=True)
+
+    public = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
@@ -25,14 +31,15 @@ class CollectionPermissions:
     filters = {'view_collection': 'view_collection_list'}
 
     @staticmethod
-    def view_collection_list(user_obj, qs=Collection._default_manager):
-        if not user_obj.is_active or not user_obj.is_authenticated:
-            return qs.none()
+    def view_collection_list(
+        user_obj: User, qs: Optional[QuerySet[Collection]] = None
+    ) -> QuerySet[Collection]:
+        qs: QuerySet = qs if qs is not None else Collection._default_manager.all()
 
         if user_obj.is_staff:
             return qs
 
-        return qs.none()
+        return qs.filter(public=True)
 
     @staticmethod
     def view_collection(user_obj, obj):
