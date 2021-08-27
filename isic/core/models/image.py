@@ -66,6 +66,7 @@ class Image(CreationSortedTimeStampedModel):
                     user.pk for user in self.accession.upload.cohort.contributor.owners.all()
                 ],
                 'shared_to': [user.pk for user in self.shares.all()],
+                'collections': list(self.collections.values_list('pk', flat=True)),
             }
         )
 
