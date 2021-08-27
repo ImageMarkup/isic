@@ -80,9 +80,11 @@ class DuplicateImageAdmin(admin.ModelAdmin):
 
 @admin.register(Image)
 class ImageAdmin(admin.ModelAdmin):
-    list_display = ['isic_id', 'created', 'public']
+    # Using "isic_id" will not allow ordering
+    list_display = ['isic', 'created', 'public']
     list_filter = ['public']
-    search_fields = ['isic_id']
+    # The related field ("isic_id") will not directly allow an icontains lookup
+    search_fields = ['isic__id']
 
     autocomplete_fields = ['accession']
     readonly_fields = ['created', 'modified', 'thumbnail_image']

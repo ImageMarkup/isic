@@ -22,7 +22,11 @@ class Image(CreationSortedTimeStampedModel):
     )
     # This should typically be referenced as ".isic_id"
     isic = models.OneToOneField(
-        IsicId, on_delete=models.PROTECT, default=IsicId.safe_create, editable=False
+        IsicId,
+        on_delete=models.PROTECT,
+        default=IsicId.safe_create,
+        editable=False,
+        verbose_name='isic id',
     )
 
     public = models.BooleanField(default=False)
