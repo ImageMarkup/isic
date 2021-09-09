@@ -3,7 +3,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
-from girder_utils.models import DeferredFieldsManager
+from girder_utils.db import DeferredFieldsManager
 
 from isic.core.models import Image
 
