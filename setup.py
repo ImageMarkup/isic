@@ -48,7 +48,7 @@ setup(
         'django-extensions',
         'django-filter',
         'django-girder-style>=0.6.0',
-        'django-girder-utils',
+        'django-girder-utils>=0.10',
         'django-json-widget',
         'django-nested-admin',
         'django-oauth-toolkit',
