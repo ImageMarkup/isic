@@ -149,4 +149,4 @@ def publish_cohort_task(cohort_pk: int, public: bool):
         .filter(image__isnull=True, upload__cohort=cohort)
         .values_list('pk', flat=True)
     ):
-        publish_accession_task.delay(accession.pk, public)
+        publish_accession_task.delay(accession, public)
