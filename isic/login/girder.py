@@ -43,7 +43,8 @@ def create_girder_user(
 ) -> None:
     insert_result = get_girder_db()['user'].insert_one(
         {
-            'login': email,
+            # Girder user validation prohibits "@" in the "login" field
+            'login': email.replace('@', '_'),
             'email': email,
             'firstName': first_name,
             'lastName': last_name,
