@@ -11,7 +11,7 @@ from isic.core.models import (
     GirderDataset,
     GirderImage,
     Image,
-    ImageRedirect,
+    ImageAlias,
 )
 
 # general admin settings
@@ -94,8 +94,8 @@ class ImageAdmin(admin.ModelAdmin):
         return mark_safe(f'<img src="{obj.accession.thumbnail_256.url}" />')
 
 
-@admin.register(ImageRedirect)
-class ImageRedirectAdmin(admin.ModelAdmin):
+@admin.register(ImageAlias)
+class ImageAliasAdmin(admin.ModelAdmin):
     list_display = ['isic_id', 'image']
     search_fields = ['isic_id']
 
