@@ -2,7 +2,7 @@ from .base import CopyrightLicense, CreationSortedTimeStampedModel
 from .collection import Collection
 from .girder_image import GirderDataset, GirderImage
 from .image import Image
-from .image_redirect import DuplicateImage, ImageRedirect
+from .image_alias import DuplicateImage, ImageAlias
 
 __all__ = [
     'Collection',
@@ -12,5 +12,5 @@ __all__ = [
     'GirderDataset',
     'GirderImage',
     'Image',
-    'ImageRedirect',
+    'ImageAlias',
 ]
