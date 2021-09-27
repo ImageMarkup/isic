@@ -90,7 +90,7 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
         'from django.core.files.uploadedfile import UploadedFile',
         'import pandas as pd',
         'from isic.ingest.validators import *',
-        'from elasticsearch import Elasticsearch',
+        'from opensearchpy import OpenSearch',
         'from isic.core.search import *',
     ]
     ISIC_MONGO_URI = values.Value(None)
