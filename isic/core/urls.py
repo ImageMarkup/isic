@@ -4,7 +4,7 @@ from django.urls import path, register_converter
 from isic.core.api import stats as api_stats
 from isic.core.constants import ISIC_ID_REGEX, MONGO_ID_REGEX
 from isic.core.models.image import Image
-from isic.core.models.image_redirect import ImageRedirect
+from isic.core.models.image_alias import ImageAlias
 from isic.core.views import collection_detail, collection_list, image_detail, staff_list, stats
 from isic.ingest.models.accession import Accession
 
@@ -26,9 +26,9 @@ class ImageIdentifierConverter:
             if image:
                 return image.pk
 
-            redirect = ImageRedirect.objects.filter(isic_id=value).first()
-            if redirect:
-                return redirect.image.pk
+            alias = ImageAlias.objects.filter(isic_id=value).first()
+            if alias:
+                return alias.image.pk
 
             raise Http404
 

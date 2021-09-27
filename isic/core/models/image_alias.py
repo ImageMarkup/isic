@@ -21,7 +21,7 @@ class DuplicateImage(TimeStampedModel):
     metadata = models.JSONField(default=dict)
 
 
-class ImageRedirect(TimeStampedModel):
+class ImageAlias(TimeStampedModel):
     # This should typically be referenced as ".isic_id"
     isic = models.OneToOneField(IsicId, on_delete=models.PROTECT, editable=False)
-    image = models.ForeignKey(Image, on_delete=models.PROTECT, related_name='redirects')
+    image = models.ForeignKey(Image, on_delete=models.PROTECT, related_name='aliases')
