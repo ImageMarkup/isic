@@ -4,8 +4,8 @@ from typing import Optional
 
 from django.conf import settings
 from django.db.models.query import QuerySet
-from elasticsearch import Elasticsearch, NotFoundError
-from elasticsearch.helpers import streaming_bulk
+from opensearchpy import NotFoundError, OpenSearch
+from opensearchpy.helpers import streaming_bulk
 
 from isic.core.models import Image
 
@@ -100,8 +100,8 @@ DEFAULT_SEARCH_AGGREGATES = {
 
 
 @lru_cache
-def get_elasticsearch_client() -> Elasticsearch:
-    return Elasticsearch(settings.ISIC_ELASTICSEARCH_URI)
+def get_elasticsearch_client() -> OpenSearch:
+    return OpenSearch(settings.ISIC_ELASTICSEARCH_URI)
 
 
 def maybe_create_index() -> None:
