@@ -1,5 +1,3 @@
-from typing import Optional
-
 from django.contrib.auth.models import User
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action, api_view, permission_classes
@@ -7,8 +5,9 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
+from isic.core.models.collection import Collection
 from isic.core.models.image import Image
-from isic.core.permissions import IsicObjectPermissionsFilter
+from isic.core.permissions import IsicObjectPermissionsFilter, get_visible_objects
 from isic.core.search import facets, search_images
 from isic.core.serializers import ImageSerializer, SearchQuerySerializer
 from isic.core.stats import get_archive_stats
@@ -23,14 +22,27 @@ def stats(request):
     return Response(get_archive_stats())
 
 
-def build_filtered_query(user: User, query: Optional[str] = None) -> dict:
+def build_filtered_query(user: User, query_params: dict) -> dict:
+    """Translate a django search request into an elasticsearch query."""
+    serializer = SearchQuerySerializer(data=query_params, context={'user': user})
+    serializer.is_valid(raise_exception=True)
+    collection_pks = serializer.validated_data.get('collections')
+    dsl_query = serializer.validated_data.get('query')
+
     query_dict = {'bool': {}}
 
-    if query:
-        query_dict['bool']['must'] = {'query_string': {'query': query}}
+    if collection_pks is not None:
+        query_dict['bool'].setdefault('filter', {})
+        query_dict['bool']['filter']['terms'] = {'collections': collection_pks}
+
+    if dsl_query:
+        query_dict['bool'].setdefault('must', {})
+        query_dict['bool']['must']['query_string'] = {'query': dsl_query}
 
     if user.is_anonymous:
         query_dict['bool']['should'] = [{'term': {'public': 'true'}}]
+        # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html#bool-min-should-match
+        query_dict['bool']['minimum_should_match'] = 1
     elif not user.is_staff:
         query_dict['bool']['should'] = [
             {'term': {'public': 'true'}},
@@ -57,10 +69,17 @@ class ImageViewSet(ReadOnlyModelViewSet):
     )
     @action(detail=False, methods=['get'], pagination_class=None)
     def facets(self, request):
-        serializer = SearchQuerySerializer(data=request.query_params)
-        serializer.is_valid(raise_exception=True)
-        query = build_filtered_query(request.user, serializer.data.get('query'))
-        return Response(facets(query))
+        query = build_filtered_query(request.user, request.query_params)
+        # Manually pass the list of visible collection PKs through so buckets with
+        # counts of 0 aren't included in the facets output for non-visible collections.
+        collection_pks = list(
+            get_visible_objects(
+                request.user,
+                'core.view_collection',
+                Collection.objects.values_list('pk', flat=True),
+            )
+        )
+        return Response(facets(query, collection_pks))
 
     @swagger_auto_schema(
         operation_description='Search images with a key:value query string.',
@@ -68,9 +87,7 @@ class ImageViewSet(ReadOnlyModelViewSet):
     )
     @action(detail=False, methods=['get'])
     def search(self, request):
-        serializer = SearchQuerySerializer(data=request.query_params)
-        serializer.is_valid(raise_exception=True)
-        query = build_filtered_query(request.user, serializer.data.get('query'))
+        query = build_filtered_query(request.user, request.query_params)
         search_results = search_images(
             query, self.paginator.get_limit(request), self.paginator.get_offset(request)
         )
