@@ -151,11 +151,17 @@ def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 500) -> None
             logger.error('Failed to insert document into elasticsearch', info)
 
 
-def facets(query: Optional[dict] = None) -> dict:
+def facets(query: Optional[dict] = None, collections: Optional[list[int]] = None) -> dict:
     body = {
         'size': 0,
         'aggs': DEFAULT_SEARCH_AGGREGATES,
     }
+
+    if collections is not None:
+        # Note this include statement means we can only filter by ~65k collections. See:
+        # "By default, Elasticsearch limits the terms query to a maximum of 65,536 terms.
+        # You can change this limit using the index.max_terms_count setting."
+        body['aggs']['collections'] = {'terms': {'field': 'collections', 'include': collections}}
 
     if query:
         body['query'] = query
