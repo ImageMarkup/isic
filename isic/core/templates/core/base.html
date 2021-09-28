@@ -41,15 +41,15 @@
               <a href="{% url 'upload/select-or-create-contributor' %}" class="text-center {% if request.resolver_match.url_name == 'upload/select-or-create-contributor' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                 Upload
               </a>
+              <a href="{% url 'core/collection-list' %}" class="text-center {% if request.resolver_match.url_name == 'core/collection-list' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                Collections
+              </a>
               <a href="{% url 'core/stats' %}" class="text-center {% if request.resolver_match.url_name == 'core/stats' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                 Stats
               </a>
               {% if request.user.is_staff %}
                 <a href="{% url 'ingest-review' %}" class="text-center {% if request.resolver_match.url_name == 'ingest-review' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                   Ingest <br /> Review
-                </a>
-                <a href="{% url 'core/collection-list' %}" class="text-center {% if request.resolver_match.url_name == 'core/collection-list' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                  Collections
                 </a>
                 <a href="{% url 'study-list' %}" class="text-center {% if request.resolver_match.url_name == 'study-list' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                   Studies

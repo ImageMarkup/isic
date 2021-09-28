@@ -81,12 +81,19 @@ def collection_list(request):
 @permission_or_404('core.view_collection', (Collection, 'pk', 'pk'))
 def collection_detail(request, pk):
     collection = get_object_or_404(Collection, pk=pk)
-    images = collection.images.order_by('created')
+    # TODO; if they can see the collection they can see the images?
+    images = get_visible_objects(
+        request.user, 'core.view_image', collection.images.order_by('created')
+    )
     paginator = Paginator(images, 30)
     page = paginator.get_page(request.GET.get('page'))
-    contributors = Contributor.objects.filter(
-        pk__in=collection.images.values('accession__upload__cohort__contributor__pk').distinct()
-    ).order_by('institution_name')
+    contributors = get_visible_objects(
+        request.user,
+        'ingest.view_contributor',
+        Contributor.objects.filter(
+            pk__in=collection.images.values('accession__upload__cohort__contributor__pk').distinct()
+        ).order_by('institution_name'),
+    )
 
     return render(
         request,
