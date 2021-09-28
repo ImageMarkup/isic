@@ -19,3 +19,4 @@ class CollectionFactory(factory.django.DjangoModelFactory):
 
     name = factory.Faker('words')
     description = factory.Faker('paragraph')
+    public = factory.Faker('boolean')

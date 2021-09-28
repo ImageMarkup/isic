@@ -7,13 +7,15 @@
   <div class="my-4 bg-gray-50 p-2 rounded-sm border-gray-200 border">
     <ul>
       <li><span class="font-bold">Name:</span> {{ collection.name }}</li>
-      <li><span class="font-bold">Contributors:</span>
-        <ul>
-          {% for contributor in contributors %}
-            <li><a href="{% url 'admin:ingest_contributor_change' contributor.pk %}">{{ contributor.institution_name }}</a></li>
-          {% endfor %}
-        </ul>
-      </li>
+      {% if contributors %}
+        <li><span class="font-bold">Contributors:</span>
+          <ul>
+              {% for contributor in contributors %}
+                <li><a href="{% url 'admin:ingest_contributor_change' contributor.pk %}">{{ contributor.institution_name }}</a></li>
+              {% endfor %}
+          </ul>
+        </li>
+      {% endif %}
       <li><span class="font-bold">Number of images:</span> {{ num_images|intcomma }}</li>
     </ul>
   </div>
