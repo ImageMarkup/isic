@@ -41,10 +41,17 @@ def create_girder_user(
     last_name: str,
     password: str,
 ) -> None:
+
+    # Normally, the Mongo client API would set this internally, but it needs to be used for multiple
+    # fields
+    new_object_id = ObjectId()
+
     insert_result = get_girder_db()['user'].insert_one(
         {
-            # Girder user validation prohibits "@" in the "login" field
-            'login': email.replace('@', '_'),
+            '_id': new_object_id,
+            # Girder username validation is too complicated to always use email as a basis for
+            # the login / username
+            'login': f'User-{new_object_id}',
             'email': email,
             'firstName': first_name,
             'lastName': last_name,
