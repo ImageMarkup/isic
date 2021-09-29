@@ -47,12 +47,12 @@ urlpatterns = [
     path('api/v2/stats/', api_stats, name='core/api/stats'),
     path('staff/users/', staff_list, name='core/staff-list'),
     path(
-        'staff/collections/',
+        'collections/',
         collection_list,
         name='core/collection-list',
     ),
     path(
-        'staff/collections/<pk>/',
+        'collections/<pk>/',
         collection_detail,
         name='core/collection-detail',
     ),
