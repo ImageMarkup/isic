@@ -5,8 +5,11 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db.models import Count, Prefetch
+from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
+from django.urls.base import reverse
 
+from isic.core.forms.doi import CreateDoiForm
 from isic.core.models import Collection, Image
 from isic.core.permissions import get_visible_objects, permission_or_404
 from isic.core.stats import get_archive_stats
@@ -81,6 +84,20 @@ def collection_list(request):
 @permission_or_404('core.view_collection', (Collection, 'pk', 'pk'))
 def collection_detail(request, pk):
     collection = get_object_or_404(Collection, pk=pk)
+
+    if request.method == 'POST':
+        form = CreateDoiForm(request.POST, request=request)
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(reverse('core/collection-detail', args=[collection.pk]))
+    else:
+        form = CreateDoiForm(
+            initial={
+                'collection_pk': collection.pk,
+            },
+            request=request,
+        )
+
     # TODO; if they can see the collection they can see the images?
     images = get_visible_objects(
         request.user, 'core.view_image', collection.images.order_by('created')
@@ -103,6 +120,7 @@ def collection_detail(request, pk):
             'contributors': contributors,
             'images': page,
             'num_images': paginator.count,
+            'form': form,
         },
     )
 
