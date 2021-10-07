@@ -8,5 +8,7 @@ from isic.login.girder import create_girder_token
 @api_view(['POST'])
 @protected_resource(scopes=['identity'])
 def get_girder_token(request):
+    if not request.user.profile.girder_id:
+        raise Exception('Profile has no girder_id', request.user.profile)
     token = create_girder_token(request.user.profile.girder_id)
     return JsonResponse({'token': token})
