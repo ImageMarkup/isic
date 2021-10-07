@@ -89,6 +89,9 @@ class IsicMixin(ConfigMixin):
     ISIC_GUI_URL = 'https://www.isic-archive.com'
     ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = ISIC_GUI_URL
     ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = ISIC_GUI_URL
+    ISIC_DATACITE_API_URL = 'https://api.test.datacite.org'
+    ISIC_DATACITE_USERNAME = values.Value()
+    ISIC_DATACITE_PASSWORD = values.SecretValue()
 
     CELERY_WORKER_MAX_MEMORY_PER_CHILD = 256 * 1024
 
@@ -114,6 +117,8 @@ class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
     ISIC_DISCOURSE_SSO_SECRET = 'discourse_secret'
     ISIC_MONGO_URI = None
     ISIC_ELASTICSEARCH_INDEX = 'isic-testing'
+    ISIC_DATACITE_USERNAME = None
+    ISIC_DATACITE_PASSWORD = None
 
 
 class ProductionConfiguration(IsicMixin, ProductionBaseConfiguration):
