@@ -1,34 +1,58 @@
 {% extends 'core/base.html' %}
 {% load get_key %}
 {% load humanize %}
-
 {% block content %}
-  <h1>{{collection.name}}</h1>
+  <h1>{{ collection.name }}</h1>
   <div class="my-4 bg-gray-50 p-2 rounded-sm border-gray-200 border">
     <ul>
-      <li><span class="font-bold">Name:</span> {{ collection.name }}</li>
+      <li>
+        <span class="font-bold">Name:</span>
+        {{ collection.name }}
+      </li>
+      {% if collection.doi %}
+        <li>
+          <span class="font-bold">DOI:</span>
+          <a href="{{ collection.doi.url }}">{{ collection.doi.url }}</a>
+        </li>
+      {% endif %}
       {% if contributors %}
-        <li><span class="font-bold">Contributors:</span>
+        <li>
+          <span class="font-bold">Contributors:</span>
           <ul>
-              {% for contributor in contributors %}
-                <li><a href="{% url 'admin:ingest_contributor_change' contributor.pk %}">{{ contributor.institution_name }}</a></li>
-              {% endfor %}
+            {% for contributor in contributors %}
+              <li>
+                <a href="{% url 'admin:ingest_contributor_change' contributor.pk %}">{{ contributor.institution_name }}</a>
+              </li>
+            {% endfor %}
           </ul>
         </li>
       {% endif %}
-      <li><span class="font-bold">Number of images:</span> {{ num_images|intcomma }}</li>
+      <li>
+        <span class="font-bold">Number of images:</span>
+        {{ num_images|intcomma }}
+      </li>
     </ul>
   </div>
-
   {% if collection.description %}
-    <p>{{ collection.description }}</p>
+    <p>
+      {{ collection.description }}
+    </p>
   {% endif %}
-
+  {% if request.user.is_staff and not collection.doi %}
+    <form method="post">
+      {% csrf_token %}
+      {{ form }}
+      <button type="submit"
+              class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+        Create DOI
+      </button>
+    </form>
+  {% endif %}
   {% include 'studies/partials/pagination.html' with page_obj=images %}
-
   <div class="mb-4" x-data="thumbnailGrid();">
     <div class="flex flex-row justify-end pb-3">
-      <a class="px-1" href="#" @click="decrease();">fewer columns</a> |
+      <a class="px-1" href="#" @click="decrease();">fewer columns</a>
+      |
       <a class="px-1" href="#" @click="increase();">more columns</a>
     </div>
     <div class="grid gap-4" :class="`grid-cols-${numCols}`">
@@ -37,8 +61,6 @@
       {% endfor %}
     </div>
   </div>
-
   {% include 'studies/partials/pagination.html' with page_obj=images %}
-
   {% include 'ingest/partials/thumbnail_grid_js.html' %}
 {% endblock %}
