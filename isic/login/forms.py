@@ -47,9 +47,10 @@ class RealNameSignupForm(forms.Form):
         # allauth.account.signals.user_signed_up signal, but the raw password from the form is
         # necessary
         if settings.ISIC_MONGO_URI:
-            create_girder_user(
+            user.profile.girder_id = create_girder_user(
                 email=user.email,
                 first_name=user.first_name,
                 last_name=user.last_name,
                 password=self.cleaned_data['password1'],
             )
+            user.profile.save(update_fields=['girder_id'])

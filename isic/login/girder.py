@@ -40,7 +40,7 @@ def create_girder_user(
     first_name: str,
     last_name: str,
     password: str,
-) -> None:
+) -> ObjectId:
 
     # Normally, the Mongo client API would set this internally, but it needs to be used for multiple
     # fields
@@ -87,6 +87,8 @@ def create_girder_user(
     )
     # In Girder, the "Study Administrators" group receives read access to this new girder_user,
     # but that requirement is obsolete
+
+    return insert_result.inserted_id
 
 
 def create_girder_token(girder_user_id: str) -> str:
