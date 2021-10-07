@@ -40,7 +40,7 @@ def test_core_staff_list(client, authenticated_client, staff_client):
 
 
 @pytest.mark.django_db
-def test_core_collection_list(client, authenticated_client, staff_client, collection):
+def test_core_collection_list(client, authenticated_client, staff_client, private_collection):
     r = client.get(reverse('core/collection-list'))
     assertQuerysetEqual(r.context['collections'].object_list, [])
 
@@ -48,7 +48,7 @@ def test_core_collection_list(client, authenticated_client, staff_client, collec
     assertQuerysetEqual(r.context['collections'].object_list, [])
 
     r = staff_client.get(reverse('core/collection-list'))
-    assertQuerysetEqual(r.context['collections'].object_list, [collection])
+    assertQuerysetEqual(r.context['collections'].object_list, [private_collection])
 
 
 @pytest.mark.django_db
