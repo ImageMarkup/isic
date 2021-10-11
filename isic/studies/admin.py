@@ -91,7 +91,11 @@ class ResponseAdmin(admin.ModelAdmin):
 class AnnotationAdmin(admin.ModelAdmin):
     list_display = ['study', 'annotator', 'image']
     list_filter = ['study']
-    search_fields = ['annotator__email', 'image__object_id']
+    search_fields = ['annotator__email', 'image__isic__id', 'image__accession__girder_id']
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('image__accession', 'image__isic', 'study', 'annotator')
 
     inlines = [ResponseInline, MarkupInline]
     autocomplete_fields = ['image', 'annotator', 'image', 'task']
