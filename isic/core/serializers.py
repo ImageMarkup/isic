@@ -1,5 +1,5 @@
 import re
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 from rest_framework import serializers
 from rest_framework.fields import Field
@@ -23,11 +23,11 @@ class CollectionsField(Field):
         'not_comma_delimited': 'Not a comma delimited string.',
     }
 
-    def to_representation(self, obj: List[int]) -> str:
+    def to_representation(self, obj: list[int]) -> str:
         obj = super().to_representation(obj)
         return ','.join([str(element) for element in obj])
 
-    def to_internal_value(self, data: Optional[Union[list, str]]) -> Optional[List[int]]:
+    def to_internal_value(self, data: Optional[Union[list, str]]) -> Optional[list[int]]:
         if data:
             # if the data is coming from swagger, it's built into a 1 element list
             if isinstance(data, list):
@@ -41,7 +41,7 @@ class CollectionsField(Field):
             data = [int(x) for x in data.split(',')]
             return self._filter_collection_pks(data)
 
-    def _filter_collection_pks(self, collection_pks: List[int]) -> List[int]:
+    def _filter_collection_pks(self, collection_pks: list[int]) -> list[int]:
         visible_collection_pks = get_visible_objects(
             self.context['user'],
             'core.view_collection',
@@ -88,3 +88,14 @@ class ImageSerializer(serializers.ModelSerializer):
                 del obj.accession.metadata[field]
 
         return obj.accession.metadata
+
+
+class CollectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Collection
+        fields = [
+            'id',
+            'name',
+            'description',
+            'public',
+        ]
