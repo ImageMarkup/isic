@@ -52,17 +52,6 @@ if apps.is_installed('isic.discourse_sso'):
         path('', include('isic.discourse_sso.urls')),
     ]
 
-if settings.ISIC_LEGACY_SIGNUP_URL:
-    # Place at the beginning, so it's matched before the actual endpoint
-    urlpatterns.insert(
-        0,
-        path(
-            'accounts/signup/',
-            RedirectView.as_view(url=settings.ISIC_LEGACY_SIGNUP_URL),
-            name='account_signup_redirect',
-        ),
-    )
-
 if settings.DEBUG:
     import debug_toolbar
 
