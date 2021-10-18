@@ -9,7 +9,7 @@ from isic.core.models.collection import Collection
 from isic.core.models.image import Image
 from isic.core.permissions import IsicObjectPermissionsFilter, get_visible_objects
 from isic.core.search import facets, search_images
-from isic.core.serializers import ImageSerializer, SearchQuerySerializer
+from isic.core.serializers import CollectionSerializer, ImageSerializer, SearchQuerySerializer
 from isic.core.stats import get_archive_stats
 
 
@@ -101,3 +101,9 @@ class ImageViewSet(ReadOnlyModelViewSet):
         # get a count for the queryset (images), which will always be PAGE_SIZE.
         paginated_response.data['count'] = search_results['hits']['total']['value']
         return paginated_response
+
+
+class CollectionViewSet(ReadOnlyModelViewSet):
+    serializer_class = CollectionSerializer
+    queryset = Collection.objects.all()
+    filter_backends = [IsicObjectPermissionsFilter]

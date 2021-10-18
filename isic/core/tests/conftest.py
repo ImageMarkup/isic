@@ -10,3 +10,15 @@ def search_index():
     maybe_create_index()
     yield
     es.indices.delete(settings.ISIC_ELASTICSEARCH_INDEX)
+
+
+@pytest.fixture
+def private_collection(collection_factory):
+    collection = collection_factory(public=False)
+    return collection
+
+
+@pytest.fixture
+def public_collection(collection_factory):
+    collection = collection_factory(public=True)
+    return collection
