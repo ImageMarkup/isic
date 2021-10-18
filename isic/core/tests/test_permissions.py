@@ -3,18 +3,6 @@ import pytest
 from pytest_django.asserts import assertQuerysetEqual
 
 
-@pytest.fixture
-def private_collection(collection_factory):
-    collection = collection_factory(public=False)
-    return collection
-
-
-@pytest.fixture
-def public_collection(collection_factory):
-    collection = collection_factory(public=True)
-    return collection
-
-
 @pytest.mark.django_db
 def test_core_stats(client):
     r = client.get(reverse('core/stats'))
