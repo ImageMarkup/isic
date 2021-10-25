@@ -86,11 +86,11 @@ class ImagePermissions:
 
     @staticmethod
     def view_image_list(user_obj: User, qs: Optional[QuerySet[Image]] = None) -> QuerySet[Image]:
-        qs: QuerySet = qs if qs is not None else Image._default_manager.all()
+        qs = qs if qs is not None else Image._default_manager.all()
 
-        if user_obj.is_staff:
+        if user_obj.is_active and user_obj.is_staff:
             return qs
-        elif not user_obj.is_anonymous:
+        elif user_obj.is_active and not user_obj.is_anonymous:
             return qs.filter(
                 Q(public=True)
                 | Q(accession__upload__cohort__contributor__owners=user_obj)
