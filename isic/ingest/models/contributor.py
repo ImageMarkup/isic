@@ -1,5 +1,8 @@
+from typing import Optional
+
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models.query import QuerySet
 from django.utils.safestring import mark_safe
 
 from isic.core.models import CopyrightLicense, CreationSortedTimeStampedModel
@@ -57,16 +60,17 @@ class ContributorPermissions:
     filters = {'view_contributor': 'view_contributor_list'}
 
     @staticmethod
-    def view_contributor_list(user_obj, qs=None):
+    def view_contributor_list(
+        user_obj: User, qs: Optional[QuerySet[Contributor]] = None
+    ) -> QuerySet[Contributor]:
         qs = qs if qs is not None else Contributor._default_manager.all()
 
-        if not user_obj.is_active or not user_obj.is_authenticated:
-            return qs.none()
-
-        if user_obj.is_staff:
+        if user_obj.is_active and user_obj.is_staff:
             return qs
-
-        return qs.filter(owners__in=[user_obj])
+        elif user_obj.is_active and user_obj.is_authenticated:
+            return qs.filter(owners__in=[user_obj])
+        else:
+            return qs.none()
 
     @staticmethod
     def view_contributor(user_obj, obj):
