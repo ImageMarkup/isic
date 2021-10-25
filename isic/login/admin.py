@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 
 
 class UserAdmin(BaseUserAdmin):
+    list_select_related = ['profile']
     list_display = ['email', 'first_name', 'last_name', 'girder_id', 'is_staff']
     search_fields = ['email', 'profile__girder_id']
 
