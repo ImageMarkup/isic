@@ -1,6 +1,9 @@
+from typing import Optional
+
 from django.contrib.auth.models import User
 from django.core.validators import FileExtensionValidator
 from django.db import models
+from django.db.models.query import QuerySet
 import numpy as np
 import pandas as pd
 from s3_file_field import S3FileField
@@ -37,15 +40,17 @@ class MetadataFilePermissions:
     filters = {'view_metadatafile': 'view_metadatafile_list'}
 
     @staticmethod
-    def view_metadatafile_list(user_obj, qs=None):
+    def view_metadatafile_list(
+        user_obj: User, qs: Optional[QuerySet[MetadataFile]] = None
+    ) -> QuerySet[MetadataFile]:
         qs = qs if qs is not None else MetadataFile._default_manager.all()
 
-        if not user_obj.is_active or not user_obj.is_authenticated:
-            return qs.none()
-        elif user_obj.is_staff:
+        if user_obj.is_active and user_obj.is_staff:
             return qs
-        else:
+        elif user_obj.is_active and user_obj.is_authenticated:
             return qs.filter(cohort__contributor__owners__in=[user_obj])
+        else:
+            return qs.none()
 
     @staticmethod
     def view_metadatafile(user_obj, obj):

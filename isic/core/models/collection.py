@@ -34,12 +34,12 @@ class CollectionPermissions:
     def view_collection_list(
         user_obj: User, qs: Optional[QuerySet[Collection]] = None
     ) -> QuerySet[Collection]:
-        qs: QuerySet = qs if qs is not None else Collection._default_manager.all()
+        qs = qs if qs is not None else Collection._default_manager.all()
 
-        if user_obj.is_staff:
+        if user_obj.is_active and user_obj.is_staff:
             return qs
-
-        return qs.filter(public=True)
+        else:
+            return qs.filter(public=True)
 
     @staticmethod
     def view_collection(user_obj, obj):

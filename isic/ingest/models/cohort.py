@@ -1,6 +1,9 @@
+from typing import Optional
+
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import Count, Q, UniqueConstraint
+from django.db.models.query import QuerySet
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 
@@ -77,15 +80,15 @@ class CohortPermissions:
     filters = {'view_cohort': 'view_cohort_list'}
 
     @staticmethod
-    def view_cohort_list(user_obj, qs=None):
+    def view_cohort_list(user_obj: User, qs: Optional[QuerySet[Cohort]] = None) -> QuerySet[Cohort]:
         qs = qs if qs is not None else Cohort._default_manager.all()
 
-        if not user_obj.is_active or not user_obj.is_authenticated:
-            return qs.none()
-        elif user_obj.is_staff:
+        if user_obj.is_active and user_obj.is_staff:
             return qs
-        else:
+        elif user_obj.is_active and user_obj.is_authenticated:
             return qs.filter(contributor__owners__in=[user_obj])
+        else:
+            return qs.none()
 
     @staticmethod
     def view_cohort(user_obj, obj):
