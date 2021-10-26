@@ -31,9 +31,14 @@ class Collection(TimeStampedModel):
     def get_absolute_url(self):
         return reverse('core/collection-detail', args=[self.pk])
 
-    @property
-    def ordered_cohorts(self) -> QuerySet[Cohort]:
-        return (
+    def _get_datacite_creators(self) -> list[str]:
+        """
+        Return a list of datacite creators for this collection.
+
+        Creators are ordered by number of images contributed (to this collection), ties are broken
+        alphabetically, except for Anonymous contributions which are always last.
+        """
+        creator_cohorts = (
             Cohort.objects.alias(
                 num_images=Count(
                     'zips__accessions__image', filter=Q(zips__accessions__image__collections=self)
@@ -41,7 +46,15 @@ class Collection(TimeStampedModel):
             )
             .filter(pk__in=self.images.values('accession__upload__cohort').distinct())
             .order_by('-num_images', 'attribution')
+            .distinct()
         )
+
+        creators = creator_cohorts.values_list('attribution', flat=True)
+
+        # Push Anonymous attributions to last
+        creators = sorted(creators, key=lambda x: 1 if x == 'Anonymous' else 0)
+
+        return creators
 
     def as_datacite_doi(self, contributor: User, doi_id: str) -> dict:
         return {
@@ -51,7 +64,7 @@ class Collection(TimeStampedModel):
                     'identifiers': [{'identifierType': 'DOI', 'identifier': doi_id}],
                     'event': 'publish',
                     'doi': doi_id,
-                    'creators': [{'name': cohort.attribution} for cohort in self.ordered_cohorts],
+                    'creators': [{'name': creator} for creator in self._get_datacite_creators()],
                     'contributor': f'{contributor.first_name} {contributor.last_name}',
                     'titles': [{'title': self.name}],
                     'publisher': 'ISIC Archive',
