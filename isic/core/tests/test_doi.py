@@ -101,16 +101,62 @@ def test_doi_creators_ordered_by_number_images_contributed(collection_with_sever
 
     creators = doi['data']['attributes']['creators']
 
+    assert len(creators) == 3
     assert creators[0]['name'] == cohort_a.attribution
     assert creators[1]['name'] == cohort_b.attribution
     assert creators[2]['name'] == cohort_c.attribution
 
 
-@pytest.mark.skip
-def test_doi_creators_order_anonymous_contributions_last():
-    pass
+@pytest.mark.django_db
+def test_doi_creators_order_anonymous_contributions_last(
+    collection_with_several_creators, cohort_factory, image_factory, user
+):
+    collection, *_ = collection_with_several_creators
+    anon_cohort = cohort_factory(attribution='Anonymous')
+    # Give anonymous cohort more contributions than others, assert it's still ordered last
+    for _ in range(10):
+        collection.images.add(image_factory(public=True, accession__upload__cohort=anon_cohort))
+
+    doi = collection.as_datacite_doi(user, 'foo')
+
+    creators = doi['data']['attributes']['creators']
+
+    assert creators[-1]['name'] == 'Anonymous'
 
 
-@pytest.mark.skip
-def test_doi_creators_collapse_multiple_anonymous_contributions():
-    pass
+@pytest.fixture
+def collection_with_repeated_creators(image_factory, collection_factory, cohort_factory):
+    # Cohort A has the most images in collection
+    # Cohort B and C have the same number of images in collection
+    # Therefore, DOI creation should order A (most), then B and C (alphabetical tie breaker)
+    cohort_a1 = cohort_factory(attribution='Cohort A')
+    cohort_a2 = cohort_factory(attribution='Cohort A')
+    cohort_b = cohort_factory(attribution='Cohort B')
+    collection = collection_factory(public=True)
+
+    for _ in range(3):
+        image_factory(public=True, accession__upload__cohort=cohort_a1)
+        image_factory(public=True, accession__upload__cohort=cohort_a2)
+
+    for _ in range(2):
+        image_factory(public=True, accession__upload__cohort=cohort_b)
+
+    collection.images.set(
+        Image.objects.filter(accession__upload__cohort__in=[cohort_a1, cohort_a2, cohort_b])
+    )
+
+    return collection, cohort_a1, cohort_a2, cohort_b
+
+
+@pytest.mark.django_db
+def test_doi_creators_collapse_repeated_creators(collection_with_repeated_creators, user):
+    collection, cohort_a1, cohort_a2, cohort_b = collection_with_repeated_creators
+
+    doi = collection.as_datacite_doi(user, 'foo')
+
+    creators = doi['data']['attributes']['creators']
+
+    assert creators[0]['name'] == cohort_a1.attribution
+    assert creators[1]['name'] == cohort_b.attribution
+
+    assert len(creators) == 2
