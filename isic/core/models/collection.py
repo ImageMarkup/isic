@@ -68,8 +68,7 @@ class Collection(TimeStampedModel):
                     'contributor': f'{contributor.first_name} {contributor.last_name}',
                     'titles': [{'title': self.name}],
                     'publisher': 'ISIC Archive',
-                    # TODO: year of the earliest image, or year of the earliest image going public?
-                    'publicationYear': int(self.created.strftime('%Y')),
+                    'publicationYear': self.images.order_by('created').latest().created.year,
                     # resourceType?
                     'types': {'resourceTypeGeneral': 'Dataset'},
                     # TODO: api.?
