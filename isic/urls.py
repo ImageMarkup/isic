@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.urls import include, path, reverse_lazy
 from django.views.generic.base import RedirectView, TemplateView
 from drf_yasg import openapi
+from drf_yasg.generators import OpenAPISchemaGenerator
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
@@ -21,11 +22,19 @@ router.register('metadata-files', MetadataFileViewSet)
 router.register('studies', StudyViewSet)
 router.register('study-tasks', StudyTaskViewSet)
 
+
+# TODO: Removed this once https://github.com/girder/django-s3-file-field/issues/257 is resolved.
+class ExcludeS3FFGenerator(OpenAPISchemaGenerator):
+    def should_include_endpoint(self, path, method, view, public):
+        return 's3-upload' not in path
+
+
 # OpenAPI generation
 schema_view = get_schema_view(
     openapi.Info(title='ISIC', default_version='v2', description=''),
     public=True,
     permission_classes=(permissions.AllowAny,),
+    generator_class=ExcludeS3FFGenerator,
 )
 
 urlpatterns = [
