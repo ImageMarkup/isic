@@ -10,14 +10,20 @@ class StudyTaskViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = StudyTask.objects.all()
     permission_classes = [IsAdminUser]
 
+    swagger_schema = None
+
 
 class StudyViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = StudySerializer
     queryset = Study.objects.all()
     permission_classes = [IsAdminUser]
 
+    swagger_schema = None
+
 
 class AnnotationViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = AnnotationSerializer
     queryset = Annotation.objects.all()
     permission_classes = [IsAdminUser]
+
+    swagger_schema = None
