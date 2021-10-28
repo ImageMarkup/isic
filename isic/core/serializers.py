@@ -67,8 +67,13 @@ class SearchQuerySerializer(serializers.Serializer):
     the context.
     """
 
-    query = serializers.CharField(required=False)
-    collections = CollectionsField(required=False)
+    query = serializers.CharField(
+        required=False, help_text='A search query following the Elasticsearch query string syntax.'
+    )
+    collections = CollectionsField(
+        required=False,
+        help_text='A list of collection IDs to filter a query by, separated with a comma.',
+    )
 
 
 class ImageUrlSerializer(serializers.Serializer):

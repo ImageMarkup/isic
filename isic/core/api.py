@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -19,7 +20,7 @@ from isic.core.stats import get_archive_stats
 
 
 @swagger_auto_schema(
-    methods=['GET'], operation_description='Retrieve statistics about the ISIC Archive'
+    methods=['GET'], operation_summary='Retrieve statistics about the ISIC Archive'
 )
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -27,7 +28,7 @@ def stats(request):
     return Response(get_archive_stats())
 
 
-@swagger_auto_schema(methods=['GET'], operation_description='Retrieve the currently logged in user')
+@swagger_auto_schema(methods=['GET'], operation_summary='Retrieve the currently logged in user.')
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def user_me(request):
@@ -67,6 +68,13 @@ def build_filtered_query(user: User, query_params: dict) -> dict:
     return query_dict
 
 
+@method_decorator(
+    name='list', decorator=swagger_auto_schema(operation_summary='Return a list of images.')
+)
+@method_decorator(
+    name='retrieve',
+    decorator=swagger_auto_schema(operation_summary='Retrieve a single image by ISIC ID.'),
+)
 class ImageViewSet(ReadOnlyModelViewSet):
     serializer_class = ImageSerializer
     queryset = (
@@ -76,8 +84,9 @@ class ImageViewSet(ReadOnlyModelViewSet):
     lookup_field = 'isic_id'
 
     @swagger_auto_schema(
-        operation_description='Retrieve the facet counts of a query.',
+        operation_summary='Retrieve the facets of a search query.',
         query_serializer=SearchQuerySerializer,
+        responses={200: 'A set of facets corresponding to the search query.'},
     )
     @action(detail=False, methods=['get'], pagination_class=None)
     def facets(self, request):
@@ -94,7 +103,51 @@ class ImageViewSet(ReadOnlyModelViewSet):
         return Response(facets(query, collection_pks))
 
     @swagger_auto_schema(
-        operation_description='Search images with a key:value query string.',
+        operation_summary='Search images with a key:value query string.',
+        operation_description="""
+        The search query uses the <a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.15/query-dsl-query-string-query.html#query-string-syntax">Elasticsearch Query String Syntax</a>.
+
+        Some example queries are:
+        <pre>
+            # Display images diagnosed as melanoma from patients that are approximately 50 years old.
+            age_approx:50 AND diagnosis:melanoma
+        </pre>
+        <pre>
+            # Display images from male patients that are approximately 20 to 40 years old.
+            age_approx:[20 TO 40] AND sex:male
+        </pre>
+        <pre>
+            # Display images from the anterior, posterior, or lateral torso anatomical site where the diagnosis was confirmed by single image expert consensus.
+            anatom_site_general:*torso AND diagnosis_confirm_type:"single image expert consensus"
+        </pre>
+
+        The following fields are exposed to the query parameter:
+        <ul>
+            <li>diagnosis</li>
+            <li>age_approx</li>
+            <li>sex</li>
+            <li>benign_malignant</li>
+            <li>diagnosis_confirm_type</li>
+            <li>personal_hx_mm</li>
+            <li>family_hx_mm</li>
+            <li>clin_size_long_diam_mm</li>
+            <li>melanocytic</li>
+            <li>acquisition_day</li>
+            <li>marker_pen</li>
+            <li>hairy</li>
+            <li>blurry</li>
+            <li>nevus_type</li>
+            <li>image_type</li>
+            <li>dermoscopic_type</li>
+            <li>anatom_site_general</li>
+            <li>color_tint</li>
+            <li>mel_class</li>
+            <li>mel_mitotic_index</li>
+            <li>mel_thick_mm</li>
+            <li>mel_type</li>
+            <li>mel_ulcer</li>
+        </ul>
+        """,  # noqa: E501
         query_serializer=SearchQuerySerializer,
     )
     @action(detail=False, methods=['get'])
@@ -115,6 +168,13 @@ class ImageViewSet(ReadOnlyModelViewSet):
         return paginated_response
 
 
+@method_decorator(
+    name='list', decorator=swagger_auto_schema(operation_summary='Return a list of collections.')
+)
+@method_decorator(
+    name='retrieve',
+    decorator=swagger_auto_schema(operation_summary='Retrieve a single collection by ID.'),
+)
 class CollectionViewSet(ReadOnlyModelViewSet):
     serializer_class = CollectionSerializer
     queryset = Collection.objects.all()
