@@ -20,6 +20,8 @@ class AccessionViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
     queryset = Accession.objects.all()
     permission_classes = [IsAdminUser]
 
+    swagger_schema = None
+
     def perform_update(self, serializer):
         with transaction.atomic():
             serializer.save()
@@ -63,6 +65,8 @@ class MetadataFileViewSet(
     serializer_class = MetadataFileSerializer
     queryset = MetadataFile.objects.all()
     permission_classes = [IsAdminUser]
+
+    swagger_schema = None
 
     def perform_destroy(self, instance):
         # Delete the blob from S3
