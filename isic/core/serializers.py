@@ -1,6 +1,7 @@
 import re
 from typing import Optional, Union
 
+from django.contrib.auth.models import User
 from rest_framework import serializers
 from rest_framework.fields import Field
 
@@ -8,6 +9,14 @@ from isic.core.models import Image
 from isic.core.models.collection import Collection
 from isic.core.models.image import RESTRICTED_SEARCH_FIELDS
 from isic.core.permissions import get_visible_objects
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'created', 'email', 'first_name', 'last_name']
+
+    created = serializers.DateTimeField(source='date_joined')
 
 
 class CollectionsField(Field):
