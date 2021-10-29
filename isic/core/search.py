@@ -135,7 +135,7 @@ def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 500) -> None
     # Use a generator for lazy evaluation
     image_documents = (
         image.as_elasticsearch_document
-        for image in qs.prefetch_related('accession__upload__cohort__contributor__owners')
+        for image in qs.prefetch_related('accession__cohort__contributor__owners')
         .prefetch_related('shares')
         .all()
     )

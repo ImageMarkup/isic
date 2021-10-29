@@ -56,16 +56,16 @@ def cohort_detail(request, pk):
         Cohort,
         pk=pk,
     )
-    accession_qs = Accession.objects.filter(upload__cohort=cohort).order_by('created')
+    accession_qs = Accession.objects.filter(cohort=cohort).order_by('created')
 
     num_duplicates = accession_qs.filter(
         distinctnessmeasure__checksum__in=DistinctnessMeasure.objects.values('checksum')
         .annotate(is_duplicate=Count('checksum'))
-        .filter(accession__upload__cohort=cohort, is_duplicate__gt=1)
+        .filter(accession__cohort=cohort, is_duplicate__gt=1)
         .values('checksum')
     ).count()
     num_unique_lesions = (
-        Accession.objects.filter(metadata__lesion_id__isnull=False, upload__cohort=cohort)
+        Accession.objects.filter(metadata__lesion_id__isnull=False, cohort=cohort)
         .values('metadata__lesion_id')
         .distinct()
         .count()

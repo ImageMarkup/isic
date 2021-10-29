@@ -64,7 +64,7 @@ class ContributorAdmin(admin.ModelAdmin):
         qs = super().get_queryset(request)
         qs = qs.annotate(
             cohorts_count=Count('cohorts', distinct=True),
-            accessions_count=Count('cohorts__zips__accessions', distinct=True),
+            accessions_count=Count('cohorts__accessions', distinct=True),
         )
         return qs
 
@@ -202,7 +202,7 @@ class MetadataFileAdmin(admin.ModelAdmin):
 
 @admin.register(Accession)
 class AccessionAdmin(admin.ModelAdmin):
-    list_select_related = ['upload__cohort']
+    list_select_related = ['cohort']
     list_display = ['id', 'blob_name', 'human_blob_size', 'created', 'status', 'cohort']
     list_filter = ['status']
     search_fields = ['blob_name', 'girder_id']
@@ -217,9 +217,9 @@ class AccessionAdmin(admin.ModelAdmin):
     def human_blob_size(self, obj):
         return filesizeformat(obj.blob_size)
 
-    @admin.display(ordering='upload__cohort')
+    @admin.display(ordering='cohort')
     def cohort(self, obj):
-        return obj.upload.cohort
+        return obj.cohort
 
     @admin.display()
     def thumbnail_image(self, obj):
@@ -228,7 +228,7 @@ class AccessionAdmin(admin.ModelAdmin):
 
 @admin.register(CheckLog)
 class CheckLogAdmin(admin.ModelAdmin):
-    list_select_related = ['accession', 'creator', 'accession__upload__cohort']
+    list_select_related = ['accession', 'creator', 'accession__cohort']
     list_display = ['id', 'cohort', 'accession', 'creator', 'created', 'change_field', 'change_to']
     list_filter = ['change_field', 'change_to']
 
@@ -236,7 +236,7 @@ class CheckLogAdmin(admin.ModelAdmin):
 
     @admin.display(description='Cohort')
     def cohort(self, obj):
-        return obj.accession.upload.cohort
+        return obj.accession.cohort
 
 
 @admin.register(Zip)

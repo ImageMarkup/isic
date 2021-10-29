@@ -55,7 +55,7 @@ def validate_csv_format_and_filenames(df, cohort):
         )
 
     matching_accessions = Accession.objects.filter(
-        upload__cohort=cohort, blob_name__in=df['filename']
+        cohort=cohort, blob_name__in=df['filename']
     ).values_list('blob_name', 'metadata')
 
     existing_df = pd.DataFrame((x[0] for x in matching_accessions), columns=['filename'])

@@ -52,7 +52,7 @@ class Zip(CreationSortedTimeStampedModel):
                 blob_names_in_zip.add(original_filename)
 
         blob_name_preexisting = Accession.objects.filter(
-            upload__cohort=self.cohort, blob_name__in=blob_names_in_zip
+            cohort=self.cohort, blob_name__in=blob_names_in_zip
         ).values_list('blob_name', flat=True)
 
         return sorted(blob_name_preexisting), sorted(blob_name_duplicates)
@@ -86,6 +86,7 @@ class Zip(CreationSortedTimeStampedModel):
                         zip_item_content_type = guess_type(zip_item.name)[0]
                         # TODO: Store content_type in the DB?
                         self.accessions.create(
+                            cohort=self.cohort,
                             blob_name=zip_item.name,
                             # Use an InMemoryUploadedFile instead of a SimpleUploadedFile, since
                             # we can explicitly know the size and don't need the stream to be

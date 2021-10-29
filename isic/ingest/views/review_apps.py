@@ -24,7 +24,7 @@ class ReviewAppView(ListView):
 
     def get_queryset(self):
         self.cohort = get_object_or_404(Cohort, pk=self.kwargs['cohort_pk'])
-        filters = Q(upload__cohort=self.cohort)
+        filters = Q(cohort=self.cohort)
         unreviewed = self.get_unreviewed_filter()
         return Accession.objects.filter(filters & unreviewed).order_by(
             'metadata__diagnosis', 'created'
@@ -93,7 +93,7 @@ class DuplicateReviewAppView(GroupedReviewAppView):
                     )
                 )
                 .filter(
-                    accession__upload__cohort=self.cohort,
+                    accession__cohort=self.cohort,
                     is_duplicate__gt=1,
                     num_unreviewed_accessions__gt=0,
                 )
@@ -108,7 +108,7 @@ class DuplicateReviewAppView(GroupedReviewAppView):
         context = super().get_context_data(**kwargs)
         grouped_accessions: dict[str, list] = defaultdict(list)
         relevant_accessions = Accession.objects.select_related('distinctnessmeasure').filter(
-            upload__cohort=self.cohort,
+            cohort=self.cohort,
             distinctnessmeasure__checksum__in=self.get_queryset(),
         )
         for accession in relevant_accessions:
@@ -147,7 +147,7 @@ class LesionReviewAppView(GroupedReviewAppView):
     def get_queryset(self):
         self.cohort = get_object_or_404(Cohort, pk=self.kwargs['cohort_pk'])
         return (
-            Accession.objects.filter(upload__cohort=self.cohort, metadata__lesion_id__isnull=False)
+            Accession.objects.filter(cohort=self.cohort, metadata__lesion_id__isnull=False)
             .filter(self.get_unreviewed_filter())
             .order_by('metadata__lesion_id', 'metadata__acquisition_day')
             .distinct('metadata__lesion_id')
@@ -158,7 +158,7 @@ class LesionReviewAppView(GroupedReviewAppView):
         context = super().get_context_data(**kwargs)
         grouped_accessions: dict[str, list] = defaultdict(list)
         relevant_accessions = Accession.objects.filter(
-            upload__cohort=self.cohort, metadata__lesion_id__in=self.get_queryset()
+            cohort=self.cohort, metadata__lesion_id__in=self.get_queryset()
         )
         for accession in relevant_accessions:
             grouped_accessions[accession.metadata['lesion_id']].append(accession)

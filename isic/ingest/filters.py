@@ -28,7 +28,7 @@ class AccessionFilter(django_filters.FilterSet):
         super().__init__(data=data, queryset=queryset, request=request, prefix=prefix)
 
         diagnosis_frequencies = (
-            Accession.objects.filter(upload__cohort=cohort, metadata__diagnosis__isnull=False)
+            Accession.objects.filter(cohort=cohort, metadata__diagnosis__isnull=False)
             .values('metadata__diagnosis')
             .order_by('metadata__diagnosis')
             .annotate(count=Count('metadata__diagnosis'))

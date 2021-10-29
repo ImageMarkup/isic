@@ -54,14 +54,14 @@
             <div class="py-3 flex justify-between text-sm font-medium">
               <dt class="text-gray-500">Contributor</dt>
               <dd class="text-gray-900">
-                <a href="{% url 'admin:ingest_contributor_change' image.accession.upload.cohort.contributor.pk %}">
-                  {{image.accession.upload.cohort.contributor.institution_name}}
+                <a href="{% url 'admin:ingest_contributor_change' image.accession.cohort.contributor.pk %}">
+                  {{image.accession.cohort.contributor.institution_name}}
                 </a></dd>
             </div>
 
             <div class="py-3 flex justify-between text-sm font-medium">
               <dt class="text-gray-500">Cohort</dt>
-              <dd class="text-gray-900">{{image.accession.upload.cohort.name}}</dd>
+              <dd class="text-gray-900">{{image.accession.cohort.name}}</dd>
             </div>
 
             <div class="py-3 flex justify-between text-sm font-medium">
