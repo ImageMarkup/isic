@@ -1,12 +1,19 @@
 from django.db import transaction
+from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
+from isic.core.permissions import IsicObjectPermissionsFilter
 from isic.ingest.models import Accession, MetadataFile
-from isic.ingest.serializers import AccessionSerializer, MetadataFileSerializer
+from isic.ingest.models.contributor import Contributor
+from isic.ingest.serializers import (
+    AccessionSerializer,
+    ContributorSerializer,
+    MetadataFileSerializer,
+)
 from isic.ingest.tasks import apply_metadata_task
 
 
@@ -57,6 +64,23 @@ class AccessionViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
             return Response({})
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@method_decorator(
+    name='create',
+    decorator=swagger_auto_schema(operation_summary='Create a contributor.'),
+)
+@method_decorator(
+    name='list', decorator=swagger_auto_schema(operation_summary='Return a list of contributors.')
+)
+@method_decorator(
+    name='retrieve',
+    decorator=swagger_auto_schema(operation_summary='Retrieve a single contributor by ID.'),
+)
+class ContributorViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
+    serializer_class = ContributorSerializer
+    queryset = Contributor.objects.all()
+    filter_backends = [IsicObjectPermissionsFilter]
 
 
 class MetadataFileViewSet(
