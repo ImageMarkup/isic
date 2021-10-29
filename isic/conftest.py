@@ -9,7 +9,7 @@ from isic.ingest.tests.factories import (
     CohortFactory,
     ContributorFactory,
     MetadataFileFactory,
-    ZipFactory,
+    ZipUploadFactory,
 )
 from isic.studies.tests.factories import (
     AnnotationFactory,
@@ -77,7 +77,7 @@ register(AccessionFactory)
 register(CohortFactory)
 register(ContributorFactory)
 register(MetadataFileFactory)
-register(ZipFactory)
+register(ZipUploadFactory)
 
 # core factories
 register(ImageFactory)

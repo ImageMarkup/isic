@@ -91,9 +91,9 @@ def validate_internal_consistency(df):
 def validate_archive_consistency(df, cohort):
     # keyed by column, message
     column_problems: dict[tuple[str, str], list[int]] = defaultdict(list)
-    accessions = Accession.objects.filter(
-        upload__cohort=cohort, blob_name__in=df['filename']
-    ).values_list('blob_name', 'metadata')
+    accessions = Accession.objects.filter(cohort=cohort, blob_name__in=df['filename']).values_list(
+        'blob_name', 'metadata'
+    )
     # TODO: easier way to do this?
     accessions_dict = {x[0]: x[1] for x in accessions}
 

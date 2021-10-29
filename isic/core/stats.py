@@ -1,7 +1,7 @@
 from django.conf import settings
 
 from isic.core.models import Collection, Image
-from isic.ingest.models import Contributor, Zip
+from isic.ingest.models import Contributor, ZipUpload
 from isic.login.girder import get_girder_db
 from isic.studies.models import Annotation, Markup, Response, Study
 
@@ -18,7 +18,7 @@ def get_archive_stats():
         'responses_count': Response.objects.count(),
         'studies_count': Study.objects.count(),
         'annotated_images_count': Annotation.objects.values('image').distinct().count(),
-        'uploaders_count': Zip.objects.values('creator').distinct().count(),
+        'uploaders_count': ZipUpload.objects.values('creator').distinct().count(),
         'annotating_users_count': Annotation.objects.values('annotator').distinct().count(),
     }
 

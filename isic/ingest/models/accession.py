@@ -12,7 +12,7 @@ from s3_file_field import S3FileField
 from isic.core.models import CreationSortedTimeStampedModel
 from isic.ingest.models.cohort import Cohort
 
-from .zip import Zip
+from .zip_upload import ZipUpload
 
 
 class AccessionStatus(models.TextChoices):
@@ -28,7 +28,7 @@ class Accession(CreationSortedTimeStampedModel):
         # A blob_name is unique at the *cohort* level, but that's not possible to enforce at the
         # database layer. At least enforce the blob_name being unique at the zip level.
         # TODO: How to properly enforce cohort, blob_name uniqueness at the app layer.
-        unique_together = [['upload', 'blob_name']]
+        unique_together = [['zip_upload', 'blob_name']]
 
         constraints = [
             # girder_id should be unique among nonempty girder_id values
@@ -46,7 +46,9 @@ class Accession(CreationSortedTimeStampedModel):
     girder_id = models.CharField(
         blank=True, max_length=24, help_text='The image_id from Girder.', db_index=True
     )
-    upload = models.ForeignKey(Zip, on_delete=models.CASCADE, null=True, related_name='accessions')
+    zip_upload = models.ForeignKey(
+        ZipUpload, on_delete=models.CASCADE, null=True, related_name='accessions'
+    )
     cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name='accessions')
 
     # the original blob is stored in case blobs need to be reprocessed

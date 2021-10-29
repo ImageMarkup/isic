@@ -16,7 +16,7 @@ from isic.ingest.models import (
     Cohort,
     DistinctnessMeasure,
     MetadataFile,
-    Zip,
+    ZipUpload,
 )
 from isic.ingest.utils.mime import guess_mime_type
 from isic.ingest.validators import MetadataRow
@@ -30,20 +30,20 @@ def generate_thumbnail_task(accession_pk: int) -> None:
 
 @shared_task
 def extract_zip_task(zip_pk: int):
-    zip = Zip.objects.get(pk=zip_pk)
+    zip_upload = ZipUpload.objects.get(pk=zip_pk)
 
     try:
-        zip.extract_and_notify()
-    except Zip.ExtractError:
+        zip_upload.extract_and_notify()
+    except ZipUpload.ExtractError:
         # Errors from bad input; these will be logged, but the task is not a failure
         pass
     except SoftTimeLimitExceeded:
-        zip.status = Zip.Status.FAILED
-        zip.save(update_fields=['status'])
+        zip_upload.status = ZipUpload.Status.FAILED
+        zip_upload.save(update_fields=['status'])
         raise
     else:
         # tasks should be delayed after the accessions are committed to the database
-        for accession_id in zip.accessions.values_list('id', flat=True):
+        for accession_id in zip_upload.accessions.values_list('id', flat=True):
             process_accession_task.delay(accession_id)
 
 
