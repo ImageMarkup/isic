@@ -8,9 +8,11 @@ from rest_framework.response import Response
 
 from isic.core.permissions import IsicObjectPermissionsFilter
 from isic.ingest.models import Accession, MetadataFile
+from isic.ingest.models.cohort import Cohort
 from isic.ingest.models.contributor import Contributor
 from isic.ingest.serializers import (
     AccessionSerializer,
+    CohortSerializer,
     ContributorSerializer,
     MetadataFileSerializer,
 )
@@ -64,6 +66,23 @@ class AccessionViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
             return Response({})
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@method_decorator(
+    name='create',
+    decorator=swagger_auto_schema(operation_summary='Create a cohort.'),
+)
+@method_decorator(
+    name='list', decorator=swagger_auto_schema(operation_summary='Return a list of cohorts.')
+)
+@method_decorator(
+    name='retrieve',
+    decorator=swagger_auto_schema(operation_summary='Retrieve a single cohort by ID.'),
+)
+class CohortViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
+    serializer_class = CohortSerializer
+    queryset = Cohort.objects.all()
+    filter_backends = [IsicObjectPermissionsFilter]
 
 
 @method_decorator(
