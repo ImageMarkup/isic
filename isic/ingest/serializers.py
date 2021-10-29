@@ -1,6 +1,8 @@
 from rest_framework import serializers
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from isic.ingest.models import Accession, MetadataFile
+from isic.ingest.models.cohort import Cohort
 from isic.ingest.models.contributor import Contributor
 
 
@@ -16,6 +18,45 @@ class AccessionSerializer(serializers.ModelSerializer):
             'duplicate_check',
             'lesion_check',
         ]
+
+
+class CohortSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cohort
+        fields = [
+            'id',
+            'created',
+            'creator',
+            'contributor',
+            'name',
+            'description',
+            'copyright_license',
+            'attribution',
+        ]
+        read_only_fields = ['created', 'creator']
+
+    def create(self, validated_data):
+        validated_data['creator'] = self.context['request'].user
+        return super().create(validated_data)
+
+    # TODO: figure out how to better integrate this into the permissions system
+    def validate_contributor(self, value):
+        if not self.context['request'].user.has_perm('ingest.add_cohort', value):
+            raise PermissionDenied
+        return value
+
+    def validate(self, data):
+        """
+        Check that the user is a contributor owner.
+
+        Note: this isn't quite the same as checking permissions because a superuser
+        shouldn't be able to create a cohort with a non-contributor owner as the creator.
+        """
+        # TODO: use .contains in django 4
+        if not data['contributor'].owners.filter(pk=self.context['request'].user.pk).exists():
+            raise ValidationError('Cohort creator is not a contributor owner.')
+
+        return data
 
 
 class ContributorSerializer(serializers.ModelSerializer):

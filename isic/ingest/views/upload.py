@@ -49,7 +49,7 @@ def upload_contributor_create(request):
 
 
 @login_required
-@permission_or_404('ingest.view_contributor', (Contributor, 'pk', 'contributor_pk'))
+@permission_or_404('ingest.add_cohort', (Contributor, 'pk', 'contributor_pk'))
 def upload_cohort_create(request, contributor_pk):
     contributor: Contributor = get_object_or_404(Contributor, pk=contributor_pk)
 

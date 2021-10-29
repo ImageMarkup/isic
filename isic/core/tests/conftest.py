@@ -22,3 +22,15 @@ def private_collection(collection_factory):
 def public_collection(collection_factory):
     collection = collection_factory(public=True)
     return collection
+
+
+@pytest.fixture
+def other_contributor(user_factory, contributor_factory):
+    user = user_factory()
+    contributor = contributor_factory(owners=[user])
+    return contributor
+
+
+@pytest.fixture
+def contributors(contributor, other_contributor):
+    return [contributor, other_contributor]
