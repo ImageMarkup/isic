@@ -110,7 +110,7 @@ def test_core_api_image_search_images_as_guest(searchable_images, api_client):
 def test_core_api_image_search_contributed(
     private_searchable_image, authenticated_api_client, user
 ):
-    private_searchable_image.accession.upload.cohort.contributor.owners.add(user)
+    private_searchable_image.accession.cohort.contributor.owners.add(user)
     add_to_search_index(private_searchable_image)
     get_elasticsearch_client().indices.refresh(index='_all')
 

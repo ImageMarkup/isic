@@ -58,11 +58,11 @@ class Cohort(CreationSortedTimeStampedModel):
         duplicate_cohort_checksums = (
             DistinctnessMeasure.objects.values('checksum')
             .annotate(is_duplicate=Count('checksum'))
-            .filter(is_duplicate__gt=1, accession__upload__cohort=self)
+            .filter(is_duplicate__gt=1, accession__cohort=self)
             .values_list('checksum')
         )
 
-        return Accession.objects.filter(upload__cohort=self).filter(
+        return Accession.objects.filter(cohort=self).filter(
             Q(quality_check=None)
             | Q(diagnosis_check=None)
             | Q(phi_check=None)
