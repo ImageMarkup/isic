@@ -63,7 +63,7 @@ class Image(CreationSortedTimeStampedModel):
                 'public': self.public,
                 # TODO: make sure these fields can't be searched on
                 'contributor_owner_ids': [
-                    user.pk for user in self.accession.upload.cohort.contributor.owners.all()
+                    user.pk for user in self.accession.cohort.contributor.owners.all()
                 ],
                 'shared_to': [user.pk for user in self.shares.all()],
                 'collections': list(self.collections.values_list('pk', flat=True)),
@@ -93,7 +93,7 @@ class ImagePermissions:
         elif user_obj.is_active and not user_obj.is_anonymous:
             return qs.filter(
                 Q(public=True)
-                | Q(accession__upload__cohort__contributor__owners=user_obj)
+                | Q(accession__cohort__contributor__owners=user_obj)
                 | Q(shares=user_obj)
             )
         else:

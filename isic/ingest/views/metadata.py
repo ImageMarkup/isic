@@ -71,7 +71,7 @@ def metadata_file_create(request, cohort_pk):
 def reset_metadata(request, cohort_pk):
     # TODO: GET request to mutate?
     cohort = get_object_or_404(Cohort, pk=cohort_pk)
-    Accession.objects.filter(upload__cohort=cohort).update(metadata={})
+    Accession.objects.filter(cohort=cohort).update(metadata={})
     messages.info(request, 'Metadata has been reset.')
     return HttpResponseRedirect(reverse('cohort-detail', args=[cohort_pk]))
 
