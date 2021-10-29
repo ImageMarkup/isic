@@ -22,7 +22,7 @@ from isic.ingest.models import (
     Cohort,
     Contributor,
     MetadataFile,
-    Zip,
+    ZipUpload,
 )
 from isic.ingest.tasks import extract_zip_task
 
@@ -47,7 +47,7 @@ class MetadataFileInline(ReadonlyTabularInline):
 
 
 class ZipInline(ReadonlyTabularInline):
-    model = Zip
+    model = ZipUpload
 
 
 @admin.register(Contributor)
@@ -104,36 +104,36 @@ class CohortAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         qs = qs.annotate(
-            zips_count=Count('zips', distinct=True),
+            zip_uploads_count=Count('zip_uploads', distinct=True),
             metadata_files_count=Count('metadata_files', distinct=True),
-            accessions_count=Count('zips__accessions', distinct=True),
+            accessions_count=Count('zip_uploads__accessions', distinct=True),
             pending_accessions_count=Count(
-                'zips__accessions',
-                filter=Q(zips__accessions__status=AccessionStatus.CREATING)
-                | Q(zips__accessions__status=AccessionStatus.CREATED),
+                'zip_uploads__accessions',
+                filter=Q(zip_uploads__accessions__status=AccessionStatus.CREATING)
+                | Q(zip_uploads__accessions__status=AccessionStatus.CREATED),
                 distinct=True,
             ),
             skipped_accessions_count=Count(
-                'zips__accessions',
-                filter=Q(zips__accessions__status=AccessionStatus.SKIPPED),
+                'zip_uploads__accessions',
+                filter=Q(zip_uploads__accessions__status=AccessionStatus.SKIPPED),
                 distinct=True,
             ),
             failed_accessions_count=Count(
-                'zips__accessions',
-                filter=Q(zips__accessions__status=AccessionStatus.FAILED),
+                'zip_uploads__accessions',
+                filter=Q(zip_uploads__accessions__status=AccessionStatus.FAILED),
                 distinct=True,
             ),
             successful_accessions_count=Count(
-                'zips__accessions',
-                filter=Q(zips__accessions__status=AccessionStatus.SUCCEEDED),
+                'zip_uploads__accessions',
+                filter=Q(zip_uploads__accessions__status=AccessionStatus.SUCCEEDED),
                 distinct=True,
             ),
         )
         return qs
 
-    @admin.display(ordering='zips_count')
+    @admin.display(ordering='zip_uploads_count')
     def zips(self, obj):
-        return intcomma(obj.zips_count)
+        return intcomma(obj.zip_uploads_count)
 
     @admin.display(ordering='metadata_files_count')
     def metadata_files(self, obj):
@@ -172,10 +172,10 @@ class CohortAdmin(admin.ModelAdmin):
 
         writer.writeheader()
         for cohort in queryset.select_related('contributor').prefetch_related(
-            Prefetch('zips__accessions', queryset=Accession.objects.select_related('image'))
+            Prefetch('zip_uploads__accessions', queryset=Accession.objects.select_related('image'))
         ):
-            for zip in cohort.zips.all():
-                for accession in zip.accessions.all():
+            for zip_upload in cohort.zip_uploads.all():
+                for accession in zip_upload.accessions.all():
                     d = {
                         'contributor': cohort.contributor.institution_name,
                         'cohort': cohort.name,
@@ -239,7 +239,7 @@ class CheckLogAdmin(admin.ModelAdmin):
         return obj.accession.cohort
 
 
-@admin.register(Zip)
+@admin.register(ZipUpload)
 class ZipAdmin(DjangoObjectActions, admin.ModelAdmin):
     list_select_related = ['creator', 'cohort']
     list_display = ['id', 'blob_name', 'human_blob_size', 'creator', 'created', 'status', 'cohort']

@@ -44,13 +44,13 @@
                 {% comment %}
                   TODO: put in a status for rejected zips
                   {% endcomment %}
-                {% for zip in cohort.zips.all %}
+                {% for zip_upload in cohort.zip_uploads.all %}
                   <tr class="{% cycle 'bg-white' 'bg-gray-50' %}">
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {{ zip.blob_name }}
+                      {{ zip_upload.blob_name }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {{ zip.blob_size|filesizeformat }}
+                      {{ zip_upload.blob_size|filesizeformat }}
                     </td>
                   </tr>
                 {% endfor %}
