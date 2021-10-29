@@ -91,7 +91,7 @@ def collection_detail(request, pk):
         request.user,
         'ingest.view_contributor',
         Contributor.objects.filter(
-            pk__in=collection.images.values('accession__upload__cohort__contributor__pk').distinct()
+            pk__in=collection.images.values('accession__cohort__contributor__pk').distinct()
         ).order_by('institution_name'),
     )
 
@@ -113,7 +113,7 @@ def collection_detail(request, pk):
 def image_detail(request, pk):
     image = get_object_or_404(
         Image.objects.select_related(
-            'accession__upload__cohort__contributor__creator',
+            'accession__cohort__contributor__creator',
         )
         .prefetch_related(
             Prefetch('accession__checklogs', queryset=CheckLog.objects.select_related('creator'))

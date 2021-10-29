@@ -114,7 +114,7 @@ def apply_metadata_task(metadata_file_pk: int):
     with transaction.atomic():
         for _, row in df.iterrows():
             accession = Accession.objects.get(
-                blob_name=row['filename'], upload__cohort=metadata_file.cohort
+                blob_name=row['filename'], cohort=metadata_file.cohort
             )
             # filename doesn't need to be stored in the metadata since it's equal to blob_name
             del row['filename']
@@ -146,7 +146,7 @@ def publish_cohort_task(cohort_pk: int, public: bool):
     for accession in (
         Accession.objects.filter(status=AccessionStatus.SUCCEEDED)
         .exclude(Accession.rejected_filter())
-        .filter(image__isnull=True, upload__cohort=cohort)
+        .filter(image__isnull=True, cohort=cohort)
         .values_list('pk', flat=True)
     ):
         publish_accession_task.delay(accession, public)
