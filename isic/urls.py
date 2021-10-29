@@ -9,7 +9,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
 from isic.core.api import CollectionViewSet, ImageViewSet
-from isic.ingest.api import AccessionViewSet, MetadataFileViewSet
+from isic.ingest.api import AccessionViewSet, ContributorViewSet, MetadataFileViewSet
 from isic.login.views import get_girder_token
 from isic.studies.api import AnnotationViewSet, StudyTaskViewSet, StudyViewSet
 
@@ -17,6 +17,7 @@ router = routers.SimpleRouter()
 router.register('accessions', AccessionViewSet)
 router.register('annotations', AnnotationViewSet)
 router.register('collections', CollectionViewSet)
+router.register('contributors', ContributorViewSet)
 router.register('images', ImageViewSet)
 router.register('metadata-files', MetadataFileViewSet)
 router.register('studies', StudyViewSet)
