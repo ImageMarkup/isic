@@ -2,18 +2,6 @@ import pytest
 from pytest import lazy_fixture
 
 
-@pytest.fixture
-def other_contributor(user_factory, contributor_factory):
-    user = user_factory()
-    contributor = contributor_factory(owners=[user])
-    return contributor
-
-
-@pytest.fixture
-def contributors(contributor, other_contributor):
-    return [contributor, other_contributor]
-
-
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     'client,contributors_,num_visible',
