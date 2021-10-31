@@ -6,6 +6,7 @@ from allauth.account.auth_backends import AuthenticationBackend
 from django.conf import settings
 from django.contrib.auth.hashers import BasePasswordHasher, mask_hash
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.http import HttpRequest
 from django.utils.translation import gettext_noop as _
 from passlib.hash import bcrypt
@@ -54,6 +55,7 @@ class GirderBackend(AuthenticationBackend):
         return super().authenticate(request, **credentials)
 
     @staticmethod
+    @transaction.atomic
     def get_or_create_user_from_girder(girder_user: dict) -> User:
         try:
             user = User.objects.get(username=girder_user['email'])
@@ -68,12 +70,9 @@ class GirderBackend(AuthenticationBackend):
                 is_staff=girder_user['admin'],
                 is_superuser=girder_user['admin'],
             )
-            if girder_user['salt'] is None:
-                user.set_unusable_password()
-            else:
-                user.password = (f'bcrypt_girder${girder_user["salt"]}',)
+            # This will trigger sync_from_girder, which will set passwords, email verification, etc.
             user.save()
         else:
-            user.profile.sync_from_girder()
+            user.profile.sync_from_girder(girder_user)
 
         return user
