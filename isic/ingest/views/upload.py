@@ -78,7 +78,7 @@ def cohort_files(request, pk):
     cohort = get_object_or_404(
         Cohort.objects.prefetch_related(
             Prefetch('metadata_files', queryset=MetadataFile.objects.order_by('-created'))
-        ).prefetch_related('zips'),
+        ).prefetch_related('zip_uploads'),
         pk=pk,
     )
     return render(

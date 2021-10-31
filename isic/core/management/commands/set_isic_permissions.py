@@ -10,7 +10,7 @@ from isic.ingest.models import (
     Contributor,
     DistinctnessMeasure,
     MetadataFile,
-    Zip,
+    ZipUpload,
 )
 from isic.studies.models import (
     Annotation,
@@ -48,7 +48,7 @@ def add_staff_group():
         Study,
         StudyTask,
         User,
-        Zip,
+        ZipUpload,
     ]:
         content_type = ContentType.objects.get_for_model(model)
         for permission in ['view', 'change']:
