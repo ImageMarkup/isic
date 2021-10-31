@@ -49,7 +49,7 @@ class IsicMixin(ConfigMixin):
 
         # PASSWORD_HASHERS are ordered "best" to "worst", appending Girder last means
         # it will be upgraded on login.
-        configuration.PASSWORD_HASHERS += ['isic.login.backends.GirderPasswordHasher']
+        configuration.PASSWORD_HASHERS += ['isic.login.hashers.GirderPasswordHasher']
 
         configuration.OAUTH2_PROVIDER.update(
             {
@@ -75,7 +75,6 @@ class IsicMixin(ConfigMixin):
         )
 
     AUTHENTICATION_BACKENDS = [
-        'isic.login.backends.GirderBackend',
         'allauth.account.auth_backends.AuthenticationBackend',
         'isic.core.permissions.IsicObjectPermissionsBackend',
     ]
