@@ -11,7 +11,7 @@ from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
 from isic.core.permissions import permission_or_404
-from isic.ingest.models import Accession, AccessionStatus, Cohort, DistinctnessMeasure, Zip
+from isic.ingest.models import Accession, AccessionStatus, Cohort, DistinctnessMeasure, ZipUpload
 from isic.ingest.tasks import extract_zip_task
 
 
@@ -26,7 +26,7 @@ def make_breadcrumbs(cohort: Optional[Cohort] = None) -> list:
 
 class ZipForm(ModelForm):
     class Meta:
-        model = Zip
+        model = ZipUpload
         fields = ['blob']
 
 
@@ -52,10 +52,7 @@ def zip_create(request, cohort_pk):
 
 @staff_member_required
 def cohort_detail(request, pk):
-    cohort = get_object_or_404(
-        Cohort,
-        pk=pk,
-    )
+    cohort = get_object_or_404(Cohort.objects.select_related('creator'), pk=pk)
     accession_qs = Accession.objects.filter(cohort=cohort).order_by('created')
 
     num_duplicates = accession_qs.filter(

@@ -19,14 +19,14 @@ from .cohort import Cohort
 logger = logging.getLogger(__name__)
 
 
-class Zip(CreationSortedTimeStampedModel):
+class ZipUpload(CreationSortedTimeStampedModel):
     class Status(models.TextChoices):
         CREATED = 'created', 'Created'
         EXTRACTING = 'extracting', 'Extracting'
         EXTRACTED = 'extracted', 'Extracted'
         FAILED = 'failed', 'Failed'
 
-    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name='zips')
+    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name='zip_uploads')
 
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
 
@@ -69,17 +69,19 @@ class Zip(CreationSortedTimeStampedModel):
     def extract(self):
         from .accession import AccessionStatus
 
-        if self.status != Zip.Status.CREATED:
+        if self.status != ZipUpload.Status.CREATED:
             raise Exception('Can not extract zip %d with status %s', self.pk, self.status)
 
         try:
             with transaction.atomic():
-                self.status = Zip.Status.EXTRACTING
+                self.status = ZipUpload.Status.EXTRACTING
                 self.save(update_fields=['status'])
 
                 blob_name_preexisting, blob_name_duplicates = self._get_preexisting_and_duplicates()
                 if blob_name_preexisting or blob_name_duplicates:
-                    raise Zip.DuplicateExtractError(blob_name_preexisting, blob_name_duplicates)
+                    raise ZipUpload.DuplicateExtractError(
+                        blob_name_preexisting, blob_name_duplicates
+                    )
 
                 with self.blob.open('rb') as zip_blob_stream:
                     for zip_item in items_in_zip(zip_blob_stream):
@@ -105,21 +107,21 @@ class Zip(CreationSortedTimeStampedModel):
 
         except zipfile.BadZipFile as e:
             logger.warning('Failed zip extraction: %d <%s>: invalid zip: %s', self.pk, self, e)
-            self.status = Zip.Status.FAILED
-            raise Zip.InvalidExtractError
-        except Zip.DuplicateExtractError:
+            self.status = ZipUpload.Status.FAILED
+            raise ZipUpload.InvalidExtractError
+        except ZipUpload.DuplicateExtractError:
             logger.warning('Failed zip extraction: %d <%s>: duplicates', self.pk, self)
-            self.status = Zip.Status.FAILED
+            self.status = ZipUpload.Status.FAILED
             raise
         else:
-            self.status = Zip.Status.EXTRACTED
+            self.status = ZipUpload.Status.EXTRACTED
         finally:
             self.save(update_fields=['status'])
 
     def extract_and_notify(self):
         try:
             self.extract()
-        except Zip.InvalidExtractError:
+        except ZipUpload.InvalidExtractError:
             send_mail(
                 'A problem processing your zip file',
                 render_to_string(
@@ -132,7 +134,7 @@ class Zip(CreationSortedTimeStampedModel):
                 [self.creator.email],
             )
             raise
-        except Zip.DuplicateExtractError as e:
+        except ZipUpload.DuplicateExtractError as e:
             blob_name_preexisting, blob_name_duplicates = e.args
             send_mail(
                 'A problem processing your zip file',
@@ -164,5 +166,5 @@ class Zip(CreationSortedTimeStampedModel):
     def reset(self):
         with transaction.atomic():
             self.accessions.all().delete()
-            self.status = Zip.Status.CREATED
+            self.status = ZipUpload.Status.CREATED
             self.save(update_fields=['status'])

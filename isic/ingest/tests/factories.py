@@ -5,7 +5,7 @@ import factory.django
 
 from isic.core.models import CopyrightLicense
 from isic.factories import UserFactory
-from isic.ingest.models import Accession, Cohort, Contributor, MetadataFile, Zip
+from isic.ingest.models import Accession, Cohort, Contributor, MetadataFile, ZipUpload
 
 from .csv_streams import csv_stream_without_filename_column
 from .zip_streams import zip_stream_only_images
@@ -55,9 +55,9 @@ class MetadataFileFactory(factory.django.DjangoModelFactory):
     blob_size = factory.SelfAttribute('blob.size')
 
 
-class ZipFactory(factory.django.DjangoModelFactory):
+class ZipUploadFactory(factory.django.DjangoModelFactory):
     class Meta:
-        model = Zip
+        model = ZipUpload
 
     cohort = factory.SubFactory(CohortFactory)
     creator = factory.SelfAttribute('cohort.creator')
@@ -73,8 +73,8 @@ class AccessionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Accession
 
-    upload = factory.SubFactory(ZipFactory)
-    cohort = factory.SelfAttribute('upload.cohort')
+    zip_upload = factory.SubFactory(ZipUploadFactory)
+    cohort = factory.SelfAttribute('zip_upload.cohort')
     original_blob = factory.django.FileField(from_path=data_dir / 'ISIC_0000000.jpg')
     blob = factory.django.FileField(from_path=data_dir / 'ISIC_0000000.jpg')
     blob_name = factory.SelfAttribute('original_blob.name')
