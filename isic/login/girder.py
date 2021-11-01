@@ -1,4 +1,5 @@
 import datetime
+from functools import lru_cache
 import hashlib
 import random
 import string
@@ -11,6 +12,7 @@ from pymongo import MongoClient
 from pymongo.database import Database
 
 
+@lru_cache
 def get_girder_db() -> Database:
     # Default database name is specified within ISIC_MONGO_URI
     return MongoClient(settings.ISIC_MONGO_URI).get_database()

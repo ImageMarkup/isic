@@ -1,5 +1,7 @@
 import logging
+from typing import Optional
 
+from allauth.account.models import EmailAddress
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
@@ -28,8 +30,9 @@ class Profile(models.Model):
     # check if the user password has changed.
     girder_salt = models.CharField(max_length=60, blank=True)
 
-    def sync_from_girder(self) -> None:
-        girder_user = fetch_girder_user_by_email(self.user.email)
+    def sync_from_girder(self, girder_user: Optional[dict] = None) -> None:
+        if girder_user is None:
+            girder_user = fetch_girder_user_by_email(self.user.email)
         if not girder_user:
             # If this is a Django-native signup, the girder_user will not have been created yet
             logger.info(f'Cannot retrieve girder_user for {self.user.email}.')
@@ -46,6 +49,8 @@ class Profile(models.Model):
             changed = True
 
         if self.girder_salt != girder_user['salt']:
+            if isinstance(girder_user['salt'], bytes):
+                girder_user['salt'] = girder_user['salt'].decode('utf-8')
             # An empty salt is stored as None in MongoDB, but should be '' here
             self.girder_salt = girder_user['salt'] or ''
             if not self.girder_salt:
@@ -57,6 +62,16 @@ class Profile(models.Model):
         if changed:
             self.user.save()
             self.save()
+
+        if girder_user['emailVerified'] is True:
+            EmailAddress.objects.update_or_create(
+                user=self.user,
+                email=self.user.email,
+                defaults={
+                    'primary': True,
+                    'verified': True,
+                },
+            )
 
 
 @receiver(post_save, sender=User)
