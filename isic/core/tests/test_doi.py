@@ -26,7 +26,7 @@ def staff_user_request(staff_user, mocker):
 
 @pytest.mark.django_db
 def test_doi_form_requires_public_collection(private_collection, staff_user_request):
-    form = CreateDoiForm(data={'collection_pk': private_collection.pk}, request=staff_user_request)
+    form = CreateDoiForm(data={}, collection=private_collection, request=staff_user_request)
     assert not form.is_valid()
 
 
@@ -35,7 +35,7 @@ def test_doi_form_requires_all_public_images(
     public_collection_with_private_images, staff_user_request
 ):
     form = CreateDoiForm(
-        data={'collection_pk': public_collection_with_private_images.pk}, request=staff_user_request
+        data={}, collection=public_collection_with_private_images, request=staff_user_request
     )
     assert not form.is_valid()
 
@@ -46,7 +46,8 @@ def test_doi_form_requires_no_existing_doi(public_collection, staff_user_request
     public_collection.save()
 
     form = CreateDoiForm(
-        data={'collection_pk': public_collection.pk},
+        data={},
+        collection=public_collection,
         request=staff_user_request,
     )
     assert not form.is_valid()
@@ -57,7 +58,8 @@ def test_doi_form_creation(public_collection_with_public_images, staff_user_requ
     mocker.patch.object(CreateDoiForm, '_create_doi', lambda self: True)
 
     form = CreateDoiForm(
-        data={'collection_pk': public_collection_with_public_images.pk},
+        data={},
+        collection=public_collection_with_public_images,
         request=staff_user_request,
     )
     assert form.is_valid(), form.errors
@@ -80,14 +82,14 @@ def collection_with_several_creators(image_factory, collection_factory, cohort_f
     collection = collection_factory(public=True)
 
     for _ in range(3):
-        image_factory(public=True, accession__upload__cohort=cohort_a)
+        image_factory(public=True, accession__cohort=cohort_a)
 
     for _ in range(2):
-        image_factory(public=True, accession__upload__cohort=cohort_b)
-        image_factory(public=True, accession__upload__cohort=cohort_c)
+        image_factory(public=True, accession__cohort=cohort_b)
+        image_factory(public=True, accession__cohort=cohort_c)
 
     collection.images.set(
-        Image.objects.filter(accession__upload__cohort__in=[cohort_a, cohort_b, cohort_c])
+        Image.objects.filter(accession__cohort__in=[cohort_a, cohort_b, cohort_c])
     )
 
     return collection, cohort_a, cohort_b, cohort_c
@@ -115,7 +117,7 @@ def test_doi_creators_order_anonymous_contributions_last(
     anon_cohort = cohort_factory(attribution='Anonymous')
     # Give anonymous cohort more contributions than others, assert it's still ordered last
     for _ in range(10):
-        collection.images.add(image_factory(public=True, accession__upload__cohort=anon_cohort))
+        collection.images.add(image_factory(public=True, accession__cohort=anon_cohort))
 
     doi = collection.as_datacite_doi(user, 'foo')
 
@@ -135,14 +137,14 @@ def collection_with_repeated_creators(image_factory, collection_factory, cohort_
     collection = collection_factory(public=True)
 
     for _ in range(3):
-        image_factory(public=True, accession__upload__cohort=cohort_a1)
-        image_factory(public=True, accession__upload__cohort=cohort_a2)
+        image_factory(public=True, accession__cohort=cohort_a1)
+        image_factory(public=True, accession__cohort=cohort_a2)
 
     for _ in range(2):
-        image_factory(public=True, accession__upload__cohort=cohort_b)
+        image_factory(public=True, accession__cohort=cohort_b)
 
     collection.images.set(
-        Image.objects.filter(accession__upload__cohort__in=[cohort_a1, cohort_a2, cohort_b])
+        Image.objects.filter(accession__cohort__in=[cohort_a1, cohort_a2, cohort_b])
     )
 
     return collection, cohort_a1, cohort_a2, cohort_b
