@@ -5,8 +5,11 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db.models import Count, Prefetch
+from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
+from django.urls.base import reverse
 
+from isic.core.forms.doi import DOI_PREFIX, CreateDoiForm
 from isic.core.models import Collection, Image
 from isic.core.permissions import get_visible_objects, permission_or_404
 from isic.core.stats import get_archive_stats
@@ -79,8 +82,41 @@ def collection_list(request):
 
 
 @permission_or_404('core.view_collection', (Collection, 'pk', 'pk'))
+@permission_or_404('core.create_doi', (Collection, 'pk', 'pk'))
+def collection_create_doi(request, pk):
+    collection = get_object_or_404(Collection, pk=pk)
+    context = {'collection': collection}
+
+    if request.method == 'POST':
+        context['form'] = CreateDoiForm(request.POST, collection=collection, request=request)
+        if context['form'].is_valid():
+            context['form'].save()
+            # TODO flash message
+            return HttpResponseRedirect(reverse('core/collection-detail', args=[collection.pk]))
+    else:
+        context['form'] = CreateDoiForm(
+            collection=collection,
+            request=request,
+        )
+
+    preview = collection.as_datacite_doi(request.user, f'{DOI_PREFIX}/123456')['data']['attributes']
+    preview['creators'] = ', '.join([c['name'] for c in preview['creators']])
+    context['preview'] = preview
+
+    if not collection.public or collection.images.filter(public=False).exists():
+        context['warnings'] = ['The collection or some of the images in it are private.']
+
+    return render(
+        request,
+        'core/collection_create_doi.html',
+        context,
+    )
+
+
+@permission_or_404('core.view_collection', (Collection, 'pk', 'pk'))
 def collection_detail(request, pk):
     collection = get_object_or_404(Collection, pk=pk)
+
     # TODO; if they can see the collection they can see the images?
     images = get_visible_objects(
         request.user, 'core.view_image', collection.images.order_by('created')
