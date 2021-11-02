@@ -4,11 +4,8 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.aggregates import Count
 from django.db.models.query import QuerySet
-from django.db.models.query_utils import Q
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
-
-from isic.ingest.models.cohort import Cohort
 
 from .doi import Doi
 from .image import Image
@@ -38,20 +35,14 @@ class Collection(TimeStampedModel):
         Creators are ordered by number of images contributed (to this collection), ties are broken
         alphabetically, except for Anonymous contributions which are always last.
         """
-        creator_cohorts = (
-            Cohort.objects.alias(
-                num_images=Count(
-                    'zips__accessions__image', filter=Q(zips__accessions__image__collections=self)
-                )
-            )
-            .filter(pk__in=self.images.values('accession__upload__cohort').distinct())
-            .order_by('-num_images', 'attribution')
+        creators = (
+            self.images.alias(num_images=Count('accession__image'))
+            .values_list('accession__cohort__attribution', flat=True)
+            .order_by('-num_images', 'accession__cohort__attribution')
             .distinct()
         )
 
-        creators = creator_cohorts.values_list('attribution', flat=True)
-
-        # Push Anonymous attributions to last
+        # Push an Anonymous attribution to the end
         creators = sorted(creators, key=lambda x: 1 if x == 'Anonymous' else 0)
 
         return creators
@@ -72,7 +63,7 @@ class Collection(TimeStampedModel):
                     # resourceType?
                     'types': {'resourceTypeGeneral': 'Dataset'},
                     # TODO: api.?
-                    'url': f'https://api.isic-archive.com/collections/{self.pk}',
+                    'url': f'https://api.isic-archive.com/collections/{self.pk}/',
                     'schemaVersion': 'http://datacite.org/schema/kernel-4',
                     'description': self.description,
                     'descriptionType': 'Other',
