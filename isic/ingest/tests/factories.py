@@ -38,7 +38,7 @@ class CohortFactory(factory.django.DjangoModelFactory):
     name = factory.Faker('sentence', nb_words=3, variable_nb_words=True)
     description = factory.Faker('paragraph')
     copyright_license = CopyrightLicense.CC_BY
-    attribution = factory.Faker('paragraph')
+    attribution = factory.Faker('sentence')
 
 
 class MetadataFileFactory(factory.django.DjangoModelFactory):

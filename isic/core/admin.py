@@ -7,6 +7,7 @@ from django_json_widget.widgets import JSONEditorWidget
 
 from isic.core.models import (
     Collection,
+    Doi,
     DuplicateImage,
     GirderDataset,
     GirderImage,
@@ -118,3 +119,8 @@ class CollectionAdmin(admin.ModelAdmin):
     @admin.display()
     def num_images(self, obj):
         return intcomma(obj.num_images)
+
+
+@admin.register(Doi)
+class DoiAdmin(admin.ModelAdmin):
+    list_display = ['id', 'url']
