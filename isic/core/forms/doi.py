@@ -17,22 +17,20 @@ DOI_PREFIX = '10.80222'
 
 
 class CreateDoiForm(forms.Form):
-    collection_pk = forms.IntegerField(widget=forms.HiddenInput())
-
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
+        self.collection: Collection = kwargs.pop('collection', None)
         super().__init__(*args, **kwargs)
 
     def clean(self):
         super().clean()
-        self.collection = Collection.objects.get(pk=self.cleaned_data['collection_pk'])
 
         if not self.request.user.has_perm('core.create_doi', self.collection):
             raise ValidationError("You don't have permissions to do that.")
-        elif not self.collection.public:
-            raise ValidationError('A collection must be public to issue a DOI.')
         elif self.collection.doi:
             raise ValidationError('This collection already has a DOI.')
+        elif not self.collection.public:
+            raise ValidationError('A collection must be public to issue a DOI.')
         elif self.collection.images.filter(public=False).exists():
             raise ValidationError('This collection contains private images.')
 

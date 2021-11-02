@@ -5,7 +5,14 @@ from isic.core.api import stats as api_stats, user_me
 from isic.core.constants import ISIC_ID_REGEX, MONGO_ID_REGEX
 from isic.core.models.image import Image
 from isic.core.models.image_alias import ImageAlias
-from isic.core.views import collection_detail, collection_list, image_detail, staff_list, stats
+from isic.core.views import (
+    collection_create_doi,
+    collection_detail,
+    collection_list,
+    image_detail,
+    staff_list,
+    stats,
+)
 from isic.ingest.models.accession import Accession
 
 
@@ -56,6 +63,11 @@ urlpatterns = [
         'collections/<pk>/',
         collection_detail,
         name='core/collection-detail',
+    ),
+    path(
+        'collections/<pk>/create-doi/',
+        collection_create_doi,
+        name='core/collection-create-doi',
     ),
     path(
         'images/<image-identifier:pk>/',
