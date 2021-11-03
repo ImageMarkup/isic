@@ -34,7 +34,9 @@ def valid_metadatafile(cohort, metadata_file_factory, csv_stream_valid):
 
 @pytest.mark.django_db
 def test_apply_metadata(accession_factory, valid_metadatafile, cohort):
-    accession = accession_factory(cohort=cohort, blob_name='filename.jpg')
+    accession = accession_factory(
+        cohort=cohort, blob_name='filename.jpg', metadata={}, unstructured_metadata={}
+    )
     apply_metadata_task(valid_metadatafile.pk)
     accession.refresh_from_db()
     assert accession.metadata == {'benign_malignant': 'benign'}

@@ -2,15 +2,32 @@ import pathlib
 
 import factory
 import factory.django
+from faker import Faker
+from faker.providers.python import Provider
 
 from isic.core.models import CopyrightLicense
 from isic.factories import UserFactory
 from isic.ingest.models import Accession, Cohort, Contributor, MetadataFile, ZipUpload
+from isic.ingest.validators import (
+    BenignMalignantEnum,
+    ColorTintEnum,
+    DermoscopicTypeEnum,
+    DiagnosisConfirmTypeEnum,
+    DiagnosisEnum,
+    GeneralAnatomicSiteEnum,
+    ImageTypeEnum,
+    MelClassEnum,
+    MelMitoticIndexEnum,
+    MelTypeEnum,
+    NevusTypeEnum,
+)
 
 from .csv_streams import csv_stream_without_filename_column
 from .zip_streams import zip_stream_only_images
 
 data_dir = pathlib.Path(__file__).parent / 'data'
+
+fake = Faker()
 
 
 class ContributorFactory(factory.django.DjangoModelFactory):
@@ -69,6 +86,52 @@ class ZipUploadFactory(factory.django.DjangoModelFactory):
     blob_size = factory.SelfAttribute('blob.size')
 
 
+def accession_metadata():
+    def from_enum(e):
+        return fake.random_element([x.value for x in e])
+
+    m = {
+        'age': fake.pyint(1, 85),
+        'sex': fake.random_element(['male', 'female']),
+        'benign_malignant': from_enum(BenignMalignantEnum),
+        'diagnosis': from_enum(DiagnosisEnum),
+        'diagnosis_confirm_type': from_enum(DiagnosisConfirmTypeEnum),
+        'personal_hx_mm': fake.boolean(),
+        'family_hx_mm': fake.boolean(),
+        'clin_size_long_diam_mm': fake.pyfloat(
+            left_digits=3, right_digits=2, positive=True, max_value=100.0
+        ),
+        'melanocytic': fake.boolean(),
+        'patient_id': f'IP_{fake.pyint(1_000_000,9_999_999)}',
+        'lesion_id': f'IL_{fake.pyint(1_000_000,9_999_999)}',
+        'acquisition_day': fake.pyint(),
+        'marker_pen': fake.boolean(),
+        'hairy': fake.boolean(),
+        'blurry': fake.boolean(),
+        'nevus_type': from_enum(NevusTypeEnum),
+        'image_type': from_enum(ImageTypeEnum),
+        'dermoscopic_type': from_enum(DermoscopicTypeEnum),
+        'anatom_site_general': from_enum(GeneralAnatomicSiteEnum),
+        'color_tint': from_enum(ColorTintEnum),
+        'mel_class': from_enum(MelClassEnum),
+        'mel_mitotic_index': from_enum(MelMitoticIndexEnum),
+        'mel_thick_mm': fake.pyfloat(left_digits=1, right_digits=2, positive=True, max_value=5.0),
+        'mel_type': from_enum(MelTypeEnum),
+        'mel_ulcer': fake.boolean(),
+    }
+
+    for key in fake.random.sample(list(m.keys()), fake.pyint(0, len(m))):
+        del m[key]
+
+    return m
+
+
+def accession_unstructured_metadata():
+    return fake.pydict(
+        value_types=list(set(Provider.default_value_types) - {'date_time', 'decimal'})
+    )
+
+
 class AccessionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Accession
@@ -86,5 +149,5 @@ class AccessionFactory(factory.django.DjangoModelFactory):
     duplicate_check = factory.Faker('boolean')
     lesion_check = factory.Faker('boolean')
 
-    # Using "metadata = factory.Dict" breaks pytest-factoryboy; see
-    # https://github.com/pytest-dev/pytest-factoryboy/issues/67
+    metadata = factory.LazyFunction(accession_metadata)
+    unstructured_metadata = factory.LazyFunction(accession_unstructured_metadata)
