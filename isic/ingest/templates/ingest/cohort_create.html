@@ -61,14 +61,20 @@
             </div>
           </div>
 
-
-          <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
+          <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5" x-data="{ attribution: '{{ form.attribution.value|default:"" }}' }">
             <label for="{{ form.attribution.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
               {{ form.attribution.label }}
             </label>
             <div class="mt-1 mt-0 col-span-2">
-              <textarea id="{{ form.attribution.html_name }}" name="{{ form.attribution.html_name }}" rows="3" class="border max-w-lg outline-none shadow-sm block p-4 w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ form.attribution.value|default:'' }}</textarea>
-              <p class="mt-2 text-sm text-gray-500">Text which must be reproduced by users of your images, to comply with Creative Commons Attribution requirements.</p>
+              <div class="max-w-xl flex rounded-md shadow-sm">
+                <input type="text" x-bind:disabled="attribution == 'Anonymous'" x-model="attribution" id="{{ form.attribution.html_name }}" name="{{ form.attribution.html_name }}" class="flex-1 block w-full focus:ring-primary-500 focus:border-primary-500 min-w-0 rounded-none rounded-r-md text-sm border-gray-300"/>
+                <div class="ml-2">
+                  <input type="checkbox" name="" value="" @click="if (attribution === 'Anonymous') { attribution = ''; } else { attribution = 'Anonymous' }" /><span class="ml-2 text-sm text-gray-500">Make anonymous</span>
+                </div>
+              </div>
+              <p class="mt-2 text-sm text-gray-500">
+                Text which must be reproduced by users of your images, to comply with Creative Commons Attribution requirements.
+              </p>
               {{ form.attribution.errors }}
             </div>
           </div>
