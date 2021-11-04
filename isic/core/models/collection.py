@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.aggregates import Count
 from django.db.models.query import QuerySet
+from django.db.models.query_utils import Q
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
@@ -12,6 +13,8 @@ from .image import Image
 
 
 class Collection(TimeStampedModel):
+    creator = models.ForeignKey(User, on_delete=models.PROTECT)
+
     images = models.ManyToManyField(Image, related_name='collections')
 
     # TODO: probably make it unique per user, or unique for official collections
@@ -85,6 +88,8 @@ class CollectionPermissions:
 
         if user_obj.is_active and user_obj.is_staff:
             return qs
+        elif user_obj.is_authenticated:
+            return qs.filter(Q(public=True) | Q(creator=user_obj))
         else:
             return qs.filter(public=True)
 
@@ -99,7 +104,6 @@ class CollectionPermissions:
     ) -> QuerySet[Collection]:
         qs = qs if qs is not None else Collection._default_manager.all()
 
-        # TODO: allow collection creators to create a DOI (when collection creators exist)
         if user_obj.is_active and user_obj.is_staff:
             return qs
         else:
