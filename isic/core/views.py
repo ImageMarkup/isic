@@ -69,7 +69,9 @@ def collection_list(request):
     collections = get_visible_objects(
         request.user,
         'core.view_collection',
-        Collection.objects.annotate(num_images=Count('images', distinct=True)).order_by('-name'),
+        Collection.objects.annotate(num_images=Count('images', distinct=True)).order_by(
+            '-official', '-name'
+        ),
     )
     paginator = Paginator(collections, 25)
     page = paginator.get_page(request.GET.get('page'))

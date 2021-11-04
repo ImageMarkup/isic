@@ -23,6 +23,8 @@ class Collection(TimeStampedModel):
 
     public = models.BooleanField(default=False)
 
+    official = models.BooleanField(default=False)
+
     doi = models.OneToOneField(Doi, on_delete=models.PROTECT, null=True, blank=True)
 
     def __str__(self):
