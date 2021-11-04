@@ -9,3 +9,6 @@ class Doi(TimeStampedModel):
         max_length=30, primary_key=True, validators=[RegexValidator(r'^\d+\.\d+/\d+$')]
     )
     url = models.CharField(max_length=200)
+
+    def __str__(self):
+        return self.id

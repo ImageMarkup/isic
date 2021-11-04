@@ -105,7 +105,8 @@ class ImageAliasAdmin(admin.ModelAdmin):
 
 @admin.register(Collection)
 class CollectionAdmin(admin.ModelAdmin):
-    list_display = ['name', 'num_images']
+    list_select_related = ['doi']
+    list_display = ['name', 'num_images', 'doi']
 
     exclude = ['images']
 
@@ -123,4 +124,5 @@ class CollectionAdmin(admin.ModelAdmin):
 
 @admin.register(Doi)
 class DoiAdmin(admin.ModelAdmin):
-    list_display = ['id', 'url']
+    list_select_related = ['collection']
+    list_display = ['id', 'url', 'collection']
