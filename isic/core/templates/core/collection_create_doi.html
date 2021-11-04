@@ -4,7 +4,7 @@
   <h1>Create a DOI for {{ collection.name }}<span class="ml-2 text-base font-semibold"><a href="{% url 'core/collection-detail' collection.pk %}">back to collection</a></span></h1>
 
   {% if warnings %}
-    <ul class="flex bg-red-100 border border-red-300 my-4 px-4 py-3 rounded-md text-red-900 text-sm">
+    <ul class="flex bg-yellow-100 border border-yellow-300 my-4 px-4 py-3 rounded-md text-yellow-900 text-sm">
       {% for warning in warnings %}
         <li>{{ warning }}</li>
       {% endfor %}
