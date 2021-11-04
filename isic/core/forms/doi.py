@@ -37,7 +37,7 @@ class CreateDoiForm(forms.Form):
     def _create_doi(self) -> str:
         doi_id = f'{DOI_PREFIX}/{random.randint(10_000,999_999)}'
 
-        doi = self.collection.as_datacite_doi(self.request.user, doi_id)
+        doi = self.collection.as_datacite_doi(self.collection.creator, doi_id)
 
         r = requests.post(
             f'{settings.ISIC_DATACITE_API_URL}/dois',
