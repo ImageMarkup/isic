@@ -91,6 +91,7 @@ class ImagePermissions:
         if user_obj.is_active and user_obj.is_staff:
             return qs
         elif user_obj.is_active and not user_obj.is_anonymous:
+            # Note: permissions here must be also modified in build_filtered_query
             return qs.filter(
                 Q(public=True)
                 | Q(accession__cohort__contributor__owners=user_obj)

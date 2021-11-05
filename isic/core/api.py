@@ -57,6 +57,7 @@ def build_filtered_query(user: User, query_params: dict) -> dict:
         # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html#bool-min-should-match
         query_dict['bool']['minimum_should_match'] = 1
     elif not user.is_staff:
+        # Note: permissions here must be also modified in ImagePermissions.view_image_list
         query_dict['bool']['should'] = [
             {'term': {'public': 'true'}},
             {'terms': {'shared_to': [user.pk]}},
