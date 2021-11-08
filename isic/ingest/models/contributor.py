@@ -83,7 +83,10 @@ class ContributorPermissions:
 
     @staticmethod
     def add_cohort(user_obj: User, obj: Contributor) -> bool:
-        return user_obj.is_authenticated and ContributorPermissions.view_contributor(user_obj, obj)
+        if obj:
+            return user_obj.is_authenticated and ContributorPermissions.view_contributor(
+                user_obj, obj
+            )
 
 
 Contributor.perms_class = ContributorPermissions
