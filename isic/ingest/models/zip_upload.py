@@ -1,10 +1,8 @@
 import logging
-from mimetypes import guess_type
 import zipfile
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.core.mail import send_mail
 from django.core.validators import FileExtensionValidator
 from django.db import models, transaction
@@ -67,7 +65,7 @@ class ZipUpload(CreationSortedTimeStampedModel):
         pass
 
     def extract(self):
-        from .accession import AccessionStatus
+        from .accession import Accession, AccessionStatus
 
         if self.status != ZipUpload.Status.CREATED:
             raise Exception('Can not extract zip %d with status %s', self.pk, self.status)
@@ -85,23 +83,9 @@ class ZipUpload(CreationSortedTimeStampedModel):
 
                 with self.blob.open('rb') as zip_blob_stream:
                     for zip_item in items_in_zip(zip_blob_stream):
-                        zip_item_content_type = guess_type(zip_item.name)[0]
-                        # TODO: Store content_type in the DB?
-                        self.accessions.create(
-                            cohort=self.cohort,
-                            blob_name=zip_item.name,
-                            # Use an InMemoryUploadedFile instead of a SimpleUploadedFile, since
-                            # we can explicitly know the size and don't need the stream to be
-                            # wrapped
-                            original_blob=InMemoryUploadedFile(
-                                file=zip_item.stream,
-                                field_name=None,
-                                name=zip_item.name,
-                                content_type=zip_item_content_type,
-                                size=zip_item.size,
-                                charset=None,
-                            ),
-                        )
+                        accession = Accession.from_blob(zip_item)
+                        accession.cohort = self.cohort
+                        self.accessions.add(accession, bulk=False)
 
                 self.accessions.update(status=AccessionStatus.CREATED)
 
