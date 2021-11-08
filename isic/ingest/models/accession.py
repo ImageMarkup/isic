@@ -1,4 +1,5 @@
 import io
+from mimetypes import guess_type
 from typing import Optional
 
 import PIL.Image
@@ -11,6 +12,7 @@ from s3_file_field import S3FileField
 
 from isic.core.models import CreationSortedTimeStampedModel
 from isic.ingest.models.cohort import Cohort
+from isic.ingest.utils.zip import Blob
 
 from .zip_upload import ZipUpload
 
@@ -115,6 +117,25 @@ class Accession(CreationSortedTimeStampedModel):
                 charset=None,
             )
             self.save(update_fields=['thumbnail_256'])
+
+    @classmethod
+    def from_blob(cls, blob: Blob):
+        blob_content_type = guess_type(blob.name)[0]
+        # TODO: Store content_type in the DB?
+        return cls(
+            blob_name=blob.name,
+            # Use an InMemoryUploadedFile instead of a SimpleUploadedFile, since
+            # we can explicitly know the size and don't need the stream to be
+            # wrapped
+            original_blob=InMemoryUploadedFile(
+                file=blob.stream,
+                field_name=None,
+                name=blob.name,
+                content_type=blob_content_type,
+                size=blob.size,
+                charset=None,
+            ),
+        )
 
     @staticmethod
     def rejected_filter():

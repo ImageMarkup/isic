@@ -37,18 +37,18 @@ def file_names_in_zip(stream: IO[bytes]) -> Generator[str, None, None]:
 
 
 @dataclass
-class ZipItem:
+class Blob:
     name: str
     stream: IO[bytes]
     size: int
 
 
-def items_in_zip(stream: IO[bytes]) -> Generator[ZipItem, None, None]:
+def items_in_zip(stream: IO[bytes]) -> Generator[Blob, None, None]:
     """Yield the items in a zip stream."""
     with zipfile.ZipFile(stream) as zip_file:
         for file_info in _filtered_infolist(zip_file):
             with zip_file.open(file_info) as zip_file_stream:
-                yield ZipItem(
+                yield Blob(
                     name=_base_file_name(file_info.filename),
                     stream=zip_file_stream,
                     size=file_info.file_size,
