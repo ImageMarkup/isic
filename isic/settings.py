@@ -89,9 +89,9 @@ class IsicMixin(ConfigMixin):
     ISIC_GUI_URL = 'https://www.isic-archive.com'
     ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = ISIC_GUI_URL
     ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = ISIC_GUI_URL
-    ISIC_DATACITE_API_URL = 'https://api.test.datacite.org'
-    ISIC_DATACITE_USERNAME = values.Value()
-    ISIC_DATACITE_PASSWORD = values.SecretValue()
+    ISIC_DATACITE_API_URL = values.Value('https://api.test.datacite.org')
+    ISIC_DATACITE_USERNAME = values.Value(None)
+    ISIC_DATACITE_PASSWORD = values.SecretValue(None, environ_required=False)
 
     CELERY_WORKER_MAX_MEMORY_PER_CHILD = 256 * 1024
 
