@@ -1,19 +1,9 @@
 from django.contrib import admin
 from django.contrib.humanize.templatetags.humanize import intcomma
-from django.db import models
 from django.db.models import Count
 from django.utils.safestring import mark_safe
-from django_json_widget.widgets import JSONEditorWidget
 
-from isic.core.models import (
-    Collection,
-    Doi,
-    DuplicateImage,
-    GirderDataset,
-    GirderImage,
-    Image,
-    ImageAlias,
-)
+from isic.core.models import Collection, Doi, GirderDataset, GirderImage, Image, ImageAlias
 
 # general admin settings
 # https://docs.djangoproject.com/en/3.1/ref/contrib/admin/#adminsite-objects
@@ -61,22 +51,6 @@ class GirderImageAdmin(admin.ModelAdmin):
         'stripped_blob_dm',
         'accession',
     ]
-
-
-@admin.register(DuplicateImage)
-class DuplicateImageAdmin(admin.ModelAdmin):
-    list_select_related = ['accession', 'accession__distinctnessmeasure']
-    list_display = ['id', 'isic_id', 'girder_id', 'accession', 'accession_distinctnessmeasure']
-    search_fields = ['isic_id', 'girder_id']
-
-    autocomplete_fields = ['accession']
-    formfield_overrides = {
-        models.JSONField: {'widget': JSONEditorWidget},
-    }
-
-    @admin.display(ordering='accession__distinctnessmeasure')
-    def accession_distinctnessmeasure(self, obj):
-        return obj.accession.distinctnessmeasure
 
 
 @admin.register(Image)
