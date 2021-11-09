@@ -9,12 +9,11 @@ from joblib import Parallel, delayed, parallel_backend
 import requests
 
 from isic.core.models.girder_image import GirderImage
-from isic.core.models.image import Image
 from isic.ingest.models import Accession
 from isic.ingest.models.accession import AccessionStatus
 from isic.ingest.models.check_log import CheckLog
 from isic.ingest.models.cohort import Cohort
-from isic.ingest.tasks import process_accession_task, publish_accession_task
+from isic.ingest.tasks import process_accession_task
 from isic.ingest.utils.zip import Blob
 from isic.ingest.validators import MetadataRow
 from isic.login.models import Profile
@@ -151,23 +150,12 @@ def _fix_girder_image(girder_image, girder_token):
             ).replace(tzinfo=timezone.utc),
         )
 
-        process_accession_task.delay(a.pk)
-
-        girder_image.accession = a
-        girder_image.save()
-
         migrate_metadata(a, girder_image.raw)
 
-        girder_image.refresh_from_db()
-        # publish image
-        # should it be public?
-        public_cohort_values = set(
-            Image.objects.values_list('public', flat=True).filter(
-                accession__cohort__girder_id=girder_image.dataset_id
-            )
-        )
-        assert len(public_cohort_values) == 1
-        publish_accession_task(girder_image.accession.pk, public=public_cohort_values.pop())
+        girder_image.accession = a
+        girder_image.save(update_fields=['accession'])
+
+    process_accession_task.delay(a.pk)
 
 
 @click.command(help='Fix the GirderImage table so duplicates have duplicate accessions')
