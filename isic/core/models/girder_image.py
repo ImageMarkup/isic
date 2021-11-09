@@ -105,5 +105,7 @@ class GirderImage(models.Model):
         Accession, null=True, blank=True, on_delete=models.CASCADE, editable=False
     )
 
+    raw = models.JSONField(null=True, blank=True)
+
     def __str__(self) -> str:
         return self.isic_id
