@@ -106,26 +106,26 @@ class CohortAdmin(admin.ModelAdmin):
         qs = qs.annotate(
             zip_uploads_count=Count('zip_uploads', distinct=True),
             metadata_files_count=Count('metadata_files', distinct=True),
-            accessions_count=Count('zip_uploads__accessions', distinct=True),
+            accessions_count=Count('accessions', distinct=True),
             pending_accessions_count=Count(
-                'zip_uploads__accessions',
-                filter=Q(zip_uploads__accessions__status=AccessionStatus.CREATING)
-                | Q(zip_uploads__accessions__status=AccessionStatus.CREATED),
+                'accessions',
+                filter=Q(accessions__status=AccessionStatus.CREATING)
+                | Q(accessions__status=AccessionStatus.CREATED),
                 distinct=True,
             ),
             skipped_accessions_count=Count(
-                'zip_uploads__accessions',
-                filter=Q(zip_uploads__accessions__status=AccessionStatus.SKIPPED),
+                'accessions',
+                filter=Q(accessions__status=AccessionStatus.SKIPPED),
                 distinct=True,
             ),
             failed_accessions_count=Count(
-                'zip_uploads__accessions',
-                filter=Q(zip_uploads__accessions__status=AccessionStatus.FAILED),
+                'accessions',
+                filter=Q(accessions__status=AccessionStatus.FAILED),
                 distinct=True,
             ),
             successful_accessions_count=Count(
-                'zip_uploads__accessions',
-                filter=Q(zip_uploads__accessions__status=AccessionStatus.SUCCEEDED),
+                'accessions',
+                filter=Q(accessions__status=AccessionStatus.SUCCEEDED),
                 distinct=True,
             ),
         )
