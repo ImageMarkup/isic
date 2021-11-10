@@ -79,8 +79,9 @@ class ImageAliasAdmin(admin.ModelAdmin):
 
 @admin.register(Collection)
 class CollectionAdmin(admin.ModelAdmin):
-    list_select_related = ['doi']
-    list_display = ['name', 'num_images', 'doi']
+    list_select_related = ['creator', 'doi']
+    list_filter = ['public', 'official']
+    list_display = ['name', 'creator', 'num_images', 'public', 'official', 'doi']
 
     exclude = ['images']
 
