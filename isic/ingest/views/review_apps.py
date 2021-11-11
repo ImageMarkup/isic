@@ -140,6 +140,7 @@ class LesionReviewAppView(GroupedReviewAppView):
             Accession.objects.values('metadata__lesion_id')
             .annotate(num_unreviewed_accessions=Count(1, filter=Q(lesion_check=None)))
             .filter(num_unreviewed_accessions__gt=0)
+            .filter(cohort=self.cohort)
             .values('metadata__lesion_id')
         )
         return Q(metadata__lesion_id__in=lesion_ids_with_any_unreviewed_accessions)
