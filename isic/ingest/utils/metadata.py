@@ -23,14 +23,10 @@ class Problem(BaseModel):
 
 def get_unstructured_columns(df):
     unstructured_columns = set()
+    structured_columns = set(MetadataRow.__fields__.keys()) - {'unstructured'}
 
     for _, (_, row) in enumerate(df.iterrows(), start=2):
-        try:
-            m = MetadataRow.parse_obj(row)
-        except Exception:
-            pass
-        else:
-            unstructured_columns |= set(m.unstructured.keys())
+        unstructured_columns |= set(row.keys()) - structured_columns
 
     # unstructured columns are any columns that aren't part of the core
     # columns (filename) and aren't defined in MetadataRow
