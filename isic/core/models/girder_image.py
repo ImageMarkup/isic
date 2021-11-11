@@ -101,7 +101,7 @@ class GirderImage(models.Model):
         max_length=64, validators=[RegexValidator(r'^[0-9a-f]{64}$')], blank=True, editable=False
     )
 
-    accession = models.ForeignKey(
+    accession = models.OneToOneField(
         Accession, null=True, blank=True, on_delete=models.CASCADE, editable=False
     )
 
