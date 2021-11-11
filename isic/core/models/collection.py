@@ -61,7 +61,7 @@ class Collection(TimeStampedModel):
                     'event': 'publish',
                     'doi': doi_id,
                     'creators': [{'name': creator} for creator in self._get_datacite_creators()],
-                    'contributor': f'{contributor.first_name} {contributor.last_name}',
+                    'contributor': f'{self.creator.first_name} {self.creator.last_name}',
                     'titles': [{'title': self.name}],
                     'publisher': 'ISIC Archive',
                     'publicationYear': self.images.order_by('created').latest().created.year,
