@@ -83,6 +83,8 @@ class CollectionAdmin(admin.ModelAdmin):
     list_filter = ['public', 'official']
     list_display = ['name', 'creator', 'num_images', 'public', 'official', 'doi']
 
+    autocomplete_fields = ['creator']
+
     exclude = ['images']
 
     def get_queryset(self, request):
