@@ -1,7 +1,9 @@
 import csv
 from datetime import datetime
 
-from django.contrib import admin
+from admin_confirm import AdminConfirmMixin
+from admin_confirm.admin import confirm_action
+from django.contrib import admin, messages
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.db import models
 from django.db.models import Count
@@ -24,7 +26,7 @@ from isic.ingest.models import (
     MetadataFile,
     ZipUpload,
 )
-from isic.ingest.tasks import extract_zip_task
+from isic.ingest.tasks import extract_zip_task, publish_cohort_task
 
 
 class CohortInline(ReadonlyTabularInline):
@@ -78,7 +80,7 @@ class ContributorAdmin(admin.ModelAdmin):
 
 
 @admin.register(Cohort)
-class CohortAdmin(admin.ModelAdmin):
+class CohortAdmin(AdminConfirmMixin, admin.ModelAdmin):
     list_select_related = ['creator', 'contributor']
     list_display = [
         'id',
@@ -95,7 +97,7 @@ class CohortAdmin(admin.ModelAdmin):
         'contributor',
     ]
     search_fields = ['name', 'creator__username']
-    actions = ['export_file_mapping']
+    actions = ['export_file_mapping', 'publish_cohort_publicly', 'publish_cohort_privately']
 
     autocomplete_fields = ['creator', 'contributor']
     readonly_fields = ['created', 'modified']
@@ -184,6 +186,22 @@ class CohortAdmin(admin.ModelAdmin):
                     }
                     writer.writerow(d)
         return response
+
+    @confirm_action
+    @admin.action(description='Publish cohort publicly')
+    @takes_instance_or_queryset
+    def publish_cohort_publicly(self, request, queryset):
+        for cohort_pk in queryset.values_list('pk', flat=True):
+            publish_cohort_task.delay(cohort_pk, public=True)
+        messages.add_message(request, messages.INFO, 'Publishing cohort(s) publicly.')
+
+    @confirm_action
+    @admin.action(description='Publish cohort privately')
+    @takes_instance_or_queryset
+    def publish_cohort_privately(self, request, queryset):
+        for cohort_pk in queryset.values_list('pk', flat=True):
+            publish_cohort_task.delay(cohort_pk, public=False)
+        messages.add_message(request, messages.INFO, 'Publishing cohort(s) privately.')
 
 
 @admin.register(MetadataFile)

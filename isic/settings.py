@@ -30,6 +30,9 @@ class IsicMixin(ConfigMixin):
 
     @staticmethod
     def mutate_configuration(configuration: ComposedConfiguration) -> None:
+        admin_index = configuration.INSTALLED_APPS.index('django.contrib.admin')
+        configuration.INSTALLED_APPS.insert(admin_index, 'admin_confirm')
+
         # Install local apps first, to ensure any overridden resources are found first
         configuration.INSTALLED_APPS = [
             'isic.core.apps.CoreConfig',
