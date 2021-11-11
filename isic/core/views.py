@@ -70,7 +70,7 @@ def collection_list(request):
         request.user,
         'core.view_collection',
         Collection.objects.annotate(num_images=Count('images', distinct=True)).order_by(
-            '-official', '-name'
+            '-official', 'name'
         ),
     )
     paginator = Paginator(collections, 25)
