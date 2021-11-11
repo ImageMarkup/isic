@@ -1,5 +1,6 @@
 import csv
 from datetime import datetime
+import logging
 
 from admin_confirm import AdminConfirmMixin
 from admin_confirm.admin import confirm_action
@@ -27,6 +28,8 @@ from isic.ingest.models import (
     ZipUpload,
 )
 from isic.ingest.tasks import extract_zip_task, publish_cohort_task
+
+logger = logging.getLogger(__name__)
 
 
 class CohortInline(ReadonlyTabularInline):
@@ -193,6 +196,7 @@ class CohortAdmin(AdminConfirmMixin, admin.ModelAdmin):
     def publish_cohort_publicly(self, request, queryset):
         for cohort_pk in queryset.values_list('pk', flat=True):
             publish_cohort_task.delay(cohort_pk, public=True)
+            logger.info(f'User {request.user.pk} is publishing cohort {cohort_pk} publicly.')
         messages.add_message(request, messages.INFO, 'Publishing cohort(s) publicly.')
 
     @confirm_action
@@ -201,6 +205,7 @@ class CohortAdmin(AdminConfirmMixin, admin.ModelAdmin):
     def publish_cohort_privately(self, request, queryset):
         for cohort_pk in queryset.values_list('pk', flat=True):
             publish_cohort_task.delay(cohort_pk, public=False)
+            logger.info(f'User {request.user.pk} is publishing cohort {cohort_pk} privately.')
         messages.add_message(request, messages.INFO, 'Publishing cohort(s) privately.')
 
 

@@ -149,6 +149,7 @@ class LesionReviewAppView(GroupedReviewAppView):
         return (
             Accession.objects.filter(cohort=self.cohort, metadata__lesion_id__isnull=False)
             .filter(self.get_unreviewed_filter())
+            # TODO: is the ordering here necessary given the ordering in get_context_data
             .order_by('metadata__lesion_id', 'metadata__acquisition_day')
             .distinct('metadata__lesion_id')
             .values_list('metadata__lesion_id', flat=True)
@@ -159,7 +160,7 @@ class LesionReviewAppView(GroupedReviewAppView):
         grouped_accessions: dict[str, list] = defaultdict(list)
         relevant_accessions = Accession.objects.filter(
             cohort=self.cohort, metadata__lesion_id__in=self.get_queryset()
-        )
+        ).order_by('metadata__acquisition_day')
         for accession in relevant_accessions:
             grouped_accessions[accession.metadata['lesion_id']].append(accession)
 
