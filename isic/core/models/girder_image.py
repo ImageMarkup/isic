@@ -1,9 +1,12 @@
 from bson import ObjectId
+from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Q
+from s3_file_field.fields import S3FileField
 
 from isic.core.constants import MONGO_ID_REGEX
+from isic.core.models.image import Image
 from isic.core.models.isic_id import IsicId
 from isic.ingest.models import Accession
 from isic.login.girder import get_girder_db
@@ -109,3 +112,29 @@ class GirderImage(models.Model):
 
     def __str__(self) -> str:
         return self.isic_id
+
+
+class GirderSegmentation(models.Model):
+    class Meta:
+        ordering = ['id']
+
+    id = models.CharField(
+        primary_key=True,
+        max_length=24,
+        validators=[RegexValidator(f'^{MONGO_ID_REGEX}$')],
+    )
+    created = models.DateTimeField()
+    creator = models.ForeignKey(User, on_delete=models.RESTRICT)
+    image = models.ForeignKey(Image, on_delete=models.RESTRICT)
+    mask = S3FileField(null=True)
+    meta = models.JSONField(default=dict)
+
+
+class GirderSegmentationReview(models.Model):
+    segmentation = models.ForeignKey(
+        GirderSegmentation, on_delete=models.CASCADE, related_name='reviews'
+    )
+    created = models.DateTimeField()
+    approved = models.BooleanField()
+    skill = models.CharField(max_length=6, choices=[('novice', 'novice'), ('expert', 'expert')])
+    user = models.ForeignKey(User, on_delete=models.RESTRICT)
