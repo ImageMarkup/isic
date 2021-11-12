@@ -4,6 +4,7 @@ from .doi import Doi
 from .girder_image import GirderDataset, GirderImage
 from .image import Image
 from .image_alias import ImageAlias
+from .segmentation import Segmentation, SegmentationReview
 
 __all__ = [
     'Collection',
@@ -14,4 +15,6 @@ __all__ = [
     'GirderImage',
     'Image',
     'ImageAlias',
+    'Segmentation',
+    'SegmentationReview',
 ]

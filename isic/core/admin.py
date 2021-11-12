@@ -2,8 +2,10 @@ from django.contrib import admin
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.db.models import Count
 from django.utils.safestring import mark_safe
+from girder_utils.admin import ReadonlyTabularInline
 
 from isic.core.models import Collection, Doi, GirderDataset, GirderImage, Image, ImageAlias
+from isic.core.models.segmentation import Segmentation, SegmentationReview
 
 # general admin settings
 # https://docs.djangoproject.com/en/3.1/ref/contrib/admin/#adminsite-objects
@@ -12,6 +14,67 @@ admin.site.site_title = 'ISIC Admin'
 admin.site.index_title = ''
 
 # TODO: unregister unnecessary apps from admin site
+
+
+class HasMaskFilter(admin.SimpleListFilter):
+    title = 'mask'
+    parameter_name = 'mask'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'Yes'),
+            ('no', 'No'),
+        )
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value == 'yes':
+            return queryset.exclude(mask='')
+        elif value == 'no':
+            return queryset.filter(mask='')
+        return queryset
+
+
+class SegmentationReviewInline(ReadonlyTabularInline):
+    model = SegmentationReview
+    fields = ['created', 'creator', 'skill', 'approved']
+
+
+@admin.register(SegmentationReview)
+class SegmentationReviewAdmin(admin.ModelAdmin):
+    list_display = ['id', 'created', 'creator', 'skill', 'approved']
+    list_filter = ['approved', 'skill']
+
+    search_fields = ['girder_id']
+    autocomplete_fields = ['creator', 'segmentation']
+
+
+@admin.register(Segmentation)
+class SegmentationAdmin(admin.ModelAdmin):
+    list_display = ['id', 'created', 'creator', 'image', 'num_reviews']
+    list_filter = [HasMaskFilter]
+    inlines = [SegmentationReviewInline]
+
+    readonly_fields = ['mask_thumbnail']
+
+    search_fields = ['id', 'girder_id']
+    autocomplete_fields = ['creator', 'image']
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        qs = qs.annotate(
+            num_reviews=Count('reviews', distinct=True),
+        )
+        return qs
+
+    @admin.display(ordering='num_reviews')
+    def num_reviews(self, obj):
+        return intcomma(obj.num_reviews)
+
+    @admin.display()
+    def mask_thumbnail(self, obj):
+        if obj.mask:
+            return mark_safe(f'<img src="{obj.mask.url}" width="256" height="256" />')
 
 
 @admin.register(GirderDataset)
