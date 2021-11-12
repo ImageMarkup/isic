@@ -34,7 +34,7 @@ class CreateDoiForm(forms.Form):
 
     def _create_doi(self) -> str:
         # pad DOI with leading zeros so all DOIs are prefix/6 digits
-        doi_id = f'{settings.DOI_PREFIX}/{random.randint(10_000,999_999):06}'
+        doi_id = f'{settings.ISIC_DATACITE_DOI_PREFIX}/{random.randint(10_000,999_999):06}'
 
         doi = self.collection.as_datacite_doi(self.collection.creator, doi_id)
 

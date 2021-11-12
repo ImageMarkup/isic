@@ -102,9 +102,9 @@ def collection_create_doi(request, pk):
             request=request,
         )
 
-    preview = collection.as_datacite_doi(request.user, f'{settings.DOI_PREFIX}/123456')['data'][
-        'attributes'
-    ]
+    preview = collection.as_datacite_doi(
+        request.user, f'{settings.ISIC_DATACITE_DOI_PREFIX}/123456'
+    )['data']['attributes']
     preview['creators'] = ', '.join([c['name'] for c in preview['creators']])
     context['preview'] = preview
 
