@@ -7,7 +7,6 @@ from composed_configuration import (
     ConfigMixin,
     DevelopmentBaseConfiguration,
     HerokuProductionBaseConfiguration,
-    ProductionBaseConfiguration,
     TestingBaseConfiguration,
 )
 from configurations import values
@@ -125,9 +124,6 @@ class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
     ISIC_DATACITE_PASSWORD = None
 
 
-class ProductionConfiguration(IsicMixin, ProductionBaseConfiguration):
-    ISIC_DATACITE_DOI_PREFIX = '10.34970'
-
-
 class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration):
+    ISIC_DATACITE_DOI_PREFIX = '10.34970'
     ISIC_ELASTICSEARCH_URI = values.SecretValue(environ_name='SEARCHBOX_URL', environ_prefix=None)
