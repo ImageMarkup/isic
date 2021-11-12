@@ -1,6 +1,7 @@
 from collections import defaultdict
 import json
 
+from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
@@ -9,7 +10,7 @@ from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
-from isic.core.forms.doi import DOI_PREFIX, CreateDoiForm
+from isic.core.forms.doi import CreateDoiForm
 from isic.core.models import Collection, Image
 from isic.core.permissions import get_visible_objects, permission_or_404
 from isic.core.stats import get_archive_stats
@@ -101,7 +102,9 @@ def collection_create_doi(request, pk):
             request=request,
         )
 
-    preview = collection.as_datacite_doi(request.user, f'{DOI_PREFIX}/123456')['data']['attributes']
+    preview = collection.as_datacite_doi(request.user, f'{settings.DOI_PREFIX}/123456')['data'][
+        'attributes'
+    ]
     preview['creators'] = ', '.join([c['name'] for c in preview['creators']])
     context['preview'] = preview
 
