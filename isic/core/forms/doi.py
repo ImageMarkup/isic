@@ -13,8 +13,6 @@ from isic.core.models.doi import Doi
 
 logger = logging.getLogger(__name__)
 
-DOI_PREFIX = '10.80222'
-
 
 class CreateDoiForm(forms.Form):
     def __init__(self, *args, **kwargs):
@@ -35,7 +33,8 @@ class CreateDoiForm(forms.Form):
             raise ValidationError('This collection contains private images.')
 
     def _create_doi(self) -> str:
-        doi_id = f'{DOI_PREFIX}/{random.randint(10_000,999_999)}'
+        # pad DOI with leading zeros so all DOIs are prefix/6 digits
+        doi_id = f'{settings.DOI_PREFIX}/{random.randint(10_000,999_999):06}'
 
         doi = self.collection.as_datacite_doi(self.collection.creator, doi_id)
 
