@@ -132,6 +132,13 @@ def test_core_api_image_search_shares(private_searchable_image, authenticated_ap
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize('route', ['images/search/', 'images/facets/'])
+def test_core_api_image_search_invalid_query(route, searchable_images, authenticated_api_client):
+    r = authenticated_api_client.get(f'/api/v2/{route}', {'query': 'age_approx:[[[[]]]]'})
+    assert r.status_code == 400, r.data
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     'restricted_field,route',
     itertools.product(RESTRICTED_SEARCH_FIELDS, ['/api/v2/images/', '/api/v2/images/search/']),
