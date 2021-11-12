@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.utils.decorators import method_decorator
+from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from opensearchpy.exceptions import RequestError
 from rest_framework.decorators import action, api_view, permission_classes
@@ -10,12 +11,14 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from isic.core.models.collection import Collection
 from isic.core.models.image import Image
+from isic.core.models.segmentation import Segmentation
 from isic.core.permissions import IsicObjectPermissionsFilter, get_visible_objects
 from isic.core.search import facets, search_images
 from isic.core.serializers import (
     CollectionSerializer,
     ImageSerializer,
     SearchQuerySerializer,
+    SegmentationSerializer,
     UserSerializer,
 )
 from isic.core.stats import get_archive_stats
@@ -178,6 +181,37 @@ class ImageViewSet(ReadOnlyModelViewSet):
         # get a count for the queryset (images), which will always be PAGE_SIZE.
         paginated_response.data['count'] = search_results['hits']['total']['value']
         return paginated_response
+
+    @swagger_auto_schema(
+        operation_summary='Retrieve the segmentations for an image.',
+        responses={
+            200: openapi.Response(
+                'A list of segmentations corresponding to the image.', SegmentationSerializer
+            )
+        },
+    )
+    @action(detail=True, methods=['get'])
+    def segmentations(self, request, isic_id):
+        segmentations = get_visible_objects(
+            request.user,
+            'core.view_segmentation',
+            Segmentation.objects.prefetch_related('reviews').filter(image__isic_id=isic_id),
+        )
+        serializer = SegmentationSerializer(segmentations, many=True)
+        return Response(serializer.data)
+
+
+@method_decorator(
+    name='list', decorator=swagger_auto_schema(operation_summary='Return a list of segmentations.')
+)
+@method_decorator(
+    name='retrieve',
+    decorator=swagger_auto_schema(operation_summary='Retrieve a single segmentation by ID.'),
+)
+class SegmentationViewSet(ReadOnlyModelViewSet):
+    serializer_class = SegmentationSerializer
+    queryset = Segmentation.objects.prefetch_related('reviews').all()
+    filter_backends = [IsicObjectPermissionsFilter]
 
 
 @method_decorator(

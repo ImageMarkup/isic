@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import re
 from typing import Optional, Union
 
@@ -8,6 +9,7 @@ from rest_framework.fields import Field
 from isic.core.models import Image
 from isic.core.models.collection import Collection
 from isic.core.models.image import RESTRICTED_SEARCH_FIELDS
+from isic.core.models.segmentation import Segmentation, SegmentationReview
 from isic.core.permissions import get_visible_objects
 
 
@@ -102,6 +104,50 @@ class ImageSerializer(serializers.ModelSerializer):
                 del obj.accession.metadata[field]
 
         return obj.accession.metadata
+
+
+class SegmentationReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SegmentationReview
+        fields = [
+            'id',
+            'created',
+            'creator',
+            'approved',
+            'skill',
+        ]
+
+
+class SegmentationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Segmentation
+        fields = [
+            'id',
+            'created',
+            'creator',
+            'failed',
+            'image',
+            'mask',
+            'meta',
+            'reviews',
+        ]
+
+    mask = serializers.URLField(source='mask.url')
+    reviews = SegmentationReviewSerializer(many=True, read_only=True)
+    failed = serializers.SerializerMethodField(read_only=True)
+    meta = serializers.SerializerMethodField(read_only=True)
+
+    def get_failed(self, obj: Segmentation) -> bool:
+        return obj.mask == ''
+
+    def get_meta(self, obj: Segmentation) -> dict:
+        for time in ['startTime', 'stopTime']:
+            if time in obj.meta:
+                obj.meta[time] = datetime.utcfromtimestamp(
+                    obj.meta[time]['$date'] / 1000.0
+                ).replace(tzinfo=timezone.utc)
+
+        return obj.meta
 
 
 class CollectionSerializer(serializers.ModelSerializer):
