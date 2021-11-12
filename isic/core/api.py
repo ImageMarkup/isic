@@ -1,7 +1,9 @@
 from django.contrib.auth.models import User
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
+from opensearchpy.exceptions import RequestError
 from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.exceptions import ParseError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
@@ -101,7 +103,12 @@ class ImageViewSet(ReadOnlyModelViewSet):
                 Collection.objects.values_list('pk', flat=True),
             )
         )
-        return Response(facets(query, collection_pks))
+        try:
+            response = facets(query, collection_pks)
+        except RequestError:
+            raise ParseError('Error parsing search query.')
+
+        return Response(response)
 
     @swagger_auto_schema(
         operation_summary='Search images with a key:value query string.',
@@ -154,9 +161,13 @@ class ImageViewSet(ReadOnlyModelViewSet):
     @action(detail=False, methods=['get'])
     def search(self, request):
         query = build_filtered_query(request.user, request.query_params)
-        search_results = search_images(
-            query, self.paginator.get_limit(request), self.paginator.get_offset(request)
-        )
+        try:
+            search_results = search_images(
+                query, self.paginator.get_limit(request), self.paginator.get_offset(request)
+            )
+        except RequestError:
+            raise ParseError('Error parsing search query.')
+
         isic_ids = [x['fields']['id'][0] for x in search_results['hits']['hits']]
         images = self.get_queryset().filter(pk__in=isic_ids)
         page = self.paginate_queryset(images)
