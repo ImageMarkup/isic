@@ -114,6 +114,7 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
     # Allow developers to run tasks synchronously for easy debugging
     CELERY_TASK_ALWAYS_EAGER = values.BooleanValue(False)
     CELERY_TASK_EAGER_PROPAGATES = values.BooleanValue(False)
+    ISIC_DATACITE_DOI_PREFIX = '10.80222'
 
 
 class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
@@ -125,7 +126,7 @@ class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
 
 
 class ProductionConfiguration(IsicMixin, ProductionBaseConfiguration):
-    pass
+    ISIC_DATACITE_DOI_PREFIX = '10.34970'
 
 
 class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration):
