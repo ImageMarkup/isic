@@ -9,6 +9,7 @@ from rest_framework.response import Response
 
 from isic.core.permissions import IsicObjectPermissionsFilter
 from isic.ingest.models import Accession, MetadataFile
+from isic.ingest.models.check_log import CheckLog
 from isic.ingest.models.cohort import Cohort
 from isic.ingest.models.contributor import Contributor
 from isic.ingest.serializers import (
@@ -71,9 +72,12 @@ To create an Accession you must provide an "original_blob" which comports to an 
     @swagger_auto_schema(auto_schema=None)
     def perform_update(self, serializer):
         with transaction.atomic():
+            # TODO: figure out how to use update_fields?
             serializer.save()
             for field, value in serializer.validated_data.items():
                 if field.endswith('_check'):
+                    # TODO: checklogs could be "double set", e.g. a user sets
+                    # check foo to true when it's already true, resulting in 2 check log entries.
                     serializer.instance.checklogs.create(
                         creator=serializer.context['request'].user,
                         change_field=field,
@@ -90,16 +94,29 @@ To create an Accession you must provide an "original_blob" which comports to an 
         if serializer.is_valid():
             data_by_id = {x['id']: x['checks'] for x in serializer.data}
             accessions = Accession.objects.filter(id__in=data_by_id.keys())
+            checks = set(sum(data_by_id.values(), []))
 
             with transaction.atomic():
+                checklogs = []
+                accessions_to_update = []
                 for accession in accessions:
                     for check in data_by_id[accession.pk]:
                         if getattr(accession, check) is None:
                             setattr(accession, check, True)
-                            accession.save(update_fields=[check])
-                            accession.checklogs.create(
-                                creator=request.user, change_field=check, change_to=True
+                            accessions_to_update.append(accession)
+                            checklogs.append(
+                                CheckLog(
+                                    accession=accession,
+                                    creator=request.user,
+                                    change_field=check,
+                                    change_to=True,
+                                )
                             )
+
+                # TODO: this is technically updating all the checks fields when each record may only
+                # want to update a specific check field.
+                Accession.objects.bulk_update(accessions_to_update, fields=checks)
+                CheckLog.objects.bulk_create(checklogs)
 
             return Response({})
         else:
