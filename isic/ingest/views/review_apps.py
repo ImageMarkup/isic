@@ -156,6 +156,7 @@ def lesion_review(request, cohort_pk):
                 'reject': {'lesion_check': 'Reject Lesion'},
             },
             'checks': ['lesion_check'],
+            'breadcrumbs': make_breadcrumbs(cohort) + [['#', 'Lesion Review']],
             'grouped_review_app': True,
             'cohort': cohort,
             'page_obj': page,
