@@ -18,6 +18,9 @@
   {% elif grouped_review_app %}
     {% for group in page_obj %}
       <div class="my-4" x-data="thumbnailGrid();">
+        {% if title == 'Lesion Review' %}
+          <span class="font-bold text-lg">{{ group }}</span>
+        {% endif %}
         <div class="grid gap-4" :class="`grid-cols-${numCols}`">
           {% for accession in grouped_accessions|get_key:group %}
             {% include 'ingest/partials/accession.html' %}
