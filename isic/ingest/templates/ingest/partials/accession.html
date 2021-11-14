@@ -16,9 +16,12 @@
       {% endif %}
     </a>
 
-    <div x-show="open">
-      {% include 'ingest/partials/accession_modal.html' %}
-    </div>
+    {% comment %}x-cloak doesn't seem to be working, see https://alpinejs.dev/directives/cloak{% endcomment %}
+    <template x-if="true">
+      <div x-show="open">
+        {% include 'ingest/partials/accession_modal.html' %}
+      </div>
+    </template>
   </div>
   <div class="flex justify-around">
     {% if accession.metadata.diagnosis %}
@@ -26,7 +29,6 @@
     {% endif %}
     {% if title == 'Lesion Review' %}
       <span>
-        {{ accession.metadata.lesion_id }}
         {% if accession.metadata.acquisition_day %}
           (Day {{ accession.metadata.acquisition_day }})
         {% endif %}
