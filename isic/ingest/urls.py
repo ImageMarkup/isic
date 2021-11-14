@@ -53,7 +53,7 @@ urlpatterns = [
     ),
     path(
         'staff/ingest-review/lesion/<cohort_pk>/',
-        review_apps_views.LesionReviewAppView.as_view(),
+        review_apps_views.lesion_review,
         name='cohort-review-lesion',
     ),
     path(

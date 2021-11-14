@@ -1,12 +1,14 @@
 from collections import defaultdict
 
 from django.contrib.admin.views.decorators import staff_member_required
+from django.core.paginator import Paginator
 from django.db.models import Count
 from django.db.models.query_utils import Q
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView
 
+from isic.core.permissions import permission_or_404
 from isic.ingest.models import Accession, Cohort, DistinctnessMeasure
 
 from . import make_breadcrumbs
@@ -123,52 +125,40 @@ class DuplicateReviewAppView(GroupedReviewAppView):
         return context
 
 
-class LesionReviewAppView(GroupedReviewAppView):
-    title = 'Lesion Review'
-    buttons = {
-        'reject': {'lesion_check': 'Reject Lesion'},
-    }
-    checks = ['lesion_check']
+@staff_member_required
+@permission_or_404('ingest.view_cohort', (Cohort, 'pk', 'cohort_pk'))
+def lesion_review(request, cohort_pk):
+    cohort = get_object_or_404(Cohort, pk=cohort_pk)
+    lesions_with_unreviewed_accessions = (
+        cohort.accessions.values('metadata__lesion_id')
+        .annotate(num_unreviewed_accessions=Count(1, filter=Q(lesion_check=None)))
+        .filter(num_unreviewed_accessions__gt=0)
+        .values_list('metadata__lesion_id', flat=True)
+        .distinct()
+        .order_by('metadata__lesion_id')
+    )
+    paginator = Paginator(lesions_with_unreviewed_accessions, 10)
+    page = paginator.get_page(request.GET.get('page'))
 
-    def get_unreviewed_filter(self):
-        """
-        Filter out the unreviewed lesion IDs.
+    grouped_accessions: dict[str, list] = defaultdict(list)
+    relevant_accessions = cohort.accessions.filter(metadata__lesion_id__in=page).order_by(
+        'metadata__acquisition_day'
+    )
+    for accession in relevant_accessions:
+        grouped_accessions[accession.metadata['lesion_id']].append(accession)
 
-        This is similar to DuplicateReviewAppView.get_unreviewed_filter.
-        """
-        lesion_ids_with_any_unreviewed_accessions = (
-            Accession.objects.values('metadata__lesion_id')
-            .annotate(num_unreviewed_accessions=Count(1, filter=Q(lesion_check=None)))
-            .filter(num_unreviewed_accessions__gt=0)
-            .filter(cohort=self.cohort)
-            .values('metadata__lesion_id')
-        )
-        return Q(metadata__lesion_id__in=lesion_ids_with_any_unreviewed_accessions)
-
-    def get_queryset(self):
-        self.cohort = get_object_or_404(Cohort, pk=self.kwargs['cohort_pk'])
-        return (
-            Accession.objects.filter(cohort=self.cohort, metadata__lesion_id__isnull=False)
-            .filter(self.get_unreviewed_filter())
-            # TODO: is the ordering here necessary given the ordering in get_context_data
-            .order_by('metadata__lesion_id', 'metadata__acquisition_day')
-            .distinct('metadata__lesion_id')
-            .values_list('metadata__lesion_id', flat=True)
-        )
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        grouped_accessions: dict[str, list] = defaultdict(list)
-        relevant_accessions = Accession.objects.filter(
-            cohort=self.cohort, metadata__lesion_id__in=self.get_queryset()
-        ).order_by('metadata__acquisition_day')
-        for accession in relevant_accessions:
-            grouped_accessions[accession.metadata['lesion_id']].append(accession)
-
-        context.update(
-            {
-                'cohort': self.cohort,
-                'grouped_accessions': grouped_accessions,
-            }
-        )
-        return context
+    return render(
+        request,
+        'ingest/review_app.html',
+        {
+            'title': 'Lesion Review',
+            'buttons': {
+                'reject': {'lesion_check': 'Reject Lesion'},
+            },
+            'checks': ['lesion_check'],
+            'grouped_review_app': True,
+            'cohort': cohort,
+            'page_obj': page,
+            'grouped_accessions': grouped_accessions,
+        },
+    )
