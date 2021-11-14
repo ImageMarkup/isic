@@ -52,11 +52,15 @@
               return {id: id, checks: checks};
           }))
         }).then((values) => {
-          this.submitted = true;
-          this.submitting = false;
-          // reload the page. use this instead of .reload() since this
-          // version won't keep users at the bottom of the page.
-          window.location.href = window.location.href;
+          if (!values.ok) {
+            alert('Something went wrong, refresh and try again.');
+          } else {
+            this.submitted = true;
+            this.submitting = false;
+            // reload the page. use this instead of .reload() since this
+            // version won't keep users at the bottom of the page.
+            window.location.href = window.location.href;
+          }
         });
       }
     }
