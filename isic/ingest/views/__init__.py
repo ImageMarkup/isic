@@ -4,14 +4,13 @@ from typing import Optional
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Count
 from django.forms.models import ModelForm
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
 from isic.core.permissions import permission_or_404
-from isic.ingest.models import Accession, AccessionStatus, Cohort, DistinctnessMeasure, ZipUpload
+from isic.ingest.models import Accession, Cohort, ZipUpload
 from isic.ingest.tasks import extract_zip_task
 
 
@@ -55,28 +54,11 @@ def cohort_detail(request, pk):
     cohort = get_object_or_404(Cohort.objects.select_related('creator'), pk=pk)
     accession_qs = Accession.objects.filter(cohort=cohort).order_by('created')
 
-    num_duplicates = accession_qs.filter(
-        distinctnessmeasure__checksum__in=DistinctnessMeasure.objects.values('checksum')
-        .annotate(is_duplicate=Count('checksum'))
-        .filter(accession__cohort=cohort, is_duplicate__gt=1)
-        .values('checksum')
-    ).count()
-    num_unique_lesions = (
-        Accession.objects.filter(metadata__lesion_id__isnull=False, cohort=cohort)
-        .values('metadata__lesion_id')
-        .distinct()
-        .count()
-    )
-    num_skipped_accessions = accession_qs.filter(status=AccessionStatus.SKIPPED).count()
-
     return render(
         request,
         'ingest/cohort_detail.html',
         {
             'cohort': cohort,
-            'num_duplicates': num_duplicates,
-            'num_unique_lesions': num_unique_lesions,
-            'num_skipped_accessions': num_skipped_accessions,
             'total_accessions': accession_qs.count(),
             'check_counts': Accession.check_counts(cohort),
             'checks': Accession.checks(),
