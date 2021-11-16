@@ -56,7 +56,7 @@ class Contributor(CreationSortedTimeStampedModel):
 
 class ContributorPermissions:
     model = Contributor
-    perms = ['view_contributor', 'add_contributor', 'add_cohort']
+    perms = ['view_contributor', 'create_contributor', 'create_cohort']
     filters = {'view_contributor': 'view_contributor_list'}
 
     @staticmethod
@@ -78,11 +78,11 @@ class ContributorPermissions:
         return ContributorPermissions.view_contributor_list(user_obj).filter(pk=obj.pk).exists()
 
     @staticmethod
-    def add_contributor(user_obj, obj=None):
+    def create_contributor(user_obj, obj=None):
         return user_obj.is_active and user_obj.is_authenticated
 
     @staticmethod
-    def add_cohort(user_obj: User, obj: Contributor) -> bool:
+    def create_cohort(user_obj: User, obj: Contributor) -> bool:
         if obj:
             return user_obj.is_authenticated and ContributorPermissions.view_contributor(
                 user_obj, obj

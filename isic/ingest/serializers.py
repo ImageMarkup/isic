@@ -41,7 +41,7 @@ class CohortSerializer(serializers.ModelSerializer):
 
     # TODO: figure out how to better integrate this into the permissions system
     def validate_contributor(self, value):
-        if not self.context['request'].user.has_perm('ingest.add_cohort', value):
+        if not self.context['request'].user.has_perm('ingest.create_cohort', value):
             raise PermissionDenied
         return value
 
