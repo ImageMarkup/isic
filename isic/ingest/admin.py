@@ -164,7 +164,7 @@ class CohortAdmin(AdminConfirmMixin, admin.ModelAdmin):
     def successful_accessions(self, obj):
         return intcomma(obj.successful_accessions_count)
 
-    @admin.action(description='Export original file mapping')
+    @admin.action(description='Export original file mapping', permissions=['view'])
     @takes_instance_or_queryset
     def export_file_mapping(self, request, queryset):
         current_time = datetime.utcnow().strftime('%Y-%m-%d')
@@ -190,8 +190,8 @@ class CohortAdmin(AdminConfirmMixin, admin.ModelAdmin):
                     writer.writerow(d)
         return response
 
+    @admin.action(description='Publish cohort publicly', permissions=['change'])
     @confirm_action
-    @admin.action(description='Publish cohort publicly')
     @takes_instance_or_queryset
     def publish_cohort_publicly(self, request, queryset):
         for cohort_pk in queryset.values_list('pk', flat=True):
@@ -199,8 +199,8 @@ class CohortAdmin(AdminConfirmMixin, admin.ModelAdmin):
             logger.info(f'User {request.user.pk} is publishing cohort {cohort_pk} publicly.')
         messages.add_message(request, messages.INFO, 'Publishing cohort(s) publicly.')
 
+    @admin.action(description='Publish cohort privately', permissions=['change'])
     @confirm_action
-    @admin.action(description='Publish cohort privately')
     @takes_instance_or_queryset
     def publish_cohort_privately(self, request, queryset):
         for cohort_pk in queryset.values_list('pk', flat=True):
@@ -278,7 +278,7 @@ class ZipAdmin(DjangoObjectActions, admin.ModelAdmin):
     def human_blob_size(self, obj):
         return filesizeformat(obj.blob_size)
 
-    @admin.action(description='Extract zip')
+    @admin.action(description='Extract zip', permissions=['change'])
     @takes_instance_or_queryset
     def extract_zip(self, request, queryset):
         for zip in queryset:
