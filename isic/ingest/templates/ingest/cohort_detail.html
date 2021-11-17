@@ -5,6 +5,7 @@
 {% load chunks %}
 
 {% block head_extra %}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/2.3.0/alpine.js" integrity="sha512-nIwdJlD5/vHj23CbO2iHCXtsqzdTTx3e3uAmpTm4x2Y8xCIFyWu4cSIV8GaGe2UNVq86/1h9EgUZy7tn243qdA==" crossorigin="anonymous"></script>
   {% include 'ingest/partials/review_header.html' %}
 {% endblock %}
 
@@ -58,11 +59,11 @@
                     </a>
                   </td>
                   {% if check != 'quality_check' %}
-                  <td rowspan="{% if check == 'phi_check' %}2{% else %}1{% endif %}" class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    {% with review_url=review_urls|get_key:check %}
-                      <a href="{% url review_url cohort.id %}" class="text-indigo-600 hover:text-indigo-900">Review</a>
-                    {% endwith %}
-                  </td>
+                    <td rowspan="{% if check == 'phi_check' %}2{% else %}1{% endif %}" class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      {% with review_url=review_urls|get_key:check %}
+                        <a href="{% url review_url cohort.id %}" class="text-indigo-600 hover:text-indigo-900">Review</a>
+                      {% endwith %}
+                    </td>
                   {% endif %}
                 </tr>
               {% endfor %}
