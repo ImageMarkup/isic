@@ -10,17 +10,8 @@
 
 {% block content %}
   {% include 'ingest/partials/breadcrumbs.html' %}
-  <div class="my-4 bg-gray-50 p-2 rounded-sm border-gray-200 border">
-    <ul>
-      <li><span class="font-bold">Name:</span> {{ cohort.name }}</li>
-      <li><span class="font-bold">Description:</span> {{ cohort.description }}</li>
-      <li><span class="font-bold">License:</span> {{ cohort.get_copyright_license_display }}</li>
-      <li><span class="font-bold">Created by:</span> {{ cohort.creator }}</li>
-      <li><span class="font-bold">Created on:</span> {{ cohort.created }}</li>
-      <li><span class="font-bold">Number accessions:</span> {{ total_accessions|intcomma }}</li>
-    </ul>
-  </div>
 
+  {% include 'ingest/partials/cohort_details.html' %}
   <div class="flex flex-col">
     <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
       <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
@@ -46,98 +37,35 @@
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              {% with counts=check_counts|get_key:"quality_check" %}
+              {% for check, counts in check_counts.items %}
                 <tr>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    Quality
+                    {{ check_nicenames|get_key:check }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.unreviewed|intcomma }}
+                    <a href="{% url 'upload/cohort-browser' cohort.pk %}?{{ check }}=unreviewed">
+                      {{ counts.unreviewed|intcomma }}
+                    </a>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.rejected|intcomma }}
+                    <a href="{% url 'upload/cohort-browser' cohort.pk %}?{{ check }}=False">
+                      {{ counts.rejected|intcomma }}
+                    </a>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.accepted|intcomma  }}
+                    <a href="{% url 'upload/cohort-browser' cohort.pk %}?{{ check }}=True">
+                      {{ counts.accepted|intcomma  }}
+                    </a>
                   </td>
-                  <td rowspan="2" class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <a href="{% url 'cohort-review-quality-and-phi' cohort.id %}" class="text-indigo-600 hover:text-indigo-900">Review</a>
+                  {% if check != 'quality_check' %}
+                  <td rowspan="{% if check == 'phi_check' %}2{% else %}1{% endif %}" class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    {% with review_url=review_urls|get_key:check %}
+                      <a href="{% url review_url cohort.id %}" class="text-indigo-600 hover:text-indigo-900">Review</a>
+                    {% endwith %}
                   </td>
+                  {% endif %}
                 </tr>
-              {% endwith %}
-              {% with counts=check_counts|get_key:"phi_check" %}
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    PHI
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.unreviewed|intcomma }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.rejected|intcomma }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.accepted|intcomma  }}
-                  </td>
-                </tr>
-              {% endwith %}
-              {% with counts=check_counts|get_key:"diagnosis_check" %}
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    Diagnosis
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.unreviewed|intcomma }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.rejected|intcomma }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.accepted|intcomma  }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <a href="{% url 'cohort-review-diagnosis' cohort.id %}" class="text-indigo-600 hover:text-indigo-900">Review</a>
-                  </td>
-                </tr>
-              {% endwith %}
-              {% with counts=check_counts|get_key:"duplicate_check" %}
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    Duplicate
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.unreviewed|intcomma }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.rejected|intcomma }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.accepted|intcomma  }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <a href="{% url 'cohort-review-duplicate' cohort.id %}" class="text-indigo-600 hover:text-indigo-900">Review</a>
-                  </td>
-                </tr>
-              {% endwith %}
-              {% with counts=check_counts|get_key:"lesion_check" %}
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    Lesion
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.unreviewed|intcomma }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.rejected|intcomma }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ counts.accepted|intcomma  }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <a href="{% url 'cohort-review-lesion' cohort.id %}" class="text-indigo-600 hover:text-indigo-900">Review</a>
-                  </td>
-                </tr>
-              {% endwith %}
+              {% endfor %}
             </tbody>
           </table>
         </div>
@@ -145,9 +73,19 @@
     </div>
   </div>
 
-  <div class="mt-4">
-    <a href="{% url 'validate-metadata' cohort.id %}">Validate & Apply Metadata</a> |
-    <a href="{% url 'reset-metadata' cohort.id %}" onclick="return confirm('Are you sure you want to reset metadata for the entire Cohort?')">Reset Metadata</a><br />
+  <div class="flex justify-between mt-4">
+    <div>
+      <a href="{% url 'validate-metadata' cohort.id %}">Validate & Apply Metadata</a> |
+      <a href="{% url 'reset-metadata' cohort.id %}" onclick="return confirm('Are you sure you want to reset metadata for the entire Cohort?')">Reset Metadata</a><br />
+    </div>
+
+    <div>
+      <a href="{% url 'upload/cohort-browser' cohort.pk %}">
+        <button type="button" class="relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+          Browse Accessions
+        </button>
+      </a>
+    </div>
   </div>
 
 {% endblock %}

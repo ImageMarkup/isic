@@ -33,6 +33,7 @@ urlpatterns = [
         metadata_views.metadata_file_create,
         name='upload-metadata',
     ),
+    path('upload/<pk>/browser/', views.cohort_browser, name='upload/cohort-browser'),
     # Staff pages
     path('staff/ingest-review/', views.ingest_review, name='ingest-review'),
     path('staff/ingest-review/<pk>/', views.cohort_detail, name='cohort-detail'),
