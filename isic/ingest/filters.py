@@ -1,46 +1,55 @@
-from django.db.models.aggregates import Count
+from django import forms
+from django.db.models.query import QuerySet
+from django.db.models.query_utils import Q
 import django_filters
-from django_filters.filters import ChoiceFilter
+from django_filters.filters import BooleanFilter, ChoiceFilter
 
 from isic.ingest.models import Accession
+from isic.ingest.models.accession import AccessionStatus
 
 
-class DynamicChoiceFilter(ChoiceFilter):
+class TailwindSelectWidget(forms.widgets.Select):
+    template_name = 'ingest/widgets/select.html'
+
+
+class CheckFilter(django_filters.ChoiceFilter):
     def __init__(self, *args, **kwargs):
-        self.choices_from = kwargs.pop('choices_from')
+        kwargs.setdefault('null_value', 'unreviewed')
+        kwargs.setdefault(
+            'choices', [('unreviewed', 'Unreviewed'), (False, 'Rejected'), (True, 'Approved')]
+        )
+        kwargs.setdefault('widget', TailwindSelectWidget)
         super().__init__(*args, **kwargs)
-
-    @property
-    def field(self):
-        if not hasattr(self, '_field'):
-            field_kwargs = self.extra.copy()
-            field_kwargs['choices'] = getattr(self.parent, self.choices_from)
-            self._field = self.field_class(label=self.label, **field_kwargs)
-        return self._field
 
 
 class AccessionFilter(django_filters.FilterSet):
     class Meta:
         model = Accession
-        fields = ['diagnosis']
-
-    def __init__(self, data=None, queryset=None, *, cohort, request=None, prefix=None):
-        super().__init__(data=data, queryset=queryset, request=request, prefix=prefix)
-
-        diagnosis_frequencies = (
-            Accession.objects.filter(cohort=cohort, metadata__diagnosis__isnull=False)
-            .values('metadata__diagnosis')
-            .order_by('metadata__diagnosis')
-            .annotate(count=Count('metadata__diagnosis'))
-            .values_list('metadata__diagnosis', 'count')
-        )
-        self.diagnosis_choices = [
-            (diagnosis, f'{diagnosis} ({count})') for diagnosis, count in diagnosis_frequencies
+        fields = [
+            'status',
+            'quality_check',
+            'phi_check',
+            'diagnosis_check',
+            'duplicate_check',
+            'lesion_check',
+            'published',
         ]
 
-    diagnosis = DynamicChoiceFilter(
-        label='Diagnosis', method='filter_metadata_value', choices_from='diagnosis_choices'
+    status = ChoiceFilter(choices=AccessionStatus.choices, widget=TailwindSelectWidget)
+    quality_check = CheckFilter()
+    phi_check = CheckFilter()
+    diagnosis_check = CheckFilter()
+    duplicate_check = CheckFilter()
+    lesion_check = CheckFilter()
+    published = BooleanFilter(
+        method='filter_published',
+        label='Published',
     )
 
-    def filter_metadata_value(self, queryset, name, value):
-        return queryset.filter(**{f'metadata__{name}': value})
+    def filter_published(self, qs: QuerySet, name, value):
+        if value is True:
+            qs = qs.filter(~Q(image=None))
+        elif value is False:
+            qs = qs.filter(image=None)
+
+        return qs
