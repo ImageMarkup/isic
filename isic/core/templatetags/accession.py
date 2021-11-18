@@ -1,3 +1,5 @@
+import json
+
 from django import template
 
 register = template.Library()
@@ -13,3 +15,8 @@ def to_js(value):
         'duplicate_check': value.duplicate_check,
         'lesion_check': value.lesion_check,
     }
+
+
+@register.filter
+def formatted(value):
+    return json.dumps(value, indent=4, sort_keys=True)
