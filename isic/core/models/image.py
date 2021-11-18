@@ -43,32 +43,22 @@ class Image(CreationSortedTimeStampedModel):
 
     @property
     def as_elasticsearch_document(self) -> dict:
-        # This dict's values should all be immutable, otherwise a deep copy would be necessary
-        document = dict(self.accession.metadata)
+        document = {
+            'id': self.pk,
+            'created': self.created,
+            'isic_id': self.isic_id,
+            'public': self.public,
+            # TODO: make sure these fields can't be searched on
+            'contributor_owner_ids': [
+                user.pk for user in self.accession.cohort.contributor.owners.all()
+            ],
+            'shared_to': [user.pk for user in self.shares.all()],
+            'collections': list(self.collections.values_list('pk', flat=True)),
+        }
 
-        # The age has to be stored in the search index in rounded form, otherwise searches
-        # (e.g. 'age:47') could leak the true age.
-        if 'age' in document:
-            document['age_approx'] = self.accession.age_approx
-
-        for f in RESTRICTED_SEARCH_FIELDS:
-            if f in document:
-                del document[f]
-
-        document.update(
-            {
-                'id': self.pk,
-                'created': self.created,
-                'isic_id': self.isic_id,
-                'public': self.public,
-                # TODO: make sure these fields can't be searched on
-                'contributor_owner_ids': [
-                    user.pk for user in self.accession.cohort.contributor.owners.all()
-                ],
-                'shared_to': [user.pk for user in self.shares.all()],
-                'collections': list(self.collections.values_list('pk', flat=True)),
-            }
-        )
+        # Fields in the search index have to be redacted otherwise the documents that match could
+        # leak what their true metadata values are.
+        document.update(self.accession.redacted_metadata)
 
         return document
 
