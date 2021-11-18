@@ -16,7 +16,7 @@ class CheckFilter(django_filters.ChoiceFilter):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('null_value', 'unreviewed')
         kwargs.setdefault(
-            'choices', [('unreviewed', 'Unreviewed'), (False, 'Rejected'), (True, 'Approved')]
+            'choices', [('unreviewed', 'Unreviewed'), (False, 'Rejected'), (True, 'Accepted')]
         )
         kwargs.setdefault('widget', TailwindSelectWidget)
         super().__init__(*args, **kwargs)
