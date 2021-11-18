@@ -36,7 +36,7 @@ def stats(request):
             ('Annotating Users', archive_stats['annotating_users_count']),
         ],
         [
-            ('Contributors', archive_stats['contributors_count']),
+            ('Contributing Institutions', archive_stats['contributors_count']),
             ('', ''),
             ('Collections', archive_stats['collections_count']),
         ],
