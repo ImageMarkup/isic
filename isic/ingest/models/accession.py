@@ -208,3 +208,18 @@ class Accession(CreationSortedTimeStampedModel):
     @property
     def age_approx(self) -> Optional[int]:
         return int(round(self.metadata['age'] / 5.0) * 5) if 'age' in self.metadata else None
+
+    @property
+    def redacted_metadata(self) -> dict:
+        from isic.core.models.image import RESTRICTED_SEARCH_FIELDS
+
+        redacted = dict(self.metadata)
+
+        if 'age' in self.metadata:
+            redacted['age_approx'] = self.age_approx
+
+        for f in RESTRICTED_SEARCH_FIELDS:
+            if f in redacted:
+                del redacted[f]
+
+        return redacted

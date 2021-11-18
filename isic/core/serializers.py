@@ -7,7 +7,6 @@ from rest_framework.fields import Field
 
 from isic.core.models import Image
 from isic.core.models.collection import Collection
-from isic.core.models.image import RESTRICTED_SEARCH_FIELDS
 from isic.core.permissions import get_visible_objects
 
 
@@ -91,17 +90,8 @@ class ImageSerializer(serializers.ModelSerializer):
             'urls',
         ]
 
-    metadata = serializers.SerializerMethodField()
+    metadata = serializers.DictField(source='accession.redacted_metadata', read_only=True)
     urls = ImageUrlSerializer(source='*', read_only=True)
-
-    def get_metadata(self, obj) -> dict:
-        obj.accession.metadata['age_approx'] = obj.accession.age_approx
-
-        for field in RESTRICTED_SEARCH_FIELDS:
-            if field in obj.accession.metadata:
-                del obj.accession.metadata[field]
-
-        return obj.accession.metadata
 
 
 class CollectionSerializer(serializers.ModelSerializer):
