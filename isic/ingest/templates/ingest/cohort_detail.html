@@ -10,7 +10,10 @@
 {% endblock %}
 
 {% block content %}
-  {% include 'ingest/partials/breadcrumbs.html' %}
+  <div class="flex justify-between">
+    {% include 'ingest/partials/breadcrumbs.html' %}
+    {% include 'ingest/partials/cohort_actions.html' %}
+  </div>
 
   {% include 'ingest/partials/cohort_details.html' %}
   <div class="flex flex-col">
@@ -75,18 +78,11 @@
   </div>
 
   <div class="flex justify-between mt-4">
-    <div>
-      <a href="{% url 'validate-metadata' cohort.id %}">Validate & Apply Metadata</a> |
-      <a href="{% url 'reset-metadata' cohort.id %}" onclick="return confirm('Are you sure you want to reset metadata for the entire Cohort?')">Reset Metadata</a><br />
-    </div>
-
-    <div>
-      <a href="{% url 'upload/cohort-browser' cohort.pk %}">
-        <button type="button" class="relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-          Browse Accessions
-        </button>
-      </a>
-    </div>
+    <a href="{% url 'upload/cohort-browser' cohort.pk %}">
+      <button type="button" class="relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+        Browse Accessions
+      </button>
+    </a>
   </div>
 
 {% endblock %}

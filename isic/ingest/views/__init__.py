@@ -1,8 +1,10 @@
 import os
 from typing import Optional
 
+from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
+from django.contrib.humanize.templatetags.humanize import intcomma
 from django.core.paginator import Paginator
 from django.forms.models import ModelForm
 from django.http import HttpResponseRedirect
@@ -13,7 +15,7 @@ from isic.core.permissions import permission_or_404
 from isic.ingest.filters import AccessionFilter
 from isic.ingest.models import Accession, Cohort, ZipUpload
 from isic.ingest.models.accession import ACCESSION_CHECKS
-from isic.ingest.tasks import extract_zip_task
+from isic.ingest.tasks import extract_zip_task, publish_cohort_task
 
 
 def make_breadcrumbs(cohort: Optional[Cohort] = None) -> list:
@@ -112,3 +114,40 @@ def cohort_browser(request, pk):
             'breadcrumbs': make_breadcrumbs(cohort) + [['#', 'Browse Accessions']],
         },
     )
+
+
+@staff_member_required  # TODO: who gets to publish a cohort? anyone who can view it?
+@permission_or_404('ingest.view_cohort', (Cohort, 'pk', 'pk'))
+def publish_cohort(request, pk):
+    cohort = get_object_or_404(Cohort, pk=pk)
+
+    if request.method == 'POST':
+        public = False
+        if 'public' in request.POST:
+            public = True
+        elif 'private' in request.POST:
+            public = False
+        else:
+            raise Exception
+
+        publish_cohort_task.delay(cohort.pk, public=public)
+        messages.add_message(
+            request,
+            messages.SUCCESS,
+            f'Publishing {intcomma(cohort.publishable_accessions().count())} images. This may take several minutes.',  # noqa: E501
+        )
+        return HttpResponseRedirect(reverse('cohort-detail', args=[cohort.pk]))
+    else:
+        ctx = {
+            'cohort': cohort,
+            'breadcrumbs': make_breadcrumbs(cohort) + [['#', 'Publish Cohort']],
+            'num_accessions': cohort.accessions.count(),
+            'num_published': cohort.published_accessions().count(),
+            'num_publishable': cohort.publishable_accessions().count(),
+            'num_rejected': cohort.rejected_accessions().count(),
+            'num_pending_or_failed': cohort.pending_or_failed_accessions().count(),
+        }
+
+    ctx['num_unpublishable'] = ctx['num_accessions'] - ctx['num_publishable']
+
+    return render(request, 'ingest/cohort_publish.html', ctx)
