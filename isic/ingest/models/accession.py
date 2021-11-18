@@ -16,6 +16,17 @@ from isic.ingest.utils.zip import Blob
 
 from .zip_upload import ZipUpload
 
+ACCESSION_CHECKS = {
+    'quality_check': {
+        'short_name': 'Quality',
+        'nice_name': 'Quality Check',
+    },
+    'diagnosis_check': {'short_name': 'Diagnosis', 'nice_name': 'Diagnosis Check'},
+    'phi_check': {'short_name': 'PHI', 'nice_name': 'PHI Check'},
+    'duplicate_check': {'short_name': 'Duplicate', 'nice_name': 'Duplicate Check'},
+    'lesion_check': {'short_name': 'Lesion IDs', 'nice_name': 'Lesion ID Check'},
+}
+
 
 class AccessionStatus(models.TextChoices):
     CREATING = 'creating', 'Creating'
@@ -146,16 +157,6 @@ class Accession(CreationSortedTimeStampedModel):
             | Q(duplicate_check=False)
             | Q(lesion_check=False)
         )
-
-    @staticmethod
-    def checks():
-        return {
-            'quality_check': 'Quality',
-            'diagnosis_check': 'Diagnosis',
-            'phi_check': 'PHI',
-            'duplicate_check': 'Duplicate',
-            'lesion_check': 'Lesion IDs',
-        }
 
     @staticmethod
     def check_counts(cohort):
