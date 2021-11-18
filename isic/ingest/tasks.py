@@ -143,10 +143,5 @@ def publish_accession_task(accession_pk: int, *, public: bool):
 @shared_task
 def publish_cohort_task(cohort_pk: int, *, public: bool):
     cohort = Cohort.objects.get(pk=cohort_pk)
-    for accession_pk in (
-        Accession.objects.filter(status=AccessionStatus.SUCCEEDED)
-        .exclude(Accession.rejected_filter())
-        .filter(image__isnull=True, cohort=cohort)
-        .values_list('pk', flat=True)
-    ):
+    for accession_pk in cohort.publishable_accessions().values_list('pk', flat=True):
         publish_accession_task.delay(accession_pk, public=public)

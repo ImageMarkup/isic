@@ -12,6 +12,7 @@ from django.urls.base import reverse
 from isic.core.permissions import permission_or_404
 from isic.ingest.filters import AccessionFilter
 from isic.ingest.models import Accession, Cohort, ZipUpload
+from isic.ingest.models.accession import ACCESSION_CHECKS
 from isic.ingest.tasks import extract_zip_task
 
 
@@ -60,7 +61,7 @@ def cohort_detail(request, pk):
         {
             'cohort': cohort,
             'check_counts': Accession.check_counts(cohort),
-            'checks': Accession.checks(),
+            'checks': ACCESSION_CHECKS,
             'breadcrumbs': make_breadcrumbs(cohort),
             'review_urls': {
                 'phi_check': 'cohort-review-quality-and-phi',

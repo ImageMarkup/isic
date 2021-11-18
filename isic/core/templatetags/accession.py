@@ -2,6 +2,8 @@ import json
 
 from django import template
 
+from isic.ingest.models.accession import ACCESSION_CHECKS
+
 register = template.Library()
 
 
@@ -20,3 +22,13 @@ def to_js(value):
 @register.filter
 def formatted(value):
     return json.dumps(value, indent=4, sort_keys=True)
+
+
+@register.filter
+def nice_name(value: str) -> str:
+    return ACCESSION_CHECKS[value]['nice_name']
+
+
+@register.filter
+def short_name(value: str) -> str:
+    return ACCESSION_CHECKS[value]['short_name']
