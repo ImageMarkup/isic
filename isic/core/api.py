@@ -10,7 +10,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from isic.core.models.collection import Collection
 from isic.core.models.image import Image
 from isic.core.permissions import IsicObjectPermissionsFilter, get_visible_objects
-from isic.core.search import build_filtered_query, facets, search
+from isic.core.search import ElasticsearchQuerySet, build_elasticsearch_query, facets
 from isic.core.serializers import (
     CollectionSerializer,
     ImageSerializer,
@@ -60,7 +60,7 @@ class ImageViewSet(ReadOnlyModelViewSet):
     def facets(self, request):
         serializer = SearchQuerySerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
-        query = build_filtered_query(
+        query = build_elasticsearch_query(
             serializer.validated_data.get('query', ''),
             request.user,
             serializer.validated_data.get('collections'),
@@ -75,7 +75,7 @@ class ImageViewSet(ReadOnlyModelViewSet):
             )
         )
         try:
-            response = facets(query, collection_pks)
+            response = facets(query.query, collection_pks)
         except RequestError:
             raise ParseError('Error parsing search query.')
 
@@ -133,26 +133,21 @@ class ImageViewSet(ReadOnlyModelViewSet):
     def search(self, request):
         serializer = SearchQuerySerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
+        qs: ElasticsearchQuerySet = build_elasticsearch_query(
+            serializer.validated_data.get('query', ''),
+            request.user,
+            serializer.validated_data.get('collections'),
+        )
 
         try:
-            isic_ids, count = search(
-                serializer.validated_data.get('query', ''),
-                request.user,
-                serializer.validated_data.get('collections'),
-                self.paginator.get_limit(request),
-                self.paginator.get_offset(request),
-            )
+            # Evaluation of the elasticsearch query occurs here, so check for an error
+            # in parsing the query.
+            page = self.paginate_queryset(qs)
+            serializer = self.get_serializer(page, many=True)
+            paginated_response = self.get_paginated_response(serializer.data)
         except RequestError:
             raise ParseError('Error parsing search query.')
 
-        images = self.get_queryset().filter(pk__in=isic_ids)
-        page = self.paginate_queryset(images)
-        serializer = self.get_serializer(page, many=True)
-        paginated_response = self.get_paginated_response(serializer.data)
-
-        # The count needs to be overriden otherwise the paginator tries to
-        # get a count for the queryset (images), which will always be PAGE_SIZE.
-        paginated_response.data['count'] = count
         return paginated_response
 
 

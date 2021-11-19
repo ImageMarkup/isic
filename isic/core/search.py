@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 from functools import lru_cache
 import logging
 from typing import Optional
@@ -5,6 +6,7 @@ from typing import Optional
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db.models.query import QuerySet
+from django.utils.functional import cached_property
 from opensearchpy import NotFoundError, OpenSearch
 from opensearchpy.helpers import streaming_bulk
 
@@ -152,6 +154,59 @@ def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 500) -> None
             logger.error('Failed to insert document into elasticsearch', info)
 
 
+@dataclass
+class ElasticsearchQuerySet:
+    """
+    A naive queryset for elasticsearch queries.
+
+    This is meant to mimic a django queryset just enough to work with other django
+    utilities like pagination.
+
+    Usage:
+    qs = ElasticsearchQuerySet()
+    qs.count
+    qs[0:100]
+    """
+
+    query: Optional[dict] = field(default_factory=dict)
+
+    def __len__(self) -> int:
+        return self.count
+
+    def __getitem__(self, key):
+        if isinstance(key, slice):
+            assert key.step is None, 'Step slices are unsupported'
+            return self._search(key.stop, key.start)
+        elif isinstance(key, int):
+            return self._search(1, key)
+        else:
+            raise TypeError
+
+    @cached_property
+    def count(self) -> int:
+        body = {}
+
+        if self.query:
+            body['query'] = self.query
+
+        result = get_elasticsearch_client().count(
+            index=settings.ISIC_ELASTICSEARCH_INDEX, body=body
+        )
+        return result['count']
+
+    @property
+    def ordered(self) -> bool:
+        return True
+
+    def _search(self, limit: int, offset: int) -> QuerySet[Image]:
+        results = execute_elasticsearch_query(self.query, limit, offset)
+        return self._images_from_ids([x['fields']['id'][0] for x in results['hits']['hits']])
+
+    # TODO: how to allow customizing the queryset?
+    def _images_from_ids(self, pks: list[int]) -> QuerySet[Image]:
+        return Image.objects.select_related('accession').filter(pk__in=pks).order_by('created')
+
+
 def facets(query: Optional[dict] = None, collections: Optional[list[int]] = None) -> dict:
     body = {
         'size': 0,
@@ -172,28 +227,18 @@ def facets(query: Optional[dict] = None, collections: Optional[list[int]] = None
     ]
 
 
-def search_images(
-    query: Optional[dict] = None,
-    limit: Optional[int] = settings.REST_FRAMEWORK['PAGE_SIZE'],
-    offset: Optional[int] = 0,
-) -> dict:
-    # TODO: stably sort by _created
-    body = {
-        'from': offset,
-        'size': limit,
-        'fields': ['id'],
-        '_source': False,
-        'track_total_hits': True,
-    }
+def build_elasticsearch_query(
+    query: str, user: User, collection_pks: Optional[list[int]] = None
+) -> ElasticsearchQuerySet:
+    """
+    Build an elasticsearch query from a DSL query string, a user, and collection ids.
 
-    if query:
-        body['query'] = query
-
-    return get_elasticsearch_client().search(index=settings.ISIC_ELASTICSEARCH_INDEX, body=body)
-
-
-def build_filtered_query(query: str, user: User, collection_pks=None) -> dict:
-    """Translate a django search request into an elasticsearch query."""
+    collection_pks is the confusing bit here. None indicates the user doesn't want to do any
+    filtering of collections. An empty list would instead indicate that the user wants images that
+    are in an empty set of collections (aka no images). This is counterintuitive but necessary
+    because the list of collection IDs gets filtered by permissions. So if the user requests images
+    in collections [1] but don't have access to collection 1 then the user should get 0 results.
+    """
     if collection_pks is not None:
         visible_collection_pks = list(
             get_visible_objects(
@@ -213,12 +258,12 @@ def build_filtered_query(query: str, user: User, collection_pks=None) -> dict:
         query_dict['bool'].setdefault('must', {})
         query_dict['bool']['must']['query_string'] = {'query': query}
 
+    # Note: permissions here must be also modified in ImagePermissions.view_image_list
     if user.is_anonymous:
         query_dict['bool']['should'] = [{'term': {'public': 'true'}}]
         # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html#bool-min-should-match
         query_dict['bool']['minimum_should_match'] = 1
     elif not user.is_staff:
-        # Note: permissions here must be also modified in ImagePermissions.view_image_list
         query_dict['bool']['should'] = [
             {'term': {'public': 'true'}},
             {'terms': {'shared_to': [user.pk]}},
@@ -227,15 +272,32 @@ def build_filtered_query(query: str, user: User, collection_pks=None) -> dict:
         # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html#bool-min-should-match
         query_dict['bool']['minimum_should_match'] = 1
 
-    return query_dict
+    return ElasticsearchQuerySet(query_dict)
 
 
-# list of isic ids, total hits
-def search(query, user, collection_pks=None, limit=None, offset=0) -> tuple[list[int], int]:
-    es_query = build_filtered_query(query, user, collection_pks)
-    # TODO: validate es query
-    search_results = search_images(es_query, limit, offset)
+def execute_elasticsearch_query(
+    query: dict,
+    limit: Optional[int] = settings.REST_FRAMEWORK['PAGE_SIZE'],
+    offset: Optional[int] = 0,
+) -> dict:
+    """
+    Execute a query with necessary parameters like sorting and limit/offset.
 
-    return [x['fields']['id'][0] for x in search_results['hits']['hits']], search_results['hits'][
-        'total'
-    ]['value']
+    query should usually be generated by build_elasticsearch_query.
+    """
+    body = {
+        'fields': ['id'],
+        '_source': False,
+        'sort': {'created': 'asc'},
+    }
+
+    if limit:
+        body['size'] = limit
+
+    if offset:
+        body['from'] = offset
+
+    if query:
+        body['query'] = query
+
+    return get_elasticsearch_client().search(index=settings.ISIC_ELASTICSEARCH_INDEX, body=body)
