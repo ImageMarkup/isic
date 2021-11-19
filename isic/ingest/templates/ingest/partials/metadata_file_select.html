@@ -1,3 +1,5 @@
+{% load localtime %}
+
 <form method="POST" action="">
   {{ form.non_field_errors }}
   {{ form.metadata_file.errors }}
@@ -41,7 +43,7 @@
               'text-indigo-700': checked === {{ forloop.counter }}}"
               class="text-gray-500 block text-sm">
               <p>{{ metadata_file.creator }}</p>
-              <p>{{ metadata_file.created }}</p>
+              <p>{% localtime metadata_file.created %}</p>
             </span>
           </div>
         </label>
