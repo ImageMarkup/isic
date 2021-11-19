@@ -6,6 +6,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db.models import Count, Prefetch
+from django.db.models.query import QuerySet
 from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
@@ -207,11 +208,12 @@ def image_browser(request):
             request.user, 'core.view_collection', Collection.objects.order_by('name')
         ),
     )
-    search_form.is_valid()
+    qs: QuerySet[Image] = Image.objects.none()
+    if search_form.is_valid():
+        qs = search_form.results
 
-    paginator = Paginator(search_form.results, 30)
+    paginator = Paginator(qs, 30)
     page = paginator.get_page(request.GET.get('page'))
-
     return render(
         request,
         'core/image_browser.html',
