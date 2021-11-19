@@ -3,11 +3,14 @@ import logging
 from typing import Optional
 
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.db.models.query import QuerySet
 from opensearchpy import NotFoundError, OpenSearch
 from opensearchpy.helpers import streaming_bulk
 
 from isic.core.models import Image
+from isic.core.models.collection import Collection
+from isic.core.permissions import get_visible_objects
 
 logger = logging.getLogger(__name__)
 
@@ -187,3 +190,52 @@ def search_images(
         body['query'] = query
 
     return get_elasticsearch_client().search(index=settings.ISIC_ELASTICSEARCH_INDEX, body=body)
+
+
+def build_filtered_query(query: str, user: User, collection_pks=None) -> dict:
+    """Translate a django search request into an elasticsearch query."""
+    if collection_pks is not None:
+        visible_collection_pks = list(
+            get_visible_objects(
+                user, 'core.view_collection', Collection.objects.filter(pk__in=collection_pks)
+            ).values_list('pk', flat=True)
+        )
+    else:
+        visible_collection_pks = None
+
+    query_dict = {'bool': {}}
+
+    if visible_collection_pks is not None:
+        query_dict['bool'].setdefault('filter', {})
+        query_dict['bool']['filter']['terms'] = {'collections': visible_collection_pks}
+
+    if query:
+        query_dict['bool'].setdefault('must', {})
+        query_dict['bool']['must']['query_string'] = {'query': query}
+
+    if user.is_anonymous:
+        query_dict['bool']['should'] = [{'term': {'public': 'true'}}]
+        # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html#bool-min-should-match
+        query_dict['bool']['minimum_should_match'] = 1
+    elif not user.is_staff:
+        # Note: permissions here must be also modified in ImagePermissions.view_image_list
+        query_dict['bool']['should'] = [
+            {'term': {'public': 'true'}},
+            {'terms': {'shared_to': [user.pk]}},
+            {'terms': {'contributor_owner_ids': [user.pk]}},
+        ]
+        # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html#bool-min-should-match
+        query_dict['bool']['minimum_should_match'] = 1
+
+    return query_dict
+
+
+# list of isic ids, total hits
+def search(query, user, collection_pks=None, limit=None, offset=0) -> tuple[list[int], int]:
+    es_query = build_filtered_query(query, user, collection_pks)
+    # TODO: validate es query
+    search_results = search_images(es_query, limit, offset)
+
+    return [x['fields']['id'][0] for x in search_results['hits']['hits']], search_results['hits'][
+        'total'
+    ]['value']
