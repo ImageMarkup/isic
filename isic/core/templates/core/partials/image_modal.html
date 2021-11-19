@@ -1,3 +1,5 @@
+{% load accession %}
+
 <div class="fixed z-10 inset-0 overflow-y-auto">
   <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
     <div class="fixed inset-0 transition-opacity" aria-hidden="true">
@@ -12,6 +14,32 @@
       {% else %}
         <img src="{{ image.accession.blob.url }}" title="{{ image.accession.blob_name }}" />
       {% endif %}
+
+      <div x-data="{selectedTab: 'Metadata'}">
+        <div class="mt-2">
+          <div class="sm:hidden">
+            <label for="tabs" class="sr-only">Select a tab</label>
+            <select id="tabs" name="tabs" class="block w-full focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md">
+              <option :selected="selectedTab == 'Metadata'">Metadata</option>
+            </select>
+          </div>
+          <div class="hidden sm:block">
+            <nav class="flex space-x-4" aria-label="Tabs">
+              <a href="" @click.prevent="selectedTab = 'Metadata'" class="px-3 py-2 font-medium text-sm rounded-md"
+                :class="{'bg-indigo-100 text-indigo-700': selectedTab == 'Metadata',
+                'text-gray-500 hover:text-gray-700': selectedTab != 'Metadata'}">
+                Metadata
+              </a>
+            </nav>
+          </div>
+        </div>
+
+        <div class="my-2 bg-gray-100 p-4">
+          <pre x-show="selectedTab == 'Metadata'">{{ image.accession.redacted_metadata|formatted }}</pre>
+        </div>
+      </div>
+
+
       <div class="mt-5 sm:mt-6">
         <button @click="open = false" type="button" class="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm">
           Close

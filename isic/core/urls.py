@@ -9,6 +9,7 @@ from isic.core.views import (
     collection_create_doi,
     collection_detail,
     collection_list,
+    image_browser,
     image_detail,
     staff_list,
     stats,
@@ -54,6 +55,11 @@ urlpatterns = [
     path('api/v2/stats/', api_stats, name='core/api/stats'),
     path('api/v2/users/me/', user_me, name='core/api/users/me'),
     path('staff/users/', staff_list, name='core/staff-list'),
+    path(
+        'images/',
+        image_browser,
+        name='core/image-browser',
+    ),
     path(
         'collections/',
         collection_list,
