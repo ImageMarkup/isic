@@ -22,13 +22,7 @@ def test_collections_field_invalid_inputs(input):
         ['1', [1]],
     ],
 )
-def test_collections_field_valid_inputs(input, output, mocker):
-    # Skip database access for determining which collections are visible
-    def mocked_filter(self, x):
-        return x
-
-    mocker.patch.object(CollectionsField, '_filter_collection_pks', mocked_filter)
-
+def test_collections_field_valid_inputs(input, output):
     s = DummySerializer(data={'test': input})
     s.is_valid(raise_exception=True)
     assert s.validated_data.get('test') == output
