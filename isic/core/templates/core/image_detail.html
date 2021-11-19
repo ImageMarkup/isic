@@ -1,5 +1,6 @@
 {% extends 'core/base.html' %}
 {% load humanize %}
+{% load localtime %}
 {% load get_key %}
 
 {% load chunks %}
@@ -48,7 +49,7 @@
           <dl class="mt-2 border-t border-b border-gray-200 divide-y divide-gray-200">
             <div class="py-3 flex justify-between text-sm font-medium">
               <dt class="text-gray-500">Created</dt>
-              <dd class="text-gray-900">{{image.accession.created}}</dd>
+              <dd class="text-gray-900">{% localtime image.accession.created %}</dd>
             </div>
 
             <div class="py-3 flex justify-between text-sm font-medium">
@@ -208,7 +209,7 @@
 
         <div x-show="selectedTab == 'ingest-review'">
           <div class="my-4">
-            Published {{ image.created }}
+            Published {% localtime image.created %}
           </div>
           <h3>Reviews</h3>
           <div class="flex flex-col">
@@ -236,7 +237,7 @@
                       {% for log in image.accession.checklogs.all %}
                         <tr>
                           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {{ log.created }}
+                            {% localtime log.created %}
                           </td>
                           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {{ log.creator }}

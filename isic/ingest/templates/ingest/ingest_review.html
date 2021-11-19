@@ -1,5 +1,6 @@
 {% extends 'core/base.html' %}
 {% load humanize %}
+{% load localtime %}
 {% load get_key %}
 {% load chunks %}
 
@@ -52,8 +53,7 @@
               <div class="mt-2 sm:flex sm:justify-between">
                 <div class="mt-2 flex-col items-center text-sm text-gray-500 sm:mt-0">
                   <p>
-                    Created on
-                    <time datetime="2020-01-07">{{ cohort.created }}</time>
+                    Created on {% localtime cohort.created %}
                   </p>
                   <p>
                     Created by
