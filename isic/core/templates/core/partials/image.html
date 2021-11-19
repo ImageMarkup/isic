@@ -11,9 +11,11 @@
       {% endif %}
     </a>
 
-    <div x-show="open">
-      {% include 'core/partials/image_modal.html' %}
-    </div>
+    <template x-if="true">
+      <div x-show="open">
+        {% include 'core/partials/image_modal.html' %}
+      </div>
+    </template>
   </div>
   <div class="flex">
     {% if request.user.is_staff %}
