@@ -211,14 +211,14 @@ class Accession(CreationSortedTimeStampedModel):
 
     @property
     def redacted_metadata(self) -> dict:
-        from isic.core.models.image import RESTRICTED_SEARCH_FIELDS
+        from isic.core.models.image import RESTRICTED_METADATA_FIELDS
 
         redacted = dict(self.metadata)
 
         if 'age' in self.metadata:
             redacted['age_approx'] = self.age_approx
 
-        for f in RESTRICTED_SEARCH_FIELDS:
+        for f in RESTRICTED_METADATA_FIELDS:
             if f in redacted:
                 del redacted[f]
 

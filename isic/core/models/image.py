@@ -12,7 +12,7 @@ from isic.ingest.models import Accession
 
 from .isic_id import IsicId
 
-RESTRICTED_SEARCH_FIELDS = ['age', 'patient_id', 'lesion_id']
+RESTRICTED_METADATA_FIELDS = ['age', 'patient_id', 'lesion_id']
 
 
 class Image(CreationSortedTimeStampedModel):
@@ -81,7 +81,7 @@ class ImagePermissions:
         if user_obj.is_active and user_obj.is_staff:
             return qs
         elif user_obj.is_active and not user_obj.is_anonymous:
-            # Note: permissions here must be also modified in build_filtered_query
+            # Note: permissions here must be also modified in build_elasticsearch_query
             return qs.filter(
                 Q(public=True)
                 | Q(accession__cohort__contributor__owners=user_obj)
