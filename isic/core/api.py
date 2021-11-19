@@ -1,4 +1,3 @@
-from django.contrib.auth.models import User
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from opensearchpy.exceptions import RequestError
@@ -11,7 +10,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from isic.core.models.collection import Collection
 from isic.core.models.image import Image
 from isic.core.permissions import IsicObjectPermissionsFilter, get_visible_objects
-from isic.core.search import facets, search_images
+from isic.core.search import build_filtered_query, facets, search
 from isic.core.serializers import (
     CollectionSerializer,
     ImageSerializer,
@@ -37,40 +36,6 @@ def user_me(request):
     return Response(UserSerializer(request.user).data)
 
 
-def build_filtered_query(user: User, query_params: dict) -> dict:
-    """Translate a django search request into an elasticsearch query."""
-    serializer = SearchQuerySerializer(data=query_params, context={'user': user})
-    serializer.is_valid(raise_exception=True)
-    collection_pks = serializer.validated_data.get('collections')
-    dsl_query = serializer.validated_data.get('query')
-
-    query_dict = {'bool': {}}
-
-    if collection_pks is not None:
-        query_dict['bool'].setdefault('filter', {})
-        query_dict['bool']['filter']['terms'] = {'collections': collection_pks}
-
-    if dsl_query:
-        query_dict['bool'].setdefault('must', {})
-        query_dict['bool']['must']['query_string'] = {'query': dsl_query}
-
-    if user.is_anonymous:
-        query_dict['bool']['should'] = [{'term': {'public': 'true'}}]
-        # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html#bool-min-should-match
-        query_dict['bool']['minimum_should_match'] = 1
-    elif not user.is_staff:
-        # Note: permissions here must be also modified in ImagePermissions.view_image_list
-        query_dict['bool']['should'] = [
-            {'term': {'public': 'true'}},
-            {'terms': {'shared_to': [user.pk]}},
-            {'terms': {'contributor_owner_ids': [user.pk]}},
-        ]
-        # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html#bool-min-should-match
-        query_dict['bool']['minimum_should_match'] = 1
-
-    return query_dict
-
-
 @method_decorator(
     name='list', decorator=swagger_auto_schema(operation_summary='Return a list of images.')
 )
@@ -93,7 +58,13 @@ class ImageViewSet(ReadOnlyModelViewSet):
     )
     @action(detail=False, methods=['get'], pagination_class=None)
     def facets(self, request):
-        query = build_filtered_query(request.user, request.query_params)
+        serializer = SearchQuerySerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        query = build_filtered_query(
+            serializer.validated_data.get('query', ''),
+            request.user,
+            serializer.validated_data.get('collections'),
+        )
         # Manually pass the list of visible collection PKs through so buckets with
         # counts of 0 aren't included in the facets output for non-visible collections.
         collection_pks = list(
@@ -160,15 +131,20 @@ class ImageViewSet(ReadOnlyModelViewSet):
     )
     @action(detail=False, methods=['get'])
     def search(self, request):
-        query = build_filtered_query(request.user, request.query_params)
+        serializer = SearchQuerySerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
         try:
-            search_results = search_images(
-                query, self.paginator.get_limit(request), self.paginator.get_offset(request)
+            isic_ids, count = search(
+                serializer.validated_data.get('query', ''),
+                request.user,
+                serializer.validated_data.get('collections'),
+                self.paginator.get_limit(request),
+                self.paginator.get_offset(request),
             )
         except RequestError:
             raise ParseError('Error parsing search query.')
 
-        isic_ids = [x['fields']['id'][0] for x in search_results['hits']['hits']]
         images = self.get_queryset().filter(pk__in=isic_ids)
         page = self.paginate_queryset(images)
         serializer = self.get_serializer(page, many=True)
@@ -176,7 +152,7 @@ class ImageViewSet(ReadOnlyModelViewSet):
 
         # The count needs to be overriden otherwise the paginator tries to
         # get a count for the queryset (images), which will always be PAGE_SIZE.
-        paginated_response.data['count'] = search_results['hits']['total']['value']
+        paginated_response.data['count'] = count
         return paginated_response
 
 

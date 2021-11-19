@@ -7,7 +7,6 @@ from rest_framework.fields import Field
 
 from isic.core.models import Image
 from isic.core.models.collection import Collection
-from isic.core.permissions import get_visible_objects
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -47,16 +46,7 @@ class CollectionsField(Field):
                 self.fail('not_comma_delimited')
 
             data = [int(x) for x in data.split(',')]
-            return self._filter_collection_pks(data)
-
-    def _filter_collection_pks(self, collection_pks: list[int]) -> list[int]:
-        visible_collection_pks = get_visible_objects(
-            self.context['user'],
-            'core.view_collection',
-            Collection.objects.filter(pk__in=collection_pks),
-        )
-
-        return list(visible_collection_pks.values_list('pk', flat=True))
+            return data
 
 
 class SearchQuerySerializer(serializers.Serializer):

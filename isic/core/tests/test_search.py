@@ -2,7 +2,7 @@ import itertools
 
 import pytest
 
-from isic.core.models.image import RESTRICTED_SEARCH_FIELDS
+from isic.core.models.image import RESTRICTED_METADATA_FIELDS
 from isic.core.search import add_to_search_index, get_elasticsearch_client
 
 
@@ -141,7 +141,7 @@ def test_core_api_image_search_invalid_query(route, searchable_images, authentic
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     'restricted_field,route',
-    itertools.product(RESTRICTED_SEARCH_FIELDS, ['/api/v2/images/', '/api/v2/images/search/']),
+    itertools.product(RESTRICTED_METADATA_FIELDS, ['/api/v2/images/', '/api/v2/images/search/']),
 )
 def test_core_api_image_hides_fields(
     authenticated_api_client, searchable_images_with_private_fields, restricted_field, route
