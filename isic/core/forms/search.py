@@ -17,12 +17,13 @@ class ImageSearchForm(forms.Form):
             queryset=collections, required=False
         )
 
-    def full_clean(self):
-        super().full_clean()
+    def clean(self):
+        collections = None
+        if 'collections' in self.cleaned_data and self.cleaned_data['collections'].exists():
+            collections = self.cleaned_data['collections']
 
-        collections = (
-            self.cleaned_data['collections'] if self.cleaned_data['collections'].exists() else None
-        )
         self.results = build_elasticsearch_query(
             self.cleaned_data.get('search', ''), self.user, collections
         )
+
+        return super().clean()
