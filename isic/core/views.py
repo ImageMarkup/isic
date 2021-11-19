@@ -11,6 +11,7 @@ from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
 from isic.core.forms.doi import CreateDoiForm
+from isic.core.forms.search import ImageSearchForm
 from isic.core.models import Collection, Image
 from isic.core.permissions import get_visible_objects, permission_or_404
 from isic.core.stats import get_archive_stats
@@ -152,6 +153,7 @@ def collection_detail(request, pk):
 
 # TODO: refactor permissions in the future to use permission_or_404 and filtering
 # only visible studies/responses
+# TODO: never show unstructured metadata to non-staff users (maybe also in cohort review pages)
 @staff_member_required
 def image_detail(request, pk):
     image = get_object_or_404(
@@ -193,5 +195,28 @@ def image_detail(request, pk):
                 'studies': f'Studies ({studies.count()})',
                 'ingest-review': 'Ingest Review',
             },
+        },
+    )
+
+
+def image_browser(request):
+    search_form = ImageSearchForm(
+        request.GET,
+        user=request.user,
+        collections=get_visible_objects(
+            request.user, 'core.view_collection', Collection.objects.order_by('name')
+        ),
+    )
+    search_form.is_valid()
+
+    paginator = Paginator(search_form.results, 30)
+    page = paginator.get_page(request.GET.get('page'))
+
+    return render(
+        request,
+        'core/image_browser.html',
+        {
+            'images': page,
+            'form': search_form,
         },
     )
