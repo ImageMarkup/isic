@@ -16,7 +16,8 @@
           </template>
         {% else %}
           <template x-if="hovered">
-            <img src="{{ accession.blob.url }}" title="{{ accession.blob_name }}" />
+            {% comment %}Note the single quotes: https://github.com/alpinejs/alpine/issues/466{% endcomment %}
+            <img :src="'{{ accession.blob.url }}'" title="{{ accession.blob_name }}" />
           </template>
         {% endif %}
 
