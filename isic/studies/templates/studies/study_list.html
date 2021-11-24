@@ -20,13 +20,11 @@
                 <div class="flex">
                   <p class="text-sm font-medium text-indigo-600 truncate">
                     {{ study.name }}
-                    {% with unreviewed_count=study.unreviewed_accessions.count %}
-                      {% if unreviewed_count %}
-                        <p class="px-2 ml-2 text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                          {{ unreviewed_count|intcomma }} unreviewed
-                        </p>
-                      {%endif%}
-                    {% endwith %}
+                    {% if study.num_personal_tasks %}
+                      <p class="px-2 ml-2 text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                        {{ study.num_personal_tasks|intcomma }} remaining tasks
+                      </p>
+                    {% endif %}
                   </p>
                 </div>
                 <div class="sm:flex">
