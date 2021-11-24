@@ -1,23 +1,30 @@
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
-from django.db import transaction
 from django.db.models import Count
+from django.db.models.query_utils import Q
 from django.http import HttpResponse
-from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
-from django.urls.base import reverse
 
 from isic.core.permissions import get_visible_objects, permission_or_404
-from isic.studies.forms import StudyTaskForm
-from isic.studies.models import Annotation, Markup, Question, QuestionChoice, Study, StudyTask
+from isic.studies.models import Annotation, Markup, Study
 
 
 def study_list(request):
-    studies = get_visible_objects(
-        request.user,
-        'studies.view_study',
-        Study.objects.select_related('creator').distinct().order_by('-created'),
+    visible_studies = get_visible_objects(request.user, 'studies.view_study')
+
+    annotations = {}
+    if request.user.is_authenticated:
+        annotations['num_personal_tasks'] = Count(
+            'tasks', distinct=True, filter=Q(tasks__annotator=request.user, annotation=None)
+        )
+
+    studies = (
+        visible_studies.select_related('creator')
+        .annotate(**annotations)
+        .distinct()
+        .order_by('-created')
     )
+
     paginator = Paginator(studies, 10)
     studies_page = paginator.get_page(request.GET.get('page'))
     return render(request, 'studies/study_list.html', {'studies': studies_page})
@@ -51,12 +58,12 @@ def study_detail(request, pk):
         Study.objects.annotate(
             num_images=Count('tasks__image', distinct=True),
             num_annotators=Count('tasks__annotator', distinct=True),
-            num_features=Count('features',distinct=True),
-            num_questions=Count('questions',distinct=True),
+            num_features=Count('features', distinct=True),
+            num_questions=Count('questions', distinct=True),
         )
         .prefetch_related('questions')
         .prefetch_related('features'),
         pk=pk,
     )
 
-    return render(request, 'studies/study_detail.html', {'study':study})
+    return render(request, 'studies/study_detail.html', {'study': study})
