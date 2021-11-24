@@ -1,33 +1,51 @@
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
 from django.db.models import Count
-from django.db.models.query_utils import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 
 from isic.core.permissions import get_visible_objects, permission_or_404
-from isic.studies.models import Annotation, Markup, Study
+from isic.studies.models import Annotation, Markup, Study, StudyTask
 
 
 def study_list(request):
-    visible_studies = get_visible_objects(request.user, 'studies.view_study')
-
-    annotations = {}
-    if request.user.is_authenticated:
-        annotations['num_personal_tasks'] = Count(
-            'tasks', distinct=True, filter=Q(tasks__annotator=request.user, annotation=None)
-        )
-
-    studies = (
-        visible_studies.select_related('creator')
-        .annotate(**annotations)
-        .distinct()
-        .order_by('-created')
+    studies = get_visible_objects(
+        request.user,
+        'studies.view_study',
+        Study.objects.select_related('creator').distinct().order_by('-created'),
     )
-
     paginator = Paginator(studies, 10)
     studies_page = paginator.get_page(request.GET.get('page'))
-    return render(request, 'studies/study_list.html', {'studies': studies_page})
+
+    num_participants = dict(
+        StudyTask.objects.values('study')
+        .filter(study__in=studies_page)
+        .annotate(count=Count('annotator', distinct=True))
+        .values_list('study', 'count')
+    )
+
+    if request.user.is_authenticated:
+        # Ideally this could be tacked onto studies as an annotation but the
+        # generated SQL is extremely inefficient.
+        # Map the study id -> num pending tasks a user has to complete on a study
+        num_pending_tasks = dict(
+            StudyTask.objects.values('study')
+            .filter(study__in=studies_page, annotator=request.user, annotation=None)
+            .annotate(count=Count(1))
+            .values_list('study', 'count')
+        )
+    else:
+        num_pending_tasks = {}
+
+    return render(
+        request,
+        'studies/study_list.html',
+        {
+            'studies': studies_page,
+            'num_pending_tasks': num_pending_tasks,
+            'num_participants': num_participants,
+        },
+    )
 
 
 @staff_member_required
