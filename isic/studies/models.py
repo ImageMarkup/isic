@@ -77,10 +77,6 @@ class Study(TimeStampedModel):
     def get_absolute_url(self) -> str:
         return reverse('study-detail', args=[self.pk])
 
-    @property
-    def annotators(self):
-        return User.objects.filter(studytask__study=self).distinct()
-
 
 class StudyPermissions:
     model = Study
