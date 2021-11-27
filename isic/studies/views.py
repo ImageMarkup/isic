@@ -79,9 +79,14 @@ def study_detail(request, pk):
             num_features=Count('features', distinct=True),
             num_questions=Count('questions', distinct=True),
         )
+        .select_related('creator')
         .prefetch_related('questions')
         .prefetch_related('features'),
         pk=pk,
     )
 
-    return render(request, 'studies/study_detail.html', {'study': study})
+    pending_tasks = study.tasks.pending_for_user(request.user)
+
+    return render(
+        request, 'studies/study_detail.html', {'study': study, 'pending_tasks': pending_tasks}
+    )
