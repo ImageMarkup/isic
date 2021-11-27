@@ -105,6 +105,14 @@ class StudyPermissions:
 Study.perms_class = StudyPermissions
 
 
+class StudyTaskSet(models.QuerySet):
+    def pending(self):
+        return self.filter(annotation=None)
+
+    def pending_for_user(self, user: User):
+        return self.pending().filter(annotator=user)
+
+
 class StudyTask(TimeStampedModel):
     class Meta(TimeStampedModel.Meta):
         unique_together = [['study', 'annotator', 'image']]
@@ -113,6 +121,8 @@ class StudyTask(TimeStampedModel):
     # TODO: annotators might become M2M in the future
     annotator = models.ForeignKey(User, on_delete=models.CASCADE)
     image = models.ForeignKey(Image, on_delete=models.CASCADE)
+
+    objects = StudyTaskSet.as_manager()
 
     @property
     def complete(self) -> bool:
