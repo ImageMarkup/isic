@@ -20,10 +20,15 @@
                 <div class="flex">
                   <p class="text-sm font-medium text-indigo-600 truncate">
                     {{ study.name }}
-                    {% with pending_tasks=num_pending_tasks|get_key:study.pk %}
+                    {% with pending_tasks=num_pending_tasks|get_key:study.pk completed_tasks=num_completed_tasks|get_key:study.pk %}
                       {% if pending_tasks %}
-                        <p class="px-2 ml-2 text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                        <p class="px-2 ml-2 text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
                           {{ pending_tasks|intcomma }} remaining tasks
+                        </p>
+                      {% endif %}
+                      {% if completed_tasks %}
+                        <p class="px-2 ml-2 text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                          {{ completed_tasks|intcomma }} completed tasks
                         </p>
                       {% endif %}
                     {% endwith %}
