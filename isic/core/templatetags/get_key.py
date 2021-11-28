@@ -5,7 +5,7 @@ register = template.Library()
 
 @register.filter()
 def get_key(value, arg):
-    if arg in value:
+    if value and arg in value:
         return value[arg]
     else:
         return ''
