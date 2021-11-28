@@ -1,6 +1,10 @@
+from typing import Optional
+
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
+from django.db.models.query import QuerySet
+from django.db.models.query_utils import Q
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 from girder_utils.db import DeferredFieldsManager
@@ -61,6 +65,10 @@ class Study(TimeStampedModel):
     features = models.ManyToManyField(Feature)
     questions = models.ManyToManyField(Question)
 
+    # public study means that all images in the study must be public
+    # and all of the related data to the study is public (responses).
+    # if a study is private, only the owner can see the responses of
+    # a study.
     public = models.BooleanField(default=False)
 
     def __str__(self) -> str:
@@ -68,6 +76,33 @@ class Study(TimeStampedModel):
 
     def get_absolute_url(self) -> str:
         return reverse('study-detail', args=[self.pk])
+
+
+class StudyPermissions:
+    model = Study
+    perms = ['view_study']
+    filters = {'view_study': 'view_study_list'}
+
+    @staticmethod
+    def view_study_list(user_obj: User, qs: Optional[QuerySet[Study]] = None) -> QuerySet[Study]:
+        qs: QuerySet[Study] = qs if qs is not None else Study._default_manager.all()
+
+        if user_obj.is_staff:
+            return qs
+        elif user_obj.is_authenticated:
+            # Creator of the study, it's public, or the user has been assigned a task from
+            # the study.
+            return qs.filter(Q(creator=user_obj) | Q(public=True) | Q(tasks__annotator=user_obj))
+        else:
+            return qs.filter(public=True)
+
+    @staticmethod
+    def view_study(user_obj, obj):
+        # TODO: use .contains in django 4
+        return StudyPermissions.view_study_list(user_obj).filter(pk=obj.pk).exists()
+
+
+Study.perms_class = StudyPermissions
 
 
 class StudyTask(TimeStampedModel):
