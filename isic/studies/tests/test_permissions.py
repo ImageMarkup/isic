@@ -117,6 +117,39 @@ def test_study_detail_objects_annotator_permissions(
     assert r.status_code == 200
 
 
+@pytest.fixture
+def private_study_with_responses(study_factory, user_factory, response_factory):
+    # create a scenario for testing that a user can only see their responses and
+    # not another annotators.
+    study = study_factory(public=False)
+    u1, u2 = user_factory(), user_factory()
+    response_factory(
+        annotation__annotator=u1,
+        annotation__study=study,
+        annotation__task__annotator=u1,
+        annotation__task__study=study,
+    )
+    response_factory(
+        annotation__annotator=u2,
+        annotation__study=study,
+        annotation__task__annotator=u2,
+        annotation__task__study=study,
+    )
+    return study, u1, u2
+
+
+@pytest.mark.django_db
+def test_study_detail_responses(client, private_study_with_responses):
+    study, *users = private_study_with_responses
+
+    for user in users:
+        client.force_login(user)
+        r = client.get(reverse('study-detail', args=[study.pk]))
+        assert r.status_code == 200
+        assert len(r.context['responses']) == 1
+        assert r.context['responses'][0].annotation.annotator == user
+
+
 @pytest.mark.django_db
 def test_view_mask_permissions(client, authenticated_client, staff_client, markup):
     r = client.get(reverse('view-mask', args=[markup.pk]))
