@@ -1,26 +1,83 @@
 {% extends 'core/base.html' %}
+{% load humanize %}
 
 {% block content %}
-  <div><h2>{{ study.name }}</h2>
-  </div>
+  {% if pending_tasks and next_task %}
+    <div class="rounded-md bg-blue-50 p-4 mb-4">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <!-- Heroicon name: solid/information-circle -->
+          <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <div class="ml-3 flex justify-between">
+          <div class="mt-2 text-sm text-blue-700">
+            <p>You have {{ pending_tasks.count|intcomma }} tasks remaining for this study.</p>
+          </div>
 
+          <a href="{% url 'study-task-detail' next_task.pk %}">
+            <button type="submit"
+              class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+              Begin
+            </button>
+          </a>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <div><h2>{{ study.name }}</h2></div>
   {% include 'studies/partials/study_details.html' %}
 
-  <div class="row">
-    <div class="col s6">
-      <h4>Features</h4>
-      {% for feature in study.features.all %}
-        <div>{{ feature.label  }}</div>
-      {% endfor %}
+  <div x-data="{selectedTab: 'Questions'}">
+    <div class="mt-2">
+      <div class="sm:hidden">
+        <label for="tabs" class="sr-only">Select a tab</label>
+        <select id="tabs" name="tabs" class="block w-full focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md">
+          <option :selected="selectedTab == 'Questions'">Questions</option>
+          <option :selected="selectedTab == 'Features'">Features</option>
+          <option :selected="selectedTab == 'Responses'">Responses</option>
+        </select>
+      </div>
+      <div class="hidden sm:block">
+        <nav class="flex space-x-4" aria-label="Tabs">
+          <a href="" @click.prevent="selectedTab = 'Questions'" class="px-3 py-2 font-medium text-sm rounded-md"
+            :class="{'bg-indigo-100 text-indigo-700': selectedTab == 'Questions',
+            'text-gray-500 hover:text-gray-700': selectedTab != 'Questions'}">
+            Questions ({{ study.questions.count }})
+          </a>
+          <a href="" @click.prevent="selectedTab = 'Features'" class="px-3 py-2 font-medium text-sm rounded-md"
+            :class="{'bg-indigo-100 text-indigo-700': selectedTab == 'Features',
+            'text-gray-500 hover:text-gray-700': selectedTab != 'Features'}">
+            Features ({{ study.features.count }})
+          </a>
+          <a href="" @click.prevent="selectedTab = 'Responses'" class="px-3 py-2 font-medium text-sm rounded-md"
+            :class="{'bg-indigo-100 text-indigo-700': selectedTab == 'Responses',
+            'text-gray-500 hover:text-gray-700': selectedTab != 'Responses'}">
+            Responses ({{ responses|length }})
+          </a>
+        </nav>
+      </div>
     </div>
-    <div class="col s6">
 
-      <h4>Questions</h4>
-      <ul>
+    <div class="my-2 p-4">
+      <ul x-show="selectedTab == 'Questions'">
         {% for question in study.questions.all %}
           <li>{{ question.prompt }}</li>
         {% endfor %}
       </ul>
+      <ul x-show="selectedTab == 'Features'">
+        {% for feature in study.features.all %}
+          <li>{{ feature.label }}</li>
+        {% endfor %}
+      </ul>
+      <div x-show="selectedTab == 'Responses'">
+        {% if responses %}
+          {% include 'studies/partials/pagination.html' with page_obj=responses %}
+          {% include 'studies/partials/responses_table.html' %}
+        {% endif %}
+      </div>
     </div>
   </div>
 {% endblock %}
