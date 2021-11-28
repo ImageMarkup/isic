@@ -5,6 +5,8 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
+from django.forms.fields import ChoiceField
+from django.forms.widgets import RadioSelect
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 from girder_utils.db import DeferredFieldsManager
@@ -27,6 +29,15 @@ class Question(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.prompt
+
+    @property
+    def to_form_field(self):
+        return ChoiceField(
+            required=self.required,
+            choices=[(choice.pk, choice.text) for choice in self.choices.all()],
+            label=self.prompt,
+            widget=RadioSelect,
+        )
 
 
 class QuestionChoice(TimeStampedModel):
@@ -105,6 +116,14 @@ class StudyPermissions:
 Study.perms_class = StudyPermissions
 
 
+class StudyTaskSet(models.QuerySet):
+    def pending(self):
+        return self.filter(annotation=None)
+
+    def for_user(self, user: User):
+        return self.filter(annotator=user)
+
+
 class StudyTask(TimeStampedModel):
     class Meta(TimeStampedModel.Meta):
         unique_together = [['study', 'annotator', 'image']]
@@ -114,13 +133,45 @@ class StudyTask(TimeStampedModel):
     annotator = models.ForeignKey(User, on_delete=models.CASCADE)
     image = models.ForeignKey(Image, on_delete=models.CASCADE)
 
+    objects = StudyTaskSet.as_manager()
+
     @property
     def complete(self) -> bool:
         return hasattr(self, 'annotation')
 
 
+class StudyTaskPermissions:
+    model = StudyTask
+    perms = ['view_study_task']
+    filters = {'view_study_task': 'view_study_task_list'}
+
+    @staticmethod
+    def view_study_task_list(
+        user_obj: User, qs: Optional[QuerySet[StudyTask]] = None
+    ) -> QuerySet[StudyTask]:
+        qs = qs if qs is not None else StudyTask._default_manager.all()
+
+        if user_obj.is_staff:
+            return qs
+        elif user_obj.is_authenticated:
+            # Note: this allows people who can't see the image to see it if it's part of a study
+            # task ONLY within the studytask check. In other words, they can't see it in the
+            # gallery.
+            return qs.filter(Q(annotator=user_obj) | Q(study__creator=user_obj))
+        else:
+            return qs.none()
+
+    @staticmethod
+    def view_study_task(user_obj, obj):
+        # TODO: use .contains in django 4
+        return StudyTaskPermissions.view_study_task_list(user_obj).filter(pk=obj.pk).exists()
+
+
+StudyTask.perms_class = StudyTaskPermissions
+
+
 class Annotation(TimeStampedModel):
-    study = models.ForeignKey(Study, on_delete=models.CASCADE)
+    study = models.ForeignKey(Study, on_delete=models.CASCADE, related_name='annotations')
     image = models.ForeignKey(Image, on_delete=models.PROTECT)
     task = models.OneToOneField(StudyTask, related_name='annotation', on_delete=models.RESTRICT)
     annotator = models.ForeignKey(User, on_delete=models.PROTECT)
@@ -129,6 +180,35 @@ class Annotation(TimeStampedModel):
 
     def get_absolute_url(self) -> str:
         return reverse('annotation-detail', args=[self.pk])
+
+
+class AnnotationPermissions:
+    model = Annotation
+    perms = ['view_annotation']
+    filters = {'view_annotation': 'view_annotation_list'}
+
+    @staticmethod
+    def view_annotation_list(
+        user_obj: User, qs: Optional[QuerySet[Annotation]] = None
+    ) -> QuerySet[Annotation]:
+        qs = qs if qs is not None else Annotation._default_manager.all()
+
+        if user_obj.is_staff:
+            return qs
+        elif user_obj.is_authenticated:
+            # Note: this allows people who can't see the image to see it if it's part of an
+            # annotation. This is similar to StudyTaskPermissions
+            return qs.filter(Q(annotator=user_obj) | Q(study__creator=user_obj))
+        else:
+            return qs.none()
+
+    @staticmethod
+    def view_annotation(user_obj, obj):
+        # TODO: use .contains in django 4
+        return AnnotationPermissions.view_annotation_list(user_obj).filter(pk=obj.pk).exists()
+
+
+Annotation.perms_class = AnnotationPermissions
 
 
 class Response(TimeStampedModel):
