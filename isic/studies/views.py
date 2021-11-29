@@ -4,7 +4,6 @@ from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count
 from django.db.models.query import Prefetch
-from django.http import HttpResponse
 from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
@@ -74,7 +73,7 @@ def study_list(request):
 @staff_member_required
 def view_mask(request, markup_id):
     markup = get_object_or_404(Markup.objects.values('mask'), pk=markup_id)
-    return HttpResponse(markup['mask'], content_type='image/png')
+    return HttpResponseRedirect(markup['mask'].url)
 
 
 @staff_member_required
