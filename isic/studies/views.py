@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count
+from django.db.models.query import Prefetch
 from django.http import HttpResponse
 from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
@@ -103,7 +104,17 @@ def study_detail(request, pk):
             num_questions=Count('questions', distinct=True),
         )
         .select_related('creator')
-        .prefetch_related('questions')
+        .prefetch_related(
+            # the entire point of this prefetch is to select the questions ordered by the
+            # StudyQuestion.order field. This is pretty contrived but there doesn't appear
+            # to be an easier way.
+            Prefetch(
+                'questions',
+                queryset=Question.objects.filter(studyquestion__study_id=pk).order_by(
+                    'studyquestion__order', 'prompt'
+                ),
+            )
+        )
         .prefetch_related('features'),
         pk=pk,
     )
@@ -141,7 +152,11 @@ def study_task_detail(request, pk):
         StudyTask.objects.select_related('annotator', 'image', 'study'),
         pk=pk,
     )
-    questions = study_task.study.questions.prefetch_related('choices').all()
+    questions = (
+        study_task.study.questions.prefetch_related('choices')
+        .order_by('studyquestion__order')
+        .all()
+    )
 
     if study_task.complete:
         return maybe_redirect_to_next_study_task(request.user, study_task.study)
