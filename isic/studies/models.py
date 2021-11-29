@@ -95,6 +95,7 @@ class StudyQuestion(models.Model):
 
     study = models.ForeignKey(Study, on_delete=models.CASCADE)
     question = models.ForeignKey(Question, on_delete=models.PROTECT)
+    order = models.PositiveSmallIntegerField(default=0)
 
 
 class StudyPermissions:
