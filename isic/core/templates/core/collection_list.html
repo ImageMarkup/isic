@@ -20,7 +20,7 @@
         {% endif %}
 
         <div class="flex-1 min-w-0">
-          <a href="{{ collection.get_absolute_url }}" class="focus:outline-none">
+          <a up-target="body" href="{{ collection.get_absolute_url }}" class="focus:outline-none">
             <span class="absolute inset-0" aria-hidden="true"></span>
             <p class="text-sm font-medium text-gray-900">
               {{ collection.name }}
