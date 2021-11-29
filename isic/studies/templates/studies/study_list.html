@@ -20,6 +20,11 @@
                 <div class="flex">
                   <p class="text-sm font-medium text-indigo-600 truncate">
                     {{ study.name }}
+                    {% if not study.public %}
+                      <p class="px-2 ml-2 text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                        Private
+                      </p>
+                    {% endif %}
                     {% with pending_tasks=num_pending_tasks|get_key:study.pk completed_tasks=num_completed_tasks|get_key:study.pk %}
                       {% if pending_tasks %}
                         <p class="px-2 ml-2 text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
