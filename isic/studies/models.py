@@ -74,7 +74,7 @@ class Study(TimeStampedModel):
     description = models.TextField()
 
     features = models.ManyToManyField(Feature)
-    questions = models.ManyToManyField(Question)
+    questions = models.ManyToManyField(Question, through='StudyQuestion')
 
     # public study means that all images in the study must be public
     # and all of the related data to the study is public (responses).
@@ -87,6 +87,14 @@ class Study(TimeStampedModel):
 
     def get_absolute_url(self) -> str:
         return reverse('study-detail', args=[self.pk])
+
+
+class StudyQuestion(models.Model):
+    class Meta:
+        unique_together = [['study', 'question']]
+
+    study = models.ForeignKey(Study, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.PROTECT)
 
 
 class StudyPermissions:
