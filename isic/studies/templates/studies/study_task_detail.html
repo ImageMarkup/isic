@@ -11,8 +11,8 @@
     Warning: you're not the expected annotator, you shouldn't fill this out, {{ study_task.annotator }} should.
   {% endif %}
 
-  <div class="flex justify-between mt-2">
-  <div x-data="{ open: false, hovered: false }" class="pb-4">
+  <div class="flex mt-2">
+  <div x-data="{ open: false, hovered: false }" class="pb-4 mr-8">
     <a class="cursor-pointer">
       {% if debug %}
         <img height="512" width="512" @mouseenter="hovered = true" @click="open = true" src="https://picsum.photos/seed/{{study_task.image.id}}/512">
