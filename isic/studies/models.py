@@ -222,6 +222,9 @@ Annotation.perms_class = AnnotationPermissions
 
 
 class Response(TimeStampedModel):
+    class Meta:
+        unique_together = [['annotation', 'question']]
+
     annotation = models.ForeignKey(Annotation, on_delete=models.CASCADE, related_name='responses')
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='responses')
     # TODO: investigate limit_choices_to for admin capabilities
