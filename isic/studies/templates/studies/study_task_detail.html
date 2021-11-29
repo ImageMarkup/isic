@@ -12,12 +12,21 @@
   {% endif %}
 
   <div class="flex justify-between mt-2">
-    {% if debug %}
-      <img width="512" height="512" src="https://picsum.photos/seed/{{study_task.image.id}}/512" style="height:fit-content">
-    {% else %}
-      <img src="{{ study_task.image.accession.blob.url }}" title="{{ study_task.image.accession.blob_name }}"  style="height:fit-content"/>
-    {% endif %}
+  <div x-data="{ open: false, hovered: false }" class="pb-4">
+    <a class="cursor-pointer">
+      {% if debug %}
+        <img height="512" width="512" @mouseenter="hovered = true" @click="open = true" src="https://picsum.photos/seed/{{study_task.image.id}}/512">
+      {% else %}
+        <img height="512" width="512" @mouseenter="hovered = true" @click="open = true" src="{{ study_task.image.accession.blob.url }}" title="{{ study_task.image.accession.blob_name }}" />
+      {% endif %}
+    </a>
 
+    <template x-if="true">
+      <div x-show="open">
+        {% include 'core/partials/image_modal.html' with image=study_task.image %}
+      </div>
+    </template>
+  </div>
     {% if study_task.complete %}
       You've finished this task.
     {% else %}
@@ -38,5 +47,4 @@
       </form>
     {% endif %}
   </div>
-
 {% endblock %}
