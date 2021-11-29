@@ -111,5 +111,4 @@ class MarkupFactory(factory.django.DjangoModelFactory):
 
     annotation = factory.SubFactory(AnnotationFactory)
     feature = factory.SubFactory(FeatureFactory)
-    mask = factory.Faker('binary')
     present = factory.Faker('boolean')
