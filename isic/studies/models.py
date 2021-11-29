@@ -9,7 +9,6 @@ from django.forms.fields import ChoiceField
 from django.forms.widgets import RadioSelect
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
-from girder_utils.db import DeferredFieldsManager
 from s3_file_field.fields import S3FileField
 
 from isic.core.models import Image
@@ -233,8 +232,5 @@ class Response(TimeStampedModel):
 class Markup(TimeStampedModel):
     annotation = models.ForeignKey(Annotation, on_delete=models.CASCADE, related_name='markups')
     feature = models.ForeignKey(Feature, on_delete=models.PROTECT, related_name='markups')
-    mask = models.BinaryField()
-    mask_blob = S3FileField(upload_to=generate_upload_to, null=True)
+    mask = S3FileField(upload_to=generate_upload_to)
     present = models.BooleanField()
-
-    objects = DeferredFieldsManager('mask')
