@@ -150,6 +150,48 @@ def test_study_detail_responses(client, private_study_with_responses):
         assert r.context['responses'][0].annotation.annotator == user
 
 
+@pytest.fixture
+def study_task_with_user(study_task_factory, user_factory):
+    u = user_factory()
+    study_task = study_task_factory(annotator=u)
+    return study_task
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'client_,visible',
+    [
+        [lazy_fixture('client'), False],
+        [lazy_fixture('authenticated_client'), False],
+        [lazy_fixture('staff_client'), True],
+    ],
+)
+def test_study_task_detail_invisible_to_non_annotators(client_, visible, study_task_with_user):
+    r = client_.get(reverse('study-task-detail', args=[study_task_with_user.pk]))
+
+    if visible:
+        assert r.status_code == 200
+    else:
+        assert r.status_code == 404
+
+
+@pytest.mark.django_db
+def test_study_task_detail_visible_to_annotator(client, user, study_task_factory):
+    study_task = study_task_factory(annotator=user)
+    client.force_login(user)
+    r = client.get(reverse('study-task-detail', args=[study_task.pk]))
+    assert r.status_code == 200
+
+
+@pytest.mark.django_db
+def test_study_task_detail_visible_to_study_creator(client, user, study_task_factory, user_factory):
+    # make sure the annotator is a different user so the test doesn't accidentally pass
+    study_task = study_task_factory(annotator=user_factory(), study__creator=user)
+    client.force_login(user)
+    r = client.get(reverse('study-task-detail', args=[study_task.pk]))
+    assert r.status_code == 200
+
+
 @pytest.mark.skip('Migrating model so test is temporarily broken')
 @pytest.mark.django_db
 def test_view_mask_permissions(client, authenticated_client, staff_client, markup):
