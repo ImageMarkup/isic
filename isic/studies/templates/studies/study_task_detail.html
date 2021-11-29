@@ -11,25 +11,32 @@
     Warning: you're not the expected annotator, you shouldn't fill this out, {{ study_task.annotator }} should.
   {% endif %}
 
-  <div class="flex justify-center m-6">
+  <div class="flex justify-between mt-2">
     {% if debug %}
-      <img src="https://picsum.photos/seed/{{study_task.image.id}}/512">
+      <img width="512" height="512" src="https://picsum.photos/seed/{{study_task.image.id}}/512" style="height:fit-content">
     {% else %}
-      <img src="{{ study_task.image.accession.blob.url }}" title="{{ study_task.image.accession.blob_name }}" />
+      <img src="{{ study_task.image.accession.blob.url }}" title="{{ study_task.image.accession.blob_name }}"  style="height:fit-content"/>
+    {% endif %}
+
+    {% if study_task.complete %}
+      You've finished this task.
+    {% else %}
+      <form method="POST" action="">
+        {% csrf_token %}
+        {{ form.non_field_errors  }}
+        {% for field in form %}
+          <div class="mb-4">
+            {{ field.errors }}
+            {{ field.label }}{% if field.field.required %}*{% endif %}
+            {{ field }}
+          </div>
+        {% endfor %}
+        <button type="submit"
+          class="mt-4 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+          Respond and continue
+        </button>
+      </form>
     {% endif %}
   </div>
 
-  {% if study_task.complete %}
-    You've finished this task.
-  {% else %}
-    <form method="POST" action="">
-      {% csrf_token %}
-      {{ form.non_field_errors  }}
-      {{ form }}
-      <button type="submit"
-        class="mt-4 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-        Respond and continue
-      </button>
-    </form>
-  {% endif %}
 {% endblock %}
