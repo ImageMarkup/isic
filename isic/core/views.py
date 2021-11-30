@@ -128,7 +128,7 @@ def collection_detail(request, pk):
     images = get_visible_objects(
         request.user,
         'core.view_image',
-        collection.images.select_related('accession').order_by('created'),
+        collection.images.select_related('accession').order_by('created').distinct(),
     )
     paginator = Paginator(images, 30)
     page = paginator.get_page(request.GET.get('page'))
