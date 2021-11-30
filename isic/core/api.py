@@ -46,7 +46,9 @@ def user_me(request):
 class ImageViewSet(ReadOnlyModelViewSet):
     serializer_class = ImageSerializer
     queryset = (
-        Image.objects.select_related('accession').defer('accession__unstructured_metadata').all()
+        Image.objects.select_related('accession')
+        .defer('accession__unstructured_metadata')
+        .distinct()
     )
     filter_backends = [IsicObjectPermissionsFilter]
     lookup_field = 'isic_id'
