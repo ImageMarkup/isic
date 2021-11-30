@@ -29,7 +29,8 @@ class Image(CreationSortedTimeStampedModel):
         verbose_name='isic id',
     )
 
-    public = models.BooleanField(default=False)
+    # index is used because public is filtered in every permissions check
+    public = models.BooleanField(default=False, db_index=True)
 
     shares = models.ManyToManyField(
         User, through='ImageShare', through_fields=['image', 'recipient']
