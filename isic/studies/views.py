@@ -10,15 +10,7 @@ from django.urls.base import reverse
 
 from isic.core.permissions import get_visible_objects, permission_or_404
 from isic.studies.forms import StudyTaskForm
-from isic.studies.models import (
-    Annotation,
-    Markup,
-    Question,
-    QuestionChoice,
-    Response,
-    Study,
-    StudyTask,
-)
+from isic.studies.models import Annotation, Markup, Question, Response, Study, StudyTask
 
 
 def study_list(request):
@@ -118,7 +110,7 @@ def study_detail(request, pk):
         pk=pk,
     )
     ctx['pending_tasks'] = ctx['study'].tasks.pending().for_user(request.user)
-    ctx['next_task'] = ctx['pending_tasks'].first()
+    ctx['next_task'] = ctx['pending_tasks'].random_next()
 
     visible_annotations = get_visible_objects(
         request.user, 'studies.view_annotation', ctx['study'].annotations.all()
@@ -137,7 +129,7 @@ def study_detail(request, pk):
 
 
 def maybe_redirect_to_next_study_task(user: User, study: Study):
-    next_task = study.tasks.pending().for_user(user).first()
+    next_task = study.tasks.pending().for_user(user).random_next()
 
     if not next_task:
         return HttpResponseRedirect(reverse('study-detail', args=[study.pk]))
@@ -175,11 +167,10 @@ def study_task_detail(request, pk):
                 for question_pk, choice_pk in form.cleaned_data.items():
                     if choice_pk == '':  # ignore optional questions
                         continue
+                    question = form.questions[int(question_pk)]
+                    choices = {x.pk: x for x in question.choices.all()}
+                    annotation.responses.create(question=question, choice=choices[int(choice_pk)])
 
-                    annotation.responses.create(
-                        question=Question.objects.get(pk=question_pk),
-                        choice=QuestionChoice.objects.get(pk=choice_pk),
-                    )
             return maybe_redirect_to_next_study_task(request.user, study_task.study)
     else:
         form = StudyTaskForm(questions=questions)
