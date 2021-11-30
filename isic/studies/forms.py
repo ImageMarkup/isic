@@ -15,6 +15,7 @@ class StudyTaskForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         questions: QuerySet[QuestionChoice] = kwargs.pop('questions')
+        self.questions = {x.pk: x for x in questions}
         super().__init__(*args, **kwargs)
         for question in questions:
             # field names for django forms must be strings

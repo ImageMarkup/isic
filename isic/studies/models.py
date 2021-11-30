@@ -133,6 +133,13 @@ class StudyTaskSet(models.QuerySet):
     def for_user(self, user: User):
         return self.filter(annotator=user)
 
+    def random_next(self):
+        # This is really inefficient when performing on large sets of rows,
+        # and getting a set of rows in a random order is pretty hard in SQL.
+        # This should always be called once the studytask queryset has been
+        # narrowed a lot.
+        return self.order_by('?').first()
+
 
 class StudyTask(TimeStampedModel):
     class Meta(TimeStampedModel.Meta):
