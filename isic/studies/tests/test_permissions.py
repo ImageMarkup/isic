@@ -192,6 +192,20 @@ def test_study_task_detail_visible_to_study_creator(client, user, study_task_fac
     assert r.status_code == 200
 
 
+@pytest.mark.django_db
+def test_study_task_detail_shows_private_images_to_annotator(
+    user, image_factory, study_task_factory
+):
+    # This test is more about documenting a policy decision which allows a user to see
+    # an image via a study task, but not directly.
+    # This allows a person to conduct a study on images they haven't explicitly shared.
+    image = image_factory(public=False)
+    study_task = study_task_factory(image=image, annotator=user)
+
+    assert not user.has_perm('core.view_image', image)
+    assert user.has_perm('studies.view_study_task', study_task)
+
+
 @pytest.mark.skip('Migrating model so test is temporarily broken')
 @pytest.mark.django_db
 def test_view_mask_permissions(client, authenticated_client, staff_client, markup):
@@ -225,3 +239,28 @@ def test_annotation_detail_permissions(client, authenticated_client, staff_clien
 
     r = staff_client.get(reverse('annotation-detail', args=[annotation.pk]))
     assert r.status_code == 200
+
+
+@pytest.fixture
+def study_scenario(study_factory, question_factory, question_choice_factory):
+    study = study_factory()
+    question = question_factory(required=True)
+    choice = question_choice_factory(question=question)
+    question.choices.add(choice)
+    study.questions.add(question)
+    return study, question, choice
+
+
+@pytest.mark.django_db
+def test_study_task_detail_post(client, study_scenario, study_task_factory, user_factory):
+    study, question, choice = study_scenario
+    user = user_factory()
+    study_task = study_task_factory(study=study, annotator=user)
+    client.force_login(study_task.annotator)
+    client.post(reverse('study-task-detail', args=[study_task.pk]), {question.pk: choice.pk})
+    assert study_task.annotation
+
+    response = study_task.annotation.responses.first()
+    assert response.annotation.annotator == user
+    assert response.question == question
+    assert response.choice == choice
