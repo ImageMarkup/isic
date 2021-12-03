@@ -22,6 +22,7 @@
             <img class="max-w-full h-auto" @mouseenter="hovered = true" @click="open = true" src="{{ study_task.image.accession.blob.url }}" title="{{ study_task.image.accession.blob_name }}" />
           {% endif %}
         </a>
+        <span class="text-sm">Click on the image to view it in full screen</span>
 
         <template x-if="true">
           <div x-show="open">

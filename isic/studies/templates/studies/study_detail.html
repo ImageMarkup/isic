@@ -71,7 +71,12 @@
     <div class="my-2 p-4">
       <ul x-show="selectedTab == 'Questions'">
         {% for question in study.questions.all %}
-          <li>{{ question.prompt }}</li>
+          <li>
+            <span class="font-bold">
+              {{ question.prompt }}
+            </span>
+            {{ question.choices.all|join:", " }}
+          </li>
         {% endfor %}
       </ul>
       <ul x-show="selectedTab == 'Features'">
