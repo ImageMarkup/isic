@@ -18,7 +18,7 @@
         {% if debug %}
           <img class="max-w-full h-auto" style="width: inherit;" @mouseenter="hovered = true" @click="open = true" src="https://picsum.photos/seed/{{study_task.image.id}}/2000/1000">
         {% else %}
-          <img class="max-w-full h-auto" @mouseenter="hovered = true" @click="open = true" src="{{ study_task.image.accession.blob.url }}" title="{{ study_task.image.accession.blob_name }}" />
+          <img class="max-w-full h-auto" style="width: inherit;" @mouseenter="hovered = true" @click="open = true" src="{{ study_task.image.accession.blob.url }}" title="{{ study_task.image.accession.blob_name }}" />
         {% endif %}
       </a>
 
