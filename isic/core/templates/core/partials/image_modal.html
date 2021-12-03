@@ -7,47 +7,47 @@
 
   {% comment %}TODO: escape key should exist{% endcomment %}
 
-  <div @click.away="open = false" class="block align-top bg-white max-w-full rounded-lg p-8 text-left overflow-hidden shadow-xl transform transition-all m-8 align-middle p-6" role="dialog" aria-modal="true" aria-labelledby="modal-headline">
-    {% if debug %}
-      <template x-if="hovered">
-        <img src="https://picsum.photos/seed/{{image.id}}/4000">
-      </template>
-    {% else %}
-      <template x-if="hovered">
-        {% comment %}Note the single quotes: https://github.com/alpinejs/alpine/issues/466{% endcomment %}
-        <img :src="'{{ image.accession.blob.url }}'" title="{{ image.accession.blob_name }}" />
-      </template>
-    {% endif %}
+  <div @click.away="open = false" class="h-screen overflow-hidden max-w-max mx-auto p-8 transform transition-all" role="dialog" aria-modal="true" aria-labelledby="modal-headline">
+    <div class="bg-white h-full relative p-8 rounded-lg text-left shadow-xl">
+      {% if debug %}
+        <template x-if="hovered">
+          <img src="https://picsum.photos/seed/{{image.id}}/4000" class="max-h-full max-w-full w-auto mx-auto">
+        </template>
+      {% else %}
+        <template x-if="hovered">
+          {% comment %}Note the single quotes: https://github.com/alpinejs/alpine/issues/466{% endcomment %}
+          <img :src="'{{ image.accession.blob.url }}'" title="{{ image.accession.blob_name }}" />
+        </template>
+      {% endif %}
 
-    {% if include_metadata %}
-      <div x-data="{selectedTab: 'Metadata'}">
-        <div class="mt-2">
-          <div class="sm:hidden">
-            <label for="tabs" class="sr-only">Select a tab</label>
-            <select id="tabs" name="tabs" class="block w-full focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md">
-              <option :selected="selectedTab == 'Metadata'">Metadata</option>
-            </select>
+      {% if include_metadata %}
+        <div x-data="{selectedTab: 'Metadata'}">
+          <div class="mt-2">
+            <div class="sm:hidden">
+              <label for="tabs" class="sr-only">Select a tab</label>
+              <select id="tabs" name="tabs" class="block w-full focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md">
+                <option :selected="selectedTab == 'Metadata'">Metadata</option>
+              </select>
+            </div>
+            <div class="hidden sm:block">
+              <nav class="flex space-x-4" aria-label="Tabs">
+                <a href="" @click.prevent="selectedTab = 'Metadata'" class="px-3 py-2 font-medium text-sm rounded-md"
+                  :class="{'bg-indigo-100 text-indigo-700': selectedTab == 'Metadata',
+                  'text-gray-500 hover:text-gray-700': selectedTab != 'Metadata'}">
+                  Metadata
+                </a>
+              </nav>
+            </div>
           </div>
-          <div class="hidden sm:block">
-            <nav class="flex space-x-4" aria-label="Tabs">
-              <a href="" @click.prevent="selectedTab = 'Metadata'" class="px-3 py-2 font-medium text-sm rounded-md"
-                :class="{'bg-indigo-100 text-indigo-700': selectedTab == 'Metadata',
-                'text-gray-500 hover:text-gray-700': selectedTab != 'Metadata'}">
-                Metadata
-              </a>
-            </nav>
+
+          <div class="my-2 bg-gray-100 p-4">
+            <pre x-show="selectedTab == 'Metadata'">{{ image.accession.redacted_metadata|formatted }}</pre>
           </div>
         </div>
+      {% endif %}
 
-        <div class="my-2 bg-gray-100 p-4">
-          <pre x-show="selectedTab == 'Metadata'">{{ image.accession.redacted_metadata|formatted }}</pre>
-        </div>
-      </div>
-    {% endif %}
-
-    <div class="mt-5 sm:mt-6">
-      <button @click="open = false" type="button" class="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm">
-        Close
+      <button @click="open = false" type="button" class="absolute top-0 right-0 p-2 hover:bg-transparent hover:opacity-75">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-11.414L9.172 7.757 7.757 9.172 10.586 12l-2.829 2.828 1.415 1.415L12 13.414l2.828 2.829 1.415-1.415L13.414 12l2.829-2.828-1.415-1.415L12 10.586z" fill="rgba(80,70,228,1)"/></svg>
       </button>
     </div>
   </div>
