@@ -118,6 +118,49 @@ def test_study_detail_objects_annotator_permissions(
     assert r.status_code == 200
 
 
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'client_,can_see_private',
+    [
+        [lazy_fixture('client'), False],
+        [lazy_fixture('authenticated_client'), False],
+        [lazy_fixture('staff_client'), True],
+    ],
+)
+def test_study_view_responses_csv_private_study_permissions(
+    client_, can_see_private, private_study
+):
+    r = client_.get(reverse('study-download-responses', args=[private_study.pk]))
+
+    if can_see_private:
+        assert r.status_code == 200
+    else:
+        assert r.status_code == 404
+
+
+@pytest.mark.django_db
+def test_study_view_responses_csv_private_study_creator_permissions(client, study_factory):
+    study = study_factory(public=False)
+    client.force_login(study.creator)
+
+    r = client.get(reverse('study-download-responses', args=[study.pk]))
+    assert r.status_code == 200
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'client_',
+    [
+        lazy_fixture('client'),
+        lazy_fixture('authenticated_client'),
+        lazy_fixture('staff_client'),
+    ],
+)
+def test_study_view_responses_csv_public_permissions(client_, public_study):
+    r = client_.get(reverse('study-download-responses', args=[public_study.pk]))
+    assert r.status_code == 200
+
+
 @pytest.fixture
 def private_study_with_responses(study_factory, user_factory, response_factory):
     # create a scenario for testing that a user can only see their responses and
