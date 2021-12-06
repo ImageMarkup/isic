@@ -62,6 +62,7 @@ setup(
         'Pillow',
         'pydantic',
         'pymongo',
+        'pyparsing',
         'python-magic',
         'tenacity',
         'zipfile-deflate64',
