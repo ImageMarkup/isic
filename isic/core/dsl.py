@@ -87,7 +87,8 @@ def q_or(s, loc, toks):
 AND = Suppress(Keyword('AND'))
 OR = Suppress(Keyword('OR'))
 
-str_value = (Word(alphas + '*') | QuotedString('"')).set_parse_action(StrValue)
+# asterisks for wildcard, _ for ISIC ID search
+str_value = (Word(alphas + nums + '*' + '_') | QuotedString('"')).set_parse_action(StrValue)
 int_value = Word(nums).set_parse_action(IntValue)
 int_range_value = (
     Suppress(Literal('['))
@@ -115,7 +116,7 @@ TERMS = {
     'isic_id': make_str_term('isic_id'),
     'public': make_bool_term('public'),
     'age_approx': make_int_term('age_approx'),
-    'sex': make_str_term('isic_id'),
+    'sex': make_str_term('sex'),
     'benign_malignant': make_str_term('benign_malignant'),
     'diagnosis': make_str_term('diagnosis'),
     'diagnosis_confirm_type': make_str_term('diagnosis_confirm_type'),
@@ -154,15 +155,20 @@ def prefix_q_object(node: Union[tuple, Q], prefix: str) -> Union[tuple, Q]:
         node.children = [prefix_q_object(x, prefix) for x in node.children]
         return node
     elif isinstance(node, tuple):
+        # special casing for isic_id and public, which are top level on the Image model
+        # and should never be prefixed
+        if node[0] in ['isic_id', 'public']:
+            return node
+
         elements = list(node)
         elements[0] = prefix + elements[0]
         return tuple(elements)
 
 
 # Takes ~16ms to parse a fairly complex query
-def parse_query(query, prefix='') -> Q:
+def parse_query(query) -> Q:
     parse_results = e.parse_string(query, parse_all=True)
     if parse_results:
-        return prefix_q_object(parse_results[0], f'{prefix}metadata__')
+        return prefix_q_object(parse_results[0], 'accession__metadata__')
     else:
         return Q()
