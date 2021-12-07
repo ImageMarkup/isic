@@ -1,7 +1,5 @@
 from __future__ import barry_as_FLUFL
 
-from typing import Union
-
 from django.db.models.query_utils import Q
 from pyparsing import Keyword, ParserElement, Word, alphas, infixNotation, nums, opAssoc
 from pyparsing.core import Literal, OneOrMore, Or, QuotedString, Suppress
@@ -38,19 +36,12 @@ class IntValue(Value):
     def __init__(self, toks) -> None:
         self.value = int(toks[0])
 
-    def to_q(self, key):
-        if key == 'age_approx':
-            key = 'age__approx'
-        return super().to_q(key)
-
 
 class IntRangeValue(Value):
     def __init__(self, toks) -> None:
         self.value = (toks[0].value, toks[1].value)
 
     def to_q(self, key):
-        if key == 'age_approx':
-            key = 'age__approx'
         start_key, end_key = f'{key}__gte', f'{key}__lte'
         start_value, end_value = self.value
         return Q(**{start_key: start_value}, **{end_key: end_value})
@@ -107,16 +98,36 @@ int_range_value = (
 bool_value = one_of('true false').set_parse_action(BoolValue)
 
 
+def convert_term(s, loc, toks):
+    if toks[0] in ['isic_id', 'public']:
+        return toks[0]
+    elif toks[0] == 'age_approx':
+        return 'accession__metadata__age__approx'
+    else:
+        return f'accession__metadata__{toks[0]}'
+
+
+def make_term_keyword(name):
+    return Keyword(name).set_parse_action(convert_term)
+
+
+def make_term(name, values):
+    term = make_term_keyword(name)
+    term = term + Suppress(Literal(':')) + values
+    term.set_parse_action(q)
+    return term
+
+
 def make_int_term(keyword_name):
-    return Keyword(keyword_name) + Suppress(Literal(':')) + (int_range_value | int_value)
+    return make_term(keyword_name, int_range_value | int_value)
 
 
 def make_str_term(keyword_name):
-    return Keyword(keyword_name) + Suppress(Literal(':')) + str_value
+    return make_term(keyword_name, str_value)
 
 
 def make_bool_term(keyword_name):
-    return Keyword(keyword_name) + Suppress(Literal(':')) + bool_value
+    return make_term(keyword_name, bool_value)
 
 
 TERMS = {
@@ -146,8 +157,6 @@ TERMS = {
     'mel_type': make_str_term('mel_type'),
     'mel_ulcer': make_bool_term('mel_ulcer'),
 }
-for _, term in TERMS.items():
-    term.set_parse_action(q)
 
 
 parser = OneOrMore(Or(TERMS.values())).set_parse_action(q_and)
@@ -156,26 +165,10 @@ parser = OneOrMore(Or(TERMS.values())).set_parse_action(q_and)
 e = infixNotation(parser, [(AND, 2, opAssoc.LEFT, q_and), (OR, 2, opAssoc.LEFT, q_or)])
 
 
-# TODO; figure out TypeVar(.., tuple, Q)
-def prefix_q_object(node: Union[tuple, Q], prefix: str) -> Union[tuple, Q]:
-    if isinstance(node, Q):
-        node.children = [prefix_q_object(x, prefix) for x in node.children]
-        return node
-    elif isinstance(node, tuple):
-        # special casing for isic_id and public, which are top level on the Image model
-        # and should never be prefixed
-        if node[0] in ['isic_id', 'public']:
-            return node
-
-        elements = list(node)
-        elements[0] = prefix + elements[0]
-        return tuple(elements)
-
-
 # Takes ~16ms to parse a fairly complex query
 def parse_query(query) -> Q:
     parse_results = e.parse_string(query, parse_all=True)
     if parse_results:
-        return prefix_q_object(parse_results[0], 'accession__metadata__')
+        return parse_results[0]
     else:
         return Q()
