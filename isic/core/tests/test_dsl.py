@@ -30,7 +30,7 @@ from isic.core.dsl import parse_query
                 Q(accession__metadata__diagnosis='foobaz')
                 & (
                     Q(accession__metadata__diagnosis__startswith='foo')
-                    | Q(accession__metadata__age_approx=50)
+                    | Q(accession__metadata__age__approx=50)
                 )
             ),
         ],
@@ -40,7 +40,7 @@ from isic.core.dsl import parse_query
             Q(accession__metadata__age__approx__gte=50, accession__metadata__age__approx__lte=70),
         ],
         [
-            'diagnosis:foo AND age__approx:[10 TO 12] AND diagnosis:bar AND diagnosis:baz',
+            'diagnosis:foo AND age_approx:[10 TO 12] AND diagnosis:bar AND diagnosis:baz',
             Q(accession__metadata__diagnosis='foo')
             & Q(accession__metadata__age__approx__gte=10)
             & Q(accession__metadata__age__approx__lte=12)
