@@ -2,9 +2,11 @@ import re
 from typing import Optional, Union
 
 from django.contrib.auth.models import User
+from pyparsing.exceptions import ParseException
 from rest_framework import serializers
 from rest_framework.fields import Field
 
+from isic.core.dsl import parse_query
 from isic.core.models import Image
 from isic.core.models.collection import Collection
 
@@ -18,12 +20,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class CollectionsField(Field):
-    """
-    A field for comma separated collection ids.
-
-    This field filters the collection ids to those that are visible
-    to the user in context.
-    """
+    """A field for comma separated collection ids."""
 
     default_error_messages = {
         'invalid': 'Not a valid string.',
@@ -49,16 +46,20 @@ class CollectionsField(Field):
             return data
 
 
+class SearchQueryField(Field):
+    default_error_messages = {'invalid_query': 'Invalid search query'}
+
+    def to_internal_value(self, data):
+        try:
+            return parse_query(data)
+        except ParseException:
+            self.fail('invalid_query')
+
+
 class SearchQuerySerializer(serializers.Serializer):
-    """A serializer for a search query against images.
+    """A serializer for a search query against images."""
 
-    Note that this serializer requires being called with a user object in
-    the context.
-    """
-
-    query = serializers.CharField(
-        required=False, help_text='A search query following the Elasticsearch query string syntax.'
-    )
+    query = SearchQueryField(required=False, help_text='A search query string.')
     collections = CollectionsField(
         required=False,
         help_text='A list of collection IDs to filter a query by, separated with a comma.',

@@ -78,32 +78,32 @@ def collection_with_image(search_index, image_factory, collection_factory):
 def test_core_api_image_search(searchable_images, staff_api_client):
     r = staff_api_client.get('/api/v2/images/search/')
     assert r.status_code == 200, r.data
-    assert r.data['count'] == 2
+    assert r.data['count'] == 2, r.data
 
     r = staff_api_client.get('/api/v2/images/search/', {'query': 'diagnosis:nevus'})
     assert r.status_code == 200, r.data
-    assert r.data['count'] == 1
+    assert r.data['count'] == 1, r.data
 
 
 @pytest.mark.django_db
 def test_core_api_image_search_private_image(private_searchable_image, authenticated_api_client):
     r = authenticated_api_client.get('/api/v2/images/search/')
     assert r.status_code == 200, r.data
-    assert r.data['count'] == 0
+    assert r.data['count'] == 0, r.data
 
 
 @pytest.mark.django_db
 def test_core_api_image_search_private_image_as_guest(private_searchable_image, api_client):
     r = api_client.get('/api/v2/images/search/')
     assert r.status_code == 200, r.data
-    assert r.data['count'] == 0
+    assert r.data['count'] == 0, r.data
 
 
 @pytest.mark.django_db
 def test_core_api_image_search_images_as_guest(searchable_images, api_client):
     r = api_client.get('/api/v2/images/search/')
     assert r.status_code == 200, r.data
-    assert r.data['count'] == 1
+    assert r.data['count'] == 1, r.data
 
 
 @pytest.mark.django_db
@@ -116,7 +116,7 @@ def test_core_api_image_search_contributed(
 
     r = authenticated_api_client.get('/api/v2/images/search/')
     assert r.status_code == 200, r.data
-    assert r.data['count'] == 1
+    assert r.data['count'] == 1, r.data
 
 
 @pytest.mark.django_db
@@ -128,7 +128,7 @@ def test_core_api_image_search_shares(private_searchable_image, authenticated_ap
 
     r = authenticated_api_client.get('/api/v2/images/search/')
     assert r.status_code == 200, r.data
-    assert r.data['count'] == 1
+    assert r.data['count'] == 1, r.data
 
 
 @pytest.mark.django_db
@@ -148,7 +148,7 @@ def test_core_api_image_hides_fields(
 ):
     r = authenticated_api_client.get('/api/v2/images/search/')
     assert r.status_code == 200, r.data
-    assert r.data['count'] == 3
+    assert r.data['count'] == 3, r.data
     for image in r.data['results']:
         assert restricted_field not in image['metadata']
 
@@ -162,7 +162,7 @@ def test_core_api_image_search_collection_and_query(
         {'collections': f'{collection_with_image.pk}', 'query': 'age_approx:50'},
     )
     assert r.status_code == 200, r.data
-    assert r.data['count'] == 1
+    assert r.data['count'] == 1, r.data
 
 
 @pytest.mark.django_db
@@ -195,9 +195,9 @@ def test_core_api_image_search_collection(
     assert r.status_code == 200, r.data
 
     if can_see:
-        assert r.data['count'] == 1
+        assert r.data['count'] == 1, r.data
     else:
-        assert r.data['count'] == 0
+        assert r.data['count'] == 0, r.data
 
 
 @pytest.mark.django_db
@@ -210,7 +210,7 @@ def test_core_api_image_search_collection_parsing(
         '/api/v2/images/search/', {'collections': f'{public_coll.pk},{private_coll.pk}'}
     )
     assert r.status_code == 200, r.data
-    assert r.data['count'] == 1
+    assert r.data['count'] == 1, r.data
 
 
 @pytest.mark.django_db

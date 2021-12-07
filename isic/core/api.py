@@ -1,8 +1,7 @@
+from django.db.models.query_utils import Q
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
-from opensearchpy.exceptions import RequestError
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.exceptions import ParseError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
@@ -10,7 +9,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from isic.core.models.collection import Collection
 from isic.core.models.image import Image
 from isic.core.permissions import IsicObjectPermissionsFilter, get_visible_objects
-from isic.core.search import ElasticsearchQuerySet, build_elasticsearch_query, facets
+from isic.core.search import build_elasticsearch_query, facets
 from isic.core.serializers import (
     CollectionSerializer,
     ImageSerializer,
@@ -76,17 +75,14 @@ class ImageViewSet(ReadOnlyModelViewSet):
                 Collection.objects.values_list('pk', flat=True),
             )
         )
-        try:
-            response = facets(query.query, collection_pks)
-        except RequestError:
-            raise ParseError('Error parsing search query.')
+        response = facets(query, collection_pks)
 
         return Response(response)
 
     @swagger_auto_schema(
         operation_summary='Search images with a key:value query string.',
         operation_description="""
-        The search query uses the <a href="https://www.elastic.co/guide/en/elasticsearch/reference/7.15/query-dsl-query-string-query.html#query-string-syntax">Elasticsearch Query String Syntax</a>.
+        The search query uses a simple DSL syntax.
 
         Some example queries are:
         <pre>
@@ -135,20 +131,23 @@ class ImageViewSet(ReadOnlyModelViewSet):
     def search(self, request):
         serializer = SearchQuerySerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
-        qs: ElasticsearchQuerySet = build_elasticsearch_query(
-            serializer.validated_data.get('query', ''),
-            request.user,
-            serializer.validated_data.get('collections'),
-        )
 
-        try:
-            # Evaluation of the elasticsearch query occurs here, so check for an error
-            # in parsing the query.
-            page = self.paginate_queryset(qs)
-            serializer = self.get_serializer(page, many=True)
-            paginated_response = self.get_paginated_response(serializer.data)
-        except RequestError:
-            raise ParseError('Error parsing search query.')
+        qs = self.get_queryset().filter(serializer.validated_data.get('query', Q()))
+
+        if serializer.validated_data.get('collections', None):
+            qs = qs.filter(
+                collections__in=get_visible_objects(
+                    request.user,
+                    'core.view_collection',
+                    Collection.objects.filter(pk__in=serializer.validated_data['collections']),
+                )
+            )
+
+        qs = get_visible_objects(request.user, 'core.view_image', qs)
+
+        page = self.paginate_queryset(qs)
+        serializer = self.get_serializer(page, many=True)
+        paginated_response = self.get_paginated_response(serializer.data)
 
         return paginated_response
 
