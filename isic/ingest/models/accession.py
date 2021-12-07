@@ -5,6 +5,7 @@ from typing import Optional
 import PIL.Image
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models
+from django.db.models import JSONField, Transform
 from django.db.models.aggregates import Count
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.query_utils import Q
@@ -26,6 +27,17 @@ ACCESSION_CHECKS = {
     'duplicate_check': {'short_name': 'Duplicate', 'nice_name': 'Duplicate Check'},
     'lesion_check': {'short_name': 'Lesion IDs', 'nice_name': 'Lesion ID Check'},
 }
+
+
+class Approx(Transform):
+    lookup_name = 'approx'
+
+    def as_sql(self, compiler, connection):
+        lhs, params = compiler.compile(self.lhs)
+        return 'ROUND(CAST(%s as float) / 5.0) * 5' % lhs, params
+
+
+JSONField.register_lookup(Approx)
 
 
 class AccessionStatus(models.TextChoices):
