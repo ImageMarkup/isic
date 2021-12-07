@@ -38,12 +38,19 @@ class IntValue(Value):
     def __init__(self, toks) -> None:
         self.value = int(toks[0])
 
+    def to_q(self, key):
+        if key == 'age_approx':
+            key = 'age__approx'
+        return super().to_q(key)
+
 
 class IntRangeValue(Value):
     def __init__(self, toks) -> None:
         self.value = (toks[0].value, toks[1].value)
 
     def to_q(self, key):
+        if key == 'age_approx':
+            key = 'age__approx'
         start_key, end_key = f'{key}__gte', f'{key}__lte'
         start_value, end_value = self.value
         return Q(**{start_key: start_value}, **{end_key: end_value})
