@@ -1,6 +1,8 @@
 from django import forms
+from django.db.models.query import QuerySet
 
-from isic.core.search import build_elasticsearch_query
+from isic.core.models.image import Image
+from isic.core.permissions import get_visible_objects
 
 
 class ImageSearchForm(forms.Form):
@@ -18,12 +20,15 @@ class ImageSearchForm(forms.Form):
         )
 
     def clean(self):
-        collections = None
-        if 'collections' in self.cleaned_data and self.cleaned_data['collections'].exists():
-            collections = self.cleaned_data['collections']
-
-        self.results = build_elasticsearch_query(
-            self.cleaned_data.get('search', ''), self.user, collections
+        self.results: QuerySet[Image] = get_visible_objects(
+            self.user,
+            'core.view_image',
         )
+        self.results = self.results.select_related('accession').from_search_query(
+            self.cleaned_data.get('search', '')
+        )
+
+        if 'collections' in self.cleaned_data and self.cleaned_data['collections'].exists():
+            self.results = self.results.filter(collections__in=self.cleaned_data['collections'])
 
         return super().clean()

@@ -7,12 +7,21 @@ from django.db.models.query_utils import Q
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
+from isic.core.dsl import parse_query
 from isic.core.models.base import CreationSortedTimeStampedModel
 from isic.ingest.models import Accession
 
 from .isic_id import IsicId
 
 RESTRICTED_METADATA_FIELDS = ['age', 'patient_id', 'lesion_id']
+
+
+class ImageQuerySet(models.QuerySet):
+    def from_search_query(self, query: str):
+        if query == '':
+            return self
+        else:
+            return self.filter(parse_query(query))
 
 
 class Image(CreationSortedTimeStampedModel):
@@ -35,6 +44,8 @@ class Image(CreationSortedTimeStampedModel):
     shares = models.ManyToManyField(
         User, through='ImageShare', through_fields=['image', 'recipient']
     )
+
+    objects = ImageQuerySet.as_manager()
 
     def __str__(self):
         return self.isic_id

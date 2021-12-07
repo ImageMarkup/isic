@@ -1,4 +1,3 @@
-from dataclasses import dataclass, field
 from functools import lru_cache
 import logging
 from typing import Optional
@@ -6,7 +5,6 @@ from typing import Optional
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db.models.query import QuerySet
-from django.utils.functional import cached_property
 from opensearchpy import NotFoundError, OpenSearch
 from opensearchpy.helpers import streaming_bulk
 
@@ -154,59 +152,6 @@ def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 500) -> None
             logger.error('Failed to insert document into elasticsearch', info)
 
 
-@dataclass
-class ElasticsearchQuerySet:
-    """
-    A naive queryset for elasticsearch queries.
-
-    This is meant to mimic a django queryset just enough to work with other django
-    utilities like pagination.
-
-    Usage:
-    qs = ElasticsearchQuerySet()
-    qs.count
-    qs[0:100]
-    """
-
-    query: Optional[dict] = field(default_factory=dict)
-
-    def __len__(self) -> int:
-        return self.count
-
-    def __getitem__(self, key):
-        if isinstance(key, slice):
-            assert key.step is None, 'Step slices are unsupported'
-            return self._search(key.stop, key.start)
-        elif isinstance(key, int):
-            return self._search(1, key)
-        else:
-            raise TypeError
-
-    @cached_property
-    def count(self) -> int:
-        body = {}
-
-        if self.query:
-            body['query'] = self.query
-
-        result = get_elasticsearch_client().count(
-            index=settings.ISIC_ELASTICSEARCH_INDEX, body=body
-        )
-        return result['count']
-
-    @property
-    def ordered(self) -> bool:
-        return True
-
-    def _search(self, limit: int, offset: int) -> QuerySet[Image]:
-        results = execute_elasticsearch_query(self.query, limit, offset)
-        return self._images_from_ids([x['fields']['id'][0] for x in results['hits']['hits']])
-
-    # TODO: how to allow customizing the queryset?
-    def _images_from_ids(self, pks: list[int]) -> QuerySet[Image]:
-        return Image.objects.select_related('accession').filter(pk__in=pks).order_by('created')
-
-
 def facets(query: Optional[dict] = None, collections: Optional[list[int]] = None) -> dict:
     body = {
         'size': 0,
@@ -229,7 +174,7 @@ def facets(query: Optional[dict] = None, collections: Optional[list[int]] = None
 
 def build_elasticsearch_query(
     query: str, user: User, collection_pks: Optional[list[int]] = None
-) -> ElasticsearchQuerySet:
+) -> dict:
     """
     Build an elasticsearch query from a DSL query string, a user, and collection ids.
 
@@ -272,7 +217,7 @@ def build_elasticsearch_query(
         # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html#bool-min-should-match
         query_dict['bool']['minimum_should_match'] = 1
 
-    return ElasticsearchQuerySet(query_dict)
+    return query_dict
 
 
 def execute_elasticsearch_query(
