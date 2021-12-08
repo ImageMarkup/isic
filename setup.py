@@ -56,6 +56,7 @@ setup(
         'django-object-actions',
         'djangorestframework',
         'drf-yasg',
+        'hashids',
         'opensearch-py',
         'pandas',
         'passlib[bcrypt]',

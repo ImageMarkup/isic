@@ -6,7 +6,7 @@ import factory
 import factory.django
 from passlib.hash import bcrypt
 
-from isic.login.models import Profile
+from isic.login.models import Profile, get_hashid
 
 
 @factory.django.mute_signals(post_save)
@@ -18,6 +18,7 @@ class ProfileFactory(factory.django.DjangoModelFactory):
     girder_salt = factory.LazyAttribute(
         lambda o: bcrypt.using(rounds=4).hash(o.raw_password) if o.raw_password else ''
     )
+    hash_id = factory.LazyAttribute(lambda o: get_hashid(o.user.pk))
 
     # Pass in profile=None to prevent UserFactory from creating another profile this disables the
     # RelatedFactory).
