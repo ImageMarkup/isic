@@ -51,7 +51,9 @@ def searchable_images_with_private_fields(image_factory, search_index):
 @pytest.fixture
 def private_and_public_images_collections(search_index, image_factory, collection_factory):
     public_coll, private_coll = collection_factory(public=True), collection_factory(public=False)
-    public_image, private_image = image_factory(public=True), image_factory(public=False)
+    public_image, private_image = image_factory(
+        public=True, accession__metadata={'age': 10}
+    ), image_factory(public=False)
 
     public_coll.images.add(public_image)
     private_coll.images.add(private_image)
@@ -235,6 +237,19 @@ def test_core_api_image_faceting(private_and_public_images_collections, authenti
     r = authenticated_api_client.get(
         '/api/v2/images/facets/',
     )
+    assert r.status_code == 200, r.data
+    buckets = r.data['collections']['buckets']
+    assert len(buckets) == 1, buckets
+    assert buckets[0] == {'key': public_coll.pk, 'doc_count': 1}, buckets
+
+
+@pytest.mark.django_db
+def test_core_api_image_faceting_query(
+    private_and_public_images_collections, authenticated_api_client
+):
+    public_coll, private_coll = private_and_public_images_collections
+
+    r = authenticated_api_client.get('/api/v2/images/facets/', {'query': 'age_approx:10'})
     assert r.status_code == 200, r.data
     buckets = r.data['collections']['buckets']
     assert len(buckets) == 1, buckets
