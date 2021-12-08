@@ -46,20 +46,20 @@ class CollectionsField(Field):
             return data
 
 
-class SearchQueryField(Field):
-    default_error_messages = {'invalid_query': 'Invalid search query'}
-
-    def to_internal_value(self, data):
-        try:
-            return parse_query(data)
-        except ParseException:
-            self.fail('invalid_query')
+def valid_search_query(value: str) -> None:
+    # TODO: this means the DSL query gets parsed twice for /images/search
+    try:
+        parse_query(value)
+    except ParseException:
+        raise serializers.ValidationError('Invalid search query.')
 
 
 class SearchQuerySerializer(serializers.Serializer):
     """A serializer for a search query against images."""
 
-    query = SearchQueryField(required=False, help_text='A search query string.')
+    query = serializers.CharField(
+        required=False, help_text='A search query string.', validators=[valid_search_query]
+    )
     collections = CollectionsField(
         required=False,
         help_text='A list of collection IDs to filter a query by, separated with a comma.',

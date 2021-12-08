@@ -1,4 +1,3 @@
-from django.db.models.query_utils import Q
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action, api_view, permission_classes
@@ -6,6 +5,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
+from isic.core.dsl import parse_query
 from isic.core.models.collection import Collection
 from isic.core.models.image import Image
 from isic.core.permissions import IsicObjectPermissionsFilter, get_visible_objects
@@ -132,7 +132,11 @@ class ImageViewSet(ReadOnlyModelViewSet):
         serializer = SearchQuerySerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
 
-        qs = self.get_queryset().filter(serializer.validated_data.get('query', Q()))
+        if serializer.validated_data.get('query'):
+            # the serializer has already validated the query will parse
+            qs = self.get_queryset().filter(parse_query(serializer.validated_data['query']))
+        else:
+            qs = self.get_queryset()
 
         if serializer.validated_data.get('collections', None):
             qs = qs.filter(
