@@ -50,10 +50,9 @@ class AccessionStatus(models.TextChoices):
 
 class Accession(CreationSortedTimeStampedModel):
     class Meta(CreationSortedTimeStampedModel.Meta):
-        # A blob_name is unique at the *cohort* level, but that's not possible to enforce at the
-        # database layer. At least enforce the blob_name being unique at the zip level.
-        # TODO: How to properly enforce cohort, blob_name uniqueness at the app layer.
-        unique_together = [['zip_upload', 'blob_name']]
+        # A blob_name is unique at the *cohort* level, which also makes it unique at the zip
+        # level.
+        unique_together = [['cohort', 'blob_name']]
 
         constraints = [
             # girder_id should be unique among nonempty girder_id values
