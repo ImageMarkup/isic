@@ -1,9 +1,10 @@
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import mixins, serializers, status, viewsets
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import BasePermission, IsAdminUser
 from rest_framework.response import Response
 
 from isic.core.permissions import IsicObjectPermissionsFilter
@@ -11,26 +12,63 @@ from isic.ingest.models import Accession, MetadataFile
 from isic.ingest.models.cohort import Cohort
 from isic.ingest.models.contributor import Contributor
 from isic.ingest.serializers import (
-    AccessionSerializer,
+    AccessionChecksSerializer,
+    AccessionCreateSerializer,
+    AccessionSoftAcceptCheckSerializer,
     CohortSerializer,
     ContributorSerializer,
     MetadataFileSerializer,
 )
-from isic.ingest.tasks import apply_metadata_task
+from isic.ingest.tasks import apply_metadata_task, process_accession_task
 
 
-class AccessionSoftAcceptCheckSerializer(serializers.Serializer):
-    id = serializers.IntegerField(required=True)
-    checks = serializers.ListField(child=serializers.CharField(), required=True)
+class AccessionPermissions(BasePermission):
+    def has_permission(self, request, view):
+        if request.user.is_staff:
+            return True
+
+        if request.method == 'POST':
+            if 'cohort' in request.data:
+                cohort = get_object_or_404(Cohort, pk=request.data['cohort'])
+                return request.user.has_perm('ingest.add_accession', cohort)
+
+        return False
 
 
-class AccessionViewSet(mixins.UpdateModelMixin, viewsets.GenericViewSet):
-    serializer_class = AccessionSerializer
+class AccessionViewSet(mixins.UpdateModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
     queryset = Accession.objects.all()
-    permission_classes = [IsAdminUser]
+    permission_classes = [AccessionPermissions]
 
-    swagger_schema = None
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return AccessionCreateSerializer
+        else:
+            return AccessionChecksSerializer
 
+    @swagger_auto_schema(
+        operation_summary='Create an accession directly.',
+        operation_description="""
+To create an Accession you must provide an "original_blob" which comports to an S3FileField value.
+    """,
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        accession = serializer.save(creator=self.request.user)
+        process_accession_task.delay(accession.pk)
+
+    # override method just to disable the auto-schema for it
+    @swagger_auto_schema(auto_schema=None)
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    # override method just to disable the auto-schema for it
+    @swagger_auto_schema(auto_schema=None)
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @swagger_auto_schema(auto_schema=None)
     def perform_update(self, serializer):
         with transaction.atomic():
             serializer.save()

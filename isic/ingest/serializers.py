@@ -1,3 +1,5 @@
+import os
+
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -6,7 +8,26 @@ from isic.ingest.models.cohort import Cohort
 from isic.ingest.models.contributor import Contributor
 
 
-class AccessionSerializer(serializers.ModelSerializer):
+class AccessionSoftAcceptCheckSerializer(serializers.Serializer):
+    id = serializers.IntegerField(required=True)
+    checks = serializers.ListField(child=serializers.CharField(), required=True)
+
+
+class AccessionCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Accession
+        fields = ['cohort', 'original_blob']
+
+    def validate(self, data: dict) -> dict:
+        data = super().validate(data)
+        data['blob_name'] = os.path.basename(data['original_blob'])
+        if data['cohort'].accessions.filter(blob_name=data['blob_name']).exists():
+            raise ValidationError('An accession with this name already exists')
+
+        return data
+
+
+class AccessionChecksSerializer(serializers.ModelSerializer):
     class Meta:
         model = Accession
         fields = [
