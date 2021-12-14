@@ -1,3 +1,4 @@
+import csv
 from typing import Optional
 
 from django.contrib.auth.models import User
@@ -89,6 +90,27 @@ class Study(TimeStampedModel):
     def get_absolute_url(self) -> str:
         return reverse('study-detail', args=[self.pk])
 
+    def write_responses_csv(self, stream) -> None:
+        writer = csv.DictWriter(stream, ['image', 'annotator', 'question', 'answer'])
+
+        writer.writeheader()
+        for response in (
+            Response.objects.select_related(
+                'choice', 'question', 'annotation__annotator__profile', 'annotation__image'
+            )
+            .filter(annotation__study=self)
+            .order_by('annotation__image__isic_id')
+            .all()
+        ):
+            writer.writerow(
+                {
+                    'image': response.annotation.image.isic_id,
+                    'annotator': response.annotation.annotator.profile.hash_id,
+                    'question': response.question.prompt,
+                    'answer': response.choice.text,
+                }
+            )
+
 
 class StudyQuestion(models.Model):
     class Meta:
@@ -101,8 +123,27 @@ class StudyQuestion(models.Model):
 
 class StudyPermissions:
     model = Study
-    perms = ['view_study']
-    filters = {'view_study': 'view_study_list'}
+    perms = ['view_study', 'view_study_results']
+    filters = {'view_study': 'view_study_list', 'view_study_results': 'view_study_results_list'}
+
+    @staticmethod
+    def view_study_results_list(
+        user_obj: User, qs: Optional[QuerySet[Study]] = None
+    ) -> QuerySet[Study]:
+        qs: QuerySet[Study] = qs if qs is not None else Study._default_manager.all()
+
+        # There's duplication of this check in study_detail.html
+        if user_obj.is_staff:
+            return qs
+        elif user_obj.is_authenticated:
+            return qs.filter(Q(creator=user_obj) | Q(public=True))
+        else:
+            return qs.filter(public=True)
+
+    @staticmethod
+    def view_study_results(user_obj, obj):
+        # TODO: use .contains in django 4
+        return StudyPermissions.view_study_results_list(user_obj).filter(pk=obj.pk).exists()
 
     @staticmethod
     def view_study_list(user_obj: User, qs: Optional[QuerySet[Study]] = None) -> QuerySet[Study]:

@@ -1,11 +1,14 @@
+from datetime import datetime
+
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count
 from django.db.models.query import Prefetch
-from django.http.response import HttpResponseRedirect
+from django.http.response import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
+from django.template.defaultfilters import slugify
 from django.urls.base import reverse
 from django.utils import timezone
 
@@ -102,9 +105,9 @@ def study_detail(request, pk):
             # to be an easier way.
             Prefetch(
                 'questions',
-                queryset=Question.objects.filter(studyquestion__study_id=pk).order_by(
-                    'studyquestion__order', 'prompt'
-                ),
+                queryset=Question.objects.prefetch_related('choices')
+                .filter(studyquestion__study_id=pk)
+                .order_by('studyquestion__order', 'prompt'),
             )
         )
         .prefetch_related('features'),
@@ -118,7 +121,11 @@ def study_detail(request, pk):
     )
     ctx['responses'] = (
         Response.objects.select_related(
-            'annotation', 'annotation__annotator', 'annotation__image', 'question', 'choice'
+            'annotation',
+            'annotation__annotator__profile',
+            'annotation__image',
+            'question',
+            'choice',
         )
         .filter(annotation__in=visible_annotations)
         .order_by('annotation__image', 'annotation__annotator')
@@ -126,7 +133,23 @@ def study_detail(request, pk):
     paginator = Paginator(ctx['responses'], 10)
     ctx['responses'] = paginator.get_page(request.GET.get('page'))
 
+    # TODO: create a formal permission for this?
+    # Using view_study_results would make all public studies show real user names.
+    ctx['show_real_names'] = request.user.is_staff or ctx['study'].creator == request.user
+
     return render(request, 'studies/study_detail.html', ctx)
+
+
+@permission_or_404('studies.view_study_results', (Study, 'pk', 'pk'))
+def study_responses_csv(request, pk):
+    study: Study = get_object_or_404(Study, pk=pk)
+    current_time = datetime.utcnow().strftime('%Y-%m-%d')
+    response = HttpResponse(content_type='text/csv')
+    response[
+        'Content-Disposition'
+    ] = f'attachment; filename="{slugify(study.name)}_responses_{current_time}.csv"'
+    study.write_responses_csv(response)
+    return response
 
 
 def maybe_redirect_to_next_study_task(user: User, study: Study):
