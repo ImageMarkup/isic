@@ -3,6 +3,8 @@ from typing import Optional
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
+from django.db.models.constraints import CheckConstraint
+from django.db.models.expressions import F
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 from django.forms.fields import ChoiceField
@@ -188,13 +190,21 @@ StudyTask.perms_class = StudyTaskPermissions
 
 
 class Annotation(TimeStampedModel):
+    class Meta:
+        constraints = [
+            CheckConstraint(
+                name='annotation_start_time_check', check=Q(start_time__lte=F('created'))
+            ),
+        ]
+
     study = models.ForeignKey(Study, on_delete=models.CASCADE, related_name='annotations')
     image = models.ForeignKey(Image, on_delete=models.PROTECT)
     task = models.OneToOneField(StudyTask, related_name='annotation', on_delete=models.RESTRICT)
     annotator = models.ForeignKey(User, on_delete=models.PROTECT)
 
-    # For the ISIC GUI this time is generated on page load
-    start_time = models.DateTimeField(null=True)
+    # For the ISIC GUI this time is generated on page load.
+    # The created field acts as the end_time value.
+    start_time = models.DateTimeField()
 
     def get_absolute_url(self) -> str:
         return reverse('annotation-detail', args=[self.pk])
