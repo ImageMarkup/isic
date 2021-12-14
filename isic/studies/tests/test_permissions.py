@@ -1,4 +1,5 @@
 from django.urls.base import reverse
+from django.utils import timezone
 import pytest
 from pytest_lazyfixture import lazy_fixture
 
@@ -257,7 +258,10 @@ def test_study_task_detail_post(client, study_scenario, study_task_factory, user
     user = user_factory()
     study_task = study_task_factory(study=study, annotator=user)
     client.force_login(study_task.annotator)
-    client.post(reverse('study-task-detail', args=[study_task.pk]), {question.pk: choice.pk})
+    client.post(
+        reverse('study-task-detail', args=[study_task.pk]),
+        {'start_time': timezone.now(), question.pk: choice.pk},
+    )
     assert study_task.annotation
 
     response = study_task.annotation.responses.first()

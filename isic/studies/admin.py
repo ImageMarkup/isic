@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.db.models import Count, Exists, OuterRef
+from django.db.models.expressions import F
 from girder_utils.admin import ReadonlyInlineMixin, ReadonlyTabularInline
 import nested_admin
 
@@ -89,16 +90,22 @@ class ResponseAdmin(admin.ModelAdmin):
 
 @admin.register(Annotation)
 class AnnotationAdmin(admin.ModelAdmin):
-    list_display = ['study', 'annotator', 'image']
+    list_display = ['study', 'annotator', 'image', 'duration']
     list_filter = ['study']
     search_fields = ['annotator__email', 'image__isic__id', 'image__accession__girder_id']
 
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        return qs.select_related('image__accession', 'image__isic', 'study', 'annotator')
-
     inlines = [ResponseInline, MarkupInline]
     autocomplete_fields = ['image', 'annotator', 'image', 'task']
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('image__accession', 'image__isic', 'study', 'annotator').annotate(
+            duration=F('created') - F('start_time')
+        )
+
+    @admin.display(ordering='duration')
+    def duration(self, obj):
+        return obj.duration
 
 
 @admin.register(StudyTask)

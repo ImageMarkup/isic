@@ -193,7 +193,8 @@ class Annotation(TimeStampedModel):
     task = models.OneToOneField(StudyTask, related_name='annotation', on_delete=models.RESTRICT)
     annotator = models.ForeignKey(User, on_delete=models.PROTECT)
 
-    # TODO: auditing/telemetry start/stop times, logs, etc
+    # For the ISIC GUI this time is generated on page load
+    start_time = models.DateTimeField(null=True)
 
     def get_absolute_url(self) -> str:
         return reverse('annotation-detail', args=[self.pk])
