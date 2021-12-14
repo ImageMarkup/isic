@@ -113,8 +113,10 @@ def study_detail(request, pk):
         .prefetch_related('features'),
         pk=pk,
     )
-    ctx['pending_tasks'] = ctx['study'].tasks.pending().for_user(request.user)
-    ctx['next_task'] = ctx['pending_tasks'].random_next()
+
+    if request.user.is_authenticated:
+        ctx['pending_tasks'] = ctx['study'].tasks.pending().for_user(request.user)
+        ctx['next_task'] = ctx['pending_tasks'].random_next()
 
     visible_annotations = get_visible_objects(
         request.user, 'studies.view_annotation', ctx['study'].annotations.all()
@@ -130,6 +132,7 @@ def study_detail(request, pk):
         .filter(annotation__in=visible_annotations)
         .order_by('annotation__image', 'annotation__annotator')
     )
+    ctx['num_responses'] = ctx['responses'].count()
     paginator = Paginator(ctx['responses'], 10)
     ctx['responses'] = paginator.get_page(request.GET.get('page'))
 
