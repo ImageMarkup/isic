@@ -94,6 +94,7 @@ class AnnotationFactory(factory.django.DjangoModelFactory):
     image = factory.SelfAttribute('task.image')
     task = factory.SubFactory(StudyTaskFactory)
     annotator = factory.SelfAttribute('task.annotator')
+    start_time = factory.Faker('date_time', tzinfo=factory.Faker('pytimezone'))
 
 
 class ResponseFactory(factory.django.DjangoModelFactory):
