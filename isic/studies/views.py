@@ -7,6 +7,7 @@ from django.db.models.query import Prefetch
 from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
+from django.utils import timezone
 
 from isic.core.permissions import get_visible_objects, permission_or_404
 from isic.studies.forms import StudyTaskForm
@@ -161,7 +162,10 @@ def study_task_detail(request, pk):
                     image=study_task.image,
                     task=study_task,
                     annotator=request.user,
+                    start_time=form.cleaned_data['start_time'],
                 )
+
+                del form.cleaned_data['start_time']
 
                 # TODO: markups, one day?
                 for question_pk, choice_pk in form.cleaned_data.items():
@@ -173,7 +177,7 @@ def study_task_detail(request, pk):
 
             return maybe_redirect_to_next_study_task(request.user, study_task.study)
     else:
-        form = StudyTaskForm(questions=questions)
+        form = StudyTaskForm(initial={'start_time': timezone.now()}, questions=questions)
 
     context = {
         'study_task': study_task,

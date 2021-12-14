@@ -13,6 +13,8 @@ class StudyTaskForm(forms.Form):
     Question.to_form_field.
     """
 
+    start_time = forms.DateTimeField(widget=forms.HiddenInput())
+
     def __init__(self, *args, **kwargs):
         questions: QuerySet[QuestionChoice] = kwargs.pop('questions')
         self.questions = {x.pk: x for x in questions}
