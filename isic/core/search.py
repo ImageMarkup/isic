@@ -51,8 +51,8 @@ DEFAULT_SEARCH_AGGREGATES = {
     'age_approx': {
         'histogram': {
             'field': 'age_approx',
-            'interval': 10,
-            'extended_bounds': {'min': 0, 'max': 100},
+            'interval': 5,
+            'extended_bounds': {'min': 0, 'max': 85},
         }
     },
     'sex': {'terms': {'field': 'sex'}},
@@ -64,7 +64,7 @@ DEFAULT_SEARCH_AGGREGATES = {
         'histogram': {
             'field': 'clin_size_long_diam_mm',
             'interval': 10,
-            'extended_bounds': {'min': 0, 'max': 110},
+            'extended_bounds': {'min': 0, 'max': 100},
         }
     },
     'melanocytic': {'terms': {'field': 'melanocytic'}},
