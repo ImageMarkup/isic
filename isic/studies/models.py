@@ -257,9 +257,11 @@ class AnnotationPermissions:
         elif user_obj.is_authenticated:
             # Note: this allows people who can't see the image to see it if it's part of an
             # annotation. This is similar to StudyTaskPermissions
-            return qs.filter(Q(annotator=user_obj) | Q(study__creator=user_obj))
+            return qs.filter(
+                Q(study__public=True) | Q(annotator=user_obj) | Q(study__creator=user_obj)
+            )
         else:
-            return qs.none()
+            return qs.filter(study__public=True)
 
     @staticmethod
     def view_annotation(user_obj, obj):
