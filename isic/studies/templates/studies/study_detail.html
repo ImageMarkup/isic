@@ -27,12 +27,19 @@
     </div>
   {% endif %}
 
-  <div class="flex flex-row">
-    <h2>{{ study.name }}</h2>
-    {% if not study.public %}
-      <p class="px-3 py-2 ml-2 text-md leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-        Private
-      </p>
+  <div class="flex justify-between">
+    <div class="flex flex-row">
+      <h2>{{ study.name }}</h2>
+      {% if not study.public %}
+        <p class="px-3 py-2 ml-2 text-md leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+          Private
+        </p>
+      {% endif %}
+    </div>
+
+    {% comment %}Figure out object based perms in templates{% endcomment %}
+    {% if request.user.is_staff or request.user == study.creator or study.public %}
+      {% include 'studies/partials/study_actions.html' %}
     {% endif %}
   </div>
   {% include 'studies/partials/study_details.html' %}
