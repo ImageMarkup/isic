@@ -88,7 +88,7 @@ OR = Suppress(Keyword('OR'))
 
 # asterisks for wildcard, _ for ISIC ID search
 str_value = (Word(alphas + nums + '*' + '_') | QuotedString('"')).add_parse_action(StrValue)
-number_value = pyparsing_common.fnumber.add_parse_action(NumberValue)
+number_value = pyparsing_common.number.add_parse_action(NumberValue)
 number_range_value = (
     Suppress(Literal('['))
     + number_value
