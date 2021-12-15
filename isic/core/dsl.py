@@ -40,10 +40,12 @@ class NumberValue(Value):
 
 class NumberRangeValue(Value):
     def __init__(self, toks) -> None:
-        self.value = (toks[0].value, toks[1].value)
+        self.lower_lookup = 'gte' if toks[0] == '[' else 'gt'
+        self.upper_lookup = 'lte' if toks[-1] == ']' else 'lt'
+        self.value = (toks[1].value, toks[2].value)
 
     def to_q(self, key):
-        start_key, end_key = f'{key}__gte', f'{key}__lte'
+        start_key, end_key = f'{key}__{self.lower_lookup}', f'{key}__{self.upper_lookup}'
         start_value, end_value = self.value
         return Q(**{start_key: start_value}, **{end_key: end_value})
 
@@ -90,11 +92,7 @@ OR = Suppress(Keyword('OR'))
 str_value = (Word(alphas + nums + '*' + '_') | QuotedString('"')).add_parse_action(StrValue)
 number_value = pyparsing_common.number.add_parse_action(NumberValue)
 number_range_value = (
-    Suppress(Literal('['))
-    + number_value
-    + Suppress(Literal('TO'))
-    + number_value
-    + Suppress(Literal(']'))
+    one_of('[ {') + number_value + Suppress(Literal('TO')) + number_value + one_of('] }')
 ).add_parse_action(NumberRangeValue)
 bool_value = one_of('true false').add_parse_action(BoolValue)
 
