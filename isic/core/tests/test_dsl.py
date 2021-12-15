@@ -40,12 +40,16 @@ from isic.core.dsl import parse_query
             Q(accession__metadata__age__approx__gte=50, accession__metadata__age__approx__lte=70),
         ],
         [
-            'diagnosis:foo AND age_approx:[10 TO 12] AND diagnosis:bar AND diagnosis:baz',
+            'diagnosis:foo AND age_approx:[10 TO 12.5] AND diagnosis:bar AND diagnosis:baz',
             Q(accession__metadata__diagnosis='foo')
             & Q(accession__metadata__age__approx__gte=10)
-            & Q(accession__metadata__age__approx__lte=12)
+            & Q(accession__metadata__age__approx__lte=12.5)
             & Q(accession__metadata__diagnosis='bar')
             & Q(accession__metadata__diagnosis='baz'),
+        ],
+        [
+            'mel_thick_mm:[0 TO 0.5]',
+            Q(accession__metadata__mel_thick_mm__gte=0, accession__metadata__mel_thick_mm__lte=0.5),
         ],
         ['diagnosis:foo randstring', ParseException],
         ['public:true', Q(public=True)],
