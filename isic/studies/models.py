@@ -94,7 +94,7 @@ class Study(TimeStampedModel):
 
     def write_responses_csv(self, stream) -> None:
         writer = csv.DictWriter(
-            stream, ['image', 'annotator', 'annotation_time', 'question', 'answer']
+            stream, ['image', 'annotator', 'annotation_duration', 'question', 'answer']
         )
 
         writer.writeheader()
@@ -112,7 +112,7 @@ class Study(TimeStampedModel):
                     'annotator': response.annotation.annotator.profile.hash_id,
                     # formatting as total seconds is easier, otherwise long durations get printed as
                     # 2 days, H:M:S.ms
-                    'annotation_time': response.annotation.annotation_time.total_seconds(),
+                    'annotation_duration': response.annotation.annotation_duration.total_seconds(),
                     'question': response.question.prompt,
                     'answer': response.choice.text,
                 }
@@ -256,7 +256,7 @@ class Annotation(TimeStampedModel):
         return reverse('annotation-detail', args=[self.pk])
 
     @property
-    def annotation_time(self):
+    def annotation_duration(self):
         return self.created - self.start_time
 
 
