@@ -46,8 +46,10 @@ INDEX_MAPPINGS = {
     }
 }
 
+# These are all approaching 10 unique values, which would require passing a size attribute
+# to see them all: nevus_type, anatom_site_general, mel_mitotic_index, mel_type
 DEFAULT_SEARCH_AGGREGATES = {
-    'diagnosis': {'terms': {'field': 'diagnosis'}},
+    'diagnosis': {'terms': {'field': 'diagnosis', 'size': 100}},
     'age_approx': {
         'histogram': {
             'field': 'age_approx',
@@ -68,7 +70,6 @@ DEFAULT_SEARCH_AGGREGATES = {
         }
     },
     'melanocytic': {'terms': {'field': 'melanocytic'}},
-    'acquisition_day': {'terms': {'field': 'acquisition_day'}},
     'marker_pen': {'terms': {'field': 'marker_pen'}},
     'hairy': {'terms': {'field': 'hairy'}},
     'blurry': {'terms': {'field': 'blurry'}},
