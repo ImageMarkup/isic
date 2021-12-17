@@ -83,8 +83,29 @@ class ImageShare(TimeStampedModel):
 
 class ImagePermissions:
     model = Image
-    perms = ['view_image']
-    filters = {'view_image': 'view_image_list'}
+    perms = ['view_image', 'view_full_metadata']
+    filters = {'view_image': 'view_image_list', 'view_full_metadata': 'view_full_metadata_list'}
+
+    @staticmethod
+    def view_full_metadata_list(
+        user_obj: User, qs: Optional[QuerySet[Image]] = None
+    ) -> QuerySet[Image]:
+        # Allows viewing unstructured metadata as well as the redacted metadata fields.
+        #
+        # This is only used in an SSR context, the API doesn't yet reveal more.
+        qs = qs if qs is not None else Image._default_manager.all()
+
+        if user_obj.is_staff:
+            return qs
+        elif not user_obj.is_anonymous:
+            return qs.filter(accession__cohort__contributor__owners=user_obj)
+        else:
+            return qs.none()
+
+    @staticmethod
+    def view_full_metadata(user_obj: User, obj: Image) -> bool:
+        # TODO: use .contains in django 4
+        return ImagePermissions.view_full_metadata_list(user_obj).filter(pk=obj.pk).exists()
 
     @staticmethod
     def view_image_list(user_obj: User, qs: Optional[QuerySet[Image]] = None) -> QuerySet[Image]:
