@@ -74,6 +74,28 @@ class Image(CreationSortedTimeStampedModel):
 
         return document
 
+    def _with_same_metadata(self, metadata_key: str) -> QuerySet['Image']:
+        if self.accession.metadata.get(metadata_key):
+            return (
+                Image.objects.filter(accession__cohort_id=self.accession.cohort_id)
+                .filter(
+                    **{
+                        f'accession__metadata__{metadata_key}': self.accession.metadata[
+                            metadata_key
+                        ]
+                    }
+                )
+                .exclude(pk=self.pk)
+            )
+        else:
+            return Image.objects.none()
+
+    def same_patient_images(self) -> QuerySet['Image']:
+        return self._with_same_metadata('patient_id')
+
+    def same_lesion_images(self) -> QuerySet['Image']:
+        return self._with_same_metadata('lesion_id')
+
 
 class ImageShare(TimeStampedModel):
     creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name='shares')
