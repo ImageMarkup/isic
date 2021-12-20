@@ -1,0 +1,28 @@
+{% load accession %}
+
+<div x-show="selectedTab == 'metadata'" class="flex">
+  <div class="flex-col mr-4">
+    <h3>Clinical</h3>
+    <pre>
+      <code class="language-json">{{ metadata|formatted }}</code>
+    </pre>
+  </div>
+  {% if unstructured_metadata %}
+    <div class="flex-col">
+      <div class="flex items-center">
+        <h3>Unstructured</h3>
+
+        <!-- heroicon/lock-closed -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+        </svg>
+      </div>
+
+      <pre>
+        <code class="language-json">{{ unstructured_metadata|formatted }}</code>
+      </pre>
+    </div>
+  {% endif %}
+</div>
+
+<script>hljs.highlightAll();</script>

@@ -1,12 +1,11 @@
 from collections import defaultdict
-import json
 
 from django.conf import settings
-from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db.models import Count, Prefetch
 from django.db.models.query import QuerySet
+from django.db.models.query_utils import Q
 from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
@@ -17,7 +16,6 @@ from isic.core.models import Collection, Image
 from isic.core.permissions import get_visible_objects, permission_or_404
 from isic.core.stats import get_archive_stats
 from isic.ingest.models import CheckLog, Contributor
-from isic.studies.models import Markup, Response, Study
 
 
 def key_by(sequence, f):
@@ -152,52 +150,71 @@ def collection_detail(request, pk):
     )
 
 
-# TODO: refactor permissions in the future to use permission_or_404 and filtering
-# only visible studies/responses
-# TODO: never show unstructured metadata to non-staff users (maybe also in cohort review pages)
-@staff_member_required
+@permission_or_404('core.view_image', (Image, 'pk', 'pk'))
 def image_detail(request, pk):
     image = get_object_or_404(
-        Image.objects.select_related(
-            'accession__cohort__contributor__creator',
-        )
-        .prefetch_related(
+        Image.objects.select_related('accession__cohort__contributor__creator',).prefetch_related(
             Prefetch('accession__checklogs', queryset=CheckLog.objects.select_related('creator'))
-        )
-        .prefetch_related(Prefetch('collections', queryset=Collection.objects.order_by('name'))),
+        ),
         pk=pk,
     )
 
-    studies = Study.objects.filter(tasks__image=image).distinct()
+    studies = get_visible_objects(
+        request.user,
+        'studies.view_study',
+    )
+    studies = (
+        studies.filter(tasks__image=image)
+        .annotate(
+            num_responses=Count(
+                'tasks__annotation__responses', filter=Q(tasks__image=image), distinct=True
+            )
+        )
+        .annotate(
+            num_markups=Count(
+                'tasks__annotation__markups', filter=Q(tasks__image=image), distinct=True
+            )
+        )
+        .distinct()
+    )
 
-    responses = (
-        Response.objects.filter(annotation__task__study__in=studies, annotation__image=image)
-        .select_related('annotation__annotator', 'choice', 'question', 'annotation__task__study')
-        .order_by('question__prompt', 'annotation__annotator')
-    )
-    markups = (
-        Markup.objects.filter(annotation__task__study__in=studies, annotation__image=image)
-        .select_related('annotation__annotator', 'annotation__task__study', 'feature')
-        .order_by('feature__name', 'annotation__annotator')
-    )
+    ctx = {
+        'image': image,
+        'official_collections': get_visible_objects(
+            request.user,
+            'core.view_collection',
+            image.collections.filter(official=True).order_by('name'),
+        ),
+        'other_patient_images': get_visible_objects(
+            request.user, 'core.view_image', image.same_patient_images().select_related('accession')
+        ),
+        'other_lesion_images': get_visible_objects(
+            request.user, 'core.view_image', image.same_lesion_images().select_related('accession')
+        ),
+        'studies': studies,
+    }
 
-    return render(
-        request,
-        'core/image_detail.html',
-        {
-            'image': image,
-            'studies': studies,
-            'responses': key_by(responses, lambda r: r.annotation.task.study.pk),
-            'markups': key_by(markups, lambda r: r.annotation.task.study.pk),
-            'meta': json.dumps(image.accession.metadata, indent=2),
-            'unstructured': json.dumps(image.accession.unstructured_metadata, indent=2),
-            'sections': {
-                'metadata': 'Metadata',
-                'studies': f'Studies ({studies.count()})',
-                'ingest-review': 'Ingest Review',
-            },
-        },
-    )
+    if request.user.has_perm('core.view_full_metadata', image):
+        ctx['metadata'] = image.accession.metadata
+        ctx['unstructured_metadata'] = image.accession.unstructured_metadata
+    else:
+        ctx['metadata'] = image.accession.redacted_metadata
+
+    ctx['sections'] = {
+        'metadata': 'Metadata',
+        'studies': f'Studies ({studies.count()})',
+    }
+
+    if request.user.is_staff:
+        ctx['sections'][
+            'patient_images'
+        ] = f'Other Patient Images ({ctx["other_patient_images"].count()})'
+        ctx['sections'][
+            'lesion_images'
+        ] = f'Other Lesion Images ({ctx["other_lesion_images"].count()})'
+        ctx['sections']['ingestion_details'] = 'Ingestion Details'
+
+    return render(request, 'core/image_detail/base.html', ctx)
 
 
 def image_browser(request):

@@ -1,0 +1,86 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+{% load accession %}
+{% load localtime %}
+{% load get_key %}
+{% load chunks %}
+
+{% block head_extra %}
+  {{ block.super }}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/highlight.min.js"></script>
+{% endblock %}
+
+{% block content %}
+  <div x-data="{selectedTab: 'metadata'}">
+    <div class="pb-5 border-b border-gray-200 sm:pb-0">
+      <div class="text-lg leading-6 font-medium text-gray-900 flex-col">
+        <div class="flex">
+          <h1>{{image.isic_id}}</h1>
+
+          {% if image.public %}
+            <p class="px-3 py-2 ml-2 text-md leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+              Public
+            </p>
+          {% else %}
+            <p class="px-3 py-2 ml-2 text-md leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+              Private
+            </p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="flex justify-between pt-4">
+        <div>
+          {% if debug %}
+            <img src="https://picsum.photos/seed/{{image.accession.id}}/256" style="object-fit: cover;" />
+          {% else %}
+            <img src="{{ image.accession.thumbnail_256.url }}" style="object-fit: cover;" />
+          {% endif %}
+        </div>
+
+        {% include 'core/image_detail/right_panel.html' %}
+      </div>
+
+      <div x-data="{selectedTab: 'metadata'}">
+        <div class="mt-2">
+          <div class="sm:hidden">
+            <label for="tabs" class="sr-only">Select a tab</label>
+            <select id="tabs" name="tabs" class="block w-full focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md">
+
+              {% for k,v in sections.items %}
+                <option :selected="selectedTab == '{{ k }}'">{{ v }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="hidden sm:block">
+            <nav class="flex space-x-4" aria-label="Tabs">
+              {% for k,v in sections.items %}
+                <a href="" @click.prevent="selectedTab = '{{ k }}'" class="px-3 py-2 font-medium text-sm rounded-md"
+                  :class="{'bg-indigo-100 text-indigo-700': selectedTab == '{{ k }}',
+                  'text-gray-500 hover:text-gray-700': selectedTab != '{{ k }}'}">
+                  {{ v }}
+                </a>
+              {% endfor %}
+            </nav>
+          </div>
+        </div>
+
+        <div class="my-2 p-4">
+          {% include 'core/image_detail/metadata_tab.html' %}
+          {% include 'core/image_detail/studies_tab.html' %}
+
+          {% if sections.patient_images %}
+            {% include 'core/image_detail/images_tab.html' with images=other_patient_images section_name='patient_images' %}
+          {% endif %}
+
+          {% if sections.lesion_images %}
+            {% include 'core/image_detail/images_tab.html' with images=other_lesion_images section_name='lesion_images' %}
+          {% endif %}
+
+          {% if sections.ingestion_details %}
+            {% include 'core/image_detail/ingestion_details_tab.html' %}
+          {% endif %}
+        </div>
+      </div>
+{% endblock %}
