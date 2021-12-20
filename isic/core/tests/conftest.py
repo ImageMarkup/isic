@@ -34,3 +34,13 @@ def other_contributor(user_factory, contributor_factory):
 @pytest.fixture
 def contributors(contributor, other_contributor):
     return [contributor, other_contributor]
+
+
+@pytest.fixture
+def private_image(image_factory):
+    return image_factory(public=False)
+
+
+@pytest.fixture
+def public_image(image_factory):
+    return image_factory(public=True)

@@ -9,11 +9,6 @@ def images(image_factory):
     ]
 
 
-@pytest.fixture
-def private_image(image_factory):
-    return image_factory(public=False)
-
-
 @pytest.mark.django_db
 def test_core_api_image_list(images, api_client, authenticated_api_client, staff_api_client):
     for client in [api_client, authenticated_api_client]:

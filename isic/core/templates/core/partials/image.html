@@ -18,11 +18,7 @@
     </template>
   </div>
   <div class="flex">
-    {% if request.user.is_staff %}
-      <a href="{{image.get_absolute_url}}">{{image.isic_id}}</a>
-    {% else %}
-      {{ image.isic_id }}
-    {% endif %}
+    <a href="{{image.get_absolute_url}}">{{image.isic_id}}</a>
 
     <a href="{{ image.accession.blob.url }}">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
