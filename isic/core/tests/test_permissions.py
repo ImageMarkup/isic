@@ -68,16 +68,3 @@ def test_core_collection_detail_filters_contributors(
     r = staff_client.get(reverse('core/collection-detail', args=[public_collection.pk]))
     assert r.status_code == 200
     assert list(r.context['contributors']) == [image.accession.cohort.contributor]
-
-
-@pytest.mark.django_db
-def test_core_image_detail(client, authenticated_client, staff_client, image_factory):
-    for image in [image_factory(public=True), image_factory(public=False)]:
-        r = client.get(reverse('core/image-detail', args=[image.pk]))
-        assert r.status_code == 302
-
-        r = authenticated_client.get(reverse('core/image-detail', args=[image.pk]))
-        assert r.status_code == 302
-
-        r = staff_client.get(reverse('core/image-detail', args=[image.pk]))
-        assert r.status_code == 200
