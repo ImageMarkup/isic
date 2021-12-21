@@ -73,6 +73,7 @@ class Study(TimeStampedModel):
         verbose_name_plural = 'Studies'
 
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
+    owners = models.ManyToManyField(User, related_name='owned_studies')
 
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField()
@@ -82,7 +83,7 @@ class Study(TimeStampedModel):
 
     # public study means that all images in the study must be public
     # and all of the related data to the study is public (responses).
-    # if a study is private, only the owner can see the responses of
+    # if a study is private, only the owners can see the responses of
     # a study.
     public = models.BooleanField(default=False)
 
@@ -143,7 +144,7 @@ class StudyPermissions:
         if user_obj.is_staff:
             return qs
         elif user_obj.is_authenticated:
-            return qs.filter(Q(creator=user_obj) | Q(public=True))
+            return qs.filter(Q(owners=user_obj) | Q(public=True))
         else:
             return qs.filter(public=True)
 
@@ -161,7 +162,7 @@ class StudyPermissions:
         elif user_obj.is_authenticated:
             # Creator of the study, it's public, or the user has been assigned a task from
             # the study.
-            return qs.filter(Q(creator=user_obj) | Q(public=True) | Q(tasks__annotator=user_obj))
+            return qs.filter(Q(owners=user_obj) | Q(public=True) | Q(tasks__annotator=user_obj))
         else:
             return qs.filter(public=True)
 
@@ -222,7 +223,7 @@ class StudyTaskPermissions:
             # Note: this allows people who can't see the image to see it if it's part of a study
             # task ONLY within the studytask check. In other words, they can't see it in the
             # gallery.
-            return qs.filter(Q(annotator=user_obj) | Q(study__creator=user_obj))
+            return qs.filter(Q(annotator=user_obj) | Q(study__owners=user_obj))
         else:
             return qs.none()
 
@@ -277,7 +278,7 @@ class AnnotationPermissions:
             # Note: this allows people who can't see the image to see it if it's part of an
             # annotation. This is similar to StudyTaskPermissions
             return qs.filter(
-                Q(study__public=True) | Q(annotator=user_obj) | Q(study__creator=user_obj)
+                Q(study__public=True) | Q(annotator=user_obj) | Q(study__owners=user_obj)
             )
         else:
             return qs.filter(study__public=True)
