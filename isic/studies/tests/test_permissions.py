@@ -7,13 +7,17 @@ from isic.studies.models import StudyTask
 
 
 @pytest.fixture
-def public_study(study_factory):
-    return study_factory(public=True)
+def public_study(study_factory, user_factory):
+    creator = user_factory()
+    owners = [creator] + [user_factory() for _ in range(2)]
+    return study_factory(public=True, creator=creator, owners=owners)
 
 
 @pytest.fixture
-def private_study(study_factory):
-    return study_factory(public=False)
+def private_study(study_factory, user_factory):
+    creator = user_factory()
+    owners = [creator] + [user_factory() for _ in range(2)]
+    return study_factory(public=False, creator=creator, owners=owners)
 
 
 @pytest.mark.django_db
@@ -53,12 +57,13 @@ def test_study_list_objects_public_permissions(
 
 
 @pytest.mark.django_db
-def test_study_list_objects_creator_permissions(authenticated_client, private_study, public_study):
-    authenticated_client.force_login(private_study.creator)
-    r = authenticated_client.get(reverse('study-list'))
-    assert r.status_code == 200
-    assert public_study in r.context['studies']
-    assert private_study in r.context['studies']
+def test_study_list_objects_owner_permissions(authenticated_client, private_study, public_study):
+    for owner in private_study.owners.all():
+        authenticated_client.force_login(owner)
+        r = authenticated_client.get(reverse('study-list'))
+        assert r.status_code == 200
+        assert public_study in r.context['studies']
+        assert private_study in r.context['studies']
 
 
 @pytest.mark.django_db
@@ -99,9 +104,10 @@ def test_study_detail_objects_public_permissions(client_, can_see_private, priva
 
 @pytest.mark.django_db
 def test_study_detail_objects_creator_permissions(authenticated_client, private_study):
-    authenticated_client.force_login(private_study.creator)
-    r = authenticated_client.get(reverse('study-detail', args=[private_study.pk]))
-    assert r.status_code == 200
+    for owner in private_study.owners.all():
+        authenticated_client.force_login(owner)
+        r = authenticated_client.get(reverse('study-detail', args=[private_study.pk]))
+        assert r.status_code == 200
 
 
 @pytest.mark.django_db
@@ -139,12 +145,11 @@ def test_study_view_responses_csv_private_study_permissions(
 
 
 @pytest.mark.django_db
-def test_study_view_responses_csv_private_study_creator_permissions(client, study_factory):
-    study = study_factory(public=False)
-    client.force_login(study.creator)
-
-    r = client.get(reverse('study-download-responses', args=[study.pk]))
-    assert r.status_code == 200
+def test_study_view_responses_csv_private_study_owner_permissions(client, private_study):
+    for owner in private_study.owners.all():
+        client.force_login(owner)
+        r = client.get(reverse('study-download-responses', args=[private_study.pk]))
+        assert r.status_code == 200
 
 
 @pytest.mark.django_db
@@ -228,7 +233,7 @@ def test_study_task_detail_visible_to_annotator(client, user, study_task_factory
 
 
 @pytest.mark.django_db
-def test_study_task_detail_visible_to_study_creator(client, user, study_task_factory, user_factory):
+def test_study_task_detail_visible_to_study_owner(client, user, study_task_factory, user_factory):
     # make sure the annotator is a different user so the test doesn't accidentally pass
     study_task = study_task_factory(annotator=user_factory(), study__creator=user)
     client.force_login(user)

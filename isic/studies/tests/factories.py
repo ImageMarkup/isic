@@ -54,6 +54,12 @@ class StudyFactory(factory.django.DjangoModelFactory):
     public = factory.Faker('boolean')
 
     @factory.post_generation
+    def owners(self, create, extracted, **kwargs):
+        owners = [self.creator] if extracted is None else extracted
+        for owner in owners:
+            self.owners.add(owner)
+
+    @factory.post_generation
     def features(self, create, extracted, **kwargs):
         if not create:
             # Simple build, do nothing.
