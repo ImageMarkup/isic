@@ -38,7 +38,7 @@
     </div>
 
     {% comment %}Figure out object based perms in templates{% endcomment %}
-    {% if request.user.is_staff or request.user == study.creator or study.public %}
+    {% if request.user.is_staff or request.user in study.owners.all or study.public %}
       {% include 'studies/partials/study_actions.html' %}
     {% endif %}
   </div>

@@ -138,7 +138,7 @@ def study_detail(request, pk):
 
     # TODO: create a formal permission for this?
     # Using view_study_results would make all public studies show real user names.
-    ctx['show_real_names'] = request.user.is_staff or ctx['study'].creator == request.user
+    ctx['show_real_names'] = request.user.is_staff or request.user in ctx['study'].owners.all()
 
     return render(request, 'studies/study_detail.html', ctx)
 
