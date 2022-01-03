@@ -191,6 +191,8 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
     ISIC_DATACITE_DOI_PREFIX = '10.80222'
     MINIO_STORAGE_MEDIA_OBJECT_METADATA = {'Content-Disposition': 'attachment'}
 
+    ZIP_DOWNLOAD_SERVICE_URL = 'http://localhost:4008'
+
 
 class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
     ISIC_ELASTICSEARCH_INDEX = 'isic-testing'
@@ -199,6 +201,7 @@ class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
     CELERY_TASK_ALWAYS_EAGER = values.BooleanValue(False)
     CELERY_TASK_EAGER_PROPAGATES = values.BooleanValue(False)
     ISIC_DATACITE_DOI_PREFIX = '10.80222'
+    ZIP_DOWNLOAD_SERVICE_URL = 'http://service-url.test'
 
 
 class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration):
@@ -213,3 +216,5 @@ class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration
     AWS_S3_OBJECT_PARAMETERS = {'ContentDisposition': 'attachment'}
 
     SENTRY_TRACES_SAMPLE_RATE = 0.01  # sample 1% of requests for performance monitoring
+
+    ZIP_DOWNLOAD_SERVICE_URL = values.Value()
