@@ -56,6 +56,7 @@ urlpatterns = [
     path('', include('isic.ingest.urls')),
     path('', include('isic.stats.urls')),
     path('', include('isic.studies.urls')),
+    path('', include('isic.zip_download.urls')),
 ]
 
 if settings.DEBUG:
