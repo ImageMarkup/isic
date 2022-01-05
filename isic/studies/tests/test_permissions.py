@@ -187,18 +187,6 @@ def private_study_with_responses(study_factory, user_factory, response_factory):
     return study, u1, u2
 
 
-@pytest.mark.django_db
-def test_study_detail_responses(client, private_study_with_responses):
-    study, *users = private_study_with_responses
-
-    for user in users:
-        client.force_login(user)
-        r = client.get(reverse('study-detail', args=[study.pk]))
-        assert r.status_code == 200
-        assert len(r.context['responses']) == 1
-        assert r.context['responses'][0].annotation.annotator == user
-
-
 @pytest.fixture
 def study_task_with_user(study_task_factory, user_factory):
     u = user_factory()
