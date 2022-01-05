@@ -8,8 +8,5 @@
     <li><span class="font-bold">Created by:</span> {{ study.creator.first_name }} {{ study.creator.last_name }}</li>
     <li><span class="font-bold">Created on:</span> {% localtime study.created %}</li>
     <li><span class="font-bold">Number of images:</span> {{ study.num_images|intcomma }}</li>
-    <li><span class="font-bold">Number of annotators:</span> {{ study.num_annotators|intcomma }}</li>
-    <li><span class="font-bold">Number of features:</span> {{ study.num_features|intcomma }}</li>
-    <li><span class="font-bold">Number of questions:</span> {{ study.num_questions|intcomma }}</li>
   </ul>
 </div>

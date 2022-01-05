@@ -66,10 +66,10 @@
             'text-gray-500 hover:text-gray-700': selectedTab != 'Features'}">
             Features ({{ study.features.count }})
           </a>
-          <a href="" @click.prevent="selectedTab = 'Responses'" class="px-3 py-2 font-medium text-sm rounded-md"
-            :class="{'bg-indigo-100 text-indigo-700': selectedTab == 'Responses',
-            'text-gray-500 hover:text-gray-700': selectedTab != 'Responses'}">
-            Responses ({{ num_responses|intcomma }})
+          <a href="" @click.prevent="selectedTab = 'Annotators'" class="px-3 py-2 font-medium text-sm rounded-md"
+            :class="{'bg-indigo-100 text-indigo-700': selectedTab == 'Annotators',
+            'text-gray-500 hover:text-gray-700': selectedTab != 'Annotators'}">
+            Annotators ({{ study.num_annotators|intcomma }})
           </a>
         </nav>
       </div>
@@ -91,11 +91,8 @@
           <li>{{ feature.label }}</li>
         {% endfor %}
       </ul>
-      <div x-show="selectedTab == 'Responses'">
-        {% if responses %}
-          {% include 'studies/partials/pagination.html' with page_obj=responses %}
-          {% include 'studies/partials/responses_table.html' %}
-        {% endif %}
+      <div x-show="selectedTab == 'Annotators'">
+        {% include 'studies/partials/annotators_progress_table.html' %}
       </div>
     </div>
   </div>
