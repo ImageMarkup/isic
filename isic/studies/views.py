@@ -6,6 +6,7 @@ from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count
 from django.db.models.query import Prefetch
+from django.db.models.query_utils import Q
 from django.http.response import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
@@ -14,7 +15,7 @@ from django.utils import timezone
 
 from isic.core.permissions import get_visible_objects, permission_or_404
 from isic.studies.forms import StudyTaskForm
-from isic.studies.models import Annotation, Markup, Question, Response, Study, StudyTask
+from isic.studies.models import Annotation, Markup, Question, Study, StudyTask
 
 
 def study_list(request):
@@ -118,23 +119,20 @@ def study_detail(request, pk):
         ctx['pending_tasks'] = ctx['study'].tasks.pending().for_user(request.user)
         ctx['next_task'] = ctx['pending_tasks'].random_next()
 
-    visible_annotations = get_visible_objects(
-        request.user, 'studies.view_annotation', ctx['study'].annotations.all()
+    annotator_counts = list(
+        ctx['study']
+        .tasks.values('annotator')
+        .annotate(completed=Count('pk', filter=~Q(annotation=None)), total=Count('pk'))
+        .order_by('annotator__last_name', 'annotator__first_name')
     )
-    ctx['responses'] = (
-        Response.objects.select_related(
-            'annotation',
-            'annotation__annotator__profile',
-            'annotation__image',
-            'question',
-            'choice',
-        )
-        .filter(annotation__in=visible_annotations)
-        .order_by('annotation__image', 'annotation__annotator')
+    annotators = list(
+        User.objects.select_related('profile')
+        .filter(pk__in=[x['annotator'] for x in annotator_counts])
+        .order_by('last_name', 'first_name')
     )
-    ctx['num_responses'] = ctx['responses'].count()
-    paginator = Paginator(ctx['responses'], 10)
-    ctx['responses'] = paginator.get_page(request.GET.get('page'))
+    # TODO: Fix brittleness - both of the lists have to be ordered by the same thing for this to
+    # work.
+    ctx['annotators'] = zip(annotators, annotator_counts)
 
     # TODO: create a formal permission for this?
     # Using view_study_results would make all public studies show real user names.
