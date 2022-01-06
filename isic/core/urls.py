@@ -66,12 +66,12 @@ urlpatterns = [
         name='core/collection-list',
     ),
     path(
-        'collections/<pk>/',
+        'collections/<int:pk>/',
         collection_detail,
         name='core/collection-detail',
     ),
     path(
-        'collections/<pk>/create-doi/',
+        'collections/<int:pk>/create-doi/',
         collection_create_doi,
         name='core/collection-create-doi',
     ),
