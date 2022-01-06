@@ -11,9 +11,11 @@ from isic.studies.views import (
 
 urlpatterns = [
     path('studies/', study_list, name='study-list'),
-    path('studies/<pk>/', study_detail, name='study-detail'),
-    path('studies/tasks/<pk>/', study_task_detail, name='study-task-detail'),
-    path('studies/<pk>/download-responses/', study_responses_csv, name='study-download-responses'),
-    path('staff/masks/<markup_id>/', view_mask, name='view-mask'),
-    path('staff/annotations/<pk>/', annotation_detail, name='annotation-detail'),
+    path('studies/<int:pk>/', study_detail, name='study-detail'),
+    path('studies/tasks/<int:pk>/', study_task_detail, name='study-task-detail'),
+    path(
+        'studies/<int:pk>/download-responses/', study_responses_csv, name='study-download-responses'
+    ),
+    path('staff/masks/<int:markup_id>/', view_mask, name='view-mask'),
+    path('staff/annotations/<int:pk>/', annotation_detail, name='annotation-detail'),
 ]
