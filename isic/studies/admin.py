@@ -112,7 +112,7 @@ class AnnotationAdmin(admin.ModelAdmin):
 class StudyTaskAdmin(nested_admin.NestedModelAdmin):
     list_display = ['study', 'annotator', 'image', 'complete', 'created']
     list_filter = ['study', IsStudyTaskCompleteFilter]
-    search_fields = ['annotator__email', 'image__object_id', 'study__name']
+    search_fields = ['annotator__email', 'image__isic__girderimage__item_id', 'study__name']
 
     autocomplete_fields = ['image', 'annotator', 'image']
     readonly_fields = ['created']
