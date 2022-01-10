@@ -7,6 +7,5 @@
     <li><span class="font-bold">Description:</span> {{ study.description|default:"-" }}</li>
     <li><span class="font-bold">Created by:</span> {{ study.creator.first_name }} {{ study.creator.last_name }}</li>
     <li><span class="font-bold">Created on:</span> {% localtime study.created %}</li>
-    <li><span class="font-bold">Number of images:</span> {{ study.num_images|intcomma }}</li>
   </ul>
 </div>
