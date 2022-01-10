@@ -1,0 +1,11 @@
+{% extends "core/partials/image.html" %}
+
+{% block image_modal %}
+  {% include 'core/partials/image_modal.html' with include_metadata=0 %}
+{% endblock %}
+
+{% block below_thumb %}
+  {% comment %}intentionally leave empty. it would be awkward to try to link to images because certain annotators
+  wouldn't be able to see the image detail page.{% endcomment %}
+  <div class="flex"></div>
+{% endblock %}
