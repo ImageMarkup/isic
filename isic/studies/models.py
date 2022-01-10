@@ -85,6 +85,7 @@ class Study(TimeStampedModel):
     # and all of the related data to the study is public (responses).
     # if a study is private, only the owners can see the responses of
     # a study.
+    # TODO: implement public checking
     public = models.BooleanField(default=False)
 
     def __str__(self) -> str:
@@ -160,7 +161,7 @@ class StudyPermissions:
         if user_obj.is_staff:
             return qs
         elif user_obj.is_authenticated:
-            # Creator of the study, it's public, or the user has been assigned a task from
+            # Owner of the study, it's public, or the user has been assigned a task from
             # the study.
             return qs.filter(Q(owners=user_obj) | Q(public=True) | Q(tasks__annotator=user_obj))
         else:

@@ -20,6 +20,51 @@ def private_study(study_factory, user_factory):
     return study_factory(public=False, creator=creator, owners=owners)
 
 
+@pytest.fixture
+def private_study_and_guest(private_study, user_factory):
+    return private_study, user_factory()
+
+
+@pytest.fixture
+def private_study_and_annotator(private_study, user_factory, study_task_factory):
+    u = user_factory()
+    study_task_factory(annotator=u, study=private_study)
+    return private_study, u
+
+
+@pytest.fixture
+def private_study_and_owner(private_study):
+    return private_study, private_study.owners.first()
+
+
+@pytest.fixture
+def private_study_with_responses(study_factory, user_factory, response_factory):
+    # create a scenario for testing that a user can only see their responses and
+    # not another annotators.
+    study = study_factory(public=False)
+    u1, u2 = user_factory(), user_factory()
+    response_factory(
+        annotation__annotator=u1,
+        annotation__study=study,
+        annotation__task__annotator=u1,
+        annotation__task__study=study,
+    )
+    response_factory(
+        annotation__annotator=u2,
+        annotation__study=study,
+        annotation__task__annotator=u2,
+        annotation__task__study=study,
+    )
+    return study, u1, u2
+
+
+@pytest.fixture
+def study_task_with_user(study_task_factory, user_factory):
+    u = user_factory()
+    study_task = study_task_factory(annotator=u)
+    return study_task
+
+
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     'client_',
@@ -166,32 +211,29 @@ def test_study_view_responses_csv_public_permissions(client_, public_study):
     assert r.status_code == 200
 
 
-@pytest.fixture
-def private_study_with_responses(study_factory, user_factory, response_factory):
-    # create a scenario for testing that a user can only see their responses and
-    # not another annotators.
-    study = study_factory(public=False)
-    u1, u2 = user_factory(), user_factory()
-    response_factory(
-        annotation__annotator=u1,
-        annotation__study=study,
-        annotation__task__annotator=u1,
-        annotation__task__study=study,
-    )
-    response_factory(
-        annotation__annotator=u2,
-        annotation__study=study,
-        annotation__task__annotator=u2,
-        annotation__task__study=study,
-    )
-    return study, u1, u2
+@pytest.mark.django_db
+def test_study_task_detail_preview_public(authenticated_client, public_study):
+    r = authenticated_client.get(reverse('study-task-detail-preview', args=[public_study.pk]))
+    assert r.status_code == 200
 
 
-@pytest.fixture
-def study_task_with_user(study_task_factory, user_factory):
-    u = user_factory()
-    study_task = study_task_factory(annotator=u)
-    return study_task
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'study_and_user,visible',
+    [
+        [lazy_fixture('private_study_and_guest'), False],
+        [lazy_fixture('private_study_and_owner'), True],
+        [lazy_fixture('private_study_and_annotator'), True],
+    ],
+)
+def test_study_task_detail_preview_private(client, study_and_user, visible):
+    client.force_login(study_and_user[1])
+    r = client.get(reverse('study-task-detail-preview', args=[study_and_user[0].pk]))
+
+    if visible:
+        assert r.status_code == 200
+    else:
+        assert r.status_code == 404
 
 
 @pytest.mark.django_db
