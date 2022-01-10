@@ -13,6 +13,7 @@ from django.template.defaultfilters import slugify
 from django.urls.base import reverse
 from django.utils import timezone
 
+from isic.core.models.image import Image
 from isic.core.permissions import get_visible_objects, permission_or_404
 from isic.studies.forms import StudyTaskForm
 from isic.studies.models import Annotation, Markup, Question, Study, StudyTask
@@ -94,7 +95,6 @@ def study_detail(request, pk):
     ctx = {}
     ctx['study'] = get_object_or_404(
         Study.objects.annotate(
-            num_images=Count('tasks__image', distinct=True),
             num_annotators=Count('tasks__annotator', distinct=True),
             num_features=Count('features', distinct=True),
             num_questions=Count('questions', distinct=True),
@@ -114,6 +114,13 @@ def study_detail(request, pk):
         .prefetch_related('features'),
         pk=pk,
     )
+
+    # Note: there is no permission checking here because access to the study means
+    # access to the images when viewing the study. See Study.public comment as well.
+    images = Image.objects.filter(pk__in=ctx['study'].tasks.values('image').distinct())
+    paginator = Paginator(images.select_related('accession'), 30)
+    ctx['num_images'] = images.count()
+    ctx['images'] = paginator.get_page(request.GET.get('page'))
 
     if request.user.is_authenticated:
         ctx['pending_tasks'] = ctx['study'].tasks.pending().for_user(request.user)
@@ -210,3 +217,30 @@ def study_task_detail(request, pk):
     }
 
     return render(request, 'studies/study_task_detail.html', context)
+
+
+@permission_or_404('studies.view_study', (Study, 'pk', 'pk'))
+def study_task_detail_preview(request, pk):
+    study = get_object_or_404(Study, pk=pk)
+    image = Image.objects.filter(pk__in=study.tasks.values('image')).order_by('?').first()
+
+    # note: this intentionally builds but doesn't create a study task
+    study_task = StudyTask(study=study, annotator=request.user, image=image)
+
+    questions = (
+        study_task.study.questions.prefetch_related('choices')
+        .order_by('studyquestion__order')
+        .all()
+    )
+
+    form = StudyTaskForm(initial={'start_time': timezone.now()}, questions=questions)
+
+    return render(
+        request,
+        'studies/study_task_detail.html',
+        {
+            'study_task': study_task,
+            'form': form,
+            'preview_mode': True,
+        },
+    )
