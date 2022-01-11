@@ -13,6 +13,7 @@ admin.site.site_header = 'ISIC Admin'
 admin.site.site_title = 'ISIC Admin'
 admin.site.index_title = ''
 
+
 # TODO: unregister unnecessary apps from admin site
 
 
@@ -45,7 +46,7 @@ class SegmentationReviewAdmin(admin.ModelAdmin):
     list_display = ['id', 'created', 'creator', 'skill', 'approved']
     list_filter = ['approved', 'skill']
 
-    search_fields = ['girder_id']
+    search_fields = ['segmentation__girder_id']
     autocomplete_fields = ['creator', 'segmentation']
 
 
@@ -135,7 +136,7 @@ class ImageAdmin(admin.ModelAdmin):
 @admin.register(ImageAlias)
 class ImageAliasAdmin(admin.ModelAdmin):
     list_display = ['isic_id', 'image']
-    search_fields = ['isic_id']
+    search_fields = ['isic__id']
 
     autocomplete_fields = ['image']
 
