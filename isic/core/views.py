@@ -13,7 +13,7 @@ from django.urls.base import reverse
 from isic.core.forms.doi import CreateDoiForm
 from isic.core.forms.search import ImageSearchForm
 from isic.core.models import Collection, Image
-from isic.core.permissions import get_visible_objects, permission_or_404
+from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.core.stats import get_archive_stats
 from isic.ingest.models import CheckLog, Contributor
 
@@ -59,7 +59,7 @@ def stats(request):
     return render(request, 'core/stats.html', ctx)
 
 
-@permission_or_404('auth.view_staff')
+@needs_object_permission('auth.view_staff')
 def staff_list(request):
     users = User.objects.filter(is_staff=True).order_by('email')
     return render(request, 'core/staff_list.html', {'users': users, 'total_users': User.objects})
@@ -84,8 +84,8 @@ def collection_list(request):
     )
 
 
-@permission_or_404('core.view_collection', (Collection, 'pk', 'pk'))
-@permission_or_404('core.create_doi', (Collection, 'pk', 'pk'))
+@needs_object_permission('core.view_collection', (Collection, 'pk', 'pk'))
+@needs_object_permission('core.create_doi', (Collection, 'pk', 'pk'))
 def collection_create_doi(request, pk):
     collection = get_object_or_404(Collection, pk=pk)
     context = {'collection': collection}
@@ -118,7 +118,7 @@ def collection_create_doi(request, pk):
     )
 
 
-@permission_or_404('core.view_collection', (Collection, 'pk', 'pk'))
+@needs_object_permission('core.view_collection', (Collection, 'pk', 'pk'))
 def collection_detail(request, pk):
     collection = get_object_or_404(Collection, pk=pk)
 
@@ -150,7 +150,7 @@ def collection_detail(request, pk):
     )
 
 
-@permission_or_404('core.view_image', (Image, 'pk', 'pk'))
+@needs_object_permission('core.view_image', (Image, 'pk', 'pk'))
 def image_detail(request, pk):
     image = get_object_or_404(
         Image.objects.select_related('accession__cohort__contributor__creator',).prefetch_related(

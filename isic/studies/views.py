@@ -14,7 +14,7 @@ from django.urls.base import reverse
 from django.utils import timezone
 
 from isic.core.models.image import Image
-from isic.core.permissions import get_visible_objects, permission_or_404
+from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.studies.forms import StudyTaskForm
 from isic.studies.models import Annotation, Markup, Question, Study, StudyTask
 
@@ -90,7 +90,7 @@ def annotation_detail(request, pk):
     )
 
 
-@permission_or_404('studies.view_study', (Study, 'pk', 'pk'))
+@needs_object_permission('studies.view_study', (Study, 'pk', 'pk'))
 def study_detail(request, pk):
     ctx = {}
     ctx['study'] = get_object_or_404(
@@ -148,7 +148,7 @@ def study_detail(request, pk):
     return render(request, 'studies/study_detail.html', ctx)
 
 
-@permission_or_404('studies.view_study_results', (Study, 'pk', 'pk'))
+@needs_object_permission('studies.view_study_results', (Study, 'pk', 'pk'))
 def study_responses_csv(request, pk):
     study: Study = get_object_or_404(Study, pk=pk)
     current_time = datetime.utcnow().strftime('%Y-%m-%d')
@@ -169,7 +169,7 @@ def maybe_redirect_to_next_study_task(user: User, study: Study):
         return HttpResponseRedirect(reverse('study-task-detail', args=[next_task.pk]))
 
 
-@permission_or_404('studies.view_study_task', (StudyTask, 'pk', 'pk'))
+@needs_object_permission('studies.view_study_task', (StudyTask, 'pk', 'pk'))
 def study_task_detail(request, pk):
     study_task: StudyTask = get_object_or_404(
         StudyTask.objects.select_related('annotator', 'image', 'study'),
@@ -219,7 +219,7 @@ def study_task_detail(request, pk):
     return render(request, 'studies/study_task_detail.html', context)
 
 
-@permission_or_404('studies.view_study', (Study, 'pk', 'pk'))
+@needs_object_permission('studies.view_study', (Study, 'pk', 'pk'))
 def study_task_detail_preview(request, pk):
     study = get_object_or_404(Study, pk=pk)
     image = Image.objects.filter(pk__in=study.tasks.values('image')).order_by('?').first()

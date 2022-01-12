@@ -37,27 +37,23 @@ def test_upload_create_contributor_permissions(client, authenticated_client):
 def test_upload_select_create_cohort_permissions(
     client, authenticated_client, staff_client, cohort_factory, contributor_factory
 ):
-    contributor1, contributor2 = contributor_factory(), contributor_factory()
-    cohort_factory(contributor=contributor1)
-    cohort_factory(contributor=contributor2)
+    contributor = contributor_factory()
+    cohort_factory(contributor=contributor)
 
-    for contributor in [contributor1, contributor2]:
-        r = client.get(reverse('upload/select-or-create-cohort', args=[contributor.pk]))
-        assert r.status_code == 404
+    r = client.get(reverse('upload/select-or-create-cohort', args=[contributor.pk]))
+    assert r.status_code == 302
 
-        r = authenticated_client.get(
-            reverse('upload/select-or-create-cohort', args=[contributor.pk])
-        )
-        assert r.status_code == 404
+    r = authenticated_client.get(reverse('upload/select-or-create-cohort', args=[contributor.pk]))
+    assert r.status_code == 403
 
-        client.force_login(contributor.creator)
-        r = client.get(reverse('upload/select-or-create-cohort', args=[contributor.pk]))
-        assert r.status_code == 200
-        assert set(r.context['cohorts']) == set(list(contributor.cohorts.all()))
+    client.force_login(contributor.creator)
+    r = client.get(reverse('upload/select-or-create-cohort', args=[contributor.pk]))
+    assert r.status_code == 200
+    assert set(r.context['cohorts']) == set(list(contributor.cohorts.all()))
 
-        r = staff_client.get(reverse('upload/select-or-create-cohort', args=[contributor.pk]))
-        assert r.status_code == 200
-        assert set(r.context['cohorts']) == set(list(contributor.cohorts.all()))
+    r = staff_client.get(reverse('upload/select-or-create-cohort', args=[contributor.pk]))
+    assert r.status_code == 200
+    assert set(r.context['cohorts']) == set(list(contributor.cohorts.all()))
 
 
 @pytest.mark.django_db
@@ -97,12 +93,12 @@ def test_cohort_pages_permissions(
     assert r.status_code == 302
 
     r = authenticated_client.get(reverse(url_name, args=[cohort.pk]))
-    assert r.status_code == 404
+    assert r.status_code == 403
 
     # scope permissions to the contributor, not the cohort creator
     client.force_login(cohort.creator)
     r = client.get(reverse(url_name, args=[cohort.pk]))
-    assert r.status_code == 404
+    assert r.status_code == 403
 
     client.force_login(cohort.contributor.creator)
     r = client.get(reverse(url_name, args=[cohort.pk]))
@@ -128,7 +124,9 @@ def test_cohort_review_permissions(url_name, client, authenticated_client, staff
     assert r.status_code == 302
 
     r = authenticated_client.get(reverse(url_name, args=[cohort.pk]))
-    assert r.status_code == 302
+    assert (
+        r.status_code == 302
+    )  # TODO: should be 403, staff_member_required should change to a perms check
 
     client.force_login(cohort.contributor.creator)
     r = client.get(reverse(url_name, args=[cohort.pk]))
