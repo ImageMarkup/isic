@@ -18,10 +18,10 @@ def test_core_api_stats(client):
 @pytest.mark.django_db
 def test_core_staff_list(client, authenticated_client, staff_client):
     r = client.get(reverse('core/staff-list'))
-    assert r.status_code == 404
+    assert r.status_code == 302
 
     r = authenticated_client.get(reverse('core/staff-list'))
-    assert r.status_code == 404
+    assert r.status_code == 403
 
     r = staff_client.get(reverse('core/staff-list'))
     assert r.status_code == 200
@@ -42,10 +42,10 @@ def test_core_collection_list(client, authenticated_client, staff_client, privat
 @pytest.mark.django_db
 def test_core_collection_detail(client, authenticated_client, staff_client, private_collection):
     r = client.get(reverse('core/collection-detail', args=[private_collection.pk]))
-    assert r.status_code == 404
+    assert r.status_code == 302
 
     r = authenticated_client.get(reverse('core/collection-detail', args=[private_collection.pk]))
-    assert r.status_code == 404
+    assert r.status_code == 403
 
     r = staff_client.get(reverse('core/collection-detail', args=[private_collection.pk]))
     assert r.status_code == 200

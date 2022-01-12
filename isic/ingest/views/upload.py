@@ -4,7 +4,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
-from isic.core.permissions import get_visible_objects, permission_or_404
+from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.ingest.forms import CohortForm, ContributorForm
 from isic.ingest.models import Cohort, Contributor, MetadataFile
 
@@ -18,7 +18,7 @@ def select_or_create_contributor(request):
     return render(request, 'ingest/contributor_select_or_create.html', ctx)
 
 
-@permission_or_404('ingest.view_contributor', (Contributor, 'pk', 'contributor_pk'))
+@needs_object_permission('ingest.view_contributor', (Contributor, 'pk', 'contributor_pk'))
 def select_or_create_cohort(request, contributor_pk):
     contributor = Contributor.objects.get(pk=contributor_pk)
     ctx = {
@@ -31,8 +31,7 @@ def select_or_create_cohort(request, contributor_pk):
     return render(request, 'ingest/cohort_select_or_create.html', ctx)
 
 
-@login_required
-@permission_or_404('ingest.add_contributor')
+@needs_object_permission('ingest.add_contributor')
 def upload_contributor_create(request):
     if request.method == 'POST':
         form = ContributorForm(request.POST)
@@ -48,8 +47,7 @@ def upload_contributor_create(request):
     return render(request, 'ingest/contributor_create.html', {'form': form})
 
 
-@login_required
-@permission_or_404('ingest.add_cohort', (Contributor, 'pk', 'contributor_pk'))
+@needs_object_permission('ingest.add_cohort', (Contributor, 'pk', 'contributor_pk'))
 def upload_cohort_create(request, contributor_pk):
     contributor: Contributor = get_object_or_404(Contributor, pk=contributor_pk)
 
@@ -72,8 +70,7 @@ def upload_cohort_create(request, contributor_pk):
     return render(request, 'ingest/cohort_create.html', {'form': form})
 
 
-@login_required
-@permission_or_404('ingest.view_cohort', (Cohort, 'pk', 'pk'))
+@needs_object_permission('ingest.view_cohort', (Cohort, 'pk', 'pk'))
 def cohort_files(request, pk):
     cohort = get_object_or_404(
         Cohort.objects.prefetch_related(

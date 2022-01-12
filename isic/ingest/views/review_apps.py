@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, render
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView
 
-from isic.core.permissions import permission_or_404
+from isic.core.permissions import needs_object_permission
 from isic.ingest.models import Accession, Cohort, DistinctnessMeasure
 
 from . import make_breadcrumbs
@@ -126,7 +126,7 @@ class DuplicateReviewAppView(GroupedReviewAppView):
 
 
 @staff_member_required
-@permission_or_404('ingest.view_cohort', (Cohort, 'pk', 'cohort_pk'))
+@needs_object_permission('ingest.view_cohort', (Cohort, 'pk', 'cohort_pk'))
 def lesion_review(request, cohort_pk):
     cohort = get_object_or_404(Cohort, pk=cohort_pk)
     lesions_with_unreviewed_accessions = (

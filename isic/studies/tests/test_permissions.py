@@ -131,20 +131,16 @@ def test_study_list_objects_annotator_permissions(
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    'client_,can_see_private',
+    'client_,status',
     [
-        [lazy_fixture('client'), False],
-        [lazy_fixture('authenticated_client'), False],
-        [lazy_fixture('staff_client'), True],
+        [lazy_fixture('client'), 302],
+        [lazy_fixture('authenticated_client'), 403],
+        [lazy_fixture('staff_client'), 200],
     ],
 )
-def test_study_detail_objects_public_permissions(client_, can_see_private, private_study):
+def test_study_detail_objects_public_permissions(client_, status, private_study):
     r = client_.get(reverse('study-detail', args=[private_study.pk]))
-
-    if can_see_private:
-        assert r.status_code == 200
-    else:
-        assert r.status_code == 404
+    assert r.status_code == status
 
 
 @pytest.mark.django_db
@@ -160,7 +156,7 @@ def test_study_detail_objects_annotator_permissions(
     user, authenticated_client, private_study, image
 ):
     r = authenticated_client.get(reverse('study-detail', args=[private_study.pk]))
-    assert r.status_code == 404
+    assert r.status_code == 403
 
     # Test that a user with a studytask in a study can see the study even if it's private
     StudyTask.objects.create(study=private_study, annotator=user, image=image)
@@ -171,22 +167,17 @@ def test_study_detail_objects_annotator_permissions(
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    'client_,can_see_private',
+    'client_,status',
     [
-        [lazy_fixture('client'), False],
-        [lazy_fixture('authenticated_client'), False],
-        [lazy_fixture('staff_client'), True],
+        [lazy_fixture('client'), 302],
+        [lazy_fixture('authenticated_client'), 403],
+        [lazy_fixture('staff_client'), 200],
     ],
 )
-def test_study_view_responses_csv_private_study_permissions(
-    client_, can_see_private, private_study
-):
+def test_study_view_responses_csv_private_study_permissions(client_, status, private_study):
     r = client_.get(reverse('study-download-responses', args=[private_study.pk]))
 
-    if can_see_private:
-        assert r.status_code == 200
-    else:
-        assert r.status_code == 404
+    assert r.status_code == status
 
 
 @pytest.mark.django_db
@@ -219,39 +210,31 @@ def test_study_task_detail_preview_public(authenticated_client, public_study):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    'study_and_user,visible',
+    'study_and_user,status',
     [
-        [lazy_fixture('private_study_and_guest'), False],
-        [lazy_fixture('private_study_and_owner'), True],
-        [lazy_fixture('private_study_and_annotator'), True],
+        [lazy_fixture('private_study_and_guest'), 403],
+        [lazy_fixture('private_study_and_owner'), 200],
+        [lazy_fixture('private_study_and_annotator'), 200],
     ],
 )
-def test_study_task_detail_preview_private(client, study_and_user, visible):
+def test_study_task_detail_preview_private(client, study_and_user, status):
     client.force_login(study_and_user[1])
     r = client.get(reverse('study-task-detail-preview', args=[study_and_user[0].pk]))
-
-    if visible:
-        assert r.status_code == 200
-    else:
-        assert r.status_code == 404
+    assert r.status_code == status
 
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    'client_,visible',
+    'client_,status',
     [
-        [lazy_fixture('client'), False],
-        [lazy_fixture('authenticated_client'), False],
-        [lazy_fixture('staff_client'), True],
+        [lazy_fixture('client'), 302],
+        [lazy_fixture('authenticated_client'), 403],
+        [lazy_fixture('staff_client'), 200],
     ],
 )
-def test_study_task_detail_invisible_to_non_annotators(client_, visible, study_task_with_user):
+def test_study_task_detail_invisible_to_non_annotators(client_, status, study_task_with_user):
     r = client_.get(reverse('study-task-detail', args=[study_task_with_user.pk]))
-
-    if visible:
-        assert r.status_code == 200
-    else:
-        assert r.status_code == 404
+    assert r.status_code == status
 
 
 @pytest.mark.django_db
@@ -311,10 +294,10 @@ def test_annotation_detail_permissions(client, authenticated_client, staff_clien
     # TODO: annotation creators can't see their own annotations
     client.force_login(annotation.annotator)
     r = client.get(reverse('annotation-detail', args=[annotation.pk]))
-    assert r.status_code == 302
+    assert r.status_code == 302  # TODO: Should be 404
 
     r = authenticated_client.get(reverse('annotation-detail', args=[annotation.pk]))
-    assert r.status_code == 302
+    assert r.status_code == 302  # TODO: Should be 404
 
     r = staff_client.get(reverse('annotation-detail', args=[annotation.pk]))
     assert r.status_code == 200
