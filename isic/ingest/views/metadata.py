@@ -3,14 +3,13 @@ import os
 from django import forms
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth.decorators import login_required
 from django.db.models.query import Prefetch
 from django.forms.models import ModelForm
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
-from isic.core.permissions import get_visible_objects, permission_or_404
+from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.ingest.models import Accession, Cohort, MetadataFile
 from isic.ingest.utils.metadata import (
     get_unstructured_columns,
@@ -43,8 +42,7 @@ class ValidateMetadataForm(forms.Form):
         )
 
 
-@login_required
-@permission_or_404('ingest.view_cohort', (Cohort, 'pk', 'cohort_pk'))
+@needs_object_permission('ingest.view_cohort', (Cohort, 'pk', 'cohort_pk'))
 def metadata_file_create(request, cohort_pk):
     cohort = get_object_or_404(Cohort, pk=cohort_pk)
 
