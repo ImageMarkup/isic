@@ -2,7 +2,7 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path, reverse_lazy
-from django.views.generic.base import RedirectView, TemplateView
+from django.views.generic.base import RedirectView
 from drf_yasg import openapi
 from drf_yasg.generators import OpenAPISchemaGenerator
 from drf_yasg.views import get_schema_view
@@ -49,10 +49,7 @@ urlpatterns = [
     path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),
     path('api/docs/swagger/', schema_view.with_ui('swagger'), name='docs-swagger'),
     # Core app
-    path('', RedirectView.as_view(url=reverse_lazy('staff-index')), name='index'),
-    path(
-        'staff/', TemplateView.as_view(template_name='core/staff_landing.html'), name='staff-index'
-    ),
+    path('', RedirectView.as_view(url=reverse_lazy('core/image-browser')), name='index'),
     path('', include('isic.core.urls')),
     path('', include('isic.ingest.urls')),
     path('', include('isic.studies.urls')),
