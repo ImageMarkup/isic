@@ -1,12 +1,16 @@
+from urllib.parse import urlparse
+
 import django.apps
 from django.apps import apps
+from django.conf import settings
 from django.contrib.auth.backends import BaseBackend
 from django.contrib.auth.models import User
+from django.contrib.auth.views import redirect_to_login
+from django.core.exceptions import PermissionDenied
 from django.db.models import Model
 from django.db.models.base import ModelBase
 from django.db.models.query import QuerySet
-from django.http.response import Http404
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, resolve_url
 from django.utils.functional import wraps
 from rest_framework.filters import BaseFilterBackend
 
@@ -62,16 +66,24 @@ def get_visible_objects(user, perm, qs=None):
         raise Exception(f'No permission registered: {perm}')
 
 
-# This is a decorator adapted from django-guardian
-def permission_or_404(perm, lookup_variables=None, **kwargs):
-    # Check if perm is given as string in order not to decorate
-    # view function itself which makes debugging harder
-    if not isinstance(perm, str):
-        raise Exception(
-            'First argument must be in format: '
-            "'app_label.codename or a callable which return similar string'"
-        )
+# this code is adapted from the login_required decorator, it's
+# useful for building the redirect url with a ?next= component.
+def _redirect_to_login(request):
+    path = request.build_absolute_uri()
+    resolved_login_url = resolve_url(settings.LOGIN_URL)
+    # If the login url is the same scheme and net location then just
+    # use the path as the "next" url.
+    login_scheme, login_netloc = urlparse(resolved_login_url)[:2]
+    current_scheme, current_netloc = urlparse(path)[:2]
+    if (not login_scheme or login_scheme == current_scheme) and (
+        not login_netloc or login_netloc == current_netloc
+    ):
+        path = request.get_full_path()
+    return redirect_to_login(path, resolved_login_url)
 
+
+# This is a decorator adapted from django-guardian
+def needs_object_permission(perm: str, lookup_variables=None):
     def decorator(view_func):
         def _wrapped_view(request, *args, **kwargs):
             # if more than one parameter is passed to the decorator we try to
@@ -110,7 +122,10 @@ def permission_or_404(perm, lookup_variables=None, **kwargs):
                 obj = get_object_or_404(model, **lookup_dict)
 
             if not request.user.has_perm(perm, obj):
-                raise Http404
+                if not request.user.is_authenticated:
+                    return _redirect_to_login(request)
+                else:
+                    raise PermissionDenied
 
             return view_func(request, *args, **kwargs)
 

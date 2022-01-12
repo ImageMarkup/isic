@@ -3,7 +3,6 @@ from typing import Optional
 
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth.decorators import login_required
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.core.paginator import Paginator
 from django.forms.models import ModelForm
@@ -11,7 +10,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
-from isic.core.permissions import permission_or_404
+from isic.core.permissions import needs_object_permission
 from isic.ingest.filters import AccessionFilter
 from isic.ingest.models import Accession, Cohort, ZipUpload
 from isic.ingest.models.accession import ACCESSION_CHECKS
@@ -33,8 +32,7 @@ class ZipForm(ModelForm):
         fields = ['blob']
 
 
-@login_required
-@permission_or_404('ingest.view_cohort', (Cohort, 'pk', 'cohort_pk'))
+@needs_object_permission('ingest.view_cohort', (Cohort, 'pk', 'cohort_pk'))
 def zip_create(request, cohort_pk):
     cohort = get_object_or_404(Cohort, pk=cohort_pk)
     if request.method == 'POST':
@@ -96,8 +94,7 @@ def ingest_review(request):
     )
 
 
-@login_required
-@permission_or_404('ingest.view_cohort', (Cohort, 'pk', 'pk'))
+@needs_object_permission('ingest.view_cohort', (Cohort, 'pk', 'pk'))
 def cohort_browser(request, pk):
     cohort = get_object_or_404(Cohort, pk=pk)
     filter = AccessionFilter(request.GET, queryset=cohort.accessions.all())
@@ -117,7 +114,7 @@ def cohort_browser(request, pk):
 
 
 @staff_member_required  # TODO: who gets to publish a cohort? anyone who can view it?
-@permission_or_404('ingest.view_cohort', (Cohort, 'pk', 'pk'))
+@needs_object_permission('ingest.view_cohort', (Cohort, 'pk', 'pk'))
 def publish_cohort(request, pk):
     cohort = get_object_or_404(Cohort, pk=pk)
 

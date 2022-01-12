@@ -19,7 +19,7 @@ from isic.core.models.image import RESTRICTED_METADATA_FIELDS
 )
 def test_core_image_detail(client_, image_, can_see):
     r = client_.get(reverse('core/image-detail', args=[image_.pk]))
-    assert r.status_code == 200 if can_see else 404
+    assert r.status_code == 200 if can_see else 403
 
 
 @pytest.fixture
