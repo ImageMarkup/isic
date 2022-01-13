@@ -109,7 +109,7 @@ class Cohort(CreationSortedTimeStampedModel):
 
 class CohortPermissions:
     model = Cohort
-    perms = ['view_cohort']
+    perms = ['view_cohort', 'add_accession']
     filters = {'view_cohort': 'view_cohort_list'}
 
     @staticmethod
@@ -127,6 +127,12 @@ class CohortPermissions:
     def view_cohort(user_obj, obj):
         # TODO: use .contains in django 4
         return CohortPermissions.view_cohort_list(user_obj).filter(pk=obj.pk).exists()
+
+    @staticmethod
+    def add_accession(user_obj: User, obj: Cohort) -> bool:
+        if obj:
+            # TODO: use .contains in django 4
+            return user_obj.is_authenticated and user_obj in obj.contributor.owners.all()
 
 
 Cohort.perms_class = CohortPermissions

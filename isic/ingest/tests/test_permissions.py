@@ -81,7 +81,7 @@ def test_staff_page_permissions(client, authenticated_client, staff_client):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    'url_name', ['upload/cohort-files', 'upload-zip', 'upload-metadata', 'upload/cohort-browser']
+    'url_name', ['upload/cohort-files', 'upload/zip', 'upload-metadata', 'upload/cohort-browser']
 )
 def test_cohort_pages_permissions(
     url_name, client, authenticated_client, staff_client, cohort_factory, user_factory
