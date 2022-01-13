@@ -27,7 +27,12 @@ urlpatterns = [
         name='upload/create-cohort',
     ),
     path('upload/<int:pk>/files/', upload_views.cohort_files, name='upload/cohort-files'),
-    path('upload/<int:cohort_pk>/upload-zip/', views.zip_create, name='upload-zip'),
+    path(
+        'upload/<int:cohort_pk>/upload-single-accession/',
+        views.upload_single_accession,
+        name='upload/single-accession',
+    ),
+    path('upload/<int:cohort_pk>/upload-zip/', views.upload_zip, name='upload/zip'),
     path(
         'upload/<int:cohort_pk>/upload-metadata/',
         metadata_views.metadata_file_create,
