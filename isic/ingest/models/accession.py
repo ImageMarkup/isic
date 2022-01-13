@@ -3,6 +3,7 @@ from mimetypes import guess_type
 from typing import Optional
 
 import PIL.Image
+from django.contrib.auth.models import User
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models
 from django.db.models import JSONField, Transform
@@ -68,6 +69,9 @@ class Accession(CreationSortedTimeStampedModel):
             ),
         ]
 
+    # the creator is either inherited from the zip creator, or directly attached in the
+    # case of a single shot upload.
+    creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name='accessions')
     girder_id = models.CharField(
         blank=True, max_length=24, help_text='The image_id from Girder.', db_index=True
     )
