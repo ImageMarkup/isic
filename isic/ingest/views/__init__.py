@@ -1,3 +1,4 @@
+import functools
 import os
 from typing import Optional
 
@@ -12,9 +13,10 @@ from django.urls.base import reverse
 
 from isic.core.permissions import needs_object_permission
 from isic.ingest.filters import AccessionFilter
+from isic.ingest.forms import SingleAccessionUploadForm
 from isic.ingest.models import Accession, Cohort, ZipUpload
 from isic.ingest.models.accession import ACCESSION_CHECKS
-from isic.ingest.tasks import extract_zip_task, publish_cohort_task
+from isic.ingest.tasks import extract_zip_task, process_accession_task, publish_cohort_task
 
 
 def make_breadcrumbs(cohort: Optional[Cohort] = None) -> list:
@@ -33,7 +35,35 @@ class ZipForm(ModelForm):
 
 
 @needs_object_permission('ingest.view_cohort', (Cohort, 'pk', 'cohort_pk'))
-def zip_create(request, cohort_pk):
+def upload_single_accession(request, cohort_pk):
+    cohort = get_object_or_404(Cohort, pk=cohort_pk)
+    Form = functools.partial(  # noqa: N806
+        SingleAccessionUploadForm, user=request.user, cohort=cohort
+    )
+    if request.method == 'POST':
+        form = Form(request.POST)
+        if form.is_valid():
+            form.instance.creator = request.user
+            form.instance.cohort = cohort
+            form.instance.blob_name = os.path.basename(form.instance.original_blob.name)
+            form.save()
+            process_accession_task.delay(form.instance.pk)
+            messages.add_message(
+                request,
+                messages.SUCCESS,
+                f'The following accession has been uploaded: {form.instance.blob_name}',
+            )
+            return HttpResponseRedirect(
+                reverse('upload/cohort-files', args=[form.instance.cohort.pk])
+            )
+    else:
+        form = Form()
+
+    return render(request, 'ingest/upload_zip_or_accession.html', {'form': form})
+
+
+@needs_object_permission('ingest.view_cohort', (Cohort, 'pk', 'cohort_pk'))
+def upload_zip(request, cohort_pk):
     cohort = get_object_or_404(Cohort, pk=cohort_pk)
     if request.method == 'POST':
         form = ZipForm(request.POST)
@@ -48,7 +78,7 @@ def zip_create(request, cohort_pk):
     else:
         form = ZipForm()
 
-    return render(request, 'ingest/zip_create.html', {'form': form})
+    return render(request, 'ingest/upload_zip_or_accession.html', {'form': form})
 
 
 @staff_member_required
