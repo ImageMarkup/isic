@@ -84,6 +84,7 @@ class ZipUpload(CreationSortedTimeStampedModel):
                 with self.blob.open('rb') as zip_blob_stream:
                     for zip_item in items_in_zip(zip_blob_stream):
                         accession = Accession.from_blob(zip_item)
+                        accession.creator = self.creator
                         accession.cohort = self.cohort
                         self.accessions.add(accession, bulk=False)
 

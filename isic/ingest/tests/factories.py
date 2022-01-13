@@ -73,6 +73,7 @@ class AccessionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Accession
 
+    creator = factory.SelfAttribute('cohort.creator')
     zip_upload = factory.SubFactory(ZipUploadFactory)
     cohort = factory.SelfAttribute('zip_upload.cohort')
     original_blob = factory.django.FileField(from_path=data_dir / 'ISIC_0000000.jpg')
