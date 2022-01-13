@@ -31,7 +31,8 @@ def test_accession_generate_thumbnail(accession_factory):
 
 
 @pytest.mark.django_db
-def test_accession_without_zip_upload(jpg_blob, cohort):
+def test_accession_without_zip_upload(user, jpg_blob, cohort):
     accession = Accession.from_blob(jpg_blob)
+    accession.creator = user
     accession.cohort = cohort
     accession.save()
