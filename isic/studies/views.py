@@ -15,6 +15,7 @@ from django.utils import timezone
 
 from isic.core.models.image import Image
 from isic.core.permissions import get_visible_objects, needs_object_permission
+from isic.core.templatetags.display import user_nicename
 from isic.studies.forms import StudyTaskForm
 from isic.studies.models import Annotation, Markup, Question, Study, StudyTask
 
@@ -144,6 +145,15 @@ def study_detail(request, pk):
     # TODO: create a formal permission for this?
     # Using view_study_results would make all public studies show real user names.
     ctx['show_real_names'] = request.user.is_staff or request.user in ctx['study'].owners.all()
+
+    # passing request.user to a queryset requires an authenticated user, so wrap
+    # the entire block in request.user.is_authenticated check anyway.
+    if request.user.is_authenticated and (
+        request.user.is_staff
+        or request.user in ctx['study'].owners.all()
+        or ctx['study'].tasks.filter(annotator=request.user).exists()
+    ):
+        ctx['owners'] = [user_nicename(u) for u in ctx['study'].owners.all()]
 
     return render(request, 'studies/study_detail.html', ctx)
 
