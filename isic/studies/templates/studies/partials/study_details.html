@@ -1,11 +1,15 @@
 {% load localtime %}
+{% load display %}
 {% load humanize %}
 
 <div class="my-4 bg-gray-50 p-2 rounded-sm border-gray-200 border">
   <ul>
     <li><span class="font-bold">Name:</span> {{ study.name }}</li>
     <li><span class="font-bold">Description:</span> {{ study.description|default:"-" }}</li>
-    <li><span class="font-bold">Created by:</span> {{ study.creator.first_name }} {{ study.creator.last_name }}</li>
+    <li><span class="font-bold">Created by:</span> {{ study.creator|user_nicename }}</li>
+    {% if owners %}
+      <li><span class="font-bold">Owners:</span> {{ owners|join:", "  }}</li>
+    {% endif %}
     <li><span class="font-bold">Created on:</span> {% localtime study.created %}</li>
   </ul>
 </div>
