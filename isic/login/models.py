@@ -45,6 +45,7 @@ class Profile(models.Model):
         # A-Z0-9 except for O, 0, 1 and I.
         validators=[RegexValidator('^[A-HJ-NP-Z2-9]{5}')],
     )
+    accepted_terms = models.DateTimeField(null=True)
 
 
 @receiver(post_save, sender=User)

@@ -15,6 +15,7 @@ from isic.core.views import (
     stats,
 )
 from isic.ingest.models.accession import Accession
+from isic.login.views import accept_terms_of_use
 
 
 class ImageIdentifierConverter:
@@ -54,6 +55,7 @@ urlpatterns = [
     ),
     path('api/v2/stats/', api_stats, name='core/api/stats'),
     path('api/v2/users/me/', user_me, name='core/api/users/me'),
+    path('api/v2/users/accept-terms/', accept_terms_of_use, name='core/api/users/accept-terms'),
     path('staff/users/', staff_list, name='core/staff-list'),
     path(
         'images/',

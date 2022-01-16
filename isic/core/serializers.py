@@ -14,9 +14,10 @@ from isic.core.models.collection import Collection
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'created', 'email', 'first_name', 'last_name']
+        fields = ['id', 'created', 'email', 'first_name', 'last_name', 'accepted_terms']
 
     created = serializers.DateTimeField(source='date_joined')
+    accepted_terms = serializers.DateTimeField(source='profile.accepted_terms')
 
 
 class CollectionsField(Field):
