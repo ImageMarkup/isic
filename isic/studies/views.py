@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AnonymousUser, User
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count
@@ -234,8 +234,10 @@ def study_task_detail_preview(request, pk):
     study = get_object_or_404(Study, pk=pk)
     image = Image.objects.filter(pk__in=study.tasks.values('image')).order_by('?').first()
 
+    # note: a studytask can't be built with an AnonymousUser, so use a dummy User object
+    annotator = request.user if not isinstance(request.user, AnonymousUser) else User()
     # note: this intentionally builds but doesn't create a study task
-    study_task = StudyTask(study=study, annotator=request.user, image=image)
+    study_task = StudyTask(study=study, annotator=annotator, image=image)
 
     questions = (
         study_task.study.questions.prefetch_related('choices')

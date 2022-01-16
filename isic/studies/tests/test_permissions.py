@@ -203,8 +203,9 @@ def test_study_view_responses_csv_public_permissions(client_, public_study):
 
 
 @pytest.mark.django_db
-def test_study_task_detail_preview_public(authenticated_client, public_study):
-    r = authenticated_client.get(reverse('study-task-detail-preview', args=[public_study.pk]))
+@pytest.mark.parametrize('client_', [lazy_fixture('client'), lazy_fixture('authenticated_client')])
+def test_study_task_detail_preview_public(client_, public_study):
+    r = client_.get(reverse('study-task-detail-preview', args=[public_study.pk]))
     assert r.status_code == 200
 
 
