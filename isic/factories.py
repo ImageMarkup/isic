@@ -19,6 +19,7 @@ class ProfileFactory(factory.django.DjangoModelFactory):
         lambda o: bcrypt.using(rounds=4).hash(o.raw_password) if o.raw_password else ''
     )
     hash_id = factory.LazyAttribute(lambda o: get_hashid(o.user.pk))
+    accepted_terms = None
 
     # Pass in profile=None to prevent UserFactory from creating another profile this disables the
     # RelatedFactory).
