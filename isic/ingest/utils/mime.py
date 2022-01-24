@@ -2,14 +2,14 @@ import logging
 import mimetypes
 import shutil
 import tempfile
-from typing import IO, Optional
+from typing import IO
 
 import magic
 
 logger = logging.getLogger(__name__)
 
 
-def guess_mime_type(content: IO[bytes], filename: Optional[str] = None) -> str:
+def guess_mime_type(content: IO[bytes], filename: str | None = None) -> str:
     """
     Guess the MIME type of a file, based on its content.
 

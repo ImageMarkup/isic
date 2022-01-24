@@ -1,5 +1,3 @@
-from typing import Optional
-
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.aggregates import Count
@@ -84,7 +82,7 @@ class CollectionPermissions:
 
     @staticmethod
     def view_collection_list(
-        user_obj: User, qs: Optional[QuerySet[Collection]] = None
+        user_obj: User, qs: QuerySet[Collection] | None = None
     ) -> QuerySet[Collection]:
         qs = qs if qs is not None else Collection._default_manager.all()
 
@@ -102,7 +100,7 @@ class CollectionPermissions:
 
     @staticmethod
     def create_doi_list(
-        user_obj: User, qs: Optional[QuerySet[Collection]] = None
+        user_obj: User, qs: QuerySet[Collection] | None = None
     ) -> QuerySet[Collection]:
         qs = qs if qs is not None else Collection._default_manager.all()
 

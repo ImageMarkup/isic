@@ -1,6 +1,5 @@
 import io
 from mimetypes import guess_type
-from typing import Optional
 
 import PIL.Image
 from django.contrib.auth.models import User
@@ -222,7 +221,7 @@ class Accession(CreationSortedTimeStampedModel):
         }
 
     @property
-    def age_approx(self) -> Optional[int]:
+    def age_approx(self) -> int | None:
         return int(round(self.metadata['age'] / 5.0) * 5) if 'age' in self.metadata else None
 
     @property
