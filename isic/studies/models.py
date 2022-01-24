@@ -1,5 +1,4 @@
 import csv
-from typing import Optional
 
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
@@ -137,7 +136,7 @@ class StudyPermissions:
 
     @staticmethod
     def view_study_results_list(
-        user_obj: User, qs: Optional[QuerySet[Study]] = None
+        user_obj: User, qs: QuerySet[Study] | None = None
     ) -> QuerySet[Study]:
         qs: QuerySet[Study] = qs if qs is not None else Study._default_manager.all()
 
@@ -155,7 +154,7 @@ class StudyPermissions:
         return StudyPermissions.view_study_results_list(user_obj).filter(pk=obj.pk).exists()
 
     @staticmethod
-    def view_study_list(user_obj: User, qs: Optional[QuerySet[Study]] = None) -> QuerySet[Study]:
+    def view_study_list(user_obj: User, qs: QuerySet[Study] | None = None) -> QuerySet[Study]:
         qs: QuerySet[Study] = qs if qs is not None else Study._default_manager.all()
 
         if user_obj.is_staff:
@@ -214,7 +213,7 @@ class StudyTaskPermissions:
 
     @staticmethod
     def view_study_task_list(
-        user_obj: User, qs: Optional[QuerySet[StudyTask]] = None
+        user_obj: User, qs: QuerySet[StudyTask] | None = None
     ) -> QuerySet[StudyTask]:
         qs = qs if qs is not None else StudyTask._default_manager.all()
 
@@ -269,7 +268,7 @@ class AnnotationPermissions:
 
     @staticmethod
     def view_annotation_list(
-        user_obj: User, qs: Optional[QuerySet[Annotation]] = None
+        user_obj: User, qs: QuerySet[Annotation] | None = None
     ) -> QuerySet[Annotation]:
         qs = qs if qs is not None else Annotation._default_manager.all()
 

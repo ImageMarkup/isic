@@ -1,5 +1,3 @@
-from typing import Optional
-
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.query import QuerySet
@@ -61,7 +59,7 @@ class ContributorPermissions:
 
     @staticmethod
     def view_contributor_list(
-        user_obj: User, qs: Optional[QuerySet[Contributor]] = None
+        user_obj: User, qs: QuerySet[Contributor] | None = None
     ) -> QuerySet[Contributor]:
         qs = qs if qs is not None else Contributor._default_manager.all()
 
