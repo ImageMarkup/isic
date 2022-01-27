@@ -12,15 +12,6 @@ from composed_configuration import (
 from configurations import values
 
 
-def _oauth2_pkce_required(client_id):
-    from oauth2_provider.models import Application
-
-    oauth_application = Application.objects.get(client_id=client_id)
-    # PKCE is only required for public clients, but express the logic this way to make it required
-    # by default for any future new client_types
-    return oauth_application.client_type != Application.CLIENT_CONFIDENTIAL
-
-
 class IsicMixin(ConfigMixin):
     WSGI_APPLICATION = 'isic.wsgi.application'
     ROOT_URLCONF = 'isic.urls'
@@ -55,7 +46,7 @@ class IsicMixin(ConfigMixin):
 
         configuration.OAUTH2_PROVIDER.update(
             {
-                'PKCE_REQUIRED': _oauth2_pkce_required,
+                'PKCE_REQUIRED': True,
                 'SCOPES': {
                     'identity': 'Access to your basic profile information',
                     'image:read': 'Read access to images',
