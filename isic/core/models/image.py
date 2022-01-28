@@ -1,5 +1,3 @@
-from typing import Optional
-
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.query import QuerySet
@@ -110,7 +108,7 @@ class ImagePermissions:
 
     @staticmethod
     def view_full_metadata_list(
-        user_obj: User, qs: Optional[QuerySet[Image]] = None
+        user_obj: User, qs: QuerySet[Image] | None = None
     ) -> QuerySet[Image]:
         # Allows viewing unstructured metadata as well as the redacted metadata fields.
         #
@@ -130,7 +128,7 @@ class ImagePermissions:
         return ImagePermissions.view_full_metadata_list(user_obj).filter(pk=obj.pk).exists()
 
     @staticmethod
-    def view_image_list(user_obj: User, qs: Optional[QuerySet[Image]] = None) -> QuerySet[Image]:
+    def view_image_list(user_obj: User, qs: QuerySet[Image] | None = None) -> QuerySet[Image]:
         qs = qs if qs is not None else Image._default_manager.all()
 
         if user_obj.is_active and user_obj.is_staff:

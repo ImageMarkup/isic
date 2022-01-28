@@ -1,6 +1,5 @@
 import functools
 import os
-from typing import Optional
 
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
@@ -19,7 +18,7 @@ from isic.ingest.models.accession import ACCESSION_CHECKS
 from isic.ingest.tasks import extract_zip_task, process_accession_task, publish_cohort_task
 
 
-def make_breadcrumbs(cohort: Optional[Cohort] = None) -> list:
+def make_breadcrumbs(cohort: Cohort | None = None) -> list:
     ret = [[reverse('ingest-review'), 'Ingest Review']]
 
     if cohort:

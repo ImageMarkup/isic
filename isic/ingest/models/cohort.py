@@ -1,5 +1,3 @@
-from typing import Optional
-
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import Count, Q, UniqueConstraint
@@ -113,7 +111,7 @@ class CohortPermissions:
     filters = {'view_cohort': 'view_cohort_list'}
 
     @staticmethod
-    def view_cohort_list(user_obj: User, qs: Optional[QuerySet[Cohort]] = None) -> QuerySet[Cohort]:
+    def view_cohort_list(user_obj: User, qs: QuerySet[Cohort] | None = None) -> QuerySet[Cohort]:
         qs = qs if qs is not None else Cohort._default_manager.all()
 
         if user_obj.is_active and user_obj.is_staff:

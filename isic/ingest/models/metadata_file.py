@@ -1,5 +1,3 @@
-from typing import Optional
-
 from django.contrib.auth.models import User
 from django.core.validators import FileExtensionValidator
 from django.db import models
@@ -41,7 +39,7 @@ class MetadataFilePermissions:
 
     @staticmethod
     def view_metadatafile_list(
-        user_obj: User, qs: Optional[QuerySet[MetadataFile]] = None
+        user_obj: User, qs: QuerySet[MetadataFile] | None = None
     ) -> QuerySet[MetadataFile]:
         qs = qs if qs is not None else MetadataFile._default_manager.all()
 
