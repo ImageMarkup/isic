@@ -1,5 +1,4 @@
 from collections import defaultdict
-from typing import Optional
 
 from django.forms.models import ModelForm
 import pandas as pd
@@ -16,9 +15,9 @@ class MetadataForm(ModelForm):
 
 
 class Problem(BaseModel):
-    message: Optional[str]
-    context: Optional[list]
-    type: Optional[str] = 'error'
+    message: str | None
+    context: list | None
+    type: str | None = 'error'
 
 
 def get_unstructured_columns(df):

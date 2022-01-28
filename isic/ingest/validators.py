@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 import re
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, root_validator, validator
 from pydantic.types import constr
@@ -20,7 +20,7 @@ class BaseStr(str):
 
 class ClinicalSize(BaseStr):
     @classmethod
-    def validate(cls, value) -> Optional[float]:
+    def validate(cls, value) -> float | None:
         if not value:
             return None
 
@@ -46,7 +46,7 @@ class ClinicalSize(BaseStr):
 
 class Age(BaseStr):
     @classmethod
-    def validate(cls, value: str) -> Optional[int]:
+    def validate(cls, value: str) -> int | None:
         if not value:
             return None
         elif value == '85+':
@@ -60,7 +60,7 @@ class Age(BaseStr):
 
 class Sex(BaseStr):
     @classmethod
-    def validate(cls, value: str) -> Optional[str]:
+    def validate(cls, value: str) -> str | None:
         if not value:
             return None
 
@@ -86,7 +86,7 @@ class BenignMalignantEnum(str, Enum):
 # todo indeterminable
 class BenignMalignant(BaseStr):
     @classmethod
-    def validate(cls, value: str) -> Optional[str]:
+    def validate(cls, value: str) -> str | None:
         if not value:
             return None
 
@@ -105,7 +105,7 @@ class DiagnosisConfirmTypeEnum(str, Enum):
 
 class DiagnosisConfirmType(BaseStr):
     @classmethod
-    def validate(cls, value: str) -> Optional[str]:
+    def validate(cls, value: str) -> str | None:
         if value not in DiagnosisConfirmTypeEnum._value2member_map_:
             raise ValueError(f'Invalid diagnosis confirm type of: {value}.')
         return value
@@ -152,7 +152,7 @@ class DiagnosisEnum(str, Enum):
 
 class Diagnosis(BaseStr):
     @classmethod
-    def validate(cls, value: str) -> Optional[str]:
+    def validate(cls, value: str) -> str | None:
         if value not in DiagnosisEnum._value2member_map_:
             raise ValueError(f'Invalid diagnosis of: {value}.')
         return value
@@ -173,7 +173,7 @@ class NevusTypeEnum(str, Enum):
 
 class NevusType(BaseStr):
     @classmethod
-    def validate(cls, value: str) -> Optional[str]:
+    def validate(cls, value: str) -> str | None:
         if value not in NevusTypeEnum._value2member_map_:
             raise ValueError(f'Invalid nevus type of: {value}.')
         return value
@@ -187,7 +187,7 @@ class ImageTypeEnum(str, Enum):
 
 class ImageType(BaseStr):
     @classmethod
-    def validate(cls, value: str) -> Optional[str]:
+    def validate(cls, value: str) -> str | None:
         if value not in ImageTypeEnum._value2member_map_:
             raise ValueError(f'Invalid image type of: {value}.')
         return value
@@ -201,7 +201,7 @@ class DermoscopicTypeEnum(str, Enum):
 
 class DermoscopicType(BaseStr):
     @classmethod
-    def validate(cls, value: str) -> Optional[str]:
+    def validate(cls, value: str) -> str | None:
         if value not in DermoscopicTypeEnum._value2member_map_:
             raise ValueError(f'Invalid dermoscopic type of: {value}.')
         return value
@@ -217,7 +217,7 @@ class MelTypeEnum(str, Enum):
 
 class MelType(BaseStr):
     @classmethod
-    def validate(cls, value: str) -> Optional[str]:
+    def validate(cls, value: str) -> str | None:
         if value not in MelTypeEnum._value2member_map_:
             raise ValueError(f'Invalid mel type of: {value}.')
         return value
@@ -233,7 +233,7 @@ class MelClassEnum(str, Enum):
 
 class MelClass(BaseStr):
     @classmethod
-    def validate(cls, value: str) -> Optional[str]:
+    def validate(cls, value: str) -> str | None:
         if value not in MelClassEnum._value2member_map_:
             raise ValueError(f'Invalid mel class of: {value}.')
         return value
@@ -250,7 +250,7 @@ class MelThickMm(BaseStr):
     )
 
     @classmethod
-    def validate(cls, value) -> Optional[float]:
+    def validate(cls, value) -> float | None:
         if isinstance(value, float):
             return value
         # Parse value into floating point component and units
@@ -276,7 +276,7 @@ class MelMitoticIndexEnum(str, Enum):
 
 class MelMitoticIndex(BaseStr):
     @classmethod
-    def validate(cls, value: str) -> Optional[str]:
+    def validate(cls, value: str) -> str | None:
         if value not in MelMitoticIndexEnum._value2member_map_:
             raise ValueError(f'Invalid mel mitotic index of: {value}.')
         return value
@@ -295,7 +295,7 @@ class GeneralAnatomicSiteEnum(str, Enum):
 
 class GeneralAnatomicSite(BaseStr):
     @classmethod
-    def validate(cls, value: str) -> Optional[str]:
+    def validate(cls, value: str) -> str | None:
         if value not in GeneralAnatomicSiteEnum._value2member_map_:
             raise ValueError(f'Invalid general anatomical site of: {value}.')
         return value
@@ -309,7 +309,7 @@ class ColorTintEnum(str, Enum):
 
 class ColorTint(BaseStr):
     @classmethod
-    def validate(cls, value: str) -> Optional[str]:
+    def validate(cls, value: str) -> str | None:
         if value not in ColorTintEnum._value2member_map_:
             raise ValueError(f'Invalid color tint of: {value}.')
         return value
@@ -320,31 +320,31 @@ LesionIdType = constr(regex=r'^IL_[0-9]{7}$')
 
 
 class MetadataRow(BaseModel):
-    age: Optional[Age]
-    sex: Optional[Sex]
-    benign_malignant: Optional[BenignMalignant]
-    diagnosis: Optional[Diagnosis]
-    diagnosis_confirm_type: Optional[DiagnosisConfirmType]
-    personal_hx_mm: Optional[bool]
-    family_hx_mm: Optional[bool]
-    clin_size_long_diam_mm: Optional[ClinicalSize]
-    melanocytic: Optional[bool]
+    age: Age | None
+    sex: Sex | None
+    benign_malignant: BenignMalignant | None
+    diagnosis: Diagnosis | None
+    diagnosis_confirm_type: DiagnosisConfirmType | None
+    personal_hx_mm: bool | None
+    family_hx_mm: bool | None
+    clin_size_long_diam_mm: ClinicalSize | None
+    melanocytic: bool | None
     patient_id: PatientIdType = None
     lesion_id: LesionIdType = None
-    acquisition_day: Optional[int]  # TODO: metadata dictionary
-    marker_pen: Optional[bool]
-    hairy: Optional[bool]
-    blurry: Optional[bool]
-    nevus_type: Optional[NevusType]
-    image_type: Optional[ImageType]
-    dermoscopic_type: Optional[DermoscopicType]
-    anatom_site_general: Optional[GeneralAnatomicSite]
-    color_tint: Optional[ColorTint]
-    mel_class: Optional[MelClass]
-    mel_mitotic_index: Optional[MelMitoticIndex]
-    mel_thick_mm: Optional[MelThickMm]
-    mel_type: Optional[MelType]
-    mel_ulcer: Optional[bool]
+    acquisition_day: int | None  # TODO: metadata dictionary
+    marker_pen: bool | None
+    hairy: bool | None
+    blurry: bool | None
+    nevus_type: NevusType | None
+    image_type: ImageType | None
+    dermoscopic_type: DermoscopicType | None
+    anatom_site_general: GeneralAnatomicSite | None
+    color_tint: ColorTint | None
+    mel_class: MelClass | None
+    mel_mitotic_index: MelMitoticIndex | None
+    mel_thick_mm: MelThickMm | None
+    mel_type: MelType | None
+    mel_ulcer: bool | None
 
     unstructured: dict[str, Any]
 

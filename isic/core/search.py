@@ -1,6 +1,5 @@
 from functools import lru_cache
 import logging
-from typing import Optional
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -153,7 +152,7 @@ def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 500) -> None
             logger.error('Failed to insert document into elasticsearch', info)
 
 
-def facets(query: Optional[dict] = None, collections: Optional[list[int]] = None) -> dict:
+def facets(query: dict | None = None, collections: list[int] | None = None) -> dict:
     body = {
         'size': 0,
         'aggs': DEFAULT_SEARCH_AGGREGATES,
@@ -174,7 +173,7 @@ def facets(query: Optional[dict] = None, collections: Optional[list[int]] = None
 
 
 def build_elasticsearch_query(
-    query: str, user: User, collection_pks: Optional[list[int]] = None
+    query: str, user: User, collection_pks: list[int] | None = None
 ) -> dict:
     """
     Build an elasticsearch query from a DSL query string, a user, and collection ids.
@@ -223,8 +222,8 @@ def build_elasticsearch_query(
 
 def execute_elasticsearch_query(
     query: dict,
-    limit: Optional[int] = settings.REST_FRAMEWORK['PAGE_SIZE'],
-    offset: Optional[int] = 0,
+    limit: int | None = settings.REST_FRAMEWORK['PAGE_SIZE'],
+    offset: int | None = 0,
 ) -> dict:
     """
     Execute a query with necessary parameters like sorting and limit/offset.

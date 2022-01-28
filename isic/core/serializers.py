@@ -1,5 +1,4 @@
 import re
-from typing import Optional, Union
 
 from django.contrib.auth.models import User
 from pyparsing.exceptions import ParseException
@@ -32,7 +31,7 @@ class CollectionsField(Field):
         obj = super().to_representation(obj)
         return ','.join([str(element) for element in obj])
 
-    def to_internal_value(self, data: Optional[Union[list, str]]) -> Optional[list[int]]:
+    def to_internal_value(self, data: list | str | None) -> list[int] | None:
         if data:
             # if the data is coming from swagger, it's built into a 1 element list
             if isinstance(data, list):
