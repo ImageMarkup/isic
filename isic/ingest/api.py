@@ -1,10 +1,10 @@
 from django.db import transaction
-from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
+from oauth2_provider.contrib.rest_framework import TokenMatchesOASRequirements
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import BasePermission, IsAdminUser
+from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 
 from isic.core.permissions import IsicObjectPermissionsFilter
@@ -21,23 +21,18 @@ from isic.ingest.serializers import (
 )
 from isic.ingest.tasks import apply_metadata_task, process_accession_task
 
-
-class AccessionPermissions(BasePermission):
-    def has_permission(self, request, view):
-        if request.user.is_staff:
-            return True
-
-        if request.method == 'POST':
-            if 'cohort' in request.data:
-                cohort = get_object_or_404(Cohort, pk=request.data['cohort'])
-                return request.user.has_perm('ingest.add_accession', cohort)
-
-        return False
+REQUIRED_ALTERNATE_SCOPES = {
+    'GET': [['read:ingest']],
+    'POST': [['write:ingest']],
+    'PUT': [['write:ingest']],
+    'DELETE': [['write:ingest']],
+}
 
 
 class AccessionViewSet(mixins.UpdateModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
     queryset = Accession.objects.all()
-    permission_classes = [AccessionPermissions]
+    permission_classes = [TokenMatchesOASRequirements]
+    required_alternate_scopes = REQUIRED_ALTERNATE_SCOPES
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -121,6 +116,8 @@ class CohortViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
     serializer_class = CohortSerializer
     queryset = Cohort.objects.all()
     filter_backends = [IsicObjectPermissionsFilter]
+    permission_classes = [TokenMatchesOASRequirements]
+    required_alternate_scopes = REQUIRED_ALTERNATE_SCOPES
 
 
 @method_decorator(
@@ -138,6 +135,8 @@ class ContributorViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet)
     serializer_class = ContributorSerializer
     queryset = Contributor.objects.all()
     filter_backends = [IsicObjectPermissionsFilter]
+    permission_classes = [TokenMatchesOASRequirements]
+    required_alternate_scopes = REQUIRED_ALTERNATE_SCOPES
 
 
 class MetadataFileViewSet(
@@ -145,7 +144,8 @@ class MetadataFileViewSet(
 ):
     serializer_class = MetadataFileSerializer
     queryset = MetadataFile.objects.all()
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser & TokenMatchesOASRequirements]
+    required_alternate_scopes = REQUIRED_ALTERNATE_SCOPES
 
     swagger_schema = None
 

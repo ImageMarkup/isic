@@ -1,5 +1,7 @@
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
+from oauth2_provider.contrib.rest_framework.permissions import TokenMatchesOASRequirements
+from oauth2_provider.decorators import protected_resource
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -31,6 +33,7 @@ def stats(request):
 @swagger_auto_schema(methods=['GET'], operation_summary='Retrieve the currently logged in user.')
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@protected_resource(scopes=['identity'])
 def user_me(request):
     return Response(UserSerializer(request.user).data)
 
@@ -50,6 +53,8 @@ class ImageViewSet(ReadOnlyModelViewSet):
         .distinct()
     )
     filter_backends = [IsicObjectPermissionsFilter]
+    permission_classes = [TokenMatchesOASRequirements]
+    required_scopes = ['read:image']
     lookup_field = 'isic_id'
 
     @swagger_auto_schema(
@@ -167,3 +172,10 @@ class CollectionViewSet(ReadOnlyModelViewSet):
     serializer_class = CollectionSerializer
     queryset = Collection.objects.all()
     filter_backends = [IsicObjectPermissionsFilter]
+    permission_classes = [TokenMatchesOASRequirements]
+    required_alternate_scopes = {
+        'GET': [['read:collection']],
+        'POST': [['write:collection']],
+        'PUT': [['write:collection']],
+        'DELETE': [['write:collection']],
+    }

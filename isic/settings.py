@@ -48,10 +48,16 @@ class IsicMixin(ConfigMixin):
             {
                 'PKCE_REQUIRED': True,
                 'SCOPES': {
-                    'identity': 'Access to your basic profile information',
-                    'image:read': 'Read access to images',
-                    'image:write': 'Write access to images',
+                    'identity': 'View your basic user information',
+                    'read:ingest': 'View cohorts, contributors, accessions, and metadata.',
+                    'write:ingest': 'Add or remove cohorts, contributors, accessions, and metadata.',  # noqa: E501
+                    'read:image': 'View images and metadata.',
+                    'read:collection': 'View collections.',
+                    'write:collection': 'Add or remove collections, and publish DOIs.',
+                    'read:study': 'View studies.',
+                    'write:study': 'Add, remove, or participate in studies.',
                 },
+                'ERROR_RESPONSE_WITH_SCOPES': True,
                 'DEFAULT_SCOPES': ['identity'],
                 # Allow setting DJANGO_OAUTH_ALLOWED_REDIRECT_URI_SCHEMES to override this on the
                 # sandbox instance.
