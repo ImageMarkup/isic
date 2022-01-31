@@ -76,8 +76,14 @@ class AccessionFactory(factory.django.DjangoModelFactory):
     creator = factory.SelfAttribute('cohort.creator')
     zip_upload = factory.SubFactory(ZipUploadFactory)
     cohort = factory.SelfAttribute('zip_upload.cohort')
-    original_blob = factory.django.FileField(from_path=data_dir / 'ISIC_0000000.jpg')
-    blob = factory.django.FileField(from_path=data_dir / 'ISIC_0000000.jpg')
+    original_blob = factory.django.FileField(
+        from_path=data_dir / 'ISIC_0000000.jpg',
+        filename=factory.Sequence(lambda n: f'ISIC_{n:07}.jpg'),
+    )
+    blob = factory.django.FileField(
+        from_path=data_dir / 'ISIC_0000000.jpg',
+        filename=factory.Sequence(lambda n: f'ISIC_{n:07}.jpg'),
+    )
     blob_name = factory.SelfAttribute('original_blob.name')
     thumbnail_256 = factory.django.FileField(from_path=data_dir / 'ISIC_0000000_thumbnail_256.jpg')
 
