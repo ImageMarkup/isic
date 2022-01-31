@@ -3,6 +3,14 @@ from pytest import lazy_fixture
 
 
 @pytest.mark.django_db
+def test_core_api_contributor_oauth(user, oauth_token_client):
+    client = oauth_token_client(user, 'read:ingest')
+    r = client.get('/api/v2/contributors/')
+
+    assert r.status_code == 200, r.data
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     'client,contributors_,num_visible',
     [
