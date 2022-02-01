@@ -114,9 +114,9 @@ class CohortPermissions:
     def view_cohort_list(user_obj: User, qs: QuerySet[Cohort] | None = None) -> QuerySet[Cohort]:
         qs = qs if qs is not None else Cohort._default_manager.all()
 
-        if user_obj.is_active and user_obj.is_staff:
+        if user_obj.is_staff:
             return qs
-        elif user_obj.is_active and user_obj.is_authenticated:
+        elif user_obj.is_authenticated:
             return qs.filter(contributor__owners__in=[user_obj])
         else:
             return qs.none()

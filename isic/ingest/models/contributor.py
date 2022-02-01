@@ -63,9 +63,9 @@ class ContributorPermissions:
     ) -> QuerySet[Contributor]:
         qs = qs if qs is not None else Contributor._default_manager.all()
 
-        if user_obj.is_active and user_obj.is_staff:
+        if user_obj.is_staff:
             return qs
-        elif user_obj.is_active and user_obj.is_authenticated:
+        elif user_obj.is_authenticated:
             return qs.filter(owners__in=[user_obj])
         else:
             return qs.none()
@@ -77,7 +77,7 @@ class ContributorPermissions:
 
     @staticmethod
     def add_contributor(user_obj, obj=None):
-        return user_obj.is_active and user_obj.is_authenticated
+        return user_obj.is_authenticated
 
     @staticmethod
     def add_cohort(user_obj: User, obj: Contributor) -> bool:
