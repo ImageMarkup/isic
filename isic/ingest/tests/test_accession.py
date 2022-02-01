@@ -1,6 +1,7 @@
 import os
 import pathlib
 
+from django.core.exceptions import ValidationError
 from django.urls.base import reverse
 import pytest
 
@@ -91,3 +92,19 @@ def test_accession_upload_invalid_cohort(
         {'original_blob': s3ff_field_value},
     )
     assert r.status_code == 403, r.data
+
+
+@pytest.mark.django_db
+def test_accession_mutable_before_publish(accession_factory):
+    accession = accession_factory(image=None)
+    accession.metadata.update({'foo': 'bar'})
+    accession.save()
+
+
+@pytest.mark.django_db
+def test_accession_immutable_after_publish(image_factory):
+    image = image_factory()
+
+    with pytest.raises(ValidationError):
+        image.accession.metadata.update({'foo': 'bar'})
+        image.accession.save()
