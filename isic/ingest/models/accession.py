@@ -3,6 +3,7 @@ from mimetypes import guess_type
 
 import PIL.Image
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models
 from django.db.models import JSONField, Transform
@@ -237,3 +238,11 @@ class Accession(CreationSortedTimeStampedModel):
                 del redacted[f]
 
         return redacted
+
+    def save(self, **kwargs):
+        # Check for updates to the accession
+        if self.pk:
+            if hasattr(self, 'image'):
+                raise ValidationError("Can't modify the accession as it already has an image.")
+
+        return super().save(**kwargs)
