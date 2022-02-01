@@ -3,6 +3,7 @@ from collections import defaultdict
 from django.forms.models import ModelForm
 import pandas as pd
 from pydantic.main import BaseModel
+from s3_file_field.widgets import S3FileInput
 
 from isic.ingest.models import Accession, MetadataFile
 from isic.ingest.validators import MetadataRow
@@ -12,6 +13,7 @@ class MetadataForm(ModelForm):
     class Meta:
         model = MetadataFile
         fields = ['blob']
+        widgets = {'blob': S3FileInput(attrs={'accept': 'text/csv'})}
 
 
 class Problem(BaseModel):
