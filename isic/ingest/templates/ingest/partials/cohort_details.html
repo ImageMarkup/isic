@@ -8,6 +8,6 @@
     <li><span class="font-bold">License:</span> {{ cohort.get_copyright_license_display }}</li>
     <li><span class="font-bold">Created by:</span> {{ cohort.creator }}</li>
     <li><span class="font-bold">Created on:</span> {% localtime cohort.created %}</li>
-    <li><span class="font-bold">Number accessions:</span> {{ cohort.accessions.count|intcomma }}</li>
+    <li><span class="font-bold">Number of accessions:</span> {{ cohort.accessions.count|intcomma }}</li>
   </ul>
 </div>

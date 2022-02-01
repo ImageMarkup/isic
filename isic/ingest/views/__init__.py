@@ -9,6 +9,8 @@ from django.forms.models import ModelForm
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
+from django.utils.safestring import mark_safe
+from s3_file_field.widgets import S3FileInput
 
 from isic.core.permissions import needs_object_permission
 from isic.ingest.filters import AccessionFilter
@@ -31,6 +33,7 @@ class ZipForm(ModelForm):
     class Meta:
         model = ZipUpload
         fields = ['blob']
+        widgets = {'blob': S3FileInput(attrs={'accept': 'application/zip'})}
 
 
 @needs_object_permission('ingest.view_cohort', (Cohort, 'pk', 'cohort_pk'))
@@ -47,10 +50,11 @@ def upload_single_accession(request, cohort_pk):
             form.instance.blob_name = os.path.basename(form.instance.original_blob.name)
             form.save()
             process_accession_task.delay(form.instance.pk)
+            browse_url = reverse('upload/cohort-browser', args=[cohort.pk])
             messages.add_message(
                 request,
                 messages.SUCCESS,
-                f'The following accession has been uploaded: {form.instance.blob_name}',
+                mark_safe(f'Accession uploaded. <a href="{browse_url}">View accessions</a>.'),
             )
             return HttpResponseRedirect(
                 reverse('upload/cohort-files', args=[form.instance.cohort.pk])

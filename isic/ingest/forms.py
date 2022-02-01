@@ -2,7 +2,7 @@ import os
 
 from django.core.exceptions import ValidationError
 from django.forms.models import ModelForm
-from s3_file_field.widgets import S3PlaceholderFile
+from s3_file_field.widgets import S3FileInput, S3PlaceholderFile
 
 from isic.ingest.models import Cohort, Contributor
 from isic.ingest.models.accession import Accession
@@ -32,6 +32,7 @@ class SingleAccessionUploadForm(ModelForm):
         fields = [
             'original_blob',
         ]
+        widgets = {'original_blob': S3FileInput(attrs={'accept': 'image/*;capture=camera'})}
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
