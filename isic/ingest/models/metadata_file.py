@@ -43,9 +43,9 @@ class MetadataFilePermissions:
     ) -> QuerySet[MetadataFile]:
         qs = qs if qs is not None else MetadataFile._default_manager.all()
 
-        if user_obj.is_active and user_obj.is_staff:
+        if user_obj.is_staff:
             return qs
-        elif user_obj.is_active and user_obj.is_authenticated:
+        elif user_obj.is_authenticated:
             return qs.filter(cohort__contributor__owners__in=[user_obj])
         else:
             return qs.none()

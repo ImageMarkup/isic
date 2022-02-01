@@ -86,7 +86,7 @@ class CollectionPermissions:
     ) -> QuerySet[Collection]:
         qs = qs if qs is not None else Collection._default_manager.all()
 
-        if user_obj.is_active and user_obj.is_staff:
+        if user_obj.is_staff:
             return qs
         elif user_obj.is_authenticated:
             return qs.filter(Q(public=True) | Q(creator=user_obj))
@@ -104,7 +104,7 @@ class CollectionPermissions:
     ) -> QuerySet[Collection]:
         qs = qs if qs is not None else Collection._default_manager.all()
 
-        if user_obj.is_active and user_obj.is_staff:
+        if user_obj.is_staff:
             return qs
         else:
             return qs.none()
