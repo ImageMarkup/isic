@@ -10,6 +10,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 from django.utils.safestring import mark_safe
+from s3_file_field.widgets import S3FileInput
 
 from isic.core.permissions import needs_object_permission
 from isic.ingest.filters import AccessionFilter
@@ -32,6 +33,7 @@ class ZipForm(ModelForm):
     class Meta:
         model = ZipUpload
         fields = ['blob']
+        widgets = {'blob': S3FileInput(attrs={'accept': 'application/zip'})}
 
 
 @needs_object_permission('ingest.view_cohort', (Cohort, 'pk', 'cohort_pk'))

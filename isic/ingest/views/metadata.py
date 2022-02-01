@@ -8,6 +8,7 @@ from django.forms.models import ModelForm
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
+from s3_file_field.widgets import S3FileInput
 
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.ingest.models import Accession, Cohort, MetadataFile
@@ -25,6 +26,7 @@ class MetadataFileForm(ModelForm):
     class Meta:
         model = MetadataFile
         fields = ['blob']
+        widgets = {'blob': S3FileInput(attrs={'accept': 'text/csv'})}
 
 
 class ValidateMetadataForm(forms.Form):
