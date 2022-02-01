@@ -22,7 +22,7 @@ class UserPermissions:
 
     @staticmethod
     def view_staff(user_obj, obj=None):
-        return user_obj.is_active and user_obj.is_staff
+        return user_obj.is_staff
 
 
 User.perms_class = UserPermissions
