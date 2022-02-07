@@ -57,6 +57,7 @@ setup(
         'djangorestframework',
         'drf-yasg',
         'hashids',
+        'isic-metadata',
         'opensearch-py',
         'pandas',
         'passlib[bcrypt]',

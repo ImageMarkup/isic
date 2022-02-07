@@ -4,6 +4,7 @@ import logging
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db.models.query import QuerySet
+from isic_metadata import FIELD_REGISTRY
 from opensearchpy import NotFoundError, OpenSearch
 from opensearchpy.helpers import streaming_bulk
 
@@ -13,93 +14,39 @@ from isic.core.permissions import get_visible_objects
 
 logger = logging.getLogger(__name__)
 
+INDEX_MAPPINGS = {'properties': {}}
+DEFAULT_SEARCH_AGGREGATES = {}
+
 # TODO: include private meta fields (e.g. patient/lesion id)
-INDEX_MAPPINGS = {
-    'properties': {
+for key, definition in FIELD_REGISTRY.items():
+    if definition.get('search'):
+        INDEX_MAPPINGS['properties'][key] = definition['search']['es_property']
+        DEFAULT_SEARCH_AGGREGATES[key] = definition['search']['es_facet']
+
+
+# Reserved mappings that can only be set by the archive
+# Additional fields here need to update the checks in isic_field on isic-metadata.
+INDEX_MAPPINGS['properties'].update(
+    {
         'created': {'type': 'date'},
         'isic_id': {'type': 'text'},
         'public': {'type': 'boolean'},
         'age_approx': {'type': 'integer'},
-        'sex': {'type': 'keyword'},
-        'benign_malignant': {'type': 'keyword'},
-        'diagnosis': {'type': 'keyword'},
-        'diagnosis_confirm_type': {'type': 'keyword'},
-        'personal_hx_mm': {'type': 'boolean'},
-        'family_hx_mm': {'type': 'boolean'},
-        'clin_size_long_diam_mm': {'type': 'float'},
-        'melanocytic': {'type': 'boolean'},
-        'acquisition_day': {'type': 'float'},
-        'marker_pen': {'type': 'boolean'},
-        'hairy': {'type': 'boolean'},
-        'blurry': {'type': 'boolean'},
-        'nevus_type': {'type': 'keyword'},
-        'image_type': {'type': 'keyword'},
-        'dermoscopic_type': {'type': 'keyword'},
-        'anatom_site_general': {'type': 'keyword'},
-        'color_tint': {'type': 'keyword'},
-        'mel_class': {'type': 'keyword'},
-        'mel_mitotic_index': {'type': 'keyword'},
-        'mel_thick_mm': {'type': 'float'},
-        'mel_type': {'type': 'keyword'},
-        'mel_ulcer': {'type': 'boolean'},
+    }
+)
+
+
+DEFAULT_SEARCH_AGGREGATES['age_approx'] = {
+    'histogram': {
+        'field': 'age_approx',
+        'interval': 5,
+        'extended_bounds': {'min': 0, 'max': 85},
     }
 }
 
+
 # These are all approaching 10 unique values, which would require passing a size attribute
 # to see them all: nevus_type, anatom_site_general, mel_mitotic_index, mel_type
-DEFAULT_SEARCH_AGGREGATES = {
-    'diagnosis': {'terms': {'field': 'diagnosis', 'size': 100}},
-    'age_approx': {
-        'histogram': {
-            'field': 'age_approx',
-            'interval': 5,
-            'extended_bounds': {'min': 0, 'max': 85},
-        }
-    },
-    'sex': {'terms': {'field': 'sex'}},
-    'benign_malignant': {'terms': {'field': 'benign_malignant'}},
-    'diagnosis_confirm_type': {'terms': {'field': 'diagnosis_confirm_type'}},
-    'personal_hx_mm': {'terms': {'field': 'personal_hx_mm'}},
-    'family_hx_mm': {'terms': {'field': 'family_hx_mm'}},
-    'clin_size_long_diam_mm': {
-        'histogram': {
-            'field': 'clin_size_long_diam_mm',
-            'interval': 10,
-            'extended_bounds': {'min': 0, 'max': 100},
-        }
-    },
-    'melanocytic': {'terms': {'field': 'melanocytic'}},
-    'marker_pen': {'terms': {'field': 'marker_pen'}},
-    'hairy': {'terms': {'field': 'hairy'}},
-    'blurry': {'terms': {'field': 'blurry'}},
-    'nevus_type': {'terms': {'field': 'nevus_type'}},
-    'image_type': {'terms': {'field': 'image_type'}},
-    'dermoscopic_type': {'terms': {'field': 'dermoscopic_type'}},
-    'anatom_site_general': {'terms': {'field': 'anatom_site_general'}},
-    'color_tint': {'terms': {'field': 'color_tint'}},
-    'mel_class': {'terms': {'field': 'mel_class'}},
-    'mel_mitotic_index': {'terms': {'field': 'mel_mitotic_index'}},
-    'mel_thick_mm': {
-        'range': {
-            'field': 'mel_thick_mm',
-            'ranges': [
-                {'from': 0.0, 'to': 0.5},
-                {'from': 0.5, 'to': 1.0},
-                {'from': 1.0, 'to': 1.5},
-                {'from': 1.5, 'to': 2.0},
-                {'from': 2.0, 'to': 2.5},
-                {'from': 2.5, 'to': 3.0},
-                {'from': 3.0, 'to': 3.5},
-                {'from': 3.5, 'to': 4.0},
-                {'from': 4.0, 'to': 4.5},
-                {'from': 4.5, 'to': 5.0},
-                {'from': 5.0},
-            ],
-        }
-    },
-    'mel_type': {'terms': {'field': 'mel_type'}},
-    'mel_ulcer': {'terms': {'field': 'mel_ulcer'}},
-}
 
 
 @lru_cache
