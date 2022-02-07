@@ -8,12 +8,12 @@ from django.forms.models import ModelForm
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
+from isic_metadata.utils import get_unstructured_columns
 from s3_file_field.widgets import S3FileInput
 
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.ingest.models import Accession, Cohort, MetadataFile
 from isic.ingest.utils.metadata import (
-    get_unstructured_columns,
     validate_archive_consistency,
     validate_csv_format_and_filenames,
     validate_internal_consistency,

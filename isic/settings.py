@@ -96,7 +96,6 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
         'from isic.studies.tasks import *',
         'from django.core.files.uploadedfile import UploadedFile',
         'import pandas as pd',
-        'from isic.ingest.validators import *',
         'from opensearchpy import OpenSearch',
         'from isic.core.search import *',
     ]

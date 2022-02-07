@@ -1,6 +1,7 @@
 from __future__ import barry_as_FLUFL
 
 from django.db.models.query_utils import Q
+from isic_metadata import FIELD_REGISTRY
 from pyparsing import Keyword, ParserElement, Word, alphas, infixNotation, nums, opAssoc
 from pyparsing.common import pyparsing_common
 from pyparsing.core import Literal, OneOrMore, Or, QuotedString, Suppress
@@ -129,34 +130,27 @@ def make_bool_term(keyword_name):
     return make_term(keyword_name, bool_value)
 
 
+# First setup reserved (special) search terms
 TERMS = {
     'isic_id': make_str_term('isic_id'),
     'public': make_bool_term('public'),
     'age_approx': make_number_term('age_approx'),
-    'sex': make_str_term('sex'),
-    'benign_malignant': make_str_term('benign_malignant'),
-    'diagnosis': make_str_term('diagnosis'),
-    'diagnosis_confirm_type': make_str_term('diagnosis_confirm_type'),
-    'personal_hx_mm': make_bool_term('personal_hx_mm'),
-    'family_hx_mm': make_bool_term('family_hx_mm'),
-    'clin_size_long_diam_mm': make_number_term('clin_size_long_diam_mm'),
-    'melanocytic': make_bool_term('melanocytic'),
-    'acquisition_day': make_number_term('acquisition_day'),
-    'marker_pen': make_bool_term('marker_pen'),
-    'hairy': make_bool_term('hairy'),
-    'blurry': make_bool_term('blurry'),
-    'nevus_type': make_str_term('nevus_type'),
-    'image_type': make_str_term('image_type'),
-    'dermoscopic_type': make_str_term('dermoscopic_type'),
-    'anatom_site_general': make_str_term('anatom_site_general'),
-    'color_tint': make_str_term('color_tint'),
-    'mel_class': make_str_term('mel_class'),
-    'mel_mitotic_index': make_str_term('mel_mitotic_index'),
-    'mel_thick_mm': make_number_term('mel_thick_mm'),
-    'mel_type': make_str_term('mel_type'),
-    'mel_ulcer': make_bool_term('mel_ulcer'),
 }
 
+for key, definition in FIELD_REGISTRY.items():
+    if definition.get('search'):
+        es_property_type = definition['search']['es_property']['type']
+
+        if es_property_type == 'keyword':
+            term = make_str_term(key)
+        elif es_property_type == 'boolean':
+            term = make_bool_term(key)
+        elif es_property_type in ['integer', 'float']:
+            term = make_number_term(key)
+        else:
+            raise Exception('Found unknown es property type')
+
+        TERMS[key] = term
 
 parser = OneOrMore(Or(TERMS.values())).add_parse_action(q_and)
 
