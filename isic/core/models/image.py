@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.contrib.postgres.aggregates.general import ArrayAgg
 from django.db import models
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
@@ -20,6 +21,15 @@ class ImageQuerySet(models.QuerySet):
             return self
         else:
             return self.filter(parse_query(query))
+
+    def with_elasticsearch_properties(self):
+        return self.select_related('accession').annotate(
+            coll_pks=ArrayAgg('collections', distinct=True, default=[]),
+            contributor_owner_ids=ArrayAgg(
+                'accession__cohort__contributor__owners', distinct=True, default=[]
+            ),
+            shared_to=ArrayAgg('shares', distinct=True, default=[]),
+        )
 
 
 class Image(CreationSortedTimeStampedModel):
@@ -51,26 +61,28 @@ class Image(CreationSortedTimeStampedModel):
     def get_absolute_url(self):
         return reverse('core/image-detail', args=[self.pk])
 
-    @property
-    def as_elasticsearch_document(self) -> dict:
+    def to_elasticsearch_document(self, body_only=False) -> dict:
+        # Can only be called on images that were fetched with with_elasticsearch_properties.
         document = {
             'id': self.pk,
             'created': self.created,
             'isic_id': self.isic_id,
             'public': self.public,
             # TODO: make sure these fields can't be searched on
-            'contributor_owner_ids': [
-                user.pk for user in self.accession.cohort.contributor.owners.all()
-            ],
-            'shared_to': [user.pk for user in self.shares.all()],
-            'collections': list(self.collections.values_list('pk', flat=True)),
+            'contributor_owner_ids': self.contributor_owner_ids,
+            'shared_to': self.shared_to,
+            'collections': self.coll_pks,
         }
 
         # Fields in the search index have to be redacted otherwise the documents that match could
         # leak what their true metadata values are.
         document.update(self.accession.redacted_metadata)
 
-        return document
+        if body_only:
+            return document
+        else:
+            # index the document by image.pk so it can be updated later.
+            return {'_id': self.pk, '_source': document}
 
     def _with_same_metadata(self, metadata_key: str) -> QuerySet['Image']:
         if self.accession.metadata.get(metadata_key):
