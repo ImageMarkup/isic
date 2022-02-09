@@ -1,7 +1,7 @@
 import djclick as click
+from isic_metadata.metadata import MetadataRow
 
 from isic.ingest.models import Accession
-from isic.ingest.validators import MetadataRow
 
 
 @click.command(help='Revalidate all accession metadata')

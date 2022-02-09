@@ -5,6 +5,7 @@ from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
+from isic_metadata.metadata import MetadataRow
 import numpy as np
 import pandas as pd
 
@@ -19,7 +20,6 @@ from isic.ingest.models import (
     ZipUpload,
 )
 from isic.ingest.utils.mime import guess_mime_type
-from isic.ingest.validators import MetadataRow
 
 
 @shared_task
