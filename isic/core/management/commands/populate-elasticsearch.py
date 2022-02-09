@@ -11,5 +11,7 @@ def populate_elasticsearch(chunk_size):
     es = get_elasticsearch_client()
     es.indices.delete(index=settings.ISIC_ELASTICSEARCH_INDEX, ignore=[404])
     maybe_create_index()
-    bulk_add_to_search_index(Image.objects.all(), chunk_size=chunk_size)
+    bulk_add_to_search_index(
+        Image.objects.with_elasticsearch_properties().all(), chunk_size=chunk_size
+    )
     es.indices.refresh(index='_all')
