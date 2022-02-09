@@ -90,21 +90,22 @@ def apply_metadata(request, cohort_pk):
         'breadcrumbs': make_breadcrumbs(cohort)
         + [[reverse('validate-metadata', args=[cohort.id]), 'Validate Metadata']],
     }
+    # TODO: Find a cleaner way to implement this system altogether.
     checkpoints = {
         1: {
             'title': 'Filename checks',
             'run': False,
-            'problems': [],
+            'problems': {},
         },
         2: {
             'title': 'Internal consistency',
             'run': False,
-            'problems': [],
+            'problems': {},
         },
         3: {
             'title': 'Archive consistency',
             'run': False,
-            'problems': [],
+            'problems': {},
         },
     }
 
@@ -128,7 +129,6 @@ def apply_metadata(request, cohort_pk):
                     checkpoints[3]['run'] = True
 
                     if not checkpoints[3]['problems']:
-                        # apply_metadata_task.delay(form.instance.pk)
                         ctx['successful'] = True
 
     else:
