@@ -1,12 +1,12 @@
 from collections import defaultdict
 
 from django.forms.models import ModelForm
+from isic_metadata.metadata import MetadataRow
 import pandas as pd
 from pydantic.main import BaseModel
 from s3_file_field.widgets import S3FileInput
 
 from isic.ingest.models import Accession, MetadataFile
-from isic.ingest.validators import MetadataRow
 
 
 class MetadataForm(ModelForm):
@@ -20,20 +20,6 @@ class Problem(BaseModel):
     message: str | None
     context: list | None
     type: str | None = 'error'
-
-
-def get_unstructured_columns(df):
-    unstructured_columns = set()
-    structured_columns = set(MetadataRow.__fields__.keys()) - {'unstructured'}
-
-    for _, (_, row) in enumerate(df.iterrows(), start=2):
-        unstructured_columns |= set(row.keys()) - structured_columns
-
-    # unstructured columns are any columns that aren't part of the core
-    # columns (filename) and aren't defined in MetadataRow
-    unstructured_columns -= {'filename'}
-
-    return sorted(list(unstructured_columns))
 
 
 def validate_csv_format_and_filenames(df, cohort):
