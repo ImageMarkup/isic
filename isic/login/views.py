@@ -21,6 +21,7 @@ def get_girder_token(request):
 @swagger_auto_schema(methods=['PUT'], operation_summary='Accept the terms of use.')
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
+@protected_resource(scopes=['identity'])
 def accept_terms_of_use(request):
     if not request.user.profile.accepted_terms:
         request.user.profile.accepted_terms = timezone.now()
