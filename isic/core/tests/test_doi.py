@@ -67,6 +67,7 @@ def test_doi_form_creation(public_collection_with_public_images, staff_user_requ
 
     public_collection_with_public_images.refresh_from_db()
     assert public_collection_with_public_images.doi is not None
+    assert public_collection_with_public_images.locked
 
 
 @pytest.fixture

@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.aggregates import Count
 from django.db.models.query import QuerySet
@@ -24,6 +25,8 @@ class Collection(TimeStampedModel):
     official = models.BooleanField(default=False)
 
     doi = models.OneToOneField(Doi, on_delete=models.PROTECT, null=True, blank=True)
+
+    locked = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
@@ -73,6 +76,14 @@ class Collection(TimeStampedModel):
                 },
             }
         }
+
+    def save(self, **kwargs):
+        # Check for updates to the collection
+        # TODO: allow creating a DOI for locked collections
+        if self.pk and Collection.objects.filter(pk=self.pk, locked=True).exists():
+            raise ValidationError("Can't modify the collection, it's locked.")
+
+        return super().save(**kwargs)
 
 
 class CollectionPermissions:
