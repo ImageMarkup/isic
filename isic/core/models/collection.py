@@ -88,7 +88,7 @@ class Collection(TimeStampedModel):
 
 class CollectionPermissions:
     model = Collection
-    perms = ['view_collection', 'create_doi']
+    perms = ['view_collection', 'create_doi', 'add_images']
     filters = {'view_collection': 'view_collection_list', 'create_doi': 'create_doi_list'}
 
     @staticmethod
@@ -123,6 +123,24 @@ class CollectionPermissions:
     @staticmethod
     def create_doi(user_obj: User, obj: Collection) -> bool:
         return CollectionPermissions.create_doi_list(user_obj).filter(pk=obj.pk).exists()
+
+    @staticmethod
+    def add_images_list(
+        user_obj: User, qs: QuerySet[Collection] | None = None
+    ) -> QuerySet[Collection]:
+        qs = qs if qs is not None else Collection._default_manager.all()
+
+        if user_obj.is_staff:
+            return qs
+        elif user_obj.is_authenticated:
+            return qs.filter(creator=user_obj)
+        else:
+            return qs.none()
+
+    @staticmethod
+    def add_images(user_obj, obj: Collection):
+        # TODO: use .contains in django 4
+        return CollectionPermissions.add_images_list(user_obj).filter(pk=obj.pk).exists()
 
 
 Collection.perms_class = CollectionPermissions

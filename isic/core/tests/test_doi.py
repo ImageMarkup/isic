@@ -7,14 +7,14 @@ from isic.core.models.image import Image
 
 @pytest.fixture
 def public_collection_with_public_images(image_factory, collection_factory):
-    collection = collection_factory(public=True)
+    collection = collection_factory(public=True, locked=False)
     collection.images.set([image_factory(public=True) for _ in range(5)])
     return collection
 
 
 @pytest.fixture
 def public_collection_with_private_images(image_factory, collection_factory):
-    collection = collection_factory(public=True)
+    collection = collection_factory(public=True, locked=False)
     collection.images.set([image_factory(public=False) for _ in range(5)])
     return collection
 
