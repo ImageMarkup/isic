@@ -1,6 +1,8 @@
+from django.contrib import messages
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
@@ -172,8 +174,19 @@ class CollectionViewSet(ReadOnlyModelViewSet):
     @swagger_auto_schema(auto_schema=None)
     @action(detail=True, methods=['post'], pagination_class=None, url_path='populate-from-search')
     def populate_from_search(self, request, *args, **kwargs):
-        assert request.user == self.get_object().creator
+        if not request.user.has_perm('core.add_images', self.get_object()):
+            raise PermissionDenied
+
+        if self.get_object().locked:
+            raise ValidationError('Collection is locked for changes.')
+
         serializer = SearchQuerySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         populate_collection.delay(kwargs['pk'], request.user.pk, serializer.validated_data)
+
+        # TODO: this is a weird mixture of concerns between SSR and an API, figure out a better
+        # way to handle this.
+        messages.add_message(
+            request, messages.INFO, 'Adding images to collection, this may take a few minutes.'
+        )
         return Response()

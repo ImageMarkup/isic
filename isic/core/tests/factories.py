@@ -23,4 +23,4 @@ class CollectionFactory(factory.django.DjangoModelFactory):
     description = factory.Faker('paragraph')
     public = factory.Faker('boolean')
     official = factory.Faker('boolean')
-    locked = factory.Faker('boolean')
+    locked = False

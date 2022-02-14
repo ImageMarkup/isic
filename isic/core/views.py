@@ -1,4 +1,5 @@
 from collections import defaultdict
+import json
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -244,12 +245,13 @@ def image_detail(request, pk):
 
 
 def image_browser(request):
+    collections = get_visible_objects(
+        request.user, 'core.view_collection', Collection.objects.order_by('name')
+    )
     search_form = ImageSearchForm(
         request.GET,
         user=request.user,
-        collections=get_visible_objects(
-            request.user, 'core.view_collection', Collection.objects.order_by('name')
-        ),
+        collections=collections,
     )
     qs: QuerySet[Image] = Image.objects.none()
     if search_form.is_valid():
@@ -261,7 +263,12 @@ def image_browser(request):
         request,
         'core/image_browser.html',
         {
+            'total_images': qs.count(),
             'images': page,
+            # The user can only add images to collections that are theirs and unlocked.
+            'collections': collections.filter(creator=request.user, locked=False),
+            # This gets POSTed to the populate endpoint if called
+            'search_body': json.dumps(request.GET),
             'form': search_form,
         },
     )

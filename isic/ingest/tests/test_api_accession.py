@@ -106,3 +106,15 @@ def test_api_accession_create_invalid_cohort(
     )
 
     assert resp.status_code == 403, resp.data
+
+
+@pytest.mark.django_db
+def test_api_accession_metadata(authenticated_api_client, user, cohort_factory, s3ff_field_value):
+    cohort = cohort_factory(contributor__owners=[user])
+
+    resp = authenticated_api_client.post(
+        '/api/v2/accessions/', data={'cohort': cohort.pk, 'original_blob': s3ff_field_value}
+    )
+
+    assert resp.status_code == 201, resp.data
+    assert cohort.accessions.count() == 1

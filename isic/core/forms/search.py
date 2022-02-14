@@ -6,7 +6,7 @@ from isic.core.permissions import get_visible_objects
 
 
 class ImageSearchForm(forms.Form):
-    search = forms.CharField(
+    query = forms.CharField(
         required=False,
         widget=forms.TextInput(attrs={'placeholder': 'diagnosis:melanoma OR diagnosis:nevus'}),
     )
@@ -25,7 +25,7 @@ class ImageSearchForm(forms.Form):
             'core.view_image',
         )
         self.results = self.results.select_related('accession').from_search_query(
-            self.cleaned_data.get('search', '')
+            self.cleaned_data.get('query', '')
         )
 
         if 'collections' in self.cleaned_data and self.cleaned_data['collections'].exists():

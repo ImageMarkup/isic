@@ -58,7 +58,10 @@ class SearchQuerySerializer(serializers.Serializer):
     """A serializer for a search query against images."""
 
     query = serializers.CharField(
-        required=False, help_text='A search query string.', validators=[valid_search_query]
+        required=False,
+        allow_blank=True,
+        help_text='A search query string.',
+        validators=[valid_search_query],
     )
     collections = CollectionsField(
         required=False,
