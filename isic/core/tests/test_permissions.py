@@ -1,6 +1,7 @@
 from django.urls.base import reverse
 import pytest
 from pytest_django.asserts import assertQuerysetEqual
+from pytest_lazyfixture import lazy_fixture
 
 
 @pytest.mark.django_db
@@ -25,6 +26,19 @@ def test_core_staff_list(client, authenticated_client, staff_client):
 
     r = staff_client.get(reverse('core/staff-list'))
     assert r.status_code == 200
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'client_,visible',
+    [
+        [lazy_fixture('client'), False],
+        [lazy_fixture('authenticated_client'), True],
+    ],
+)
+def test_core_collection_create(client_, visible):
+    r = client_.get(reverse('core/collection-create'))
+    assert r.status_code == 200 if visible else 403
 
 
 @pytest.mark.django_db
