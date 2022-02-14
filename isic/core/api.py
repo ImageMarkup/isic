@@ -17,6 +17,7 @@ from isic.core.serializers import (
     UserSerializer,
 )
 from isic.core.stats import get_archive_stats
+from isic.core.tasks import populate_collection
 
 
 @swagger_auto_schema(
@@ -167,3 +168,12 @@ class CollectionViewSet(ReadOnlyModelViewSet):
     serializer_class = CollectionSerializer
     queryset = Collection.objects.all()
     filter_backends = [IsicObjectPermissionsFilter]
+
+    @swagger_auto_schema(auto_schema=None)
+    @action(detail=True, methods=['post'], pagination_class=None, url_path='populate-from-search')
+    def populate_from_search(self, request, *args, **kwargs):
+        assert request.user == self.get_object().creator
+        serializer = SearchQuerySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        populate_collection.delay(kwargs['pk'], request.user.pk, serializer.validated_data)
+        return Response()
