@@ -1,5 +1,11 @@
 {% extends 'core/base.html' %}
+{% load static %}
 {% load humanize %}
+
+{% block head_extra %}
+  {{ block.super }}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.26.0/axios.min.js" integrity="sha512-bPh3uwgU5qEMipS/VOmRqynnMXGGSRv+72H/N260MQeXZIK4PG48401Bsby9Nq5P5fz7hy5UGNmC/W1Z51h2GQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+{% endblock %}
 
 {% block content %}
   <div x-data="imageBrowser()">
@@ -56,29 +62,5 @@
     {% include 'ingest/partials/thumbnail_grid_js.html' %}
   </div>
 
-
-  <script type="text/javascript">
-    function imageBrowser() {
-      // allow between 4-8 columns
-      return {
-        modalOpen: false,
-        open: false,
-        selectedCollection:'',
-        addSearchResultsToCollection() {
-          if (confirm('Are you sure you want to add {{ total_images|intcomma }} images to this collection?')) {
-            fetch(`/api/v2/collections/${this.selectedCollection}/populate-from-search/`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-              },
-              body: '{{ search_body|safe }}',
-            }).then((resp) => {
-              window.location.href = `/collections/${this.selectedCollection}/`;
-            }).catch(console.error);
-          }
-        },
-      }
-    }
-  </script>
+  {% include 'core/partials/image_browser_js.html' %}
 {% endblock %}
