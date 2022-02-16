@@ -259,6 +259,12 @@ def image_browser(request):
 
     paginator = Paginator(qs, 30)
     page = paginator.get_page(request.GET.get('page'))
+
+    if request.user.is_authenticated:
+        addable_collections = collections.filter(creator=request.user, locked=False)
+    else:
+        addable_collections = []
+
     return render(
         request,
         'core/image_browser.html',
@@ -266,7 +272,7 @@ def image_browser(request):
             'total_images': qs.count(),
             'images': page,
             # The user can only add images to collections that are theirs and unlocked.
-            'collections': collections.filter(creator=request.user, locked=False),
+            'collections': addable_collections,
             # This gets POSTed to the populate endpoint if called
             'search_body': json.dumps(request.GET),
             'form': search_form,
