@@ -67,3 +67,32 @@ def test_core_api_collection_detail_permissions(client, collection, visible):
         assert r.data['id'] == collection.id
     else:
         assert r.status_code == 404, r.data
+
+
+@pytest.mark.django_db
+def test_core_api_collection_populate_from_search(
+    eager_celery, authenticated_client, collection_factory, image_factory, user
+):
+    collection = collection_factory(locked=False, creator=user, public=True)
+    image_factory(accession__metadata={'sex': 'male'}, public=True)
+    image_factory(accession__metadata={'sex': 'female'}, public=True)
+    r = authenticated_client.post(
+        f'/api/v2/collections/{collection.pk}/populate-from-search/', {'query': 'sex:male'}
+    )
+
+    assert r.status_code == 200, r.data
+    assert collection.images.count() == 1
+    assert collection.images.first().accession.metadata['sex'] == 'male'
+
+
+@pytest.mark.django_db
+def test_core_api_collection_populate_from_search_locked(
+    authenticated_client, collection_factory, user
+):
+    collection = collection_factory(locked=True, creator=user)
+
+    r = authenticated_client.post(
+        f'/api/v2/collections/{collection.pk}/populate-from-search/', {'query': 'sex:male'}
+    )
+
+    assert r.status_code == 400, r.data

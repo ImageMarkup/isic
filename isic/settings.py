@@ -112,6 +112,8 @@ class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
     ISIC_ELASTICSEARCH_INDEX = 'isic-testing'
     ISIC_DATACITE_USERNAME = None
     ISIC_DATACITE_PASSWORD = None
+    CELERY_TASK_ALWAYS_EAGER = values.BooleanValue(False)
+    CELERY_TASK_EAGER_PROPAGATES = values.BooleanValue(False)
 
 
 class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration):

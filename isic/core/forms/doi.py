@@ -56,5 +56,6 @@ class CreateDoiForm(forms.Form):
             raise ValidationError('Something went wrong talking to DataCite.')
         else:
             with transaction.atomic():
+                self.collection.locked = True
                 self.collection.doi = Doi.objects.create(id=id, url=f'https://doi.org/{id}')
-                self.collection.save(update_fields=['doi'])
+                self.collection.save(update_fields=['doi', 'locked'])

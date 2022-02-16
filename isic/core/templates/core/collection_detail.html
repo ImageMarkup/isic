@@ -3,7 +3,18 @@
 {% load humanize %}
 {% block content %}
   <div class="flex justify-between">
-    <h1>{{ collection.name }}</h1>
+    <div class="flex justify-items">
+      <h1>{{ collection.name }}</h1>
+      {% if collection.public %}
+        <p class="px-3 py-2 ml-2 text-md leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+          Public
+        </p>
+      {% else %}
+        <p class="px-3 py-2 ml-2 text-md leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+          Private
+        </p>
+      {% endif %}
+    </div>
 
     <div class="relative inline-block text-left" x-data="{open: false}">
       <div>
