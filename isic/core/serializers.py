@@ -117,4 +117,8 @@ class CollectionSerializer(serializers.ModelSerializer):
             'name',
             'description',
             'public',
+            'official',
+            'doi',
         ]
+
+    doi = serializers.URLField(source='doi_url')
