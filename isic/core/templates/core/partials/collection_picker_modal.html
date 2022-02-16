@@ -1,0 +1,26 @@
+{% load humanize %}
+
+<div class="fixed z-10 inset-0 overflow-y-auto">
+  <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+    <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+  </div>
+
+  <div @click.away="modalOpen = false" class="h-2/5 w-1/2 overflow-hidden  mx-auto p-8 transform transition-all" role="dialog" aria-modal="true" aria-labelledby="modal-headline">
+    <div class="bg-white h-full relative p-8 rounded-lg text-left shadow-xl">
+      <h3 class="mb-2">Add images to a collection</h3>
+      <span>Collection: </span>
+      <select x-model="selectedCollection" class="border max-w-lg px-3 py-2 block focus:ring-primary-500 focus:border-primary-500 w-full shadow-sm max-w-xs text-sm border-gray-400 rounded-md">
+        <option value="">--</option>
+        {% for collection in collections %}
+          <option value="{{ collection.pk }}" {% if collection.locked %}disabled{% endif %}>{{ collection.name }}</option>
+        {% endfor %}
+      </select>
+
+      <div x-text="errorMessage"></div>
+
+      <button :disabled="selectedCollection == ''" @click="addSearchResultsToCollection" type="submit" class="mt-2 relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+        <span>Add search results to collection</span>
+      </button>
+    </div>
+  </div>
+</div>

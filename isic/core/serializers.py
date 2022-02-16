@@ -1,6 +1,8 @@
 import re
+from typing import Optional
 
 from django.contrib.auth.models import User
+from django.db.models.query import QuerySet
 from pyparsing.exceptions import ParseException
 from rest_framework import serializers
 from rest_framework.fields import Field
@@ -8,6 +10,7 @@ from rest_framework.fields import Field
 from isic.core.dsl import parse_query
 from isic.core.models import Image
 from isic.core.models.collection import Collection
+from isic.core.permissions import get_visible_objects
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -58,12 +61,33 @@ class SearchQuerySerializer(serializers.Serializer):
     """A serializer for a search query against images."""
 
     query = serializers.CharField(
-        required=False, help_text='A search query string.', validators=[valid_search_query]
+        required=False,
+        allow_blank=True,
+        help_text='A search query string.',
+        validators=[valid_search_query],
     )
     collections = CollectionsField(
         required=False,
         help_text='A list of collection IDs to filter a query by, separated with a comma.',
     )
+
+    def to_queryset(self, qs: Optional[QuerySet[Image]] = None) -> QuerySet[Image]:
+        qs = qs if qs is not None else Image._default_manager.all()
+
+        if self.validated_data.get('query'):
+            # the serializer has already validated the query will parse
+            qs = qs.from_search_query(self.validated_data['query'])
+
+        if self.validated_data.get('collections', None):
+            qs = qs.filter(
+                collections__in=get_visible_objects(
+                    self.context['user'],
+                    'core.view_collection',
+                    Collection.objects.filter(pk__in=self.validated_data['collections']),
+                )
+            )
+
+        return get_visible_objects(self.context['user'], 'core.view_image', qs)
 
 
 class ImageUrlSerializer(serializers.Serializer):
@@ -93,4 +117,8 @@ class CollectionSerializer(serializers.ModelSerializer):
             'name',
             'description',
             'public',
+            'official',
+            'doi',
         ]
+
+    doi = serializers.URLField(source='doi_url')

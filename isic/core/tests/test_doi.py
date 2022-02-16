@@ -7,15 +7,8 @@ from isic.core.models.image import Image
 
 @pytest.fixture
 def public_collection_with_public_images(image_factory, collection_factory):
-    collection = collection_factory(public=True)
+    collection = collection_factory(public=True, locked=False)
     collection.images.set([image_factory(public=True) for _ in range(5)])
-    return collection
-
-
-@pytest.fixture
-def public_collection_with_private_images(image_factory, collection_factory):
-    collection = collection_factory(public=True)
-    collection.images.set([image_factory(public=False) for _ in range(5)])
     return collection
 
 
@@ -27,16 +20,6 @@ def staff_user_request(staff_user, mocker):
 @pytest.mark.django_db
 def test_doi_form_requires_public_collection(private_collection, staff_user_request):
     form = CreateDoiForm(data={}, collection=private_collection, request=staff_user_request)
-    assert not form.is_valid()
-
-
-@pytest.mark.django_db
-def test_doi_form_requires_all_public_images(
-    public_collection_with_private_images, staff_user_request
-):
-    form = CreateDoiForm(
-        data={}, collection=public_collection_with_private_images, request=staff_user_request
-    )
     assert not form.is_valid()
 
 
@@ -67,6 +50,7 @@ def test_doi_form_creation(public_collection_with_public_images, staff_user_requ
 
     public_collection_with_public_images.refresh_from_db()
     assert public_collection_with_public_images.doi is not None
+    assert public_collection_with_public_images.locked
 
 
 @pytest.fixture

@@ -1,6 +1,8 @@
 from collections import defaultdict
+import json
 
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db.models import Count, Prefetch
@@ -10,6 +12,7 @@ from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
+from isic.core.forms.collection import CollectionForm
 from isic.core.forms.doi import CreateDoiForm
 from isic.core.forms.search import ImageSearchForm
 from isic.core.models import Collection, Image
@@ -84,32 +87,56 @@ def collection_list(request):
     )
 
 
+@login_required
+def collection_create(request):
+    context = {}
+
+    if request.method == 'POST':
+        context['form'] = CollectionForm(request.POST)
+        if context['form'].is_valid():
+            collection = context['form'].save(commit=False)
+            collection.creator = request.user
+            collection.save()
+            return HttpResponseRedirect(reverse('core/collection-detail', args=[collection.pk]))
+    else:
+        context['form'] = CollectionForm()
+
+    return render(
+        request,
+        'core/collection_create.html',
+        context,
+    )
+
+
 @needs_object_permission('core.view_collection', (Collection, 'pk', 'pk'))
 @needs_object_permission('core.create_doi', (Collection, 'pk', 'pk'))
 def collection_create_doi(request, pk):
     collection = get_object_or_404(Collection, pk=pk)
     context = {'collection': collection}
 
-    if request.method == 'POST':
-        context['form'] = CreateDoiForm(request.POST, collection=collection, request=request)
-        if context['form'].is_valid():
-            context['form'].save()
-            # TODO flash message
-            return HttpResponseRedirect(reverse('core/collection-detail', args=[collection.pk]))
+    if not collection.images.exists():
+        context['warnings'] = ['An empty collection cannot be published.']
     else:
-        context['form'] = CreateDoiForm(
-            collection=collection,
-            request=request,
-        )
+        if request.method == 'POST':
+            context['form'] = CreateDoiForm(request.POST, collection=collection, request=request)
+            if context['form'].is_valid():
+                context['form'].save()
+                # TODO flash message
+                return HttpResponseRedirect(reverse('core/collection-detail', args=[collection.pk]))
+        else:
+            context['form'] = CreateDoiForm(
+                collection=collection,
+                request=request,
+            )
 
-    preview = collection.as_datacite_doi(
-        request.user, f'{settings.ISIC_DATACITE_DOI_PREFIX}/123456'
-    )['data']['attributes']
-    preview['creators'] = ', '.join([c['name'] for c in preview['creators']])
-    context['preview'] = preview
+        preview = collection.as_datacite_doi(
+            request.user, f'{settings.ISIC_DATACITE_DOI_PREFIX}/123456'
+        )['data']['attributes']
+        preview['creators'] = ', '.join([c['name'] for c in preview['creators']])
+        context['preview'] = preview
 
-    if not collection.public or collection.images.filter(public=False).exists():
-        context['warnings'] = ['The collection or some of the images in it are private.']
+        if not collection.public or collection.images.filter(public=False).exists():
+            context['warnings'] = ['The collection or some of the images in it are private.']
 
     return render(
         request,
@@ -218,12 +245,13 @@ def image_detail(request, pk):
 
 
 def image_browser(request):
+    collections = get_visible_objects(
+        request.user, 'core.view_collection', Collection.objects.order_by('name')
+    )
     search_form = ImageSearchForm(
         request.GET,
         user=request.user,
-        collections=get_visible_objects(
-            request.user, 'core.view_collection', Collection.objects.order_by('name')
-        ),
+        collections=collections,
     )
     qs: QuerySet[Image] = Image.objects.none()
     if search_form.is_valid():
@@ -235,7 +263,12 @@ def image_browser(request):
         request,
         'core/image_browser.html',
         {
+            'total_images': qs.count(),
             'images': page,
+            # The user can only add images to collections that are theirs and unlocked.
+            'collections': collections.filter(creator=request.user, locked=False),
+            # This gets POSTed to the populate endpoint if called
+            'search_body': json.dumps(request.GET),
             'form': search_form,
         },
     )
