@@ -1,8 +1,7 @@
 from django import forms
-from django.db.models.query import QuerySet
 
 from isic.core.models.image import Image
-from isic.core.permissions import get_visible_objects
+from isic.core.serializers import SearchQuerySerializer
 
 
 class ImageSearchForm(forms.Form):
@@ -20,15 +19,19 @@ class ImageSearchForm(forms.Form):
         )
 
     def clean(self):
-        self.results: QuerySet[Image] = get_visible_objects(
-            self.user,
-            'core.view_image',
-        )
-        self.results = self.results.select_related('accession').from_search_query(
-            self.cleaned_data.get('query', '')
-        )
-
-        if 'collections' in self.cleaned_data and self.cleaned_data['collections'].exists():
-            self.results = self.results.filter(collections__in=self.cleaned_data['collections'])
+        # This is a little bit ugly but it allows us to keep putting the repeated logic of finding
+        # images from a search query in a single place. Unfortunately the input to collections is a
+        # comma delimited string - so build one even though we already have the collection objects.
+        serializer_input = {
+            **self.cleaned_data,
+            **{
+                'collections': ','.join(
+                    map(str, self.cleaned_data['collections'].values_list('pk', flat=True))
+                )
+            },
+        }
+        serializer = SearchQuerySerializer(data=serializer_input, context={'user': self.user})
+        serializer.is_valid(raise_exception=True)
+        self.results = serializer.to_queryset(Image.objects.select_related('accession').all())
 
         return super().clean()
