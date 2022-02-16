@@ -4,6 +4,8 @@ from django.db import models
 from django.db.models.aggregates import Count
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
+from django.db.models.signals import m2m_changed
+from django.dispatch import receiver
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
@@ -12,6 +14,16 @@ from .image import Image
 
 
 class Collection(TimeStampedModel):
+    """
+    Collections are unordered groups of images.
+
+    Collections are locked and then nothing can be modified except for
+    adding a DOI. Once locked, no images can be added either.
+
+    A collection can be public or private. Public collections cannot contain
+    private images.
+    """
+
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
 
     images = models.ManyToManyField(Image, related_name='collections')
@@ -77,6 +89,11 @@ class Collection(TimeStampedModel):
             }
         }
 
+    @property
+    def doi_url(self):
+        if self.doi:
+            return f'https://doi.org/{self.doi}'
+
     def save(self, **kwargs):
         # Check for updates to the collection
         # TODO: allow creating a DOI for locked collections
@@ -84,6 +101,32 @@ class Collection(TimeStampedModel):
             raise ValidationError("Can't modify the collection, it's locked.")
 
         return super().save(**kwargs)
+
+
+@receiver(m2m_changed, sender=Collection.images.through)
+def collection_images_change(sender, instance: Collection, action: str, **kwargs) -> None:
+    if action == 'pre_add':
+        if isinstance(instance, Collection):
+            if instance.locked:
+                raise ValidationError('Attempting to add images to a locked collection.')
+
+            if (
+                instance.public
+                and kwargs['model'].objects.filter(public=False, pk__in=kwargs['pk_set']).exists()
+            ):
+                raise ValidationError('Attempting to add private images to a public collection.')
+        elif isinstance(instance, Image):
+            locked_colls = (
+                kwargs['model'].objects.filter(locked=True, pk__in=kwargs['pk_set']).exists()
+            )
+            if locked_colls:
+                raise ValidationError('Attempting to add locked collections to an image.')
+
+            public_colls = (
+                kwargs['model'].objects.filter(public=True, pk__in=kwargs['pk_set']).exists()
+            )
+            if not instance.public and public_colls:
+                raise ValidationError('Attempting to add public collections to a private image.')
 
 
 class CollectionPermissions:

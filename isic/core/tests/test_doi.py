@@ -13,13 +13,6 @@ def public_collection_with_public_images(image_factory, collection_factory):
 
 
 @pytest.fixture
-def public_collection_with_private_images(image_factory, collection_factory):
-    collection = collection_factory(public=True, locked=False)
-    collection.images.set([image_factory(public=False) for _ in range(5)])
-    return collection
-
-
-@pytest.fixture
 def staff_user_request(staff_user, mocker):
     return mocker.MagicMock(user=staff_user)
 
@@ -27,16 +20,6 @@ def staff_user_request(staff_user, mocker):
 @pytest.mark.django_db
 def test_doi_form_requires_public_collection(private_collection, staff_user_request):
     form = CreateDoiForm(data={}, collection=private_collection, request=staff_user_request)
-    assert not form.is_valid()
-
-
-@pytest.mark.django_db
-def test_doi_form_requires_all_public_images(
-    public_collection_with_private_images, staff_user_request
-):
-    form = CreateDoiForm(
-        data={}, collection=public_collection_with_private_images, request=staff_user_request
-    )
     assert not form.is_valid()
 
 

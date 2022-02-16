@@ -74,7 +74,7 @@ def test_core_api_collection_populate_from_search(
     eager_celery, authenticated_client, collection_factory, image_factory, user
 ):
     collection = collection_factory(locked=False, creator=user)
-    image_factory(accession__metadata={'sex': 'male'})
+    image_factory(accession__metadata={'sex': 'male'}, public=False)
     image_factory(accession__metadata={'sex': 'female'})
     r = authenticated_client.post(
         f'/api/v2/collections/{collection.pk}/populate-from-search/', {'query': 'sex:male'}
