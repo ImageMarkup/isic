@@ -7,7 +7,6 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from isic.core.dsl import parse_query
 from isic.core.models.collection import Collection
 from isic.core.models.image import Image
 from isic.core.permissions import IsicObjectPermissionsFilter, get_visible_objects
@@ -132,26 +131,11 @@ class ImageViewSet(ReadOnlyModelViewSet):
     )
     @action(detail=False, methods=['get'])
     def search(self, request):
-        serializer = SearchQuerySerializer(data=request.query_params)
+        serializer = SearchQuerySerializer(
+            data=request.query_params, context={'user': request.user}
+        )
         serializer.is_valid(raise_exception=True)
-
-        if serializer.validated_data.get('query'):
-            # the serializer has already validated the query will parse
-            qs = self.get_queryset().filter(parse_query(serializer.validated_data['query']))
-        else:
-            qs = self.get_queryset()
-
-        if serializer.validated_data.get('collections', None):
-            qs = qs.filter(
-                collections__in=get_visible_objects(
-                    request.user,
-                    'core.view_collection',
-                    Collection.objects.filter(pk__in=serializer.validated_data['collections']),
-                )
-            )
-
-        qs = get_visible_objects(request.user, 'core.view_image', qs)
-
+        qs = serializer.to_queryset()
         page = self.paginate_queryset(qs)
         serializer = self.get_serializer(page, many=True)
         paginated_response = self.get_paginated_response(serializer.data)
@@ -180,9 +164,17 @@ class CollectionViewSet(ReadOnlyModelViewSet):
         if self.get_object().locked:
             raise ValidationError('Collection is locked for changes.')
 
-        serializer = SearchQuerySerializer(data=request.data)
+        serializer = SearchQuerySerializer(data=request.data, context={'user': request.user})
         serializer.is_valid(raise_exception=True)
-        populate_collection.delay(kwargs['pk'], request.user.pk, serializer.validated_data)
+
+        if self.get_object().public and serializer.to_queryset().filter(public=False).exists():
+            raise ValidationError(
+                'You are attempting to add private images to a public collection.'
+            )
+
+        # Pass data instead of validated_data because the celery task is going to revalidate.
+        # This avoids re encoding collections as a comma delimited string.
+        populate_collection.delay(kwargs['pk'], request.user.pk, serializer.data)
 
         # TODO: this is a weird mixture of concerns between SSR and an API, figure out a better
         # way to handle this.
