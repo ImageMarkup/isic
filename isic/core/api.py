@@ -18,7 +18,7 @@ from isic.core.serializers import (
     UserSerializer,
 )
 from isic.core.stats import get_archive_stats
-from isic.core.tasks import populate_collection
+from isic.core.tasks import populate_collection_task
 
 
 @swagger_auto_schema(
@@ -174,7 +174,7 @@ class CollectionViewSet(ReadOnlyModelViewSet):
 
         # Pass data instead of validated_data because the celery task is going to revalidate.
         # This avoids re encoding collections as a comma delimited string.
-        populate_collection.delay(kwargs['pk'], request.user.pk, serializer.data)
+        populate_collection_task.delay(kwargs['pk'], request.user.pk, serializer.data)
 
         # TODO: this is a weird mixture of concerns between SSR and an API, figure out a better
         # way to handle this.
