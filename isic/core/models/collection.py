@@ -2,6 +2,8 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.aggregates import Count
+from django.db.models.constraints import CheckConstraint
+from django.db.models.expressions import F
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 from django.db.models.signals import m2m_changed
@@ -33,6 +35,13 @@ class Collection(TimeStampedModel):
     description = models.TextField(blank=True)
 
     public = models.BooleanField(default=False)
+
+    shares = models.ManyToManyField(
+        User,
+        through='CollectionShare',
+        through_fields=['collection', 'recipient'],
+        related_name='collection_shares',
+    )
 
     official = models.BooleanField(default=False)
 
@@ -129,6 +138,24 @@ def collection_images_change(sender, instance: Collection, action: str, **kwargs
                 raise ValidationError('Attempting to add public collections to a private image.')
 
 
+class CollectionShare(TimeStampedModel):
+    class Meta(TimeStampedModel.Meta):
+        constraints = [
+            CheckConstraint(
+                name='collectionshare_creator_recipient_diff_check',
+                check=~Q(creator=F('recipient')),
+            )
+        ]
+
+    creator = models.ForeignKey(
+        User, on_delete=models.PROTECT, related_name='collection_shares_given'
+    )
+    collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
+    recipient = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='collection_shares_received'
+    )
+
+
 class CollectionPermissions:
     model = Collection
     perms = ['view_collection', 'create_doi', 'add_images']
@@ -143,7 +170,7 @@ class CollectionPermissions:
         if user_obj.is_staff:
             return qs
         elif user_obj.is_authenticated:
-            return qs.filter(Q(public=True) | Q(creator=user_obj))
+            return qs.filter(Q(public=True) | Q(creator=user_obj) | Q(shares=user_obj))
         else:
             return qs.filter(public=True)
 

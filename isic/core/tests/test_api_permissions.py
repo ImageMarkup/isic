@@ -39,8 +39,8 @@ def test_core_api_image_list_contributed(private_image, authenticated_api_client
 
 
 @pytest.mark.django_db
-def test_core_api_image_list_shares(private_image, authenticated_api_client, user):
-    private_image.shares.add(user, through_defaults={'creator': user})
+def test_core_api_image_list_shares(private_image, authenticated_api_client, user, staff_user):
+    private_image.shares.add(user, through_defaults={'creator': staff_user})
     private_image.save()
 
     r = authenticated_api_client.get('/api/v2/images/')
