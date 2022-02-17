@@ -92,7 +92,7 @@ class IsicMixin(ConfigMixin):
     CELERY_BEAT_SCHEDULE = {
         'sync-elasticsearch-index': {
             'task': 'isic.core.tasks.sync_elasticsearch_index_task',
-            'schedule': timedelta(minutes=10),
+            'schedule': timedelta(minutes=5),
         },
     }
 

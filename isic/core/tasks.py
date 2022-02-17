@@ -18,4 +18,4 @@ def populate_collection_task(collection_pk: int, user_pk: int, search_params: di
 
 @shared_task
 def sync_elasticsearch_index_task():
-    bulk_add_to_search_index(Image.objects.with_elasticsearch_properties().all(), chunk_size=100)
+    bulk_add_to_search_index(Image.objects.with_elasticsearch_properties().all(), chunk_size=10)
