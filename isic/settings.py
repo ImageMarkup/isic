@@ -88,6 +88,8 @@ class IsicMixin(ConfigMixin):
 
     CELERY_WORKER_MAX_MEMORY_PER_CHILD = 256 * 1024
 
+    CELERY_BEAT_SCHEDULE = {}
+
 
 class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
     # Development-only settings
