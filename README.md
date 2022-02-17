@@ -36,14 +36,17 @@ but allows developers to run Python code on their native system.
 8. Run `./manage.py createsuperuser` and follow the prompts to create your own user
 
 ### Run Application
-1.  Ensure `docker-compose -f ./docker-compose.yml up -d` is still active
+1. Ensure `docker-compose -f ./docker-compose.yml up -d` is still active
 2. Run:
    1. `source ./dev/export-env.sh`
    2. `./manage.py runserver`
 3. Run in a separate terminal:
    1. `source ./dev/export-env.sh`
    2. `celery --app isic.celery worker --loglevel INFO --without-heartbeat`
-4. When finished, run `docker-compose stop`
+4. Run in a seperate terminal:
+   1. `source ./dev/export-env.sh`
+   2. `celery --app isic.celery beat --loglevel INFO`
+5. When finished, run `docker-compose stop`
 
 ## Remap Service Ports (optional)
 Attached services may be exposed to the host system via alternative ports. Developers who work
