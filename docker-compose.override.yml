@@ -37,3 +37,22 @@ services:
       - postgres
       - rabbitmq
       - minio
+
+  celerybeat:
+    build:
+      context: .
+      dockerfile: ./dev/django.Dockerfile
+    command: [
+      "celery",
+      "--app", "isic.celery",
+      "beat",
+      "--loglevel", "INFO"
+    ]
+    tty: false
+    env_file: ./dev/.env.docker-compose
+    volumes:
+      - .:/opt/django-project
+    depends_on:
+      - postgres
+      - rabbitmq
+      - minio
