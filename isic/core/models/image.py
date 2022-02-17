@@ -1,6 +1,8 @@
 from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates.general import ArrayAgg
 from django.db import models
+from django.db.models.constraints import CheckConstraint
+from django.db.models.expressions import F
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 from django.urls import reverse
@@ -108,6 +110,13 @@ class Image(CreationSortedTimeStampedModel):
 
 
 class ImageShare(TimeStampedModel):
+    class Meta(TimeStampedModel.Meta):
+        constraints = [
+            CheckConstraint(
+                name='imageshare_creator_recipient_diff_check', check=~Q(creator=F('recipient'))
+            )
+        ]
+
     creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name='shares')
     image = models.ForeignKey(Image, on_delete=models.CASCADE)
     recipient = models.ForeignKey(User, on_delete=models.CASCADE)

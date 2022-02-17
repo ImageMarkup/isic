@@ -66,6 +66,36 @@ def test_core_collection_detail(client, authenticated_client, staff_client, priv
 
 
 @pytest.mark.django_db
+def test_core_collection_list_shares(
+    user, client, authenticated_client, staff_client, private_collection
+):
+    private_collection.shares.add(user, through_defaults={'creator': private_collection.creator})
+    r = client.get(reverse('core/collection-list'))
+    assertQuerysetEqual(r.context['collections'].object_list, [])
+
+    r = authenticated_client.get(reverse('core/collection-list'))
+    assertQuerysetEqual(r.context['collections'].object_list, [private_collection])
+
+    r = staff_client.get(reverse('core/collection-list'))
+    assertQuerysetEqual(r.context['collections'].object_list, [private_collection])
+
+
+@pytest.mark.django_db
+def test_core_collection_detail_shares(
+    user, client, authenticated_client, staff_client, private_collection
+):
+    private_collection.shares.add(user, through_defaults={'creator': private_collection.creator})
+    r = client.get(reverse('core/collection-detail', args=[private_collection.pk]))
+    assert r.status_code == 302
+
+    r = authenticated_client.get(reverse('core/collection-detail', args=[private_collection.pk]))
+    assert r.status_code == 200
+
+    r = staff_client.get(reverse('core/collection-detail', args=[private_collection.pk]))
+    assert r.status_code == 200
+
+
+@pytest.mark.django_db
 def test_core_collection_detail_filters_contributors(
     client, authenticated_client, staff_client, public_collection, image_factory
 ):
