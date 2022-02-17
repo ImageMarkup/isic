@@ -122,8 +122,10 @@ def test_core_api_image_search_contributed(
 
 
 @pytest.mark.django_db
-def test_core_api_image_search_shares(private_searchable_image, authenticated_api_client, user):
-    private_searchable_image.shares.add(user, through_defaults={'creator': user})
+def test_core_api_image_search_shares(
+    private_searchable_image, authenticated_api_client, user, staff_user
+):
+    private_searchable_image.shares.add(user, through_defaults={'creator': staff_user})
     private_searchable_image.save()
     add_to_search_index(private_searchable_image)
     get_elasticsearch_client().indices.refresh(index='_all')
