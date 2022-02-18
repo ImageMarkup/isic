@@ -80,7 +80,7 @@ def test_core_api_collection_populate_from_search(
         f'/api/v2/collections/{collection.pk}/populate-from-search/', {'query': 'sex:male'}
     )
 
-    assert r.status_code == 200, r.data
+    assert r.status_code == 202, r.data
     assert collection.images.count() == 1
     assert collection.images.first().accession.metadata['sex'] == 'male'
 

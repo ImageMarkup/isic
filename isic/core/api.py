@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework import status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -14,11 +15,15 @@ from isic.core.search import build_elasticsearch_query, facets
 from isic.core.serializers import (
     CollectionSerializer,
     ImageSerializer,
+    IsicIdListSerializer,
     SearchQuerySerializer,
     UserSerializer,
 )
 from isic.core.stats import get_archive_stats
-from isic.core.tasks import populate_collection_task
+from isic.core.tasks import (
+    populate_collection_from_isic_ids_task,
+    populate_collection_from_search_task,
+)
 
 
 @swagger_auto_schema(
@@ -135,7 +140,7 @@ class ImageViewSet(ReadOnlyModelViewSet):
             data=request.query_params, context={'user': request.user}
         )
         serializer.is_valid(raise_exception=True)
-        qs = serializer.to_queryset()
+        qs = serializer.to_queryset(self.get_queryset())
         page = self.paginate_queryset(qs)
         serializer = self.get_serializer(page, many=True)
         paginated_response = self.get_paginated_response(serializer.data)
@@ -174,11 +179,36 @@ class CollectionViewSet(ReadOnlyModelViewSet):
 
         # Pass data instead of validated_data because the celery task is going to revalidate.
         # This avoids re encoding collections as a comma delimited string.
-        populate_collection_task.delay(kwargs['pk'], request.user.pk, serializer.data)
+        populate_collection_from_search_task.delay(kwargs['pk'], request.user.pk, serializer.data)
 
         # TODO: this is a weird mixture of concerns between SSR and an API, figure out a better
         # way to handle this.
         messages.add_message(
             request, messages.INFO, 'Adding images to collection, this may take a few minutes.'
         )
-        return Response()
+        return Response(status=status.HTTP_202_ACCEPTED)
+
+    @swagger_auto_schema(auto_schema=None)
+    @action(detail=True, methods=['post'], pagination_class=None, url_path='populate-from-list')
+    def populate_from_list(self, request, *args, **kwargs):
+        if not request.user.has_perm('core.add_images', self.get_object()):
+            raise PermissionDenied
+
+        if self.get_object().locked:
+            raise ValidationError('Collection is locked for changes.')
+
+        serializer = IsicIdListSerializer(data=request.data, context={'user': request.user})
+        serializer.is_valid(raise_exception=True)
+
+        # TODO: what if the user attempts to add more than allowed?
+
+        if self.get_object().public and serializer.to_queryset().filter(public=False).exists():
+            raise ValidationError(
+                'You are attempting to add private images to a public collection.'
+            )
+
+        # Pass data instead of validated_data because the celery task is going to revalidate.
+        # This avoids re encoding collections as a comma delimited string.
+        populate_collection_from_isic_ids_task.delay(kwargs['pk'], request.user.pk, serializer.data)
+
+        return Response(status=status.HTTP_202_ACCEPTED)
