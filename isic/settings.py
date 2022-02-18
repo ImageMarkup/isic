@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import timedelta
 from pathlib import Path
 
 from composed_configuration import (
@@ -89,12 +88,7 @@ class IsicMixin(ConfigMixin):
 
     CELERY_WORKER_MAX_MEMORY_PER_CHILD = 256 * 1024
 
-    CELERY_BEAT_SCHEDULE = {
-        'sync-elasticsearch-index': {
-            'task': 'isic.core.tasks.sync_elasticsearch_index_task',
-            'schedule': timedelta(minutes=5),
-        },
-    }
+    CELERY_BEAT_SCHEDULE = {}
 
 
 class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
