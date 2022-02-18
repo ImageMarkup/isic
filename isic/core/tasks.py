@@ -27,6 +27,6 @@ def populate_collection_from_isic_ids_task(collection_pk: int, user_pk: int, isi
     collection.images.add(*serializer.to_queryset())
 
 
-@shared_task
+@shared_task(soft_time_limit=120, time_limit=180)
 def sync_elasticsearch_index_task():
     bulk_add_to_search_index(Image.objects.with_elasticsearch_properties().all(), chunk_size=10)
