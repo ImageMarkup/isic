@@ -261,7 +261,10 @@ def image_browser(request):
     page = paginator.get_page(request.GET.get('page'))
 
     if request.user.is_authenticated:
-        addable_collections = collections.filter(creator=request.user, locked=False)
+        addable_collections = collections.filter(locked=False)
+
+        if not request.user.is_staff:
+            addable_collections = addable_collections.filter(creator=request.user)
     else:
         addable_collections = []
 
