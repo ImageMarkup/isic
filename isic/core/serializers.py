@@ -7,6 +7,7 @@ from pyparsing.exceptions import ParseException
 from rest_framework import serializers
 from rest_framework.fields import Field
 
+from isic.core.constants import ISIC_ID_REGEX
 from isic.core.dsl import parse_query
 from isic.core.models import Image
 from isic.core.models.collection import Collection
@@ -55,6 +56,15 @@ def valid_search_query(value: str) -> None:
         parse_query(value)
     except ParseException:
         raise serializers.ValidationError('Invalid search query.')
+
+
+class IsicIdListSerializer(serializers.Serializer):
+    isic_ids = serializers.ListField(child=serializers.RegexField(ISIC_ID_REGEX))
+
+    def to_queryset(self, qs: Optional[QuerySet[Image]] = None) -> QuerySet[Image]:
+        qs = qs if qs is not None else Image._default_manager.all()
+        qs = qs.filter(isic_id__in=self.validated_data['isic_ids'])
+        return get_visible_objects(self.context['user'], 'core.view_image', qs)
 
 
 class SearchQuerySerializer(serializers.Serializer):
