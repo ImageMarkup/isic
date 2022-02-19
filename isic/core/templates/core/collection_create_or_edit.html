@@ -9,13 +9,19 @@
     <div class="space-y-8 space-y-5">
       <div>
         <div class="max-w-2xl">
-          <h2 class="leading-6 text-gray-900">
-            Create a Collection
-          </h2>
-          <p class="mt-1 max-w-2xl text-sm text-gray-500">
-            A Collection is a container for a set of images. Collections can be used as the basis for sharing images or creating studies.
-            A Collection can be public or private, and each of the individual images within it can be public or private.
-          </p>
+          {% if not collection %}
+            <h2 class="leading-6 text-gray-900">
+              Create a Collection
+            </h2>
+            <p class="mt-1 max-w-2xl text-sm text-gray-500">
+              A Collection is a container for a set of images. Collections can be used as the basis for sharing images or creating studies.
+              A Collection can be public or private, and each of the individual images within it can be public or private.
+            </p>
+          {% else %}
+            <h2 class="leading-6 text-gray-900">
+              Edit Collection
+            </h2>
+          {% endif %}
         </div>
 
         <div class="mt-6 mt-5 space-y-6 space-y-5">
@@ -48,7 +54,7 @@
               {{ form.public.label }}
             </label>
             <div class="mt-1 mt-0 col-span-2">
-              <input type="checkbox" name="{{ form.public.html_name }}" />
+              <input type="checkbox" name="{{ form.public.html_name }}" {% if form.public.value %}checked{% endif %} />
               <div>
                 <span class="my-3 text-xs">A public collection can't contain private images.</span>
               </div>
@@ -60,7 +66,7 @@
         <div class="border-t border-gray-200 py-5">
           <div class="flex justify-end">
             <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-500 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
-              Create Collection
+              {% if not collection %}Create Collection{% else %}Save{% endif %}
             </button>
           </div>
   </form>
