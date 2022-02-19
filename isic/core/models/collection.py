@@ -109,6 +109,9 @@ class Collection(TimeStampedModel):
         if self.pk and Collection.objects.filter(pk=self.pk, locked=True).exists():
             raise ValidationError("Can't modify the collection, it's locked.")
 
+        if self.pk and self.public and self.images.filter(public=False).exists():
+            raise ValidationError("Can't make collection public, it contains private images.")
+
         return super().save(**kwargs)
 
 
@@ -158,8 +161,21 @@ class CollectionShare(TimeStampedModel):
 
 class CollectionPermissions:
     model = Collection
-    perms = ['view_collection', 'create_doi', 'add_images']
+    perms = ['view_collection', 'edit_collection', 'create_doi', 'add_images']
     filters = {'view_collection': 'view_collection_list', 'create_doi': 'create_doi_list'}
+
+    @staticmethod
+    def _is_creator_list(
+        user_obj: User, qs: QuerySet[Collection] | None = None
+    ) -> QuerySet[Collection]:
+        qs = qs if qs is not None else Collection._default_manager.all()
+
+        if user_obj.is_staff:
+            return qs
+        elif user_obj.is_authenticated:
+            return qs.filter(creator=user_obj)
+        else:
+            return qs.none()
 
     @staticmethod
     def view_collection_list(
@@ -198,17 +214,21 @@ class CollectionPermissions:
     def add_images_list(
         user_obj: User, qs: QuerySet[Collection] | None = None
     ) -> QuerySet[Collection]:
-        qs = qs if qs is not None else Collection._default_manager.all()
-
-        if user_obj.is_staff:
-            return qs
-        elif user_obj.is_authenticated:
-            return qs.filter(creator=user_obj)
-        else:
-            return qs.none()
+        return CollectionPermissions._is_creator_list(user_obj, qs)
 
     @staticmethod
     def add_images(user_obj, obj: Collection):
+        # TODO: use .contains in django 4
+        return CollectionPermissions.add_images_list(user_obj).filter(pk=obj.pk).exists()
+
+    @staticmethod
+    def edit_collection_list(
+        user_obj: User, qs: QuerySet[Collection] | None = None
+    ) -> QuerySet[Collection]:
+        return CollectionPermissions._is_creator_list(user_obj, qs)
+
+    @staticmethod
+    def edit_collection(user_obj, obj: Collection):
         # TODO: use .contains in django 4
         return CollectionPermissions.add_images_list(user_obj).filter(pk=obj.pk).exists()
 
