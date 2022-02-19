@@ -31,13 +31,48 @@ def test_collection_locked_modifications(locked_collection):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_collection_locked_add_images(locked_collection, image):
-    # test both sides
+def test_collection_locked_m2m_api(locked_collection, image):
     with pytest.raises(ValidationError):
         locked_collection.images.add(image)
 
     with pytest.raises(ValidationError):
+        locked_collection.images.remove(image)
+
+    with pytest.raises(ValidationError):
+        locked_collection.images.set([image])
+
+    with pytest.raises(ValidationError):
         image.collections.add(locked_collection)
+
+    with pytest.raises(ValidationError):
+        image.collections.set([locked_collection])
+
+    with pytest.raises(ValidationError):
+        image.collections.remove(locked_collection)
+
+    with pytest.raises(ValidationError):
+        image.collections.set([locked_collection])
+
+
+@pytest.mark.django_db(transaction=True)
+def test_collection_locked_m2m_api_clear_empty(collection, image):
+    collection.images.clear()
+    image.collections.clear()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_collection_locked_m2m_api_clear_nonempty(collection_factory, image_factory):
+    collection = collection_factory(public=True, locked=False)
+    image = image_factory(public=True)
+    collection.images.add(image)
+    collection.locked = True
+    collection.save()
+
+    with pytest.raises(ValidationError):
+        collection.images.clear()
+
+    with pytest.raises(ValidationError):
+        image.collections.clear()
 
 
 @pytest.mark.skip('Unimplemented')
