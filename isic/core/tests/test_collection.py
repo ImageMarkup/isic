@@ -55,3 +55,13 @@ def test_public_collection_add_private_images(public_collection, image_factory):
 
     with pytest.raises(ValidationError):
         image.collections.add(public_collection)
+
+
+@pytest.mark.django_db
+def test_make_private_collection_public(private_collection, image_factory):
+    image = image_factory(public=False)
+    private_collection.images.add(image)
+
+    with pytest.raises(ValidationError):
+        private_collection.public = True
+        private_collection.save(update_fields=['public'])
