@@ -115,30 +115,63 @@ class Collection(TimeStampedModel):
         return super().save(**kwargs)
 
 
-@receiver(m2m_changed, sender=Collection.images.through)
-def collection_images_change(sender, instance: Collection, action: str, **kwargs) -> None:
+@receiver(
+    m2m_changed,
+    sender=Collection.images.through,
+    dispatch_uid='block_private_images_in_public_collections',
+)
+def block_private_images_in_public_collections(
+    sender, instance: Collection, action: str, **kwargs
+) -> None:
     if action == 'pre_add':
         if isinstance(instance, Collection):
-            if instance.locked:
-                raise ValidationError('Attempting to add images to a locked collection.')
-
             if (
                 instance.public
                 and kwargs['model'].objects.filter(public=False, pk__in=kwargs['pk_set']).exists()
             ):
                 raise ValidationError('Attempting to add private images to a public collection.')
         elif isinstance(instance, Image):
-            locked_colls = (
-                kwargs['model'].objects.filter(locked=True, pk__in=kwargs['pk_set']).exists()
-            )
-            if locked_colls:
-                raise ValidationError('Attempting to add locked collections to an image.')
-
             public_colls = (
                 kwargs['model'].objects.filter(public=True, pk__in=kwargs['pk_set']).exists()
             )
             if not instance.public and public_colls:
                 raise ValidationError('Attempting to add public collections to a private image.')
+
+
+@receiver(
+    m2m_changed, sender=Collection.images.through, dispatch_uid='block_locked_collection_mutation'
+)
+def block_locked_collection_mutation(sender, instance: Collection, action: str, **kwargs) -> None:
+    if action == 'pre_clear':
+        if isinstance(instance, Collection):
+            if instance.locked and instance.images.exists():
+                raise ValidationError('Attempting to clear images from a locked collection.')
+        elif isinstance(instance, Image):
+            locked_colls = instance.collections.filter(locked=True).exists()
+            if locked_colls:
+                raise ValidationError('Attempting to remove a locked collection from an image.')
+
+    if action == 'pre_remove':
+        if isinstance(instance, Collection):
+            if instance.locked:
+                raise ValidationError('Attempting to remove images from a locked collection.')
+        elif isinstance(instance, Image):
+            locked_colls = (
+                kwargs['model'].objects.filter(locked=True, pk__in=kwargs['pk_set']).exists()
+            )
+            if locked_colls:
+                raise ValidationError('Attempting to remove a locked collection from an image.')
+
+    if action == 'pre_add':
+        if isinstance(instance, Collection):
+            if instance.locked:
+                raise ValidationError('Attempting to add images to a locked collection.')
+        elif isinstance(instance, Image):
+            locked_colls = (
+                kwargs['model'].objects.filter(locked=True, pk__in=kwargs['pk_set']).exists()
+            )
+            if locked_colls:
+                raise ValidationError('Attempting to add locked collections to an image.')
 
 
 class CollectionShare(TimeStampedModel):
