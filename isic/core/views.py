@@ -103,8 +103,22 @@ def collection_create(request):
 
     return render(
         request,
-        'core/collection_create.html',
+        'core/collection_create_or_edit.html',
         context,
+    )
+
+
+@needs_object_permission('core.edit_collection', (Collection, 'pk', 'pk'))
+def collection_edit(request, pk):
+    collection = get_object_or_404(Collection, pk=pk)
+    form = CollectionForm(request.POST or None, instance=collection)
+
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        return HttpResponseRedirect(reverse('core/collection-detail', args=[collection.pk]))
+
+    return render(
+        request, 'core/collection_create_or_edit.html', {'form': form, 'collection': collection}
     )
 
 
