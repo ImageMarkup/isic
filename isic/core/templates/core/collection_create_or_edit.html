@@ -1,73 +1,91 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-  <form class="space-y-8" method="post">
-    {% csrf_token %}
-
-    {{ form.non_field_errors }}
-
-    <div class="space-y-8 space-y-5">
-      <div>
-        <div class="max-w-2xl">
-          {% if not collection %}
-            <h2 class="leading-6 text-gray-900">
-              Create a Collection
-            </h2>
-            <p class="mt-1 max-w-2xl text-sm text-gray-500">
-              A Collection is a container for a set of images. Collections can be used as the basis for sharing images or creating studies.
-              A Collection can be public or private, and each of the individual images within it can be public or private.
-            </p>
-          {% else %}
-            <h2 class="leading-6 text-gray-900">
-              Edit Collection
-            </h2>
-          {% endif %}
+  {% if collection and collection.locked %}
+    <div class="rounded-md bg-red-50 p-4 mb-4">
+      <div class="flex items-center">
+        <div class="flex-shrink-0">
+          <!-- Heroicon name: solid/information-circle -->
+          <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+          </svg>
         </div>
-
-        <div class="mt-6 mt-5 space-y-6 space-y-5">
-          <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
-            <label for="{{ form.name.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
-              {{ form.name.label }}
-            </label>
-            <div class="mt-1 mt-0 col-span-2">
-              <div class="max-w-lg flex rounded-md shadow-sm">
-                <input type="text" value="{{ form.name.value|default:'' }}" name="{{ form.name.html_name }}" id="{{ form.name.html_name }}" class="flex-1 block w-full focus:ring-primary-500 focus:border-primary-500 min-w-0 rounded-none rounded-r-md text-sm border-gray-300">
-              </div>
-              <p class="mt-2 text-sm text-gray-500" id="email-description">{{ form.name.help_text }}</p>
-              {{ form.name.errors }}
-            </div>
-          </div>
-
-          <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
-            <label for="{{ form.description.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
-              {{ form.description.label }}
-            </label>
-            <div class="mt-1 mt-0 col-span-2">
-              <textarea id="{{ form.description.html_name }}" name="{{ form.description.html_name }}" rows="3" class="border max-w-lg outline-none shadow-sm p-4 block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ form.description.value|default:'' }}</textarea>
-              <p class="mt-2 text-sm text-gray-500">{{ form.description.help_text }}</p>
-              {{ form.description.errors }}
-            </div>
-          </div>
-
-          <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
-            <label for="{{ form.public.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
-              {{ form.public.label }}
-            </label>
-            <div class="mt-1 mt-0 col-span-2">
-              <input type="checkbox" name="{{ form.public.html_name }}" {% if form.public.value %}checked{% endif %} />
-              <div>
-                <span class="my-3 text-xs">A public collection can't contain private images.</span>
-              </div>
-              {{ form.public.errors }}
-            </div>
+        <div class="ml-3">
+          <div class="mt-2 text-sm text-red-700">
+            <p>This collection is locked for editing.</p>
           </div>
         </div>
+      </div>
+    </div>
+  {% else %}
+    <form class="space-y-8" method="post">
+      {% csrf_token %}
 
-        <div class="border-t border-gray-200 py-5">
-          <div class="flex justify-end">
-            <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-500 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
-              {% if not collection %}Create Collection{% else %}Save{% endif %}
-            </button>
+      {{ form.non_field_errors }}
+
+      <div class="space-y-8 space-y-5">
+        <div>
+          <div class="max-w-2xl">
+            {% if not collection %}
+              <h2 class="leading-6 text-gray-900">
+                Create a Collection
+              </h2>
+              <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                A Collection is a container for a set of images. Collections can be used as the basis for sharing images or creating studies.
+                A Collection can be public or private, and each of the individual images within it can be public or private.
+              </p>
+            {% else %}
+              <h2 class="leading-6 text-gray-900">
+                Edit Collection
+              </h2>
+            {% endif %}
           </div>
-  </form>
+
+          <div class="mt-6 mt-5 space-y-6 space-y-5">
+            <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
+              <label for="{{ form.name.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
+                {{ form.name.label }}
+              </label>
+              <div class="mt-1 mt-0 col-span-2">
+                <div class="max-w-lg flex rounded-md shadow-sm">
+                  <input type="text" value="{{ form.name.value|default:'' }}" name="{{ form.name.html_name }}" id="{{ form.name.html_name }}" class="flex-1 block w-full focus:ring-primary-500 focus:border-primary-500 min-w-0 rounded-none rounded-r-md text-sm border-gray-300">
+                </div>
+                <p class="mt-2 text-sm text-gray-500" id="email-description">{{ form.name.help_text }}</p>
+                {{ form.name.errors }}
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
+              <label for="{{ form.description.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
+                {{ form.description.label }}
+              </label>
+              <div class="mt-1 mt-0 col-span-2">
+                <textarea id="{{ form.description.html_name }}" name="{{ form.description.html_name }}" rows="3" class="border max-w-lg outline-none shadow-sm p-4 block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ form.description.value|default:'' }}</textarea>
+                <p class="mt-2 text-sm text-gray-500">{{ form.description.help_text }}</p>
+                {{ form.description.errors }}
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
+              <label for="{{ form.public.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
+                {{ form.public.label }}
+              </label>
+              <div class="mt-1 mt-0 col-span-2">
+                <input type="checkbox" name="{{ form.public.html_name }}" {% if form.public.value %}checked{% endif %} />
+                <div>
+                  <span class="my-3 text-xs">A public collection can't contain private images.</span>
+                </div>
+                {{ form.public.errors }}
+              </div>
+            </div>
+          </div>
+
+          <div class="border-t border-gray-200 py-5">
+            <div class="flex justify-end">
+              <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-500 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
+                {% if not collection %}Create Collection{% else %}Save{% endif %}
+              </button>
+            </div>
+    </form>
+  {% endif %}
 {% endblock %}
