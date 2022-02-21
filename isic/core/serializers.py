@@ -32,7 +32,6 @@ class CollectionsField(Field):
     }
 
     def to_representation(self, obj: list[int]) -> str:
-        obj = super().to_representation(obj)
         return ','.join([str(element) for element in obj])
 
     def to_internal_value(self, data: list | str | None) -> list[int] | None:
@@ -59,7 +58,7 @@ def valid_search_query(value: str) -> None:
 
 
 class IsicIdListSerializer(serializers.Serializer):
-    isic_ids = serializers.ListField(child=serializers.RegexField(ISIC_ID_REGEX))
+    isic_ids = serializers.ListField(child=serializers.RegexField(ISIC_ID_REGEX), max_length=100)
 
     def to_queryset(self, qs: Optional[QuerySet[Image]] = None) -> QuerySet[Image]:
         qs = qs if qs is not None else Image._default_manager.all()
@@ -128,6 +127,7 @@ class CollectionSerializer(serializers.ModelSerializer):
             'description',
             'public',
             'official',
+            'locked',
             'doi',
         ]
 
