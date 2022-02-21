@@ -1,9 +1,12 @@
 from django.contrib import messages
+from django.contrib.auth.models import User
+from django.db import transaction
+from django.http.response import JsonResponse
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import APIException, PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
@@ -20,10 +23,13 @@ from isic.core.serializers import (
     UserSerializer,
 )
 from isic.core.stats import get_archive_stats
-from isic.core.tasks import (
-    populate_collection_from_isic_ids_task,
-    populate_collection_from_search_task,
-)
+from isic.core.tasks import populate_collection_from_search_task
+
+
+class Conflict(APIException):
+    status_code = 409
+    default_detail = 'Request conflicts with current state of the target resource.'
+    default_code = 'conflict'
 
 
 @swagger_auto_schema(
@@ -160,22 +166,22 @@ class CollectionViewSet(ReadOnlyModelViewSet):
     queryset = Collection.objects.all()
     filter_backends = [IsicObjectPermissionsFilter]
 
-    @swagger_auto_schema(auto_schema=None)
-    @action(detail=True, methods=['post'], pagination_class=None, url_path='populate-from-search')
-    def populate_from_search(self, request, *args, **kwargs):
-        if not request.user.has_perm('core.add_images', self.get_object()):
+    def _enforce_write_checks(self, user: User):
+        if not user.has_perm('core.add_images', self.get_object()):
             raise PermissionDenied
 
         if self.get_object().locked:
-            raise ValidationError('Collection is locked for changes.')
+            raise Conflict('Collection is locked for changes.')
 
+    @swagger_auto_schema(auto_schema=None)
+    @action(detail=True, methods=['post'], pagination_class=None, url_path='populate-from-search')
+    def populate_from_search(self, request, *args, **kwargs):
+        self._enforce_write_checks(request.user)
         serializer = SearchQuerySerializer(data=request.data, context={'user': request.user})
         serializer.is_valid(raise_exception=True)
 
         if self.get_object().public and serializer.to_queryset().filter(public=False).exists():
-            raise ValidationError(
-                'You are attempting to add private images to a public collection.'
-            )
+            raise Conflict('You are attempting to add private images to a public collection.')
 
         # Pass data instead of validated_data because the celery task is going to revalidate.
         # This avoids re encoding collections as a comma delimited string.
@@ -188,27 +194,62 @@ class CollectionViewSet(ReadOnlyModelViewSet):
         )
         return Response(status=status.HTTP_202_ACCEPTED)
 
+    # TODO: refactor *-from-list methods
     @swagger_auto_schema(auto_schema=None)
     @action(detail=True, methods=['post'], pagination_class=None, url_path='populate-from-list')
     def populate_from_list(self, request, *args, **kwargs):
-        if not request.user.has_perm('core.add_images', self.get_object()):
-            raise PermissionDenied
-
-        if self.get_object().locked:
-            raise ValidationError('Collection is locked for changes.')
-
-        serializer = IsicIdListSerializer(data=request.data, context={'user': request.user})
+        self._enforce_write_checks(request.user)
+        serializer = IsicIdListSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # TODO: what if the user attempts to add more than allowed?
+        requested_images = Image.objects.filter(isic_id__in=serializer.validated_data['isic_ids'])
+        visible_images = get_visible_objects(request.user, 'core.view_image', requested_images)
+        requested_images = {i.isic_id: i for i in requested_images}
+        visible_images = {i.isic_id: i for i in visible_images}
+        collection = self.get_object()
 
-        if self.get_object().public and serializer.to_queryset().filter(public=False).exists():
-            raise ValidationError(
-                'You are attempting to add private images to a public collection.'
-            )
+        summary = {
+            'no_perms_or_does_not_exist': [],
+            'private_image_public_collection': [],
+            'succeeded': [],
+        }
 
-        # Pass data instead of validated_data because the celery task is going to revalidate.
-        # This avoids re encoding collections as a comma delimited string.
-        populate_collection_from_isic_ids_task.delay(kwargs['pk'], request.user.pk, serializer.data)
+        with transaction.atomic():
+            for isic_id in set(serializer.validated_data['isic_ids']):
+                if isic_id not in requested_images or isic_id not in visible_images:
+                    summary['no_perms_or_does_not_exist'].append(isic_id)
+                elif collection.public and visible_images[isic_id].public is False:
+                    summary['private_image_public_collection'].append(isic_id)
+                else:
+                    collection.images.add(visible_images[isic_id])
+                    summary['succeeded'].append(isic_id)
 
-        return Response(status=status.HTTP_202_ACCEPTED)
+        return JsonResponse(summary)
+
+    @swagger_auto_schema(auto_schema=None)
+    @action(detail=True, methods=['post'], pagination_class=None, url_path='remove-from-list')
+    def remove_from_list(self, request, *args, **kwargs):
+        self._enforce_write_checks(request.user)
+        serializer = IsicIdListSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        requested_images = Image.objects.filter(isic_id__in=serializer.validated_data['isic_ids'])
+        visible_images = get_visible_objects(request.user, 'core.view_image', requested_images)
+        requested_images = {i.isic_id: i for i in requested_images}
+        visible_images = {i.isic_id: i for i in visible_images}
+        collection = self.get_object()
+
+        summary = {
+            'no_perms_or_does_not_exist': [],
+            'succeeded': [],
+        }
+
+        with transaction.atomic():
+            for isic_id in set(serializer.validated_data['isic_ids']):
+                if isic_id not in requested_images or isic_id not in visible_images:
+                    summary['no_perms_or_does_not_exist'].append(isic_id)
+                else:
+                    collection.images.remove(visible_images[isic_id])
+                    summary['succeeded'].append(isic_id)
+
+        return JsonResponse(summary)
