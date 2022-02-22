@@ -1,7 +1,7 @@
 import factory
 import factory.django
 
-from isic.core.tests.factories import ImageFactory
+from isic.core.tests.factories import CollectionFactory, ImageFactory
 from isic.factories import UserFactory
 from isic.studies.models import (
     Annotation,
@@ -50,6 +50,7 @@ class StudyFactory(factory.django.DjangoModelFactory):
 
     name = factory.Faker('text', max_nb_chars=100)
     description = factory.Faker('sentences')
+    collection = factory.SubFactory(CollectionFactory)
 
     public = factory.Faker('boolean')
 
