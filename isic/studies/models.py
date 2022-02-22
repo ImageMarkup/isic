@@ -15,6 +15,7 @@ from django_extensions.db.models import TimeStampedModel
 from s3_file_field.fields import S3FileField
 
 from isic.core.models import Image
+from isic.core.models.collection import Collection
 from isic.core.storage import generate_upload_to
 
 
@@ -124,6 +125,7 @@ class Study(TimeStampedModel):
 
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField()
+    collection = models.ForeignKey(Collection, on_delete=models.PROTECT, related_name='studies')
 
     features = models.ManyToManyField(Feature)
     questions = models.ManyToManyField(Question, through='StudyQuestion')
