@@ -2,8 +2,9 @@ import csv
 
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
+from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models.constraints import CheckConstraint
+from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.expressions import F
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
@@ -20,12 +21,19 @@ from isic.core.storage import generate_upload_to
 class Question(TimeStampedModel):
     class Meta(TimeStampedModel.Meta):
         ordering = ['prompt']
+        constraints = [
+            UniqueConstraint(
+                name='question_official_prompt_unique',
+                fields=['prompt'],
+                condition=Q(official=True),
+            )
+        ]
 
     class QuestionType(models.TextChoices):
         SELECT = 'select', 'Select'
 
     required = models.BooleanField(default=True)
-    prompt = models.CharField(max_length=400, unique=True)
+    prompt = models.CharField(max_length=400)
     type = models.CharField(max_length=6, choices=QuestionType.choices, default=QuestionType.SELECT)
     official = models.BooleanField()
     # TODO: maybe add a default field
@@ -42,13 +50,42 @@ class Question(TimeStampedModel):
             widget=RadioSelect,
         )
 
+    def save(self, **kwargs):
+        from isic.studies.models import Annotation
+
+        if (
+            self.pk
+            and Annotation.objects.filter(study__in=Study.objects.filter(questions=self)).exists()
+        ):
+            raise ValidationError("Can't modify the question, someone has already answered it.")
+
+        return super().save(**kwargs)
+
 
 class QuestionChoice(TimeStampedModel):
+    class Meta(TimeStampedModel.Meta):
+        unique_together = [['question', 'text']]
+
     question = models.ForeignKey(Question, related_name='choices', on_delete=models.CASCADE)
     text = models.CharField(max_length=100)
 
     def __str__(self) -> str:
         return self.text
+
+    def save(self, **kwargs):
+        from isic.studies.models import Annotation
+
+        if (
+            self.pk
+            and Annotation.objects.filter(
+                study__in=Study.objects.filter(question=self.question)
+            ).exists()
+        ):
+            raise ValidationError(
+                "Can't modify the choice, the question has already been answered."
+            )
+
+        return super().save(**kwargs)
 
 
 class Feature(TimeStampedModel):
@@ -65,6 +102,17 @@ class Feature(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.label
+
+    def save(self, **kwargs):
+        from isic.studies.models import Annotation
+
+        if (
+            self.pk
+            and Annotation.objects.filter(study__in=Study.objects.filter(features=self)).exists()
+        ):
+            raise ValidationError("Can't modify the feature, someone has already annotated it.")
+
+        return super().save(**kwargs)
 
 
 class Study(TimeStampedModel):
@@ -243,6 +291,7 @@ class Annotation(TimeStampedModel):
                 name='annotation_start_time_check', check=Q(start_time__lte=F('created'))
             ),
         ]
+        unique_together = [['study', 'task', 'image', 'annotator']]
 
     study = models.ForeignKey(Study, on_delete=models.CASCADE, related_name='annotations')
     image = models.ForeignKey(Image, on_delete=models.PROTECT)
@@ -304,6 +353,9 @@ class Response(TimeStampedModel):
 
 
 class Markup(TimeStampedModel):
+    class Meta:
+        unique_together = [['annotation', 'feature']]
+
     annotation = models.ForeignKey(Annotation, on_delete=models.CASCADE, related_name='markups')
     feature = models.ForeignKey(Feature, on_delete=models.PROTECT, related_name='markups')
     mask = S3FileField(upload_to=generate_upload_to)
