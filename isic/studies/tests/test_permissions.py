@@ -307,10 +307,10 @@ def test_annotation_detail_permissions(client, authenticated_client, staff_clien
 @pytest.fixture
 def study_scenario(study_factory, question_factory, question_choice_factory):
     study = study_factory()
-    question = question_factory(required=True)
+    question = question_factory()
     choice = question_choice_factory(question=question)
     question.choices.add(choice)
-    study.questions.add(question)
+    study.questions.add(question, through_defaults={'required': True})
     return study, question, choice
 
 

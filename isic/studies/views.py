@@ -187,6 +187,7 @@ def study_task_detail(request, pk):
     )
     questions = (
         study_task.study.questions.prefetch_related('choices')
+        .annotate(required=F('studyquestion__required'))  # required for StudyTaskForm
         .order_by('studyquestion__order')
         .all()
     )
@@ -241,6 +242,7 @@ def study_task_detail_preview(request, pk):
 
     questions = (
         study_task.study.questions.prefetch_related('choices')
+        .annotate(required=F('studyquestion__required'))  # required for StudyTaskForm
         .order_by('studyquestion__order')
         .all()
     )
