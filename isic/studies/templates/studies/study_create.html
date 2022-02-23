@@ -1,0 +1,323 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+  {{ existing_questions|json_script:"existing-questions" }}
+
+  <script type="text/javascript">
+    const questions = JSON.parse(document.getElementById('existing-questions').textContent);
+
+    function displayOfficialQuestions() {
+      const total_forms = parseInt(document.getElementById(`id_official-TOTAL_FORMS`).value);
+
+      for (let i=0;i<total_forms;i++) {
+        let el= document.getElementById(`id_official-${i}-question_id`);
+        let question_id = parseInt(el.value);
+        let question = questions.filter(q => q.id === question_id)[0];
+        let existingOfficialQuestionEl = el.parentElement.querySelector('div');
+
+        if (existingOfficialQuestionEl) {
+          existingOfficialQuestionEl.remove();
+        }
+
+        el.parentElement.insertAdjacentHTML('afterbegin', `
+<div>
+<div><strong>Prompt</strong>: ${question.prompt} </div>
+<div><strong>Choices</strong>: ${question.choice_array} </div>
+</div>
+        `);
+      }
+    }
+
+    let FormSetManager = class {
+      constructor(prefix) {
+        this.prefix = prefix;
+      }
+
+      getTotalForms() {
+        const total_forms = document.getElementById(`id_${this.prefix}-TOTAL_FORMS`);
+        return parseInt(total_forms.value);
+      }
+
+      incrementTotalForms() {
+        document.getElementById(`id_${this.prefix}-TOTAL_FORMS`).value = this.getTotalForms() + 1
+      }
+
+      decrementTotalForms() {
+        document.getElementById(`id_${this.prefix}-TOTAL_FORMS`).value = this.getTotalForms() - 1
+      }
+
+      add() {
+        const formsets = document.getElementById(`${this.prefix}-questions`);
+        const target_form = document.getElementById(`${this.prefix}-empty-form`).children[0];
+        formsets.insertAdjacentHTML('beforeend', target_form.outerHTML.replace(/__prefix__/g, this.getTotalForms()));
+        this.incrementTotalForms()
+
+        /*
+           Confusing but django refuses to put the required attribute on formsets because
+           it uses a hidden empty_form that's not intended to be filled out.
+           It's easiest to just use JS to set the required attribute for easier client side
+           validation.
+         */
+        formsets.querySelectorAll('input[type="text"]').forEach((function(x) { x.setAttribute('required', true); }));
+      }
+
+      remove(e) {
+        const formset = e.target.parentElement;
+        formset.remove();
+        this.fixupIds();
+        this.decrementTotalForms();
+      }
+
+      fixupIds() {
+        const nameRegex = new RegExp(`${this.prefix}-\\d+-`);
+        const idRegex = new RegExp(`id_${this.prefix}-\\d+-`);
+        const _this = this;
+
+        document.querySelectorAll(`#${this.prefix}-questions > .${this.prefix}-question-form`).forEach(function(form,i) {
+          form.querySelectorAll('input').forEach(function(input) {
+            input.setAttribute('name', input.attributes.name.value.replace(nameRegex, `${_this.prefix}-${i}-`));
+            input.setAttribute('id', input.attributes.id.value.replace(idRegex, `id_${_this.prefix}-${i}-`));
+          });
+
+          form.querySelectorAll('label').forEach(function(label) {
+            label.setAttribute('for', label.attributes.for.value.replace(idRegex, `id_${_this.prefix}-${i}-`));
+          });
+        });
+      }
+    }
+
+    function customQuestionFormSetComponent() {
+      const manager = new FormSetManager('custom')
+      return {
+        add() {
+          manager.add();
+        },
+        remove(e){
+          manager.remove(e);
+        }
+      }
+    }
+
+    function officialQuestionFormSetComponent() {
+      const manager = new FormSetManager('official')
+      return {
+        search: '',
+        officialQuestionModal: false,
+        existingQuestions: JSON.parse(document.getElementById('existing-questions').textContent),
+        questions: [],
+        get filteredQuestions(){
+          return this.existingQuestions.filter(q => q.prompt.indexOf(this.search) !== -1)
+        },
+        addQuestion(q) {
+          this.questions.push(q);
+          this.add();
+          // Set the official question id
+          document.getElementById('official-questions').lastChild.querySelector('input[type="hidden"]').setAttribute('value', q.id);
+          displayOfficialQuestions();
+        },
+        usingQuestion(q) {
+          return this.questions.filter(x => x.id === q.id).length;
+        },
+
+        add() {
+          manager.add();
+        },
+        remove(e){
+          manager.remove(e);
+        }
+      }
+    }
+  </script>
+
+  <form class="space-y-8" method="post" x-data="officialQuestionFormSetComponent()">
+    {% csrf_token %}
+
+    <div class="hidden">
+      <div id="custom-empty-form">
+        {% comment %}this must mirror the custom_question_formset rendering below{% endcomment %}
+        <div class="custom-question-form">
+          {{ custom_question_formset.empty_form }}
+          <a href="" @click.prevent="remove">Remove</a>
+        </div>
+      </div>
+      <div id="custom-management-form">
+        {{ custom_question_formset.management_form }}
+      </div>
+
+      <div id="official-empty-form">
+        {% comment %}this must mirror the official_question_formset rendering below{% endcomment %}
+        <div class="official-question-form mb-4">
+          {{ official_question_formset.empty_form }}
+          <a href="" @click.prevent="remove">Remove</a>
+        </div>
+      </div>
+      <div id="official-management-form">
+        {{ official_question_formset.management_form }}
+      </div>
+    </div>
+
+    {{ form.non_field_errors }}
+
+    <div class="space-y-8 space-y-5">
+      <div>
+        <div class="max-w-2xl">
+          <h2 class="leading-6 text-gray-900">
+            Create a Study
+          </h2>
+          <p class="mt-1 max-w-2xl text-sm text-gray-500">
+            A Study is a set of images, questions, and annotators used to collect data. Studies are based
+            off of collections of images, and can be public or private. Responses to the study can be downloaded
+            for research.
+          </p>
+        </div>
+
+        <div class="mt-6 mt-5 space-y-6 space-y-5">
+          <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
+            <label for="{{ base_form.name.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
+              {{ base_form.name.label }}
+            </label>
+            <div class="mt-1 mt-0 col-span-2">
+              <div class="max-w-lg flex rounded-md shadow-sm">
+                <input {% if base_form.name.field.required %}required{% endif %} type="text" value="{{ base_form.name.value|default:'' }}" name="{{ base_form.name.html_name }}" id="{{ base_form.name.html_name }}" class="flex-1 block w-full focus:ring-primary-500 focus:border-primary-500 min-w-0 rounded-none rounded-r-md text-sm border-gray-300">
+              </div>
+              <p class="mt-2 text-sm text-gray-500" id="email-description">{{ base_form.name.help_text }}</p>
+              {{ base_form.name.errors }}
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
+            <label for="{{ base_form.description.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
+              {{ base_form.description.label }}
+            </label>
+            <div class="mt-1 mt-0 col-span-2">
+              <textarea {% if base_form.description.field.required %}required{% endif %}  id="{{ base_form.description.html_name }}" name="{{ base_form.description.html_name }}" rows="3" class="border max-w-lg outline-none shadow-sm p-4 block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ base_form.description.value|default:'' }}</textarea>
+              <p class="mt-2 text-sm text-gray-500">{{ base_form.description.help_text }}</p>
+              {{ base_form.description.errors }}
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
+            <label for="{{ base_form.collection.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
+              {{ base_form.collection.label }}
+            </label>
+            <div class="mt-1 mt-0 col-span-2">
+              <select {% if base_form.annotators.field.required %}required{% endif %} id="{{ base_form.collection.html_name }}" name="{{ base_form.collection.html_name }}"  class="border max-w-lg px-3 py-2 block focus:ring-primary-500 focus:border-primary-500 w-full shadow-sm max-w-xs text-sm border-gray-400 rounded-md">
+                <option value="">--</option>
+                {% for collection in visible_collections %}
+                  <option value="{{ collection.pk }}" {% if base_form.collection.value == collection.pk %}selected="selected"{% endif %}>{{ collection.name }}</option>
+                {% endfor %}
+              </select>
+              <p class="mt-2 text-sm text-gray-500">{{ base_form.collection.help_text }}<br/>This collection will be locked once a study is made.</p>
+              {{ base_form.collection.errors }}
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
+            <label for="{{ base_form.annotators.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
+              {{ base_form.annotators.label }}
+            </label>
+            <div class="mt-1 mt-0 col-span-2">
+              <textarea {% if base_form.annotators.field.required %}required{% endif %}  id="{{ base_form.annotators.html_name }}" name="{{ base_form.annotators.html_name }}" rows="3" class="border max-w-lg outline-none shadow-sm p-4 block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ base_form.annotators.value|default:'' }}</textarea>
+              <p class="mt-2 text-sm text-gray-500">A list of email addresses (one per line) of the annotators to collect responses from.</p>
+              {{ base_form.annotators.errors }}
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
+            <label for="{{ base_form.public.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
+              {{ base_form.public.label }}
+            </label>
+            <div class="mt-1 mt-0 col-span-2">
+              <input type="checkbox" name="{{ base_form.public.html_name }}" {% if base_form.public.value %}checked{% endif %} />
+              <p class="mt-2 text-sm text-gray-500">{{ base_form.public.help_text }}</p>
+              {{ base_form.public.errors }}
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 mt-5 space-y-6 space-y-5 border-t border-gray-200">
+          <h3>Official Questions</h3>
+          <div class="flex justify-between">
+
+            <p class="max-w-2xl text-sm text-gray-500">
+              Official questions are questions that have been used in other studies. Using official questions
+              is <strong>strongly encouraged</strong> because it allows the results to be searchable within the Archive.
+              Searchable responses can be compared to other studies and used for meta analyses.
+            </p>
+
+            <button @click.prevent="officialQuestionModal = true" type="button" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-500 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
+              Add Official Question
+            </button>
+          </div>
+
+          <div class="mt-6 mt-5 space-y-6 space-y-5">
+            <div class="grid grid-cols-3 gap-4 items-start pt-5">
+              <div id="official-questions">
+
+                {% for form in official_question_formset %}
+                  {% comment %}this must mirror the official-empty-form element{% endcomment %}
+                  <div class="official-question-form mb-4">
+                    {{ form.non_field_errors }}
+                    {{ form.as_p }}
+                    <a href="" @click.prevent="remove">Remove</a>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <template x-if="true">
+            <div x-show="officialQuestionModal">
+              {% include 'studies/partials/question_picker_modal.html' %}
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <div class="mt-6 mt-5 space-y-6 space-y-5 border-t border-gray-200" x-data="customQuestionFormSetComponent()">
+        <h3>Custom Questions</h3>
+        <div class="flex justify-between">
+
+          <p class="max-w-2xl text-sm text-gray-500">
+            Custom questions are questions that are only used in your Study. Using custom questions
+            is <strong>discouraged</strong> because it the results can't be searched for within the Archive.
+            Further, custom questions can't be compared to other studies.
+          </p>
+
+          <button @click="add" type="button" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-500 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
+            Add Custom Question
+          </button>
+        </div>
+
+        <div id="custom-questions">
+          {% for form in custom_question_formset %}
+            {% comment %}this must mirror the custom-empty-form element{% endcomment %}
+            <div class="custom-question-form">
+              {{ form.non_field_errors  }}
+              {{ form.as_p  }}
+              <a href="" @click.prevent="remove">Remove</a>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="border-t border-gray-200 py-5">
+        <div class="flex justify-end">
+          <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-500 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
+            Create Study
+          </button>
+        </div>
+  </form>
+
+  <script type="text/javascript">
+    document.querySelectorAll(`#custom-questions input[type="text"]`).forEach((function(x) {
+      x.setAttribute('required', true);
+    }));
+
+    document.querySelectorAll(`#official-questions input[type="text"]`).forEach((function(x) {
+      x.setAttribute('required', true);
+    }));
+
+    displayOfficialQuestions();
+  </script>
+{% endblock %}
