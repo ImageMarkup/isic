@@ -123,9 +123,14 @@ class Study(TimeStampedModel):
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
     owners = models.ManyToManyField(User, related_name='owned_studies')
 
-    name = models.CharField(max_length=100, unique=True)
-    description = models.TextField()
-    collection = models.ForeignKey(Collection, on_delete=models.PROTECT, related_name='studies')
+    name = models.CharField(max_length=100, unique=True, help_text='The name for your Study.')
+    description = models.TextField(help_text='A description of the methodology behind your Study.')
+    collection = models.ForeignKey(
+        Collection,
+        on_delete=models.PROTECT,
+        related_name='studies',
+        help_text='The Collection of images to use in your Study.',
+    )
 
     features = models.ManyToManyField(Feature)
     questions = models.ManyToManyField(Question, through='StudyQuestion')
@@ -135,7 +140,13 @@ class Study(TimeStampedModel):
     # if a study is private, only the owners can see the responses of
     # a study.
     # TODO: implement public checking
-    public = models.BooleanField(default=False)
+    public = models.BooleanField(
+        default=False,
+        help_text=(
+            'Whether or not your Study will be public. A study can only be public if '
+            'the images it uses are also public.'
+        ),
+    )
 
     def __str__(self) -> str:
         return self.name
