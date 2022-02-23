@@ -5,9 +5,11 @@
 {% load chunks %}
 
 {% block content %}
-  <div class="mb-4">
+  <div class="mb-5 flex justify-between">
     <h2>Studies</h2>
-    {% include 'studies/partials/pagination.html' with page_obj=studies %}
+    <div class="flex justify-between">
+      {% include 'studies/partials/study_list_actions.html' %}
+    </div>
   </div>
 
   <div class="bg-white shadow overflow-hidden sm:rounded-md">
@@ -69,4 +71,6 @@
       {% endfor %}
     </ul>
   </div>
+
+  {% include 'studies/partials/pagination.html' with page_obj=studies %}
 {% endblock %}
