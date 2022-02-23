@@ -123,6 +123,8 @@ class Study(TimeStampedModel):
 
     name = models.CharField(max_length=100, unique=True, help_text='The name for your Study.')
     description = models.TextField(help_text='A description of the methodology behind your Study.')
+
+    # TODO: refactor code to get images from here instead of inspecting study tasks
     collection = models.ForeignKey(
         Collection,
         on_delete=models.PROTECT,
@@ -222,7 +224,12 @@ class StudyPermissions:
         elif user_obj.is_authenticated:
             # Owner of the study, it's public, or the user has been assigned a task from
             # the study.
-            return qs.filter(Q(owners=user_obj) | Q(public=True) | Q(tasks__annotator=user_obj))
+            return qs.filter(
+                Q(creator=user_obj)
+                | Q(owners=user_obj)
+                | Q(public=True)
+                | Q(tasks__annotator=user_obj)
+            )
         else:
             return qs.filter(public=True)
 
