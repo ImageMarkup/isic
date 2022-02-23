@@ -33,7 +33,6 @@ class Question(TimeStampedModel):
     class QuestionType(models.TextChoices):
         SELECT = 'select', 'Select'
 
-    required = models.BooleanField(default=True)
     prompt = models.CharField(max_length=400)
     type = models.CharField(max_length=6, choices=QuestionType.choices, default=QuestionType.SELECT)
     official = models.BooleanField()
@@ -42,10 +41,9 @@ class Question(TimeStampedModel):
     def __str__(self) -> str:
         return self.prompt
 
-    @property
-    def to_form_field(self):
+    def to_form_field(self, required: bool):
         return ChoiceField(
-            required=self.required,
+            required=required,
             choices=[(choice.pk, choice.text) for choice in self.choices.all()],
             label=self.prompt,
             widget=RadioSelect,
@@ -188,6 +186,7 @@ class StudyQuestion(models.Model):
     study = models.ForeignKey(Study, on_delete=models.CASCADE)
     question = models.ForeignKey(Question, on_delete=models.PROTECT)
     order = models.PositiveSmallIntegerField(default=0)
+    required = models.BooleanField()
 
 
 class StudyPermissions:
