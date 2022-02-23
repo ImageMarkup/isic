@@ -2,6 +2,7 @@ from django.urls import path
 
 from isic.studies.views import (
     annotation_detail,
+    study_create,
     study_detail,
     study_list,
     study_responses_csv,
@@ -12,6 +13,7 @@ from isic.studies.views import (
 
 urlpatterns = [
     path('studies/', study_list, name='study-list'),
+    path('studies/create/', study_create, name='study-create'),
     path('studies/<int:pk>/', study_detail, name='study-detail'),
     path('studies/tasks/<int:pk>/', study_task_detail, name='study-task-detail'),
     path(

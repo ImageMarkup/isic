@@ -2,8 +2,9 @@ import csv
 
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
+from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models.constraints import CheckConstraint
+from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.expressions import F
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
@@ -14,18 +15,25 @@ from django_extensions.db.models import TimeStampedModel
 from s3_file_field.fields import S3FileField
 
 from isic.core.models import Image
+from isic.core.models.collection import Collection
 from isic.core.storage import generate_upload_to
 
 
 class Question(TimeStampedModel):
     class Meta(TimeStampedModel.Meta):
         ordering = ['prompt']
+        constraints = [
+            UniqueConstraint(
+                name='question_official_prompt_unique',
+                fields=['prompt'],
+                condition=Q(official=True),
+            )
+        ]
 
     class QuestionType(models.TextChoices):
         SELECT = 'select', 'Select'
 
-    required = models.BooleanField(default=True)
-    prompt = models.CharField(max_length=400, unique=True)
+    prompt = models.CharField(max_length=400)
     type = models.CharField(max_length=6, choices=QuestionType.choices, default=QuestionType.SELECT)
     official = models.BooleanField()
     # TODO: maybe add a default field
@@ -33,22 +41,50 @@ class Question(TimeStampedModel):
     def __str__(self) -> str:
         return self.prompt
 
-    @property
-    def to_form_field(self):
+    def to_form_field(self, required: bool):
         return ChoiceField(
-            required=self.required,
+            required=required,
             choices=[(choice.pk, choice.text) for choice in self.choices.all()],
             label=self.prompt,
             widget=RadioSelect,
         )
 
+    def save(self, **kwargs):
+        from isic.studies.models import Annotation
+
+        if (
+            self.pk
+            and Annotation.objects.filter(study__in=Study.objects.filter(questions=self)).exists()
+        ):
+            raise ValidationError("Can't modify the question, someone has already answered it.")
+
+        return super().save(**kwargs)
+
 
 class QuestionChoice(TimeStampedModel):
+    class Meta(TimeStampedModel.Meta):
+        unique_together = [['question', 'text']]
+
     question = models.ForeignKey(Question, related_name='choices', on_delete=models.CASCADE)
     text = models.CharField(max_length=100)
 
     def __str__(self) -> str:
         return self.text
+
+    def save(self, **kwargs):
+        from isic.studies.models import Annotation
+
+        if (
+            self.pk
+            and Annotation.objects.filter(
+                study__in=Study.objects.filter(question=self.question)
+            ).exists()
+        ):
+            raise ValidationError(
+                "Can't modify the choice, the question has already been answered."
+            )
+
+        return super().save(**kwargs)
 
 
 class Feature(TimeStampedModel):
@@ -66,6 +102,17 @@ class Feature(TimeStampedModel):
     def __str__(self) -> str:
         return self.label
 
+    def save(self, **kwargs):
+        from isic.studies.models import Annotation
+
+        if (
+            self.pk
+            and Annotation.objects.filter(study__in=Study.objects.filter(features=self)).exists()
+        ):
+            raise ValidationError("Can't modify the feature, someone has already annotated it.")
+
+        return super().save(**kwargs)
+
 
 class Study(TimeStampedModel):
     class Meta(TimeStampedModel.Meta):
@@ -74,8 +121,16 @@ class Study(TimeStampedModel):
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
     owners = models.ManyToManyField(User, related_name='owned_studies')
 
-    name = models.CharField(max_length=100, unique=True)
-    description = models.TextField()
+    name = models.CharField(max_length=100, unique=True, help_text='The name for your Study.')
+    description = models.TextField(help_text='A description of the methodology behind your Study.')
+
+    # TODO: refactor code to get images from here instead of inspecting study tasks
+    collection = models.ForeignKey(
+        Collection,
+        on_delete=models.PROTECT,
+        related_name='studies',
+        help_text='The Collection of images to use in your Study.',
+    )
 
     features = models.ManyToManyField(Feature)
     questions = models.ManyToManyField(Question, through='StudyQuestion')
@@ -85,7 +140,13 @@ class Study(TimeStampedModel):
     # if a study is private, only the owners can see the responses of
     # a study.
     # TODO: implement public checking
-    public = models.BooleanField(default=False)
+    public = models.BooleanField(
+        default=False,
+        help_text=(
+            'Whether or not your Study will be public. A study can only be public if '
+            'the images it uses are also public.'
+        ),
+    )
 
     def __str__(self) -> str:
         return self.name
@@ -127,6 +188,7 @@ class StudyQuestion(models.Model):
     study = models.ForeignKey(Study, on_delete=models.CASCADE)
     question = models.ForeignKey(Question, on_delete=models.PROTECT)
     order = models.PositiveSmallIntegerField(default=0)
+    required = models.BooleanField()
 
 
 class StudyPermissions:
@@ -162,7 +224,12 @@ class StudyPermissions:
         elif user_obj.is_authenticated:
             # Owner of the study, it's public, or the user has been assigned a task from
             # the study.
-            return qs.filter(Q(owners=user_obj) | Q(public=True) | Q(tasks__annotator=user_obj))
+            return qs.filter(
+                Q(creator=user_obj)
+                | Q(owners=user_obj)
+                | Q(public=True)
+                | Q(tasks__annotator=user_obj)
+            )
         else:
             return qs.filter(public=True)
 
@@ -243,6 +310,7 @@ class Annotation(TimeStampedModel):
                 name='annotation_start_time_check', check=Q(start_time__lte=F('created'))
             ),
         ]
+        unique_together = [['study', 'task', 'image', 'annotator']]
 
     study = models.ForeignKey(Study, on_delete=models.CASCADE, related_name='annotations')
     image = models.ForeignKey(Image, on_delete=models.PROTECT)
@@ -304,6 +372,9 @@ class Response(TimeStampedModel):
 
 
 class Markup(TimeStampedModel):
+    class Meta:
+        unique_together = [['annotation', 'feature']]
+
     annotation = models.ForeignKey(Annotation, on_delete=models.CASCADE, related_name='markups')
     feature = models.ForeignKey(Feature, on_delete=models.PROTECT, related_name='markups')
     mask = S3FileField(upload_to=generate_upload_to)

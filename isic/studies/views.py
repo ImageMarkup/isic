@@ -1,12 +1,16 @@
 from datetime import datetime
 
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
+from django.contrib.postgres.aggregates.general import ArrayAgg
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count
+from django.db.models.expressions import F
 from django.db.models.query import Prefetch
 from django.db.models.query_utils import Q
+from django.forms.formsets import formset_factory
 from django.http.response import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
@@ -16,8 +20,14 @@ from django.utils import timezone
 from isic.core.models.image import Image
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.core.templatetags.display import user_nicename
-from isic.studies.forms import StudyTaskForm
-from isic.studies.models import Annotation, Markup, Question, Study, StudyTask
+from isic.studies.forms import (
+    BaseStudyForm,
+    CustomQuestionForm,
+    OfficialQuestionForm,
+    StudyTaskForm,
+)
+from isic.studies.models import Annotation, Markup, Question, QuestionChoice, Study, StudyTask
+from isic.studies.tasks import populate_study_tasks_task
 
 
 def study_list(request):
@@ -65,6 +75,64 @@ def study_list(request):
             'num_pending_tasks': num_pending_tasks,
             'num_completed_tasks': num_completed_tasks,
             'num_participants': num_participants,
+        },
+    )
+
+
+@login_required
+@transaction.atomic()
+def study_create(request):
+    OfficialQuestionFormSet = formset_factory(OfficialQuestionForm, extra=0)  # noqa: N806
+    CustomQuestionFormSet = formset_factory(CustomQuestionForm, extra=0)  # noqa: N806
+
+    visible_collections = get_visible_objects(request.user, 'core.view_collection').order_by('name')
+
+    base_form = BaseStudyForm(
+        request.POST or None, user=request.user, collections=visible_collections
+    )
+    custom_question_formset = CustomQuestionFormSet(request.POST or None, prefix='custom')
+    official_question_formset = OfficialQuestionFormSet(request.POST or None, prefix='official')
+
+    if request.method == 'POST':
+        if (
+            base_form.is_valid()
+            and custom_question_formset.is_valid()
+            and official_question_formset.is_valid()
+        ):
+            base_form.instance.creator = request.user
+            study = base_form.save()
+
+            for question in official_question_formset.cleaned_data:
+                study.questions.add(
+                    Question.objects.get(pk=question['question_id']),
+                    through_defaults={'required': question['required']},
+                )
+
+            for custom_question in custom_question_formset.cleaned_data:
+                q = Question.objects.create(prompt=custom_question['prompt'], official=False)
+                for choice in custom_question['choices']:
+                    QuestionChoice.objects.create(question=q, text=choice)
+                study.questions.add(q, through_defaults={'required': custom_question['required']})
+
+            populate_study_tasks_task.delay(study.pk, base_form.cleaned_data['annotators'])
+
+            return HttpResponseRedirect(reverse('study-detail', args=[study.pk]))
+
+    questions = list(
+        Question.objects.filter(official=True)
+        .annotate(choice_array=ArrayAgg('choices__text'))
+        .values('id', 'prompt', 'choice_array')
+    )
+
+    return render(
+        request,
+        'studies/study_create.html',
+        {
+            'existing_questions': questions,
+            'visible_collections': visible_collections,
+            'base_form': base_form,
+            'official_question_formset': official_question_formset,
+            'custom_question_formset': custom_question_formset,
         },
     )
 
@@ -187,6 +255,7 @@ def study_task_detail(request, pk):
     )
     questions = (
         study_task.study.questions.prefetch_related('choices')
+        .annotate(required=F('studyquestion__required'))  # required for StudyTaskForm
         .order_by('studyquestion__order')
         .all()
     )
@@ -241,6 +310,7 @@ def study_task_detail_preview(request, pk):
 
     questions = (
         study_task.study.questions.prefetch_related('choices')
+        .annotate(required=F('studyquestion__required'))  # required for StudyTaskForm
         .order_by('studyquestion__order')
         .all()
     )
