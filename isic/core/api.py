@@ -58,7 +58,7 @@ def user_me(request):
 class ImageViewSet(ReadOnlyModelViewSet):
     serializer_class = ImageSerializer
     queryset = (
-        Image.objects.select_related('accession')
+        Image.objects.select_related('accession__cohort')
         .defer('accession__unstructured_metadata')
         .distinct()
     )

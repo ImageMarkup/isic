@@ -110,10 +110,16 @@ class ImageSerializer(serializers.ModelSerializer):
         fields = [
             'isic_id',
             'public',
+            'copyright_license',
+            'attribution',
             'metadata',
             'urls',
         ]
 
+    copyright_license = serializers.CharField(
+        source='accession.cohort.copyright_license', read_only=True
+    )
+    attribution = serializers.CharField(source='accession.cohort.attribution', read_only=True)
     metadata = serializers.DictField(source='accession.redacted_metadata', read_only=True)
     urls = ImageUrlSerializer(source='*', read_only=True)
 
