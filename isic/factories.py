@@ -1,3 +1,4 @@
+from allauth.account.models import EmailAddress
 from bson import ObjectId
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
@@ -54,3 +55,8 @@ class UserFactory(factory.django.DjangoModelFactory):
 
     class Params:
         raw_password = factory.Faker('password')
+
+    @factory.post_generation
+    def email_address(self, create, extracted, **kwargs):
+        if create:
+            EmailAddress.objects.create(user=self, email=self.email, verified=True, primary=True)

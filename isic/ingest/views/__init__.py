@@ -68,8 +68,9 @@ def upload_single_accession(request, cohort_pk):
 @needs_object_permission('ingest.view_cohort', (Cohort, 'pk', 'cohort_pk'))
 def upload_zip(request, cohort_pk):
     cohort = get_object_or_404(Cohort, pk=cohort_pk)
+
     if request.method == 'POST':
-        form = ZipForm(request.POST)
+        form = ZipForm(request.POST, request.FILES)
         if form.is_valid():
             form.instance.creator = request.user
             form.instance.blob_size = form.instance.blob.size
