@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
@@ -114,6 +115,9 @@ def study_create(request):
                     QuestionChoice.objects.create(question=q, text=choice)
                 study.questions.add(q, through_defaults={'required': custom_question['required']})
 
+            messages.add_message(
+                request, messages.INFO, 'Creating study, this may take a few minutes.'
+            )
             populate_study_tasks_task.delay(study.pk, base_form.cleaned_data['annotators'])
 
             return HttpResponseRedirect(reverse('study-detail', args=[study.pk]))
