@@ -16,7 +16,7 @@ class AccessionSoftAcceptCheckSerializer(serializers.Serializer):
 class AccessionCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Accession
-        fields = ['cohort', 'original_blob']
+        fields = ['id', 'cohort', 'original_blob']
 
     def validate(self, data: dict) -> dict:
         data = super().validate(data)
