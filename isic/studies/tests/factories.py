@@ -37,7 +37,7 @@ class FeatureFactory(factory.django.DjangoModelFactory):
         model = Feature
 
     required = factory.Faker('boolean')
-    name = factory.Faker('words')
+    name = factory.Faker('sentence')
     official = factory.Faker('boolean')
 
 

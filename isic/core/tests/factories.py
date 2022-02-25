@@ -19,7 +19,7 @@ class CollectionFactory(factory.django.DjangoModelFactory):
         model = Collection
 
     creator = factory.SubFactory(UserFactory)
-    name = factory.Faker('words')
+    name = factory.Faker('sentence')
     description = factory.Faker('paragraph')
     public = factory.Faker('boolean')
     official = factory.Faker('boolean')
