@@ -67,6 +67,10 @@ class IsicMixin(ConfigMixin):
             }
         )
 
+        configuration.TEMPLATES[0]['OPTIONS']['context_processors'].append(
+            'isic.core.context_processors.noindex'
+        )
+
     AUTHENTICATION_BACKENDS = [
         'allauth.account.auth_backends.AuthenticationBackend',
         'isic.core.permissions.IsicObjectPermissionsBackend',
@@ -74,6 +78,7 @@ class IsicMixin(ConfigMixin):
 
     ACCOUNT_SIGNUP_FORM_CLASS = 'isic.login.forms.RealNameSignupForm'
 
+    ISIC_NOINDEX = values.BooleanValue(False)
     ISIC_DISCOURSE_SSO_SECRET = values.Value(None)
     ISIC_DISCOURSE_SSO_FAIL_URL = 'https://forum.isic-archive.com/'
     ISIC_MONGO_URI = values.SecretValue()
