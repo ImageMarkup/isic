@@ -119,6 +119,7 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
     CELERY_TASK_ALWAYS_EAGER = values.BooleanValue(False)
     CELERY_TASK_EAGER_PROPAGATES = values.BooleanValue(False)
     ISIC_DATACITE_DOI_PREFIX = '10.80222'
+    ISIC_GOOGLE_API_JSON_KEY = values.Value(None)
 
 
 class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
@@ -129,6 +130,7 @@ class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
     ISIC_DATACITE_PASSWORD = None
     CELERY_TASK_ALWAYS_EAGER = values.BooleanValue(False)
     CELERY_TASK_EAGER_PROPAGATES = values.BooleanValue(False)
+    ISIC_GOOGLE_API_JSON_KEY = values.Value(None)
 
 
 class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration):
