@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import timedelta
 from pathlib import Path
 
 from composed_configuration import (
@@ -28,6 +29,7 @@ class IsicMixin(ConfigMixin):
             'isic.core.apps.CoreConfig',
             'isic.login.apps.LoginConfig',
             'isic.ingest.apps.IngestConfig',
+            'isic.stats.apps.StatsConfig',
             'isic.studies.apps.StudiesConfig',
             'isic.discourse_sso.apps.DiscourseSSOConfig',
         ] + configuration.INSTALLED_APPS
@@ -90,10 +92,16 @@ class IsicMixin(ConfigMixin):
     ISIC_DATACITE_API_URL = values.Value('https://api.test.datacite.org')
     ISIC_DATACITE_USERNAME = values.Value(None)
     ISIC_DATACITE_PASSWORD = values.SecretValue(None, environ_required=False)
+    ISIC_GOOGLE_API_JSON_KEY = values.SecretValue(None)
 
     CELERY_WORKER_MAX_MEMORY_PER_CHILD = 256 * 1024
 
-    CELERY_BEAT_SCHEDULE = {}
+    CELERY_BEAT_SCHEDULE = {
+        'collect-google-analytics-stats': {
+            'task': 'isic.stats.tasks.collect_google_analytics_metrics_task',
+            'schedule': timedelta(days=1),
+        },
+    }
 
 
 class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
