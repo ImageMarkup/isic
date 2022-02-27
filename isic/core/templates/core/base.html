@@ -54,7 +54,7 @@
               <a href="{% url 'study-list' %}" class="text-center {% if request.resolver_match.url_name == 'study-list' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                 Studies
               </a>
-              <a href="{% url 'core/stats' %}" class="text-center {% if request.resolver_match.url_name == 'core/stats' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+              <a href="{% url 'stats/stats' %}" class="text-center {% if request.resolver_match.url_name == 'core/stats' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                 Stats
               </a>
               {% if request.user.is_staff %}

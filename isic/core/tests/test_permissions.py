@@ -5,18 +5,6 @@ from pytest_lazyfixture import lazy_fixture
 
 
 @pytest.mark.django_db
-def test_core_stats(client):
-    r = client.get(reverse('core/stats'))
-    assert r.status_code == 200
-
-
-@pytest.mark.django_db
-def test_core_api_stats(client):
-    r = client.get(reverse('core/api/stats'))
-    assert r.status_code == 200
-
-
-@pytest.mark.django_db
 def test_core_staff_list(client, authenticated_client, staff_client):
     r = client.get(reverse('core/staff-list'))
     assert r.status_code == 302

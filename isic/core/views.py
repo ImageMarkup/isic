@@ -17,7 +17,6 @@ from isic.core.forms.doi import CreateDoiForm
 from isic.core.forms.search import ImageSearchForm
 from isic.core.models import Collection, Image
 from isic.core.permissions import get_visible_objects, needs_object_permission
-from isic.core.stats import get_archive_stats
 from isic.ingest.models import CheckLog, Contributor
 
 
@@ -26,40 +25,6 @@ def key_by(sequence, f):
     for item in sequence:
         r[f(item)].append(item)
     return dict(r)
-
-
-def stats(request):
-    ctx = {}
-    archive_stats = get_archive_stats()
-
-    ctx['stats'] = [
-        [
-            ('Users', archive_stats['total_users_count']),
-            ('Uploading Users', archive_stats['uploaders_count']),
-            ('Annotating Users', archive_stats['annotating_users_count']),
-        ],
-        [
-            ('Contributors', archive_stats['contributors_count']),
-            ('', ''),
-            ('Collections', archive_stats['collections_count']),
-        ],
-        [
-            ('Images', archive_stats['images_count']),
-            ('Public Images', archive_stats['public_images_count']),
-            ('Annotated Images', archive_stats['annotated_images_count']),
-        ],
-        [
-            ('Studies', archive_stats['studies_count']),
-            ('Public Studies', archive_stats['public_studies_count']),
-            ('', ''),
-        ],
-        [
-            ('Annotations', archive_stats['annotations_count']),
-            ('Markups', archive_stats['markups_count']),
-            ('Responses', archive_stats['responses_count']),
-        ],
-    ]
-    return render(request, 'core/stats.html', ctx)
 
 
 @needs_object_permission('auth.view_staff')
