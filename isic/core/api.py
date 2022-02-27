@@ -7,7 +7,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import APIException, PermissionDenied
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
@@ -22,7 +22,6 @@ from isic.core.serializers import (
     SearchQuerySerializer,
     UserSerializer,
 )
-from isic.core.stats import get_archive_stats
 from isic.core.tasks import populate_collection_from_search_task
 
 
@@ -30,15 +29,6 @@ class Conflict(APIException):
     status_code = 409
     default_detail = 'Request conflicts with current state of the target resource.'
     default_code = 'conflict'
-
-
-@swagger_auto_schema(
-    methods=['GET'], operation_summary='Retrieve statistics about the ISIC Archive'
-)
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def stats(request):
-    return Response(get_archive_stats())
 
 
 @swagger_auto_schema(methods=['GET'], operation_summary='Retrieve the currently logged in user.')
