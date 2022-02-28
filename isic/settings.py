@@ -101,7 +101,12 @@ class IsicMixin(ConfigMixin):
     CELERY_BEAT_SCHEDULE = {
         'collect-google-analytics-stats': {
             'task': 'isic.stats.tasks.collect_google_analytics_metrics_task',
-            'schedule': timedelta(days=1),
+            'schedule': timedelta(hours=6),
+        },
+        'sync-elasticsearch-index': {
+            'task': 'isic.core.tasks.sync_elasticsearch_index_task',
+            # TODO: revisit interval, currently takes ~22s to run
+            'schedule': timedelta(minutes=5),
         },
     }
 
