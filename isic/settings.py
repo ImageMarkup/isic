@@ -91,8 +91,10 @@ class IsicMixin(ConfigMixin):
     ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = ISIC_GUI_URL
     ISIC_DATACITE_API_URL = values.Value('https://api.test.datacite.org')
     ISIC_DATACITE_USERNAME = values.Value(None)
-    ISIC_DATACITE_PASSWORD = values.SecretValue(None, environ_required=False)
-    ISIC_GOOGLE_API_JSON_KEY = values.SecretValue(None)
+    ISIC_DATACITE_PASSWORD = values.SecretValue(None)
+    # This is technically a secret, but it's unset in sandbox so we don't want to make
+    # it required.
+    ISIC_GOOGLE_API_JSON_KEY = values.Value(None)
 
     CELERY_WORKER_MAX_MEMORY_PER_CHILD = 256 * 1024
 
@@ -119,7 +121,6 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
     CELERY_TASK_ALWAYS_EAGER = values.BooleanValue(False)
     CELERY_TASK_EAGER_PROPAGATES = values.BooleanValue(False)
     ISIC_DATACITE_DOI_PREFIX = '10.80222'
-    ISIC_GOOGLE_API_JSON_KEY = values.Value(None)
 
 
 class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
@@ -130,7 +131,6 @@ class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
     ISIC_DATACITE_PASSWORD = None
     CELERY_TASK_ALWAYS_EAGER = values.BooleanValue(False)
     CELERY_TASK_EAGER_PROPAGATES = values.BooleanValue(False)
-    ISIC_GOOGLE_API_JSON_KEY = values.Value(None)
 
 
 class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration):
