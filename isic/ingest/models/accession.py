@@ -10,6 +10,7 @@ from django.db.models import JSONField, Transform
 from django.db.models.aggregates import Count
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.query_utils import Q
+from isic_metadata.metadata import MetadataRow
 from s3_file_field import S3FileField
 
 from isic.core.models import CreationSortedTimeStampedModel
@@ -239,10 +240,13 @@ class Accession(CreationSortedTimeStampedModel):
 
         return redacted
 
-    def save(self, **kwargs):
-        # Check for updates to the accession
+    def apply_metadata(self, csv_row: dict):
         if self.pk:
             if hasattr(self, 'image'):
                 raise ValidationError("Can't modify the accession as it already has an image.")
 
-        return super().save(**kwargs)
+        metadata = MetadataRow.parse_obj(csv_row)
+        self.unstructured_metadata.update(metadata.unstructured)
+        self.metadata.update(
+            metadata.dict(exclude_unset=True, exclude_none=True, exclude={'unstructured'})
+        )
