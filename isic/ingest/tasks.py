@@ -5,9 +5,6 @@ from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
-from isic_metadata.metadata import MetadataRow
-import numpy as np
-import pandas as pd
 
 from isic.core.models import Image
 from isic.core.search import add_to_search_index
@@ -105,26 +102,15 @@ def process_distinctness_measure_task(accession_pk: int):
 @shared_task
 def apply_metadata_task(metadata_file_pk: int):
     metadata_file = MetadataFile.objects.get(pk=metadata_file_pk)
-    with metadata_file.blob.open() as csv:
-        df = pd.read_csv(csv, header=0)
-
-    # pydantic expects None for the absence of a value, not NaN
-    df = df.replace({np.nan: None})
 
     with transaction.atomic():
-        for _, row in df.iterrows():
+        for _, row in metadata_file.to_df().iterrows():
             accession = Accession.objects.get(
                 blob_name=row['filename'], cohort=metadata_file.cohort
             )
             # filename doesn't need to be stored in the metadata since it's equal to blob_name
             del row['filename']
-
-            metadata = MetadataRow.parse_obj(row)
-            accession.unstructured_metadata.update(metadata.unstructured)
-            accession.metadata.update(
-                metadata.dict(exclude_unset=True, exclude_none=True, exclude={'unstructured'})
-            )
-
+            accession.apply_metadata(row)
             accession.save(update_fields=['metadata', 'unstructured_metadata'])
 
 
