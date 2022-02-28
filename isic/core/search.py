@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.db.models.query import QuerySet
 from isic_metadata import FIELD_REGISTRY
 from opensearchpy import NotFoundError, OpenSearch
-from opensearchpy.helpers import parallel_bulk
+from opensearchpy.helpers import streaming_bulk
 
 from isic.core.models import Image
 from isic.core.models.collection import Collection
@@ -89,7 +89,7 @@ def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 500) -> None
     # Use a generator for lazy evaluation
     image_documents = (image.to_elasticsearch_document() for image in qs)
 
-    for success, info in parallel_bulk(
+    for success, info in streaming_bulk(
         client=get_elasticsearch_client(),
         index=settings.ISIC_ELASTICSEARCH_INDEX,
         actions=image_documents,
