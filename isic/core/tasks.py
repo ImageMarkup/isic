@@ -7,7 +7,7 @@ from isic.core.search import bulk_add_to_search_index
 from isic.core.serializers import SearchQuerySerializer
 
 
-@shared_task
+@shared_task(soft_time_limit=120, time_limit=180)
 def populate_collection_from_search_task(
     collection_pk: int, user_pk: int, search_params: dict
 ) -> None:

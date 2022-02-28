@@ -19,13 +19,13 @@ from isic.ingest.models import (
 from isic.ingest.utils.mime import guess_mime_type
 
 
-@shared_task
+@shared_task(soft_time_limit=30, time_limit=60)
 def generate_thumbnail_task(accession_pk: int) -> None:
     accession = Accession.objects.get(pk=accession_pk)
     accession.generate_thumbnail()
 
 
-@shared_task
+@shared_task(soft_time_limit=7200, time_limit=8100)
 def extract_zip_task(zip_pk: int):
     zip_upload = ZipUpload.objects.get(pk=zip_pk)
 
@@ -99,7 +99,7 @@ def process_distinctness_measure_task(accession_pk: int):
     DistinctnessMeasure.objects.create(accession=accession, checksum=checksum)
 
 
-@shared_task
+@shared_task(soft_time_limit=300, time_limit=600)
 def apply_metadata_task(metadata_file_pk: int):
     metadata_file = MetadataFile.objects.get(pk=metadata_file_pk)
 
@@ -114,7 +114,7 @@ def apply_metadata_task(metadata_file_pk: int):
             accession.save(update_fields=['metadata', 'unstructured_metadata'])
 
 
-@shared_task
+@shared_task(soft_time_limit=10, time_limit=20)
 def publish_accession_task(accession_pk: int, *, public: bool):
     accession = Accession.objects.get(pk=accession_pk)
 
@@ -126,7 +126,7 @@ def publish_accession_task(accession_pk: int, *, public: bool):
     add_to_search_index(image)
 
 
-@shared_task
+@shared_task(soft_time_limit=60, time_limit=90)
 def publish_cohort_task(cohort_pk: int, *, public: bool):
     cohort = Cohort.objects.get(pk=cohort_pk)
     for accession_pk in cohort.publishable_accessions().values_list('pk', flat=True):

@@ -4,7 +4,7 @@ from django.db import transaction
 from isic.studies.models import Study, StudyTask
 
 
-@shared_task
+@shared_task(soft_time_limit=180, time_limit=300)
 def populate_study_tasks_task(study_pk: int, user_pks: list[int]):
     study = Study.objects.prefetch_related('collection__images').get(pk=study_pk)
 
