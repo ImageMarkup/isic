@@ -4,6 +4,7 @@ import json
 
 from apiclient.discovery import build
 from celery import shared_task
+from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.utils import timezone
 from oauth2client.service_account import ServiceAccountCredentials
@@ -19,6 +20,9 @@ VIEW_IDS = [
     '217814783',  # ISIC Challenge 2020
     '199577101',  # ISIC Challenge Submission
 ]
+
+
+logger = get_task_logger(__name__)
 
 
 def _initialize_analyticsreporting():
@@ -72,6 +76,12 @@ def _get_google_analytics_report(analytics, view_id: str) -> dict:
 
 @shared_task(soft_time_limit=20, time_limit=60)
 def collect_google_analytics_metrics_task():
+    if not settings.ISIC_GOOGLE_API_JSON_KEY:
+        logger.info(
+            'Skipping google analytics collection, ISIC_GOOGLE_API_JSON_KEY not configured.'
+        )
+        return
+
     analytics = _initialize_analyticsreporting()
     num_sessions = 0
     sessions_per_country = defaultdict(int)
