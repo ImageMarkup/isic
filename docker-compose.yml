@@ -15,6 +15,7 @@ services:
       discovery.type: single-node
       xpack.security.enabled: "true"
       ELASTIC_PASSWORD: elastic
+      cluster.routing.allocation.disk.threshold_enabled: "false"
     ports:
       - 9200:9200
 
