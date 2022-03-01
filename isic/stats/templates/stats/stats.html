@@ -68,6 +68,13 @@
           showOutline: true,
           showGraticule: false,
           plugins: {
+            tooltip: {
+              callbacks: {
+                label(item) {
+                  return `${item.chart.data.labels[item.dataIndex]}: ${Math.ceil(Math.exp(item.raw.value))}`;
+                },
+              },
+            },
             legend: {
               display: false
             },
