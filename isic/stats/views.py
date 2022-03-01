@@ -29,10 +29,10 @@ def get_archive_stats():
 
     if latest_ga_metrics:
         ctx['sessions_last_30_days_count'] = latest_ga_metrics.num_sessions
-        ctx['sessions_last_30_days_top_10_country_count'] = latest_ga_metrics.top_countries(10)
+        ctx['sessions_last_30_days_per_country'] = latest_ga_metrics.sessions_per_country
     else:
         ctx['sessions_last_30_days_count'] = 0
-        ctx['sessions_last_30_days_top_10_country_count'] = []
+        ctx['sessions_last_30_days_per_country'] = []
 
     return ctx
 
@@ -40,9 +40,7 @@ def get_archive_stats():
 def stats(request):
     archive_stats = get_archive_stats()
     ctx = {
-        'sessions_last_30_days_top_10_country_count': archive_stats[
-            'sessions_last_30_days_top_10_country_count'
-        ],
+        'sessions_last_30_days_per_country': archive_stats['sessions_last_30_days_per_country'],
         'stats': [
             [
                 ('Users', archive_stats['total_users_count']),
