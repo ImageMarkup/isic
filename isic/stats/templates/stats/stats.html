@@ -35,15 +35,15 @@
   </div>
 
 
-  <div class="hidden lg:block mb-8">
-    <h2 class="mb-6">Sessions per country (Last 30 days)</h2>
+  <div>
+    <h2 class="mb-6">Sessions per Country (Last 30 days)</h2>
     <canvas id="canvas" width="1200" height="400"></canvas>
   </div>
 
   {{ sessions_last_30_days_per_country|json_script:"country_data" }}
 
   <script type="text/javascript">
-    let country_values = JSON.parse(document.getElementById("country_data").textContent);
+    const country_values = JSON.parse(document.getElementById("country_data").textContent);
 
     fetch('https://unpkg.com/world-atlas/countries-110m.json').then((r) => r.json()).then((data) => {
       const countries = ChartGeo.topojson.feature(data, data.objects.countries).features;
@@ -71,7 +71,11 @@
             tooltip: {
               callbacks: {
                 label(item) {
-                  return `${item.chart.data.labels[item.dataIndex]}: ${Math.ceil(Math.exp(item.raw.value))}`;
+                  if (item.raw.value === 0) {
+                    return `${item.chart.data.labels[item.dataIndex]}: 0`;
+                  } else {
+                    return `${item.chart.data.labels[item.dataIndex]}: ${Math.ceil(Math.exp(item.raw.value))}`;
+                  }
                 },
               },
             },
@@ -82,7 +86,10 @@
           scales: {
             xy: {
               projection: 'equalEarth'
-            }
+            },
+            color: {
+              display:false,
+            },
           }
         }
       });
