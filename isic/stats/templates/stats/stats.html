@@ -1,6 +1,14 @@
 {% extends 'core/base.html' %}
 {% load humanize %}
 
+
+
+{% block head_extra %}
+  {{ block.super }}
+  <script src="https://unpkg.com/chart.js@3"></script>
+  <script src="https://unpkg.com/chartjs-chart-geo@3"></script>
+{% endblock %}
+
 {% block content %}
   <h1>Archive Statistics</h1>
   <div class="mt-10 pb-12 bg-white sm:pb-16">
@@ -25,4 +33,52 @@
       </div>
     </div>
   </div>
+
+
+  <div class="hidden lg:block mb-8">
+    <h2 class="mb-6">Sessions per country (Last 30 days)</h2>
+    <canvas id="canvas" width="1200" height="400"></canvas>
+  </div>
+
+  {{ sessions_last_30_days_per_country|json_script:"country_data" }}
+
+  <script type="text/javascript">
+    let country_values = JSON.parse(document.getElementById("country_data").textContent);
+
+    fetch('https://unpkg.com/world-atlas/countries-110m.json').then((r) => r.json()).then((data) => {
+      const countries = ChartGeo.topojson.feature(data, data.objects.countries).features;
+
+      const chart = new Chart(document.getElementById("canvas").getContext("2d"), {
+        type: 'choropleth',
+        data: {
+          labels: countries.map((d) => d.properties.name),
+          datasets: [{
+            label: 'Countries',
+            data: countries.map((d) => {
+              const country = country_values.filter(x => x.country_numeric === d.id)[0];
+              if (country === undefined) {
+                return {feature: d, value: 0};
+              } else {
+                return {feature: d, value: Math.log(country.sessions)};
+              }
+            }),
+          }]
+        },
+        options: {
+          showOutline: true,
+          showGraticule: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+          },
+          scales: {
+            xy: {
+              projection: 'equalEarth'
+            }
+          }
+        }
+      });
+    });
+  </script>
 {% endblock %}

@@ -64,6 +64,7 @@ setup(
         'pandas',
         'passlib[bcrypt]',
         'Pillow',
+        'pycountry',
         'pydantic',
         'pymongo',
         'pyparsing',
