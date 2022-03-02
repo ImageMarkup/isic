@@ -123,14 +123,12 @@ class CohortPermissions:
 
     @staticmethod
     def view_cohort(user_obj, obj):
-        # TODO: use .contains in django 4
-        return CohortPermissions.view_cohort_list(user_obj).filter(pk=obj.pk).exists()
+        return CohortPermissions.view_cohort_list(user_obj).contains(obj)
 
     @staticmethod
     def add_accession(user_obj: User, obj: Cohort) -> bool:
         if obj:
-            # TODO: use .contains in django 4
-            return user_obj.is_authenticated and user_obj in obj.contributor.owners.all()
+            return user_obj.is_authenticated and obj.contributor.owners.contains(user_obj)
 
 
 Cohort.perms_class = CohortPermissions
