@@ -69,6 +69,7 @@ setup(
         'pymongo',
         'pyparsing',
         'python-magic',
+        'requests',
         'tenacity',
         'zipfile-deflate64',
         # Production-only
