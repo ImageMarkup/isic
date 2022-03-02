@@ -72,8 +72,7 @@ class ContributorPermissions:
 
     @staticmethod
     def view_contributor(user_obj, obj):
-        # TODO: use .contains in django 4
-        return ContributorPermissions.view_contributor_list(user_obj).filter(pk=obj.pk).exists()
+        return ContributorPermissions.view_contributor_list(user_obj).contains(obj)
 
     @staticmethod
     def add_contributor(user_obj, obj=None):
