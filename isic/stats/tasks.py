@@ -8,6 +8,7 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.utils import timezone
+from googleapiclient.errors import HttpError
 from oauth2client.service_account import ServiceAccountCredentials
 import pycountry
 
@@ -85,7 +86,7 @@ def _country_from_iso_code(iso_code: str) -> dict:
         country = SimpleNamespace(alpha_2='XK', numeric='383', name='Kosovo')
 
     if not country:
-        logger.error(f'Unable to find country {iso_code}.')
+        raise Exception(f'Unable to find country {iso_code}.')
 
     return {
         'country_alpha_2': country.alpha_2,
@@ -94,7 +95,13 @@ def _country_from_iso_code(iso_code: str) -> dict:
     }
 
 
-@shared_task(soft_time_limit=20, time_limit=60)
+@shared_task(
+    soft_time_limit=20,
+    time_limit=60,
+    # Figuring out retries within googleapiclient is a bit cumbersome, use celery.
+    autoretry_for=(HttpError,),
+    retry_backoff=True,
+)
 def collect_google_analytics_metrics_task():
     if not settings.ISIC_GOOGLE_API_JSON_KEY:
         logger.info(
