@@ -41,7 +41,7 @@ schema_view = get_schema_view(
 
 urlpatterns = [
     path('accounts/', include('allauth.urls')),
-    path('oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
+    path('oauth/', include('oauth2_provider.urls')),
     path('admin/', admin.site.urls),
     path('api/v2/s3-upload/', include('s3_file_field.urls')),
     path('api/v2/token/legacy/', get_girder_token),
