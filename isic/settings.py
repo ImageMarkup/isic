@@ -96,6 +96,8 @@ class IsicMixin(ConfigMixin):
     # it required.
     ISIC_GOOGLE_API_JSON_KEY = values.Value(None)
 
+    CDN_LOG_BUCKET = values.Value()
+
     CELERY_WORKER_MAX_MEMORY_PER_CHILD = 256 * 1024
 
     CELERY_BEAT_SCHEDULE = {
@@ -141,3 +143,7 @@ class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
 class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration):
     ISIC_DATACITE_DOI_PREFIX = '10.34970'
     ISIC_ELASTICSEARCH_URI = values.SecretValue(environ_name='SEARCHBOX_URL', environ_prefix=None)
+
+    AWS_CLOUDFRONT_KEY = values.SecretValue()
+    AWS_CLOUDFRONT_KEY_ID = values.Value()
+    AWS_S3_CUSTOM_DOMAIN = values.Value()
