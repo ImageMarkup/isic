@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.aggregates import Count
-from django.db.models.constraints import CheckConstraint
+from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.expressions import F
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
@@ -26,12 +26,22 @@ class Collection(TimeStampedModel):
     private images.
     """
 
+    class Meta(TimeStampedModel.Meta):
+        unique_together = [['creator', 'name']]
+        constraints = [
+            UniqueConstraint(
+                name='collection_official_has_unique_name',
+                fields=['name'],
+                condition=Q(official=True),
+            )
+        ]
+
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
 
     images = models.ManyToManyField(Image, related_name='collections')
 
-    # TODO: probably make it unique per user, or unique for official collections
-    name = models.CharField(max_length=200, unique=True)
+    # unique per user. names of official collections can't be used.
+    name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
 
     public = models.BooleanField(default=False)
