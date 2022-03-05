@@ -105,6 +105,10 @@ class IsicMixin(ConfigMixin):
             'task': 'isic.stats.tasks.collect_google_analytics_metrics_task',
             'schedule': timedelta(hours=6),
         },
+        'collect-image-download-stats': {
+            'task': 'isic.stats.tasks.collect_image_download_records_task',
+            'schedule': timedelta(hours=2),
+        },
         'sync-elasticsearch-index': {
             'task': 'isic.core.tasks.sync_elasticsearch_index_task',
             # TODO: revisit interval, currently takes ~22s to run
