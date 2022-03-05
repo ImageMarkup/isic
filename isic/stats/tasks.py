@@ -1,18 +1,26 @@
 from collections import defaultdict
 from datetime import timedelta
+import gzip
+from io import BytesIO
 import json
 from types import SimpleNamespace
+from typing import Iterable
 
 from apiclient.discovery import build
+import boto3
+from botocore.config import Config
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.conf import settings
+from django.db import transaction
 from django.utils import timezone
 from googleapiclient.errors import HttpError
 from oauth2client.service_account import ServiceAccountCredentials
+import pandas as pd
 import pycountry
 
-from isic.stats.models import GaMetrics
+from isic.core.models.image import Image
+from isic.stats.models import GaMetrics, ImageDownload
 
 SCOPES = ['https://www.googleapis.com/auth/analytics.readonly']
 VIEW_IDS = [
@@ -129,3 +137,68 @@ def collect_google_analytics_metrics_task():
         num_sessions=num_sessions,
         sessions_per_country=sessions_per_country,
     )
+
+
+def _cdn_log_objects(s3) -> Iterable[dict]:
+    pages = s3.get_paginator('list_objects_v2').paginate(Bucket=settings.CDN_LOG_BUCKET)
+    for page in pages:
+        yield from page.get('Contents', [])
+
+
+def _cdn_access_log_successful_requests(log_file_bytes) -> Iterable[dict]:
+    with gzip.GzipFile(fileobj=BytesIO(log_file_bytes)) as stream:
+        version_line, headers_line = stream.readlines()[0:2]
+        assert version_line.decode('utf-8').strip() == '#Version: 1.0'
+        headers = headers_line.decode('utf-8').replace('#Fields:', '').strip().split()
+        stream.seek(0)
+        df = pd.read_table(stream, skiprows=2, names=headers, delimiter='\\s+')
+
+    df['download_time'] = pd.to_datetime(df['date'] + ' ' + df['time'], utc=True)
+    successful_downloads_df = df[df['sc-status'] == 200]
+
+    for _, row in successful_downloads_df.iterrows():
+        yield {
+            'download_time': row['download_time'],
+            'path': row['cs-uri-stem'],
+            'ip_address': row['c-ip'],
+            'request_id': row['x-edge-request-id'],
+        }
+
+
+# note the time limit is dependent on how frequently this is run.
+@shared_task(soft_time_limit=300, time_limit=360)
+@transaction.atomic()
+def collect_image_download_records():
+    s3 = boto3.client(
+        's3', config=Config(connect_timeout=3, read_timeout=10, retries={'max_attempts': 5})
+    )
+    image_downloads: list[ImageDownload] = []
+    processed_s3_keys: list[str] = []
+
+    for s3_object in _cdn_log_objects(s3):
+        data = s3.get_object(Bucket=settings.CDN_LOG_BUCKET, Key=s3_object['Key'])
+        for request in _cdn_access_log_successful_requests(data['Body'].read()):
+            # TODO: maybe optimize in the future to do one IN query
+            downloaded_image = Image.objects.filter(
+                accession__blob=request['path'].lstrip('/')
+            ).first()
+            if downloaded_image:
+                image_downloads.append(
+                    ImageDownload(
+                        download_time=request['download_time'],
+                        ip_address=request['ip_address'],
+                        request_id=request['request_id'],
+                        image=downloaded_image,
+                    )
+                )
+
+        processed_s3_keys.append(s3_object['Key'])
+
+    ImageDownload.objects.bulk_create(image_downloads)
+
+    if processed_s3_keys:
+        delete_response = s3.delete_objects(
+            Bucket=settings.CDN_LOG_BUCKET,
+            Delete={'Objects': [{'Key': key} for key in processed_s3_keys]},
+        )
+        assert not delete_response.get('Errors')
