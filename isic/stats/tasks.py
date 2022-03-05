@@ -168,7 +168,7 @@ def _cdn_access_log_successful_requests(log_file_bytes) -> Iterable[dict]:
 # note the time limit is dependent on how frequently this is run.
 @shared_task(soft_time_limit=300, time_limit=360)
 @transaction.atomic()
-def collect_image_download_records():
+def collect_image_download_records_task():
     s3 = boto3.client(
         's3', config=Config(connect_timeout=3, read_timeout=10, retries={'max_attempts': 5})
     )
