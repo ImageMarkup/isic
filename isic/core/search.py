@@ -89,6 +89,12 @@ def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 2000) -> Non
     # Use a generator for lazy evaluation
     image_documents = (image.to_elasticsearch_document() for image in qs)
 
+    # The opensearch logger is very noisy when updating records,
+    # set it to warning during this operation.
+    opensearch_logger = logging.getLogger('opensearch')
+    previous_log_level = opensearch_logger.level
+    opensearch_logger.setLevel(logging.WARN)
+
     for success, info in parallel_bulk(
         client=get_elasticsearch_client(),
         index=settings.ISIC_ELASTICSEARCH_INDEX,
@@ -99,6 +105,8 @@ def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 2000) -> Non
     ):
         if not success:
             logger.error('Failed to insert document into elasticsearch', info)
+
+    opensearch_logger.setLevel(previous_log_level)
 
 
 def facets(query: dict | None = None, collections: list[int] | None = None) -> dict:
