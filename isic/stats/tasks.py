@@ -2,6 +2,7 @@ from collections import defaultdict
 from datetime import timedelta
 import gzip
 from io import BytesIO
+import itertools
 import json
 from types import SimpleNamespace
 from typing import Iterable
@@ -145,8 +146,10 @@ def _cdn_log_objects(s3) -> Iterable[dict]:
         yield from page.get('Contents', [])
 
 
-def _cdn_access_log_successful_requests(log_file_bytes) -> Iterable[dict]:
-    with gzip.GzipFile(fileobj=BytesIO(log_file_bytes)) as stream:
+def _cdn_access_log_records(s3, s3_log_object: dict) -> Iterable[dict]:
+    data = s3.get_object(Bucket=settings.CDN_LOG_BUCKET, Key=s3_log_object['Key'])
+
+    with gzip.GzipFile(fileobj=BytesIO(data['Body'].read())) as stream:
         version_line, headers_line = stream.readlines()[0:2]
         assert version_line.decode('utf-8').strip() == '#Version: 1.0'
         headers = headers_line.decode('utf-8').replace('#Fields:', '').strip().split()
@@ -154,47 +157,56 @@ def _cdn_access_log_successful_requests(log_file_bytes) -> Iterable[dict]:
         df = pd.read_table(stream, skiprows=2, names=headers, delimiter='\\s+')
 
     df['download_time'] = pd.to_datetime(df['date'] + ' ' + df['time'], utc=True)
-    successful_downloads_df = df[df['sc-status'] == 200]
 
-    for _, row in successful_downloads_df.iterrows():
+    for _, row in df.iterrows():
         yield {
             'download_time': row['download_time'],
-            'path': row['cs-uri-stem'],
+            'path': row['cs-uri-stem'].lstrip('/'),
             'ip_address': row['c-ip'],
             'request_id': row['x-edge-request-id'],
+            'status': row['sc-status'],
         }
 
 
 # note the time limit is dependent on how frequently this is run.
 @shared_task(soft_time_limit=300, time_limit=360)
-@transaction.atomic()
 def collect_image_download_records_task():
+    # TODO: this entire function is pretty ugly and needs to be better abstracted
+    # and tested.
     s3 = boto3.client(
         's3', config=Config(connect_timeout=3, read_timeout=10, retries={'max_attempts': 5})
     )
     image_downloads: list[ImageDownload] = []
     processed_s3_keys: list[str] = []
+    requests_by_path: dict[str, list[dict]] = defaultdict(list)
 
-    for s3_object in _cdn_log_objects(s3):
-        data = s3.get_object(Bucket=settings.CDN_LOG_BUCKET, Key=s3_object['Key'])
-        for request in _cdn_access_log_successful_requests(data['Body'].read()):
-            # TODO: maybe optimize in the future to do one IN query
-            downloaded_image = Image.objects.filter(
-                accession__blob=request['path'].lstrip('/')
-            ).first()
-            if downloaded_image:
-                image_downloads.append(
-                    ImageDownload(
-                        download_time=request['download_time'],
-                        ip_address=request['ip_address'],
-                        request_id=request['request_id'],
-                        image=downloaded_image,
-                    )
+    # gather all request log entries and group them by path
+    for s3_log_object in _cdn_log_objects(s3):
+        for request in itertools.filterfalse(
+            lambda r: r['status'] != 200, _cdn_access_log_records(s3, s3_log_object)
+        ):
+            requests_by_path[request['path']].append(request)
+
+        processed_s3_keys.append(s3_log_object['Key'])
+
+    # go through just the images that mapped onto request paths
+    # (this ignores thumbnails and other files)
+    downloaded_images = Image.objects.select_related('accession').filter(
+        accession__blob__in=requests_by_path.keys()
+    )
+    for downloaded_image in downloaded_images:
+        for download_request in requests_by_path[downloaded_image.accession.blob.name]:
+            image_downloads.append(
+                ImageDownload(
+                    download_time=download_request['download_time'],
+                    ip_address=download_request['ip_address'],
+                    request_id=download_request['request_id'],
+                    image=downloaded_image,
                 )
+            )
 
-        processed_s3_keys.append(s3_object['Key'])
-
-    ImageDownload.objects.bulk_create(image_downloads)
+    with transaction.atomic():
+        ImageDownload.objects.bulk_create(image_downloads)
 
     if processed_s3_keys:
         delete_response = s3.delete_objects(
