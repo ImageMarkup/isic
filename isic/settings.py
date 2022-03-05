@@ -120,7 +120,9 @@ class IsicMixin(ConfigMixin):
 class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
     # Development-only settings
     SHELL_PLUS_IMPORTS = [
+        'from isic.core.tasks import *',
         'from isic.ingest.tasks import *',
+        'from isic.stats.tasks import *',
         'from isic.studies.tasks import *',
         'from django.core.files.uploadedfile import UploadedFile',
         'import pandas as pd',
