@@ -1,7 +1,13 @@
+from faker import Faker
 import pytest
 
-from isic.stats.models import GaMetrics
-from isic.stats.tasks import collect_google_analytics_metrics_task
+from isic.stats.models import GaMetrics, ImageDownload
+from isic.stats.tasks import (
+    collect_google_analytics_metrics_task,
+    collect_image_download_records_task,
+)
+
+fake = Faker()
 
 
 @pytest.mark.django_db
@@ -40,3 +46,54 @@ def test_collect_google_analytics_task(mocker, settings):
             'sessions': 5,
         },
     ]
+
+
+@pytest.mark.django_db
+def test_collect_image_download_records_task(mocker, image_factory):
+    image = image_factory(accession__blob='some/exists.jpg')
+
+    def mock_client(*args, **kwargs):
+        return mocker.MagicMock(delete_objects=lambda **_: {})
+
+    mocker.patch('isic.stats.tasks.boto3', mocker.MagicMock(client=mock_client))
+    mocker.patch('isic.stats.tasks._cdn_log_objects', return_value=[{'Key': 'foo'}])
+    mocker.patch(
+        'isic.stats.tasks._cdn_access_log_records',
+        return_value=[
+            {
+                'download_time': fake.date_time(tzinfo=fake.pytimezone()),
+                'path': 'some/exists.jpg',
+                'ip_address': '1.1.1.1',
+                'request_id': fake.uuid4(),
+                'status': 200,
+            },
+            {
+                'download_time': fake.date_time(tzinfo=fake.pytimezone()),
+                'path': 'some/doesnt-exist.jpg',
+                'ip_address': '1.1.1.1',
+                'request_id': fake.uuid4(),
+                'status': 200,
+            },
+            {
+                'download_time': fake.date_time(tzinfo=fake.pytimezone()),
+                'path': 'some/exists-2.jpg',
+                'ip_address': '1.1.1.1',
+                'request_id': fake.uuid4(),
+                'status': 403,
+            },
+            {
+                'download_time': fake.date_time(tzinfo=fake.pytimezone()),
+                'path': 'some/doesnt-exist-2.jpg',
+                'ip_address': '1.1.1.1',
+                'request_id': fake.uuid4(),
+                'status': 403,
+            },
+        ],
+    )
+
+    collect_image_download_records_task()
+
+    assert ImageDownload.objects.count() == 1
+    assert image.downloads.count() == 1
+
+    # TODO: assert file is deleted with boto, this is tricky to do with mocking
