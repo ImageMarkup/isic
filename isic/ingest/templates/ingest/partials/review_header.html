@@ -24,6 +24,9 @@
   }
 
   function accession(id) {
+    // Keep a global registry of accessions so other components can use them
+    Alpine.store('accessions').items.push(id);
+
     let value = JSON.parse(document.getElementById(id).textContent);
     value['accept'] = function(check) {
       review.bind(this)(check, true);

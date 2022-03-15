@@ -36,10 +36,7 @@
       submit() {
         this.submitting = true;
         let checks = JSON.parse(document.getElementById('checks').textContent);
-        let accessionIds = $('.accession-col').map(function(i, el) {
-          // fetch id from alpine data
-          return el.__x.$data.id;
-        }).toArray();
+        let accessionIds = Alpine.store('accessions').items;
 
         fetch(`/api/v2/accessions/soft_accept_check_bulk/`, {
           method: 'PATCH',
