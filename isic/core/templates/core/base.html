@@ -19,6 +19,14 @@
   {% if NOINDEX %}
     <meta name="robots" content="noindex,follow" />
   {% endif %}
+
+  <script>
+      document.addEventListener('alpine:init', () => {
+          Alpine.store('accessions', {
+            items: [],
+          });
+      })
+  </script>
 {% endblock %}
 
 {% block body %}
