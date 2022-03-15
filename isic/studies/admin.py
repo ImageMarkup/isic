@@ -195,6 +195,7 @@ class ReferencedStudyInline(ReadonlyTabularInline):
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
     list_display = ['prompt', 'type', 'official', 'num_choices', 'used_in']
+    list_filter = ['type', 'official']
 
     inlines = [QuestionChoiceInline, ReferencedStudyInline]
 
