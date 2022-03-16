@@ -5,6 +5,10 @@ module.exports = {
   safelist: [
     // Injected by Django, and may be referenced by CSS rules
     'errorlist',
+    {
+      // Dynamically set by alpine
+      pattern:/^grid-cols-.*/
+    }
   ],
   theme: {
     fontFamily: {
@@ -17,7 +21,7 @@ module.exports = {
     require('daisyui'),
   ],
   daisyui: {
-    themes: false,
+    themes: ["winter"],
     logs: false,
   },
 }

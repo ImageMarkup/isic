@@ -2,14 +2,14 @@
 
 {% block content %}
   <div>
-    <h2>{{ annotation.study.name }}</h2>
+    <div class="heading-2">{{ annotation.study.name }}</div>
     {{ annotation.annotator }}
     <br>
     {{ annotation.image.object_id }}
   </div>
 
 
-  <h4>Markups</h4>
+  <div class="heading-4">Markups</div>
   <table>
     <thead>
       <tr>
@@ -28,7 +28,7 @@
     {% endfor %}
   </table>
 
-  <h4>Responses</h4>
+  <div class="heading-4">Responses</div>
   <table>
     <thead>
       <tr>

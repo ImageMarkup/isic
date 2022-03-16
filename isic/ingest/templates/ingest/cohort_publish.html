@@ -53,10 +53,10 @@
     <div class="mt-4 text-center">
       <form method="POST" action="">
         {% csrf_token %}
-        <button onclick="return confirm('Are you sure you want to make {{ num_publishable|intcomma }} images public?')" name="public" type="submit" class="relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+        <button onclick="return confirm('Are you sure you want to make {{ num_publishable|intcomma }} images public?')" name="public" type="submit" class="btn btn-primary">
           Make {{ num_publishable|intcomma }} accessions public
         </button>
-        <button onclick="return confirm('Are you sure you want to make {{ num_publishable|intcomma }} images private?')" name="private" type="submit" class="relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+        <button onclick="return confirm('Are you sure you want to make {{ num_publishable|intcomma }} images private?')" name="private" type="submit" class="btn btn-primary">
           Make {{ num_publishable|intcomma }} accessions private
         </button>
       </form>

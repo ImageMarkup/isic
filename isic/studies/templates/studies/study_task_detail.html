@@ -10,7 +10,7 @@
   {% endif %}
 
   <div class="mb-2">
-    <h2>{{ study_task.study.name }}</h2>
+    <div class="heading-1">{{ study_task.study.name }}</div>
     {% if not preview_mode %}
       {{ tasks_remaining|intcomma }} tasks remaining in this study.
     {% endif %}
@@ -53,8 +53,7 @@
             {{ field }}
           </div>
         {% endfor %}
-        <button {% if preview_mode %}disabled{% endif %} type="submit"
-          class="mt-4 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+        <button {% if preview_mode %}disabled{% endif %} type="submit" class="btn btn-primary">
           Respond and continue
         </button>
       </form>
