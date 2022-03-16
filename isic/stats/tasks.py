@@ -6,6 +6,7 @@ import itertools
 import json
 from types import SimpleNamespace
 from typing import Iterable
+import urllib.parse
 
 from apiclient.discovery import build
 import boto3
@@ -163,6 +164,7 @@ def _cdn_access_log_records(s3, s3_log_object: dict) -> Iterable[dict]:
             'download_time': row['download_time'],
             'path': row['cs-uri-stem'].lstrip('/'),
             'ip_address': row['c-ip'],
+            'user_agent': urllib.parse.unquote(row['cs(User-Agent)']),
             'request_id': row['x-edge-request-id'],
             'status': row['sc-status'],
         }
@@ -200,6 +202,7 @@ def collect_image_download_records_task():
                 ImageDownload(
                     download_time=download_request['download_time'],
                     ip_address=download_request['ip_address'],
+                    user_agent=download_request['user_agent'],
                     request_id=download_request['request_id'],
                     image=downloaded_image,
                 )

@@ -1,13 +1,20 @@
+import datetime
+import io
+import pathlib
+
 from faker import Faker
 import pytest
 
 from isic.stats.models import GaMetrics, ImageDownload
 from isic.stats.tasks import (
+    _cdn_access_log_records,
     collect_google_analytics_metrics_task,
     collect_image_download_records_task,
 )
 
 fake = Faker()
+
+data_dir = pathlib.Path(__file__).parent / 'data'
 
 
 @pytest.mark.django_db
@@ -48,6 +55,26 @@ def test_collect_google_analytics_task(mocker, settings):
     ]
 
 
+def test_cdn_access_log_parsing(mocker):
+    def get_object(*args, **kwargs):
+        with open(data_dir / 'cloudfront_log.gz', 'rb') as f:
+            return {'Body': io.BytesIO(f.read())}
+
+    records = list(
+        _cdn_access_log_records(mocker.MagicMock(get_object=get_object), mocker.MagicMock())
+    )
+
+    assert len(records) == 24
+    assert records[0] == {
+        'download_time': datetime.datetime(2022, 3, 16, 3, 28, tzinfo=datetime.timezone.utc),
+        'path': '22f1e9e4-bd31-4053-9362-f8891a2b307d/17.jpg',
+        'ip_address': '112.208.241.149',
+        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36',  # noqa: E501
+        'request_id': 'PLFnSMEVjigrLG1hv_9OOOQUUUslSn6oo0ih_cmAbMp_tlK-ZNK1yA==',
+        'status': 200,
+    }
+
+
 @pytest.mark.django_db
 def test_collect_image_download_records_task(mocker, image_factory):
     image = image_factory(accession__blob='some/exists.jpg')
@@ -64,6 +91,7 @@ def test_collect_image_download_records_task(mocker, image_factory):
                 'download_time': fake.date_time(tzinfo=fake.pytimezone()),
                 'path': 'some/exists.jpg',
                 'ip_address': '1.1.1.1',
+                'user_agent': fake.user_agent(),
                 'request_id': fake.uuid4(),
                 'status': 200,
             },
@@ -71,6 +99,7 @@ def test_collect_image_download_records_task(mocker, image_factory):
                 'download_time': fake.date_time(tzinfo=fake.pytimezone()),
                 'path': 'some/doesnt-exist.jpg',
                 'ip_address': '1.1.1.1',
+                'user_agent': fake.user_agent(),
                 'request_id': fake.uuid4(),
                 'status': 200,
             },
@@ -78,6 +107,7 @@ def test_collect_image_download_records_task(mocker, image_factory):
                 'download_time': fake.date_time(tzinfo=fake.pytimezone()),
                 'path': 'some/exists-2.jpg',
                 'ip_address': '1.1.1.1',
+                'user_agent': fake.user_agent(),
                 'request_id': fake.uuid4(),
                 'status': 403,
             },
@@ -85,6 +115,7 @@ def test_collect_image_download_records_task(mocker, image_factory):
                 'download_time': fake.date_time(tzinfo=fake.pytimezone()),
                 'path': 'some/doesnt-exist-2.jpg',
                 'ip_address': '1.1.1.1',
+                'user_agent': fake.user_agent(),
                 'request_id': fake.uuid4(),
                 'status': 403,
             },
