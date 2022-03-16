@@ -73,8 +73,7 @@ class CohortSerializer(serializers.ModelSerializer):
         Note: this isn't quite the same as checking permissions because a superuser
         shouldn't be able to create a cohort with a non-contributor owner as the creator.
         """
-        # TODO: use .contains in django 4
-        if not data['contributor'].owners.filter(pk=self.context['request'].user.pk).exists():
+        if not data['contributor'].owners.contains(self.context['request'].user):
             raise ValidationError('Cohort creator is not a contributor owner.')
 
         return data

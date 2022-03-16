@@ -235,8 +235,7 @@ class CollectionPermissions:
 
     @staticmethod
     def view_collection(user_obj, obj):
-        # TODO: use .contains in django 4
-        return CollectionPermissions.view_collection_list(user_obj).filter(pk=obj.pk).exists()
+        return CollectionPermissions.view_collection_list(user_obj).contains(obj)
 
     @staticmethod
     def create_doi_list(
@@ -251,7 +250,7 @@ class CollectionPermissions:
 
     @staticmethod
     def create_doi(user_obj: User, obj: Collection) -> bool:
-        return CollectionPermissions.create_doi_list(user_obj).filter(pk=obj.pk).exists()
+        return CollectionPermissions.create_doi_list(user_obj).contains(obj)
 
     @staticmethod
     def add_images_list(
@@ -261,8 +260,7 @@ class CollectionPermissions:
 
     @staticmethod
     def add_images(user_obj, obj: Collection):
-        # TODO: use .contains in django 4
-        return CollectionPermissions.add_images_list(user_obj).filter(pk=obj.pk).exists()
+        return CollectionPermissions.add_images_list(user_obj).contains(obj)
 
     @staticmethod
     def edit_collection_list(
@@ -272,8 +270,7 @@ class CollectionPermissions:
 
     @staticmethod
     def edit_collection(user_obj, obj: Collection):
-        # TODO: use .contains in django 4
-        return CollectionPermissions.add_images_list(user_obj).filter(pk=obj.pk).exists()
+        return CollectionPermissions.add_images_list(user_obj).contains(obj)
 
 
 Collection.perms_class = CollectionPermissions

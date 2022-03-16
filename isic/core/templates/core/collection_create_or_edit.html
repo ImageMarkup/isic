@@ -27,17 +27,17 @@
         <div>
           <div class="max-w-2xl">
             {% if not collection %}
-              <h2 class="leading-6 text-gray-900">
+              <div class="heading-1" class="leading-6 text-gray-900">
                 Create a Collection
-              </h2>
+              </div>
               <p class="mt-1 max-w-2xl text-sm text-gray-500">
                 A Collection is a container for a set of images. Collections can be used as the basis for sharing images or creating studies.
                 A Collection can be public or private, and each of the individual images within it can be public or private.
               </p>
             {% else %}
-              <h2 class="leading-6 text-gray-900">
+              <div class="heading-1" class="leading-6 text-gray-900">
                 Edit Collection
-              </h2>
+              </div>
             {% endif %}
           </div>
 
@@ -82,7 +82,7 @@
 
           <div class="border-t border-gray-200 py-5">
             <div class="flex justify-end">
-              <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-500 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
+              <button type="submit" class="btn btn-primary">
                 {% if not collection %}Create Collection{% else %}Save{% endif %}
               </button>
             </div>

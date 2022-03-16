@@ -212,8 +212,7 @@ class StudyPermissions:
 
     @staticmethod
     def view_study_results(user_obj, obj):
-        # TODO: use .contains in django 4
-        return StudyPermissions.view_study_results_list(user_obj).filter(pk=obj.pk).exists()
+        return StudyPermissions.view_study_results_list(user_obj).contains(obj)
 
     @staticmethod
     def view_study_list(user_obj: User, qs: QuerySet[Study] | None = None) -> QuerySet[Study]:
@@ -235,8 +234,7 @@ class StudyPermissions:
 
     @staticmethod
     def view_study(user_obj, obj):
-        # TODO: use .contains in django 4
-        return StudyPermissions.view_study_list(user_obj).filter(pk=obj.pk).exists()
+        return StudyPermissions.view_study_list(user_obj).contains(obj)
 
 
 Study.perms_class = StudyPermissions
@@ -296,8 +294,7 @@ class StudyTaskPermissions:
 
     @staticmethod
     def view_study_task(user_obj, obj):
-        # TODO: use .contains in django 4
-        return StudyTaskPermissions.view_study_task_list(user_obj).filter(pk=obj.pk).exists()
+        return StudyTaskPermissions.view_study_task_list(user_obj).contains(obj)
 
 
 StudyTask.perms_class = StudyTaskPermissions
@@ -353,8 +350,7 @@ class AnnotationPermissions:
 
     @staticmethod
     def view_annotation(user_obj, obj):
-        # TODO: use .contains in django 4
-        return AnnotationPermissions.view_annotation_list(user_obj).filter(pk=obj.pk).exists()
+        return AnnotationPermissions.view_annotation_list(user_obj).contains(obj)
 
 
 Annotation.perms_class = AnnotationPermissions

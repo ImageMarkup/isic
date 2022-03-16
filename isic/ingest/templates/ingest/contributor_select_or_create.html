@@ -3,7 +3,7 @@
 {% block content %}
   {% include 'ingest/partials/upload_progress_bar.html' with step=1 %}
 
-  <h2>Select a Contributor</h2>
+  <div class="heading-1">Select a Contributor</div>
   <p>A contributor is the institution which will be contributing the images. Choose a contributor from the list below.</p>
 
   <div class="mt-6">
@@ -20,7 +20,7 @@
               </p>
             </div>
             <div>
-              <a href="{% url 'upload/select-or-create-cohort' contributor.id %}" class="button is-primary is-sm">
+              <a href="{% url 'upload/select-or-create-cohort' contributor.id %}" class="btn btn-primary btn-sm">
                 Use
               </a>
             </div>
@@ -37,7 +37,7 @@
     </div>
     <div class="text-center">
       If you don't see your contributor in the list, you can create a new one.
-      <a href="{% url 'upload/create-contributor' %}" class="button is-secondary ml-6">New Contributor</a>
+      <a href="{% url 'upload/create-contributor' %}" class="btn btn-secondary ml-6">New Contributor</a>
     </div>
   </div>
 {% endblock %}

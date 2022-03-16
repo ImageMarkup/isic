@@ -145,8 +145,7 @@ class ImagePermissions:
 
     @staticmethod
     def view_full_metadata(user_obj: User, obj: Image) -> bool:
-        # TODO: use .contains in django 4
-        return ImagePermissions.view_full_metadata_list(user_obj).filter(pk=obj.pk).exists()
+        return ImagePermissions.view_full_metadata_list(user_obj).contains(obj)
 
     @staticmethod
     def view_image_list(user_obj: User, qs: QuerySet[Image] | None = None) -> QuerySet[Image]:
@@ -166,8 +165,7 @@ class ImagePermissions:
 
     @staticmethod
     def view_image(user_obj: User, obj: Image) -> bool:
-        # TODO: use .contains in django 4
-        return ImagePermissions.view_image_list(user_obj).filter(pk=obj.pk).exists()
+        return ImagePermissions.view_image_list(user_obj).contains(obj)
 
 
 Image.perms_class = ImagePermissions

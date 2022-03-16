@@ -1,7 +1,7 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-  <h1>Create a DOI for {{ collection.name }}<span class="ml-2 text-base font-semibold"><a href="{% url 'core/collection-detail' collection.pk %}">back to collection</a></span></h1>
+  <div class="heading-1">Create a DOI for {{ collection.name }}<span class="ml-2 text-base font-semibold"><a href="{% url 'core/collection-detail' collection.pk %}">back to collection</a></span></div>
 
   {% if warnings %}
     <ul class="flex bg-yellow-100 border border-yellow-300 my-4 px-4 py-3 rounded-md text-yellow-900 text-sm">
@@ -13,7 +13,7 @@
 
   <div class="mt-4">Below is a preview of what your DOI will look like:</div>
   <div class="my-4 bg-gray-50 p-2 rounded-sm border-gray-200 border">
-    <h3>{{ preview.titles.0.title }}</h3>
+    <div class="heading-3">{{ preview.titles.0.title }}</div>
     <div>{{ preview.creators  }}</div>
     <div class="font-semibold">Dataset published {{ preview.publicationYear }} via {{ preview.publisher }}</div>
     <div><a href="#">https://doi.org/{{ preview.doi }}</a></div>
@@ -24,8 +24,7 @@
     <form method="post">
       {% csrf_token %}
       {{ form }}
-      <button type="submit"
-        class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+      <button type="submit" class="btn btn-primary">
         Create this DOI
       </button>
     </form>

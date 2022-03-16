@@ -14,7 +14,7 @@ max_line_length = 100
 [*.html]
 indent_size = 2
 
-[*.css]
+[{*.css,*.pcss}]
 indent_size = 2
 
 [{*.yml,*.yaml}]

@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* https://alpinejs.dev/directives/cloak */
+  [x-cloak] {
+    display: none !important;
+  }
+
+  a {
+   @apply text-primary;
+
+   &:hover {
+     @apply text-primary-focus;
+    }
+  }
+
+  .heading-1 {
+    @apply text-primary text-4xl;
+  }
+
+  .heading-2 {
+    @apply text-primary text-3xl;
+  }
+
+  .heading-3 {
+    @apply text-primary text-2xl;
+  }
+
+  .heading-4 {
+    @apply text-primary text-xl;
+  }
+}

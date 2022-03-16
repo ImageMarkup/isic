@@ -2,7 +2,7 @@
 
 <div x-show="selectedTab == 'metadata'" class="flex">
   <div class="flex-col mr-4">
-    <h3>Clinical</h3>
+    <div class="heading-3">Clinical</div>
     <pre>
       <code class="language-json">{{ metadata|formatted }}</code>
     </pre>
@@ -10,7 +10,7 @@
   {% if unstructured_metadata %}
     <div class="flex-col">
       <div class="flex items-center">
-        <h3>Unstructured</h3>
+        <div class="heading-3">Unstructured</div>
 
         <!-- heroicon/lock-closed -->
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" viewBox="0 0 20 20" fill="currentColor">
