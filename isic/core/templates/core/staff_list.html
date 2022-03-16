@@ -3,8 +3,7 @@
 {% block content %}
   <header class="border-b border-gray-100 flex items-center justify-between py-2 pb-4">
     <div class="flex-col">
-      <h3>Users</h3>
-      <h4>Staff ({{ users.count }})</h4>
+      <div class="heading-1">Staff ({{ users.count }})</div>
     </div>
   </header>
 
@@ -48,6 +47,6 @@
   </div>
 
   <div class="flex-col mt-4">
-    <h4>Total Users ({{ total_users.count }})</h4>
+    <div class="heading-1">Total Users ({{ total_users.count }})</div>
   </div>
 {% endblock %}

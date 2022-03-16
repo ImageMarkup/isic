@@ -8,9 +8,9 @@
 
     <div class="space-y-8 space-y-5">
       <div>
-        <h2 class="leading-6 text-gray-900">
+        <div class="heading-1" class="leading-6 text-gray-900">
           Create a Contributor
-        </h2>
+        </div>
         <p class="mt-1 max-w-2xl text-sm text-gray-500">
           This is information about the institution contributing to the Archive. A contributor is the institution which will be contributing the images.
         </p>
@@ -52,12 +52,12 @@
           <div class="mt-1 mt-0 col-span-2">
             <textarea id="{{ form.legal_contact_info.html_name }}" name="{{ form.legal_contact_info.html_name }}" rows="3" class="border max-w-lg outline-none shadow-sm p-4 block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md" required>{{ form.legal_contact_info.value|default:'' }}</textarea>
             <p class="mt-2 text-sm text-gray-500">{{ form.legal_contact_info.help_text }}</p>
-              {{ form.legal_contact_info.errors }}
+            {{ form.legal_contact_info.errors }}
           </div>
         </div>
 
         <div class="bg-gray-50 border border-gray-200 p-6 rounded-md">
-          <h3>Cohort defaults <span class="italic text-sm">Optional</span></h3>
+          <div class="heading-3">Cohort defaults <span class="italic text-sm">Optional</span></div>
           <p>If accepted, <strong>these will be public</strong>, and published along with your images.</p>
 
           <div class="grid grid-cols-3 border-t border-gray-200 pt-5">
@@ -96,7 +96,7 @@
 
       <div class="border-t border-gray-200 py-5">
         <div class="flex justify-end">
-          <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-500 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
+          <button type="submit" class="btn btn-primary">
             Create Contributor
           </button>
         </div>
