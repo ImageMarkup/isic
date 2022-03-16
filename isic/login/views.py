@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from isic.login.girder import create_girder_token
 
 
-@swagger_auto_schema(methods=['POST'], operation_summary='Retrieve a token for the legacy API.')
+@swagger_auto_schema(methods=['POST'], auto_schema=None)
 @api_view(['POST'])
 @protected_resource(scopes=['identity'])
 def get_girder_token(request):
