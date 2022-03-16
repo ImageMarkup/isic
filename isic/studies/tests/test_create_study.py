@@ -16,7 +16,7 @@ def test_create_study(
             'name': 'foobar',
             'description': '-',
             'collection': collection.pk,
-            'annotators': user.email,
+            'annotators': user.profile.hash_id,
             'public': False,
             'official-INITIAL_FORMS': 0,
             'official-TOTAL_FORMS': 1,

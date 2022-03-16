@@ -1,5 +1,5 @@
-from allauth.account.models import EmailAddress
 from django import forms
+from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models.query import QuerySet
@@ -49,17 +49,16 @@ class BaseStudyForm(forms.ModelForm):
 
     def clean_annotators(self) -> list[int]:
         value: str = self.cleaned_data['annotators']
-        # TODO: how to fail? reveal email address existence?
-        user_ids = set(
-            EmailAddress.objects.filter(
-                email__in=[e.strip() for e in value.splitlines()]
-            ).values_list('user__pk', flat=True)
+        user_hash_ids = (
+            User.objects.filter(profile__hash_id__in=[e.strip() for e in value.splitlines()])
+            .values_list('pk', flat=True)
+            .distinct()
         )
 
-        if not len(user_ids):
-            raise ValidationError("Can't find any users with the supplied email addresses.")
+        if not len(user_hash_ids):
+            raise ValidationError("Can't find any users with the supplied identifiers.")
 
-        return list(user_ids)
+        return list(user_hash_ids)
 
     def clean_collection(self) -> bool:
         value = self.cleaned_data['collection']
