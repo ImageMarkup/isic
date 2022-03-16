@@ -17,9 +17,10 @@ from isic.core.permissions import get_visible_objects
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'created', 'email', 'first_name', 'last_name', 'accepted_terms']
+        fields = ['id', 'created', 'email', 'first_name', 'last_name', 'hash_id', 'accepted_terms']
 
     created = serializers.DateTimeField(source='date_joined')
+    hash_id = serializers.CharField(source='profile.hash_id')
     accepted_terms = serializers.DateTimeField(source='profile.accepted_terms')
 
 
