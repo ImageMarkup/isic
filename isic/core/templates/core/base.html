@@ -132,8 +132,9 @@
           {% else %}
             <div class="flex justify-between">
               <div class="hidden md:ml-4 mr-4 md:flex-shrink-0 md:flex md:items-center">
-                <div class="ml-3 relative">
-                  {{request.user.email}}
+                <div class="ml-3 relative flex flex-col">
+                  <div>{{request.user.email}}</div>
+                  <div>({{ request.user.profile.hash_id }})</div>
                 </div>
               </div>
               <a href="{% url 'account_logout' %}">

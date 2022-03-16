@@ -218,7 +218,7 @@
             </label>
             <div class="mt-1 mt-0 col-span-2">
               <textarea {% if base_form.annotators.field.required %}required{% endif %}  id="{{ base_form.annotators.html_name }}" name="{{ base_form.annotators.html_name }}" rows="3" class="border max-w-lg outline-none shadow-sm p-4 block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ base_form.annotators.value|default:'' }}</textarea>
-              <p class="mt-2 text-sm text-gray-500">A list of email addresses (one per line) of the annotators to collect responses from.</p>
+              <p class="mt-2 text-sm text-gray-500">A list of identifiers (one per line) of the annotators to collect responses from.</p>
               {{ base_form.annotators.errors }}
             </div>
           </div>
