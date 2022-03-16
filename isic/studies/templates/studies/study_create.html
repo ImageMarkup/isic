@@ -161,9 +161,9 @@
     <div class="space-y-8 space-y-5">
       <div>
         <div class="max-w-2xl">
-          <h2 class="leading-6 text-gray-900">
+          <div class="heading-2">
             Create a Study
-          </h2>
+          </div>
           <p class="mt-1 max-w-2xl text-sm text-gray-500">
             A Study is a set of images, questions, and annotators used to collect data. Studies are based
             off of collections of images, and can be public or private. Responses to the study can be downloaded
@@ -236,7 +236,7 @@
         </div>
 
         <div class="mt-6 mt-5 space-y-6 space-y-5 border-t border-gray-200">
-          <h3>Official Questions</h3>
+          <div class="heading-3">Official Questions</div>
           <div class="flex justify-between items-start">
 
             <p class="max-w-2xl text-sm text-gray-500">
@@ -245,9 +245,9 @@
               Searchable responses can be compared to other studies and used for meta analyses.
             </p>
 
-            <button @click.prevent="officialQuestionModal = true" type="button" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-500 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
+            <div class="btn btn-secondary" @click="officialQuestionModal = true" >
               Add Official Question
-            </button>
+            </div>
           </div>
 
           <div class="mt-6 mt-5 space-y-6 space-y-5">
@@ -275,7 +275,7 @@
       </div>
 
       <div class="mt-6 mt-5 space-y-6 space-y-5 border-t border-gray-200" x-data="customQuestionFormSetComponent()">
-        <h3>Custom Questions</h3>
+        <div class="heading-3">Custom Questions</div>
         <div class="flex justify-between items-start">
           <p class="max-w-2xl text-sm text-gray-500">
             Custom questions are questions that are only used in your Study. Using custom questions
@@ -283,9 +283,9 @@
             Further, custom questions can't be compared to other studies.
           </p>
 
-          <button @click="add" type="button" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-500 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
+          <div class="btn btn-secondary" @click="add">
             Add Custom Question
-          </button>
+          </div>
         </div>
 
         <div id="custom-questions">
@@ -302,7 +302,7 @@
 
       <div class="border-t border-gray-200 py-5">
         <div class="flex justify-end">
-          <button type="submit" class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-500 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 hover:text-white">
+          <button type="submit" class="btn btn-primary">
             Create Study
           </button>
         </div>

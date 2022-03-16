@@ -52,8 +52,7 @@ class MetadataFilePermissions:
 
     @staticmethod
     def view_metadatafile(user_obj, obj):
-        # TODO: use .contains in django 4
-        return MetadataFilePermissions.view_metadatafile_list(user_obj).filter(pk=obj.pk).exists()
+        return MetadataFilePermissions.view_metadatafile_list(user_obj).contains(obj)
 
 
 MetadataFile.perms_class = MetadataFilePermissions

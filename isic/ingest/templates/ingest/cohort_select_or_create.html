@@ -3,7 +3,7 @@
 {% block content %}
   {% include 'ingest/partials/upload_progress_bar.html' with step=2 %}
 
-  <h2>Select a Cohort</h2>
+  <div class="heading-1">Select a Cohort</div>
   <p>A Cohort is a group of images which share common licensing and metadata.</p>
 
   <div class="mt-6">
@@ -20,7 +20,7 @@
               </p>
             </div>
             <div>
-              <a href="{% url 'upload/cohort-files' cohort.id %}" class="button is-primary is-sm">
+              <a href="{% url 'upload/cohort-files' cohort.id %}" class="btn btn-primary">
                 Use
               </a>
             </div>
@@ -37,7 +37,7 @@
     </div>
     <div class="text-center">
       If you're not updating an existing Cohort, you should create a new one.
-      <a href="{% url 'upload/create-cohort' contributor_pk %}" class="button is-secondary ml-6">New Cohort</a>
+      <a href="{% url 'upload/create-cohort' contributor_pk %}" class="btn btn-secondary ml-6">New Cohort</a>
     </div>
   </div>
 {% endblock %}

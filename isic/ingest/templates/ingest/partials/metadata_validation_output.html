@@ -8,9 +8,9 @@
         </svg>
       </div>
       <div class="ml-3">
-        <h3 class="text-sm font-medium text-yellow-800">
+        <div class="heading-3" class="text-sm font-medium text-yellow-800">
           There are some columns we didn't recognize. This is okay, they'll be added to your images as unstructured data.
-        </h3>
+        </div>
         <div class="mt-2 text-sm text-yellow-700">
           <ul class="list-disc pl-5 space-y-1">
             {% for col in unstructured_columns %}
@@ -28,7 +28,7 @@
 <div id="checkpoint-problems">
 
   <div>
-    <h4>Checkpoint 1 - {{ checkpoint.1.title }}</h4>
+    <div class="heading-4">Checkpoint 1 - {{ checkpoint.1.title }}</div>
   </div>
   {% if checkpoint.1.run %}
     {% for problem in checkpoint.1.problems %}
@@ -47,7 +47,7 @@
   {% endif %}
 
   <div>
-    <h4>Checkpoint 2 - {{ checkpoint.2.title }}</h4>
+    <div class="heading-4">Checkpoint 2 - {{ checkpoint.2.title }}</div>
   </div>
   {% if checkpoint.2.run %}
     {% if checkpoint.2.problems %}
@@ -67,7 +67,7 @@
   {% endif %}
 
   <div>
-    <h4>Checkpoint 3 - {{ checkpoint.3.title }}</h4>
+    <div class="heading-4">Checkpoint 3 - {{ checkpoint.3.title }}</div>
   </div>
   {% if checkpoint.3.run %}
     {% if checkpoint.3.problems %}

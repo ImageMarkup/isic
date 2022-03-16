@@ -4,7 +4,7 @@
 {% block content %}
   <div class="flex justify-between">
     <div class="flex justify-items">
-      <h1>{{ collection.name }}</h1>
+      <div class="heading-1">{{ collection.name }}</div>
       {% if collection.public %}
         <p class="px-3 py-2 ml-2 text-md leading-5 font-semibold rounded-full bg-green-100 text-green-800">
           Public
@@ -29,7 +29,7 @@
       <div x-show="open" class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
         {% if request.user.is_staff or request.user == collection.creator %}
         <div class="py-1" role="none">
-          <a href="{% url 'core/collection-edit' collection.pk %}" class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-0">Edit Collection</a>
+          <a href="{% url 'core/collection-edit' collection.pk %}" class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-0">Download Collection</a>
         </div>
         {% endif %}
         {% if request.user.is_staff and not collection.doi %}

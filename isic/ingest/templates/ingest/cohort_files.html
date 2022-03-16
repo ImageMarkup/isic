@@ -7,7 +7,7 @@
 
   <div class="mb-5 flex justify-between">
     <div>
-      <h2>{{ cohort.name }}</h2>
+      <div class="heading-1">{{ cohort.name }}</div>
       <span>{{ cohort.description }}</span>
     </div>
     {% include 'ingest/partials/upload_actions.html' %}
@@ -15,7 +15,7 @@
 
   <div class="flex justify-between mb-4">
     <div>
-      <h2>Zip Files</h2>
+      <div class="heading-2">Zip Files</div>
       <p>A zip file should contain a set of images with unique filenames across the cohort that will be uploaded to the Archive.</p>
     </div>
 
@@ -67,7 +67,7 @@
 
   <div class="flex justify-between mb-4 mt-6">
     <div>
-      <h2>Metadata Files</h2>
+      <div class="heading-2">Metadata Files</div>
       <p>A metadata file should be a CSV containing an image name along with metadata compliant with the <a href="https://github.com/ImageMarkup/isic-archive/wiki/Image#metadata">metadata dictionary</a>.</p>
     </div>
 
@@ -119,7 +119,7 @@
     </div>
     <div class="text-center">
       Instead of uploading a bundle of images, you can upload an individual one.
-      <a href="{% url 'upload/single-accession' cohort.pk %}" class="button is-secondary ml-6">Upload an Image</a>
+      <a href="{% url 'upload/single-accession' cohort.pk %}" class="btn btn-secondary ml-6">Upload an Image</a>
     </div>
   </div>
 {% endblock %}
