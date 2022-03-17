@@ -43,7 +43,6 @@ setup(
     install_requires=[
         'celery',
         'django',
-        'django-admin-confirm',
         'django-allauth',
         'django-configurations[database,email]',
         'django-extensions',

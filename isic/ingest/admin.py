@@ -2,9 +2,7 @@ import csv
 from datetime import datetime
 import logging
 
-from admin_confirm import AdminConfirmMixin
-from admin_confirm.admin import confirm_action
-from django.contrib import admin, messages
+from django.contrib import admin
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.db import models
 from django.db.models import Count
@@ -27,7 +25,7 @@ from isic.ingest.models import (
     MetadataFile,
     ZipUpload,
 )
-from isic.ingest.tasks import extract_zip_task, publish_cohort_task
+from isic.ingest.tasks import extract_zip_task
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +81,7 @@ class ContributorAdmin(admin.ModelAdmin):
 
 
 @admin.register(Cohort)
-class CohortAdmin(AdminConfirmMixin, admin.ModelAdmin):
+class CohortAdmin(admin.ModelAdmin):
     list_select_related = ['creator', 'contributor']
     list_display = [
         'id',
@@ -189,24 +187,6 @@ class CohortAdmin(AdminConfirmMixin, admin.ModelAdmin):
                     }
                     writer.writerow(d)
         return response
-
-    @confirm_action
-    @admin.action(description='Publish cohort publicly')
-    @takes_instance_or_queryset
-    def publish_cohort_publicly(self, request, queryset):
-        for cohort_pk in queryset.values_list('pk', flat=True):
-            publish_cohort_task.delay(cohort_pk, public=True)
-            logger.info(f'User {request.user.pk} is publishing cohort {cohort_pk} publicly.')
-        messages.add_message(request, messages.INFO, 'Publishing cohort(s) publicly.')
-
-    @confirm_action
-    @admin.action(description='Publish cohort privately')
-    @takes_instance_or_queryset
-    def publish_cohort_privately(self, request, queryset):
-        for cohort_pk in queryset.values_list('pk', flat=True):
-            publish_cohort_task.delay(cohort_pk, public=False)
-            logger.info(f'User {request.user.pk} is publishing cohort {cohort_pk} privately.')
-        messages.add_message(request, messages.INFO, 'Publishing cohort(s) privately.')
 
 
 @admin.register(MetadataFile)
