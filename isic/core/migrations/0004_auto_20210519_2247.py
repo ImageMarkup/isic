@@ -9,7 +9,7 @@ import django_extensions.db.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ingest', '0040_accession_accession_wh_status_check'),
+        ('ingest', '0001_initial_squashed'),
         ('core', '0003_alter_duplicateimage_accession'),
     ]
 
