@@ -5,14 +5,6 @@ import django_extensions.db.fields
 
 
 class Migration(migrations.Migration):
-    replaces = [
-        ('stats', '0001_initial'),
-        ('stats', '0002_imagedownload'),
-        ('stats', '0003_auto_20220306_0902'),
-        ('stats', '0004_id_big_auto_field'),
-        ('stats', '0005_imagedownload_user_agent'),
-    ]
-
     initial = True
 
     dependencies = [
