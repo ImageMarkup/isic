@@ -52,6 +52,7 @@ setup(
         'django-nested-admin',
         'django-oauth-toolkit',
         'django-object-actions',
+        'django-widget-tweaks',
         'djangorestframework',
         'drf-yasg',
         'google-api-python-client',
