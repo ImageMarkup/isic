@@ -113,14 +113,10 @@ class ImageViewSet(ReadOnlyModelViewSet):
             <li>clin_size_long_diam_mm</li>
             <li>melanocytic</li>
             <li>acquisition_day</li>
-            <li>marker_pen</li>
-            <li>hairy</li>
-            <li>blurry</li>
             <li>nevus_type</li>
             <li>image_type</li>
             <li>dermoscopic_type</li>
             <li>anatom_site_general</li>
-            <li>color_tint</li>
             <li>mel_class</li>
             <li>mel_mitotic_index</li>
             <li>mel_thick_mm</li>
