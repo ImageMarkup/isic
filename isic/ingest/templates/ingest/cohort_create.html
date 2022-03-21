@@ -49,7 +49,7 @@
                 <option value="">--</option>
                 <option value="CC-0" {% if form.copyright_license.value == "CC-0" %}selected="selected"{% endif %}>CC-0</option>
                 <option value="CC-BY" {% if form.copyright_license.value == "CC-BY" %}selected="selected"{% endif %}>CC-BY</option>
-                <option value="CC-BY-NC" {% if form.copyright_license.value == "CC-BY-NC" %}selected="selected"{% endif %}>CC-BY-NC</option>
+                <option value="CC-BY-NC" {% if form.copyright_license.value == "CC-BY-NC" %}selected="selected"{% endif %}>CC-BY-NC (Not recommended)</option>
               </select>
               <div x-data="{ open: false }" class="pb-4">
                 <span @click="open = true" class="cursor-pointer my-3 text-xs text-primary-500">help me choose</span>
