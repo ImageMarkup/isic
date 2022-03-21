@@ -8,7 +8,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ingest', '0045_contributor_owners'),
+        ('ingest', '0001_initial_squashed'),
         ('core', '0008_auto_20210526_0232'),
     ]
 

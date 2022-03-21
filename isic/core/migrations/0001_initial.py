@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('ingest', '0028_alter_checklog_accession'),
+        ('ingest', '0001_initial_squashed'),
     ]
 
     operations = [
