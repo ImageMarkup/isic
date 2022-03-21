@@ -7,7 +7,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('core', '0004_auto_20210519_2247'),
+        ('core', '0001_initial_squashed'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('studies', '0006_delete_image'),
     ]
