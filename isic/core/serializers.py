@@ -97,7 +97,7 @@ class SearchQuerySerializer(serializers.Serializer):
                 )
             )
 
-        return get_visible_objects(self.context['user'], 'core.view_image', qs)
+        return get_visible_objects(self.context['user'], 'core.view_image', qs).distinct()
 
 
 class ImageUrlSerializer(serializers.Serializer):

@@ -22,6 +22,24 @@ function imageBrowser() {
         });
       }
     },
+    isicCliDownloadCommand() {
+
+      const params = (new URL(document.location)).searchParams;
+      let base = 'isic image download';
+
+      if (params.has('query')) {
+        base += ` --search "${params.get('query').replace(/"/g, '\\\"')}"`;
+      }
+
+      if (params.has('collections')) {
+        base += ` --collections "${params.getAll('collections').join(',')}"`;
+      }
+
+      return base + ' --limit 0 myimages/';
+    },
+    copyIsicCliDownloadCommand() {
+      navigator.clipboard.writeText(this.isicCliDownloadCommand());
+    }
   }
 }
 </script>
