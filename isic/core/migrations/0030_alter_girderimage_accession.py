@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('ingest', '0054_alter_cohort_attribution'),
+        ('ingest', '0001_initial_squashed'),
         ('core', '0029_auto_20211110_0008'),
     ]
 
