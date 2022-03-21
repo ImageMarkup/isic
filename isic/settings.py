@@ -37,6 +37,7 @@ class IsicMixin(ConfigMixin):
             'nested_admin',
             'django_object_actions',
             'django_json_widget',
+            'widget_tweaks',
         ]
 
         # PASSWORD_HASHERS are ordered "best" to "worst", appending Girder last means
