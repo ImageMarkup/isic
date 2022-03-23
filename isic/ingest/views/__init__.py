@@ -17,7 +17,7 @@ from isic.ingest.filters import AccessionFilter
 from isic.ingest.forms import SingleAccessionUploadForm
 from isic.ingest.models import Accession, Cohort, ZipUpload
 from isic.ingest.models.accession import ACCESSION_CHECKS
-from isic.ingest.tasks import extract_zip_task, process_accession_task, publish_cohort_task
+from isic.ingest.tasks import accession_generate_blob_task, extract_zip_task, publish_cohort_task
 
 
 def make_breadcrumbs(cohort: Cohort | None = None) -> list:
@@ -49,7 +49,7 @@ def upload_single_accession(request, cohort_pk):
             form.instance.cohort = cohort
             form.instance.blob_name = os.path.basename(form.instance.original_blob.name)
             form.save()
-            process_accession_task.delay(form.instance.pk)
+            accession_generate_blob_task.delay(form.instance.pk)
             browse_url = reverse('upload/cohort-browser', args=[cohort.pk])
             messages.add_message(
                 request,

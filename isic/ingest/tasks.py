@@ -1,9 +1,5 @@
-import io
-
-import PIL.Image
 from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import transaction
 
 from isic.core.models import Image
@@ -16,11 +12,10 @@ from isic.ingest.models import (
     MetadataFile,
     ZipUpload,
 )
-from isic.ingest.utils.mime import guess_mime_type
 
 
 @shared_task(soft_time_limit=30, time_limit=60)
-def generate_thumbnail_task(accession_pk: int) -> None:
+def accession_generate_thumbnail_task(accession_pk: int) -> None:
     accession = Accession.objects.get(pk=accession_pk)
     accession.generate_thumbnail()
 
@@ -41,52 +36,22 @@ def extract_zip_task(zip_pk: int):
     else:
         # tasks should be delayed after the accessions are committed to the database
         for accession_id in zip_upload.accessions.values_list('id', flat=True):
-            process_accession_task.delay(accession_id)
+            accession_generate_blob_task.delay(accession_id)
 
 
 @shared_task(soft_time_limit=60, time_limit=90)
-def process_accession_task(accession_pk: int):
+def accession_generate_blob_task(accession_pk: int):
     accession = Accession.objects.get(pk=accession_pk)
 
     try:
-        with accession.original_blob.open('rb') as original_blob_stream:
-            blob_mime_type = guess_mime_type(original_blob_stream, accession.blob_name)
-        blob_major_mime_type = blob_mime_type.partition('/')[0]
-        if blob_major_mime_type != 'image':
-            accession.status = AccessionStatus.SKIPPED
-            accession.save(update_fields=['status'])
-            return
-
-        content = accession.original_blob.open().read()
-
-        # determines image is readable, and strips exif tags
-        img = PIL.Image.open(io.BytesIO(content))
-        img = img.convert('RGB')
-        img_bytes = io.BytesIO()
-        img.save(img_bytes, format='JPEG')
-        accession.blob = SimpleUploadedFile(
-            accession.blob_name,
-            img_bytes.getvalue(),
-            'image/jpeg',
-        )
-        accession.blob_size = len(img_bytes.getvalue())
-        accession.height = img.height
-        accession.width = img.width
-        accession.save(update_fields=['blob', 'blob_size', 'height', 'width'])
-
-        accession.status = AccessionStatus.SUCCEEDED
-        accession.save(update_fields=['status'])
-
-        process_distinctness_measure_task.delay(accession.pk)
-        generate_thumbnail_task.delay(accession.pk)
+        accession.generate_blob()
     except SoftTimeLimitExceeded:
         accession.status = AccessionStatus.FAILED
         accession.save(update_fields=['status'])
         raise
-    except Exception:
-        accession.status = AccessionStatus.FAILED
-        accession.save(update_fields=['status'])
-        raise
+
+    process_distinctness_measure_task.delay(accession.pk)
+    accession_generate_thumbnail_task.delay(accession.pk)
 
 
 @shared_task(soft_time_limit=60, time_limit=90)
