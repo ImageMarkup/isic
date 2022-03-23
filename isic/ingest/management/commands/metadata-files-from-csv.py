@@ -16,10 +16,22 @@ StreamWriter = codecs.getwriter('utf-8')
 
 
 @click.command()
-@click.argument('user_id', help='The user to attribute the metadata file to.')
-@click.argument('csv_path', help='The path to the CSV of metadata, containing an ISIC ID column.')
-@click.argument('isic_id_column', help='The name of the column that refers to the ISIC ID.')
+@click.argument('user_id')
+@click.argument('csv_path')
+@click.argument('isic_id_column')
 def metadata_files_from_csv(user_id, csv_path, isic_id_column):
+    """
+    Create MetadataFile objects from a CSV that refers to already published images.
+
+    These can be later applied with apply-metadata-files.
+
+    USER_ID is the user the MetadataFile objects will be owned by.
+
+    CSV_PATH is the path to the csv of the metadata, which must contain a column with
+    the ISIC ID.
+
+    ISIC_ID_COLUMN is the name of the column that refers to the ISIC ID.
+    """
     u = User.objects.get(pk=user_id)
     with open(csv_path) as f:
         df = pd.read_csv(f, header=0)
