@@ -37,6 +37,7 @@ class IsicMixin(ConfigMixin):
             'nested_admin',
             'django_object_actions',
             'django_json_widget',
+            'spurl',
             'widget_tweaks',
         ]
 
