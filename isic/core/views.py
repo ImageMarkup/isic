@@ -12,6 +12,7 @@ from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
+from isic.core.filters import CollectionFilter
 from isic.core.forms.collection import CollectionForm
 from isic.core.forms.doi import CreateDoiForm
 from isic.core.forms.search import ImageSearchForm
@@ -42,13 +43,27 @@ def collection_list(request):
             '-official', 'name'
         ),
     )
-    paginator = Paginator(collections, 25)
+    if request.user.is_authenticated:
+        counts = collections.aggregate(
+            official=Count('pk', filter=Q(official=True)),
+            shared_with_me=Count('pk', filter=Q(shares=request.user)),
+            mine=Count('pk', filter=Q(creator=request.user)),
+            all_=Count('pk'),
+        )
+    else:
+        counts = collections.aggregate(
+            official=Count('pk', filter=Q(official=True)),
+            all_=Count('pk'),
+        )
+
+    filter = CollectionFilter(request.GET, queryset=collections, user=request.user)
+    paginator = Paginator(filter.qs, 25)
     page = paginator.get_page(request.GET.get('page'))
 
     return render(
         request,
         'core/collection_list.html',
-        {'collections': page},
+        {'collections': page, 'filter': filter, 'counts': counts},
     )
 
 
