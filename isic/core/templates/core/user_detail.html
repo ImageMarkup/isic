@@ -1,0 +1,353 @@
+{% extends 'core/base.html' %}
+{% load localtime %}
+{% load humanize %}
+
+{% block content %}
+  <div class="heading-3">
+    {{ user.first_name }} {{ user.last_name }} ({{ user.profile.hash_id }})
+  </div>
+
+  <div class="overflow-x-auto my-4">
+    <table class="table table-compact w-full">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Created</th>
+          <th>Last login</th>
+          <th>Staff</th>
+          <th>Email Addresses</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>{{ user.pk }}</th>
+          <td>{% localtime user.date_joined %}</td>
+          <td>{% localtime user.last_login %}</td>
+          <td>{{ user.is_staff }}</td>
+          <td>{{ email_addresses|join:"<br />" }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="my-4" x-data="{activeTab: 'collections'}">
+    {% for section, qs in sections.items %}
+      <a class="text-white" @click.prevent="activeTab = '{{ section }}'">
+        <button class="btn gap-2 my-2 mx-2"
+               :class="activeTab == '{{section}}' ? 'btn-primary' : 'btn-secondary'">
+          {{ section }}
+          <div class="badge badge-accent">{{ qs.count|intcomma }}</div>
+        </button>
+      </a>
+    {% endfor %}
+
+    <div x-show="activeTab == 'collections'">
+      <div class="overflow-x-auto my-4">
+        <table class="table table-compact w-full">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Created</th>
+              <th>Name</th>
+              <th>Public</th>
+              <th>DOI</th>
+              <th>Locked</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for collection in sections.collections.all %}
+              <tr>
+                <th>{{ collection.pk }}</th>
+                <td>{% localtime collection.created %}</td>
+                <td>{{ collection.name }}</td>
+                <td>{{ collection.public }}</td>
+                <td>{{ collection.doi }}</td>
+                <td>{{ collection.locked }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div x-show="activeTab == 'contributors'">
+      <div class="overflow-x-auto my-4">
+        <table class="table table-compact w-full">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Created</th>
+              <th>Creator</th>
+              <th>Owners</th>
+              <th>Institution Name</th>
+              <th>Institution URL</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for contributor in sections.contributors.all %}
+              <tr>
+                <th>{{ contributor.pk }}</th>
+                <td>{% localtime contributor.created %}</td>
+                <td>{{ contributor.creator }}</td>
+                <td>{{ contributor.owners.all|join:"<br />" }}</td>
+                <td>{{ contributor.institution_name }}</td>
+                <td>{{ contributor.institution_url }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div x-show="activeTab == 'zip_uploads'">
+      <div class="overflow-x-auto my-4">
+        <table class="table table-compact w-full">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Created</th>
+              <th>Creator</th>
+              <th>Cohort</th>
+              <th>Name</th>
+              <th>Size</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for zip_upload in sections.zip_uploads.all %}
+              <tr>
+                <th>{{ zip_upload.pk }}</th>
+                <td>{% localtime zip_upload.created %}</td>
+                <td>{{ zip_upload.creator }}</td>
+                <td>{{ zip_upload.cohort }}</td>
+                <td>{{ zip_upload.blob_name }}</td>
+                <td>{{ zip_upload.blob_size|filesizeformat }}</td>
+                <td>{{ zip_upload.get_status_display }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div x-show="activeTab == 'single_shot_accessions'">
+      <div class="overflow-x-auto my-4">
+        <table class="table table-compact w-full">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Created</th>
+              <th>Creator</th>
+              <th>Cohort</th>
+              <th>Name</th>
+              <th>Size</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for accession in sections.single_shot_accessions.all %}
+              <tr>
+                <th>{{ accession.pk }}</th>
+                <td>{% localtime accession.created %}</td>
+                <td>{{ accession.creator }}</td>
+                <td>{{ accession.cohort }}</td>
+                <td>{{ accession.blob_name }}</td>
+                <td>{{ accession.blob_size|filesizeformat }}</td>
+                <td>{{ accession.get_status_display }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div x-show="activeTab == 'accession_reviews'">
+      <div class="overflow-x-auto my-4">
+        <table class="table table-compact w-full">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Created</th>
+              <th>Creator</th>
+              <th>Reviewed</th>
+              <th>Review</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for accession_review in sections.accession_reviews.all|slice:":10" %}
+              <tr>
+                <th>{{ accession_review.pk }}</th>
+                <td>{% localtime accession_review.created %}</td>
+                <td>{{ accession_review.creator }}</td>
+                <td>{{ accession_review.change_field }}</td>
+                <td>{{ accession_review.change_to }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div x-show="activeTab == 'metadata_files'">
+      <div class="overflow-x-auto my-4">
+        <table class="table table-compact w-full">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Created</th>
+              <th>Creator</th>
+              <th>Cohort</th>
+              <th>Name</th>
+              <th>Size</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for metadata_file in sections.metadata_files.all %}
+              <tr>
+                <th>{{ metadata_file.pk }}</th>
+                <td>{% localtime metadata_file.created %}</td>
+                <td>{{ metadata_file.creator }}</td>
+                <td>{{ metadata_file.cohort }}</td>
+                <td>{{ metadata_file.blob_name }}</td>
+                <td>{{ metadata_file.blob_size|filesizeformat }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div x-show="activeTab == 'studies'">
+      <div class="overflow-x-auto my-4">
+        <table class="table table-compact w-full">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Created</th>
+              <th>Creator</th>
+              <th>Name</th>
+              <th>Collection</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for study in sections.studies.all %}
+              <tr>
+                <th>{{ study.pk }}</th>
+                <td>{% localtime study.created %}</td>
+                <td>{{ study.creator }}</td>
+                <td>{{ study.name }}</td>
+                <td>{{ study.collection.name }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div x-show="activeTab == 'study_tasks'">
+      <div class="overflow-x-auto my-4">
+        <table class="table table-compact w-full">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Created</th>
+              <th>Annotator</th>
+              <th>Image</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for study_task in sections.study_tasks.all|slice:":10" %}
+              <tr>
+                <th>{{ study_task.pk }}</th>
+                <td>{% localtime study_task.created %}</td>
+                <td>{{ study_task.annotator }}</td>
+                <td>{{ study_task.image }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div x-show="activeTab == 'annotations'">
+      <div class="overflow-x-auto my-4">
+        <table class="table table-compact w-full">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Created</th>
+              <th>Study</th>
+              <th>Annotator</th>
+              <th>Image</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for annotation in sections.annotations.all|slice:":10" %}
+              <tr>
+                <th>{{ annotation.pk }}</th>
+                <td>{% localtime annotation.created %}</td>
+                <td>{{ annotation.study }}</td>
+                <td>{{ annotation.annotator }}</td>
+                <td>{{ annotation.image }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div x-show="activeTab == 'segmentations'">
+      <div class="overflow-x-auto my-4">
+        <table class="table table-compact w-full">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Created</th>
+              <th>Creator</th>
+              <th>Image</th>
+              <th>Mask</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for segmentation in sections.segmentations.all|slice:":10" %}
+              <tr>
+                <th>{{ segmentation.pk }}</th>
+                <td>{% localtime segmentation.created %}</td>
+                <td>{{ segmentation.creator }}</td>
+                <td>{{ segmentation.image }}</td>
+                <td>-</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div x-show="activeTab == 'segmentation_reviews'">
+      <div class="overflow-x-auto my-4">
+        <table class="table table-compact w-full">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Created</th>
+              <th>Creator</th>
+              <th>Segmentation</th>
+              <th>Approved</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for segmentation_review in sections.segmentation_reviews.all|slice:":10" %}
+              <tr>
+                <th>{{ segmentation_review.pk }}</th>
+                <td>{% localtime segmentation_review.created %}</td>
+                <td>{{ segmentation_review.creator }}</td>
+                <td>{{ segmentation_review.segmentation }}</td>
+                <td>{{ segmentation_review.approved }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}

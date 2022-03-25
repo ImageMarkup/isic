@@ -14,6 +14,7 @@ from isic.core.views import (
     image_browser,
     image_detail,
     staff_list,
+    user_detail,
 )
 from isic.ingest.models.accession import Accession
 from isic.login.views import accept_terms_of_use
@@ -86,5 +87,10 @@ urlpatterns = [
         'images/<image-identifier:pk>/',
         image_detail,
         name='core/image-detail',
+    ),
+    path(
+        'users/<int:pk>/',
+        user_detail,
+        name='core/user-detail',
     ),
 ]

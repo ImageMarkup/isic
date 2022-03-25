@@ -21,6 +21,20 @@ def test_core_staff_list(client, authenticated_client, staff_client):
     'client_,visible',
     [
         [lazy_fixture('client'), False],
+        [lazy_fixture('authenticated_client'), False],
+        [lazy_fixture('staff_client'), True],
+    ],
+)
+def test_core_user_detail(user, client_, visible):
+    r = client_.get(reverse('core/user-detail', args=[user.pk]))
+    assert r.status_code == 200 if visible else 403
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'client_,visible',
+    [
+        [lazy_fixture('client'), False],
         [lazy_fixture('authenticated_client'), True],
     ],
 )
