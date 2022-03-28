@@ -319,7 +319,7 @@ class Accession(CreationSortedTimeStampedModel):
 
         return redacted
 
-    def update_metadata(self, user: User, csv_row: dict):
+    def update_metadata(self, user: User, csv_row: dict, *, ignore_image_check=False):
         """
         Apply metadata to an accession from a row in a CSV.
 
@@ -329,7 +329,7 @@ class Accession(CreationSortedTimeStampedModel):
 
         This method only supports adding/modifying metadata (e.g. dict.update).
         """
-        if self.pk:
+        if self.pk and not ignore_image_check:
             if hasattr(self, 'image'):
                 raise ValidationError("Can't modify the accession as it already has an image.")
 
