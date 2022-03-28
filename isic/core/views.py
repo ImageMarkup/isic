@@ -268,10 +268,10 @@ def image_detail(request, pk):
     }
 
     if request.user.has_perm('core.view_full_metadata', image):
-        ctx['metadata'] = image.accession.metadata
-        ctx['unstructured_metadata'] = image.accession.unstructured_metadata
+        ctx['metadata'] = dict(sorted(image.accession.metadata.items()))
+        ctx['unstructured_metadata'] = dict(sorted(image.accession.unstructured_metadata.items()))
     else:
-        ctx['metadata'] = image.accession.redacted_metadata
+        ctx['metadata'] = dict(sorted(image.accession.redacted_metadata.items()))
 
     ctx['sections'] = {
         'metadata': 'Metadata',

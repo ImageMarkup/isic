@@ -1,11 +1,11 @@
 {% load accession %}
 
 <div x-show="selectedTab == 'metadata'" class="flex">
-  <div class="flex-col mr-4">
+  <div class="flex-col flex-grow-5 mr-6">
     <div class="heading-3">Clinical</div>
-    <pre>
-      <code class="language-json">{{ metadata|formatted }}</code>
-    </pre>
+    <div class="overflow-x-auto">
+      {% include 'core/image_detail/metadata_table.html' %}
+    </div>
   </div>
   {% if unstructured_metadata %}
     <div class="flex-col">
@@ -18,11 +18,7 @@
         </svg>
       </div>
 
-      <pre>
-        <code class="language-json">{{ unstructured_metadata|formatted }}</code>
-      </pre>
+      {% include 'core/image_detail/metadata_table.html' with metadata=unstructured_metadata %}
     </div>
   {% endif %}
 </div>
-
-<script>hljs.highlightAll();</script>
