@@ -95,16 +95,16 @@ def test_accession_upload_invalid_cohort(
 
 
 @pytest.mark.django_db
-def test_accession_mutable_before_publish(accession_factory):
+def test_accession_mutable_before_publish(user, accession_factory):
     accession = accession_factory(image=None)
-    accession.apply_metadata({'foo': 'bar'})
+    accession.apply_metadata(user, {'foo': 'bar'})
     accession.save()
 
 
 @pytest.mark.django_db
-def test_accession_immutable_after_publish(image_factory):
+def test_accession_immutable_after_publish(user, image_factory):
     image = image_factory()
 
     with pytest.raises(ValidationError):
-        image.accession.apply_metadata({'foo': 'bar'})
+        image.accession.apply_metadata(user, {'foo': 'bar'})
         image.accession.save()
