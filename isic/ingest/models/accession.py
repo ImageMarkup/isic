@@ -319,6 +319,10 @@ class Accession(CreationSortedTimeStampedModel):
 
         return redacted
 
+    def _metadata_mutable_check(self):
+        if hasattr(self, 'image'):
+            raise ValidationError("Can't modify the accession as it already has an image.")
+
     def update_metadata(self, user: User, csv_row: dict, *, ignore_image_check=False):
         """
         Apply metadata to an accession from a row in a CSV.
@@ -330,10 +334,12 @@ class Accession(CreationSortedTimeStampedModel):
         This method only supports adding/modifying metadata (e.g. dict.update).
         """
         if self.pk and not ignore_image_check:
-            if hasattr(self, 'image'):
-                raise ValidationError("Can't modify the accession as it already has an image.")
+            self._metadata_mutable_check()
 
-        metadata = MetadataRow.parse_obj(csv_row)
+        # merge metadata with existing metadata, this is necessary for metadata
+        # that has interdependent checks.
+        self.metadata.update(csv_row)
+        metadata = MetadataRow.parse_obj(self.metadata)
         with transaction.atomic():
             self.unstructured_metadata.update(metadata.unstructured)
             self.metadata.update(
@@ -344,4 +350,6 @@ class Accession(CreationSortedTimeStampedModel):
                 metadata=self.metadata,
                 unstructured_metadata=self.unstructured_metadata,
             )
+            # TODO: this method could result in duplicate identical revisions
+            self.save(update_fields=['metadata', 'unstructured_metadata'])
             self.save(update_fields=['metadata', 'unstructured_metadata'])
