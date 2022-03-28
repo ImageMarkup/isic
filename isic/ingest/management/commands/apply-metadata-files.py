@@ -1,16 +1,18 @@
 import sys
 
+from django.contrib.auth.models import User
 from django.db import transaction
 import djclick as click
-from isic_metadata.metadata import MetadataRow
 
 from isic.ingest.models import Accession
 from isic.ingest.models.metadata_file import MetadataFile
 
 
 @click.command()
+@click.argument('user_id')
 @click.argument('metadata_file_id', nargs=-1, type=click.INT)
-def apply_metadata_files(metadata_file_id):
+def apply_metadata_files(user_id, metadata_file_id):
+    user = User.objects.get(pk=user_id)
     assert metadata_file_id
     metadata_files = MetadataFile.objects.filter(pk__in=metadata_file_id)
     missing_files = set(metadata_file_id) - set(metadata_files.values_list('pk', flat=True))
@@ -32,14 +34,7 @@ def apply_metadata_files(metadata_file_id):
                     )
                     # filename doesn't need to be stored in the metadata
                     del row['filename']
-                    metadata = MetadataRow.parse_obj(row)
-                    accession.unstructured_metadata.update(metadata.unstructured)
-                    accession.metadata.update(
-                        metadata.dict(
-                            exclude_unset=True, exclude_none=True, exclude={'unstructured'}
-                        )
-                    )
-                    accession.save(update_fields=['metadata', 'unstructured_metadata'])
+                    accession.update_metadata(user, row, ignore_image_check=True)
                 click.secho(f'Applied metadata file: {metadata_file.pk}', fg='green')
         except Exception as e:
             click.echo(e)
