@@ -20,7 +20,7 @@ from isic.ingest.serializers import (
     ContributorSerializer,
     MetadataFileSerializer,
 )
-from isic.ingest.tasks import accession_generate_blob_task, apply_metadata_task
+from isic.ingest.tasks import accession_generate_blob_task, update_metadata_task
 
 
 class AccessionPermissions(BasePermission):
@@ -173,7 +173,7 @@ class MetadataFileViewSet(
 
     @swagger_auto_schema(auto_schema=None)
     @action(detail=True, methods=['post'])
-    def apply_metadata(self, request, pk=None):
+    def update_metadata(self, request, pk=None):
         metadata_file = self.get_object()
-        apply_metadata_task.delay(request.user.pk, metadata_file.pk)
+        update_metadata_task.delay(request.user.pk, metadata_file.pk)
         return Response(status=status.HTTP_202_ACCEPTED)

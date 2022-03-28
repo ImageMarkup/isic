@@ -5,7 +5,7 @@ from typing import BinaryIO
 from django.urls.base import reverse
 import pytest
 
-from isic.ingest.tasks import apply_metadata_task
+from isic.ingest.tasks import update_metadata_task
 from isic.ingest.tests.csv_streams import StreamWriter
 from isic.ingest.utils.metadata import validate_csv_format_and_filenames
 
@@ -51,7 +51,7 @@ def cohort_with_accession(cohort, accession_factory):
 @pytest.mark.django_db
 def test_apply_metadata(accession_factory, valid_metadatafile, cohort, user):
     accession = accession_factory(cohort=cohort, blob_name='filename.jpg')
-    apply_metadata_task(user.pk, valid_metadatafile.pk)
+    update_metadata_task(user.pk, valid_metadatafile.pk)
     accession.refresh_from_db()
     assert accession.metadata == {'benign_malignant': 'benign'}
     assert accession.unstructured_metadata == {'foo': 'bar'}
@@ -153,7 +153,7 @@ def test_apply_metadata_step3(
     assert not r.context['form'].errors, r.context['form'].errors
     assert r.status_code == 200, r.status_code
 
-    apply_metadata_task(user.pk, metadatafile.pk)
+    update_metadata_task(user.pk, metadatafile.pk)
 
     # test step 3 by trying to make a melanoma benign
     benign_metadatafile = metadata_file_factory(
