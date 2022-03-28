@@ -1,0 +1,16 @@
+<table class="table table-compact w-full">
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for field, value in metadata.items %}
+      <tr class="hover">
+        <td>{{ field }}</td>
+        <td>{{ value }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
