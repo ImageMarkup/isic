@@ -1,5 +1,6 @@
 from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
+from django.contrib.auth.models import User
 from django.db import transaction
 
 from isic.core.models import Image
@@ -65,8 +66,9 @@ def process_distinctness_measure_task(accession_pk: int):
 
 
 @shared_task(soft_time_limit=300, time_limit=600)
-def apply_metadata_task(metadata_file_pk: int):
+def apply_metadata_task(user_pk: int, metadata_file_pk: int):
     metadata_file = MetadataFile.objects.get(pk=metadata_file_pk)
+    user = User.objects.get(pk=user_pk)
 
     with transaction.atomic():
         for _, row in metadata_file.to_df().iterrows():
@@ -75,8 +77,7 @@ def apply_metadata_task(metadata_file_pk: int):
             )
             # filename doesn't need to be stored in the metadata since it's equal to blob_name
             del row['filename']
-            accession.apply_metadata(row)
-            accession.save(update_fields=['metadata', 'unstructured_metadata'])
+            accession.apply_metadata(user, row)
 
 
 @shared_task(soft_time_limit=10, time_limit=20)

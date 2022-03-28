@@ -175,5 +175,5 @@ class MetadataFileViewSet(
     @action(detail=True, methods=['post'])
     def apply_metadata(self, request, pk=None):
         metadata_file = self.get_object()
-        apply_metadata_task.delay(metadata_file.pk)
+        apply_metadata_task.delay(request.user.pk, metadata_file.pk)
         return Response(status=status.HTTP_202_ACCEPTED)
