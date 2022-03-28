@@ -319,12 +319,12 @@ class Accession(CreationSortedTimeStampedModel):
 
         return redacted
 
-    def apply_metadata(self, user: User, csv_row: dict):
+    def update_metadata(self, user: User, csv_row: dict):
         """
         Apply metadata to an accession from a row in a CSV.
 
         ALL metadata modifications must go through one of
-        apply_metadata/remove_metadata/reset_metadata since they handle checking if the metadata
+        update_metadata/remove_metadata/reset_metadata since they handle checking if the metadata
         can be mutated and they create revision records.
 
         This method only supports adding/modifying metadata (e.g. dict.update).

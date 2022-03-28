@@ -66,7 +66,7 @@ def process_distinctness_measure_task(accession_pk: int):
 
 
 @shared_task(soft_time_limit=300, time_limit=600)
-def apply_metadata_task(user_pk: int, metadata_file_pk: int):
+def update_metadata_task(user_pk: int, metadata_file_pk: int):
     metadata_file = MetadataFile.objects.get(pk=metadata_file_pk)
     user = User.objects.get(pk=user_pk)
 
@@ -77,7 +77,7 @@ def apply_metadata_task(user_pk: int, metadata_file_pk: int):
             )
             # filename doesn't need to be stored in the metadata since it's equal to blob_name
             del row['filename']
-            accession.apply_metadata(user, row)
+            accession.update_metadata(user, row)
 
 
 @shared_task(soft_time_limit=10, time_limit=20)
