@@ -1,3 +1,4 @@
+from copy import deepcopy
 import io
 from mimetypes import guess_type
 import tempfile
@@ -6,7 +7,7 @@ import PIL.Image
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.db import models
+from django.db import models, transaction
 from django.db.models import JSONField, Transform
 from django.db.models.aggregates import Count
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
@@ -319,13 +320,37 @@ class Accession(CreationSortedTimeStampedModel):
 
         return redacted
 
-    def apply_metadata(self, csv_row: dict):
-        if self.pk:
-            if hasattr(self, 'image'):
-                raise ValidationError("Can't modify the accession as it already has an image.")
+    def _metadata_mutable_check(self):
+        if hasattr(self, 'image'):
+            raise ValidationError("Can't modify the accession as it already has an image.")
 
-        metadata = MetadataRow.parse_obj(csv_row)
-        self.unstructured_metadata.update(metadata.unstructured)
-        self.metadata.update(
-            metadata.dict(exclude_unset=True, exclude_none=True, exclude={'unstructured'})
-        )
+    def update_metadata(self, user: User, csv_row: dict, *, ignore_image_check=False):
+        """
+        Apply metadata to an accession from a row in a CSV.
+
+        ALL metadata modifications must go through update_metadata since it handles checking if the
+        metadata can be mutated and they create version records.
+
+        This method only supports adding/modifying metadata (e.g. dict.update).
+        """
+        if self.pk and not ignore_image_check:
+            self._metadata_mutable_check()
+
+        # merge metadata with existing metadata, this is necessary for metadata
+        # that has interdependent checks.
+        existing_metadata = deepcopy(self.metadata)
+        existing_metadata.update(csv_row)
+        metadata = MetadataRow.parse_obj(existing_metadata)
+        with transaction.atomic():
+            self.unstructured_metadata.update(metadata.unstructured)
+            self.metadata.update(
+                metadata.dict(exclude_unset=True, exclude_none=True, exclude={'unstructured'})
+            )
+            self.metadata_versions.create(
+                creator=user,
+                metadata=self.metadata,
+                unstructured_metadata=self.unstructured_metadata,
+            )
+            # TODO: this method could result in duplicate identical versions
+            self.save(update_fields=['metadata', 'unstructured_metadata'])
+            self.save(update_fields=['metadata', 'unstructured_metadata'])

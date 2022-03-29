@@ -62,6 +62,7 @@ def test_view_image_detail_public(client, detailed_image):
     assert set(r.context['sections'].keys()) == {'metadata', 'studies'}
 
     assert 'unstructured_metadata' not in r.context
+    assert 'metadata_versions' not in r.context
 
     for field in RESTRICTED_METADATA_FIELDS:
         assert field not in r.context['metadata']
@@ -84,6 +85,8 @@ def test_view_image_detail_uploader(client, detailed_image):
     assert set(r.context['sections'].keys()) == {'metadata', 'studies'}
 
     assert 'unstructured_metadata' in r.context
+    # TODO: uploaders can see all metadata added to their images forever?
+    assert 'metadata_versions' in r.context
 
     for field in RESTRICTED_METADATA_FIELDS:
         assert field in r.context['metadata']
