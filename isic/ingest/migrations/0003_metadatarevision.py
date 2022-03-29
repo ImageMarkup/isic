@@ -6,14 +6,14 @@ import django.db.models.deletion
 import django_extensions.db.fields
 
 
-def create_initial_metadata_revisions(apps, schema_editor):
+def create_initial_metadata_versions(apps, schema_editor):
     Accession = apps.get_model('ingest', 'Accession')  # noqa: N806
     User = apps.get_model('auth', 'User')  # noqa: N806
     accessions = Accession.objects.exclude(metadata={}, unstructured_metadata={})
     if accessions.exists():
         user = User.objects.get(pk=1)
         for accession in accessions:
-            accession.metadata_revisions.create(
+            accession.metadata_versions.create(
                 creator=user,
                 metadata=accession.metadata,
                 unstructured_metadata=accession.unstructured_metadata,
@@ -55,7 +55,7 @@ class Migration(migrations.Migration):
                     'accession',
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
-                        related_name='metadata_revisions',
+                        related_name='metadata_versions',
                         to='ingest.accession',
                     ),
                 ),
@@ -63,7 +63,7 @@ class Migration(migrations.Migration):
                     'creator',
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
-                        related_name='metadata_revisions',
+                        related_name='metadata_versions',
                         to=settings.AUTH_USER_MODEL,
                     ),
                 ),
@@ -74,5 +74,5 @@ class Migration(migrations.Migration):
                 'abstract': False,
             },
         ),
-        migrations.RunPython(create_initial_metadata_revisions),
+        migrations.RunPython(create_initial_metadata_versions),
     ]

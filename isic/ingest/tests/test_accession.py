@@ -113,8 +113,8 @@ def test_accession_immutable_after_publish(user, image_factory):
 @pytest.mark.django_db
 def test_accession_metadata_versions(user, accession):
     accession.update_metadata(user, {'foo': 'bar'})
-    assert accession.metadata_revisions.count() == 1
-    diffs = accession.metadata_revisions.differences()
+    assert accession.metadata_versions.count() == 1
+    diffs = accession.metadata_versions.differences()
     assert len(diffs) == 1
     assert diffs[0][1] == {
         'unstructured_metadata': {'added': {'foo': 'bar'}, 'removed': {}, 'changed': {}},
@@ -122,8 +122,8 @@ def test_accession_metadata_versions(user, accession):
     }
 
     accession.update_metadata(user, {'foo': 'baz', 'age': '45'})
-    assert accession.metadata_revisions.count() == 2
-    diffs = accession.metadata_revisions.differences()
+    assert accession.metadata_versions.count() == 2
+    diffs = accession.metadata_versions.differences()
     assert len(diffs) == 2
     assert diffs[0][1] == {
         'unstructured_metadata': {'added': {'foo': 'bar'}, 'removed': {}, 'changed': {}},

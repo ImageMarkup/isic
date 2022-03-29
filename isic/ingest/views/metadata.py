@@ -67,7 +67,7 @@ def metadata_file_create(request, cohort_pk):
     return render(request, 'ingest/metadata_file_create.html', {'form': form})
 
 
-# TODO: make this a less dangerous action. reconsider how metadata revisions
+# TODO: make this a less dangerous action. reconsider how metadata versions
 # should work, and how published images should be handled.
 # Note: this is hidden from the GUI for now.
 @staff_member_required

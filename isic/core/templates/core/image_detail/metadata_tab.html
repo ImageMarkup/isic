@@ -24,7 +24,7 @@
   {% endif %}
 </div>
 
-{% if metadata_revisions %}
+{% if metadata_versions %}
   <div class="mt-4">
     <div class="flex items-center">
       <div class="heading-3">Metadata History</div>
@@ -42,10 +42,10 @@
         </tr>
       </thead>
       <tbody>
-        {% for metadata_revision, diff in metadata_revisions reversed %}
+        {% for metadata_version, diff in metadata_versions reversed %}
           <tr class="hover">
-            <td>{{ metadata_revision.creator  }}</td>
-            <td>{% localtime metadata_revision.created  %}</td>
+            <td>{{ metadata_version.creator  }}</td>
+            <td>{% localtime metadata_version.created  %}</td>
             <td>
               {% if forloop.last %}
                 Initial Version
