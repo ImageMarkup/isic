@@ -235,6 +235,7 @@ def image_detail(request, pk):
     studies = get_visible_objects(
         request.user,
         'studies.view_study',
+        Study.objects.select_related('creator'),
     )
     studies = (
         studies.filter(tasks__image=image)
@@ -270,6 +271,9 @@ def image_detail(request, pk):
     if request.user.has_perm('core.view_full_metadata', image):
         ctx['metadata'] = dict(sorted(image.accession.metadata.items()))
         ctx['unstructured_metadata'] = dict(sorted(image.accession.unstructured_metadata.items()))
+        ctx['metadata_revisions'] = image.accession.metadata_revisions.select_related(
+            'creator'
+        ).differences()
     else:
         ctx['metadata'] = dict(sorted(image.accession.redacted_metadata.items()))
 
