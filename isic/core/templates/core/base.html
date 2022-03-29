@@ -56,6 +56,13 @@
 </head>
 
 <body>
+  {% if SANDBOX_BANNER %}
+    <div class="fixed-banner">
+      This is a testing sandbox for the ISIC Archive.
+      The ISIC Archive is at <a href="https://isic-archive.com">https://isic-archive.com</a>.
+    </div>
+  {% endif %}
+
   <nav class="bg-white shadow">
     <div class="mx-auto px-6 lg:px-8" style="max-width:1400px;">
       <div class="relative flex justify-between h-16">
