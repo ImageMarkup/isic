@@ -5,6 +5,8 @@
 {% load get_key %}
 {% load chunks %}
 
+{% block title %}{{ image.isic_id }} | {% endblock %}
+
 {% block content %}
   <div x-data="{selectedTab: 'metadata'}">
     <div class="pb-5 border-b border-gray-200 sm:pb-0">

@@ -328,9 +328,8 @@ class Accession(CreationSortedTimeStampedModel):
         """
         Apply metadata to an accession from a row in a CSV.
 
-        ALL metadata modifications must go through one of
-        update_metadata/remove_metadata/reset_metadata since they handle checking if the metadata
-        can be mutated and they create version records.
+        ALL metadata modifications must go through update_metadata since it handles checking if the
+        metadata can be mutated and they create version records.
 
         This method only supports adding/modifying metadata (e.g. dict.update).
         """
