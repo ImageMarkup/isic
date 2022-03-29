@@ -12,7 +12,7 @@ def create_initial_metadata_versions(apps, schema_editor):
     accessions = Accession.objects.exclude(metadata={}, unstructured_metadata={})
     if accessions.exists():
         user = User.objects.get(pk=1)
-        for accession in accessions:
+        for accession in accessions.iterator():
             accession.metadata_versions.create(
                 creator=user,
                 metadata=accession.metadata,
