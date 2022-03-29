@@ -330,7 +330,7 @@ class Accession(CreationSortedTimeStampedModel):
 
         ALL metadata modifications must go through one of
         update_metadata/remove_metadata/reset_metadata since they handle checking if the metadata
-        can be mutated and they create revision records.
+        can be mutated and they create version records.
 
         This method only supports adding/modifying metadata (e.g. dict.update).
         """
@@ -347,11 +347,11 @@ class Accession(CreationSortedTimeStampedModel):
             self.metadata.update(
                 metadata.dict(exclude_unset=True, exclude_none=True, exclude={'unstructured'})
             )
-            self.metadata_revisions.create(
+            self.metadata_versions.create(
                 creator=user,
                 metadata=self.metadata,
                 unstructured_metadata=self.unstructured_metadata,
             )
-            # TODO: this method could result in duplicate identical revisions
+            # TODO: this method could result in duplicate identical versions
             self.save(update_fields=['metadata', 'unstructured_metadata'])
             self.save(update_fields=['metadata', 'unstructured_metadata'])

@@ -9,31 +9,31 @@ from isic.core.models import CreationSortedTimeStampedModel
 from .accession import Accession
 
 
-class MetadataRevisionQuerySet(models.QuerySet):
+class MetadataVersionQuerySet(models.QuerySet):
     def differences(self) -> list:
-        revisions = list(self.order_by('created'))
+        versions = list(self.order_by('created'))
         diffs = []
 
-        # prepend revisions with an empty revision so an initial diff is generated
+        # prepend versions with an empty version so an initial diff is generated
         for prev, cur in zip(
-            [MetadataRevision(metadata={}, unstructured_metadata={})] + revisions, revisions
+            [MetadataVersion(metadata={}, unstructured_metadata={})] + versions, versions
         ):
             diffs.append((cur, prev.diff(cur)))
 
         return diffs
 
 
-class MetadataRevision(CreationSortedTimeStampedModel):
-    creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name='metadata_revisions')
+class MetadataVersion(CreationSortedTimeStampedModel):
+    creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name='metadata_versions')
     accession = models.ForeignKey(
-        Accession, on_delete=models.PROTECT, related_name='metadata_revisions'
+        Accession, on_delete=models.PROTECT, related_name='metadata_versions'
     )
     metadata = models.JSONField()
     unstructured_metadata = models.JSONField()
 
-    objects = MetadataRevisionQuerySet.as_manager()
+    objects = MetadataVersionQuerySet.as_manager()
 
-    def diff(self, other: 'MetadataRevision'):
+    def diff(self, other: 'MetadataVersion'):
         def _strip_root(key: str) -> str:
             return re.sub(r"^root\['(.*)'\]$", r'\1', key)
 

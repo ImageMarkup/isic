@@ -55,10 +55,10 @@ def test_apply_metadata(accession_factory, valid_metadatafile, cohort, user):
     accession.refresh_from_db()
     assert accession.metadata == {'benign_malignant': 'benign'}
     assert accession.unstructured_metadata == {'foo': 'bar'}
-    assert accession.metadata_revisions.count() == 1
-    revision = accession.metadata_revisions.first()
-    assert revision.metadata == {'benign_malignant': 'benign'}
-    assert revision.unstructured_metadata == {'foo': 'bar'}
+    assert accession.metadata_versions.count() == 1
+    version = accession.metadata_versions.first()
+    assert version.metadata == {'benign_malignant': 'benign'}
+    assert version.unstructured_metadata == {'foo': 'bar'}
 
 
 @pytest.fixture
