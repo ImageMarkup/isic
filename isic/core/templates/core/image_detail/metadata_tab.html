@@ -1,4 +1,5 @@
 {% load accession %}
+{% load localtime %}
 
 <div x-show="selectedTab == 'metadata'" class="flex">
   <div class="flex-col flex-grow-5 mr-6">
@@ -22,3 +23,57 @@
     </div>
   {% endif %}
 </div>
+
+{% if metadata_revisions %}
+  <div class="mt-4">
+    <div class="flex items-center">
+      <div class="heading-3">Metadata History</div>
+      <!-- heroicon/lock-closed -->
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+      </svg>
+    </div>
+    <table class="table table-compact w-full">
+      <thead>
+        <tr>
+          <th>Creator</th>
+          <th>Applied</th>
+          <th>Summary</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for metadata_revision, diff in metadata_revisions reversed %}
+          <tr class="hover">
+            <td>{{ metadata_revision.creator  }}</td>
+            <td>{% localtime metadata_revision.created  %}</td>
+            <td>
+              {% if forloop.last %}
+                Initial Version
+              {% else %}
+                {% for key, value in diff.metadata.added.items %}
+                  <div>Added {{ key }} of {{ value }}.</div>
+                {% endfor %}
+                {% for key, value in diff.metadata.removed.items %}
+                  <div>Removed {{ key }} of {{ value }}.</div>
+                {% endfor %}
+                {% for key, value in diff.metadata.changed.items %}
+                  <div>Changed {{ key }} from {{ value.old_value }} to {{ value.new_value }}.</div>
+                {% endfor %}
+
+                {% for key, value in diff.unstructured_metadata.added.items %}
+                  <div>Added unstructured {{ key }} of {{ value }}.</div>
+                {% endfor %}
+                {% for key, value in diff.unstructured_metadata.removed.items %}
+                  <div>Removed unstructured {{ key }} of {{ value }}.</div>
+                {% endfor %}
+                {% for key, value in diff.unstructured_metadata.changed.items %}
+                  <div>Changed unstructured {{ key }} from {{ value.old_value }} to {{ value.new_value }}.</div>
+                {% endfor %}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
