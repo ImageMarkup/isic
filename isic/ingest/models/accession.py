@@ -1,3 +1,4 @@
+from copy import deepcopy
 import io
 from mimetypes import guess_type
 import tempfile
@@ -338,8 +339,9 @@ class Accession(CreationSortedTimeStampedModel):
 
         # merge metadata with existing metadata, this is necessary for metadata
         # that has interdependent checks.
-        self.metadata.update(csv_row)
-        metadata = MetadataRow.parse_obj(self.metadata)
+        existing_metadata = deepcopy(self.metadata)
+        existing_metadata.update(csv_row)
+        metadata = MetadataRow.parse_obj(existing_metadata)
         with transaction.atomic():
             self.unstructured_metadata.update(metadata.unstructured)
             self.metadata.update(
