@@ -42,6 +42,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'celery',
+        'deepdiff',
         'django',
         'django-allauth',
         'django-configurations[database,email]',

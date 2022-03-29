@@ -5,11 +5,7 @@
 {% load get_key %}
 {% load chunks %}
 
-{% block head_extra %}
-  {{ block.super }}
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/default.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/highlight.min.js"></script>
-{% endblock %}
+{% block title %}{{ image.isic_id }} | {% endblock %}
 
 {% block content %}
   <div x-data="{selectedTab: 'metadata'}">
