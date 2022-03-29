@@ -36,7 +36,7 @@ def extract_zip_task(zip_pk: int):
         raise
     else:
         # tasks should be delayed after the accessions are committed to the database
-        for accession_id in zip_upload.accessions.values_list('id', flat=True):
+        for accession_id in zip_upload.accessions.values_list('id', flat=True).iterator():
             accession_generate_blob_task.delay(accession_id)
 
 
@@ -95,5 +95,5 @@ def publish_accession_task(accession_pk: int, *, public: bool):
 @shared_task(soft_time_limit=60, time_limit=90)
 def publish_cohort_task(cohort_pk: int, *, public: bool):
     cohort = Cohort.objects.get(pk=cohort_pk)
-    for accession_pk in cohort.publishable_accessions().values_list('pk', flat=True):
+    for accession_pk in cohort.publishable_accessions().values_list('pk', flat=True).iterator():
         publish_accession_task.delay(accession_pk, public=public)
