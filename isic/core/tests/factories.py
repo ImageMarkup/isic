@@ -10,6 +10,7 @@ class ImageFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Image
 
+    creator = factory.SubFactory(UserFactory)
     accession = factory.SubFactory(AccessionFactory)
     public = factory.Faker('boolean')
 
