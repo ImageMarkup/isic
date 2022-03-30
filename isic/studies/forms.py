@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models.query import QuerySet
+from django.db.models.query_utils import Q
 
 from isic.studies.models import Question, Study
 
@@ -49,16 +50,22 @@ class BaseStudyForm(forms.ModelForm):
 
     def clean_annotators(self) -> list[int]:
         value: str = self.cleaned_data['annotators']
-        user_hash_ids = (
-            User.objects.filter(profile__hash_id__in=[e.strip() for e in value.splitlines()])
-            .values_list('pk', flat=True)
-            .distinct()
-        )
+        values = {e.strip() for e in value.splitlines()}
+        user_pks = set()
 
-        if not len(user_hash_ids):
-            raise ValidationError("Can't find any users with the supplied identifiers.")
+        for email_or_hash_id in values:
+            user = User.objects.filter(
+                Q(is_active=True) & Q(profile__hash_id__iexact=email_or_hash_id)
+                | Q(emailaddress__email__iexact=email_or_hash_id)
+            ).first()
+            if not user:
+                raise ValidationError(
+                    f"Can't find any user with the identifier {email_or_hash_id}."
+                )
+            else:
+                user_pks.add(user.pk)
 
-        return list(user_hash_ids)
+        return list(user_pks)
 
     def clean_collection(self) -> bool:
         value = self.cleaned_data['collection']
