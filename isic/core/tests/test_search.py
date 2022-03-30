@@ -1,6 +1,7 @@
 import itertools
 
 import pytest
+from pytest_lazyfixture import lazy_fixture
 
 from isic.core.models.image import RESTRICTED_METADATA_FIELDS
 from isic.core.search import add_to_search_index, get_elasticsearch_client
@@ -217,13 +218,18 @@ def test_core_api_image_search_collection_parsing(
     assert r.data['count'] == 1, r.data
 
 
+@pytest.mark.parametrize(
+    'client_',
+    [
+        lazy_fixture('api_client'),
+        lazy_fixture('authenticated_api_client'),
+    ],
+)
 @pytest.mark.django_db
-def test_core_api_image_faceting_collections(
-    private_and_public_images_collections, authenticated_api_client
-):
+def test_core_api_image_faceting_collections(private_and_public_images_collections, client_):
     public_coll, private_coll = private_and_public_images_collections
 
-    r = authenticated_api_client.get(
+    r = client_.get(
         '/api/v2/images/facets/', {'collections': f'{public_coll.pk},{private_coll.pk}'}
     )
     assert r.status_code == 200, r.data
@@ -232,11 +238,18 @@ def test_core_api_image_faceting_collections(
     assert buckets[0] == {'key': public_coll.pk, 'doc_count': 1}
 
 
+@pytest.mark.parametrize(
+    'client_',
+    [
+        lazy_fixture('api_client'),
+        lazy_fixture('authenticated_api_client'),
+    ],
+)
 @pytest.mark.django_db
-def test_core_api_image_faceting(private_and_public_images_collections, authenticated_api_client):
+def test_core_api_image_faceting(private_and_public_images_collections, client_):
     public_coll, private_coll = private_and_public_images_collections
 
-    r = authenticated_api_client.get(
+    r = client_.get(
         '/api/v2/images/facets/',
     )
     assert r.status_code == 200, r.data
@@ -245,13 +258,18 @@ def test_core_api_image_faceting(private_and_public_images_collections, authenti
     assert buckets[0] == {'key': public_coll.pk, 'doc_count': 1}, buckets
 
 
+@pytest.mark.parametrize(
+    'client_',
+    [
+        lazy_fixture('api_client'),
+        lazy_fixture('authenticated_api_client'),
+    ],
+)
 @pytest.mark.django_db
-def test_core_api_image_faceting_query(
-    private_and_public_images_collections, authenticated_api_client
-):
+def test_core_api_image_faceting_query(private_and_public_images_collections, client_):
     public_coll, private_coll = private_and_public_images_collections
 
-    r = authenticated_api_client.get('/api/v2/images/facets/', {'query': 'age_approx:10'})
+    r = client_.get('/api/v2/images/facets/', {'query': 'age_approx:10'})
     assert r.status_code == 200, r.data
     buckets = r.data['collections']['buckets']
     assert len(buckets) == 1, buckets
