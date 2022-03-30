@@ -47,6 +47,8 @@ class Image(CreationSortedTimeStampedModel):
         editable=False,
         verbose_name='isic id',
     )
+    # The creator is the person who published the accessions.
+    creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name='published_images')
 
     # index is used because public is filtered in every permissions check
     public = models.BooleanField(default=False, db_index=True)
