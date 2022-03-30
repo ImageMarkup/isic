@@ -161,7 +161,7 @@ def publish_cohort(request, pk):
         else:
             raise Exception
 
-        publish_cohort_task.delay(cohort.pk, public=public)
+        publish_cohort_task.delay(cohort.pk, request.user.pk, public=public)
         messages.add_message(
             request,
             messages.SUCCESS,

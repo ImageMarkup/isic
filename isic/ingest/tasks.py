@@ -81,10 +81,12 @@ def update_metadata_task(user_pk: int, metadata_file_pk: int):
 
 
 @shared_task(soft_time_limit=10, time_limit=20)
-def publish_accession_task(accession_pk: int, *, public: bool):
+def publish_accession_task(accession_pk: int, user_pk: int, *, public: bool):
     accession = Accession.objects.get(pk=accession_pk)
+    user = User.objects.get(pk=user_pk)
 
     image = Image.objects.create(
+        creator=user,
         accession=accession,
         public=public,
     )
@@ -93,7 +95,8 @@ def publish_accession_task(accession_pk: int, *, public: bool):
 
 
 @shared_task(soft_time_limit=60, time_limit=90)
-def publish_cohort_task(cohort_pk: int, *, public: bool):
+def publish_cohort_task(cohort_pk: int, user_pk: int, *, public: bool):
     cohort = Cohort.objects.get(pk=cohort_pk)
+    user = User.objects.get(pk=user_pk)
     for accession_pk in cohort.publishable_accessions().values_list('pk', flat=True).iterator():
-        publish_accession_task.delay(accession_pk, public=public)
+        publish_accession_task.delay(accession_pk, user.pk, public=public)
