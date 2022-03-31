@@ -328,8 +328,8 @@ class Accession(CreationSortedTimeStampedModel):
         """
         Apply metadata to an accession from a row in a CSV.
 
-        ALL metadata modifications must go through update_metadata since it handles checking if the
-        metadata can be mutated and they create version records.
+        ALL metadata modifications must go through update_metadata/remove_metadata since they
+        handle checking if the metadata can be mutated and they create version records.
 
         This method only supports adding/modifying metadata (e.g. dict.update).
         """
@@ -353,4 +353,20 @@ class Accession(CreationSortedTimeStampedModel):
             )
             # TODO: this method could result in duplicate identical versions
             self.save(update_fields=['metadata', 'unstructured_metadata'])
+
+    def remove_metadata(self, user: User, metadata_fields: list[str], *, ignore_image_check=False):
+        """Remove metadata from an accession."""
+        if self.pk and not ignore_image_check:
+            self._metadata_mutable_check()
+
+        with transaction.atomic():
+            for field in metadata_fields:
+                self.metadata.pop(field, None)
+                self.unstructured_metadata.pop(field, None)
+
+            self.metadata_versions.create(
+                creator=user,
+                metadata=self.metadata,
+                unstructured_metadata=self.unstructured_metadata,
+            )
             self.save(update_fields=['metadata', 'unstructured_metadata'])
