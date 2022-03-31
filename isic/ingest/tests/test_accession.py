@@ -111,6 +111,15 @@ def test_accession_immutable_after_publish(user, image_factory):
 
 
 @pytest.mark.django_db
+def test_accession_remove_metadata(user, accession_factory):
+    accession = accession_factory(image=None)
+    accession.update_metadata(user, {'foo': 'bar', 'baz': 'qux'})
+    accession.remove_metadata(user, ['foo'])
+    assert accession.unstructured_metadata == {'baz': 'qux'}
+    assert accession.metadata_versions.count() == 2
+
+
+@pytest.mark.django_db
 def test_accession_metadata_versions(user, accession):
     accession.update_metadata(user, {'foo': 'bar'})
     assert accession.metadata_versions.count() == 1
