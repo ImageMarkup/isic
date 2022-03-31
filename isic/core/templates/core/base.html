@@ -30,14 +30,6 @@
     <meta name="robots" content="noindex,follow" />
   {% endif %}
 
-  <script>
-      document.addEventListener('alpine:init', () => {
-          Alpine.store('accessions', {
-            items: [],
-          });
-      })
-  </script>
-
   {% if debug %}
     <script id="__bs_script__">//<![CDATA[
       document.write("<script async src='//HOST:8383/browser-sync/browser-sync-client.js'><\/script>".replace("HOST", location.hostname));
