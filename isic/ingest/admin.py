@@ -25,6 +25,7 @@ from isic.ingest.models import (
     MetadataFile,
     ZipUpload,
 )
+from isic.ingest.models.metadata_version import MetadataVersion
 from isic.ingest.tasks import extract_zip_task
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,10 @@ class CohortInline(ReadonlyTabularInline):
 
 class AccessionInline(ReadonlyTabularInline):
     model = Accession
+
+
+class MetadataVersionInline(ReadonlyTabularInline):
+    model = MetadataVersion
 
 
 class CheckLogInline(ReadonlyTabularInline):
@@ -208,10 +213,11 @@ class AccessionAdmin(admin.ModelAdmin):
     list_select_related = ['cohort']
     list_display = ['id', 'blob_name', 'human_blob_size', 'created', 'status', 'cohort']
     list_filter = ['status']
-    search_fields = ['blob_name', 'girder_id']
+    search_fields = ['cohort__name', 'blob_name', 'girder_id']
+    search_help_text = 'Search by cohort name, blob name, or Girder ID.'
 
     readonly_fields = ['created', 'modified', 'thumbnail_image', 'distinctnessmeasure']
-    inlines = [CheckLogInline]
+    inlines = [CheckLogInline, MetadataVersionInline]
     formfield_overrides = {
         models.JSONField: {'widget': JSONEditorWidget},
     }
