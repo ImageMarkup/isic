@@ -12,9 +12,14 @@ from isic.core.constants import MONGO_ID_REGEX
 
 logger = logging.getLogger(__name__)
 
+# Note: this unfortunately has to change in the CLI as well
+# otherwise validation for a hash id would need it's own endpoint.
+HASH_ID_REGEX = '^[A-HJ-NP-Z2-9]{5}$'
+
 
 def get_hashid_hasher():
     # This alphabet allows for ~250k users before needing a 6th character
+    # Note: changing the alphabet necessitates changing HASH_ID_REGEX
     return Hashids(
         min_length=5,
         alphabet=list(set(string.ascii_uppercase + string.digits) - {'I', '1', 'O', '0'}),
@@ -43,7 +48,7 @@ class Profile(models.Model):
         max_length=5,
         unique=True,
         # A-Z0-9 except for O, 0, 1 and I.
-        validators=[RegexValidator('^[A-HJ-NP-Z2-9]{5}')],
+        validators=[RegexValidator(HASH_ID_REGEX)],
     )
     accepted_terms = models.DateTimeField(null=True)
 
