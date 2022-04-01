@@ -111,15 +111,6 @@ def test_accession_immutable_after_publish(user, image_factory):
 
 
 @pytest.mark.django_db
-def test_accession_remove_metadata(user, accession_factory):
-    accession = accession_factory(image=None)
-    accession.update_metadata(user, {'foo': 'bar', 'baz': 'qux'})
-    accession.remove_metadata(user, ['foo'])
-    assert accession.unstructured_metadata == {'baz': 'qux'}
-    assert accession.metadata_versions.count() == 2
-
-
-@pytest.mark.django_db
 def test_accession_metadata_versions(user, accession):
     accession.update_metadata(user, {'foo': 'bar'})
     assert accession.metadata_versions.count() == 1
@@ -146,3 +137,50 @@ def test_accession_metadata_versions(user, accession):
         },
         'metadata': {'added': {'age': 45}, 'removed': {}, 'changed': {}},
     }
+
+
+@pytest.mark.django_db
+def test_accession_metadata_versions_remove(user, accession_factory):
+    accession = accession_factory(image=None)
+    accession.update_metadata(user, {'foo': 'bar', 'baz': 'qux'})
+    accession.remove_metadata(user, ['nonexistent'])
+    assert accession.unstructured_metadata == {'foo': 'bar', 'baz': 'qux'}
+    assert accession.metadata_versions.count() == 1
+
+
+@pytest.mark.django_db
+def test_accession_update_metadata(user, accession_factory):
+    accession = accession_factory(image=None)
+    accession.update_metadata(user, {'sex': 'male', 'foo': 'bar', 'baz': 'qux'})
+    assert accession.unstructured_metadata == {'foo': 'bar', 'baz': 'qux'}
+    assert accession.metadata == {'sex': 'male'}
+    assert accession.metadata_versions.count() == 1
+
+
+@pytest.mark.django_db
+def test_accession_update_metadata_idempotent(user, accession_factory):
+    accession = accession_factory(image=None)
+    accession.update_metadata(user, {'sex': 'male', 'foo': 'bar', 'baz': 'qux'})
+    accession.update_metadata(user, {'sex': 'male', 'foo': 'bar', 'baz': 'qux'})
+    assert accession.unstructured_metadata == {'foo': 'bar', 'baz': 'qux'}
+    assert accession.metadata == {'sex': 'male'}
+    assert accession.metadata_versions.count() == 1
+
+
+@pytest.mark.django_db
+def test_accession_remove_metadata(user, accession_factory):
+    accession = accession_factory(image=None)
+    accession.update_metadata(user, {'foo': 'bar', 'baz': 'qux'})
+    accession.remove_metadata(user, ['foo'])
+    assert accession.unstructured_metadata == {'baz': 'qux'}
+    assert accession.metadata_versions.count() == 2
+
+
+@pytest.mark.django_db
+def test_accession_remove_metadata_idempotent(user, accession_factory):
+    accession = accession_factory(image=None)
+    accession.update_metadata(user, {'foo': 'bar', 'baz': 'qux'})
+    accession.remove_metadata(user, ['foo'])
+    accession.remove_metadata(user, ['foo'])
+    assert accession.unstructured_metadata == {'baz': 'qux'}
+    assert accession.metadata_versions.count() == 2
