@@ -324,14 +324,20 @@ class Accession(CreationSortedTimeStampedModel):
         if hasattr(self, 'image'):
             raise ValidationError("Can't modify the accession as it already has an image.")
 
+    def _maybe_reset_checks(self, structured_metadata_field: str) -> None:
+        if structured_metadata_field == 'diagnosis':
+            self.diagnosis_check = None
+        elif structured_metadata_field == 'lesion_id':
+            self.lesion_check = None
+
     def update_metadata(self, user: User, csv_row: dict, *, ignore_image_check=False):
         """
         Apply metadata to an accession from a row in a CSV.
 
-        ALL metadata modifications must go through update_metadata/remove_metadata since they
-        handle checking if the metadata can be mutated and they create version records.
-
-        This method only supports adding/modifying metadata (e.g. dict.update).
+        ALL metadata modifications must go through update_metadata/remove_metadata since they:
+        1) Check to see if the accession can be modified
+        2) Manage audit trails (MetadataVersion records)
+        3) Potentially reset the relevant QA checks
         """
         if self.pk and not ignore_image_check:
             self._metadata_mutable_check()
@@ -361,13 +367,19 @@ class Accession(CreationSortedTimeStampedModel):
                 modified = True
                 self.metadata.update(new_metadata)
 
+                for k, v in new_metadata.items():
+                    # if a new metadata item has been added or an existing has been modified,
+                    # potentially reset a QA check.
+                    if k not in original_metadata or original_metadata[k] != v:
+                        self._maybe_reset_checks(k)
+
             if modified:
                 self.metadata_versions.create(
                     creator=user,
                     metadata=self.metadata,
                     unstructured_metadata=self.unstructured_metadata,
                 )
-                self.save(update_fields=['metadata', 'unstructured_metadata'])
+                self.save()
 
     def remove_metadata(self, user: User, metadata_fields: list[str], *, ignore_image_check=False):
         """Remove metadata from an accession."""
@@ -379,6 +391,7 @@ class Accession(CreationSortedTimeStampedModel):
             for field in metadata_fields:
                 if self.metadata.pop(field, None) is not None:
                     modified = True
+                    self._maybe_reset_checks(field)
                 if self.unstructured_metadata.pop(field, None) is not None:
                     modified = True
 
@@ -388,4 +401,4 @@ class Accession(CreationSortedTimeStampedModel):
                     metadata=self.metadata,
                     unstructured_metadata=self.unstructured_metadata,
                 )
-                self.save(update_fields=['metadata', 'unstructured_metadata'])
+                self.save()
