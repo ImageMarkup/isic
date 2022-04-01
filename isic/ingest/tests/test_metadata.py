@@ -16,6 +16,11 @@ def valid_metadatafile(cohort, metadata_file_factory, csv_stream_valid):
 
 
 @pytest.fixture
+def imageless_accession(accession_factory):
+    return accession_factory(image=None)
+
+
+@pytest.fixture
 def csv_stream_diagnosis_sex() -> BinaryIO:
     file_stream = StreamWriter(io.BytesIO())
     writer = csv.DictWriter(file_stream, fieldnames=['filename', 'diagnosis', 'sex'])
@@ -170,3 +175,125 @@ def test_apply_metadata_step3(
     assert r.context['checkpoint'][2]['problems'] == {}
     assert r.context['checkpoint'][3]['problems']
     assert list(r.context['checkpoint'][3]['problems'].items())[0][0][0] == 'diagnosis'
+
+
+@pytest.mark.django_db
+def test_accession_metadata_versions(user, accession):
+    accession.update_metadata(user, {'foo': 'bar'})
+    assert accession.metadata_versions.count() == 1
+    diffs = accession.metadata_versions.differences()
+    assert len(diffs) == 1
+    assert diffs[0][1] == {
+        'unstructured_metadata': {'added': {'foo': 'bar'}, 'removed': {}, 'changed': {}},
+        'metadata': {'added': {}, 'removed': {}, 'changed': {}},
+    }
+
+    accession.update_metadata(user, {'foo': 'baz', 'age': '45'})
+    assert accession.metadata_versions.count() == 2
+    diffs = accession.metadata_versions.differences()
+    assert len(diffs) == 2
+    assert diffs[0][1] == {
+        'unstructured_metadata': {'added': {'foo': 'bar'}, 'removed': {}, 'changed': {}},
+        'metadata': {'added': {}, 'removed': {}, 'changed': {}},
+    }
+    assert diffs[1][1] == {
+        'unstructured_metadata': {
+            'added': {},
+            'removed': {},
+            'changed': {'foo': {'new_value': 'baz', 'old_value': 'bar'}},
+        },
+        'metadata': {'added': {'age': 45}, 'removed': {}, 'changed': {}},
+    }
+
+
+@pytest.mark.django_db
+def test_accession_metadata_versions_remove(user, imageless_accession):
+    imageless_accession.update_metadata(user, {'foo': 'bar', 'baz': 'qux'})
+    imageless_accession.remove_metadata(user, ['nonexistent'])
+    assert imageless_accession.unstructured_metadata == {'foo': 'bar', 'baz': 'qux'}
+    assert imageless_accession.metadata_versions.count() == 1
+
+
+@pytest.mark.django_db
+def test_accession_update_metadata(user, imageless_accession):
+    imageless_accession.update_metadata(user, {'sex': 'male', 'foo': 'bar', 'baz': 'qux'})
+    assert imageless_accession.unstructured_metadata == {'foo': 'bar', 'baz': 'qux'}
+    assert imageless_accession.metadata == {'sex': 'male'}
+    assert imageless_accession.metadata_versions.count() == 1
+
+
+@pytest.mark.django_db
+def test_accession_update_metadata_idempotent(user, imageless_accession):
+    imageless_accession.update_metadata(user, {'sex': 'male', 'foo': 'bar', 'baz': 'qux'})
+    imageless_accession.update_metadata(user, {'sex': 'male', 'foo': 'bar', 'baz': 'qux'})
+    assert imageless_accession.unstructured_metadata == {'foo': 'bar', 'baz': 'qux'}
+    assert imageless_accession.metadata == {'sex': 'male'}
+    assert imageless_accession.metadata_versions.count() == 1
+
+
+@pytest.mark.django_db
+def test_accession_remove_metadata(user, imageless_accession):
+    imageless_accession.update_metadata(user, {'foo': 'bar', 'baz': 'qux'})
+    imageless_accession.remove_metadata(user, ['foo'])
+    assert imageless_accession.unstructured_metadata == {'baz': 'qux'}
+    assert imageless_accession.metadata_versions.count() == 2
+
+
+@pytest.mark.django_db
+def test_accession_remove_metadata_idempotent(user, imageless_accession):
+    imageless_accession.update_metadata(user, {'foo': 'bar', 'baz': 'qux'})
+    imageless_accession.remove_metadata(user, ['foo'])
+    imageless_accession.remove_metadata(user, ['foo'])
+    assert imageless_accession.unstructured_metadata == {'baz': 'qux'}
+    assert imageless_accession.metadata_versions.count() == 2
+
+
+@pytest.mark.parametrize(
+    'field,value,check',
+    [
+        ['diagnosis', 'melanoma', 'diagnosis_check'],
+        ['lesion_id', 'IL_1234567', 'lesion_check'],
+    ],
+)
+@pytest.mark.django_db
+def test_update_metadata_resets_checks(user, accession_factory, field, value, check):
+    accession = accession_factory(image=None, diagnosis_check=True, lesion_check=True)
+    accession.update_metadata(user, {field: value})
+    accession.refresh_from_db()
+    assert getattr(accession, check) is None
+
+
+@pytest.mark.django_db
+def test_update_metadata_does_not_reset_checks(user, accession_factory):
+    accession = accession_factory(image=None, diagnosis_check=True, lesion_check=True)
+    accession.update_metadata(user, {'sex': 'male'})
+    accession.refresh_from_db()
+    assert accession.diagnosis_check and accession.lesion_check
+
+
+@pytest.mark.parametrize(
+    'field,check',
+    [
+        ['diagnosis', 'diagnosis_check'],
+        ['lesion_id', 'lesion_check'],
+    ],
+)
+@pytest.mark.django_db
+def test_remove_metadata_resets_checks(user, accession_factory, field, check):
+    accession = accession_factory(
+        image=None,
+        diagnosis_check=True,
+        lesion_check=True,
+        metadata={'diagnosis': 'melanoma', 'lesion_id': 'IL_1234567'},
+    )
+    accession.remove_metadata(user, [field])
+    accession.refresh_from_db()
+    assert getattr(accession, check) is None
+
+
+@pytest.mark.django_db
+def test_remove_metadata_does_not_reset_checks(user, accession_factory):
+    accession = accession_factory(image=None, diagnosis_check=True, lesion_check=True)
+    accession.remove_metadata(user, ['sex'])
+    accession.refresh_from_db()
+    assert accession.diagnosis_check and accession.lesion_check
