@@ -336,37 +336,56 @@ class Accession(CreationSortedTimeStampedModel):
         if self.pk and not ignore_image_check:
             self._metadata_mutable_check()
 
-        # merge metadata with existing metadata, this is necessary for metadata
-        # that has interdependent checks.
-        existing_metadata = deepcopy(self.metadata)
-        existing_metadata.update(csv_row)
-        metadata = MetadataRow.parse_obj(existing_metadata)
         with transaction.atomic():
-            self.unstructured_metadata.update(metadata.unstructured)
-            self.metadata.update(
-                metadata.dict(exclude_unset=True, exclude_none=True, exclude={'unstructured'})
+            modified = False
+
+            # keep original copy so we only modify metadata if it changes
+            original_metadata = deepcopy(self.metadata)
+            # create second copy to avoid mutating self.metadata unless it will be changed
+            metadata = deepcopy(self.metadata)
+            # merge metadata with existing metadata, this is necessary for metadata
+            # that has interdependent checks.
+            metadata.update(csv_row)
+            parsed_metadata = MetadataRow.parse_obj(metadata)
+
+            # update unstructured metadata
+            if self.unstructured_metadata != parsed_metadata.unstructured:
+                modified = True
+                self.unstructured_metadata.update(parsed_metadata.unstructured)
+
+            # update structured metadata
+            new_metadata = parsed_metadata.dict(
+                exclude_unset=True, exclude_none=True, exclude={'unstructured'}
             )
-            self.metadata_versions.create(
-                creator=user,
-                metadata=self.metadata,
-                unstructured_metadata=self.unstructured_metadata,
-            )
-            # TODO: this method could result in duplicate identical versions
-            self.save(update_fields=['metadata', 'unstructured_metadata'])
+            if original_metadata != new_metadata:
+                modified = True
+                self.metadata.update(new_metadata)
+
+            if modified:
+                self.metadata_versions.create(
+                    creator=user,
+                    metadata=self.metadata,
+                    unstructured_metadata=self.unstructured_metadata,
+                )
+                self.save(update_fields=['metadata', 'unstructured_metadata'])
 
     def remove_metadata(self, user: User, metadata_fields: list[str], *, ignore_image_check=False):
         """Remove metadata from an accession."""
         if self.pk and not ignore_image_check:
             self._metadata_mutable_check()
 
+        modified = False
         with transaction.atomic():
             for field in metadata_fields:
-                self.metadata.pop(field, None)
-                self.unstructured_metadata.pop(field, None)
+                if self.metadata.pop(field, None) is not None:
+                    modified = True
+                if self.unstructured_metadata.pop(field, None) is not None:
+                    modified = True
 
-            self.metadata_versions.create(
-                creator=user,
-                metadata=self.metadata,
-                unstructured_metadata=self.unstructured_metadata,
-            )
-            self.save(update_fields=['metadata', 'unstructured_metadata'])
+            if modified:
+                self.metadata_versions.create(
+                    creator=user,
+                    metadata=self.metadata,
+                    unstructured_metadata=self.unstructured_metadata,
+                )
+                self.save(update_fields=['metadata', 'unstructured_metadata'])
