@@ -37,7 +37,6 @@ class IsicMixin(ConfigMixin):
             'isic.ingest.apps.IngestConfig',
             'isic.stats.apps.StatsConfig',
             'isic.studies.apps.StudiesConfig',
-            'isic.discourse_sso.apps.DiscourseSSOConfig',
         ] + configuration.INSTALLED_APPS
 
         # Install additional apps
@@ -91,8 +90,6 @@ class IsicMixin(ConfigMixin):
 
     ISIC_NOINDEX = values.BooleanValue(False)
     ISIC_SANDBOX_BANNER = values.BooleanValue(False)
-    ISIC_DISCOURSE_SSO_SECRET = values.Value(None)
-    ISIC_DISCOURSE_SSO_FAIL_URL = 'https://forum.isic-archive.com/'
     ISIC_MONGO_URI = values.SecretValue()
     ISIC_ELASTICSEARCH_URI = values.SecretValue()
     ISIC_ELASTICSEARCH_INDEX = 'isic'
@@ -146,7 +143,6 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
 
 
 class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
-    ISIC_DISCOURSE_SSO_SECRET = 'discourse_secret'
     ISIC_MONGO_URI = None
     ISIC_ELASTICSEARCH_INDEX = 'isic-testing'
     ISIC_DATACITE_USERNAME = None
