@@ -18,6 +18,6 @@ def populate_collection_from_search_task(
     collection.images.add(*serializer.to_queryset())
 
 
-@shared_task(soft_time_limit=180, time_limit=300)
+@shared_task(soft_time_limit=300, time_limit=310)
 def sync_elasticsearch_index_task():
     bulk_add_to_search_index(Image.objects.with_elasticsearch_properties().iterator())
