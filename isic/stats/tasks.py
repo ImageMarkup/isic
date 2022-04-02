@@ -106,8 +106,8 @@ def _country_from_iso_code(iso_code: str) -> dict:
 
 
 @shared_task(
-    soft_time_limit=20,
-    time_limit=60,
+    soft_time_limit=60,
+    time_limit=120,
     # Figuring out retries within googleapiclient is a bit cumbersome, use celery.
     autoretry_for=(HttpError,),
     retry_backoff=True,
