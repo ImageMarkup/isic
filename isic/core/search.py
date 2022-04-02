@@ -1,4 +1,4 @@
-from functools import lru_cache
+from functools import lru_cache, partial
 import logging
 
 from django.conf import settings
@@ -7,6 +7,7 @@ from django.db.models.query import QuerySet
 from isic_metadata import FIELD_REGISTRY
 from opensearchpy import NotFoundError, OpenSearch
 from opensearchpy.helpers import parallel_bulk
+from opensearchpy.transport import Transport
 
 from isic.core.models import Image
 from isic.core.models.collection import Collection
@@ -52,7 +53,9 @@ DEFAULT_SEARCH_AGGREGATES['age_approx'] = {
 
 @lru_cache
 def get_elasticsearch_client() -> OpenSearch:
-    return OpenSearch(settings.ISIC_ELASTICSEARCH_URI)
+    # TODO: investigate using retryable requests with transport_class
+    RetryOnTimeoutTransport = partial(Transport, retry_on_timeout=True)  # noqa: N806
+    return OpenSearch(settings.ISIC_ELASTICSEARCH_URI, transport_class=RetryOnTimeoutTransport)
 
 
 def maybe_create_index() -> None:
