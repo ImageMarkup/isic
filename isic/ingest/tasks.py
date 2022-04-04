@@ -85,13 +85,14 @@ def publish_accession_task(accession_pk: int, user_pk: int, *, public: bool):
     accession = Accession.objects.get(pk=accession_pk)
     user = User.objects.get(pk=user_pk)
 
-    image, _ = Image.objects.get_or_create(
+    image, created = Image.objects.get_or_create(
         creator=user,
         accession=accession,
         public=public,
     )
 
-    add_to_search_index(image)
+    if created:
+        add_to_search_index(image)
 
 
 @shared_task(soft_time_limit=60, time_limit=90)
