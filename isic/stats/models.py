@@ -34,6 +34,6 @@ class ImageDownload(CreationSortedTimeStampedModel):
 
     download_time = models.DateTimeField()
     ip_address = models.GenericIPAddressField()
-    user_agent = models.CharField(max_length=200, null=True)
+    user_agent = models.CharField(null=True, max_length=400)
     request_id = models.CharField(unique=True, max_length=200)
     image = models.ForeignKey(Image, on_delete=models.PROTECT, related_name='downloads')
