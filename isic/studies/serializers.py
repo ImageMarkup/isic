@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from isic.core.constants import ISIC_ID_REGEX
 from isic.studies.models import Annotation, Feature, Question, QuestionChoice, Study, StudyTask
 
 
@@ -32,7 +33,7 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ['id', 'required', 'type', 'prompt', 'official', 'choices']
+        fields = ['id', 'type', 'prompt', 'official', 'choices']
 
 
 class StudySerializer(serializers.ModelSerializer):
@@ -41,4 +42,18 @@ class StudySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Study
-        fields = ['id', 'created', 'creator', 'name', 'description', 'features', 'questions']
+        fields = [
+            'id',
+            'created',
+            'creator',
+            'name',
+            'description',
+            'public',
+            'features',
+            'questions',
+        ]
+
+
+class StudyTaskAssignmentSerializer(serializers.Serializer):
+    isic_id = serializers.RegexField(ISIC_ID_REGEX)
+    user_hash_id_or_email = serializers.CharField()

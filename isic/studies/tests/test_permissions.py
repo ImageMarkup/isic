@@ -6,65 +6,6 @@ from pytest_lazyfixture import lazy_fixture
 from isic.studies.models import StudyTask
 
 
-@pytest.fixture
-def public_study(study_factory, user_factory):
-    creator = user_factory()
-    owners = [creator] + [user_factory() for _ in range(2)]
-    return study_factory(public=True, creator=creator, owners=owners)
-
-
-@pytest.fixture
-def private_study(study_factory, user_factory):
-    creator = user_factory()
-    owners = [creator] + [user_factory() for _ in range(2)]
-    return study_factory(public=False, creator=creator, owners=owners)
-
-
-@pytest.fixture
-def private_study_and_guest(private_study, user_factory):
-    return private_study, user_factory()
-
-
-@pytest.fixture
-def private_study_and_annotator(private_study, user_factory, study_task_factory):
-    u = user_factory()
-    study_task_factory(annotator=u, study=private_study)
-    return private_study, u
-
-
-@pytest.fixture
-def private_study_and_owner(private_study):
-    return private_study, private_study.owners.first()
-
-
-@pytest.fixture
-def private_study_with_responses(study_factory, user_factory, response_factory):
-    # create a scenario for testing that a user can only see their responses and
-    # not another annotators.
-    study = study_factory(public=False)
-    u1, u2 = user_factory(), user_factory()
-    response_factory(
-        annotation__annotator=u1,
-        annotation__study=study,
-        annotation__task__annotator=u1,
-        annotation__task__study=study,
-    )
-    response_factory(
-        annotation__annotator=u2,
-        annotation__study=study,
-        annotation__task__annotator=u2,
-        annotation__task__study=study,
-    )
-    return study, u1, u2
-
-
-@pytest.fixture
-def study_task_with_user(study_task_factory, user_factory):
-    u = user_factory()
-    study_task = study_task_factory(annotator=u)
-    return study_task
-
-
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     'client_',
@@ -305,8 +246,9 @@ def test_annotation_detail_permissions(client, authenticated_client, staff_clien
 
 
 @pytest.fixture
-def study_scenario(study_factory, question_factory, question_choice_factory):
-    study = study_factory()
+def study_scenario(user_factory, study_factory, question_factory, question_choice_factory):
+    user = user_factory()
+    study = study_factory(creator=user, public=False)
     question = question_factory()
     choice = question_choice_factory(question=question)
     question.choices.add(choice)
@@ -330,3 +272,54 @@ def test_study_task_detail_post(client, study_scenario, study_task_factory, user
     assert response.annotation.annotator == user
     assert response.question == question
     assert response.choice == choice
+
+
+@pytest.mark.django_db
+def test_study_api_list_creator_permissions(
+    api_client, study_scenario, study_factory, user_factory
+):
+    study_factory(creator=user_factory(), public=False)
+    api_client.force_login(study_scenario[0].creator)
+    r = api_client.get('/api/v2/studies/')
+    assert r.data['count'] == 1
+    assert r.data['results'][0]['id'] == study_scenario[0].id
+
+
+@pytest.mark.django_db
+def test_study_api_list_owners_permissions(api_client, study_scenario, study_factory, user_factory):
+    study_factory(creator=user_factory(), public=False, owners=[study_scenario[0].creator])
+    api_client.force_login(study_scenario[0].creator)
+    r = api_client.get('/api/v2/studies/')
+    assert r.data['count'] == 2
+
+
+# @pytest.mark.django_db
+# @pytest.mark.parametrize(
+#     'client_,url,',
+#     [
+#         lazy_fixture('client'),
+#         lazy_fixture('authenticated_client'),
+#         lazy_fixture('staff_client'),
+#     ],
+# )
+# def test_study_api_detail_permissions(client, study_scenario, study_task_factory, user_factory):
+#     pass
+
+
+@pytest.mark.django_db
+def test_study_api_set_tasks_on_study_with_responses_permissions(
+    api_client, private_study_with_responses
+):
+    study = private_study_with_responses[0]
+    api_client.force_login(study.creator)
+    r = api_client.post(f'/api/v2/studies/{study.pk}/set-tasks/')
+    assert r.status_code == 409
+
+
+@pytest.mark.django_db
+def test_study_api_set_tasks_on_someone_elses_study_permissions(
+    api_client, user_factory, public_study
+):
+    api_client.force_login(user_factory())
+    r = api_client.post(f'/api/v2/studies/{public_study.pk}/set-tasks/')
+    assert r.status_code == 403

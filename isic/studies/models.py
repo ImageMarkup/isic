@@ -193,8 +193,27 @@ class StudyQuestion(models.Model):
 
 class StudyPermissions:
     model = Study
-    perms = ['view_study', 'view_study_results']
-    filters = {'view_study': 'view_study_list', 'view_study_results': 'view_study_results_list'}
+    perms = ['view_study', 'view_study_results', 'modify_study']
+    filters = {
+        'view_study': 'view_study_list',
+        'view_study_results': 'view_study_results_list',
+        'modify_study': 'modify_study_list',
+    }
+
+    @staticmethod
+    def modify_study_list(user_obj: User, qs: QuerySet[Study] | None = None) -> QuerySet[Study]:
+        qs: QuerySet[Study] = qs if qs is not None else Study._default_manager.all()
+
+        if user_obj.is_staff:
+            return qs
+        elif user_obj.is_authenticated:
+            return qs.filter(creator=user_obj)
+        else:
+            return qs.none()
+
+    @staticmethod
+    def modify_study(user_obj, obj):
+        return StudyPermissions.modify_study_list(user_obj).contains(obj)
 
     @staticmethod
     def view_study_results_list(
