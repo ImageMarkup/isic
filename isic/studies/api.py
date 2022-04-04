@@ -29,7 +29,7 @@ class StudyTaskViewSet(viewsets.ReadOnlyModelViewSet):
 
 class StudyViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = StudySerializer
-    queryset = Study.objects.distinct()
+    queryset = Study.objects.prefetch_related('questions__choices', 'features').distinct()
     filter_backends = [IsicObjectPermissionsFilter]
 
     swagger_schema = None
