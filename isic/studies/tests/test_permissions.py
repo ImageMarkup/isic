@@ -307,19 +307,21 @@ def test_study_api_list_owners_permissions(api_client, study_scenario, study_fac
 
 
 @pytest.mark.django_db
-def test_study_api_set_tasks_on_study_with_responses_permissions(
-    api_client, private_study_with_responses
+@pytest.mark.parametrize('method,path', [['post', 'set-tasks'], ['delete', 'delete-tasks']])
+def test_study_api_modify_tasks_on_study_with_responses_permissions(
+    api_client, private_study_with_responses, method, path
 ):
     study = private_study_with_responses[0]
     api_client.force_login(study.creator)
-    r = api_client.post(f'/api/v2/studies/{study.pk}/set-tasks/')
+    r = api_client.generic(method, f'/api/v2/studies/{study.pk}/{path}/')
     assert r.status_code == 409
 
 
 @pytest.mark.django_db
-def test_study_api_set_tasks_on_someone_elses_study_permissions(
-    api_client, user_factory, public_study
+@pytest.mark.parametrize('method,path', [['post', 'set-tasks'], ['delete', 'delete-tasks']])
+def test_study_api_modify_tasks_on_someone_elses_study_permissions(
+    api_client, user_factory, public_study, method, path
 ):
     api_client.force_login(user_factory())
-    r = api_client.post(f'/api/v2/studies/{public_study.pk}/set-tasks/')
+    r = api_client.generic(method, f'/api/v2/studies/{public_study.pk}/{path}/')
     assert r.status_code == 403

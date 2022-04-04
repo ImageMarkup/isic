@@ -34,6 +34,18 @@ class StudyViewSet(viewsets.ReadOnlyModelViewSet):
 
     swagger_schema = None
 
+    @action(detail=True, methods=['delete'], pagination_class=None, url_path='delete-tasks')
+    def delete_tasks(self, request, *args, **kwargs):
+        study: Study = self.get_object()
+        if not request.user.has_perm('studies.modify_study', study):
+            raise PermissionDenied
+        elif study.tasks.filter(annotation__isnull=False).exists():
+            raise Conflict('Study has answered questions, tasks cannot be deleted.')
+        else:
+            # TODO: this will timeout for larger studies
+            study.tasks.all().delete()
+            return JsonResponse({})
+
     @action(detail=True, methods=['post'], pagination_class=None, url_path='set-tasks')
     def set_tasks(self, request, *args, **kwargs):
         study: Study = self.get_object()
