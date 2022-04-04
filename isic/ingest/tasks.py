@@ -85,7 +85,7 @@ def publish_accession_task(accession_pk: int, user_pk: int, *, public: bool):
     accession = Accession.objects.get(pk=accession_pk)
     user = User.objects.get(pk=user_pk)
 
-    image = Image.objects.create(
+    image, _ = Image.objects.get_or_create(
         creator=user,
         accession=accession,
         public=public,
