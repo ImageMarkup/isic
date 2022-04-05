@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.db import transaction
 
 from isic.core.models import Image
-from isic.core.search import add_to_search_index
+from isic.core.tasks import sync_elasticsearch_index_task
 from isic.ingest.models import (
     Accession,
     AccessionStatus,
@@ -80,24 +80,17 @@ def update_metadata_task(user_pk: int, metadata_file_pk: int):
             accession.update_metadata(user, row)
 
 
-@shared_task(soft_time_limit=10, time_limit=20)
-def publish_accession_task(accession_pk: int, user_pk: int, *, public: bool):
-    accession = Accession.objects.get(pk=accession_pk)
-    user = User.objects.get(pk=user_pk)
-
-    image, created = Image.objects.get_or_create(
-        creator=user,
-        accession=accession,
-        public=public,
-    )
-
-    if created:
-        add_to_search_index(image)
-
-
-@shared_task(soft_time_limit=60, time_limit=90)
+@shared_task(soft_time_limit=3600, time_limit=3660)
 def publish_cohort_task(cohort_pk: int, user_pk: int, *, public: bool):
     cohort = Cohort.objects.get(pk=cohort_pk)
     user = User.objects.get(pk=user_pk)
-    for accession_pk in cohort.publishable_accessions().values_list('pk', flat=True).iterator():
-        publish_accession_task.delay(accession_pk, user.pk, public=public)
+
+    for accession in cohort.publishable_accessions().iterator():
+        # use get_or_create so the task is idempotent in case of failure
+        Image.objects.get_or_create(
+            creator=user,
+            accession=accession,
+            public=public,
+        )
+
+    sync_elasticsearch_index_task.delay()
