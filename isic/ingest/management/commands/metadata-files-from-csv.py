@@ -39,19 +39,24 @@ def metadata_files_from_csv(user_id, csv_path, isic_id_column):
     # pydantic expects None for the absence of a value, not NaN
     df = df.replace({np.nan: None})
 
+    columns_to_drop = {'isic_id', 'filename', isic_id_column}
+
     cohort_files = defaultdict(list)
+    cohort_columns = defaultdict(set)
 
     for _, (_, row) in enumerate(df.iterrows(), start=2):
         accession: Accession = Accession.objects.select_related('cohort').get(
             image__isic_id=row[isic_id_column]
         )
-        del row[isic_id_column]
+        for column in columns_to_drop:
+            del row[column]
         row['filename'] = accession.blob_name
+        cohort_columns[accession.cohort.pk] |= set(row.keys())
         cohort_files[accession.cohort.pk].append(dict(row))
 
     for cohort_id, rows in cohort_files.items():
         blob = StreamWriter(io.BytesIO())
-        w = csv.DictWriter(blob, list(set(list(df.columns)) - set('isic_id')) + ['filename'])
+        w = csv.DictWriter(blob, list(cohort_columns[cohort_id]))
         w.writeheader()
         for row in rows:
             w.writerow(row)

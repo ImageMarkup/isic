@@ -226,6 +226,8 @@ def test_accession_update_metadata(user, imageless_accession):
 def test_accession_update_metadata_idempotent(user, imageless_accession):
     imageless_accession.update_metadata(user, {'sex': 'male', 'foo': 'bar', 'baz': 'qux'})
     imageless_accession.update_metadata(user, {'sex': 'male', 'foo': 'bar', 'baz': 'qux'})
+    # test the case where meta/unstructured are different, but updating wouldn't change anything
+    imageless_accession.update_metadata(user, {})
     assert imageless_accession.unstructured_metadata == {'foo': 'bar', 'baz': 'qux'}
     assert imageless_accession.metadata == {'sex': 'male'}
     assert imageless_accession.metadata_versions.count() == 1

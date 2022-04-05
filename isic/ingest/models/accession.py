@@ -355,7 +355,10 @@ class Accession(CreationSortedTimeStampedModel):
             parsed_metadata = MetadataRow.parse_obj(metadata)
 
             # update unstructured metadata
-            if self.unstructured_metadata != parsed_metadata.unstructured:
+            if (
+                parsed_metadata.unstructured
+                and self.unstructured_metadata != parsed_metadata.unstructured
+            ):
                 modified = True
                 self.unstructured_metadata.update(parsed_metadata.unstructured)
 
@@ -363,7 +366,7 @@ class Accession(CreationSortedTimeStampedModel):
             new_metadata = parsed_metadata.dict(
                 exclude_unset=True, exclude_none=True, exclude={'unstructured'}
             )
-            if original_metadata != new_metadata:
+            if new_metadata and original_metadata != new_metadata:
                 modified = True
                 self.metadata.update(new_metadata)
 
