@@ -3,22 +3,11 @@
 
 <div>
   <div x-data="{ open: false, hovered: false }" class="pb-4">
-    <a class="cursor-pointer">
-      {% if debug %}
-        <img @mouseenter="hovered = true" @click="open = true" src="https://picsum.photos/seed/{{image.id}}/256">
-      {% else %}
-        <img @mouseenter="hovered = true" @click="open = true" src="{{ image.accession.thumbnail_256.url }}" title="{{ image.accession.blob_name }}" />
-      {% endif %}
-    </a>
-
-    <template x-if="true">
-      <div x-show="open">
-        {% block image_modal %}
-          {% include 'core/partials/image_modal.html' with include_metadata=1 %}
-        {% endblock %}
-      </div>
-    </template>
+    {% block thumb %}
+      {% include 'core/partials/image_thumb.html' %}
+    {% endblock %}
   </div>
+
   {% block below_thumb %}
     <div class="flex">
       <a href="{{image.get_absolute_url}}">{{image.isic_id}}</a>
