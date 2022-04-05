@@ -35,7 +35,7 @@ def apply_metadata_files(user_id, metadata_file_id):
                     # filename doesn't need to be stored in the metadata
                     del row['filename']
                     accession.update_metadata(user, row, ignore_image_check=True)
-                click.secho(f'Applied metadata file: {metadata_file.pk}', fg='green')
+                click.secho(f'Applied metadata file {metadata_file.pk} as {user.email}', fg='green')
         except Exception as e:
             click.echo(e)
             click.echo()
