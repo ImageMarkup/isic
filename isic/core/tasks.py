@@ -1,5 +1,6 @@
 from celery import shared_task
 from django.contrib.auth.models import User
+from urllib3.exceptions import ConnectionError, TimeoutError
 
 from isic.core.models.collection import Collection
 from isic.core.models.image import Image
@@ -18,6 +19,13 @@ def populate_collection_from_search_task(
     collection.images.add(*serializer.to_queryset())
 
 
-@shared_task(soft_time_limit=300, time_limit=310)
+@shared_task(
+    soft_time_limit=300,
+    time_limit=310,
+    autoretry_for=(ConnectionError, TimeoutError),
+    retry_backoff=True,
+    retry_backoff_max=600,
+    retry_kwargs={'max_retries': 15},
+)
 def sync_elasticsearch_index_task():
     bulk_add_to_search_index(Image.objects.with_elasticsearch_properties().iterator())
