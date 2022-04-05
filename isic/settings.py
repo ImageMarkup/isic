@@ -123,8 +123,7 @@ class IsicMixin(ConfigMixin):
         },
         'sync-elasticsearch-index': {
             'task': 'isic.core.tasks.sync_elasticsearch_index_task',
-            # TODO: revisit interval, currently takes ~22s to run
-            'schedule': timedelta(minutes=5),
+            'schedule': timedelta(hours=12),
         },
     }
 
