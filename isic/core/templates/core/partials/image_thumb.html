@@ -1,0 +1,15 @@
+<a class="cursor-pointer">
+  {% if debug %}
+    <img @mouseenter="hovered = true" @click="open = true" src="https://picsum.photos/seed/{{image.id}}/256">
+  {% else %}
+    <img @mouseenter="hovered = true" @click="open = true" src="{{ image.accession.thumbnail_256.url }}" title="{{ image.accession.blob_name }}" />
+  {% endif %}
+</a>
+
+<template x-if="true">
+  <div x-show="open">
+    {% block image_modal %}
+      {% include 'core/partials/image_modal.html' with include_metadata=1 %}
+    {% endblock %}
+  </div>
+</template>
