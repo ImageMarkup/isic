@@ -23,5 +23,5 @@ class CollectionFactory(factory.django.DjangoModelFactory):
     name = factory.Faker('sentence')
     description = factory.Faker('paragraph')
     public = factory.Faker('boolean')
-    official = factory.Faker('boolean')
+    pinned = factory.Faker('boolean')
     locked = False

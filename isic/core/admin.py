@@ -144,8 +144,8 @@ class ImageAliasAdmin(admin.ModelAdmin):
 @admin.register(Collection)
 class CollectionAdmin(admin.ModelAdmin):
     list_select_related = ['creator', 'doi']
-    list_filter = ['public', 'official', 'locked']
-    list_display = ['creator', 'name', 'num_images', 'public', 'official', 'locked', 'doi']
+    list_filter = ['public', 'pinned', 'locked']
+    list_display = ['creator', 'name', 'num_images', 'public', 'pinned', 'locked', 'doi']
 
     autocomplete_fields = ['creator']
 
