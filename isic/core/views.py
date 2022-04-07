@@ -46,19 +46,19 @@ def collection_list(request):
         request.user,
         'core.view_collection',
         Collection.objects.annotate(num_images=Count('images', distinct=True)).order_by(
-            '-official', 'name'
+            '-pinned', 'name'
         ),
     )
     if request.user.is_authenticated:
         counts = collections.aggregate(
-            official=Count('pk', filter=Q(official=True)),
+            pinned=Count('pk', filter=Q(pinned=True)),
             shared_with_me=Count('pk', filter=Q(shares=request.user)),
             mine=Count('pk', filter=Q(creator=request.user)),
             all_=Count('pk'),
         )
     else:
         counts = collections.aggregate(
-            official=Count('pk', filter=Q(official=True)),
+            pinned=Count('pk', filter=Q(pinned=True)),
             all_=Count('pk'),
         )
 
@@ -261,10 +261,10 @@ def image_detail(request, pk):
 
     ctx = {
         'image': image,
-        'official_collections': get_visible_objects(
+        'pinned_collections': get_visible_objects(
             request.user,
             'core.view_collection',
-            image.collections.filter(official=True).order_by('name'),
+            image.collections.filter(pinned=True).order_by('name'),
         ),
         'other_patient_images': get_visible_objects(
             request.user, 'core.view_image', image.same_patient_images().select_related('accession')

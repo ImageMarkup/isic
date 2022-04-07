@@ -30,9 +30,9 @@ class Collection(TimeStampedModel):
         unique_together = [['creator', 'name']]
         constraints = [
             UniqueConstraint(
-                name='collection_official_has_unique_name',
+                name='collection_pinned_has_unique_name',
                 fields=['name'],
-                condition=Q(official=True),
+                condition=Q(pinned=True),
             )
         ]
 
@@ -40,7 +40,7 @@ class Collection(TimeStampedModel):
 
     images = models.ManyToManyField(Image, related_name='collections')
 
-    # unique per user. names of official collections can't be used.
+    # unique per user. names of pinned collections can't be used.
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
 
@@ -53,7 +53,7 @@ class Collection(TimeStampedModel):
         related_name='collection_shares',
     )
 
-    official = models.BooleanField(default=False)
+    pinned = models.BooleanField(default=False)
 
     doi = models.OneToOneField(Doi, on_delete=models.PROTECT, null=True, blank=True)
 
