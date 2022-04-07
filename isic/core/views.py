@@ -165,6 +165,12 @@ def collection_detail(request, pk):
         ).order_by('institution_name'),
     )
 
+    image_removal_mode = (
+        request.GET.get('image_removal_mode')
+        and not collection.locked
+        and request.user.has_perm('core.edit_collection', collection)
+    )
+
     return render(
         request,
         'core/collection_detail.html',
@@ -173,6 +179,7 @@ def collection_detail(request, pk):
             'contributors': contributors,
             'images': page,
             'num_images': paginator.count,
+            'image_removal_mode': image_removal_mode,
         },
     )
 

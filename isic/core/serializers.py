@@ -72,7 +72,7 @@ def valid_search_query(value: str) -> None:
 
 
 class IsicIdListSerializer(serializers.Serializer):
-    isic_ids = serializers.ListField(child=serializers.RegexField(ISIC_ID_REGEX), max_length=100)
+    isic_ids = serializers.ListField(child=serializers.RegexField(ISIC_ID_REGEX), max_length=500)
 
     def to_queryset(self, qs: Optional[QuerySet[Image]] = None) -> QuerySet[Image]:
         qs = qs if qs is not None else Image._default_manager.all()
