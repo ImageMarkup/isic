@@ -1,6 +1,13 @@
 {% extends 'core/base.html' %}
+{% load spurl %}
 {% load get_key %}
 {% load humanize %}
+
+{% block head_extra %}
+  {{ block.super }}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.26.0/axios.min.js" integrity="sha512-bPh3uwgU5qEMipS/VOmRqynnMXGGSRv+72H/N260MQeXZIK4PG48401Bsby9Nq5P5fz7hy5UGNmC/W1Z51h2GQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+{% endblock %}
+
 {% block content %}
   <div class="flex justify-between">
     <div class="flex justify-items">
@@ -28,9 +35,12 @@
       </div>
       <div x-show="open" class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
         {% if request.user.is_staff or request.user == collection.creator %}
-        <div class="py-1" role="none">
-          <a href="{% url 'core/collection-edit' collection.pk %}" class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-0">Download Collection</a>
-        </div>
+          <div class="py-1" role="none">
+            <a href="{% url 'core/collection-edit' collection.pk %}" class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-0">Edit Collection</a>
+            {% if not image_removal_mode %}
+              <a href="{% spurl base=request.get_full_path set_query="image_removal_mode=1" %}" class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-0">Remove Images</a>
+            {% endif %}
+          </div>
         {% endif %}
         {% if request.user.is_staff and not collection.doi %}
           <div class="py-1" role="none">
@@ -81,18 +91,41 @@
   {% endif %}
 
   {% include 'studies/partials/pagination.html' with page_obj=images %}
-  <div class="mb-4" x-data="thumbnailGrid();">
-    <div class="flex flex-row justify-end pb-3">
-      <a class="px-1" href="#" @click="decrease();">fewer columns</a>
-      |
-      <a class="px-1" href="#" @click="increase();">more columns</a>
-    </div>
-    <div class="grid gap-4" :class="`grid-cols-${numCols}`">
-      {% for image in images %}
-        {% include 'core/partials/image.html' %}
-      {% endfor %}
+  <div x-data="collectionEditor({{ collection.pk }})">
+    {% if image_removal_mode %}
+      <div class="alert shadow-lg my-6">
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info flex-shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span>
+            <span x-text="images.size"></span> images pending removal.
+          </span>
+        </div>
+        <div class="flex-none">
+          <button class="btn btn-sm btn-ghost" @click="resetImages('{% spurl base=request.get_full_path remove_query_param="image_removal_mode" %}')">Abort</button>
+          <button class="btn btn-sm btn-error" @click="deleteImages()">Remove</button>
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="mb-4" x-data="thumbnailGrid();">
+      <div class="flex flex-row justify-end pb-3">
+        <a class="px-1" href="#" @click="decrease();">fewer columns</a>
+        |
+        <a class="px-1" href="#" @click="increase();">more columns</a>
+      </div>
+      <div class="grid gap-4" :class="`grid-cols-${numCols}`">
+        {% for image in images %}
+          {% if image_removal_mode %}
+            {% include 'core/partials/edit_collection_image.html' %}
+          {% else %}
+            {% include 'core/partials/image.html' %}
+          {% endif %}
+        {% endfor %}
+      </div>
     </div>
   </div>
   {% include 'studies/partials/pagination.html' with page_obj=images %}
+
   {% include 'ingest/partials/thumbnail_grid_js.html' %}
+  {% include 'core/partials/edit_collection_js.html' %}
 {% endblock %}

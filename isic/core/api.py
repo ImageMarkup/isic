@@ -253,8 +253,12 @@ class CollectionViewSet(ReadOnlyModelViewSet):
         serializer = IsicIdListSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        collection.images.remove(
-            *Image.objects.filter(isic_id__in=serializer.validated_data['isic_ids'])
+        images_to_delete = collection.images.filter(
+            isic_id__in=serializer.validated_data['isic_ids']
         )
+        collection.images.remove(*images_to_delete)
 
+        # TODO: this is a weird mixture of concerns between SSR and an API, figure out a better
+        # way to handle this.
+        messages.add_message(request, messages.INFO, f'Removed {images_to_delete.count()} images.')
         return JsonResponse({})
