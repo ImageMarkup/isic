@@ -9,12 +9,12 @@ class CollectionFilter(django_filters.FilterSet):
     class Meta:
         model = Collection
         fields = [
-            'official',
+            'pinned',
             'shared_with_me',
             'mine',
         ]
 
-    official = BooleanFilter(method='filter_official')
+    pinned = BooleanFilter(method='filter_pinned')
     shared_with_me = BooleanFilter(method='filter_shared_with_me')
     mine = BooleanFilter(method='filter_mine')
 
@@ -22,8 +22,8 @@ class CollectionFilter(django_filters.FilterSet):
         self.user = kwargs.pop('user')
         super().__init__(*args, **kwargs)
 
-    def filter_official(self, qs: QuerySet, name, value):
-        qs = qs.filter(official=value)
+    def filter_pinned(self, qs: QuerySet, name, value):
+        qs = qs.filter(pinned=value)
         return qs
 
     def filter_shared_with_me(self, qs: QuerySet, name, value):
