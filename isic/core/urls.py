@@ -5,17 +5,15 @@ from isic.core.api import user_me
 from isic.core.constants import ISIC_ID_REGEX, MONGO_ID_REGEX
 from isic.core.models.image import Image
 from isic.core.models.image_alias import ImageAlias
-from isic.core.views import (
+from isic.core.views.collections import (
     collection_create,
     collection_create_doi,
     collection_detail,
     collection_edit,
     collection_list,
-    image_browser,
-    image_detail,
-    staff_list,
-    user_detail,
 )
+from isic.core.views.images import image_browser, image_detail
+from isic.core.views.users import staff_list, user_detail
 from isic.ingest.models.accession import Accession
 from isic.login.views import accept_terms_of_use
 
