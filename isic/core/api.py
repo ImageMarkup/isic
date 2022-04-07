@@ -239,3 +239,26 @@ class CollectionViewSet(ReadOnlyModelViewSet):
                     summary['succeeded'].append(isic_id)
 
         return JsonResponse(summary)
+
+    @swagger_auto_schema(auto_schema=None)
+    @action(detail=True, methods=['delete'], pagination_class=None, url_path='images/delete')
+    def delete_images(self, request, *args, **kwargs):
+        collection = self.get_object()
+
+        if not request.user.has_perm('core.edit_collection', collection):
+            raise PermissionDenied
+        elif self.get_object().locked:
+            raise Conflict('Collection is locked for changes.')
+
+        serializer = IsicIdListSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        images_to_delete = collection.images.filter(
+            isic_id__in=serializer.validated_data['isic_ids']
+        )
+        collection.images.remove(*images_to_delete)
+
+        # TODO: this is a weird mixture of concerns between SSR and an API, figure out a better
+        # way to handle this.
+        messages.add_message(request, messages.INFO, f'Removed {images_to_delete.count()} images.')
+        return JsonResponse({})

@@ -1,0 +1,8 @@
+{% extends 'core/partials/image.html' %}
+
+{% block below_thumb %}
+  <div class="flex flex-col">
+    <a href="{{image.get_absolute_url}}">{{image.isic_id}}</a>
+    <button class="btn btn-sm btn-error" :class="{'btn-outline': images.has('{{ image.isic_id }}')}" @click="toggleImage('{{ image.isic_id }}')">Remove</button>
+  </div>
+{% endblock %}
