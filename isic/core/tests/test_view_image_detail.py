@@ -33,8 +33,8 @@ def detailed_image(
         'patient_id': 'IP_123456',
     }
 
-    private_collection = collection_factory(public=False, official=True)
-    public_collection = collection_factory(public=True, official=True)
+    private_collection = collection_factory(public=False, pinned=True)
+    public_collection = collection_factory(public=True, pinned=True)
     private_study = study_factory(public=False)
     public_study = study_factory(public=True)
     main_image = image_factory(
@@ -67,8 +67,8 @@ def test_view_image_detail_public(client, detailed_image):
     for field in RESTRICTED_METADATA_FIELDS:
         assert field not in r.context['metadata']
 
-    assert all([coll.public for coll in r.context['official_collections']])
-    assert len(r.context['official_collections']) == 1
+    assert all([coll.public for coll in r.context['pinned_collections']])
+    assert len(r.context['pinned_collections']) == 1
     assert all([study.public for study in r.context['studies']])
     assert len(r.context['studies']) == 1
 
@@ -91,8 +91,8 @@ def test_view_image_detail_uploader(client, detailed_image):
     for field in RESTRICTED_METADATA_FIELDS:
         assert field in r.context['metadata']
 
-    assert all([coll.public for coll in r.context['official_collections']])
-    assert len(r.context['official_collections']) == 1
+    assert all([coll.public for coll in r.context['pinned_collections']])
+    assert len(r.context['pinned_collections']) == 1
     assert all([study.public for study in r.context['studies']])
     assert len(r.context['studies']) == 1
 

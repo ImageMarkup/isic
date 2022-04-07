@@ -146,7 +146,7 @@ class CollectionSerializer(serializers.ModelSerializer):
             'name',
             'description',
             'public',
-            'official',
+            'pinned',
             'locked',
             'doi',
         ]
