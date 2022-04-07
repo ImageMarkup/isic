@@ -104,7 +104,7 @@ def test_core_api_collection_modify_locked(endpoint, data, staff_client, collect
 
 @pytest.mark.django_db
 def test_core_api_collection_populate_from_list(
-    authenticated_client, collection_factory, image_factory, user
+    authenticated_api_client, collection_factory, image_factory, user
 ):
     collection = collection_factory(locked=False, creator=user, public=True)
     public_image = image_factory(accession__metadata={'sex': 'male'}, public=True)
@@ -115,7 +115,7 @@ def test_core_api_collection_populate_from_list(
         user, through_defaults={'creator': private_image_shared.accession.creator}
     )
 
-    r = authenticated_client.post(
+    r = authenticated_api_client.post(
         f'/api/v2/collections/{collection.pk}/populate-from-list/',
         {
             'isic_ids': [
@@ -138,7 +138,7 @@ def test_core_api_collection_populate_from_list(
 
 @pytest.mark.django_db
 def test_core_api_collection_remove_from_list(
-    authenticated_client, collection_factory, image_factory, user
+    authenticated_api_client, collection_factory, image_factory, user
 ):
     collection = collection_factory(locked=False, creator=user, public=False)
     public_image = image_factory(accession__metadata={'sex': 'male'}, public=True)
@@ -151,7 +151,7 @@ def test_core_api_collection_remove_from_list(
 
     collection.images.add(public_image, private_image_shared, private_image_unshared)
 
-    r = authenticated_client.post(
+    r = authenticated_api_client.post(
         f'/api/v2/collections/{collection.pk}/remove-from-list/',
         {
             'isic_ids': [
@@ -169,3 +169,25 @@ def test_core_api_collection_remove_from_list(
         'ISIC_0000000',
     }
     assert set(r.json()['succeeded']) == {public_image.isic_id, private_image_shared.isic_id}
+
+
+@pytest.mark.django_db
+def test_core_api_collection_delete_images(
+    authenticated_api_client, collection_factory, image_factory, user
+):
+    collection = collection_factory(locked=False, creator=user, public=True)
+    image = image_factory(public=True)
+    collection.images.add(image)
+
+    r = authenticated_api_client.delete(
+        f'/api/v2/collections/{collection.pk}/images/delete/',
+        {
+            'isic_ids': [
+                image.isic_id,
+                'ISIC_0000000',
+            ]
+        },
+    )
+
+    assert r.status_code == 200, r.json()
+    assert collection.images.count() == 0

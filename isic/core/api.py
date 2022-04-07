@@ -239,3 +239,22 @@ class CollectionViewSet(ReadOnlyModelViewSet):
                     summary['succeeded'].append(isic_id)
 
         return JsonResponse(summary)
+
+    @swagger_auto_schema(auto_schema=None)
+    @action(detail=True, methods=['delete'], pagination_class=None, url_path='images/delete')
+    def delete_images(self, request, *args, **kwargs):
+        collection = self.get_object()
+
+        if not request.user.has_perm('core.edit_collection', collection):
+            raise PermissionDenied
+        elif self.get_object().locked:
+            raise Conflict('Collection is locked for changes.')
+
+        serializer = IsicIdListSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        collection.images.remove(
+            *Image.objects.filter(isic_id__in=serializer.validated_data['isic_ids'])
+        )
+
+        return JsonResponse({})
