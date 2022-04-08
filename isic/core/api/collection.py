@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from django.http.response import JsonResponse
 from django.utils.decorators import method_decorator
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.decorators import action
@@ -29,7 +30,8 @@ from .exceptions import Conflict
 class CollectionViewSet(ReadOnlyModelViewSet):
     serializer_class = CollectionSerializer
     queryset = Collection.objects.all()
-    filter_backends = [IsicObjectPermissionsFilter]
+    filter_backends = [IsicObjectPermissionsFilter, DjangoFilterBackend]
+    filterset_fields = ['pinned']
 
     def _enforce_write_checks(self, user: User):
         if not user.has_perm('core.add_images', self.get_object()):
