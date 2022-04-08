@@ -54,8 +54,6 @@ class IsicMixin(ConfigMixin):
         # it will be upgraded on login.
         configuration.PASSWORD_HASHERS += ['isic.login.hashers.GirderPasswordHasher']
 
-        configuration.PASSWORD_HASHERS.insert(0, 'django.contrib.auth.hashers.ScryptPasswordHasher')
-
         configuration.OAUTH2_PROVIDER.update(
             {
                 'PKCE_REQUIRED': _oauth2_pkce_required,
