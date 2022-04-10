@@ -2,180 +2,73 @@
 
 <!DOCTYPE html>
 <html data-theme="winter">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
 
-  <title>{% block title %}{% endblock %}ISIC Archive</title>
+    <title>{% block title %}{% endblock %}ISIC Archive</title>
 
-  <link rel="preconnect" href="https://fonts.gstatic.com">
-  <link rel="stylesheet" href="{% static 'core/dist/styles.css' %}">
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@200;300;400;600;700&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/remixicon@2/fonts/remixicon.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="stylesheet" href="{% static 'core/dist/styles.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@200;300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@2/fonts/remixicon.min.css" rel="stylesheet">
 
-  {% if not debug %}
-    <script src="https://js.sentry-cdn.com/81572a3d084f4fef90e093440762cedd.min.js" crossorigin="anonymous"></script>
-  {% endif %}
-  <script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
-  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.8.1/cdn.min.js" integrity="sha512-R/Jhpa6TNKZy3VmvYNBe7nQviLLpNXU64csnTYd6cy64donZkeqfqpXSoJRiZ8M1MCgejev/j5NoTx0rZEy+hg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    {% if not debug %}
+      <script src="https://js.sentry-cdn.com/81572a3d084f4fef90e093440762cedd.min.js" crossorigin="anonymous"></script>
+    {% endif %}
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.8.1/cdn.min.js" integrity="sha512-R/Jhpa6TNKZy3VmvYNBe7nQviLLpNXU64csnTYd6cy64donZkeqfqpXSoJRiZ8M1MCgejev/j5NoTx0rZEy+hg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-  <!-- Global site tag (gtag.js) - Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-VBHRJSWF1T"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-VBHRJSWF1T"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
-    gtag('config', 'G-VBHRJSWF1T');
-  </script>
+      gtag('config', 'G-VBHRJSWF1T');
+    </script>
 
-  {% if NOINDEX %}
-    <meta name="robots" content="noindex,follow" />
-  {% endif %}
-
-  {% if debug %}
-    <script id="__bs_script__">//<![CDATA[
-      document.write("<script async src='//HOST:8383/browser-sync/browser-sync-client.js'><\/script>".replace("HOST", location.hostname));
-    //]]></script>
-  {% endif %}
-
-  <script>
-      document.addEventListener('alpine:init', () => {
-          Alpine.store('accessions', {
-            items: [],
-          });
-      })
-  </script>
-
-  {% block head_extra %}{% endblock %}
-</head>
-
-<body>
-  {% if SANDBOX_BANNER %}
-    <div class="fixed-banner">
-      This is a testing sandbox for the ISIC Archive.
-      The ISIC Archive is at <a href="https://isic-archive.com">https://isic-archive.com</a>.
-    </div>
-  {% endif %}
-
-  <nav class="bg-white shadow">
-    <div class="mx-auto px-6 lg:px-8" style="max-width:1400px;">
-      <div class="relative flex justify-between h-16">
-        <div class="flex-1 flex items-stretch justify-start">
-          <div class="flex-shrink-0 flex items-center">
-            <a class="text-primary-500" href="{% url 'index' %}">
-              <div class="font-semibold text-2xl text-primary-500">ISIC Archive</div>
-              <div class="text-sm text-center text-primary-500">Admin Interface</div>
-            </a>
-
-          </div>
-          <div class="ml-6 flex space-x-8">
-            <a target="blank" href="https://www.isic-archive.com" class="text-center border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-              Archive
-              <!-- heroicon external-link -->
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 pl-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            </a>
-            <a href="{% url 'upload/select-or-create-contributor' %}" class="text-center {% if request.resolver_match.url_name == 'upload/select-or-create-contributor' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-              Upload
-            </a>
-            <a href="{% url 'core/image-browser' %}" class="text-center {% if request.resolver_match.url_name == 'core/image-browser' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-              Images
-            </a>
-            <a href="{% url 'core/collection-list' %}" class="text-center {% if request.resolver_match.url_name == 'core/collection-list' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-              Collections
-            </a>
-            <a href="{% url 'study-list' %}" class="text-center {% if request.resolver_match.url_name == 'study-list' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-              Studies
-            </a>
-            <a href="{% url 'stats/stats' %}" class="text-center {% if request.resolver_match.url_name == 'core/stats' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-              Stats
-            </a>
-            {% if request.user.is_staff %}
-              <a href="{% url 'ingest-review' %}" class="text-center {% if request.resolver_match.url_name == 'ingest-review' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                Ingest <br /> Review
-              </a>
-              <a href="{% url 'core/staff-list' %}" class="text-center {% if request.resolver_match.url_name == 'core/staff-list' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                Users
-              </a>
-              <a target="blank" href="{% url 'admin:index' %}" class="text-center {% if request.resolver_match.url_name == 'admin:index' %}border-red-500 text-red-900{% else %}border-transparent text-red-900 hover:border-red-300 hover:text-red-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                Django <br /> Admin
-                <!-- heroicon external-link -->
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 pl-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </a>
-            {% endif %}
-            <a target="blank" href="{% url 'docs-swagger' %}" class="text-center {% if request.resolver_match.url_name == 'docs-swagger' %}border-secondary-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-              API
-              <!-- heroicon external-link -->
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 pl-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            </a>
-          </div>
-        </div>
-
-        <div class="flex items-center">
-          {% if not request.user.is_authenticated %}
-            <div class="flex-shrink-0">
-              <a href="{% url 'account_signup' %}">
-                <button type="button" class="relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                  <span>Sign Up</span>
-                </button>
-              </a>
-              <a href="{% url 'account_login' %}">
-                <button type="button" class="relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                  <span>Sign In</span>
-                </button>
-              </a>
-            </div>
-          {% else %}
-            <div class="flex justify-between">
-              <div class="hidden md:ml-4 mr-4 md:flex-shrink-0 md:flex md:items-center">
-                <div class="ml-3 relative flex flex-col">
-                  <div>{{request.user.email}}</div>
-                  <div>({{ request.user.profile.hash_id }})</div>
-                </div>
-              </div>
-              <a href="{% url 'account_logout' %}">
-                <button type="button" class="relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                  <span>Sign Out</span>
-                </button>
-              </a>
-            </div>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-  </nav>
-
-  <div class="container max-w-7xl mx-auto p-8">
-    {% if messages %}
-      {% for message in messages %}
-        <div class="rounded-md bg-blue-50 p-4 mb-4">
-          <div class="flex items-center">
-            <div class="flex-shrink-0">
-              <!-- Heroicon name: solid/information-circle -->
-              <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-              </svg>
-            </div>
-            <div class="ml-3">
-              <div class="mt-2 text-sm text-blue-700">
-                <p>{{ message }}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      {% endfor %}
+    {% if NOINDEX %}
+      <meta name="robots" content="noindex,follow" />
     {% endif %}
 
-    {% block content %}{% endblock %}
-  </div>
+    {% if debug %}
+      <script id="__bs_script__">//<![CDATA[
+        document.write("<script async src='//HOST:8383/browser-sync/browser-sync-client.js'><\/script>".replace("HOST", location.hostname));
+        //]]></script>
+    {% endif %}
 
-  <script type="module" src="https://unpkg.com/@github/time-elements@3.1.2?module"></script>
-</body>
+    <script>
+      document.addEventListener('alpine:init', () => {
+        Alpine.store('accessions', {
+          items: [],
+        });
+      })
+    </script>
+
+    {% block head_extra %}{% endblock %}
+  </head>
+
+  <body>
+    {% if SANDBOX_BANNER %}
+      <div class="fixed-banner">
+        This is a testing sandbox for the ISIC Archive.
+        The ISIC Archive is at <a href="https://isic-archive.com">https://isic-archive.com</a>.
+      </div>
+    {% endif %}
+
+    {% include 'core/partials/navbar.html' %}
+
+    <div class="container max-w-7xl mx-auto p-8">
+      {% if messages %}
+        {% include 'core/partials/messages.html' %}
+      {% endif %}
+
+      {% block content %}{% endblock %}
+    </div>
+
+    <script type="module" src="https://unpkg.com/@github/time-elements@3.1.2?module"></script>
+  </body>
 </html>
