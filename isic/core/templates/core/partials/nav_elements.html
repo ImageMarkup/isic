@@ -1,0 +1,23 @@
+<li><a target="blank" href="https://www.isic-archive.com/#!/topWithHeader/onlyHeaderTop/gallery">Gallery <i class="ri-external-link-line"></i></a></li>
+{% if request.user.is_staff %}
+  <li tabindex="0">
+    <a>
+      Staff
+      {% if right_arrow %}
+        <svg class="fill-current" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"/></svg>
+      {% else %}
+        <svg class="fill-current" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"/></svg>
+      {% endif %}
+    </a>
+    <ul class="p-2 bg-base-100">
+      <li><a href="{% url 'ingest-review' %}">Ingest Review</a></li>
+      <li><a href="{% url 'core/staff-list' %}">Users</a></li>
+      <li><a target="blank" href="{% url 'admin:index' %}">Django Admin <i class="ri-external-link-line"></i></a></li>
+    </ul>
+  </li>
+{% endif %}
+<li><a href="{% url 'upload/select-or-create-contributor' %}">Upload</a></li>
+<li><a href="{% url 'core/image-browser' %}">Images</a></li>
+<li><a href="{% url 'core/collection-list' %}">Collections</a></li>
+<li><a href="{% url 'study-list' %}">Studies</a></li>
+<li><a href="{% url 'stats/stats' %}">Stats</a></li>
