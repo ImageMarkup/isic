@@ -1,4 +1,3 @@
-from django.apps import apps
 from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path, reverse_lazy
@@ -55,11 +54,6 @@ urlpatterns = [
     path('', include('isic.stats.urls')),
     path('', include('isic.studies.urls')),
 ]
-
-if apps.is_installed('isic.discourse_sso'):
-    urlpatterns += [
-        path('', include('isic.discourse_sso.urls')),
-    ]
 
 if settings.DEBUG:
     import debug_toolbar
