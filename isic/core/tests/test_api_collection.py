@@ -169,25 +169,3 @@ def test_core_api_collection_remove_from_list(
         'ISIC_0000000',
     }
     assert set(r.json()['succeeded']) == {public_image.isic_id, private_image_shared.isic_id}
-
-
-@pytest.mark.django_db
-def test_core_api_collection_delete_images(
-    authenticated_api_client, collection_factory, image_factory, user
-):
-    collection = collection_factory(locked=False, creator=user, public=True)
-    image = image_factory(public=True)
-    collection.images.add(image)
-
-    r = authenticated_api_client.delete(
-        f'/api/v2/collections/{collection.pk}/images/delete/',
-        {
-            'isic_ids': [
-                image.isic_id,
-                'ISIC_0000000',
-            ]
-        },
-    )
-
-    assert r.status_code == 200, r.json()
-    assert collection.images.count() == 0

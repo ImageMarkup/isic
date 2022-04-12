@@ -6,6 +6,7 @@ from isic.core.models.collection import Collection
 from isic.core.models.image import Image
 from isic.core.search import bulk_add_to_search_index
 from isic.core.serializers import SearchQuerySerializer
+from isic.core.services.collection.image import collection_add_images
 
 
 @shared_task(soft_time_limit=120, time_limit=180)
@@ -16,7 +17,7 @@ def populate_collection_from_search_task(
     collection = Collection.objects.get(pk=collection_pk)
     serializer = SearchQuerySerializer(data=search_params, context={'user': user})
     serializer.is_valid(raise_exception=True)
-    collection.images.add(*serializer.to_queryset())
+    collection_add_images(collection=collection, qs=serializer.to_queryset())
 
 
 @shared_task(

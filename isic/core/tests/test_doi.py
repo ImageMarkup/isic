@@ -3,6 +3,7 @@ import pytest
 from isic.core.forms.doi import CreateDoiForm
 from isic.core.models.doi import Doi
 from isic.core.models.image import Image
+from isic.core.services.collection.doi import collection_build_doi
 
 
 @pytest.fixture
@@ -38,8 +39,9 @@ def test_doi_form_requires_no_existing_doi(public_collection, staff_user_request
 
 @pytest.mark.django_db
 def test_doi_form_creation(public_collection_with_public_images, staff_user_request, mocker):
-    mocker.patch.object(CreateDoiForm, '_create_doi', lambda self: True)
-
+    mocker.patch(
+        'isic.core.services.collection.doi._datacite_create_doi', lambda doi: {'doi': '123456'}
+    )
     form = CreateDoiForm(
         data={},
         collection=public_collection_with_public_images,
@@ -83,7 +85,7 @@ def collection_with_several_creators(image_factory, collection_factory, cohort_f
 def test_doi_creators_ordered_by_number_images_contributed(collection_with_several_creators, user):
     collection, cohort_a, cohort_b, cohort_c = collection_with_several_creators
 
-    doi = collection.as_datacite_doi(user, 'foo')
+    doi = collection_build_doi(collection=collection, doi_id='foo')
 
     creators = doi['data']['attributes']['creators']
 
@@ -103,7 +105,7 @@ def test_doi_creators_order_anonymous_contributions_last(
     for _ in range(10):
         collection.images.add(image_factory(public=True, accession__cohort=anon_cohort))
 
-    doi = collection.as_datacite_doi(user, 'foo')
+    doi = collection_build_doi(collection=collection, doi_id='foo')
 
     creators = doi['data']['attributes']['creators']
 
@@ -138,7 +140,7 @@ def collection_with_repeated_creators(image_factory, collection_factory, cohort_
 def test_doi_creators_collapse_repeated_creators(collection_with_repeated_creators, user):
     collection, cohort_a1, cohort_a2, cohort_b = collection_with_repeated_creators
 
-    doi = collection.as_datacite_doi(user, 'foo')
+    doi = collection_build_doi(collection=collection, doi_id='foo')
 
     creators = doi['data']['attributes']['creators']
 

@@ -6,8 +6,8 @@ from isic.core.constants import ISIC_ID_REGEX, MONGO_ID_REGEX
 from isic.core.models.image import Image
 from isic.core.models.image_alias import ImageAlias
 from isic.core.views.collections import (
-    collection_create,
-    collection_create_doi,
+    collection_create_,
+    collection_create_doi_,
     collection_detail,
     collection_edit,
     collection_list,
@@ -68,7 +68,7 @@ urlpatterns = [
     ),
     path(
         'collections/create/',
-        collection_create,
+        collection_create_,
         name='core/collection-create',
     ),
     path(
@@ -78,7 +78,7 @@ urlpatterns = [
     ),
     path(
         'collections/<int:pk>/create-doi/',
-        collection_create_doi,
+        collection_create_doi_,
         name='core/collection-create-doi',
     ),
     path(
