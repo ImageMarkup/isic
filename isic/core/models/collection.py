@@ -1,13 +1,10 @@
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models.aggregates import Count
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.expressions import F
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
-from django.db.models.signals import m2m_changed
-from django.dispatch import receiver
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
@@ -65,123 +62,19 @@ class Collection(TimeStampedModel):
     def get_absolute_url(self):
         return reverse('core/collection-detail', args=[self.pk])
 
-    def _get_datacite_creators(self) -> list[str]:
-        """
-        Return a list of datacite creators for this collection.
-
-        Creators are ordered by number of images contributed (to this collection), ties are broken
-        alphabetically, except for Anonymous contributions which are always last.
-        """
-        creators = (
-            self.images.alias(num_images=Count('accession__image'))
-            .values_list('accession__cohort__attribution', flat=True)
-            .order_by('-num_images', 'accession__cohort__attribution')
-            .distinct()
-        )
-
-        # Push an Anonymous attribution to the end
-        creators = sorted(creators, key=lambda x: 1 if x == 'Anonymous' else 0)
-
-        return creators
-
-    def as_datacite_doi(self, contributor: User, doi_id: str) -> dict:
-        return {
-            'data': {
-                'type': 'dois',
-                'attributes': {
-                    'identifiers': [{'identifierType': 'DOI', 'identifier': doi_id}],
-                    'event': 'publish',
-                    'doi': doi_id,
-                    'creators': [{'name': creator} for creator in self._get_datacite_creators()],
-                    'contributor': f'{self.creator.first_name} {self.creator.last_name}',
-                    'titles': [{'title': self.name}],
-                    'publisher': 'ISIC Archive',
-                    'publicationYear': self.images.order_by('created').latest().created.year,
-                    # resourceType?
-                    'types': {'resourceTypeGeneral': 'Dataset'},
-                    # TODO: api.?
-                    'url': f'https://api.isic-archive.com/collections/{self.pk}/',
-                    'schemaVersion': 'http://datacite.org/schema/kernel-4',
-                    'description': self.description,
-                    'descriptionType': 'Other',
-                },
-            }
-        }
-
     @property
     def doi_url(self):
         if self.doi:
             return f'https://doi.org/{self.doi}'
 
-    def save(self, **kwargs):
-        # Check for updates to the collection
-        # TODO: allow creating a DOI for locked collections
+    def full_clean(self, exclude=None, validate_unique=True):
         if self.pk and Collection.objects.filter(pk=self.pk, locked=True).exists():
             raise ValidationError("Can't modify the collection, it's locked.")
 
         if self.pk and self.public and self.images.filter(public=False).exists():
             raise ValidationError("Can't make collection public, it contains private images.")
 
-        return super().save(**kwargs)
-
-
-@receiver(
-    m2m_changed,
-    sender=Collection.images.through,
-    dispatch_uid='block_private_images_in_public_collections',
-)
-def block_private_images_in_public_collections(
-    sender, instance: Collection, action: str, **kwargs
-) -> None:
-    if action == 'pre_add':
-        if isinstance(instance, Collection):
-            if (
-                instance.public
-                and kwargs['model'].objects.filter(public=False, pk__in=kwargs['pk_set']).exists()
-            ):
-                raise ValidationError('Attempting to add private images to a public collection.')
-        elif isinstance(instance, Image):
-            public_colls = (
-                kwargs['model'].objects.filter(public=True, pk__in=kwargs['pk_set']).exists()
-            )
-            if not instance.public and public_colls:
-                raise ValidationError('Attempting to add public collections to a private image.')
-
-
-@receiver(
-    m2m_changed, sender=Collection.images.through, dispatch_uid='block_locked_collection_mutation'
-)
-def block_locked_collection_mutation(sender, instance: Collection, action: str, **kwargs) -> None:
-    if action == 'pre_clear':
-        if isinstance(instance, Collection):
-            if instance.locked and instance.images.exists():
-                raise ValidationError('Attempting to clear images from a locked collection.')
-        elif isinstance(instance, Image):
-            locked_colls = instance.collections.filter(locked=True).exists()
-            if locked_colls:
-                raise ValidationError('Attempting to remove a locked collection from an image.')
-
-    if action == 'pre_remove':
-        if isinstance(instance, Collection):
-            if instance.locked:
-                raise ValidationError('Attempting to remove images from a locked collection.')
-        elif isinstance(instance, Image):
-            locked_colls = (
-                kwargs['model'].objects.filter(locked=True, pk__in=kwargs['pk_set']).exists()
-            )
-            if locked_colls:
-                raise ValidationError('Attempting to remove a locked collection from an image.')
-
-    if action == 'pre_add':
-        if isinstance(instance, Collection):
-            if instance.locked:
-                raise ValidationError('Attempting to add images to a locked collection.')
-        elif isinstance(instance, Image):
-            locked_colls = (
-                kwargs['model'].objects.filter(locked=True, pk__in=kwargs['pk_set']).exists()
-            )
-            if locked_colls:
-                raise ValidationError('Attempting to add locked collections to an image.')
+        return super().full_clean(exclude=exclude, validate_unique=validate_unique)
 
 
 class CollectionShare(TimeStampedModel):
@@ -204,7 +97,7 @@ class CollectionShare(TimeStampedModel):
 
 class CollectionPermissions:
     model = Collection
-    perms = ['view_collection', 'edit_collection', 'create_doi', 'add_images']
+    perms = ['view_collection', 'edit_collection', 'create_doi', 'add_images', 'remove_images']
     filters = {'view_collection': 'view_collection_list', 'create_doi': 'create_doi_list'}
 
     @staticmethod
@@ -261,6 +154,11 @@ class CollectionPermissions:
     @staticmethod
     def add_images(user_obj, obj: Collection):
         return CollectionPermissions.add_images_list(user_obj).contains(obj)
+
+    # just alias add_images for now.
+    @staticmethod
+    def remove_images(user_obj, obj: Collection):
+        return CollectionPermissions.add_images(user_obj, obj)
 
     @staticmethod
     def edit_collection_list(
