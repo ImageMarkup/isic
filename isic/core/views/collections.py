@@ -1,5 +1,6 @@
-from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Count
 from django.db.models.query_utils import Q
@@ -9,9 +10,10 @@ from django.urls.base import reverse
 
 from isic.core.filters import CollectionFilter
 from isic.core.forms.collection import CollectionForm
-from isic.core.forms.doi import CreateDoiForm
 from isic.core.models import Collection
 from isic.core.permissions import get_visible_objects, needs_object_permission
+from isic.core.services.collection import collection_create, collection_update
+from isic.core.services.collection.doi import collection_build_doi_preview, collection_create_doi
 from isic.ingest.models import Contributor
 
 
@@ -49,15 +51,13 @@ def collection_list(request):
 
 
 @login_required
-def collection_create(request):
+def collection_create_(request):
     context = {}
 
     if request.method == 'POST':
         context['form'] = CollectionForm(request.POST)
         if context['form'].is_valid():
-            collection = context['form'].save(commit=False)
-            collection.creator = request.user
-            collection.save()
+            collection = collection_create(creator=request.user, **context['form'].cleaned_data)
             return HttpResponseRedirect(reverse('core/collection-detail', args=[collection.pk]))
     else:
         context['form'] = CollectionForm()
@@ -72,11 +72,17 @@ def collection_create(request):
 @needs_object_permission('core.edit_collection', (Collection, 'pk', 'pk'))
 def collection_edit(request, pk):
     collection = get_object_or_404(Collection, pk=pk)
-    form = CollectionForm(request.POST or None, instance=collection)
+    form = CollectionForm(
+        request.POST or {key: getattr(collection, key) for key in ['name', 'description', 'public']}
+    )
 
     if request.method == 'POST' and form.is_valid():
-        form.save()
-        return HttpResponseRedirect(reverse('core/collection-detail', args=[collection.pk]))
+        try:
+            collection_update(collection, **form.cleaned_data)
+        except ValidationError as e:
+            messages.add_message(request, messages.ERROR, e.message)
+        else:
+            return HttpResponseRedirect(reverse('core/collection-detail', args=[collection.pk]))
 
     return render(
         request, 'core/collection_create_or_edit.html', {'form': form, 'collection': collection}
@@ -85,33 +91,18 @@ def collection_edit(request, pk):
 
 @needs_object_permission('core.view_collection', (Collection, 'pk', 'pk'))
 @needs_object_permission('core.create_doi', (Collection, 'pk', 'pk'))
-def collection_create_doi(request, pk):
+def collection_create_doi_(request, pk):
     collection = get_object_or_404(Collection, pk=pk)
     context = {'collection': collection}
 
-    if not collection.images.exists():
-        context['warnings'] = ['An empty collection cannot be published.']
+    if request.method == 'POST':
+        try:
+            collection_create_doi(user=request.user, collection=collection)
+            return HttpResponseRedirect(reverse('core/collection-detail', args=[collection.pk]))
+        except ValidationError:
+            pass
     else:
-        if request.method == 'POST':
-            context['form'] = CreateDoiForm(request.POST, collection=collection, request=request)
-            if context['form'].is_valid():
-                context['form'].save()
-                # TODO flash message
-                return HttpResponseRedirect(reverse('core/collection-detail', args=[collection.pk]))
-        else:
-            context['form'] = CreateDoiForm(
-                collection=collection,
-                request=request,
-            )
-
-        preview = collection.as_datacite_doi(
-            request.user, f'{settings.ISIC_DATACITE_DOI_PREFIX}/123456'
-        )['data']['attributes']
-        preview['creators'] = ', '.join([c['name'] for c in preview['creators']])
-        context['preview'] = preview
-
-        if not collection.public or collection.images.filter(public=False).exists():
-            context['warnings'] = ['The collection or some of the images in it are private.']
+        context['preview'] = collection_build_doi_preview(collection=collection)
 
     return render(
         request,

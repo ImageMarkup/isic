@@ -1,4 +1,3 @@
-from django.core.exceptions import ValidationError
 from django.urls.base import reverse
 import pytest
 
@@ -23,80 +22,7 @@ def test_collection_form(authenticated_client, user):
     assert collection.public is False
 
 
-@pytest.mark.django_db
-def test_collection_locked_modifications(locked_collection):
-    with pytest.raises(ValidationError):
-        locked_collection.name = 'foo'
-        locked_collection.save()
-
-
-@pytest.mark.django_db(transaction=True)
-def test_collection_locked_m2m_api(locked_collection, image):
-    with pytest.raises(ValidationError):
-        locked_collection.images.add(image)
-
-    with pytest.raises(ValidationError):
-        locked_collection.images.remove(image)
-
-    with pytest.raises(ValidationError):
-        locked_collection.images.set([image])
-
-    with pytest.raises(ValidationError):
-        image.collections.add(locked_collection)
-
-    with pytest.raises(ValidationError):
-        image.collections.set([locked_collection])
-
-    with pytest.raises(ValidationError):
-        image.collections.remove(locked_collection)
-
-    with pytest.raises(ValidationError):
-        image.collections.set([locked_collection])
-
-
-@pytest.mark.django_db(transaction=True)
-def test_collection_locked_m2m_api_clear_empty(collection, image):
-    collection.images.clear()
-    image.collections.clear()
-
-
-@pytest.mark.django_db(transaction=True)
-def test_collection_locked_m2m_api_clear_nonempty(collection_factory, image_factory):
-    collection = collection_factory(public=True, locked=False)
-    image = image_factory(public=True)
-    collection.images.add(image)
-    collection.locked = True
-    collection.save()
-
-    with pytest.raises(ValidationError):
-        collection.images.clear()
-
-    with pytest.raises(ValidationError):
-        image.collections.clear()
-
-
 @pytest.mark.skip('Unimplemented')
 def test_collection_locked_add_doi():
     # TODO: should be able to register a DOI on a locked collection
     pass
-
-
-@pytest.mark.django_db(transaction=True)
-def test_public_collection_add_private_images(public_collection, image_factory):
-    image = image_factory(public=False)
-
-    with pytest.raises(ValidationError):
-        public_collection.images.add(image)
-
-    with pytest.raises(ValidationError):
-        image.collections.add(public_collection)
-
-
-@pytest.mark.django_db
-def test_make_private_collection_public(private_collection, image_factory):
-    image = image_factory(public=False)
-    private_collection.images.add(image)
-
-    with pytest.raises(ValidationError):
-        private_collection.public = True
-        private_collection.save(update_fields=['public'])

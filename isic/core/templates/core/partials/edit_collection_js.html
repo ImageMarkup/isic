@@ -32,17 +32,13 @@
       deleteImages() {
         let _this = this; // eek
         if (confirm(`Are you sure you want to remove ${this.images.size} images from this collection?`)) {
-          axios.delete(`/api/v2/collections/${this.collectionId}/images/delete/`,
-                       {
-                         data: {
-                           'isic_ids': this._imagesToArray()
-                         },
-                         headers: {
+          axios.post(`/api/v2/collections/${this.collectionId}/remove-from-list/`, {'isic_ids': this._imagesToArray()},
+                         { headers: {
                            'Content-Type': 'application/json',
                            'X-CSRFToken': '{{ csrf_token }}'
                          }
           }).then((resp) => {
-            window.location.href = `/collections/${this.collectionId}/`;
+            this.resetImages(`/collections/${this.collectionId}/`);
           }).catch(function(error) {
             console.error(error);
             alert('Something went wrong.');
