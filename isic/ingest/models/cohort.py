@@ -45,6 +45,10 @@ class Cohort(CreationSortedTimeStampedModel):
         help_text='The institution name that should be attributed.', max_length=200
     )
 
+    collection = models.OneToOneField(
+        'core.Collection', null=True, on_delete=models.SET_NULL, related_name='cohort'
+    )
+
     def __str__(self) -> str:
         return self.name
 
