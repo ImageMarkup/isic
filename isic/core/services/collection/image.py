@@ -7,7 +7,14 @@ from isic.core.models.image import Image
 from isic.core.permissions import get_visible_objects
 
 
-def collection_add_images(*, collection: Collection, qs: QuerySet[Image]):
+def collection_add_images(
+    *, collection: Collection, qs: QuerySet[Image] = None, image: Image = None
+):
+    assert qs or image, 'qs and image are mutually exclusive arguments.'
+
+    if image:
+        qs = Image.objects.filter(pk=image.pk)
+
     if collection.locked:
         raise ValidationError("Can't add images to locked collection.")
 
@@ -17,7 +24,14 @@ def collection_add_images(*, collection: Collection, qs: QuerySet[Image]):
     collection.images.add(*qs)
 
 
-def collection_remove_images(*, collection: Collection, qs: QuerySet[Image]):
+def collection_remove_images(
+    *, collection: Collection, qs: QuerySet[Image] = None, image: Image = None
+):
+    assert qs or image, 'qs and image are mutually exclusive arguments.'
+
+    if image:
+        qs = Image.objects.filter(pk=image.pk)
+
     if collection.locked:
         raise ValidationError("Can't remove images from a locked collection.")
 
