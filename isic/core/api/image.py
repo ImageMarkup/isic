@@ -28,11 +28,7 @@ class ImageViewSet(ReadOnlyModelViewSet):
     filter_backends = [IsicObjectPermissionsFilter]
     lookup_field = 'isic_id'
 
-    @swagger_auto_schema(
-        operation_summary='Retrieve the facets of a search query.',
-        query_serializer=SearchQuerySerializer,
-        responses={200: 'A set of facets corresponding to the search query.'},
-    )
+    @swagger_auto_schema(auto_schema=None)
     @action(detail=False, methods=['get'], pagination_class=None)
     def facets(self, request):
         serializer = SearchQuerySerializer(data=request.query_params)

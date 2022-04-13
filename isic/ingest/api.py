@@ -46,12 +46,7 @@ class AccessionViewSet(mixins.UpdateModelMixin, mixins.CreateModelMixin, viewset
         else:
             return AccessionChecksSerializer
 
-    @swagger_auto_schema(
-        operation_summary='Create an accession directly.',
-        operation_description="""
-To create an Accession you must provide an "original_blob" which comports to an S3FileField value.
-    """,
-    )
+    @swagger_auto_schema(auto_schema=None)
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
 
@@ -125,7 +120,7 @@ To create an Accession you must provide an "original_blob" which comports to an 
 
 @method_decorator(
     name='create',
-    decorator=swagger_auto_schema(operation_summary='Create a cohort.'),
+    decorator=swagger_auto_schema(auto_schema=None),
 )
 @method_decorator(
     name='list', decorator=swagger_auto_schema(operation_summary='Return a list of cohorts.')
@@ -142,7 +137,7 @@ class CohortViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
 
 @method_decorator(
     name='create',
-    decorator=swagger_auto_schema(operation_summary='Create a contributor.'),
+    decorator=swagger_auto_schema(auto_schema=None),
 )
 @method_decorator(
     name='list', decorator=swagger_auto_schema(operation_summary='Return a list of contributors.')
