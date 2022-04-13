@@ -20,9 +20,9 @@
       <div class="hidden md:flex">
         {{ request.user.email }} ({{ request.user.profile.hash_id }})
       </div>
-      <a class="btn ml-4">Sign Out</a>
+      <a class="btn ml-4" href="{% url 'account_logout' %}">Sign Out</a>
     {% else %}
-      <a class="btn ml-4">Sign In</a>
+      <a class="btn ml-4" href="{% url 'account_login' %}">Sign In</a>
     {% endif %}
   </div>
 </div>
