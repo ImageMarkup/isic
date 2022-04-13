@@ -18,7 +18,7 @@ def get_girder_token(request):
     return JsonResponse({'token': token})
 
 
-@swagger_auto_schema(methods=['PUT'], operation_summary='Accept the terms of use.')
+@swagger_auto_schema(methods=['PUT'], auto_schema=None)
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def accept_terms_of_use(request):

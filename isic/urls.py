@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib import admin
+from django.template.loader import render_to_string
 from django.urls import include, path, reverse_lazy
 from django.views.generic.base import RedirectView
 from drf_yasg import openapi
@@ -32,7 +33,11 @@ class ExcludeS3FFGenerator(OpenAPISchemaGenerator):
 
 # OpenAPI generation
 schema_view = get_schema_view(
-    openapi.Info(title='ISIC', default_version='v2', description=''),
+    openapi.Info(
+        title='ISIC Archive',
+        default_version='v2',
+        description=render_to_string('core/swagger_description.html'),
+    ),
     public=True,
     permission_classes=(permissions.AllowAny,),
     generator_class=ExcludeS3FFGenerator,
