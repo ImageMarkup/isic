@@ -122,7 +122,7 @@
       apply() {
         this.applying = true;
 
-        fetch(`/api/v2/metadata-files/{{ metadata_file_id }}/apply_metadata/`, {
+        fetch(`/api/v2/metadata-files/{{ metadata_file_id }}/update_metadata/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
