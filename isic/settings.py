@@ -33,6 +33,7 @@ class IsicMixin(ConfigMixin):
         # Install local apps first, to ensure any overridden resources are found first
         configuration.INSTALLED_APPS = [
             'isic.core.apps.CoreConfig',
+            'isic.find.apps.FindConfig',
             'isic.login.apps.LoginConfig',
             'isic.ingest.apps.IngestConfig',
             'isic.stats.apps.StatsConfig',

@@ -1,0 +1,39 @@
+{% comment %}
+  Always use x-show even though :class should be enough, otherwise the click.outside
+  directive on the inner element won't work because it can't effectively
+  tell if it's visible. This is similar-ish to https://github.com/alpinejs/alpine/discussions/2264
+{% endcomment %}
+<div class="modal" :class="{'modal-open': quickfindOpen}" x-show="quickfindOpen">
+  <div class="modal-box w-11/12 max-w-5xl" @click.outside="closeQuickfindModal()">
+    <h3 class="font-bold text-lg">Quick Find</h3>
+    <input x-ref="quickfind"
+      x-init="$watch('findText', value => performSearch(value))"
+      x-model="findText"
+      placeholder="Search anything.." class="input input-bordered w-full max-w-xs">
+    <label class="label">
+      <span class="label-text-alt" x-show="findText.length < 3">At least 3 characters</span>
+    </label>
+
+    <ul role="list" class="divide-y divide-gray-200">
+      <template x-for="result in results">
+        <li class="relative bg-white py-2 px-4 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-600">
+          <div class="flex justify-between space-x-3">
+            <div class="min-w-0 flex-1">
+              <a :href="result.url" class="block focus:outline-none">
+                <span class="absolute inset-0" aria-hidden="true"></span>
+                <div class="flex">
+                  <i :class="result.icon"></i>
+                  <div class="ml-2">
+                    <p class="text-sm font-medium text-gray-900 truncate" x-text="result.title"></p>
+                    <p class="text-sm text-gray-500 truncate" x-text="result.subtitle"></p>
+                  </div>
+                </div>
+              </a>
+            </div>
+            <p class="flex-shrink-0 whitespace-nowrap text-sm text-gray-500" x-text="result.result_type"></p>
+          </div>
+        </li>
+      </template>
+    </ul>
+  </div>
+</div>
