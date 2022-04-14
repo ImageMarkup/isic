@@ -1,8 +1,10 @@
 from django.contrib.auth.models import User
+from django.contrib.postgres.indexes import GinIndex, OpClass
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.expressions import F
+from django.db.models.functions import Upper
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 from django.urls import reverse
@@ -31,6 +33,10 @@ class Collection(TimeStampedModel):
                 fields=['name'],
                 condition=Q(pinned=True),
             )
+        ]
+        indexes = [
+            # icontains uses Upper(name) for searching
+            GinIndex(OpClass(Upper('name'), name='gin_trgm_ops'), name='collection_name_gin')
         ]
 
     creator = models.ForeignKey(User, on_delete=models.PROTECT)

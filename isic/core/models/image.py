@@ -1,8 +1,10 @@
 from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates.general import ArrayAgg
+from django.contrib.postgres.indexes import GinIndex, OpClass
 from django.db import models
 from django.db.models.constraints import CheckConstraint
 from django.db.models.expressions import F
+from django.db.models.functions import Upper
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 from django.urls import reverse
@@ -35,6 +37,12 @@ class ImageQuerySet(models.QuerySet):
 
 
 class Image(CreationSortedTimeStampedModel):
+    class Meta(CreationSortedTimeStampedModel.Meta):
+        indexes = [
+            # icontains uses Upper(name) for searching
+            GinIndex(OpClass(Upper('isic'), name='gin_trgm_ops'), name='isic_name_gin')
+        ]
+
     accession = models.OneToOneField(
         Accession,
         on_delete=models.PROTECT,
