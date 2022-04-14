@@ -60,6 +60,7 @@ setup(
         'google-api-python-client',
         'hashids',
         'isic-metadata',
+        'jaro-winkler',
         'oauth2client',
         'opensearch-py',
         'pandas',
