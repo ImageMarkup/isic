@@ -4,7 +4,6 @@ from django.contrib.auth.models import User
 from django.db import transaction
 
 from isic.core.models import Image
-from isic.core.services.collection import collection_update
 from isic.core.services.collection.image import collection_add_images
 from isic.core.tasks import sync_elasticsearch_index_task
 from isic.ingest.models import (
@@ -87,8 +86,6 @@ def publish_cohort_task(cohort_pk: int, user_pk: int, *, public: bool):
     cohort = Cohort.objects.select_related('collection').get(pk=cohort_pk)
     user = User.objects.get(pk=user_pk)
 
-    collection_update(collection=cohort.collection, locked=False)
-
     for accession in cohort.publishable_accessions().iterator():
         # use get_or_create so the task is idempotent in case of failure
         image, _ = Image.objects.get_or_create(
@@ -96,8 +93,6 @@ def publish_cohort_task(cohort_pk: int, user_pk: int, *, public: bool):
             accession=accession,
             public=public,
         )
-        collection_add_images(collection=cohort.collection, image=image)
-
-    collection_update(collection=cohort.collection, locked=True)
+        collection_add_images(collection=cohort.collection, image=image, ignore_lock=True)
 
     sync_elasticsearch_index_task.delay()
