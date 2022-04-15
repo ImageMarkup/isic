@@ -13,6 +13,7 @@ from django.utils.safestring import mark_safe
 from s3_file_field.widgets import S3FileInput
 
 from isic.core.permissions import needs_object_permission
+from isic.core.services.collection import collection_create
 from isic.ingest.filters import AccessionFilter
 from isic.ingest.forms import SingleAccessionUploadForm
 from isic.ingest.models import Accession, Cohort, ZipUpload
@@ -160,6 +161,15 @@ def publish_cohort(request, pk):
             public = False
         else:
             raise Exception
+
+        if not cohort.collection:
+            cohort.collection = collection_create(
+                creator=request.user,
+                name=f'Publish of {cohort.name}',
+                description='',
+                public=False,
+            )
+            cohort.save(update_fields=['collection'])
 
         publish_cohort_task.delay(cohort.pk, request.user.pk, public=public)
         messages.add_message(
