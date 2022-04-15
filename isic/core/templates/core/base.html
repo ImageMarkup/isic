@@ -48,10 +48,44 @@
       })
     </script>
 
+    <script type="text/javascript">
+      function quickfind() {
+        return {
+          quickfindOpen: false,
+          findText: '',
+          results: {},
+          openQuickfindModal() {
+            this.$nextTick(() => this.$refs.quickfind.focus());
+            this.quickfindOpen = true;
+          },
+          closeQuickfindModal() {
+            this.quickfindOpen = false;
+          },
+          performSearch(value) {
+            if (value.length < 3) {
+              this.results = {};
+              return;
+            }
+
+            fetch(`/api/v2/quickfind/?query=${value}`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+              },
+            }).then(response => response.json())
+              .then(data => {
+                this.results = data;
+              });
+          }
+        }
+      }
+    </script>
+
     {% block head_extra %}{% endblock %}
   </head>
 
-  <body>
+  <body x-data="quickfind()" @keydown.escape="closeQuickfindModal()">
     {% if SANDBOX_BANNER %}
       <div class="fixed-banner">
         This is a testing sandbox for the ISIC Archive.
@@ -67,6 +101,8 @@
       {% endif %}
 
       {% block content %}{% endblock %}
+
+      {% include 'find/quickfind_modal.html' %}
     </div>
 
     <script type="module" src="https://unpkg.com/@github/time-elements@3.1.2?module"></script>
