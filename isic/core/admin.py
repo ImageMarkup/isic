@@ -146,6 +146,8 @@ class CollectionAdmin(admin.ModelAdmin):
     list_select_related = ['creator', 'doi']
     list_filter = ['public', 'pinned', 'locked']
     list_display = ['creator', 'name', 'num_images', 'public', 'pinned', 'locked', 'doi']
+    search_fields = ['creator__email', 'name']
+    search_help_text = 'Search collections by name, or creator email.'
 
     autocomplete_fields = ['creator']
 
