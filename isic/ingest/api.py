@@ -9,7 +9,7 @@ from rest_framework.response import Response
 
 from isic.core.permissions import IsicObjectPermissionsFilter
 from isic.ingest.models import Accession, MetadataFile
-from isic.ingest.models.check_log import CheckLog
+from isic.ingest.models.accession_review import AccessionReview
 from isic.ingest.models.cohort import Cohort
 from isic.ingest.models.contributor import Contributor
 from isic.ingest.serializers import (
@@ -100,7 +100,7 @@ class AccessionViewSet(mixins.UpdateModelMixin, mixins.CreateModelMixin, viewset
                             setattr(accession, check, True)
                             accessions_to_update.append(accession)
                             checklogs.append(
-                                CheckLog(
+                                AccessionReview(
                                     accession=accession,
                                     creator=request.user,
                                     change_field=check,
@@ -111,7 +111,7 @@ class AccessionViewSet(mixins.UpdateModelMixin, mixins.CreateModelMixin, viewset
                 # TODO: this is technically updating all the checks fields when each record may only
                 # want to update a specific check field.
                 Accession.objects.bulk_update(accessions_to_update, fields=checks)
-                CheckLog.objects.bulk_create(checklogs)
+                AccessionReview.objects.bulk_create(checklogs)
 
             return Response({})
         else:

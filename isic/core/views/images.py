@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, render
 from isic.core.forms.search import ImageSearchForm
 from isic.core.models import Collection, Image
 from isic.core.permissions import get_visible_objects, needs_object_permission
-from isic.ingest.models import CheckLog
+from isic.ingest.models import AccessionReview
 from isic.studies.models import Study
 
 
@@ -17,7 +17,9 @@ from isic.studies.models import Study
 def image_detail(request, pk):
     image = get_object_or_404(
         Image.objects.select_related('accession__cohort__contributor__creator',).prefetch_related(
-            Prefetch('accession__checklogs', queryset=CheckLog.objects.select_related('creator'))
+            Prefetch(
+                'accession__checklogs', queryset=AccessionReview.objects.select_related('creator')
+            )
         ),
         pk=pk,
     )
