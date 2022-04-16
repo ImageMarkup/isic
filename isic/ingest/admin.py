@@ -19,7 +19,7 @@ from girder_utils.admin import ReadonlyTabularInline
 from isic.ingest.models import (
     Accession,
     AccessionStatus,
-    CheckLog,
+    AccessionReview,
     Cohort,
     Contributor,
     MetadataFile,
@@ -44,9 +44,9 @@ class MetadataVersionInline(ReadonlyTabularInline):
     model = MetadataVersion
 
 
-class CheckLogInline(ReadonlyTabularInline):
-    model = CheckLog
-    fields = ['created', 'creator', 'change_field', 'change_to']
+class AccessionReviewInline(ReadonlyTabularInline):
+    model = AccessionReview
+    fields = ['created', 'creator']
     ordering = ['-created']
 
 
@@ -217,7 +217,7 @@ class AccessionAdmin(admin.ModelAdmin):
     search_help_text = 'Search by cohort name, blob name, or Girder ID.'
 
     readonly_fields = ['created', 'modified', 'thumbnail_image', 'distinctnessmeasure']
-    inlines = [CheckLogInline, MetadataVersionInline]
+    inlines = [AccessionReviewInline, MetadataVersionInline]
     formfield_overrides = {
         models.JSONField: {'widget': JSONEditorWidget},
     }
@@ -235,11 +235,10 @@ class AccessionAdmin(admin.ModelAdmin):
         return mark_safe(f'<img src="{obj.thumbnail_256.url}" />')
 
 
-@admin.register(CheckLog)
-class CheckLogAdmin(admin.ModelAdmin):
+@admin.register(AccessionReview)
+class AccessionReviewAdmin(admin.ModelAdmin):
     list_select_related = ['accession', 'creator', 'accession__cohort']
-    list_display = ['id', 'cohort', 'accession', 'creator', 'created', 'change_field', 'change_to']
-    list_filter = ['change_field', 'change_to']
+    list_display = ['id', 'cohort', 'accession', 'creator', 'created']
 
     autocomplete_fields = ['accession', 'creator']
 

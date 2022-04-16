@@ -112,15 +112,6 @@ class Accession(CreationSortedTimeStampedModel):
 
     thumbnail_256 = S3FileField(blank=True)
 
-    # required checks
-    quality_check = models.BooleanField(null=True, db_index=True)
-    diagnosis_check = models.BooleanField(null=True, db_index=True)
-    phi_check = models.BooleanField(null=True, db_index=True)
-
-    # checks that are only applicable to a subset of a cohort
-    duplicate_check = models.BooleanField(null=True, db_index=True)
-    lesion_check = models.BooleanField(null=True, db_index=True)
-
     metadata = models.JSONField(default=dict)
     unstructured_metadata = models.JSONField(default=dict)
 
