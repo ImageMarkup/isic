@@ -1,9 +1,9 @@
 from django.urls import include, path
 
-from isic.ingest import views
 from isic.ingest.api import AccessionCreateApi, AccessionCreateReviewBulkApi
+import isic.ingest.views.cohort as cohort_views
 import isic.ingest.views.metadata as metadata_views
-import isic.ingest.views.review_apps as review_apps_views
+import isic.ingest.views.review as review_views
 import isic.ingest.views.upload as upload_views
 
 accession_api_patterns = [
@@ -37,32 +37,27 @@ urlpatterns = [
     path('upload/<int:pk>/files/', upload_views.cohort_files, name='upload/cohort-files'),
     path(
         'upload/<int:cohort_pk>/upload-single-accession/',
-        views.upload_single_accession,
+        upload_views.upload_single_accession,
         name='upload/single-accession',
     ),
-    path('upload/<int:cohort_pk>/upload-zip/', views.upload_zip, name='upload/zip'),
+    path('upload/<int:cohort_pk>/upload-zip/', upload_views.upload_zip, name='upload/zip'),
     path(
         'upload/<int:cohort_pk>/upload-metadata/',
         metadata_views.metadata_file_create,
         name='upload-metadata',
     ),
-    path('upload/<int:pk>/publish/', views.publish_cohort, name='upload/cohort-publish'),
+    path('upload/<int:pk>/publish/', cohort_views.publish_cohort, name='upload/cohort-publish'),
     # Staff pages
-    path('staff/ingest-review/', views.ingest_review, name='ingest-review'),
-    path('staff/ingest-review/<int:pk>/', views.cohort_detail, name='cohort-detail'),
+    path('staff/ingest-review/', review_views.ingest_review, name='ingest-review'),
+    path('staff/ingest-review/<int:pk>/', cohort_views.cohort_detail, name='cohort-detail'),
     path(
         'staff/ingest-review/<int:cohort_pk>/gallery/',
-        review_apps_views.cohort_review,
+        review_views.cohort_review,
         name='cohort-review',
     ),
     path(
         'staff/ingest-review/<int:cohort_pk>/validate-metadata/',
         metadata_views.apply_metadata,
         name='validate-metadata',
-    ),
-    path(
-        'staff/reset-metadata/<int:cohort_pk>/',
-        metadata_views.reset_metadata,
-        name='reset-metadata',
     ),
 ]

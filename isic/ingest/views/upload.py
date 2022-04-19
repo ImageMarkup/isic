@@ -1,12 +1,27 @@
+import os
+
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models.query import Prefetch
+from django.forms.models import ModelForm
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
+from django.utils.safestring import mark_safe
+from s3_file_field.widgets import S3FileInput
 
 from isic.core.permissions import get_visible_objects, needs_object_permission
-from isic.ingest.forms import CohortForm, ContributorForm
-from isic.ingest.models import Cohort, Contributor, MetadataFile
+from isic.ingest.forms import CohortForm, ContributorForm, SingleAccessionUploadForm
+from isic.ingest.models import Cohort, Contributor, MetadataFile, ZipUpload
+from isic.ingest.service import accession_create
+from isic.ingest.tasks import extract_zip_task
+
+
+class ZipForm(ModelForm):
+    class Meta:
+        model = ZipUpload
+        fields = ['blob']
+        widgets = {'blob': S3FileInput(attrs={'accept': 'application/zip'})}
 
 
 @login_required
@@ -85,3 +100,49 @@ def cohort_files(request, pk):
             'cohort': cohort,
         },
     )
+
+
+@needs_object_permission('ingest.view_cohort', (Cohort, 'pk', 'cohort_pk'))
+def upload_single_accession(request, cohort_pk):
+    cohort = get_object_or_404(Cohort, pk=cohort_pk)
+
+    if request.method == 'POST':
+        form = SingleAccessionUploadForm(request.POST)
+
+        if form.is_valid():
+            accession_create(
+                creator=request.user,
+                cohort=cohort,
+                original_blob=form.cleaned_data['original_blob'],
+                blob_name=os.path.basename(form.cleaned_data['original_blob'].name),
+            )
+            messages.add_message(
+                request,
+                messages.SUCCESS,
+                mark_safe('Accession uploaded.'),
+            )
+            return HttpResponseRedirect(reverse('upload/cohort-files', args=[cohort.pk]))
+    else:
+        form = SingleAccessionUploadForm()
+
+    return render(request, 'ingest/upload_zip_or_accession.html', {'form': form})
+
+
+@needs_object_permission('ingest.view_cohort', (Cohort, 'pk', 'cohort_pk'))
+def upload_zip(request, cohort_pk):
+    cohort = get_object_or_404(Cohort, pk=cohort_pk)
+
+    if request.method == 'POST':
+        form = ZipForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.instance.creator = request.user
+            form.instance.blob_size = form.instance.blob.size
+            form.instance.blob_name = os.path.basename(form.instance.blob.name)
+            form.instance.cohort = cohort
+            form.save(commit=True)
+            extract_zip_task.delay(form.instance.pk)
+            return HttpResponseRedirect(reverse('upload/cohort-files', args=[cohort.pk]))
+    else:
+        form = ZipForm()
+
+    return render(request, 'ingest/upload_zip_or_accession.html', {'form': form})
