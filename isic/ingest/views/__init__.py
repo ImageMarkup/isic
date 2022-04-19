@@ -1,4 +1,3 @@
-import functools
 import os
 
 from django.contrib import messages
@@ -14,11 +13,10 @@ from s3_file_field.widgets import S3FileInput
 
 from isic.core.permissions import needs_object_permission
 from isic.core.services.collection import collection_create
-from isic.ingest.filters import AccessionFilter
 from isic.ingest.forms import SingleAccessionUploadForm
-from isic.ingest.models import Accession, Cohort, ZipUpload
-from isic.ingest.models.accession import ACCESSION_CHECKS
-from isic.ingest.tasks import accession_generate_blob_task, extract_zip_task, publish_cohort_task
+from isic.ingest.models import Cohort, ZipUpload
+from isic.ingest.service import accession_create
+from isic.ingest.tasks import extract_zip_task, publish_cohort_task
 
 
 def make_breadcrumbs(cohort: Cohort | None = None) -> list:
@@ -40,28 +38,25 @@ class ZipForm(ModelForm):
 @needs_object_permission('ingest.view_cohort', (Cohort, 'pk', 'cohort_pk'))
 def upload_single_accession(request, cohort_pk):
     cohort = get_object_or_404(Cohort, pk=cohort_pk)
-    Form = functools.partial(  # noqa: N806
-        SingleAccessionUploadForm, user=request.user, cohort=cohort
-    )
+
     if request.method == 'POST':
-        form = Form(request.POST)
+        form = SingleAccessionUploadForm(request.POST)
+
         if form.is_valid():
-            form.instance.creator = request.user
-            form.instance.cohort = cohort
-            form.instance.blob_name = os.path.basename(form.instance.original_blob.name)
-            form.save()
-            accession_generate_blob_task.delay(form.instance.pk)
-            browse_url = reverse('upload/cohort-browser', args=[cohort.pk])
+            accession_create(
+                creator=request.user,
+                cohort=cohort,
+                original_blob=form.cleaned_data['original_blob'],
+                blob_name=os.path.basename(form.cleaned_data['original_blob'].name),
+            )
             messages.add_message(
                 request,
                 messages.SUCCESS,
-                mark_safe(f'Accession uploaded. <a href="{browse_url}">View accessions</a>.'),
+                mark_safe(f'Accession uploaded.'),
             )
-            return HttpResponseRedirect(
-                reverse('upload/cohort-files', args=[form.instance.cohort.pk])
-            )
+            return HttpResponseRedirect(reverse('upload/cohort-files', args=[cohort.pk]))
     else:
-        form = Form()
+        form = SingleAccessionUploadForm()
 
     return render(request, 'ingest/upload_zip_or_accession.html', {'form': form})
 
@@ -89,29 +84,16 @@ def upload_zip(request, cohort_pk):
 @staff_member_required
 def cohort_detail(request, pk):
     cohort = get_object_or_404(Cohort.objects.select_related('creator'), pk=pk)
+    paginator = Paginator(cohort.accessions.ingested(), 50)
+    accessions = paginator.get_page(request.GET.get('page'))
 
     return render(
         request,
         'ingest/cohort_detail.html',
         {
             'cohort': cohort,
-            'check_counts': Accession.check_counts(cohort),
-            'checks': ACCESSION_CHECKS,
+            'accessions': accessions,
             'breadcrumbs': make_breadcrumbs(cohort),
-            'review_urls': {
-                'phi_check': 'cohort-review-quality-and-phi',
-                'quality_check': 'cohort-review-quality-and-phi',
-                'diagnosis_check': 'cohort-review-diagnosis',
-                'duplicate_check': 'cohort-review-duplicate',
-                'lesion_check': 'cohort-review-lesion',
-            },
-            'check_nicenames': {
-                'phi_check': 'PHI',
-                'quality_check': 'Quality',
-                'diagnosis_check': 'Diagnosis',
-                'duplicate_check': 'Duplicate',
-                'lesion_check': 'Lesion',
-            },
         },
     )
 
@@ -126,25 +108,6 @@ def ingest_review(request):
         request,
         'ingest/ingest_review.html',
         {'cohorts': cohorts_page, 'num_cohorts': paginator.count, 'paginator': paginator},
-    )
-
-
-@needs_object_permission('ingest.view_cohort', (Cohort, 'pk', 'pk'))
-def cohort_browser(request, pk):
-    cohort = get_object_or_404(Cohort, pk=pk)
-    filter = AccessionFilter(request.GET, queryset=cohort.accessions.all())
-    paginator = Paginator(filter.qs, 30)
-    page = paginator.get_page(request.GET.get('page'))
-
-    return render(
-        request,
-        'ingest/cohort_browser.html',
-        {
-            'cohort': cohort,
-            'accessions': page,
-            'filter': filter,
-            'breadcrumbs': make_breadcrumbs(cohort) + [['#', 'Browse Accessions']],
-        },
     )
 
 
@@ -175,7 +138,7 @@ def publish_cohort(request, pk):
         messages.add_message(
             request,
             messages.SUCCESS,
-            f'Publishing {intcomma(cohort.publishable_accessions().count())} images. This may take several minutes.',  # noqa: E501
+            f'Publishing {intcomma(cohort.accessions.publishable().count())} images. This may take several minutes.',  # noqa: E501
         )
         return HttpResponseRedirect(reverse('cohort-detail', args=[cohort.pk]))
     else:
@@ -183,10 +146,11 @@ def publish_cohort(request, pk):
             'cohort': cohort,
             'breadcrumbs': make_breadcrumbs(cohort) + [['#', 'Publish Cohort']],
             'num_accessions': cohort.accessions.count(),
-            'num_published': cohort.published_accessions().count(),
-            'num_publishable': cohort.publishable_accessions().count(),
-            'num_rejected': cohort.rejected_accessions().count(),
-            'num_pending_or_failed': cohort.pending_or_failed_accessions().count(),
+            'num_published': cohort.accessions.published().count(),
+            'num_publishable': cohort.accessions.publishable().count(),
+            'num_rejected': cohort.accessions.rejected().count(),
+            'num_pending': cohort.accessions.ingesting().count(),
+            'num_uningested': cohort.accessions.uningested().count(),
         }
 
     ctx['num_unpublishable'] = ctx['num_accessions'] - ctx['num_publishable']

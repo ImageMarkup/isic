@@ -18,8 +18,8 @@ from girder_utils.admin import ReadonlyTabularInline
 
 from isic.ingest.models import (
     Accession,
-    AccessionStatus,
     AccessionReview,
+    AccessionStatus,
     Cohort,
     Contributor,
     MetadataFile,
@@ -46,7 +46,7 @@ class MetadataVersionInline(ReadonlyTabularInline):
 
 class AccessionReviewInline(ReadonlyTabularInline):
     model = AccessionReview
-    fields = ['created', 'creator']
+    fields = ['created', 'creator', 'value']
     ordering = ['-created']
 
 
@@ -208,11 +208,30 @@ class MetadataFileAdmin(admin.ModelAdmin):
         return filesizeformat(obj.blob_size)
 
 
+class AccessionReviewedFilter(admin.SimpleListFilter):
+    title = 'reviewed'
+    parameter_name = 'reviewed'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'Yes'),
+            ('no', 'No'),
+        )
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value == 'yes':
+            return queryset.filter(review__isnull=False)
+        elif value == 'no':
+            return queryset.exclude(review__isnull=False)
+        return queryset
+
+
 @admin.register(Accession)
 class AccessionAdmin(admin.ModelAdmin):
     list_select_related = ['cohort']
     list_display = ['id', 'blob_name', 'human_blob_size', 'created', 'status', 'cohort']
-    list_filter = ['status']
+    list_filter = ['status', AccessionReviewedFilter]
     search_fields = ['cohort__name', 'blob_name', 'girder_id']
     search_help_text = 'Search by cohort name, blob name, or Girder ID.'
 
@@ -238,7 +257,7 @@ class AccessionAdmin(admin.ModelAdmin):
 @admin.register(AccessionReview)
 class AccessionReviewAdmin(admin.ModelAdmin):
     list_select_related = ['accession', 'creator', 'accession__cohort']
-    list_display = ['id', 'cohort', 'accession', 'creator', 'created']
+    list_display = ['id', 'cohort', 'accession', 'creator', 'created', 'value']
 
     autocomplete_fields = ['accession', 'creator']
 

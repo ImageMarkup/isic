@@ -86,7 +86,7 @@ def publish_cohort_task(cohort_pk: int, user_pk: int, *, public: bool):
     cohort = Cohort.objects.select_related('collection').get(pk=cohort_pk)
     user = User.objects.get(pk=user_pk)
 
-    for accession in cohort.publishable_accessions().iterator():
+    for accession in cohort.accessions.publishable().iterator():
         # use get_or_create so the task is idempotent in case of failure
         image, _ = Image.objects.get_or_create(
             creator=user,

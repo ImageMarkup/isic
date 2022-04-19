@@ -1,4 +1,5 @@
 from django.urls.base import reverse
+from django.utils import timezone
 import pytest
 
 from isic.core.models.image import Image
@@ -6,20 +7,18 @@ from isic.ingest.models.accession import AccessionStatus
 
 
 @pytest.fixture
-def publishable_cohort(cohort_factory, accession_factory, user):
+def publishable_cohort(cohort_factory, accession_factory, accession_review_factory, user):
     cohort = cohort_factory(creator=user, contributor__creator=user)
     # Make a 'publishable' accession
-    accession_factory(
-        cohort=cohort,
-        status=AccessionStatus.SUCCEEDED,
-        blob_size=1,
-        width=1,
-        height=1,
-        quality_check=True,
-        diagnosis_check=True,
-        phi_check=True,
-        duplicate_check=True,
-        lesion_check=True,
+    accession_review_factory(
+        accession__cohort=cohort,
+        accession__status=AccessionStatus.SUCCEEDED,
+        accession__blob_size=1,
+        accession__width=1,
+        accession__height=1,
+        creator=user,
+        reviewed_at=timezone.now(),
+        value=True,
     )
     accession_factory(cohort=cohort, status=AccessionStatus.SKIPPED)
     return cohort

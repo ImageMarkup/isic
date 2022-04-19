@@ -22,7 +22,7 @@
                 <div class="flex">
                   <p class="text-sm font-medium text-indigo-600 truncate">
                     {{ cohort.name }}
-                    {% with unreviewed_count=cohort.unreviewed_accessions.count %}
+                    {% with unreviewed_count=cohort.accessions.unreviewed.count %}
                       {% if unreviewed_count %}
                         <p class="px-2 ml-2 text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
                           {{ unreviewed_count|intcomma }} unreviewed

@@ -1,7 +1,7 @@
 import json
 
 from django.core.paginator import Paginator
-from django.db.models import Count, Prefetch
+from django.db.models import Count
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 from django.shortcuts import get_object_or_404, render
@@ -9,17 +9,14 @@ from django.shortcuts import get_object_or_404, render
 from isic.core.forms.search import ImageSearchForm
 from isic.core.models import Collection, Image
 from isic.core.permissions import get_visible_objects, needs_object_permission
-from isic.ingest.models import AccessionReview
 from isic.studies.models import Study
 
 
 @needs_object_permission('core.view_image', (Image, 'pk', 'pk'))
 def image_detail(request, pk):
     image = get_object_or_404(
-        Image.objects.select_related('accession__cohort__contributor__creator',).prefetch_related(
-            Prefetch(
-                'accession__checklogs', queryset=AccessionReview.objects.select_related('creator')
-            )
+        Image.objects.select_related(
+            'accession__cohort__contributor__creator', 'accession__review'
         ),
         pk=pk,
     )

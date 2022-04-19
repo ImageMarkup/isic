@@ -7,7 +7,7 @@
   <div class="modal-box w-11/12 max-w-5xl" @click.outside="closeQuickfindModal()">
     <h3 class="font-bold text-lg">Quick Find</h3>
     <input x-ref="quickfind"
-      x-init="$watch('findText', value => performSearch(value))"
+      @input.debounce.250ms="performFind"
       x-model="findText"
       placeholder="Search anything.." class="input input-bordered w-full max-w-xs">
     <label class="label">

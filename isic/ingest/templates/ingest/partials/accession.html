@@ -1,8 +1,6 @@
-{% load get_key %}
 {% load accession %}
 
-{{ accession|to_js|json_script:accession.id }}
-<div class="col accession-col" x-data="accession('{{ accession.id }}');">
+<div class="col accession-col" x-data="accession({{ accession.id }});">
   <div x-data="{ open: false, hovered: false }" class="pb-4">
     <a class="cursor-pointer">
       {% if accession.status != 'skipped' %}
@@ -16,18 +14,15 @@
       {% endif %}
     </a>
 
-    {% comment %}x-cloak doesn't seem to be working, see https://alpinejs.dev/directives/cloak{% endcomment %}
-    <template x-if="true">
-      <div x-show="open">
-        {% include 'ingest/partials/accession_modal.html' %}
-      </div>
-    </template>
+    <div x-cloak x-show="open">
+      {% include 'ingest/partials/accession_modal.html' %}
+    </div>
   </div>
   <div class="flex justify-around">
     {% if accession.metadata.diagnosis %}
       <span>{{ accession.metadata.diagnosis }}</span>
     {% endif %}
-    {% if title == 'Lesion Review' %}
+    {% if include_acquisition_day %}
       <span>
         {% if accession.metadata.acquisition_day %}
           (Day {{ accession.metadata.acquisition_day }})
@@ -35,22 +30,9 @@
       </span>
     {% endif %}
   </div>
-  <div class="flex justify-evenly">
-    {% for key, label in buttons.reject.items %}
-      <button @click="reject('{{ key }}')" :class="{ 'bg-opacity-20': {{ key }} === null || {{ key }} !== false }" type="button" class="review-button inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm hover:text-white text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-        {{ label  }}
-      </button>
-    {% endfor %}
-
-    {% for key, label in buttons.accept.items %}
-      <a :class="{ 'bg-opacity-20': {{ key }} === null || {{ key }} !== true }"
-        class="review-button"
-        @click="accept('{{ key }}')"
-      >
-        <button @click="accept('{{ key }}')" :class="{ 'bg-opacity-20': {{ key }} === null || {{ key }} !== true }" type="button" class="review-button inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm hover:text-white text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-          {{ label  }}
-        </button>
-      </a>
-    {% endfor %}
-  </div>
+  {% if include_review_ui %}
+    <div class="flex justify-evenly">
+      <button @click="toggleReject()" class="btn btn-sm btn-error review-button" :class="{'dim': review === false}">Reject</button>
+    </div>
+  {% endif %}
 </div>

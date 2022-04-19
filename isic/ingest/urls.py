@@ -1,11 +1,19 @@
-from django.urls import path
+from django.urls import include, path
 
 from isic.ingest import views
+from isic.ingest.api import AccessionCreateApi, AccessionCreateReviewBulkApi
 import isic.ingest.views.metadata as metadata_views
 import isic.ingest.views.review_apps as review_apps_views
 import isic.ingest.views.upload as upload_views
 
+accession_api_patterns = [
+    path('', AccessionCreateApi.as_view(), name='create'),
+    path('create-review-bulk/', AccessionCreateReviewBulkApi.as_view(), name='create-review-bulk'),
+]
+
+
 urlpatterns = [
+    path('api/v2/accessions/', include((accession_api_patterns, 'accessions'))),
     path(
         'upload/select-or-create-contributor/',
         upload_views.select_or_create_contributor,
@@ -38,30 +46,14 @@ urlpatterns = [
         metadata_views.metadata_file_create,
         name='upload-metadata',
     ),
-    path('upload/<int:pk>/browser/', views.cohort_browser, name='upload/cohort-browser'),
     path('upload/<int:pk>/publish/', views.publish_cohort, name='upload/cohort-publish'),
     # Staff pages
     path('staff/ingest-review/', views.ingest_review, name='ingest-review'),
     path('staff/ingest-review/<int:pk>/', views.cohort_detail, name='cohort-detail'),
     path(
-        'staff/ingest-review/diagnosis/<int:cohort_pk>/',
-        review_apps_views.DiagnosisReviewAppView.as_view(),
-        name='cohort-review-diagnosis',
-    ),
-    path(
-        'staff/ingest-review/quality-and-phi/<int:cohort_pk>/',
-        review_apps_views.QualityPhiReviewAppView.as_view(),
-        name='cohort-review-quality-and-phi',
-    ),
-    path(
-        'staff/ingest-review/duplicate/<int:cohort_pk>/',
-        review_apps_views.DuplicateReviewAppView.as_view(),
-        name='cohort-review-duplicate',
-    ),
-    path(
-        'staff/ingest-review/lesion/<int:cohort_pk>/',
-        review_apps_views.lesion_review,
-        name='cohort-review-lesion',
+        'staff/ingest-review/<int:cohort_pk>/gallery/',
+        review_apps_views.cohort_review,
+        name='cohort-review',
     ),
     path(
         'staff/ingest-review/<int:cohort_pk>/validate-metadata/',
