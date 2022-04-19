@@ -6,6 +6,7 @@ import factory.django
 from isic.core.models import CopyrightLicense
 from isic.factories import UserFactory
 from isic.ingest.models import Accession, Cohort, Contributor, MetadataFile, ZipUpload
+from isic.ingest.models.accession_review import AccessionReview
 
 from .csv_streams import csv_stream_without_filename_column
 from .zip_streams import zip_stream_only_images
@@ -87,11 +88,15 @@ class AccessionFactory(factory.django.DjangoModelFactory):
     blob_name = factory.SelfAttribute('original_blob.name')
     thumbnail_256 = factory.django.FileField(from_path=data_dir / 'ISIC_0000000_thumbnail_256.jpg')
 
-    quality_check = factory.Faker('boolean')
-    diagnosis_check = factory.Faker('boolean')
-    phi_check = factory.Faker('boolean')
-    duplicate_check = factory.Faker('boolean')
-    lesion_check = factory.Faker('boolean')
-
     # Using "metadata = factory.Dict" breaks pytest-factoryboy; see
     # https://github.com/pytest-dev/pytest-factoryboy/issues/67
+
+
+class AccessionReviewFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = AccessionReview
+
+    creator = factory.SubFactory(UserFactory)
+    accession = factory.SubFactory(AccessionFactory)
+    reviewed_at = factory.Faker('date_time', tzinfo=factory.Faker('pytimezone'))
+    value = factory.Faker('boolean')

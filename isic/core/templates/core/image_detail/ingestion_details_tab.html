@@ -19,30 +19,22 @@
                   Reviewer
                 </th>
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Check
-                </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Approved
                 </th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              {% for log in image.accession.checklogs.all %}
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {% localtime log.created %}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ log.creator }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ log.change_field }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ log.change_to|yesno }}
-                  </td>
-                </tr>
-              {% endfor %}
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {% localtime image.accession.review.reviewed_at %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {{ image.accession.review.creator }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {{ image.accession.review.value|yesno }}
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>

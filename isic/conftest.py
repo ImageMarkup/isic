@@ -6,6 +6,7 @@ from rest_framework.test import APIClient
 from isic.core.tests.factories import CollectionFactory, ImageFactory
 from isic.ingest.tests.factories import (
     AccessionFactory,
+    AccessionReviewFactory,
     CohortFactory,
     ContributorFactory,
     MetadataFileFactory,
@@ -80,6 +81,7 @@ register(UserFactory)
 
 # ingest factories
 register(AccessionFactory)
+register(AccessionReviewFactory)
 register(CohortFactory)
 register(ContributorFactory)
 register(MetadataFileFactory)

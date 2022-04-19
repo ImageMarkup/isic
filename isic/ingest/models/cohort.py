@@ -1,10 +1,11 @@
 from django.contrib.auth.models import User
 from django.db import models
-from django.db.models import Count, Q, UniqueConstraint
+from django.db.models import Q, UniqueConstraint
 from django.db.models.query import QuerySet
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 
+# TODO: way to view failed/skipped  accessions
 from isic.core.models import CopyrightLicense, CreationSortedTimeStampedModel
 
 from .contributor import Contributor
@@ -54,59 +55,6 @@ class Cohort(CreationSortedTimeStampedModel):
 
     def get_absolute_url(self):
         return reverse('cohort-detail', args=[self.id])
-
-    def unreviewed_accessions(self):
-        from .accession import Accession
-        from .distinctness_measure import DistinctnessMeasure
-
-        duplicate_cohort_checksums = (
-            DistinctnessMeasure.objects.values('checksum')
-            .annotate(is_duplicate=Count('checksum'))
-            .filter(is_duplicate__gt=1, accession__cohort=self)
-            .values_list('checksum')
-        )
-
-        return Accession.objects.filter(cohort=self).filter(
-            Q(quality_check=None)
-            | Q(diagnosis_check=None)
-            | Q(phi_check=None)
-            | (Q(lesion_check=None) & Q(metadata__lesion_id__isnull=False))
-            | (
-                Q(duplicate_check=None)
-                & Q(distinctnessmeasure__checksum__in=duplicate_cohort_checksums)
-            ),
-        )
-
-    def pending_or_failed_accessions(self):
-        from .accession import AccessionStatus
-
-        return self.accessions.exclude(status=AccessionStatus.SUCCEEDED)
-
-    def rejected_accessions(self):
-        from .accession import Accession, AccessionStatus
-
-        return self.accessions.filter(status=AccessionStatus.SUCCEEDED, image__isnull=True).filter(
-            Accession.rejected_filter()
-        )
-
-    def rejected_accession_counts_by_check(self):
-        return self.rejected_accessions().aggregate(
-            quality_check=Count('pk', filter=Q(quality_check=False)),
-            diagnosis_check=Count('pk', filter=Q(diagnosis_check=False)),
-            phi_check=Count('pk', filter=Q(phi_check=False)),
-            lesion_check=Count('pk', filter=Q(lesion_check=False)),
-            duplicate_check=Count('pk', filter=Q(duplicate_check=False)),
-        )
-
-    def publishable_accessions(self):
-        from .accession import Accession, AccessionStatus
-
-        return self.accessions.filter(status=AccessionStatus.SUCCEEDED, image__isnull=True).exclude(
-            Accession.rejected_filter()
-        )
-
-    def published_accessions(self):
-        return self.accessions.exclude(image=None)
 
 
 class CohortPermissions:

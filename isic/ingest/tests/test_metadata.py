@@ -3,8 +3,10 @@ import io
 from typing import BinaryIO
 
 from django.urls.base import reverse
+from django.utils import timezone
 import pytest
 
+from isic.ingest.service import accession_review_update_or_create
 from isic.ingest.tasks import update_metadata_task
 from isic.ingest.tests.csv_streams import StreamWriter
 from isic.ingest.utils.metadata import validate_csv_format_and_filenames
@@ -250,52 +252,32 @@ def test_accession_remove_metadata_idempotent(user, imageless_accession):
     assert imageless_accession.metadata_versions.count() == 2
 
 
-@pytest.mark.parametrize(
-    'field,value,check',
-    [
-        ['diagnosis', 'melanoma', 'diagnosis_check'],
-        ['lesion_id', 'IL_1234567', 'lesion_check'],
-    ],
-)
-@pytest.mark.django_db
-def test_update_metadata_resets_checks(user, accession_factory, field, value, check):
-    accession = accession_factory(image=None, diagnosis_check=True, lesion_check=True)
-    accession.update_metadata(user, {field: value})
-    accession.refresh_from_db()
-    assert getattr(accession, check) is None
-
-
-@pytest.mark.django_db
-def test_update_metadata_does_not_reset_checks(user, accession_factory):
-    accession = accession_factory(image=None, diagnosis_check=True, lesion_check=True)
-    accession.update_metadata(user, {'sex': 'male'})
-    accession.refresh_from_db()
-    assert accession.diagnosis_check and accession.lesion_check
-
-
-@pytest.mark.parametrize(
-    'field,check',
-    [
-        ['diagnosis', 'diagnosis_check'],
-        ['lesion_id', 'lesion_check'],
-    ],
-)
-@pytest.mark.django_db
-def test_remove_metadata_resets_checks(user, accession_factory, field, check):
-    accession = accession_factory(
-        image=None,
-        diagnosis_check=True,
-        lesion_check=True,
-        metadata={'diagnosis': 'melanoma', 'lesion_id': 'IL_1234567'},
+@pytest.fixture
+def unpublished_accepted_accession(accession_factory, user):
+    accession = accession_factory(image=None)
+    accession.update_metadata(user, {'diagnosis': 'melanoma'})
+    accession_review_update_or_create(
+        accession=accession, reviewer=user, reviewed_at=timezone.now(), value=True
     )
-    accession.remove_metadata(user, [field])
-    accession.refresh_from_db()
-    assert getattr(accession, check) is None
+    return accession
 
 
 @pytest.mark.django_db
-def test_remove_metadata_does_not_reset_checks(user, accession_factory):
-    accession = accession_factory(image=None, diagnosis_check=True, lesion_check=True)
-    accession.remove_metadata(user, ['sex'])
-    accession.refresh_from_db()
-    assert accession.diagnosis_check and accession.lesion_check
+def test_update_metadata_resets_checks(user, unpublished_accepted_accession):
+    unpublished_accepted_accession.update_metadata(user, {'diagnosis': 'basal cell carcinoma'})
+    unpublished_accepted_accession.refresh_from_db()
+    assert not unpublished_accepted_accession.reviewed
+
+
+@pytest.mark.django_db
+def test_update_unstructured_metadata_does_not_reset_checks(user, unpublished_accepted_accession):
+    unpublished_accepted_accession.update_metadata(user, {'foobar': 'baz'})
+    unpublished_accepted_accession.refresh_from_db()
+    assert unpublished_accepted_accession.reviewed
+
+
+@pytest.mark.django_db
+def test_remove_metadata_resets_checks(user, unpublished_accepted_accession):
+    unpublished_accepted_accession.remove_metadata(user, ['diagnosis'])
+    unpublished_accepted_accession.refresh_from_db()
+    assert not unpublished_accepted_accession.reviewed

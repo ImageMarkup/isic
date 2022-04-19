@@ -9,7 +9,6 @@ from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models, transaction
 from django.db.models import JSONField, Transform
-from django.db.models.aggregates import Count
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.query_utils import Q
 from isic_metadata.metadata import MetadataRow
@@ -21,17 +20,6 @@ from isic.ingest.utils.mime import guess_mime_type
 from isic.ingest.utils.zip import Blob
 
 from .zip_upload import ZipUpload
-
-ACCESSION_CHECKS = {
-    'quality_check': {
-        'short_name': 'Quality',
-        'nice_name': 'Quality Check',
-    },
-    'diagnosis_check': {'short_name': 'Diagnosis', 'nice_name': 'Diagnosis Check'},
-    'phi_check': {'short_name': 'PHI', 'nice_name': 'PHI Check'},
-    'duplicate_check': {'short_name': 'Duplicate', 'nice_name': 'Duplicate Check'},
-    'lesion_check': {'short_name': 'Lesion IDs', 'nice_name': 'Lesion ID Check'},
-}
 
 
 class Approx(Transform):
@@ -47,6 +35,48 @@ JSONField.register_lookup(Approx)
 
 class InvalidBlobError(Exception):
     pass
+
+
+class AccessionQuerySet(models.QuerySet):
+    def ingesting(self):
+        return self.exclude(
+            Q(status=AccessionStatus.SUCCEEDED)
+            | Q(status=AccessionStatus.FAILED)
+            | Q(status=AccessionStatus.SKIPPED)
+        )
+
+    def uningested(self):
+        return self.filter(Q(status=AccessionStatus.FAILED) | Q(status=AccessionStatus.SKIPPED))
+
+    def ingested(self):
+        return self.filter(status=AccessionStatus.SUCCEEDED)
+
+    def unpublished(self):
+        return self.filter(image__isnull=True)
+
+    def published(self):
+        return self.filter(image__isnull=False)
+
+    def publishable(self):
+        return self.accepted()
+
+    def reviewable(self):
+        return self.ingested().unpublished()
+
+    def unreviewable(self):
+        return self.unpublished().exclude(status=AccessionStatus.SUCCEEDED)
+
+    def unreviewed(self):
+        return self.reviewable().filter(review=None)
+
+    def reviewed(self):
+        return self.reviewable().exclude(review=None)
+
+    def accepted(self):
+        return self.reviewable().filter(review__value=True)
+
+    def rejected(self):
+        return self.reviewable().filter(review__value=False)
 
 
 class AccessionStatus(models.TextChoices):
@@ -115,8 +145,18 @@ class Accession(CreationSortedTimeStampedModel):
     metadata = models.JSONField(default=dict)
     unstructured_metadata = models.JSONField(default=dict)
 
+    objects = AccessionQuerySet.as_manager()
+
     def __str__(self) -> str:
         return self.blob_name
+
+    @property
+    def published(self):
+        return hasattr(self, 'image')
+
+    @property
+    def reviewed(self):
+        return hasattr(self, 'review')
 
     def generate_blob(self):
         """
@@ -235,63 +275,6 @@ class Accession(CreationSortedTimeStampedModel):
             ),
         )
 
-    @staticmethod
-    def rejected_filter():
-        return (
-            Q(quality_check=False)
-            | Q(diagnosis_check=False)
-            | Q(phi_check=False)
-            | Q(duplicate_check=False)
-            | Q(lesion_check=False)
-        )
-
-    @staticmethod
-    def check_counts(cohort):
-        from .distinctness_measure import DistinctnessMeasure
-
-        duplicate_checksums = (
-            DistinctnessMeasure.objects.filter(
-                accession__cohort=cohort,
-                checksum__in=DistinctnessMeasure.objects.values('checksum')
-                .annotate(is_duplicate=Count('checksum'))
-                .filter(accession__cohort=cohort, is_duplicate__gt=1)
-                .values_list('checksum', flat=True),
-            )
-            .order_by('checksum')
-            .values_list('checksum', flat=True)
-        )
-        return {
-            'phi_check': Accession.objects.filter(cohort=cohort).aggregate(
-                unreviewed=Count('pk', filter=Q(phi_check=None), distinct=True),
-                accepted=Count('pk', filter=Q(phi_check=True), distinct=True),
-                rejected=Count('pk', filter=Q(phi_check=False), distinct=True),
-            ),
-            'quality_check': Accession.objects.filter(cohort=cohort).aggregate(
-                unreviewed=Count('pk', filter=Q(quality_check=None), distinct=True),
-                accepted=Count('pk', filter=Q(quality_check=True), distinct=True),
-                rejected=Count('pk', filter=Q(quality_check=False), distinct=True),
-            ),
-            'diagnosis_check': Accession.objects.filter(cohort=cohort).aggregate(
-                unreviewed=Count('pk', filter=Q(diagnosis_check=None), distinct=True),
-                accepted=Count('pk', filter=Q(diagnosis_check=True), distinct=True),
-                rejected=Count('pk', filter=Q(diagnosis_check=False), distinct=True),
-            ),
-            'duplicate_check': Accession.objects.filter(
-                cohort=cohort, distinctnessmeasure__checksum__in=duplicate_checksums
-            ).aggregate(
-                unreviewed=Count('pk', filter=Q(duplicate_check=None), distinct=True),
-                accepted=Count('pk', filter=Q(duplicate_check=True), distinct=True),
-                rejected=Count('pk', filter=Q(duplicate_check=False), distinct=True),
-            ),
-            'lesion_check': Accession.objects.filter(
-                cohort=cohort, metadata__lesion_id__isnull=False
-            ).aggregate(
-                unreviewed=Count('pk', filter=Q(lesion_check=None), distinct=True),
-                accepted=Count('pk', filter=Q(lesion_check=True), distinct=True),
-                rejected=Count('pk', filter=Q(lesion_check=False), distinct=True),
-            ),
-        }
-
     @property
     def age_approx(self) -> int | None:
         return int(round(self.metadata['age'] / 5.0) * 5) if 'age' in self.metadata else None
@@ -311,15 +294,9 @@ class Accession(CreationSortedTimeStampedModel):
 
         return redacted
 
-    def _metadata_mutable_check(self):
-        if hasattr(self, 'image'):
-            raise ValidationError("Can't modify the accession as it already has an image.")
-
-    def _maybe_reset_checks(self, structured_metadata_field: str) -> None:
-        if structured_metadata_field == 'diagnosis':
-            self.diagnosis_check = None
-        elif structured_metadata_field == 'lesion_id':
-            self.lesion_check = None
+    def _require_unpublished(self):
+        if self.published:
+            raise ValidationError("Can't modify the accession as it's already been published.")
 
     def update_metadata(self, user: User, csv_row: dict, *, ignore_image_check=False):
         """
@@ -328,10 +305,10 @@ class Accession(CreationSortedTimeStampedModel):
         ALL metadata modifications must go through update_metadata/remove_metadata since they:
         1) Check to see if the accession can be modified
         2) Manage audit trails (MetadataVersion records)
-        3) Potentially reset the relevant QA checks
+        3) Reset the review
         """
         if self.pk and not ignore_image_check:
-            self._metadata_mutable_check()
+            self._require_unpublished()
 
         with transaction.atomic():
             modified = False
@@ -361,11 +338,11 @@ class Accession(CreationSortedTimeStampedModel):
                 modified = True
                 self.metadata.update(new_metadata)
 
-                for k, v in new_metadata.items():
-                    # if a new metadata item has been added or an existing has been modified,
-                    # potentially reset a QA check.
-                    if k not in original_metadata or original_metadata[k] != v:
-                        self._maybe_reset_checks(k)
+                # if a new metadata item has been added or an existing has been modified,
+                # reset the review state.
+                from isic.ingest.service import accession_review_delete
+
+                accession_review_delete(accession=self)
 
             if modified:
                 self.metadata_versions.create(
@@ -378,14 +355,16 @@ class Accession(CreationSortedTimeStampedModel):
     def remove_metadata(self, user: User, metadata_fields: list[str], *, ignore_image_check=False):
         """Remove metadata from an accession."""
         if self.pk and not ignore_image_check:
-            self._metadata_mutable_check()
+            self._require_unpublished()
 
         modified = False
         with transaction.atomic():
             for field in metadata_fields:
                 if self.metadata.pop(field, None) is not None:
                     modified = True
-                    self._maybe_reset_checks(field)
+                    from isic.ingest.service import accession_review_delete
+
+                    accession_review_delete(accession=self)
                 if self.unstructured_metadata.pop(field, None) is not None:
                     modified = True
 
