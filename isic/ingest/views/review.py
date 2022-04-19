@@ -24,6 +24,19 @@ def _cohort_review_progress(cohort: Cohort) -> dict:
 
 
 @staff_member_required
+def ingest_review(request):
+    cohorts = Cohort.objects.select_related('contributor', 'creator').order_by('-created')
+    paginator = Paginator(cohorts, 10)
+    cohorts_page = paginator.get_page(request.GET.get('page'))
+
+    return render(
+        request,
+        'ingest/ingest_review.html',
+        {'cohorts': cohorts_page, 'num_cohorts': paginator.count, 'paginator': paginator},
+    )
+
+
+@staff_member_required
 @needs_object_permission('ingest.view_cohort', (Cohort, 'pk', 'cohort_pk'))
 def cohort_review(request, cohort_pk):
     cohort = get_object_or_404(Cohort, pk=cohort_pk)
