@@ -106,52 +106,29 @@ def test_cohort_pages_permissions(
     assert r.status_code == 200
 
 
-# @pytest.mark.django_db
-# @pytest.mark.parametrize(
-#     'url_name',
-#     [
-#         'cohort-detail',
-#         'cohort-review-diagnosis',
-#         'cohort-review-quality-and-phi',
-#         'cohort-review-duplicate',
-#         'cohort-review-lesion',
-#     ],
-# )
-# def test_cohort_review_permissions(url_name, client, authenticated_client, staff_client, cohort):
-#     r = client.get(reverse(url_name, args=[cohort.pk]))
-#     assert r.status_code == 302
-
-#     r = authenticated_client.get(reverse(url_name, args=[cohort.pk]))
-#     assert (
-#         r.status_code == 302
-#     )  # TODO: should be 403, staff_member_required should change to a perms check
-
-#     client.force_login(cohort.contributor.creator)
-#     r = client.get(reverse(url_name, args=[cohort.pk]))
-#     assert r.status_code == 302
-
-#     r = staff_client.get(reverse(url_name, args=[cohort.pk]))
-#     assert r.status_code == 200
-
-
 @pytest.mark.django_db
-def test_reset_metadata_permissions(client, authenticated_client, staff_client, cohort):
-    r = client.get(reverse('reset-metadata', args=[cohort.pk]))
+@pytest.mark.parametrize(
+    'url_name',
+    [
+        'cohort-detail',
+        'cohort-review',
+    ],
+)
+def test_cohort_review_permissions(url_name, client, authenticated_client, staff_client, cohort):
+    r = client.get(reverse(url_name, args=[cohort.pk]))
     assert r.status_code == 302
+
+    r = authenticated_client.get(reverse(url_name, args=[cohort.pk]))
+    assert (
+        r.status_code == 302
+    )  # TODO: should be 403, staff_member_required should change to a perms check
 
     client.force_login(cohort.contributor.creator)
-    r = client.get(reverse('reset-metadata', args=[cohort.pk]))
+    r = client.get(reverse(url_name, args=[cohort.pk]))
     assert r.status_code == 302
 
-    r = authenticated_client.get(reverse('reset-metadata', args=[cohort.pk]))
-    assert r.status_code == 302
-
-    # TODO: how to handle redirects generally since they're a bad indicator for 'access denied'
-    # in tests
-    r = staff_client.get(reverse('reset-metadata', args=[cohort.pk]))
-    assert r.status_code == 302
-    # 302s on a successful page load, so test where it's redirecting as a proxy for access
-    assert r.url == reverse('cohort-detail', args=[cohort.pk])
+    r = staff_client.get(reverse(url_name, args=[cohort.pk]))
+    assert r.status_code == 200
 
 
 @pytest.mark.django_db

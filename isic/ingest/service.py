@@ -3,6 +3,7 @@ from datetime import datetime
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files.base import File
+from s3_file_field.widgets import S3PlaceholderFile
 
 from isic.ingest.models.accession import Accession
 from isic.ingest.models.accession_review import AccessionReview
@@ -19,6 +20,9 @@ def accession_create(
 
     if cohort.accessions.filter(blob_name=blob_name).exists():
         raise ValidationError('An accession with this name already exists.')
+
+    if isinstance(original_blob, S3PlaceholderFile):
+        original_blob = original_blob.name
 
     accession = Accession.objects.create(
         creator=creator, cohort=cohort, original_blob=original_blob, blob_name=blob_name

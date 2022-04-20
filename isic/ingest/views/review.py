@@ -16,10 +16,11 @@ from . import make_breadcrumbs
 def _cohort_review_progress(cohort: Cohort) -> dict:
     num_reviewed = cohort.accessions.reviewed().count()
     num_reviewable = cohort.accessions.reviewable().count()
+
     return {
         'num_reviewed': num_reviewed,
         'num_reviewable': num_reviewable,
-        'percentage': math.floor(num_reviewed / num_reviewable * 100),
+        'percentage': 0 if num_reviewable == 0 else math.floor(num_reviewed / num_reviewable * 100),
     }
 
 

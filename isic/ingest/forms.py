@@ -1,10 +1,8 @@
-from django import forms
 from django.forms.forms import Form
 from django.forms.models import ModelForm
-from s3_file_field.widgets import S3FileInput
+from s3_file_field.forms import S3FormFileField
 
 from isic.ingest.models import Cohort, Contributor
-from isic.ingest.models.accession import Accession
 
 
 class CohortForm(ModelForm):
@@ -26,10 +24,4 @@ class ContributorForm(ModelForm):
 
 
 class SingleAccessionUploadForm(Form):
-    fields = forms.fields_for_model(
-        Accession,
-        ['original_blob'],
-        widgets={'original_blob': S3FileInput(attrs={'accept': 'image/*;capture=camera'})},
-    )
-
-    original_blob = fields['original_blob']
+    original_blob = S3FormFileField(model_field_id='ingest.Accession.original_blob')
