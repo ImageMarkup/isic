@@ -3,9 +3,6 @@ from celery.exceptions import SoftTimeLimitExceeded
 from django.contrib.auth.models import User
 from django.db import transaction
 
-from isic.core.models import Image
-from isic.core.services.collection.image import collection_add_images
-from isic.core.tasks import sync_elasticsearch_index_task
 from isic.ingest.models import (
     Accession,
     AccessionStatus,
@@ -14,6 +11,7 @@ from isic.ingest.models import (
     MetadataFile,
     ZipUpload,
 )
+from isic.ingest.services.cohort import cohort_publish
 
 
 @shared_task(soft_time_limit=30, time_limit=60)
@@ -85,14 +83,4 @@ def update_metadata_task(user_pk: int, metadata_file_pk: int):
 def publish_cohort_task(cohort_pk: int, user_pk: int, *, public: bool):
     cohort = Cohort.objects.select_related('collection').get(pk=cohort_pk)
     user = User.objects.get(pk=user_pk)
-
-    for accession in cohort.accessions.publishable().iterator():
-        # use get_or_create so the task is idempotent in case of failure
-        image, _ = Image.objects.get_or_create(
-            creator=user,
-            accession=accession,
-            public=public,
-        )
-        collection_add_images(collection=cohort.collection, image=image, ignore_lock=True)
-
-    sync_elasticsearch_index_task.delay()
+    cohort_publish(cohort=cohort, publisher=user, public=public)

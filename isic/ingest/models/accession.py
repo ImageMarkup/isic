@@ -340,7 +340,7 @@ class Accession(CreationSortedTimeStampedModel):
 
                 # if a new metadata item has been added or an existing has been modified,
                 # reset the review state.
-                from isic.ingest.service import accession_review_delete
+                from isic.ingest.services.accession.review import accession_review_delete
 
                 accession_review_delete(accession=self)
 
@@ -362,7 +362,7 @@ class Accession(CreationSortedTimeStampedModel):
             for field in metadata_fields:
                 if self.metadata.pop(field, None) is not None:
                     modified = True
-                    from isic.ingest.service import accession_review_delete
+                    from isic.ingest.services.accession.review import accession_review_delete
 
                     accession_review_delete(accession=self)
                 if self.unstructured_metadata.pop(field, None) is not None:

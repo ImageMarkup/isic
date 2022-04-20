@@ -7,9 +7,8 @@ from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
 from isic.core.permissions import needs_object_permission
-from isic.core.services.collection import collection_create
 from isic.ingest.models import Cohort
-from isic.ingest.tasks import publish_cohort_task
+from isic.ingest.services.cohort import cohort_publish_initialize
 from isic.ingest.views import make_breadcrumbs
 
 
@@ -36,24 +35,9 @@ def publish_cohort(request, pk):
     cohort = get_object_or_404(Cohort, pk=pk)
 
     if request.method == 'POST':
-        public = False
-        if 'public' in request.POST:
-            public = True
-        elif 'private' in request.POST:
-            public = False
-        else:
-            raise Exception
+        public = True if 'public' in request.POST else False
+        cohort_publish_initialize(cohort=cohort, publisher=request.user, public=public)
 
-        if not cohort.collection:
-            cohort.collection = collection_create(
-                creator=request.user,
-                name=f'Publish of {cohort.name}',
-                description='',
-                public=False,
-            )
-            cohort.save(update_fields=['collection'])
-
-        publish_cohort_task.delay(cohort.pk, request.user.pk, public=public)
         messages.add_message(
             request,
             messages.SUCCESS,

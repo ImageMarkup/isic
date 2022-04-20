@@ -1,6 +1,8 @@
 from django.urls.base import reverse
 import pytest
 
+from isic.ingest.models.accession import Accession
+
 
 @pytest.fixture
 def accessions(accession_factory, accession_review_factory):
@@ -55,3 +57,16 @@ def test_api_accession_create_invalid_cohort(
     )
 
     assert resp.status_code == 403, resp.data
+
+
+@pytest.mark.django_db
+def test_api_accession_create_review_bulk(staff_api_client, accession_factory):
+    accessions = [accession_factory() for _ in range(4)]
+
+    resp = staff_api_client.post(
+        reverse('accessions:create-review-bulk'),
+        data=[{'id': accession.id, 'value': True} for accession in accessions],
+    )
+
+    assert resp.status_code == 201, resp.data
+    assert Accession.objects.filter(review=None).count() == 0

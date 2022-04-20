@@ -6,7 +6,7 @@ from django.urls.base import reverse
 from django.utils import timezone
 import pytest
 
-from isic.ingest.service import accession_review_update_or_create
+from isic.ingest.services.accession.review import accession_review_update_or_create
 from isic.ingest.tasks import update_metadata_task
 from isic.ingest.tests.csv_streams import StreamWriter
 from isic.ingest.utils.metadata import validate_csv_format_and_filenames
