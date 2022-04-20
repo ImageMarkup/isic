@@ -1,7 +1,7 @@
 import os
 
 from django.db import transaction
-from django.http.response import JsonResponse
+from django.http.response import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -37,7 +37,6 @@ class AccessionPermissions(BasePermission):
 
 
 class AccessionCreateInputSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
     cohort = serializers.PrimaryKeyRelatedField(queryset=Cohort.objects.all())
     original_blob = S3FileSerializerField()
 
@@ -67,8 +66,8 @@ class AccessionCreateApi(APIView):
             blob_name=os.path.basename(serializer.validated_data['original_blob']),
             **serializer.validated_data,
         )
-        return JsonResponse(
-            AccessionCreateOutputSerializer(accession), status=status.HTTP_201_CREATED
+        return HttpResponse(
+            AccessionCreateOutputSerializer(accession).data, status=status.HTTP_201_CREATED
         )
 
 

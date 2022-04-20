@@ -63,8 +63,9 @@ def test_accession_upload_duplicate_name(authenticated_client, s3ff_field_value,
     r = authenticated_client.post(
         reverse('upload/single-accession', args=[cohort.pk]),
         {'original_blob': s3ff_field_value},
+        follow=True,
     )
-    assert r.status_code == 302, r.data
+    assert r.status_code == 200, r.data
     assert cohort.accessions.count() == 1
 
     # try uploading the same file
@@ -73,7 +74,6 @@ def test_accession_upload_duplicate_name(authenticated_client, s3ff_field_value,
         {'original_blob': s3ff_field_value},
     )
     assert r.status_code == 200, r.data
-    assert r.context['form'].errors
     assert cohort.accessions.count() == 1
 
 

@@ -2,6 +2,7 @@ import os
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.db.models.query import Prefetch
 from django.forms.models import ModelForm
 from django.http import HttpResponseRedirect
@@ -110,18 +111,22 @@ def upload_single_accession(request, cohort_pk):
         form = SingleAccessionUploadForm(request.POST)
 
         if form.is_valid():
-            accession_create(
-                creator=request.user,
-                cohort=cohort,
-                original_blob=form.cleaned_data['original_blob'],
-                blob_name=os.path.basename(form.cleaned_data['original_blob'].name),
-            )
-            messages.add_message(
-                request,
-                messages.SUCCESS,
-                mark_safe('Accession uploaded.'),
-            )
-            return HttpResponseRedirect(reverse('upload/cohort-files', args=[cohort.pk]))
+            try:
+                accession_create(
+                    creator=request.user,
+                    cohort=cohort,
+                    original_blob=form.cleaned_data['original_blob'],
+                    blob_name=os.path.basename(form.cleaned_data['original_blob'].name),
+                )
+            except ValidationError as e:
+                messages.add_message(request, messages.ERROR, e.message)
+            else:
+                messages.add_message(
+                    request,
+                    messages.SUCCESS,
+                    mark_safe('Accession uploaded.'),
+                )
+                return HttpResponseRedirect(reverse('upload/cohort-files', args=[cohort.pk]))
     else:
         form = SingleAccessionUploadForm()
 

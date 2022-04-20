@@ -1,115 +1,57 @@
+from django.urls.base import reverse
 import pytest
 
 
 @pytest.fixture
 def accessions(accession_factory, accession_review_factory):
     return [
-        accession_factory(review__value=False),
-        accession_factory(review__value=False),
-        accession_factory(review__value=None),
-        accession_factory(review__value=True),
+        accession_review_factory(value=False).accession,
+        accession_review_factory(value=False).accession,
+        accession_factory(),
+        accession_review_factory(value=True).accession,
     ]
 
 
-# @pytest.mark.django_db
-# def test_api_accession_create_review_bulk(accessions, staff_api_client):
-#     r = staff_api_client.post(
-#         reverse('accessions:create-review-bulk'),
-#         [{'id': x.id, 'value': x.review.value} for x in accessions],
-#     )
-#     assert r.status_code == 200, r.data
+@pytest.mark.django_db
+def test_api_accession_create(authenticated_api_client, user, cohort_factory, s3ff_field_value):
+    cohort = cohort_factory(contributor__owners=[user])
 
-#     # The original 2 rejected accessions should remain unchanged
-#     assert Accession.objects.rejected().count() == 2
-#     assert Accession.objects.accepted().count() == 1
-#     assert Accession.objects.unreviewed().count() == 1
+    resp = authenticated_api_client.post(
+        reverse('accessions:create'), data={'cohort': cohort.pk, 'original_blob': s3ff_field_value}
+    )
+
+    assert resp.status_code == 201, resp.data
+    assert cohort.accessions.count() == 1
 
 
-# @pytest.mark.django_db
-# def test_api_accession_soft_accept_bulk_adds_checklogs(accessions, staff_user, staff_api_client):
-#     r = staff_api_client.patch(
-#         '/api/v2/accessions/soft_accept_check_bulk/',
-#         [{'id': x.id, 'checks': ['quality_check']} for x in accessions],
-#     )
-#     assert r.status_code == 200, r.data
+@pytest.mark.django_db
+def test_api_accession_create_duplicate_blob_name(
+    authenticated_api_client, user, cohort_factory, s3ff_field_value
+):
+    cohort = cohort_factory(contributor__owners=[user])
 
-#     assert AccessionReview.objects.count() == 1
-#     checklog = AccessionReview.objects.first()
+    resp = authenticated_api_client.post(
+        reverse('accessions:create'), data={'cohort': cohort.pk, 'original_blob': s3ff_field_value}
+    )
+    assert resp.status_code == 201, resp.data
+    assert cohort.accessions.count() == 1
 
-#     assert checklog.accession.pk == accessions[2].pk
-#     assert checklog.creator.pk == staff_user.pk
-#     assert checklog.change_to is True
-
-
-# @pytest.mark.django_db
-# def test_api_accession_soft_accept_adds_checklogs(accession_factory, staff_user, staff_api_client):
-#     accession = accession_factory(quality_check=None)
-#     r = staff_api_client.patch(
-#         f'/api/v2/accessions/{accession.pk}/',
-#         {'quality_check': False, 'metadata': {}},  # ensure it doesn't care about non-check fields
-#     )
-#     assert r.status_code == 200, r.data
-
-#     accession.refresh_from_db()
-#     assert accession.quality_check is False
-#     assert accession.review.count() == 1
-
-#     assert checklog.accession.pk == accession.pk
-#     assert checklog.creator.pk == staff_user.pk
-#     assert checklog.change_to is False
+    resp = authenticated_api_client.post(
+        reverse('accessions:create'), data={'cohort': cohort.pk, 'original_blob': s3ff_field_value}
+    )
+    assert resp.status_code == 400, resp.data
+    assert cohort.accessions.count() == 1
 
 
-# @pytest.mark.django_db
-# def test_api_accession_create(authenticated_api_client, user, cohort_factory, s3ff_field_value):
-#     cohort = cohort_factory(contributor__owners=[user])
+@pytest.mark.django_db
+def test_api_accession_create_invalid_cohort(
+    authenticated_api_client, user_factory, cohort_factory, s3ff_field_value
+):
+    invalid_cohort = cohort_factory(contributor__creator=user_factory())
 
-#     resp = authenticated_api_client.post(
-#         '/api/v2/accessions/', data={'cohort': cohort.pk, 'original_blob': s3ff_field_value}
-#     )
+    resp = authenticated_api_client.post(
+        reverse('accessions:create'),
+        data={'cohort': invalid_cohort.pk, 'original_blob': s3ff_field_value},
+    )
 
-#     assert resp.status_code == 201, resp.data
-#     assert cohort.accessions.count() == 1
-
-
-# @pytest.mark.django_db
-# def test_api_accession_create_duplicate_blob_name(
-#     authenticated_api_client, user, cohort_factory, s3ff_field_value, s3ff_field_value_factory
-# ):
-#     cohort = cohort_factory(contributor__owners=[user])
-
-#     resp = authenticated_api_client.post(
-#         '/api/v2/accessions/', data={'cohort': cohort.pk, 'original_blob': s3ff_field_value}
-#     )
-#     assert resp.status_code == 201, resp.data
-#     assert cohort.accessions.count() == 1
-
-#     resp = authenticated_api_client.post(
-#         '/api/v2/accessions/', data={'cohort': cohort.pk, 'original_blob': s3ff_field_value}
-#     )
-#     assert resp.status_code == 400, resp.data
-#     assert cohort.accessions.count() == 1
-
-
-# @pytest.mark.django_db
-# def test_api_accession_create_invalid_cohort(
-#     authenticated_api_client, user_factory, cohort_factory, s3ff_field_value
-# ):
-#     invalid_cohort = cohort_factory(contributor__creator=user_factory())
-
-#     resp = authenticated_api_client.post(
-#         '/api/v2/accessions/', data={'cohort': invalid_cohort.pk, 'original_blob': s3ff_field_value}
-#     )
-
-#     assert resp.status_code == 403, resp.data
-
-
-# @pytest.mark.django_db
-# def test_api_accession_metadata(authenticated_api_client, user, cohort_factory, s3ff_field_value):
-#     cohort = cohort_factory(contributor__owners=[user])
-
-#     resp = authenticated_api_client.post(
-#         '/api/v2/accessions/', data={'cohort': cohort.pk, 'original_blob': s3ff_field_value}
-#     )
-
-#     assert resp.status_code == 201, resp.data
-#     assert cohort.accessions.count() == 1
+    assert resp.status_code == 403, resp.data
