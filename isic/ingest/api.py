@@ -1,9 +1,7 @@
 import os
 
-from django.db import transaction
-from django.http.response import HttpResponse, JsonResponse
+from django.http.response import HttpResponse
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import mixins, serializers, status, viewsets
@@ -15,11 +13,11 @@ from s3_file_field.rest_framework import S3FileSerializerField
 
 from isic.core.permissions import IsicObjectPermissionsFilter
 from isic.ingest.models import Accession, MetadataFile
-from isic.ingest.models.accession_review import AccessionReview
 from isic.ingest.models.cohort import Cohort
 from isic.ingest.models.contributor import Contributor
 from isic.ingest.serializers import CohortSerializer, ContributorSerializer, MetadataFileSerializer
-from isic.ingest.service import accession_create, accession_review_bulk_create
+from isic.ingest.services.accession import accession_create
+from isic.ingest.services.accession.review import accession_review_bulk_create
 from isic.ingest.tasks import update_metadata_task
 
 
@@ -84,24 +82,12 @@ class AccessionCreateReviewBulkApi(APIView):
         serializer = AccessionCreateReviewBulkInputSerializer(data=request.data, many=True)
         serializer.is_valid(raise_exception=True)
 
-        with transaction.atomic():
-            id_value = {x['id']: x['value'] for x in serializer.validated_data}
-            accession_reviews = []
-            for accession in Accession.objects.select_related('image').filter(
-                pk__in=id_value.keys()
-            ):
-                accession_reviews.append(
-                    AccessionReview(
-                        accession=accession,
-                        creator=request.user,
-                        reviewed_at=timezone.now(),
-                        value=id_value[accession.pk],
-                    )
-                )
+        accession_review_bulk_create(
+            reviewer=request.user,
+            accession_ids_values={x['id']: x['value'] for x in serializer.validated_data},
+        )
 
-            accession_review_bulk_create(accession_reviews=accession_reviews)
-
-        return JsonResponse({}, status=status.HTTP_200_OK)
+        return Response({}, status=status.HTTP_201_CREATED)
 
 
 @method_decorator(
