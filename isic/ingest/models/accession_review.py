@@ -7,7 +7,7 @@ from .accession import Accession
 
 
 class AccessionReview(CreationSortedTimeStampedModel):
-    accession = models.OneToOneField(Accession, on_delete=models.PROTECT, related_name='review')
+    accession = models.OneToOneField(Accession, on_delete=models.CASCADE, related_name='review')
     creator = models.ForeignKey(User, on_delete=models.DO_NOTHING)
     reviewed_at = models.DateTimeField()
     value = models.BooleanField()
