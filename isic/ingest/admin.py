@@ -46,8 +46,8 @@ class MetadataVersionInline(ReadonlyTabularInline):
 
 class AccessionReviewInline(ReadonlyTabularInline):
     model = AccessionReview
-    fields = ['created', 'creator', 'value']
-    ordering = ['-created']
+    fields = ['reviewed_at', 'creator', 'value']
+    ordering = ['-reviewed_at']
 
 
 class MetadataFileInline(ReadonlyTabularInline):
@@ -257,7 +257,7 @@ class AccessionAdmin(admin.ModelAdmin):
 @admin.register(AccessionReview)
 class AccessionReviewAdmin(admin.ModelAdmin):
     list_select_related = ['accession', 'creator', 'accession__cohort']
-    list_display = ['id', 'cohort', 'accession', 'creator', 'created', 'value']
+    list_display = ['id', 'cohort', 'accession', 'creator', 'reviewed_at', 'value']
 
     autocomplete_fields = ['accession', 'creator']
 
