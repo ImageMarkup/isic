@@ -35,8 +35,7 @@ def migrate_checks(apps, schema_editor):
 
     published_accessions = Accession.objects.exclude(image=None)
     keep_checklogs = set(
-        published_accessions.values('id')
-        .annotate(last_passed_checklog=Max('checklogs__id'))
+        published_accessions.annotate(last_passed_checklog=Max('checklogs__id'))
         .exclude(last_passed_checklog=None)
         .values_list('last_passed_checklog', flat=True)
     )
