@@ -40,7 +40,7 @@ def user_detail(request, pk):
         .order_by('-created'),
         'accession_reviews': AccessionReview.objects.select_related('creator')
         .filter(creator=user)
-        .order_by('-created'),
+        .order_by('-reviewed_at'),
         'metadata_files': MetadataFile.objects.select_related('cohort', 'creator')
         .filter(creator=user)
         .order_by('-created'),
