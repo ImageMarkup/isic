@@ -4,12 +4,11 @@
   tell if it's visible. This is similar-ish to https://github.com/alpinejs/alpine/discussions/2264
 {% endcomment %}
 <div class="modal" :class="{'modal-open': quickfindOpen}" x-show="quickfindOpen">
-  <div class="modal-box w-11/12 max-w-5xl" @click.outside="closeQuickfindModal()">
-    <h3 class="font-bold text-lg">Quick Find</h3>
+  <div class="absolute top-6 modal-box w-11/12 max-w-5xl" @click.outside="closeQuickfindModal()">
     <input x-ref="quickfind"
       @input.debounce.250ms="performFind"
       x-model="findText"
-      placeholder="Search anything.." class="input input-bordered w-full max-w-xs">
+      placeholder="Search anything.." class="input input-bordered w-full max-w-l">
     <label class="label">
       <span class="label-text-alt" x-show="findText.length < 3">At least 3 characters</span>
     </label>
