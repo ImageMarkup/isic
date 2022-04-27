@@ -72,6 +72,6 @@ from isic.core.dsl import parse_query
 def test_dsl_parser(query, filter_or_exception):
     if isinstance(filter_or_exception, Q):
         assert parse_query(query) == filter_or_exception
-    elif isinstance(filter_or_exception, Exception):
-        with pytest.assertRaises(filter_or_exception):
+    else:
+        with pytest.raises(filter_or_exception):
             parse_query(query)
