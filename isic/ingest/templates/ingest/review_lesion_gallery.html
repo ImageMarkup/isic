@@ -1,0 +1,44 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block head_extra %}
+  {{ block.super }}
+  {% include 'ingest/partials/review_header.html' %}
+{% endblock %}
+
+{% block content %}
+  <div class="flex justify-between">
+    {% include 'ingest/partials/breadcrumbs.html' %}
+  </div>
+
+  {% if not grouped_accessions and cohort.accessions.unreviewed.exists %}
+    <div>
+      No accessions with Lesion IDs left to review.
+    </div>
+  {% elif not grouped_accessions %}
+    <div>
+      No accessions left to review!
+    </div>
+  {% else %}
+    <progress class="progress progress-primary w-200 mt-6" value="{{ progress.percentage }}" max="100"></progress>
+    {{ progress.num_reviewed|intcomma }} / {{ progress.num_reviewable|intcomma }} ({{ progress.percentage }}%)
+
+    <div class="mb-4">
+      {% for lesion_id, accessions in grouped_accessions.items %}
+        {{ lesion_id  }}
+
+        <div class="grid gap-4 grid-cols-8">
+          {% for accession in accessions %}
+            {% include 'ingest/partials/accession.html' with include_review_ui=1 include_acquisition_day=1 %}
+          {% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+
+    {% if page_obj %}
+      {% include 'ingest/partials/review_footer.html' %}
+    {% endif %}
+
+    {% include 'ingest/partials/thumbnail_grid_js.html' %}
+  {% endif %}
+{% endblock %}

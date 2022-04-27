@@ -16,14 +16,18 @@
       {% if num_published %}
         <li>{{ num_published|intcomma }} accessions have already been published.</li>
       {% endif %}
-      {% if num_pending_or_failed %}
-        <li>{{ num_pending_or_failed|intcomma }} accessions failed to be processed.</li>
+
+      {% if num_pending %}
+        <li>{{ num_pending|intcomma }} accessions are still being processed.</li>
       {% endif %}
-      {% for check, rejected_count in cohort.rejected_accession_counts_by_check.items %}
-        {% if rejected_count > 0 %}
-          <li>{{ rejected_count  }} were rejected for the {{ check|nice_name }}</li>
-        {% endif %}
-      {% endfor %}
+
+      {% if num_uningested %}
+        <li>{{ num_pending|intcomma }} accessions couldn't be processed.</li>
+      {% endif %}
+
+      {% if num_rejected %}
+        <li>{{ num_rejected|intcomma }} were rejected by the QC process.</li>
+      {% endif %}
     </ul>
   </div>
 

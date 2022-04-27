@@ -1,7 +1,6 @@
 import os
 
 from django import forms
-from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models.query import Prefetch
 from django.forms.models import ModelForm
@@ -12,7 +11,7 @@ from isic_metadata.utils import get_unstructured_columns
 from s3_file_field.widgets import S3FileInput
 
 from isic.core.permissions import get_visible_objects, needs_object_permission
-from isic.ingest.models import Accession, Cohort, MetadataFile
+from isic.ingest.models import Cohort, MetadataFile
 from isic.ingest.utils.metadata import (
     validate_archive_consistency,
     validate_csv_format_and_filenames,
@@ -65,18 +64,6 @@ def metadata_file_create(request, cohort_pk):
         form = MetadataFileForm()
 
     return render(request, 'ingest/metadata_file_create.html', {'form': form})
-
-
-# TODO: make this a less dangerous action. reconsider how metadata versions
-# should work, and how published images should be handled.
-# Note: this is hidden from the GUI for now.
-@staff_member_required
-def reset_metadata(request, cohort_pk):
-    # TODO: GET request to mutate?
-    cohort = get_object_or_404(Cohort, pk=cohort_pk)
-    Accession.objects.filter(cohort=cohort).update(metadata={})
-    messages.info(request, 'Metadata has been reset.')
-    return HttpResponseRedirect(reverse('cohort-detail', args=[cohort_pk]))
 
 
 @staff_member_required
