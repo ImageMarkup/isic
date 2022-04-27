@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 
 from isic.core.models.image import Image
 from isic.core.services.collection import collection_create
@@ -33,3 +34,10 @@ def cohort_publish(*, cohort: Cohort, publisher: User, public: bool) -> None:
         collection_add_images(collection=cohort.collection, image=image, ignore_lock=True)
 
     sync_elasticsearch_index_task.delay()
+
+
+def cohort_delete(*, cohort: Cohort) -> None:
+    if cohort.accessions.published().exists():
+        raise ValidationError('Cannot delete a cohort with published images.')
+
+    cohort.delete()
