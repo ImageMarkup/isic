@@ -3,8 +3,6 @@ import re
 from deepdiff import DeepDiff
 from django.contrib.auth.models import User
 from django.db import models
-from django.db.models.constraints import CheckConstraint
-from django.db.models.query_utils import Q
 
 from isic.core.models import CreationSortedTimeStampedModel
 
@@ -26,15 +24,6 @@ class MetadataVersionQuerySet(models.QuerySet):
 
 
 class MetadataVersion(CreationSortedTimeStampedModel):
-    class Meta(CreationSortedTimeStampedModel.Meta):
-        constraints = [
-            CheckConstraint(
-                name='metadata_version_needs_meta_or_unstructured_meta',
-                check=~(Q(metadata__isnull=True) & Q(unstructured_metadata__isnull=True))
-                & ~(Q(metadata={}) & Q(unstructured_metadata={})),
-            ),
-        ]
-
     creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name='metadata_versions')
     accession = models.ForeignKey(
         Accession, on_delete=models.PROTECT, related_name='metadata_versions'

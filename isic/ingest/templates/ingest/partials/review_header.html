@@ -1,55 +1,24 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mousetrap/1.6.5/mousetrap.min.js" integrity="sha512-+Jg3Ynmj9hse704K48H6rBBI3jdNBjReRGBCxUWFfOz3yVurnJFWtAWssDAsGtzWYw89xFWPxShuj2T6E9EOpg==" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/lodash@4.17.20/lodash.min.js" integrity="sha256-ur/YlHMU96MxHEsy3fHGszZHas7NzH4RQlD4tDVvFhw=" crossorigin="anonymous"></script>
 <script type="text/javascript">
-  function review(check, pass) {
-    let body = {}
-    body[check] =  pass;
-
-    // if re-selecting the same reason, act as a de-select
-    if (this[check] === pass) {
-      body[check] = null;
-    }
-
-    fetch(`/api/v2/accessions/${this.id}/`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': '{{ csrf_token }}'
-      },
-      body: JSON.stringify(body),
-    }).then(response => response.json())
-      .then(data => {
-        this[check] = data[check];
-      });
-  }
-
   function accession(id) {
-    // Keep a global registry of accessions so other components can use them
-    Alpine.store('accessions').items.push(id);
+    Alpine.store('accessions').addItem(id);
 
-    let value = JSON.parse(document.getElementById(id).textContent);
-    value['accept'] = function(check) {
-      review.bind(this)(check, true);
-    }
-    value['reject'] = function(check) {
-      review.bind(this)(check, false);
-    }
-    return value;
-  }
-
-  $(document).ready(function(){
-    // just bind 1-5 for now
-    Mousetrap.bind(['1', '2', '3', '4', '5'], (event) => {
-      if (document.querySelectorAll(".accession-col:hover").length != 0) {
-        let button = $('.accession-col:hover').find('.review-button');
-        button = button.get(parseInt(event.key) - 1);
-
-        if (button) {
-          button.click();
+    return {
+      id: id,
+      review: null,
+      async toggleReject() {
+        if (this.review === null) {
+          this.review = false;
+        } else {
+          this.review = null;
         }
-      }
-    });
-  });
+
+        // Place values in a global store so the submit function can grab
+        // all of them.
+        Alpine.store('accessions').setReview(this.id, this.review);
+      },
+    };
+  }
 </script>
 
 <style type="text/css" media="screen">

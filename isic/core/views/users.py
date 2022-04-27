@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, render
 from isic.core.models import Collection
 from isic.core.models.segmentation import Segmentation, SegmentationReview
 from isic.core.permissions import needs_object_permission
-from isic.ingest.models import CheckLog, Contributor
+from isic.ingest.models import AccessionReview, Contributor
 from isic.ingest.models.accession import Accession
 from isic.ingest.models.metadata_file import MetadataFile
 from isic.ingest.models.zip_upload import ZipUpload
@@ -38,9 +38,9 @@ def user_detail(request, pk):
         'single_shot_accessions': Accession.objects.select_related('cohort', 'creator')
         .filter(zip_upload=None, creator=user)
         .order_by('-created'),
-        'accession_reviews': CheckLog.objects.select_related('creator')
+        'accession_reviews': AccessionReview.objects.select_related('creator')
         .filter(creator=user)
-        .order_by('-created'),
+        .order_by('-reviewed_at'),
         'metadata_files': MetadataFile.objects.select_related('cohort', 'creator')
         .filter(creator=user)
         .order_by('-created'),

@@ -1,26 +1,24 @@
-from django.db import transaction
+import os
+
+from django.http.response import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import mixins, status, viewsets
+from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import BasePermission, IsAdminUser
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from s3_file_field.rest_framework import S3FileSerializerField
 
 from isic.core.permissions import IsicObjectPermissionsFilter
 from isic.ingest.models import Accession, MetadataFile
-from isic.ingest.models.check_log import CheckLog
 from isic.ingest.models.cohort import Cohort
 from isic.ingest.models.contributor import Contributor
-from isic.ingest.serializers import (
-    AccessionChecksSerializer,
-    AccessionCreateSerializer,
-    AccessionSoftAcceptCheckSerializer,
-    CohortSerializer,
-    ContributorSerializer,
-    MetadataFileSerializer,
-)
-from isic.ingest.tasks import accession_generate_blob_task, update_metadata_task
+from isic.ingest.serializers import CohortSerializer, ContributorSerializer, MetadataFileSerializer
+from isic.ingest.services.accession import accession_create
+from isic.ingest.services.accession.review import accession_review_bulk_create
+from isic.ingest.tasks import update_metadata_task
 
 
 class AccessionPermissions(BasePermission):
@@ -36,86 +34,60 @@ class AccessionPermissions(BasePermission):
         return False
 
 
-class AccessionViewSet(mixins.UpdateModelMixin, mixins.CreateModelMixin, viewsets.GenericViewSet):
-    queryset = Accession.objects.all()
+class AccessionCreateInputSerializer(serializers.Serializer):
+    cohort = serializers.PrimaryKeyRelatedField(queryset=Cohort.objects.all())
+    original_blob = S3FileSerializerField()
+
+
+class AccessionCreateOutputSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Accession
+        fields = ['id']
+
+
+@method_decorator(
+    name='post',
+    decorator=swagger_auto_schema(
+        operation_summary='Create an Accession.',
+        request_body=AccessionCreateInputSerializer,
+        responses={201: AccessionCreateOutputSerializer},
+    ),
+)
+class AccessionCreateApi(APIView):
     permission_classes = [AccessionPermissions]
 
-    def get_serializer_class(self):
-        if self.action == 'create':
-            return AccessionCreateSerializer
-        else:
-            return AccessionChecksSerializer
+    def post(self, request):
+        serializer = AccessionCreateInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        accession = accession_create(
+            creator=request.user,
+            blob_name=os.path.basename(serializer.validated_data['original_blob']),
+            **serializer.validated_data,
+        )
+        return HttpResponse(
+            AccessionCreateOutputSerializer(accession).data, status=status.HTTP_201_CREATED
+        )
 
-    @swagger_auto_schema(auto_schema=None)
-    def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
 
-    def perform_create(self, serializer):
-        accession = serializer.save(creator=self.request.user)
-        accession_generate_blob_task.delay(accession.pk)
+class AccessionCreateReviewBulkInputSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    value = serializers.BooleanField()
 
-    # override method just to disable the auto-schema for it
-    @swagger_auto_schema(auto_schema=None)
-    def partial_update(self, request, *args, **kwargs):
-        return super().partial_update(request, *args, **kwargs)
 
-    # override method just to disable the auto-schema for it
-    @swagger_auto_schema(auto_schema=None)
-    def update(self, request, *args, **kwargs):
-        return super().update(request, *args, **kwargs)
+@method_decorator(name='post', decorator=swagger_auto_schema(auto_schema=None))
+class AccessionCreateReviewBulkApi(APIView):
+    permission_classes = [AccessionPermissions]
 
-    @swagger_auto_schema(auto_schema=None)
-    def perform_update(self, serializer):
-        with transaction.atomic():
-            # TODO: figure out how to use update_fields?
-            serializer.save()
-            for field, value in serializer.validated_data.items():
-                if field.endswith('_check'):
-                    # TODO: checklogs could be "double set", e.g. a user sets
-                    # check foo to true when it's already true, resulting in 2 check log entries.
-                    serializer.instance.checklogs.create(
-                        creator=serializer.context['request'].user,
-                        change_field=field,
-                        change_to=value,
-                    )
+    def post(self, request):
+        serializer = AccessionCreateReviewBulkInputSerializer(data=request.data, many=True)
+        serializer.is_valid(raise_exception=True)
 
-    @swagger_auto_schema(
-        operation_description="Set a check to true if it isn't already set",
-        auto_schema=None,
-    )
-    @action(detail=False, methods=['patch'])
-    def soft_accept_check_bulk(self, request, *args, **kwargs):
-        serializer = AccessionSoftAcceptCheckSerializer(data=request.data, many=True)
-        if serializer.is_valid():
-            data_by_id = {x['id']: x['checks'] for x in serializer.data}
-            accessions = Accession.objects.filter(id__in=data_by_id.keys())
-            checks = set(sum(data_by_id.values(), []))
+        accession_review_bulk_create(
+            reviewer=request.user,
+            accession_ids_values={x['id']: x['value'] for x in serializer.validated_data},
+        )
 
-            with transaction.atomic():
-                checklogs = []
-                accessions_to_update = []
-                for accession in accessions:
-                    for check in data_by_id[accession.pk]:
-                        if getattr(accession, check) is None:
-                            setattr(accession, check, True)
-                            accessions_to_update.append(accession)
-                            checklogs.append(
-                                CheckLog(
-                                    accession=accession,
-                                    creator=request.user,
-                                    change_field=check,
-                                    change_to=True,
-                                )
-                            )
-
-                # TODO: this is technically updating all the checks fields when each record may only
-                # want to update a specific check field.
-                Accession.objects.bulk_update(accessions_to_update, fields=checks)
-                CheckLog.objects.bulk_create(checklogs)
-
-            return Response({})
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({}, status=status.HTTP_201_CREATED)
 
 
 @method_decorator(

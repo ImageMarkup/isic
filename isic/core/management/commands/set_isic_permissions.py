@@ -5,7 +5,7 @@ import djclick as click
 from isic.core.models import Collection, DuplicateImage, Image, ImageAlias
 from isic.ingest.models import (
     Accession,
-    CheckLog,
+    AccessionReview,
     Cohort,
     Contributor,
     DistinctnessMeasure,
@@ -31,7 +31,7 @@ def add_staff_group():
     for model in [
         Accession,
         Annotation,
-        CheckLog,
+        AccessionReview,
         Cohort,
         Collection,
         Contributor,

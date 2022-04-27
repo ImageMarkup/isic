@@ -16,64 +16,26 @@
   </div>
 
   {% include 'ingest/partials/cohort_details.html' %}
-  <div class="flex flex-col">
-    <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-      <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-        <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Check
-                </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Unreviewed
-                </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Rejected
-                </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Accepted
-                </th>
-                <th scope="col" class="relative px-6 py-3">
-                  <span class="sr-only"></span>
-                </th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              {% for check, counts in check_counts.items %}
-                <tr>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {{ check_nicenames|get_key:check }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <a href="{% url 'upload/cohort-browser' cohort.pk %}?{{ check }}=unreviewed">
-                      {{ counts.unreviewed|intcomma }}
-                    </a>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <a href="{% url 'upload/cohort-browser' cohort.pk %}?{{ check }}=False">
-                      {{ counts.rejected|intcomma }}
-                    </a>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <a href="{% url 'upload/cohort-browser' cohort.pk %}?{{ check }}=True">
-                      {{ counts.accepted|intcomma  }}
-                    </a>
-                  </td>
-                  {% if check != 'quality_check' %}
-                    <td rowspan="{% if check == 'phi_check' %}2{% else %}1{% endif %}" class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      {% with review_url=review_urls|get_key:check %}
-                        <a href="{% url review_url cohort.id %}" class="text-indigo-600 hover:text-indigo-900">Review</a>
-                      {% endwith %}
-                    </td>
-                  {% endif %}
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
+
+  <div class="flex justify-between">
+    Showing {{ accessions.paginator.count|intcomma }} results
+    {% include 'studies/partials/pagination.html' with page_obj=accessions %}
+  </div>
+
+  <div class="mb-4" x-data="thumbnailGrid();">
+    <div class="flex flex-row justify-end pb-3">
+      <a class="px-1" href="#" @click="decrease();">fewer columns</a> |
+      <a class="px-1" href="#" @click="increase();">more columns</a>
+    </div>
+    <div class="grid gap-4" :class="`grid-cols-${numCols}`">
+      {% for accession in accessions %}
+        {% include 'ingest/partials/accession.html' with include_review_ui=0 %}
+      {% endfor %}
     </div>
   </div>
+
+  {% include 'studies/partials/pagination.html' with page_obj=accessions %}
+
+  {% include 'ingest/partials/thumbnail_grid_js.html' %}
+
 {% endblock %}
