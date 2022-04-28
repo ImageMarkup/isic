@@ -155,7 +155,21 @@ def _cdn_access_log_records(s3, s3_log_object: dict) -> Iterable[dict]:
         assert version_line.decode('utf-8').strip() == '#Version: 1.0'
         headers = headers_line.decode('utf-8').replace('#Fields:', '').strip().split()
         stream.seek(0)
-        df = pd.read_table(stream, skiprows=2, names=headers, delimiter='\\s+')
+        df = pd.read_table(
+            stream,
+            skiprows=2,
+            names=headers,
+            usecols=[
+                'date',
+                'time',
+                'cs-uri-stem',
+                'c-ip',
+                'cs(User-Agent)',
+                'x-edge-request-id',
+                'sc-status',
+            ],
+            delimiter='\\s+',
+        )
 
     df['download_time'] = pd.to_datetime(df['date'] + ' ' + df['time'], utc=True)
 
