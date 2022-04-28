@@ -200,7 +200,7 @@ def collect_image_download_records_task():
         process_s3_log_file_task.delay(s3_log_object['Key'])
 
 
-@shared_task(soft_time_limit=60, time_limit=120)
+@shared_task(soft_time_limit=300, time_limit=360)
 def process_s3_log_file_task(s3_log_object_key: str):
     s3 = _s3_client()
     image_downloads: list[ImageDownload] = []
