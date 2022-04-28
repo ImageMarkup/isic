@@ -76,7 +76,7 @@ def test_cdn_access_log_parsing(mocker):
 
 
 @pytest.mark.django_db
-def test_collect_image_download_records_task(mocker, image_factory):
+def test_collect_image_download_records_task(mocker, eager_celery, image_factory):
     image = image_factory(accession__blob='some/exists.jpg')
 
     def mock_client(*args, **kwargs):

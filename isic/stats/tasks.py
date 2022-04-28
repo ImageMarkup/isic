@@ -38,6 +38,12 @@ VIEW_IDS = [
 logger = get_task_logger(__name__)
 
 
+def _s3_client():
+    return boto3.client(
+        's3', config=Config(connect_timeout=3, read_timeout=10, retries={'max_attempts': 5})
+    )
+
+
 def _initialize_analyticsreporting():
     credentials = ServiceAccountCredentials.from_json_keyfile_dict(
         json.loads(settings.ISIC_GOOGLE_API_JSON_KEY), SCOPES
@@ -147,8 +153,8 @@ def _cdn_log_objects(s3) -> Iterable[dict]:
         yield from page.get('Contents', [])
 
 
-def _cdn_access_log_records(s3, s3_log_object: dict) -> Iterable[dict]:
-    data = s3.get_object(Bucket=settings.CDN_LOG_BUCKET, Key=s3_log_object['Key'])
+def _cdn_access_log_records(s3, s3_log_object_key: str) -> Iterable[dict]:
+    data = s3.get_object(Bucket=settings.CDN_LOG_BUCKET, Key=s3_log_object_key)
 
     with gzip.GzipFile(fileobj=BytesIO(data['Body'].read())) as stream:
         version_line, headers_line = stream.readlines()[0:2]
@@ -184,31 +190,33 @@ def _cdn_access_log_records(s3, s3_log_object: dict) -> Iterable[dict]:
         }
 
 
-# note the time limit is dependent on how frequently this is run.
-@shared_task(soft_time_limit=300, time_limit=360)
+@shared_task(soft_time_limit=60, time_limit=120)
 def collect_image_download_records_task():
-    # TODO: this entire function is pretty ugly and needs to be better abstracted
-    # and tested.
-    s3 = boto3.client(
-        's3', config=Config(connect_timeout=3, read_timeout=10, retries={'max_attempts': 5})
-    )
-    image_downloads: list[ImageDownload] = []
-    processed_s3_keys: list[str] = []
-    requests_by_path: dict[str, list[dict]] = defaultdict(list)
+    s3 = _s3_client()
 
     # gather all request log entries and group them by path
     for s3_log_object in _cdn_log_objects(s3):
-        for request in itertools.filterfalse(
-            lambda r: r['status'] != 200, _cdn_access_log_records(s3, s3_log_object)
-        ):
-            requests_by_path[request['path']].append(request)
+        # break this out into subtasks as a single log file can consume a large amount of ram.
+        process_s3_log_file_task.delay(s3_log_object['Key'])
 
-        processed_s3_keys.append(s3_log_object['Key'])
+
+@shared_task(soft_time_limit=60, time_limit=120)
+def process_s3_log_file_task(s3_log_object_key: str):
+    s3 = _s3_client()
+    image_downloads: list[ImageDownload] = []
+    requests_by_path: dict[str, list[dict]] = defaultdict(list)
+
+    for request in itertools.filterfalse(
+        lambda r: r['status'] != 200, _cdn_access_log_records(s3, s3_log_object_key)
+    ):
+        requests_by_path[request['path']].append(request)
 
     # go through just the images that mapped onto request paths
     # (this ignores thumbnails and other files)
-    downloaded_images = Image.objects.select_related('accession').filter(
-        accession__blob__in=requests_by_path.keys()
+    downloaded_images = (
+        Image.objects.select_related('accession')
+        .filter(accession__blob__in=requests_by_path.keys())
+        .iterator()
     )
     for downloaded_image in downloaded_images:
         for download_request in requests_by_path[downloaded_image.accession.blob.name]:
@@ -223,11 +231,10 @@ def collect_image_download_records_task():
             )
 
     with transaction.atomic():
-        ImageDownload.objects.bulk_create(image_downloads)
+        ImageDownload.objects.bulk_create(image_downloads, batch_size=1_000)
 
-    if processed_s3_keys:
-        delete_response = s3.delete_objects(
-            Bucket=settings.CDN_LOG_BUCKET,
-            Delete={'Objects': [{'Key': key} for key in processed_s3_keys]},
-        )
-        assert not delete_response.get('Errors')
+    delete = s3.delete_object(
+        Bucket=settings.CDN_LOG_BUCKET,
+        Key=s3_log_object_key,
+    )
+    assert delete['ResponseMetadata']['HTTPStatusCode'] == 204
