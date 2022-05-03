@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - master
+concurrency:
+  # Only run the latest workflow per-branch
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
 jobs:
   test:
     runs-on: ubuntu-latest
