@@ -28,7 +28,6 @@ SCOPES = ['https://www.googleapis.com/auth/analytics.readonly']
 VIEW_IDS = [
     '110224626',  # ISIC Archive Admin
     '183845203',  # ISIC Archive Frontend
-    '172830666',  # ISIC Challenge 2018
     '195202197',  # ISIC Challenge 2019
     '217814783',  # ISIC Challenge 2020
     '199577101',  # ISIC Challenge Submission
