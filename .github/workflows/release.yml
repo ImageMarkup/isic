@@ -3,6 +3,10 @@ on:
   push:
     branches:
       - master
+concurrency:
+  # Only run the latest workflow
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
 jobs:
   heroku:
     runs-on: ubuntu-latest
