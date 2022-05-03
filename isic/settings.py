@@ -134,6 +134,12 @@ class IsicMixin(ConfigMixin):
     ISIC_DATACITE_API_URL = values.Value('https://api.test.datacite.org')
     ISIC_DATACITE_USERNAME = values.Value(None)
     ISIC_DATACITE_PASSWORD = values.SecretValue(None)
+    ISIC_GOOGLE_ANALYTICS_VIEW_IDS = [
+        '110224626',  # ISIC Girder
+        '183845203',  # ISIC Gallery
+        '217814783',  # ISIC Challenge 2020
+        '199577101',  # ISIC Challenge
+    ]
     # This is technically a secret, but it's unset in sandbox so we don't want to make
     # it required.
     ISIC_GOOGLE_API_JSON_KEY = values.Value(None)
