@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 from pathlib import Path
+from typing import OrderedDict
 
 from composed_configuration import (
     ComposedConfiguration,
@@ -14,7 +15,27 @@ from configurations import values
 from django.core.exceptions import PermissionDenied, ValidationError as DjangoValidationError
 from django.http import Http404
 from rest_framework import exceptions
+from rest_framework.pagination import CursorPagination
+from rest_framework.response import Response
 from rest_framework.serializers import as_serializer_error
+
+
+class CursorWithCountPagination(CursorPagination):
+    def paginate_queryset(self, queryset, request, view=None):
+        self.count = queryset.count()
+        return super().paginate_queryset(queryset, request, view)
+
+    def get_paginated_response(self, data):
+        return Response(
+            OrderedDict(
+                [
+                    ('count', self.count),
+                    ('next', self.get_next_link()),
+                    ('previous', self.get_previous_link()),
+                    ('results', data),
+                ]
+            )
+        )
 
 
 def drf_default_with_modifications_exception_handler(exc, ctx):
@@ -112,9 +133,13 @@ class IsicMixin(ConfigMixin):
             'isic.core.context_processors.sandbox_banner',
         ]
 
-        configuration.REST_FRAMEWORK[
-            'EXCEPTION_HANDLER'
-        ] = 'isic.settings.drf_default_with_modifications_exception_handler'
+        configuration.REST_FRAMEWORK.update(
+            {
+                'EXCEPTION_HANDLER': 'isic.settings.drf_default_with_modifications_exception_handler',  # noqa: E501
+                'DEFAULT_PAGINATION_CLASS': 'isic.settings.CursorWithCountPagination',
+                'PAGE_SIZE': 100,
+            }
+        )
 
     AUTHENTICATION_BACKENDS = [
         'allauth.account.auth_backends.AuthenticationBackend',
