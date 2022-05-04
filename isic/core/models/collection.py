@@ -69,14 +69,15 @@ class Collection(TimeStampedModel):
         return reverse('core/collection-detail', args=[self.pk])
 
     @property
+    def has_doi(self) -> bool:
+        return self.doi is not None
+
+    @property
     def doi_url(self):
         if self.doi:
             return f'https://doi.org/{self.doi}'
 
     def full_clean(self, exclude=None, validate_unique=True):
-        if self.pk and Collection.objects.filter(pk=self.pk, locked=True).exists():
-            raise ValidationError("Can't modify the collection, it's locked.")
-
         if self.pk and self.public and self.images.filter(public=False).exists():
             raise ValidationError("Can't make collection public, it contains private images.")
 
