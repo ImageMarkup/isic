@@ -20,9 +20,9 @@ def _require_unlocked_collection(collection: Collection) -> None:
         raise ValidationError("Can't modify the collection, it's locked.")
 
 
-def collection_create(*, creator: User, name: str, description: str, public: bool):
+def collection_create(*, creator: User, name: str, description: str, public: bool, locked: bool):
     return Collection.objects.create(
-        creator=creator, name=name, description=description, public=public
+        creator=creator, name=name, description=description, public=public, locked=locked
     )
 
 

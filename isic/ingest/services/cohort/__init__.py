@@ -23,6 +23,7 @@ def cohort_publish_initialize(*, cohort: Cohort, publisher: User, public: bool) 
             name=f'Publish of {cohort.name}',
             description='',
             public=False,  # the collection is always private to avoid leaking cohort names
+            locked=True,
         )
         cohort.save(update_fields=['collection'])
 
