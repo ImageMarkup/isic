@@ -1,4 +1,5 @@
 from django.http.response import JsonResponse
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
@@ -18,6 +19,7 @@ class QuickfindSerializer(serializers.Serializer):
     query = serializers.CharField(required=True, min_length=3, validators=[valid_quickfind_query])
 
 
+@swagger_auto_schema(methods=['GET'], auto_schema=None)
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def quickfind(request):
