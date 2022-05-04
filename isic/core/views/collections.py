@@ -57,7 +57,9 @@ def collection_create_(request):
     if request.method == 'POST':
         context['form'] = CollectionForm(request.POST)
         if context['form'].is_valid():
-            collection = collection_create(creator=request.user, **context['form'].cleaned_data)
+            collection = collection_create(
+                creator=request.user, **context['form'].cleaned_data, locked=False
+            )
             return HttpResponseRedirect(reverse('core/collection-detail', args=[collection.pk]))
     else:
         context['form'] = CollectionForm()
