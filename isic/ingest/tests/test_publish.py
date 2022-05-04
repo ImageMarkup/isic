@@ -2,6 +2,7 @@ from django.urls.base import reverse
 from django.utils import timezone
 import pytest
 
+from isic.core.models.collection import Collection
 from isic.core.models.image import Image
 from isic.ingest.models.accession import AccessionStatus
 
@@ -34,3 +35,7 @@ def test_publish_cohort(staff_client, eager_celery, publishable_cohort):
 
     assert published_images.count() == 1
     assert not published_images.first().public
+    assert Collection.objects.count() == 1
+    magic_collection = Collection.objects.first()
+    assert not magic_collection.public
+    assert magic_collection.locked
