@@ -1,0 +1,18 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+{{ form.media }}
+<form method="post">
+    {% csrf_token %}
+    {% for field in form.visible_fields %}
+    <div class="mb-4">
+        {{ field.errors }}
+        {{ field.label }}
+        {{ field }}
+    </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary">
+        Upload
+    </button>
+</form>
+{% endblock %}
