@@ -51,10 +51,11 @@ def test_accession_upload(authenticated_client, s3ff_field_value, user_with_coho
     _, cohort = user_with_cohort
     r = authenticated_client.post(
         reverse('upload/single-accession', args=[cohort.pk]),
-        {'original_blob': s3ff_field_value},
+        {'original_blob': s3ff_field_value, 'age': '50'},
     )
     assert r.status_code == 302, r.data
     assert cohort.accessions.count() == 1
+    assert cohort.accessions.first().metadata['age'] == 50
 
 
 @pytest.mark.django_db

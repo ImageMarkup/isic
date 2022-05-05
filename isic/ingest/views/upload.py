@@ -3,12 +3,14 @@ import os
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models.query import Prefetch
 from django.forms.models import ModelForm
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 from django.utils.safestring import mark_safe
+from pydantic import ValidationError as MetadataValidationError
 from s3_file_field.widgets import S3FileInput
 
 from isic.core.permissions import get_visible_objects, needs_object_permission
@@ -112,14 +114,30 @@ def upload_single_accession(request, cohort_pk):
 
         if form.is_valid():
             try:
-                accession_create(
-                    creator=request.user,
-                    cohort=cohort,
-                    original_blob=form.cleaned_data['original_blob'],
-                    blob_name=os.path.basename(form.cleaned_data['original_blob'].name),
-                )
+                with transaction.atomic():
+                    accession = accession_create(
+                        creator=request.user,
+                        cohort=cohort,
+                        original_blob=form.cleaned_data['original_blob'],
+                        blob_name=os.path.basename(form.cleaned_data['original_blob'].name),
+                    )
+                    metadata = {
+                        key: form.cleaned_data[key]
+                        for key in [
+                            'age',
+                            'sex',
+                            'anatom_site_general',
+                            'diagnosis',
+                            'diagnosis_confirm_type',
+                        ]
+                        if form.cleaned_data[key] != ''
+                    }
+                    accession.update_metadata(request.user, metadata)
             except ValidationError as e:
                 messages.add_message(request, messages.ERROR, e.message)
+            except MetadataValidationError as e:
+                for error in e.errors():
+                    messages.add_message(request, messages.ERROR, error['msg'])
             else:
                 messages.add_message(
                     request,
@@ -130,7 +148,7 @@ def upload_single_accession(request, cohort_pk):
     else:
         form = SingleAccessionUploadForm()
 
-    return render(request, 'ingest/upload_zip_or_accession.html', {'form': form})
+    return render(request, 'ingest/upload_accession.html', {'form': form})
 
 
 @needs_object_permission('ingest.view_cohort', (Cohort, 'pk', 'cohort_pk'))
@@ -150,4 +168,4 @@ def upload_zip(request, cohort_pk):
     else:
         form = ZipForm()
 
-    return render(request, 'ingest/upload_zip_or_accession.html', {'form': form})
+    return render(request, 'ingest/upload_zip.html', {'form': form})

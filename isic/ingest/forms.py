@@ -1,4 +1,4 @@
-from django.forms.forms import Form
+from django import forms
 from django.forms.models import ModelForm
 from s3_file_field.forms import S3FormFileField
 
@@ -23,5 +23,11 @@ class ContributorForm(ModelForm):
         ]
 
 
-class SingleAccessionUploadForm(Form):
-    original_blob = S3FormFileField(model_field_id='ingest.Accession.original_blob')
+class SingleAccessionUploadForm(forms.Form):
+    original_blob = S3FormFileField(model_field_id='ingest.Accession.original_blob', label='Image')
+
+    age = forms.CharField(required=False)
+    sex = forms.CharField(required=False)
+    anatom_site_general = forms.CharField(required=False)
+    diagnosis = forms.CharField(required=False)
+    diagnosis_confirm_type = forms.CharField(required=False)
