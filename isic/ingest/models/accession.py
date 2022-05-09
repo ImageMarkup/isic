@@ -124,6 +124,8 @@ class Accession(CreationSortedTimeStampedModel):
 
     # the original blob is stored in case blobs need to be reprocessed
     original_blob = S3FileField()
+    # the original blob name is stored and kept private in case of leaked data in filenames
+    original_blob_name = models.CharField(max_length=255, db_index=True, editable=False)
 
     # blob_name has to be indexed because metadata selection does large
     # WHERE blob_name IN (...) queries
