@@ -50,7 +50,7 @@ def metadata_files_from_csv(user_id, csv_path, isic_id_column):
         )
         for column in columns_to_drop:
             del row[column]
-        row['filename'] = accession.blob_name
+        row['filename'] = accession.original_blob_name
         cohort_columns[accession.cohort.pk] |= set(row.keys())
         cohort_files[accession.cohort.pk].append(dict(row))
 

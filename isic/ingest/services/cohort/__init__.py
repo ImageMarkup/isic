@@ -59,14 +59,16 @@ def cohort_merge(*, dest_cohort: Cohort, other_cohorts: Iterable[Cohort]) -> Non
     collections or cohorts with relationships to the other would put the system in
     an unexpected state otherwise.
     """
-    overlapping_blob_names = dest_cohort.accessions.values('blob_name')
+    overlapping_blob_names = dest_cohort.accessions.values('original_blob_name')
     for cohort in other_cohorts:
         overlapping_blob_names = overlapping_blob_names.intersection(
-            cohort.accessions.values('blob_name')
+            cohort.accessions.values('original_blob_name')
         )
 
     if overlapping_blob_names.exists():
-        raise ValidationError(f'Found {overlapping_blob_names.count()} conflicting blob names.')
+        raise ValidationError(
+            f'Found {overlapping_blob_names.count()} conflicting original blob names.'
+        )
 
     with transaction.atomic():
         for cohort in other_cohorts:
