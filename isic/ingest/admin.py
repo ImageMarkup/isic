@@ -187,7 +187,7 @@ class CohortAdmin(admin.ModelAdmin):
                     d = {
                         'contributor': cohort.contributor.institution_name,
                         'cohort': cohort.name,
-                        'filename': accession.blob_name,
+                        'filename': accession.original_blob_name,
                         'isic_id': accession.image.isic_id if hasattr(accession, 'image') else '',
                     }
                     writer.writerow(d)
@@ -230,10 +230,10 @@ class AccessionReviewedFilter(admin.SimpleListFilter):
 @admin.register(Accession)
 class AccessionAdmin(admin.ModelAdmin):
     list_select_related = ['cohort']
-    list_display = ['id', 'blob_name', 'human_blob_size', 'created', 'status', 'cohort']
+    list_display = ['id', 'original_blob_name', 'human_blob_size', 'created', 'status', 'cohort']
     list_filter = ['status', AccessionReviewedFilter]
-    search_fields = ['cohort__name', 'blob_name', 'girder_id']
-    search_help_text = 'Search by cohort name, blob name, or Girder ID.'
+    search_fields = ['cohort__name', 'original_blob_name', 'girder_id']
+    search_help_text = 'Search by cohort name, original blob name, or Girder ID.'
 
     readonly_fields = ['created', 'modified', 'thumbnail_image', 'distinctnessmeasure']
     inlines = [AccessionReviewInline, MetadataVersionInline]

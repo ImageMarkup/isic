@@ -41,20 +41,20 @@ class ZipUpload(CreationSortedTimeStampedModel):
     def _get_preexisting_and_duplicates(self) -> tuple[list[str], list[str]]:
         from .accession import Accession
 
-        blob_names_in_zip = set()
+        original_blob_names_in_zip = set()
+        original_blob_name_duplicates = set()
 
-        blob_name_duplicates = set()
         with self.blob.open('rb') as zip_blob_stream:
             for original_filename in file_names_in_zip(zip_blob_stream):
-                if original_filename in blob_names_in_zip:
-                    blob_name_duplicates.add(original_filename)
-                blob_names_in_zip.add(original_filename)
+                if original_filename in original_blob_names_in_zip:
+                    original_blob_name_duplicates.add(original_filename)
+                original_blob_names_in_zip.add(original_filename)
 
-        blob_name_preexisting = Accession.objects.filter(
-            cohort=self.cohort, blob_name__in=blob_names_in_zip
-        ).values_list('blob_name', flat=True)
+        original_blob_name_preexisting = Accession.objects.filter(
+            cohort=self.cohort, original_blob_name__in=original_blob_names_in_zip
+        ).values_list('original_blob_name', flat=True)
 
-        return sorted(blob_name_preexisting), sorted(blob_name_duplicates)
+        return sorted(original_blob_name_preexisting), sorted(original_blob_name_duplicates)
 
     class ExtractError(Exception):
         pass
@@ -76,10 +76,13 @@ class ZipUpload(CreationSortedTimeStampedModel):
                 self.status = ZipUpload.Status.EXTRACTING
                 self.save(update_fields=['status'])
 
-                blob_name_preexisting, blob_name_duplicates = self._get_preexisting_and_duplicates()
-                if blob_name_preexisting or blob_name_duplicates:
+                (
+                    original_blob_name_preexisting,
+                    original_blob_name_duplicates,
+                ) = self._get_preexisting_and_duplicates()
+                if original_blob_name_preexisting or original_blob_name_duplicates:
                     raise ZipUpload.DuplicateExtractError(
-                        blob_name_preexisting, blob_name_duplicates
+                        original_blob_name_preexisting, original_blob_name_duplicates
                     )
 
                 with self.blob.open('rb') as zip_blob_stream:
@@ -122,15 +125,15 @@ class ZipUpload(CreationSortedTimeStampedModel):
             )
             raise
         except ZipUpload.DuplicateExtractError as e:
-            blob_name_preexisting, blob_name_duplicates = e.args
+            original_blob_name_preexisting, original_blob_name_duplicates = e.args
             send_mail(
                 'A problem processing your zip file',
                 render_to_string(
                     'ingest/email/zip_duplicates.txt',
                     {
                         'zip': self,
-                        'blob_name_preexisting': blob_name_preexisting,
-                        'blob_name_duplicates': blob_name_duplicates,
+                        'original_blob_name_preexisting': original_blob_name_preexisting,
+                        'original_blob_name_duplicates': original_blob_name_duplicates,
                     },
                 ),
                 settings.DEFAULT_FROM_EMAIL,
