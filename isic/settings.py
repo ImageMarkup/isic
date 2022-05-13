@@ -123,6 +123,8 @@ class IsicMixin(ConfigMixin):
 
     ACCOUNT_SIGNUP_FORM_CLASS = 'isic.login.forms.RealNameSignupForm'
 
+    ISIC_OAUTH_ALLOW_WILDCARD_REDIRECT_URIS = values.BooleanValue(False)
+
     ISIC_NOINDEX = values.BooleanValue(False)
     ISIC_SANDBOX_BANNER = values.BooleanValue(False)
     ISIC_MONGO_URI = values.SecretValue()
