@@ -158,6 +158,10 @@ class Accession(CreationSortedTimeStampedModel):
     def reviewed(self):
         return hasattr(self, 'review')
 
+    @property
+    def unreviewed(self):
+        return not self.reviewed
+
     def generate_blob(self):
         """
         Generate `blob` and set `blob_size`, `height`, `width`.
