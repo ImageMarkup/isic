@@ -26,7 +26,7 @@
       </div>
       <div class="grid gap-4" :class="`grid-cols-${numCols}`">
         {% for accession in page_obj %}
-          {% include 'ingest/partials/accession.html' with include_review_ui=1 %}
+          {% include 'ingest/partials/accession.html' with review_mode=1 %}
         {% endfor %}
       </div>
     </div>
