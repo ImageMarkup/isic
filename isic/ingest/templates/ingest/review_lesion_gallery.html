@@ -29,7 +29,7 @@
 
         <div class="grid gap-4 grid-cols-8">
           {% for accession in accessions %}
-            {% include 'ingest/partials/accession.html' with include_review_ui=1 include_acquisition_day=1 %}
+            {% include 'ingest/partials/accession.html' with review_mode=accession.unreviewed include_acquisition_day=1 %}
           {% endfor %}
         </div>
       {% endfor %}
