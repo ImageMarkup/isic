@@ -1,6 +1,6 @@
 {% load accession %}
 
-<div class="col accession-col" x-data="accession({{ accession.id }});">
+<div class="col accession-col" {% if review_mode %}x-data="accession({{ accession.id }});"{% endif %}>
   <div x-data="{ open: false, hovered: false }" class="pb-4">
     <a class="cursor-pointer">
       {% if accession.status != 'skipped' %}
@@ -30,7 +30,7 @@
       </span>
     {% endif %}
   </div>
-  {% if include_review_ui %}
+  {% if review_mode %}
     <div class="flex justify-evenly">
       <button @click="toggleReject()" class="btn btn-sm btn-error review-button" :class="{'dim': review === false}">Reject</button>
     </div>

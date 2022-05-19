@@ -75,9 +75,9 @@ def _cohort_review_grouped_by_lesion(request, cohort: Cohort):
 
     grouped_accessions: dict[str, list] = defaultdict(list)
     relevant_accessions = (
-        # show accessions even if they've been reviewed, because there are accessions
-        # with this lesion id that haven't. displaying the entire context is necessary.
-        cohort.accessions.reviewable()
+        # show accessions even if they've been reviewed or published, because there are *unreviewed*
+        # accessions with this lesion id still. displaying the entire context is necessary.
+        cohort.accessions.ingested()
         .filter(metadata__lesion_id__in=page)
         .order_by('metadata__acquisition_day')
     )
