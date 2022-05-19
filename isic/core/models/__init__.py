@@ -1,4 +1,4 @@
-from .base import CopyrightLicense, CreationSortedTimeStampedModel
+from .base import CopyrightLicense, CreationSortedTimeStampedModel, IsicOAuthApplication
 from .collection import Collection
 from .doi import Doi
 from .girder_image import GirderDataset, GirderImage
@@ -15,6 +15,7 @@ __all__ = [
     'GirderImage',
     'Image',
     'ImageAlias',
+    'IsicOAuthApplication',
     'Segmentation',
     'SegmentationReview',
 ]
