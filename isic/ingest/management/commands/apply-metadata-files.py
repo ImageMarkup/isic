@@ -1,4 +1,5 @@
 import sys
+import traceback
 
 from django.contrib.auth.models import User
 from django.db import transaction
@@ -36,8 +37,8 @@ def apply_metadata_files(user_id, metadata_file_id):
                     del row['filename']
                     accession.update_metadata(user, row, ignore_image_check=True)
                 click.secho(f'Applied metadata file {metadata_file.pk} as {user.email}', fg='green')
-        except Exception as e:
-            click.echo(e)
+        except Exception:
+            click.echo(traceback.format_exc(), err=True)
             click.echo()
             click.secho(
                 'Failed to apply metadata files, all changes have been rolled back.', fg='yellow'
