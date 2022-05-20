@@ -61,7 +61,7 @@ class AccessionCreateApi(APIView):
         serializer.is_valid(raise_exception=True)
         accession = accession_create(
             creator=request.user,
-            blob_name=os.path.basename(serializer.validated_data['original_blob']),
+            original_blob_name=os.path.basename(serializer.validated_data['original_blob']),
             **serializer.validated_data,
         )
         return HttpResponse(

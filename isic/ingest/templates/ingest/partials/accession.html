@@ -3,14 +3,10 @@
 <div class="col accession-col" {% if review_mode %}x-data="accession({{ accession.id }});"{% endif %}>
   <div x-data="{ open: false, hovered: false }" class="pb-4">
     <a class="cursor-pointer">
-      {% if accession.status != 'skipped' %}
-        {% if debug %}
-          <img @mouseenter="hovered = true" @click="open = true" src="https://picsum.photos/seed/{{accession.id}}/256">
-        {% else %}
-          <img @mouseenter="hovered = true" @click="open = true" src="{{ accession.thumbnail_256.url }}" title="{{ image.accession.blob_name }}" />
-        {% endif %}
-      {% else  %}
-        <img @click="open = true" src="https://via.placeholder.com/300x300.png?text={{ accession.blob_name }}" />
+      {% if debug %}
+        <img @mouseenter="hovered = true" @click="open = true" src="https://picsum.photos/seed/{{accession.id}}/256">
+      {% else %}
+        <img @mouseenter="hovered = true" @click="open = true" src="{{ accession.thumbnail_256.url }}" />
       {% endif %}
     </a>
 

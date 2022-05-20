@@ -119,7 +119,9 @@ def upload_single_accession(request, cohort_pk):
                         creator=request.user,
                         cohort=cohort,
                         original_blob=form.cleaned_data['original_blob'],
-                        blob_name=os.path.basename(form.cleaned_data['original_blob'].name),
+                        original_blob_name=os.path.basename(
+                            form.cleaned_data['original_blob'].name
+                        ),
                     )
                     metadata = {
                         key: form.cleaned_data[key]
