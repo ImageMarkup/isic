@@ -207,8 +207,9 @@ def process_s3_log_file_task(s3_log_object_key: str):
     # (this ignores thumbnails and other files)
     downloaded_images = (
         Image.objects.select_related('accession')
-        .filter(accession__blob__in=requests_by_path.keys())
-        .iterator()
+        # note this filter includes the path, because blob_name isn't unique but
+        # blob.name (the s3ff) is.
+        .filter(accession__blob__in=requests_by_path.keys()).iterator()
     )
     for downloaded_image in downloaded_images:
         for download_request in requests_by_path[downloaded_image.accession.blob.name]:

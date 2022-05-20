@@ -30,7 +30,7 @@ def apply_metadata_files(user_id, metadata_file_id):
             for metadata_file in metadata_files:
                 for _, row in metadata_file.to_df().iterrows():
                     accession = Accession.objects.get(
-                        blob_name=row['filename'], cohort=metadata_file.cohort
+                        original_blob_name=row['filename'], cohort=metadata_file.cohort
                     )
                     # filename doesn't need to be stored in the metadata
                     del row['filename']

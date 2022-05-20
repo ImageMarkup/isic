@@ -14,7 +14,7 @@ def invalid_zip(request, zip_upload_factory):
 @pytest.fixture
 def preexisting_zip(zip_upload, accession_factory):
     # "ISIC_0000001.jpg" is in the zip too
-    accession_factory(zip_upload=zip_upload, blob_name='ISIC_0000001.jpg')
+    accession_factory(zip_upload=zip_upload, original_blob_name='ISIC_0000001.jpg')
     return zip_upload
 
 
@@ -26,7 +26,7 @@ def duplicates_zip(zip_upload_factory, zip_stream_duplicates):
 @pytest.fixture
 def preexisting_and_duplicates_zip(duplicates_zip, accession_factory):
     # "ISIC_0000001.jpg" is in the zip too
-    accession_factory(zip_upload=duplicates_zip, blob_name='ISIC_0000001.jpg')
+    accession_factory(zip_upload=duplicates_zip, original_blob_name='ISIC_0000001.jpg')
     return duplicates_zip
 
 
@@ -67,7 +67,7 @@ def test_zip_extract_success(zip_upload):
 def test_zip_extract_success_accession_status(zip_upload):
     zip_upload.extract()
 
-    accession = Accession.objects.get(blob_name='ISIC_0000000.jpg')
+    accession = Accession.objects.get(original_blob_name='ISIC_0000000.jpg')
     assert accession.status == AccessionStatus.CREATED
 
 
@@ -75,7 +75,7 @@ def test_zip_extract_success_accession_status(zip_upload):
 def test_zip_extract_success_accession_original_blob_content(zip_upload):
     zip_upload.extract()
 
-    accession = Accession.objects.get(blob_name='ISIC_0000000.jpg')
+    accession = Accession.objects.get(original_blob_name='ISIC_0000000.jpg')
     with accession.original_blob.open('rb') as original_blob_stream:
         original_blob_content = original_blob_stream.read()
         # JFIF files start with FF D8 and end with FF D9
@@ -88,7 +88,7 @@ def test_zip_extract_success_accession_original_blob_content_type(zip_upload):
     # Ensure that when an accession's original_blob is created, its content type is stored
     zip_upload.extract()
 
-    accession = Accession.objects.get(blob_name='ISIC_0000000.jpg')
+    accession = Accession.objects.get(original_blob_name='ISIC_0000000.jpg')
     original_blob_url = accession.original_blob.url
     original_blob_content_type = requests.get(original_blob_url).headers.get('Content-Type')
     assert original_blob_content_type == 'image/jpeg'
@@ -99,7 +99,7 @@ def test_zip_extract_success_accession_original_blob_size(zip_upload):
     # Ensure that when an accession's original_blob is created, its size is stored
     zip_upload.extract()
 
-    accession = Accession.objects.get(blob_name='ISIC_0000000.jpg')
+    accession = Accession.objects.get(original_blob_name='ISIC_0000000.jpg')
     assert accession.original_blob.size == 49982
 
 

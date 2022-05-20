@@ -2,6 +2,7 @@ from copy import deepcopy
 import io
 from mimetypes import guess_type
 import tempfile
+from uuid import uuid4
 
 import PIL.Image
 from django.contrib.auth.models import User
@@ -91,13 +92,20 @@ class Accession(CreationSortedTimeStampedModel):
     class Meta(CreationSortedTimeStampedModel.Meta):
         # A blob_name is unique at the *cohort* level, which also makes it unique at the zip
         # level.
-        unique_together = [['cohort', 'blob_name']]
+        unique_together = [['cohort', 'original_blob_name'], ['cohort', 'blob_name']]
 
         constraints = [
             # girder_id should be unique among nonempty girder_id values
             UniqueConstraint(
                 name='accession_unique_girder_id', fields=['girder_id'], condition=~Q(girder_id='')
             ),
+            # blob should be unique when it's filled out
+            UniqueConstraint(name='accession_unique_blob', fields=['blob'], condition=~Q(blob='')),
+            # # the original blob name should always be hidden, so blob_name shouldn't be the same
+            # CheckConstraint(
+            #     name='accession_blob_name_not_original_blob_name',
+            #     check=~Q(original_blob_name=F('blob_name')),
+            # ),
             # require blob_size / width / height for succeeded accessions
             CheckConstraint(
                 name='accession_succeeded_blob_fields',
@@ -123,7 +131,9 @@ class Accession(CreationSortedTimeStampedModel):
     cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name='accessions')
 
     # the original blob is stored in case blobs need to be reprocessed
-    original_blob = S3FileField()
+    original_blob = S3FileField(unique=True)
+    # the original blob name is stored and kept private in case of leaked data in filenames
+    original_blob_name = models.CharField(max_length=255, db_index=True, editable=False)
 
     # blob_name has to be indexed because metadata selection does large
     # WHERE blob_name IN (...) queries
@@ -171,7 +181,7 @@ class Accession(CreationSortedTimeStampedModel):
         """
         try:
             with self.original_blob.open('rb') as original_blob_stream:
-                blob_mime_type = guess_mime_type(original_blob_stream, self.blob_name)
+                blob_mime_type = guess_mime_type(original_blob_stream, self.original_blob_name)
             blob_major_mime_type = blob_mime_type.partition('/')[0]
             if blob_major_mime_type != 'image':
                 raise InvalidBlobError(f'Blob has a non-image MIME type: "{blob_mime_type}"')
@@ -265,7 +275,8 @@ class Accession(CreationSortedTimeStampedModel):
         blob_content_type = guess_type(blob.name)[0]
         # TODO: Store content_type in the DB?
         return cls(
-            blob_name=blob.name,
+            original_blob_name=blob.name,
+            blob_name=f'{uuid4()}.jpg',
             # Use an InMemoryUploadedFile instead of a SimpleUploadedFile, since
             # we can explicitly know the size and don't need the stream to be
             # wrapped

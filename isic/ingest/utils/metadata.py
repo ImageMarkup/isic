@@ -38,8 +38,8 @@ def validate_csv_format_and_filenames(df, cohort):
         )
 
     matching_accessions = Accession.objects.filter(
-        cohort=cohort, blob_name__in=df['filename']
-    ).values_list('blob_name', 'metadata')
+        cohort=cohort, original_blob_name__in=df['filename']
+    ).values_list('original_blob_name', 'metadata')
 
     existing_df = pd.DataFrame((x[0] for x in matching_accessions), columns=['filename'])
     unknown_images = set(df.filename.values) - set(existing_df.filename.values)
@@ -74,9 +74,9 @@ def validate_internal_consistency(df):
 def validate_archive_consistency(df, cohort):
     # keyed by column, message
     column_problems: dict[tuple[str, str], list[int]] = defaultdict(list)
-    accessions = Accession.objects.filter(cohort=cohort, blob_name__in=df['filename']).values_list(
-        'blob_name', 'metadata'
-    )
+    accessions = Accession.objects.filter(
+        cohort=cohort, original_blob_name__in=df['filename']
+    ).values_list('original_blob_name', 'metadata')
     # TODO: easier way to do this?
     accessions_dict = {x[0]: x[1] for x in accessions}
 

@@ -51,13 +51,13 @@ def csv_stream_diagnosis_sex_invalid() -> BinaryIO:
 
 @pytest.fixture
 def cohort_with_accession(cohort, accession_factory):
-    cohort.accessions.add(accession_factory(cohort=cohort, blob_name='filename.jpg'))
+    cohort.accessions.add(accession_factory(cohort=cohort, original_blob_name='filename.jpg'))
     return cohort
 
 
 @pytest.mark.django_db
 def test_apply_metadata(accession_factory, valid_metadatafile, cohort, user):
-    accession = accession_factory(cohort=cohort, blob_name='filename.jpg')
+    accession = accession_factory(cohort=cohort, original_blob_name='filename.jpg')
     update_metadata_task(user.pk, valid_metadatafile.pk)
     accession.refresh_from_db()
     assert accession.metadata == {'benign_malignant': 'benign'}

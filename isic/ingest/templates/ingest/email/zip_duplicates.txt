@@ -1,15 +1,15 @@
 There was a problem uploading the ZIP file "{{ zip.blob_name }}", in the Cohort "{{ zip.cohort.name }}".
 
-{% if blob_name_preexisting %}
+{% if original_blob_name_preexisting %}
 The following file names within the ZIP file already exist within the Cohort:
-{% for blob_name in blob_name_preexisting %}
-  * "{{ blob_name }}"
+{% for original_blob_name in original_blob_name_preexisting %}
+  * "{{ original_blob_name }}"
 {% endfor %}
 {% endif %}
 
-{% if blob_name_duplicates %}
+{% if original_blob_name_duplicates %}
 The following file names are duplicated within the ZIP file:
-{% for blob_name in blob_name_duplicates %}
-  * "{{ blob_name }}"
+{% for original_blob_name in original_blob_name_duplicates %}
+  * "{{ original_blob_name }}"
 {% endfor %}
 {% endif %}
