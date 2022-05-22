@@ -9,7 +9,12 @@ from isic.ingest.tasks import accession_generate_blob_task
 
 
 def accession_create(
-    *, creator: User, cohort: Cohort, original_blob: File, original_blob_name: str
+    *,
+    creator: User,
+    cohort: Cohort,
+    original_blob: File,
+    original_blob_name: str,
+    original_blob_size: int,
 ) -> Accession:
     # TODO: should the user this is acting on behalf of be the same as the creator?
     if not creator.has_perm('ingest.add_accession', cohort):
@@ -26,6 +31,7 @@ def accession_create(
         cohort=cohort,
         original_blob=original_blob,
         original_blob_name=original_blob_name,
+        original_blob_size=original_blob_size,
     )
 
     accession_generate_blob_task.delay(accession.pk)
