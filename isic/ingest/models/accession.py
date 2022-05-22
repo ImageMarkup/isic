@@ -135,7 +135,7 @@ class Accession(CreationSortedTimeStampedModel):
     original_blob = S3FileField(unique=True)
     # the original blob name is stored and kept private in case of leaked data in filenames
     original_blob_name = models.CharField(max_length=255, db_index=True, editable=False)
-    original_blob_size = models.PositiveBigIntegerField(null=True, default=None, editable=False)
+    original_blob_size = models.PositiveBigIntegerField(editable=False)
 
     # When instantiated, blob is empty, as it holds the EXIF-stripped image
     # this isn't unique because of the blank case, see constraints above.

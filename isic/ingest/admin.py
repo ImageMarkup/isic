@@ -230,7 +230,14 @@ class AccessionReviewedFilter(admin.SimpleListFilter):
 @admin.register(Accession)
 class AccessionAdmin(admin.ModelAdmin):
     list_select_related = ['cohort']
-    list_display = ['id', 'original_blob_name', 'human_blob_size', 'created', 'status', 'cohort']
+    list_display = [
+        'id',
+        'original_blob_name',
+        'human_original_blob_size',
+        'created',
+        'status',
+        'cohort',
+    ]
     list_filter = ['status', AccessionReviewedFilter]
     search_fields = ['cohort__name', 'original_blob_name', 'girder_id']
     search_help_text = 'Search by cohort name, original blob name, or Girder ID.'
@@ -241,9 +248,9 @@ class AccessionAdmin(admin.ModelAdmin):
         models.JSONField: {'widget': JSONEditorWidget},
     }
 
-    @admin.display(description='Blob Size', ordering='blob_size')
-    def human_blob_size(self, obj):
-        return filesizeformat(obj.blob_size)
+    @admin.display(description='Original Blob Size', ordering='original_blob_size')
+    def human_original_blob_size(self, obj):
+        return filesizeformat(obj.original_blob_size)
 
     @admin.display(ordering='cohort')
     def cohort(self, obj):
