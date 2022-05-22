@@ -6,10 +6,11 @@ from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.fields import FileField as FileSerializerField
 from rest_framework.permissions import BasePermission, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from s3_file_field.rest_framework import S3FileSerializerField
+from s3_file_field.widgets import S3PlaceholderFile
 
 from isic.core.permissions import IsicObjectPermissionsFilter
 from isic.ingest.models import Accession, MetadataFile
@@ -34,9 +35,23 @@ class AccessionPermissions(BasePermission):
         return False
 
 
+class S3FileWithSizeSerializerField(FileSerializerField):
+    # see S3FileSerializerField for implementation details
+
+    def to_internal_value(self, data):
+        # Check the signature and load an S3PlaceholderFile
+        file_object = S3PlaceholderFile.from_field(data)
+        if file_object is None:
+            self.fail('invalid')
+
+        # This checks validity of the file name and size
+        file_object = super().to_internal_value(file_object)
+        return file_object
+
+
 class AccessionCreateInputSerializer(serializers.Serializer):
     cohort = serializers.PrimaryKeyRelatedField(queryset=Cohort.objects.all())
-    original_blob = S3FileSerializerField()
+    original_blob = S3FileWithSizeSerializerField()
 
 
 class AccessionCreateOutputSerializer(serializers.ModelSerializer):
@@ -61,7 +76,8 @@ class AccessionCreateApi(APIView):
         serializer.is_valid(raise_exception=True)
         accession = accession_create(
             creator=request.user,
-            original_blob_name=os.path.basename(serializer.validated_data['original_blob']),
+            original_blob_name=os.path.basename(serializer.validated_data['original_blob'].name),
+            original_blob_size=serializer.validated_data['original_blob'].size,
             **serializer.validated_data,
         )
         return HttpResponse(
