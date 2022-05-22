@@ -11,6 +11,7 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models, transaction
 from django.db.models import JSONField, Transform
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
+from django.db.models.expressions import F
 from django.db.models.query_utils import Q
 from isic_metadata.metadata import MetadataRow
 from s3_file_field import S3FileField
@@ -90,9 +91,9 @@ class AccessionStatus(models.TextChoices):
 
 class Accession(CreationSortedTimeStampedModel):
     class Meta(CreationSortedTimeStampedModel.Meta):
-        # A blob_name is unique at the *cohort* level, which also makes it unique at the zip
+        # original_blob_name is unique at the *cohort* level, which also makes it unique at the zip
         # level.
-        unique_together = [['cohort', 'original_blob_name'], ['cohort', 'blob_name']]
+        unique_together = [['cohort', 'original_blob_name']]
 
         constraints = [
             # girder_id should be unique among nonempty girder_id values
@@ -101,11 +102,11 @@ class Accession(CreationSortedTimeStampedModel):
             ),
             # blob should be unique when it's filled out
             UniqueConstraint(name='accession_unique_blob', fields=['blob'], condition=~Q(blob='')),
-            # # the original blob name should always be hidden, so blob_name shouldn't be the same
-            # CheckConstraint(
-            #     name='accession_blob_name_not_original_blob_name',
-            #     check=~Q(original_blob_name=F('blob_name')),
-            # ),
+            # the original blob name should always be hidden, so blob_name shouldn't be the same
+            CheckConstraint(
+                name='accession_blob_name_not_original_blob_name',
+                check=~Q(original_blob_name=F('blob_name')),
+            ),
             # require blob_size / width / height for succeeded accessions
             CheckConstraint(
                 name='accession_succeeded_blob_fields',
@@ -134,14 +135,15 @@ class Accession(CreationSortedTimeStampedModel):
     original_blob = S3FileField(unique=True)
     # the original blob name is stored and kept private in case of leaked data in filenames
     original_blob_name = models.CharField(max_length=255, db_index=True, editable=False)
-
-    # blob_name has to be indexed because metadata selection does large
-    # WHERE blob_name IN (...) queries
-    blob_name = models.CharField(max_length=255, db_index=True, editable=False)
+    original_blob_size = models.PositiveBigIntegerField(null=True, default=None, editable=False)
 
     # When instantiated, blob is empty, as it holds the EXIF-stripped image
+    # this isn't unique because of the blank case, see constraints above.
     blob = S3FileField(blank=True)
-    # nullable unless status is succeeded
+    # blob_name has to be indexed because metadata selection does large
+    # WHERE blob_name IN (...) queries
+    blob_name = models.CharField(max_length=255, db_index=True, editable=False, blank=True)
+    # blob_size/width/height are nullable unless status is succeeded
     blob_size = models.PositiveBigIntegerField(null=True, default=None, editable=False)
     width = models.PositiveIntegerField(null=True)
     height = models.PositiveIntegerField(null=True)
@@ -214,6 +216,7 @@ class Accession(CreationSortedTimeStampedModel):
                 stripped_blob_size = stripped_blob_stream.tell()
                 stripped_blob_stream.seek(0)
 
+                self.blob_name = f'{uuid4()}.jpg'
                 self.blob = InMemoryUploadedFile(
                     file=stripped_blob_stream,
                     field_name=None,
@@ -276,7 +279,7 @@ class Accession(CreationSortedTimeStampedModel):
         # TODO: Store content_type in the DB?
         return cls(
             original_blob_name=blob.name,
-            blob_name=f'{uuid4()}.jpg',
+            original_blob_size=blob.size,
             # Use an InMemoryUploadedFile instead of a SimpleUploadedFile, since
             # we can explicitly know the size and don't need the stream to be
             # wrapped
