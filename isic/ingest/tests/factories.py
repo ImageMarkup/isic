@@ -82,11 +82,13 @@ class AccessionFactory(factory.django.DjangoModelFactory):
         filename=factory.Sequence(lambda n: f'ISIC_{n:07}.jpg'),
     )
     original_blob_name = factory.SelfAttribute('original_blob.name')
+    original_blob_size = factory.SelfAttribute('original_blob.size')
     blob = factory.django.FileField(
         from_path=data_dir / 'ISIC_0000000.jpg',
         filename=factory.Sequence(lambda n: f'ISIC_{n:07}.jpg'),
     )
     blob_name = factory.Faker('uuid4')
+    blob_size = factory.SelfAttribute('blob.size')
     thumbnail_256 = factory.django.FileField(from_path=data_dir / 'ISIC_0000000_thumbnail_256.jpg')
 
     # Using "metadata = factory.Dict" breaks pytest-factoryboy; see
