@@ -263,10 +263,17 @@ def unpublished_accepted_accession(accession_factory, user):
 
 
 @pytest.mark.django_db
-def test_update_metadata_resets_checks(user, unpublished_accepted_accession):
-    unpublished_accepted_accession.update_metadata(user, {'diagnosis': 'basal cell carcinoma'})
+@pytest.mark.parametrize('reset_review', [True, False])
+def test_update_metadata_resets_checks(user, unpublished_accepted_accession, reset_review):
+    unpublished_accepted_accession.update_metadata(
+        user, {'diagnosis': 'basal cell carcinoma'}, reset_review=reset_review
+    )
     unpublished_accepted_accession.refresh_from_db()
-    assert not unpublished_accepted_accession.reviewed
+
+    if reset_review:
+        assert not unpublished_accepted_accession.reviewed
+    else:
+        assert unpublished_accepted_accession.reviewed
 
 
 @pytest.mark.django_db
@@ -277,7 +284,12 @@ def test_update_unstructured_metadata_does_not_reset_checks(user, unpublished_ac
 
 
 @pytest.mark.django_db
-def test_remove_metadata_resets_checks(user, unpublished_accepted_accession):
-    unpublished_accepted_accession.remove_metadata(user, ['diagnosis'])
+@pytest.mark.parametrize('reset_review', [True, False])
+def test_remove_metadata_resets_checks(user, unpublished_accepted_accession, reset_review):
+    unpublished_accepted_accession.remove_metadata(user, ['diagnosis'], reset_review=reset_review)
     unpublished_accepted_accession.refresh_from_db()
-    assert not unpublished_accepted_accession.reviewed
+
+    if reset_review:
+        assert not unpublished_accepted_accession.reviewed
+    else:
+        assert unpublished_accepted_accession.reviewed
