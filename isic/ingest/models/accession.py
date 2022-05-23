@@ -316,7 +316,9 @@ class Accession(CreationSortedTimeStampedModel):
         if self.published:
             raise ValidationError("Can't modify the accession as it's already been published.")
 
-    def update_metadata(self, user: User, csv_row: dict, *, ignore_image_check=False):
+    def update_metadata(
+        self, user: User, csv_row: dict, *, ignore_image_check=False, reset_review=True
+    ):
         """
         Apply metadata to an accession from a row in a CSV.
 
@@ -356,11 +358,12 @@ class Accession(CreationSortedTimeStampedModel):
                 modified = True
                 self.metadata.update(new_metadata)
 
-                # if a new metadata item has been added or an existing has been modified,
-                # reset the review state.
-                from isic.ingest.services.accession.review import accession_review_delete
+                if reset_review:
+                    # if a new metadata item has been added or an existing has been modified,
+                    # reset the review state.
+                    from isic.ingest.services.accession.review import accession_review_delete
 
-                accession_review_delete(accession=self)
+                    accession_review_delete(accession=self)
 
             if modified:
                 self.metadata_versions.create(
@@ -370,7 +373,9 @@ class Accession(CreationSortedTimeStampedModel):
                 )
                 self.save()
 
-    def remove_metadata(self, user: User, metadata_fields: list[str], *, ignore_image_check=False):
+    def remove_metadata(
+        self, user: User, metadata_fields: list[str], *, ignore_image_check=False, reset_review=True
+    ):
         """Remove metadata from an accession."""
         if self.pk and not ignore_image_check:
             self._require_unpublished()
@@ -380,9 +385,12 @@ class Accession(CreationSortedTimeStampedModel):
             for field in metadata_fields:
                 if self.metadata.pop(field, None) is not None:
                     modified = True
-                    from isic.ingest.services.accession.review import accession_review_delete
 
-                    accession_review_delete(accession=self)
+                    if reset_review:
+                        from isic.ingest.services.accession.review import accession_review_delete
+
+                        accession_review_delete(accession=self)
+
                 if self.unstructured_metadata.pop(field, None) is not None:
                     modified = True
 
