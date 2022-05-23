@@ -16,7 +16,7 @@ from isic.ingest.models import Accession
 
 from .isic_id import IsicId
 
-RESTRICTED_METADATA_FIELDS = ['age', 'patient_id', 'lesion_id']
+RESTRICTED_METADATA_FIELDS = ['age']
 
 
 class ImageQuerySet(models.QuerySet):
