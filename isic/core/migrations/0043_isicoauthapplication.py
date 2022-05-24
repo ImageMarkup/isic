@@ -7,6 +7,11 @@ import oauth2_provider.generators
 
 
 class Migration(migrations.Migration):
+    run_before = [
+        # The IsicOAuthApplication table must be created before any upstream OAuth Toolkit tables
+        # (which reference it via swappable foreign keys) are created
+        ('oauth2_provider', '0001_initial')
+    ]
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),

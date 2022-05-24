@@ -123,6 +123,7 @@ class IsicMixin(ConfigMixin):
 
     ACCOUNT_SIGNUP_FORM_CLASS = 'isic.login.forms.RealNameSignupForm'
 
+    OAUTH2_PROVIDER_APPLICATION_MODEL = 'core.IsicOAuthApplication'
     ISIC_OAUTH_ALLOW_REGEX_REDIRECT_URIS = values.BooleanValue(False)
 
     ISIC_NOINDEX = values.BooleanValue(False)
