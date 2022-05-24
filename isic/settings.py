@@ -87,6 +87,7 @@ class IsicMixin(ConfigMixin):
 
         configuration.OAUTH2_PROVIDER.update(
             {
+                # Discourse login does not support PKCE
                 'PKCE_REQUIRED': _oauth2_pkce_required,
                 'SCOPES': {
                     'identity': 'Access to your basic profile information',
