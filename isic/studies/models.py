@@ -1,14 +1,19 @@
 import csv
+from datetime import timedelta
+from typing import Optional
 
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Value
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
-from django.db.models.expressions import F
+from django.db.models.expressions import F, Func
+from django.db.models.fields import IntegerField
+from django.db.models.lookups import Exact
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
-from django.forms.fields import ChoiceField
+from django.forms.fields import CharField as FormCharField, ChoiceField
 from django.forms.widgets import RadioSelect
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
@@ -32,6 +37,7 @@ class Question(TimeStampedModel):
 
     class QuestionType(models.TextChoices):
         SELECT = 'select', 'Select'
+        NUMBER = 'number', 'Number'
 
     prompt = models.CharField(max_length=400)
     type = models.CharField(max_length=6, choices=QuestionType.choices, default=QuestionType.SELECT)
@@ -42,12 +48,19 @@ class Question(TimeStampedModel):
         return self.prompt
 
     def to_form_field(self, required: bool):
-        return ChoiceField(
-            required=required,
-            choices=[(choice.pk, choice.text) for choice in self.choices.all()],
-            label=self.prompt,
-            widget=RadioSelect,
-        )
+        if self.type == self.QuestionType.SELECT:
+            return ChoiceField(
+                required=required,
+                choices=[(choice.pk, choice.text) for choice in self.choices.all()],
+                label=self.prompt,
+                widget=RadioSelect,
+            )
+        elif self.type == self.QuestionType.NUMBER:
+            # TODO: Use floatfield/intfield
+            return FormCharField(
+                required=required,
+                label=self.prompt,
+            )
 
     def save(self, **kwargs):
         from isic.studies.models import Annotation
@@ -168,15 +181,19 @@ class Study(TimeStampedModel):
             .order_by('annotation__image__isic_id')
             .all()
         ):
+            # formatting as total seconds is easier, otherwise long durations get printed as
+            # 2 days, H:M:S.ms
+            annotation_duration = None
+            if response.annotation.annotation_duration:
+                annotation_duration = response.annotation.annotation_duration.total_seconds()
+
             writer.writerow(
                 {
                     'image': response.annotation.image.isic_id,
                     'annotator': response.annotation.annotator.profile.hash_id,
-                    # formatting as total seconds is easier, otherwise long durations get printed as
-                    # 2 days, H:M:S.ms
-                    'annotation_duration': response.annotation.annotation_duration.total_seconds(),
                     'question': response.question.prompt,
-                    'answer': response.choice.text,
+                    'annotation_duration': annotation_duration,
+                    'answer': response.answer,
                 }
             )
 
@@ -316,14 +333,17 @@ class Annotation(TimeStampedModel):
 
     # For the ISIC GUI this time is generated on page load.
     # The created field acts as the end_time value.
-    start_time = models.DateTimeField()
+    # This is nullable in the event that third party apps submit annotations, but
+    # all annotations created by this app submit a start_time.
+    start_time = models.DateTimeField(null=True)
 
     def get_absolute_url(self) -> str:
         return reverse('annotation-detail', args=[self.pk])
 
     @property
-    def annotation_duration(self):
-        return self.created - self.start_time
+    def annotation_duration(self) -> Optional[timedelta]:
+        if self.start_time:
+            return self.created - self.start_time
 
 
 class AnnotationPermissions:
@@ -359,12 +379,35 @@ Annotation.perms_class = AnnotationPermissions
 class Response(TimeStampedModel):
     class Meta:
         unique_together = [['annotation', 'question']]
+        constraints = [
+            CheckConstraint(
+                name='response_choice_or_value_check',
+                check=Exact(
+                    lhs=Func(
+                        'choice',
+                        'value__value',
+                        function='num_nonnulls',
+                        output_field=IntegerField(),
+                    ),
+                    rhs=Value(1),
+                ),
+            )
+        ]
 
     annotation = models.ForeignKey(Annotation, on_delete=models.CASCADE, related_name='responses')
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='responses')
     # TODO: investigate limit_choices_to for admin capabilities
     # see: https://code.djangoproject.com/ticket/25306
-    choice = models.ForeignKey(QuestionChoice, on_delete=models.CASCADE)
+    choice = models.ForeignKey(QuestionChoice, on_delete=models.CASCADE, null=True)
+    # expect a single key inside named value. TODO: maybe add a constraint for this.
+    value = models.JSONField(default=dict)
+
+    @property
+    def answer(self) -> str:
+        if self.question.type == Question.QuestionType.SELECT:
+            return self.choice.text
+        else:
+            return self.value.value
 
 
 class Markup(TimeStampedModel):
