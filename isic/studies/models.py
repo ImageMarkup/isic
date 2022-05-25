@@ -4,11 +4,14 @@ from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Value
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
-from django.db.models.expressions import F
+from django.db.models.expressions import F, Func
+from django.db.models.fields import IntegerField
+from django.db.models.lookups import Exact
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
-from django.forms.fields import ChoiceField
+from django.forms.fields import CharField as FormCharField, ChoiceField
 from django.forms.widgets import RadioSelect
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
@@ -32,6 +35,7 @@ class Question(TimeStampedModel):
 
     class QuestionType(models.TextChoices):
         SELECT = 'select', 'Select'
+        NUMBER = 'number', 'Number'
 
     prompt = models.CharField(max_length=400)
     type = models.CharField(max_length=6, choices=QuestionType.choices, default=QuestionType.SELECT)
@@ -42,12 +46,19 @@ class Question(TimeStampedModel):
         return self.prompt
 
     def to_form_field(self, required: bool):
-        return ChoiceField(
-            required=required,
-            choices=[(choice.pk, choice.text) for choice in self.choices.all()],
-            label=self.prompt,
-            widget=RadioSelect,
-        )
+        if self.type == self.QuestionType.SELECT:
+            return ChoiceField(
+                required=required,
+                choices=[(choice.pk, choice.text) for choice in self.choices.all()],
+                label=self.prompt,
+                widget=RadioSelect,
+            )
+        elif self.type == self.QuestionType.NUMBER:
+            # TODO: Use floatfield/intfield
+            return FormCharField(
+                required=required,
+                label=self.prompt,
+            )
 
     def save(self, **kwargs):
         from isic.studies.models import Annotation
@@ -176,7 +187,7 @@ class Study(TimeStampedModel):
                     # 2 days, H:M:S.ms
                     'annotation_duration': response.annotation.annotation_duration.total_seconds(),
                     'question': response.question.prompt,
-                    'answer': response.choice.text,
+                    'answer': response.answer,
                 }
             )
 
@@ -359,12 +370,35 @@ Annotation.perms_class = AnnotationPermissions
 class Response(TimeStampedModel):
     class Meta:
         unique_together = [['annotation', 'question']]
+        constraints = [
+            CheckConstraint(
+                name='response_choice_or_value_check',
+                check=Exact(
+                    lhs=Func(
+                        'choice',
+                        'value__value',
+                        function='num_nonnulls',
+                        output_field=IntegerField(),
+                    ),
+                    rhs=Value(1),
+                ),
+            )
+        ]
 
     annotation = models.ForeignKey(Annotation, on_delete=models.CASCADE, related_name='responses')
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='responses')
     # TODO: investigate limit_choices_to for admin capabilities
     # see: https://code.djangoproject.com/ticket/25306
-    choice = models.ForeignKey(QuestionChoice, on_delete=models.CASCADE)
+    choice = models.ForeignKey(QuestionChoice, on_delete=models.CASCADE, null=True)
+    # expect a single key inside named value. TODO: maybe add a constraint for this.
+    value = models.JSONField(default=dict)
+
+    @property
+    def answer(self) -> str:
+        if self.question.type == Question.QuestionType.SELECT:
+            return self.choice.text
+        else:
+            return self.value.value
 
 
 class Markup(TimeStampedModel):
