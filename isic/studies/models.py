@@ -407,7 +407,7 @@ class Response(TimeStampedModel):
         if self.question.type == Question.QuestionType.SELECT:
             return self.choice.text
         else:
-            return self.value.value
+            return self.value['value']
 
 
 class Markup(TimeStampedModel):
