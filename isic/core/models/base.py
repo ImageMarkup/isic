@@ -25,6 +25,9 @@ class CopyrightLicense(models.TextChoices):
 
 
 class IsicOAuthApplication(AbstractApplication):
+    class Meta:
+        verbose_name = 'ISIC OAuth application'
+
     def redirect_uri_allowed(self, uri):
         if settings.ISIC_OAUTH_ALLOW_REGEX_REDIRECT_URIS:
             for redirect_uri in self.redirect_uris.split():
