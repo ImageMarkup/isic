@@ -174,26 +174,32 @@ class Study(TimeStampedModel):
 
         writer.writeheader()
         for response in (
-            Response.objects.select_related(
-                'choice', 'question', 'annotation__annotator__profile', 'annotation__image'
+            Response.objects.filter(annotation__study=self)
+            .annotate(
+                image=F('annotation__image__isic_id'),
+                annotator=F('annotation__annotator__profile__hash_id'),
+                annotation_duration=F('annotation__created') - F('annotation__start_time'),
+                question_prompt=F('question__prompt'),
+                answer=F('value__value'),
             )
-            .filter(annotation__study=self)
             .order_by('annotation__image__isic_id')
-            .all()
+            .values('image', 'annotator', 'annotation_duration', 'question_prompt', 'answer')
+            .iterator()
         ):
-            # formatting as total seconds is easier, otherwise long durations get printed as
-            # 2 days, H:M:S.ms
-            annotation_duration = None
-            if response.annotation.annotation_duration:
-                annotation_duration = response.annotation.annotation_duration.total_seconds()
+            if response['annotation_duration'] is None:
+                annotation_duration = ''
+            else:
+                # formatting as total seconds is easier, otherwise long durations get printed as
+                # 2 days, H:M:S.ms
+                annotation_duration = response['annotation_duration'].total_seconds()
 
             writer.writerow(
                 {
-                    'image': response.annotation.image.isic_id,
-                    'annotator': response.annotation.annotator.profile.hash_id,
-                    'question': response.question.prompt,
+                    'image': response['image'],
+                    'annotator': response['annotator'],
                     'annotation_duration': annotation_duration,
-                    'answer': response.answer,
+                    'question': response['question_prompt'],
+                    'answer': response['answer'],
                 }
             )
 
