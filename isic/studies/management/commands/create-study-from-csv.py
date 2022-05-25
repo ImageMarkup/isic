@@ -2,7 +2,6 @@ import sys
 
 from django.contrib.auth.models import User
 from django.db import transaction
-from django.utils import timezone
 import djclick as click
 import pandas as pd
 
@@ -78,16 +77,16 @@ def create_study_from_csv(
     for i, (_, row) in enumerate(responses_df.iterrows()):
         if i % 1000 == 0:
             print(i)
-        task = study.tasks.get(annotator__pk=row['annotator_id'], image__isic_id=row['isic_id'])
 
+        task = study.tasks.get(annotator__pk=row['annotator_id'], image__isic_id=row['isic_id'])
         annotation = Annotation(
             study_id=task.study_id,
             image_id=task.image_id,
             task=task,
             annotator_id=row['annotator_id'],
-            start_time=timezone.now(),
         )
         annotations.append(annotation)
+
         for key, value in row.items():
             if key not in ['isic_id', 'annotator_id']:
                 if key not in column_question.keys():
@@ -95,11 +94,12 @@ def create_study_from_csv(
                         f'Skipping column {key} not found in mapping csv.', err=True, fg='yellow'
                     )
                 else:
-                    responses.append(
-                        Response(
-                            annotation=annotation, question_id=column_question[key], value=value
-                        )
+                    response = Response(
+                        annotation=annotation,
+                        question_id=column_question[key],
+                        value={'value': value},
                     )
+                    responses.append(response)
 
     Annotation.objects.bulk_create(annotations, batch_size=1_000)
     Response.objects.bulk_create(responses, batch_size=1_000)
