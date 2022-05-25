@@ -112,7 +112,12 @@ class AnnotationAdmin(admin.ModelAdmin):
 class StudyTaskAdmin(nested_admin.NestedModelAdmin):
     list_display = ['study', 'annotator', 'image', 'complete', 'created']
     list_filter = ['study', IsStudyTaskCompleteFilter]
-    search_fields = ['annotator__email', 'image__isic__girderimage__item_id', 'study__name']
+    search_fields = [
+        'annotator__email',
+        'image__isic__girderimage__item_id',
+        'study__name',
+        'image__isic__id',
+    ]
 
     autocomplete_fields = ['image', 'annotator', 'image']
     readonly_fields = ['created']
@@ -196,6 +201,8 @@ class ReferencedStudyInline(ReadonlyTabularInline):
 class QuestionAdmin(admin.ModelAdmin):
     list_display = ['prompt', 'type', 'official', 'num_choices', 'used_in']
     list_filter = ['type', 'official']
+    search_fields = ['prompt']
+    search_help_text = 'Search questions by prompt.'
 
     inlines = [QuestionChoiceInline, ReferencedStudyInline]
 
