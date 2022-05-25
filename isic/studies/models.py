@@ -1,4 +1,6 @@
 import csv
+from datetime import timedelta
+from typing import Optional
 
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
@@ -179,14 +181,18 @@ class Study(TimeStampedModel):
             .order_by('annotation__image__isic_id')
             .all()
         ):
+            # formatting as total seconds is easier, otherwise long durations get printed as
+            # 2 days, H:M:S.ms
+            annotation_duration = None
+            if response.annotation.annotation_duration:
+                annotation_duration = response.annotation.annotation_duration.total_seconds()
+
             writer.writerow(
                 {
                     'image': response.annotation.image.isic_id,
                     'annotator': response.annotation.annotator.profile.hash_id,
-                    # formatting as total seconds is easier, otherwise long durations get printed as
-                    # 2 days, H:M:S.ms
-                    'annotation_duration': response.annotation.annotation_duration.total_seconds(),
                     'question': response.question.prompt,
+                    'annotation_duration': annotation_duration,
                     'answer': response.answer,
                 }
             )
@@ -327,14 +333,17 @@ class Annotation(TimeStampedModel):
 
     # For the ISIC GUI this time is generated on page load.
     # The created field acts as the end_time value.
-    start_time = models.DateTimeField()
+    # This is nullable in the event that third party apps submit annotations, but
+    # all annotations created by this app submit a start_time.
+    start_time = models.DateTimeField(null=True)
 
     def get_absolute_url(self) -> str:
         return reverse('annotation-detail', args=[self.pk])
 
     @property
-    def annotation_duration(self):
-        return self.created - self.start_time
+    def annotation_duration(self) -> Optional[timedelta]:
+        if self.start_time:
+            return self.created - self.start_time
 
 
 class AnnotationPermissions:
