@@ -128,6 +128,8 @@ class ImageSerializer(serializers.ModelSerializer):
             'attribution',
             'metadata',
             'urls',
+            'height',
+            'width',
         ]
 
     copyright_license = serializers.CharField(
@@ -136,6 +138,8 @@ class ImageSerializer(serializers.ModelSerializer):
     attribution = serializers.CharField(source='accession.cohort.attribution', read_only=True)
     metadata = serializers.DictField(source='accession.redacted_metadata', read_only=True)
     urls = ImageUrlSerializer(source='*', read_only=True)
+    height = serializers.IntegerField(source='accession.height')
+    width = serializers.IntegerField(source='accession.width')
 
 
 class CollectionSerializer(serializers.ModelSerializer):
