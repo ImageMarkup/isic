@@ -59,8 +59,8 @@ class Cohort(CreationSortedTimeStampedModel):
 
 class CohortPermissions:
     model = Cohort
-    perms = ['view_cohort', 'add_accession']
-    filters = {'view_cohort': 'view_cohort_list'}
+    perms = ['view_cohort', 'add_accession', 'edit_cohort']
+    filters = {'view_cohort': 'view_cohort_list', 'edit_cohort': 'edit_cohort_list'}
 
     @staticmethod
     def view_cohort_list(user_obj: User, qs: QuerySet[Cohort] | None = None) -> QuerySet[Cohort]:
@@ -74,8 +74,23 @@ class CohortPermissions:
             return qs.none()
 
     @staticmethod
+    def edit_cohort_list(user_obj: User, qs: QuerySet[Cohort] | None = None) -> QuerySet[Cohort]:
+        qs = qs if qs is not None else Cohort._default_manager.all()
+
+        if user_obj.is_staff:
+            return qs
+        elif user_obj.is_authenticated:
+            return qs.filter(contributor__owners__in=[user_obj])
+        else:
+            return qs.none()
+
+    @staticmethod
     def view_cohort(user_obj, obj):
         return CohortPermissions.view_cohort_list(user_obj).contains(obj)
+
+    @staticmethod
+    def edit_cohort(user_obj, obj):
+        return CohortPermissions.edit_cohort_list(user_obj).contains(obj)
 
     @staticmethod
     def add_accession(user_obj: User, obj: Cohort) -> bool:

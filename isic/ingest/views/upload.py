@@ -85,7 +85,24 @@ def upload_cohort_create(request, contributor_pk):
             }
         )
 
-    return render(request, 'ingest/cohort_create.html', {'form': form})
+    return render(request, 'ingest/cohort_edit_or_create.html', {'form': form, 'creating': True})
+
+
+@needs_object_permission('ingest.edit_cohort', (Cohort, 'pk', 'cohort_pk'))
+def upload_cohort_edit(request, cohort_pk):
+    cohort: Cohort = get_object_or_404(Cohort, pk=cohort_pk)
+
+    if request.method == 'POST':
+        form = CohortForm(request.POST)
+        if form.is_valid():
+            form.instance.creator = cohort.creator
+            form.instance.contributor = cohort.contributor
+            form.save(commit=True)
+            return HttpResponseRedirect(reverse('cohort-detail', args=[form.instance.pk]))
+    else:
+        form = CohortForm(instance=cohort)
+
+    return render(request, 'ingest/cohort_edit_or_create.html', {'form': form, 'creating': False})
 
 
 @needs_object_permission('ingest.view_cohort', (Cohort, 'pk', 'pk'))
