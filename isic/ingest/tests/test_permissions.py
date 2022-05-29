@@ -68,6 +68,24 @@ def test_upload_create_cohort_permissions(client, authenticated_client, contribu
 
 
 @pytest.mark.django_db
+def test_upload_edit_cohort_permissions(
+    client, authenticated_client, cohort_factory, user, user_factory
+):
+    other_user = user_factory()
+    cohort = cohort_factory(contributor__creator=user)
+
+    r = client.get(reverse('upload/edit-cohort', args=[cohort.pk]))
+    assert r.status_code == 302  # redirect to login page
+
+    r = authenticated_client.get(reverse('upload/edit-cohort', args=[cohort.pk]))
+    assert r.status_code == 200
+
+    client.force_login(other_user)
+    r = client.get(reverse('upload/edit-cohort', args=[cohort.pk]))
+    assert r.status_code == 403
+
+
+@pytest.mark.django_db
 def test_staff_page_permissions(client, authenticated_client, staff_client):
     r = client.get(reverse('ingest-review'))
     assert r.status_code == 302
