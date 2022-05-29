@@ -93,7 +93,7 @@ def upload_cohort_edit(request, cohort_pk):
     cohort: Cohort = get_object_or_404(Cohort, pk=cohort_pk)
 
     if request.method == 'POST':
-        form = CohortForm(request.POST)
+        form = CohortForm(request.POST, instance=cohort)
         if form.is_valid():
             form.instance.creator = cohort.creator
             form.instance.contributor = cohort.contributor
