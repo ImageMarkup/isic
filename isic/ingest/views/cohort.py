@@ -49,13 +49,8 @@ def publish_cohort(request, pk):
             'cohort': cohort,
             'breadcrumbs': make_breadcrumbs(cohort) + [['#', 'Publish Cohort']],
             'num_accessions': cohort.accessions.count(),
-            'num_published': cohort.accessions.published().count(),
             'num_publishable': cohort.accessions.publishable().count(),
-            'num_rejected': cohort.accessions.rejected().count(),
-            'num_pending': cohort.accessions.ingesting().count(),
-            'num_uningested': cohort.accessions.uningested().count(),
         }
-
     ctx['num_unpublishable'] = ctx['num_accessions'] - ctx['num_publishable']
 
     return render(request, 'ingest/cohort_publish.html', ctx)
