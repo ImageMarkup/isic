@@ -8,34 +8,7 @@
     {% include 'ingest/partials/cohort_actions.html' %}
   </div>
 
-
-  <div class="bg-yellow-100 border border-yellow-300 my-4 px-4 py-3 rounded-md text-yellow-900 text-sm">
-    <div class="text-lg">Note: {{ num_unpublishable|intcomma }} accessions cannot be published.</div>
-
-    <ul>
-      {% if num_published %}
-        <li>{{ num_published|intcomma }} accessions have already been published.</li>
-      {% endif %}
-
-      {% if num_pending %}
-        <li>{{ num_pending|intcomma }} accessions are still being processed.</li>
-      {% endif %}
-
-      {% if num_uningested %}
-        <li>{{ num_pending|intcomma }} accessions couldn't be processed.</li>
-      {% endif %}
-
-      {% if num_rejected %}
-        <li>{{ num_rejected|intcomma }} were rejected by the QC process.</li>
-      {% endif %}
-    </ul>
-  </div>
-
   <div>
-    <div class="mb-4">
-      {{ num_accessions|intcomma }} total accessions in {{ cohort.name }}
-    </div>
-
     <p class="mb-4">
       Publishing your images will make them available in the Archive. They will be visible in the
       main gallery, available to be put into collections, and able to have studies reference them. Images can
@@ -47,21 +20,30 @@
       Should these images be made public, they will be attributed to "<span class="font-bold">{{ cohort.attribution }}</span>" when a DOI is issued.
       Images under this cohort will be licensed as <span class="font-bold">{{ cohort.copyright_license }}</span>.
     </p>
+
+    <p class="mb-4">
+      Upon publishing these accessions, they will be added to a collection named "<span class="font-bold">Publish of {{ cohort.name }}</span>".
+    </p>
   </div>
 
   {% if not num_publishable %}
-    There are no accessions that can be published.
+    There aren't any accessions that can be published at this time.
   {% else %}
     There are {{ num_publishable|intcomma }} accessions that can be published.
 
-    <div class="mt-4 text-center">
+    <div class="mt-4 max-w-3xl mx-auto text-center">
       <form method="POST" action="">
         {% csrf_token %}
-        <button onclick="return confirm('Are you sure you want to make {{ num_publishable|intcomma }} images public?')" name="public" type="submit" class="btn btn-primary">
-          Make {{ num_publishable|intcomma }} accessions public
-        </button>
-        <button onclick="return confirm('Are you sure you want to make {{ num_publishable|intcomma }} images private?')" name="private" type="submit" class="btn btn-primary">
-          Make {{ num_publishable|intcomma }} accessions private
+
+        <div class="form-control">
+          <label class="label cursor-pointer">
+            <span class="label-text">Make images public</span>
+            <input name="public" type="checkbox" class="toggle toggle-primary" />
+          </label>
+        </div>
+
+        <button onclick="return confirm('Are you sure you want to publish {{ num_publishable|intcomma }} images?')" type="submit" class="btn btn-primary">
+          Publish {{ num_publishable|intcomma }} accessions
         </button>
       </form>
     </div>
