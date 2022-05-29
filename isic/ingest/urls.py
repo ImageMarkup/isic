@@ -34,6 +34,11 @@ urlpatterns = [
         upload_views.upload_cohort_create,
         name='upload/create-cohort',
     ),
+    path(
+        'upload/edit-cohort/<int:cohort_pk>',
+        upload_views.upload_cohort_edit,
+        name='upload/edit-cohort',
+    ),
     path('upload/<int:pk>/files/', upload_views.cohort_files, name='upload/cohort-files'),
     path(
         'upload/<int:cohort_pk>/upload-single-accession/',
