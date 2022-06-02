@@ -59,10 +59,7 @@
                   <p>
                     Created on {% localtime study.created %}
                   </p>
-                  <p>
-                    Created by
-                    {{ study.creator.first_name }} {{ study.creator.last_name }}
-                  </p>
+                  <p>{{ study.attribution }}</p>
                 </div>
               </div>
             </div>
