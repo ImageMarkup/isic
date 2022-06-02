@@ -197,6 +197,17 @@
           </div>
 
           <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
+            <label for="{{ base_form.attribution.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
+              {{ base_form.attribution.label }}
+            </label>
+            <div class="mt-1 mt-0 col-span-2">
+              <textarea id="{{ base_form.attribution.html_name }}" name="{{ base_form.attribution.html_name }}" rows="3" class="border max-w-lg outline-none shadow-sm block p-4 w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ base_form.attribution.value|default:'' }}</textarea>
+              <p class="mt-2 text-sm text-gray-500">Text which will be produced with your Study. Typically an instituion name or a working group.</p>
+              {{ base_form.attribution.errors }}
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
             <label for="{{ base_form.collection.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
               {{ base_form.collection.label }}
             </label>

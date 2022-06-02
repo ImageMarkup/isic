@@ -134,6 +134,7 @@ class Study(TimeStampedModel):
 
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
     owners = models.ManyToManyField(User, related_name='owned_studies')
+    attribution = models.CharField(max_length=200)
 
     name = models.CharField(max_length=100, unique=True, help_text='The name for your Study.')
     description = models.TextField(help_text='A description of the methodology behind your Study.')
