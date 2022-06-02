@@ -35,6 +35,7 @@ class BaseStudyForm(forms.ModelForm):
         fields = [
             'name',
             'description',
+            'attribution',
             'collection',
             'annotators',
             'public',
