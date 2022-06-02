@@ -110,6 +110,7 @@ class ResponseFactory(factory.django.DjangoModelFactory):
     annotation = factory.SubFactory(AnnotationFactory)
     question = factory.SubFactory(QuestionFactory)
     choice = factory.SubFactory(QuestionChoiceFactory)
+    value = factory.Faker('pyint')
 
 
 class MarkupFactory(factory.django.DjangoModelFactory):
