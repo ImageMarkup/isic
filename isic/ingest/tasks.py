@@ -50,8 +50,10 @@ def accession_generate_blob_task(accession_pk: int):
         accession.save(update_fields=['status'])
         raise
 
-    process_distinctness_measure_task.delay(accession.pk)
-    accession_generate_thumbnail_task.delay(accession.pk)
+    # Prevent skipped accessions from being passed to these tasks
+    if accession.status == AccessionStatus.SUCCEEDED:
+        process_distinctness_measure_task.delay(accession.pk)
+        accession_generate_thumbnail_task.delay(accession.pk)
 
 
 @shared_task(soft_time_limit=60, time_limit=90)
