@@ -30,6 +30,10 @@ def zip_stream_garbage() -> BinaryIO:
         zip_file.writestr('Thumbs.db', data=b'1234')
         zip_file.writestr('somefile.jpg', data=b'')
 
+        # appear to be real but are skippable
+        zip_file.writestr('notanimage.jpg', data=b'1234')
+        zip_file.writestr('spreadsheet.csv', data=b'foo,bar,baz\n1,2,3')
+
     return file_stream
 
 
