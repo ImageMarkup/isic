@@ -93,6 +93,14 @@ def collection_merge(
             if collection.cohort and collection.cohort != dest_collection.cohort:
                 logger.warning(f'Abandoning cohort {collection.cohort.pk}')
 
+            for field in ['creator', 'name', 'description', 'public', 'pinned', 'doi', 'locked']:
+                dest_collection_value = getattr(dest_collection, field)
+                collection_value = getattr(collection, field)
+                if dest_collection_value != collection_value:
+                    logger.warning(
+                        f'Different value for {field}: {dest_collection_value}(dest) vs {collection_value}'  # noqa: E501
+                    )
+
             collection_update(
                 collection=collection, cohort=dest_collection.cohort, ignore_lock=True
             )
