@@ -153,6 +153,7 @@ class Accession(CreationSortedTimeStampedModel):
     )
 
     thumbnail_256 = S3FileField(blank=True)
+    thumbnail_256_size = models.PositiveIntegerField(null=True, default=None, editable=False)
 
     metadata = models.JSONField(default=dict)
     unstructured_metadata = models.JSONField(default=dict)
