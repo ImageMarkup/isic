@@ -72,6 +72,21 @@ def cohort_merge(*, dest_cohort: Cohort, other_cohorts: Iterable[Cohort]) -> Non
 
     with transaction.atomic():
         for cohort in other_cohorts:
+            for field in [
+                'creator',
+                'name',
+                'description',
+                'girder_id',
+                'copyright_license',
+                'attribution',
+            ]:
+                dest_cohort_value = getattr(dest_cohort, field)
+                cohort_value = getattr(cohort, field)
+                if dest_cohort_value != cohort_value:
+                    logger.warning(
+                        f'Different value for {field}: {dest_cohort_value}(dest) vs {cohort_value}'
+                    )
+
             dest_cohort.accessions.add(*cohort.accessions.all())
             dest_cohort.zip_uploads.add(*cohort.zip_uploads.all())
             dest_cohort.metadata_files.add(*cohort.metadata_files.all())
