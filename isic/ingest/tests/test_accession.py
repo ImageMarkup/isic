@@ -29,7 +29,7 @@ def jpg_blob():
 
 @pytest.mark.django_db
 def test_accession_generate_thumbnail(accession_factory):
-    accession = accession_factory(thumbnail_256=None)
+    accession = accession_factory(thumbnail_256=None, thumbnail_256_size=None)
 
     accession.generate_thumbnail()
 

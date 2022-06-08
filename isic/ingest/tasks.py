@@ -14,12 +14,6 @@ from isic.ingest.models import (
 from isic.ingest.services.cohort import cohort_publish
 
 
-@shared_task(soft_time_limit=30, time_limit=60)
-def accession_generate_thumbnail_task(accession_pk: int) -> None:
-    accession = Accession.objects.get(pk=accession_pk)
-    accession.generate_thumbnail()
-
-
 @shared_task(soft_time_limit=7200, time_limit=8100)
 def extract_zip_task(zip_pk: int):
     zip_upload = ZipUpload.objects.get(pk=zip_pk)
@@ -50,10 +44,9 @@ def accession_generate_blob_task(accession_pk: int):
         accession.save(update_fields=['status'])
         raise
 
-    # Prevent skipped accessions from being passed to these tasks
+    # Prevent skipped accessions from being passed to this task
     if accession.status == AccessionStatus.SUCCEEDED:
         process_distinctness_measure_task.delay(accession.pk)
-        accession_generate_thumbnail_task.delay(accession.pk)
 
 
 @shared_task(soft_time_limit=60, time_limit=90)
