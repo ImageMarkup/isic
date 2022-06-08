@@ -1,6 +1,7 @@
 import re
 from typing import Optional
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db.models.query import QuerySet
 from pyparsing.exceptions import ParseException
@@ -113,9 +114,32 @@ class SearchQuerySerializer(serializers.Serializer):
         return get_visible_objects(self.context['user'], 'core.view_image', qs).distinct()
 
 
-class ImageUrlSerializer(serializers.Serializer):
-    full = serializers.URLField(source='accession.blob.url')
-    thumbnail_256 = serializers.URLField(source='accession.thumbnail_256.url')
+class ImageFileSerializer(serializers.Serializer):
+    full = serializers.SerializerMethodField()
+    thumbnail_256 = serializers.SerializerMethodField()
+
+    def get_full(self, obj: Image) -> dict:
+        if settings.DEBUG:
+            url = f'https://picsum.photos/seed/{ obj.id }/1000'
+        else:
+            url = obj.accession.blob.url
+
+        return {
+            'url': url,
+            'size': obj.accession.blob_size,
+        }
+
+    def get_thumbnail_256(self, obj: Image) -> dict:
+        # TODO: add a custom setting for using placeholder images
+        if settings.DEBUG:
+            url = f'https://picsum.photos/seed/{ obj.id }/256'
+        else:
+            url = obj.accession.thumbnail_256.url
+
+        return {
+            'url': url,
+            'size': obj.accession.thumbnail_256_size,
+        }
 
 
 class ImageSerializer(serializers.ModelSerializer):
@@ -127,7 +151,7 @@ class ImageSerializer(serializers.ModelSerializer):
             'copyright_license',
             'attribution',
             'metadata',
-            'urls',
+            'files',
         ]
 
     copyright_license = serializers.CharField(
@@ -135,7 +159,7 @@ class ImageSerializer(serializers.ModelSerializer):
     )
     attribution = serializers.CharField(source='accession.cohort.attribution', read_only=True)
     metadata = serializers.DictField(source='accession.redacted_metadata', read_only=True)
-    urls = ImageUrlSerializer(source='*', read_only=True)
+    files = ImageFileSerializer(source='*', read_only=True)
 
 
 class CollectionSerializer(serializers.ModelSerializer):
