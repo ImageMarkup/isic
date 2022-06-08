@@ -62,7 +62,7 @@ setup(
         'drf-yasg',
         'google-api-python-client',
         'hashids',
-        'isic-metadata',
+        'isic-metadata>=0.0.5',
         'jaro-winkler',
         'oauth2client',
         'opensearch-py',
