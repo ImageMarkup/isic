@@ -4,6 +4,7 @@ from typing import Iterable
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Count
 
 from isic.core.models.image import Image
 from isic.core.services.collection import collection_create
@@ -59,11 +60,12 @@ def cohort_merge(*, dest_cohort: Cohort, other_cohorts: Iterable[Cohort]) -> Non
     collections or cohorts with relationships to the other would put the system in
     an unexpected state otherwise.
     """
-    overlapping_blob_names = dest_cohort.accessions.values('original_blob_name')
-    for cohort in other_cohorts:
-        overlapping_blob_names = overlapping_blob_names.intersection(
-            cohort.accessions.values('original_blob_name')
-        )
+    overlapping_blob_names = (
+        Cohort.objects.filter(id__in=[dest_cohort.id] + [cohort.id for cohort in other_cohorts])
+        .values('accessions__original_blob_name')
+        .annotate(c=Count('id'))
+        .filter(c__gt=1)
+    )
 
     if overlapping_blob_names.exists():
         raise ValidationError(
