@@ -90,6 +90,7 @@ class AccessionFactory(factory.django.DjangoModelFactory):
     blob_name = factory.Faker('uuid4')
     blob_size = factory.SelfAttribute('blob.size')
     thumbnail_256 = factory.django.FileField(from_path=data_dir / 'ISIC_0000000_thumbnail_256.jpg')
+    thumbnail_256_size = factory.SelfAttribute('thumbnail_256.size')
 
     # Using "metadata = factory.Dict" breaks pytest-factoryboy; see
     # https://github.com/pytest-dev/pytest-factoryboy/issues/67

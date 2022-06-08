@@ -112,10 +112,12 @@ class Accession(CreationSortedTimeStampedModel):
                 name='accession_succeeded_blob_fields',
                 check=Q(
                     status=AccessionStatus.SUCCEEDED,
+                    thumbnail_256_size__isnull=False,
                     blob_size__isnull=False,
                     width__isnull=False,
                     height__isnull=False,
                 )
+                & ~Q(thumbnail_256='', blob_name='')
                 | ~Q(status=AccessionStatus.SUCCEEDED),
             ),
         ]
@@ -232,6 +234,8 @@ class Accession(CreationSortedTimeStampedModel):
 
                 self.save(update_fields=['blob', 'blob_size', 'height', 'width'])
 
+            self.generate_thumbnail()
+
         except InvalidBlobError:
             self.status = AccessionStatus.SKIPPED
             self.save(update_fields=['status'])
@@ -260,6 +264,7 @@ class Accession(CreationSortedTimeStampedModel):
             img.save(thumbnail_stream, format='JPEG', quality=75, optimize=True)
             thumbnail_stream.seek(0)
 
+            self.thumbnail_256_size = thumbnail_stream.getbuffer().nbytes
             self.thumbnail_256 = InMemoryUploadedFile(
                 file=thumbnail_stream,
                 field_name=None,
@@ -269,10 +274,10 @@ class Accession(CreationSortedTimeStampedModel):
                     else 'thumbnail_256.jpg'
                 ),
                 content_type='image/jpeg',
-                size=thumbnail_stream.getbuffer().nbytes,
+                size=self.thumbnail_256_size,
                 charset=None,
             )
-            self.save(update_fields=['thumbnail_256'])
+            self.save(update_fields=['thumbnail_256', 'thumbnail_256_size'])
 
     @classmethod
     def from_blob(cls, blob: Blob):
