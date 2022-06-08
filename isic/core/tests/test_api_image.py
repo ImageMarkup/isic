@@ -21,17 +21,17 @@ def test_core_api_image_ages_are_always_rounded(
         r = client.get('/api/v2/images/')
         assert r.status_code == 200, r.data
         assert r.data['count'] == 1
-        assert r.data['results'][0]['metadata']['age_approx'] == 50
+        assert r.data['results'][0]['metadata']['clinical']['age_approx'] == 50
 
         r = client.get(f'/api/v2/images/{searchable_image.isic_id}/')
         assert r.status_code == 200, r.data
-        assert r.data['metadata']['age_approx'] == 50
+        assert r.data['metadata']['clinical']['age_approx'] == 50
 
         # test search isn't leaking ages
         r = client.get('/api/v2/images/search/', {'query': 'age_approx:50'})
         assert r.status_code == 200, r.data
         assert r.data['count'] == 1
-        assert r.data['results'][0]['metadata']['age_approx'] == 50
+        assert r.data['results'][0]['metadata']['clinical']['age_approx'] == 50
 
         r = client.get('/api/v2/images/search/', {'query': 'age_approx:52'})
         assert r.status_code == 200, r.data
@@ -39,37 +39,23 @@ def test_core_api_image_ages_are_always_rounded(
 
 
 @pytest.mark.django_db
-def test_api_image_urls_thumbnail_256(api_client, image_factory):
+@pytest.mark.parametrize('image_file', ['full', 'thumbnail_256'])
+def test_api_image_urls_thumbnail_256(api_client, image_factory, image_file):
     image = image_factory(public=True)
 
     api_resp = api_client.get(f'/api/v2/images/{image.isic_id}/')
 
-    assert isinstance(api_resp.data.get('urls'), dict)
-    assert isinstance(api_resp.data['urls'].get('thumbnail_256'), str)
-    thumbnail_url = api_resp.data['urls']['thumbnail_256']
-    assert thumbnail_url
+    assert isinstance(api_resp.data.get('files'), dict)
+    assert isinstance(api_resp.data['files'].get(image_file), dict)
+    assert isinstance(api_resp.data['files'][image_file]['url'], str)
+    image_url = api_resp.data['files'][image_file]['url']
+    assert image_url
 
     # "stream=True", as there's no need to download the actual response body
-    storage_resp = requests.get(thumbnail_url, stream=True)
+    storage_resp = requests.get(image_url, stream=True)
     assert storage_resp.status_code == 200
     # TODO: MinioStorage doesn't respect FieldFile.content_type, so there's no point to this
     # assertion, even though it succeeds
     # assert storage_resp.headers['Content-Type'] == 'image/jpeg'
     # TODO: Fix Content-Disposition
     # assert 'thumbnail' in storage_resp.headers['Content-Disposition']
-
-
-@pytest.mark.django_db
-def test_api_image_urls_full(api_client, image_factory):
-    image = image_factory(public=True)
-
-    api_resp = api_client.get(f'/api/v2/images/{image.isic_id}/')
-
-    assert isinstance(api_resp.data.get('urls'), dict)
-    assert isinstance(api_resp.data['urls'].get('full'), str)
-    full_url = api_resp.data['urls']['full']
-    assert full_url
-
-    # "stream=True", as there's no need to download the actual response body
-    storage_resp = requests.get(full_url, stream=True)
-    assert storage_resp.status_code == 200
