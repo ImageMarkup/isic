@@ -21,17 +21,17 @@ def test_core_api_image_ages_are_always_rounded(
         r = client.get('/api/v2/images/')
         assert r.status_code == 200, r.data
         assert r.data['count'] == 1
-        assert r.data['results'][0]['metadata']['age_approx'] == 50
+        assert r.data['results'][0]['metadata']['clinical']['age_approx'] == 50
 
         r = client.get(f'/api/v2/images/{searchable_image.isic_id}/')
         assert r.status_code == 200, r.data
-        assert r.data['metadata']['age_approx'] == 50
+        assert r.data['metadata']['clinical']['age_approx'] == 50
 
         # test search isn't leaking ages
         r = client.get('/api/v2/images/search/', {'query': 'age_approx:50'})
         assert r.status_code == 200, r.data
         assert r.data['count'] == 1
-        assert r.data['results'][0]['metadata']['age_approx'] == 50
+        assert r.data['results'][0]['metadata']['clinical']['age_approx'] == 50
 
         r = client.get('/api/v2/images/search/', {'query': 'age_approx:52'})
         assert r.status_code == 200, r.data

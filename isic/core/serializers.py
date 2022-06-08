@@ -4,6 +4,7 @@ from typing import Optional
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db.models.query import QuerySet
+from isic_metadata import FIELD_REGISTRY
 from pyparsing.exceptions import ParseException
 from rest_framework import serializers
 from rest_framework.fields import Field
@@ -158,8 +159,21 @@ class ImageSerializer(serializers.ModelSerializer):
         source='accession.cohort.copyright_license', read_only=True
     )
     attribution = serializers.CharField(source='accession.cohort.attribution', read_only=True)
-    metadata = serializers.DictField(source='accession.redacted_metadata', read_only=True)
+    metadata = serializers.SerializerMethodField(read_only=True)
     files = ImageFileSerializer(source='*', read_only=True)
+
+    def get_metadata(self, image: Image) -> dict:
+        metadata = {'acquisition': {}, 'clinical': {}}
+
+        for key, value in image.accession.redacted_metadata.items():
+            # this is the only field that we expose that isn't in the FIELD_REGISTRY
+            # since it's a derived field.
+            if key == 'age_approx':
+                metadata['clinical'][key] = value
+            else:
+                metadata[FIELD_REGISTRY[key]['type']][key] = value
+
+        return metadata
 
 
 class CollectionSerializer(serializers.ModelSerializer):
