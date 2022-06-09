@@ -49,7 +49,7 @@ class CollectionViewSet(ReadOnlyModelViewSet):
         serializer = SearchQuerySerializer(data=request.data, context={'user': request.user})
         serializer.is_valid(raise_exception=True)
 
-        if self.get_object().public and serializer.to_queryset().filter(public=False).exists():
+        if self.get_object().public and serializer.to_queryset().private().exists():
             raise Conflict('You are attempting to add private images to a public collection.')
 
         # Pass data instead of validated_data because the celery task is going to revalidate.
