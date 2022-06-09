@@ -35,6 +35,12 @@ class ImageQuerySet(models.QuerySet):
             shared_to=ArrayAgg('shares', distinct=True, default=[]),
         )
 
+    def public(self):
+        return self.filter(public=True)
+
+    def private(self):
+        return self.filter(public=False)
+
 
 class Image(CreationSortedTimeStampedModel):
     class Meta(CreationSortedTimeStampedModel.Meta):
@@ -171,7 +177,7 @@ class ImagePermissions:
                 | Q(shares=user_obj)
             )
         else:
-            return qs.filter(public=True)
+            return qs.public()
 
     @staticmethod
     def view_image(user_obj: User, obj: Image) -> bool:
