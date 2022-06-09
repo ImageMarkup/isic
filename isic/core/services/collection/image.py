@@ -22,7 +22,7 @@ def collection_add_images(
     if collection.locked and not ignore_lock:
         raise ValidationError("Can't add images to locked collection.")
 
-    if collection.public and qs.filter(public=False).exists():
+    if collection.public and qs.private().exists():
         raise ValidationError("Can't add private images to a public collection.")
 
     collection.images.add(*qs)

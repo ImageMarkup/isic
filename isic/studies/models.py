@@ -128,6 +128,14 @@ class Feature(TimeStampedModel):
         return super().save(**kwargs)
 
 
+class StudyQuerySet(models.QuerySet):
+    def public(self):
+        return self.filter(public=True)
+
+    def private(self):
+        return self.filter(public=False)
+
+
 class Study(TimeStampedModel):
     class Meta(TimeStampedModel.Meta):
         verbose_name_plural = 'Studies'
@@ -162,6 +170,8 @@ class Study(TimeStampedModel):
             'the images it uses are also public.'
         ),
     )
+
+    objects = StudyQuerySet.as_manager()
 
     def __str__(self) -> str:
         return self.name
@@ -206,7 +216,7 @@ class StudyPermissions:
         elif user_obj.is_authenticated:
             return qs.filter(Q(owners=user_obj) | Q(public=True))
         else:
-            return qs.filter(public=True)
+            return qs.public()
 
     @staticmethod
     def view_study_results(user_obj, obj):
@@ -228,7 +238,7 @@ class StudyPermissions:
                 | Q(tasks__annotator=user_obj)
             )
         else:
-            return qs.filter(public=True)
+            return qs.public()
 
     @staticmethod
     def view_study(user_obj, obj):

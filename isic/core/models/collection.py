@@ -14,6 +14,14 @@ from .doi import Doi
 from .image import Image
 
 
+class CollectionQuerySet(models.QuerySet):
+    def public(self):
+        return self.filter(public=True)
+
+    def private(self):
+        return self.filter(public=False)
+
+
 class Collection(TimeStampedModel):
     """
     Collections are unordered groups of images.
@@ -62,6 +70,8 @@ class Collection(TimeStampedModel):
 
     locked = models.BooleanField(default=False)
 
+    objects = CollectionQuerySet.as_manager()
+
     def __str__(self):
         return self.name
 
@@ -78,7 +88,7 @@ class Collection(TimeStampedModel):
             return f'https://doi.org/{self.doi}'
 
     def full_clean(self, exclude=None, validate_unique=True):
-        if self.pk and self.public and self.images.filter(public=False).exists():
+        if self.pk and self.public and self.images.private().exists():
             raise ValidationError("Can't make collection public, it contains private images.")
 
         return super().full_clean(exclude=exclude, validate_unique=validate_unique)
@@ -131,7 +141,7 @@ class CollectionPermissions:
         elif user_obj.is_authenticated:
             return qs.filter(Q(public=True) | Q(creator=user_obj) | Q(shares=user_obj))
         else:
-            return qs.filter(public=True)
+            return qs.public()
 
     @staticmethod
     def view_collection(user_obj, obj):
