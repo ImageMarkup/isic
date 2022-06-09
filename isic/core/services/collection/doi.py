@@ -65,7 +65,7 @@ def collection_check_create_doi_allowed(*, user: User, collection: Collection) -
         raise ValidationError('This collection already has a DOI.')
     elif not collection.public:
         raise ValidationError('A collection must be public to issue a DOI.')
-    elif collection.images.filter(public=False).exists():
+    elif collection.images.private().exists():
         raise ValidationError('This collection contains private images.')
     elif not collection.images.exists():
         raise ValidationError('An empty collection cannot be the basis of a DOI.')
