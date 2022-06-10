@@ -34,7 +34,12 @@ def collection_update(collection: Collection, ignore_lock: bool = False, **field
         setattr(collection, field, value)
 
     collection.full_clean()
-    return collection.save()
+    return collection.save(update_fields=fields)
+
+
+def collection_lock(*, collection: Collection) -> None:
+    if not collection.locked:
+        collection_update(collection=collection, locked=True)
 
 
 def collection_delete(*, collection: Collection, ignore_lock: bool = False) -> None:

@@ -6,19 +6,25 @@ import djclick as click
 import pandas as pd
 
 from isic.core.models.collection import Collection
-from isic.studies.models import Annotation, Question, Response, Study
-from isic.studies.services import populate_study_tasks
+from isic.studies.models import Annotation, Question, Response
+from isic.studies.services import populate_study_tasks, study_create
 
 
 @click.command()
 @click.argument('study_name')
+@click.argument('study_attribution')
 @click.argument('study_creator_id')
 @click.argument('collection_id')
 @click.argument('column_question_mapping_csv')
 @click.argument('responses_csv')
 @transaction.atomic()
 def create_study_from_csv(
-    study_name, study_creator_id, collection_id, column_question_mapping_csv, responses_csv
+    study_name,
+    study_attribution,
+    study_creator_id,
+    collection_id,
+    column_question_mapping_csv,
+    responses_csv,
 ):
     column_question_df = pd.read_csv(column_question_mapping_csv, header=0)
 
@@ -52,16 +58,15 @@ def create_study_from_csv(
         click.secho(f'Unable to find collection with id {collection_id}.', err=True, fg='red')
         sys.exit(1)
 
-    study, _ = Study.objects.get_or_create(
+    study = study_create(
         creator=study_creator,
+        owners=[study_creator],
+        attribution=study_attribution,
         name=study_name,
         description='-',
         collection=collection,
         public=False,
     )
-
-    collection.locked = True
-    collection.save(update_fields=['locked'])
 
     for question_id in column_question.values():
         study.questions.add(
