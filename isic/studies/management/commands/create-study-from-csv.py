@@ -68,38 +68,48 @@ def create_study_from_csv(
             Question.objects.get(id=question_id), through_defaults={'required': True}
         )
 
+    click.secho('Populating study tasks', err=True, fg='yellow')
     populate_study_tasks(
         study=study, users=User.objects.filter(id__in=responses_df['annotator_id'])
     )
 
     annotations = []
     responses = []
-    for i, (_, row) in enumerate(responses_df.iterrows()):
-        if i % 1000 == 0:
-            print(i)
+    with click.progressbar(
+        responses_df.iterrows(), length=len(responses_df), label='Creating responses'
+    ) as bar:
+        for _, row in bar:
+            task = study.tasks.get(annotator__pk=row['annotator_id'], image__isic_id=row['isic_id'])
+            annotation = Annotation(
+                study_id=task.study_id,
+                image_id=task.image_id,
+                task=task,
+                annotator_id=row['annotator_id'],
+            )
+            annotations.append(annotation)
 
-        task = study.tasks.get(annotator__pk=row['annotator_id'], image__isic_id=row['isic_id'])
-        annotation = Annotation(
-            study_id=task.study_id,
-            image_id=task.image_id,
-            task=task,
-            annotator_id=row['annotator_id'],
-        )
-        annotations.append(annotation)
+            for key, value in row.items():
 
-        for key, value in row.items():
-            if key not in ['isic_id', 'annotator_id']:
-                if key not in column_question.keys():
-                    click.secho(
-                        f'Skipping column {key} not found in mapping csv.', err=True, fg='yellow'
-                    )
-                else:
-                    response = Response(
-                        annotation=annotation,
-                        question_id=column_question[key],
-                        value={'value': value},
-                    )
-                    responses.append(response)
+                if key not in ['isic_id', 'annotator_id']:
+                    if key not in column_question.keys():
+                        click.secho(
+                            f'Skipping column {key} not found in mapping csv.',
+                            err=True,
+                            fg='yellow',
+                        )
+                    elif pd.isna(value):
+                        click.secho(
+                            f'Skipping response because {key} is null or NaN.',
+                            err=True,
+                            fg='yellow',
+                        )
+                    else:
+                        response = Response(
+                            annotation=annotation,
+                            question_id=column_question[key],
+                            value=value,
+                        )
+                        responses.append(response)
 
     Annotation.objects.bulk_create(annotations, batch_size=1_000)
     Response.objects.bulk_create(responses, batch_size=1_000)
