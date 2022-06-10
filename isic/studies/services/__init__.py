@@ -1,8 +1,21 @@
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models.query import QuerySet
 
 from isic.studies.models import Study, StudyTask
+
+
+def study_update(*, study: Study, **fields):
+    for field, value in fields.items():
+        setattr(study, field, value)
+
+    if study.public and not study.collection.public:
+        raise ValidationError("Can't make a study public with a private collection.")
+
+    study.full_clean()
+
+    return study.save()
 
 
 def populate_study_tasks(*, study: Study, users: QuerySet[User]) -> None:

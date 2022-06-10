@@ -89,7 +89,6 @@ def create_study_from_csv(
             annotations.append(annotation)
 
             for key, value in row.items():
-
                 if key not in ['isic_id', 'annotator_id']:
                     if key not in column_question.keys():
                         click.secho(
