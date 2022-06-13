@@ -69,7 +69,7 @@ def test_core_api_collection_detail_permissions(client, collection, visible):
         assert r.status_code == 404, r.data
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_core_api_collection_populate_from_search(
     eager_celery, authenticated_client, collection_factory, image_factory, user
 ):

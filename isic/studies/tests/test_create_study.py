@@ -4,7 +4,7 @@ import pytest
 from isic.studies.models import Study
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_create_study(
     eager_celery, user, authenticated_client, collection_factory, image_factory, question
 ):

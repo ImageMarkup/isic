@@ -25,7 +25,7 @@ def publishable_cohort(cohort_factory, accession_factory, accession_review_facto
     return cohort
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_publish_cohort(staff_client, eager_celery, publishable_cohort):
     staff_client.post(
         reverse('upload/cohort-publish', args=[publishable_cohort.pk]), {'private': True}

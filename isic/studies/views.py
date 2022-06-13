@@ -118,7 +118,11 @@ def study_create(request):
             messages.add_message(
                 request, messages.INFO, 'Creating study, this may take a few minutes.'
             )
-            populate_study_tasks_task.delay(study.pk, base_form.cleaned_data['annotators'])
+            transaction.on_commit(
+                lambda: populate_study_tasks_task.delay(
+                    study.pk, base_form.cleaned_data['annotators']
+                )
+            )
 
             return HttpResponseRedirect(reverse('study-detail', args=[study.pk]))
 

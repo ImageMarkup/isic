@@ -75,7 +75,7 @@ def test_cdn_access_log_parsing(mocker):
     }
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_collect_image_download_records_task(mocker, eager_celery, image_factory):
     # TODO: overriding the blob name requires passing the size manually.
     image = image_factory(
