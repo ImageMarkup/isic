@@ -1,5 +1,6 @@
 import os
 
+from django.db import transaction
 from django.http.response import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
@@ -158,5 +159,5 @@ class MetadataFileViewSet(
     @action(detail=True, methods=['post'])
     def update_metadata(self, request, pk=None):
         metadata_file = self.get_object()
-        update_metadata_task.delay(request.user.pk, metadata_file.pk)
+        transaction.on_commit(lambda: update_metadata_task.delay(request.user.pk, metadata_file.pk))
         return Response(status=status.HTTP_202_ACCEPTED)
