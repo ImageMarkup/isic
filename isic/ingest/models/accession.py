@@ -299,24 +299,30 @@ class Accession(CreationSortedTimeStampedModel):
             ),
         )
 
+    @staticmethod
+    def _age_approx(age: int) -> int:
+        return int(round(age / 5.0) * 5)
+
     @property
     def age_approx(self) -> int | None:
-        return int(round(self.metadata['age'] / 5.0) * 5) if 'age' in self.metadata else None
+        return self._age_approx(self.metadata['age']) if 'age' in self.metadata else None
+
+    @staticmethod
+    def _redact_metadata(metadata: dict) -> dict:
+        from isic.core.models.image import RESTRICTED_METADATA_FIELDS
+
+        if 'age' in metadata:
+            metadata['age_approx'] = Accession._age_approx(metadata['age'])
+
+        for f in RESTRICTED_METADATA_FIELDS:
+            if f in metadata:
+                del metadata[f]
+
+        return metadata
 
     @property
     def redacted_metadata(self) -> dict:
-        from isic.core.models.image import RESTRICTED_METADATA_FIELDS
-
-        redacted = dict(self.metadata)
-
-        if 'age' in self.metadata:
-            redacted['age_approx'] = self.age_approx
-
-        for f in RESTRICTED_METADATA_FIELDS:
-            if f in redacted:
-                del redacted[f]
-
-        return redacted
+        return self._redact_metadata(dict(self.metadata))
 
     def _require_unpublished(self):
         if self.published:

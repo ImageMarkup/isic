@@ -9,6 +9,7 @@ from isic.core.views.collections import (
     collection_create_,
     collection_create_doi_,
     collection_detail,
+    collection_download_metadata,
     collection_edit,
     collection_list,
 )
@@ -80,6 +81,11 @@ urlpatterns = [
         'collections/<int:pk>/create-doi/',
         collection_create_doi_,
         name='core/collection-create-doi',
+    ),
+    path(
+        'collections/<int:pk>/metadata/',
+        collection_download_metadata,
+        name='core/collection-download-metadata',
     ),
     path(
         'images/<image-identifier:pk>/',
