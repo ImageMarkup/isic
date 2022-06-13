@@ -1,7 +1,11 @@
+import time
+from typing import Iterable
+
 from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
 from django.contrib.auth.models import User
 from django.db import transaction
+from more_itertools import ichunked
 
 from isic.ingest.models import (
     Accession,
@@ -12,6 +16,13 @@ from isic.ingest.models import (
     ZipUpload,
 )
 from isic.ingest.services.cohort import cohort_publish
+
+
+def throttled_iterator(iterable: Iterable, chunk_size: int = 100, sleep_time: int = 1) -> Iterable:
+    for chunk in ichunked(iterable, chunk_size):
+        for item in chunk:
+            yield item
+            time.sleep(sleep_time / chunk_size)
 
 
 @shared_task(soft_time_limit=7200, time_limit=8100)
@@ -28,9 +39,15 @@ def extract_zip_task(zip_pk: int):
         zip_upload.save(update_fields=['status'])
         raise
     else:
-        # tasks should be delayed after the accessions are committed to the database
-        for accession_id in zip_upload.accessions.values_list('id', flat=True).iterator():
-            accession_generate_blob_task.delay(accession_id)
+        # rmq can only handle ~500msg/s - throttle significantly in places
+        # where we could be putting many messages onto the queue at once.
+        def generate_blobs():
+            for accession_id in throttled_iterator(
+                zip_upload.accessions.values_list('id', flat=True).iterator()
+            ):
+                accession_generate_blob_task.delay(accession_id)
+
+        transaction.on_commit(generate_blobs)
 
 
 @shared_task(soft_time_limit=60, time_limit=90)
@@ -46,7 +63,7 @@ def accession_generate_blob_task(accession_pk: int):
 
     # Prevent skipped accessions from being passed to this task
     if accession.status == AccessionStatus.SUCCEEDED:
-        process_distinctness_measure_task.delay(accession.pk)
+        transaction.on_commit(lambda: process_distinctness_measure_task.delay(accession.pk))
 
 
 @shared_task(soft_time_limit=60, time_limit=90)

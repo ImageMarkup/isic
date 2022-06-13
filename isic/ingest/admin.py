@@ -4,7 +4,7 @@ import logging
 
 from django.contrib import admin
 from django.contrib.humanize.templatetags.humanize import intcomma
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Count
 from django.db.models.query import Prefetch
 from django.db.models.query_utils import Q
@@ -294,4 +294,4 @@ class ZipAdmin(DjangoObjectActions, admin.ModelAdmin):
     def extract_zip(self, request, queryset):
         for zip in queryset:
             zip.reset()
-            extract_zip_task.delay(zip.pk)
+            transaction.on_commit(lambda: extract_zip_task.delay(zip.pk))

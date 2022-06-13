@@ -44,7 +44,7 @@ def zip_stream_garbage() -> BinaryIO:
         lazy_fixture('zip_stream_garbage'),
     ],
 )
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_upload_zip(cohort_factory, user, authenticated_client, zip_stream, eager_celery):
     cohort = cohort_factory(creator=user, contributor__creator=user)
     zip_stream.seek(0)
