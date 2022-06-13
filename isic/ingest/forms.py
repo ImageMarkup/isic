@@ -1,11 +1,27 @@
 from django import forms
 from django.forms.models import ModelForm
-from isic_metadata.fields import AnatomSiteGeneralEnum, DiagnosisConfirmTypeEnum, DiagnosisEnum
+from isic_metadata import FIELD_REGISTRY
+from isic_metadata.fields import (
+    AnatomSiteGeneralEnum,
+    DermoscopicTypeEnum,
+    DiagnosisConfirmTypeEnum,
+    DiagnosisEnum,
+    ImageTypeEnum,
+)
 from s3_file_field.forms import S3FormFileField
 
 from isic.ingest.models import Cohort, Contributor
 
-BLANK_CHOICE = ('', '')
+
+def choice_field_from_enum(field_name: str, enum) -> forms.ChoiceField:
+    label = None
+
+    if 'label' in FIELD_REGISTRY[field_name]:
+        label = FIELD_REGISTRY[field_name]['label']
+
+    return forms.ChoiceField(
+        choices=[(i.value, i.value) for i in enum], required=False, label=label
+    )
 
 
 class CohortForm(ModelForm):
@@ -29,17 +45,12 @@ class ContributorForm(ModelForm):
 class SingleAccessionUploadForm(forms.Form):
     original_blob = S3FormFileField(model_field_id='ingest.Accession.original_blob', label='Image')
 
-    age = forms.ChoiceField(choices=[BLANK_CHOICE] + [(x, x) for x in range(1, 86)], required=False)
-    sex = forms.ChoiceField(
-        choices=[BLANK_CHOICE, ('male', 'male'), ('female', 'female')], required=False
+    age = forms.IntegerField(min_value=1, max_value=85, required=False)
+    sex = forms.ChoiceField(choices=[('male', 'male'), ('female', 'female')], required=False)
+    anatom_site_general = choice_field_from_enum('anatom_site_general', AnatomSiteGeneralEnum)
+    diagnosis = choice_field_from_enum('diagnosis', DiagnosisEnum)
+    diagnosis_confirm_type = choice_field_from_enum(
+        'diagnosis_confirm_type', DiagnosisConfirmTypeEnum
     )
-    anatom_site_general = forms.ChoiceField(
-        choices=[BLANK_CHOICE] + [(i.value, i.value) for i in AnatomSiteGeneralEnum], required=False
-    )
-    diagnosis = forms.ChoiceField(
-        choices=[BLANK_CHOICE] + [(i.value, i.value) for i in DiagnosisEnum], required=False
-    )
-    diagnosis_confirm_type = forms.ChoiceField(
-        choices=[BLANK_CHOICE] + [(i.value, i.value) for i in DiagnosisConfirmTypeEnum],
-        required=False,
-    )
+    image_type = choice_field_from_enum('image_type', ImageTypeEnum)
+    dermoscopic_type = choice_field_from_enum('dermoscopic_type', DermoscopicTypeEnum)
