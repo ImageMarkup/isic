@@ -141,16 +141,11 @@ def upload_single_accession(request, cohort_pk):
                         ),
                         original_blob_size=form.cleaned_data['original_blob'].size,
                     )
+
                     metadata = {
                         key: form.cleaned_data[key]
-                        for key in [
-                            'age',
-                            'sex',
-                            'anatom_site_general',
-                            'diagnosis',
-                            'diagnosis_confirm_type',
-                        ]
-                        if form.cleaned_data[key] != ''
+                        for key in form.cleaned_data
+                        if form.cleaned_data[key] != '' and key != 'original_blob'
                     }
                     accession.update_metadata(request.user, metadata)
             except ValidationError as e:
@@ -166,9 +161,18 @@ def upload_single_accession(request, cohort_pk):
                 )
                 return HttpResponseRedirect(reverse('upload/cohort-files', args=[cohort.pk]))
     else:
-        form = SingleAccessionUploadForm()
+        # prefill form fields with GET values, this allows links to be sent around that prefill
+        # diagnosis etc.
+        form = SingleAccessionUploadForm(initial=request.GET)
 
-    return render(request, 'ingest/upload_accession.html', {'form': form})
+    return render(
+        request,
+        'ingest/upload_accession.html',
+        {
+            'form': form,
+            'cohort': cohort,
+        },
+    )
 
 
 @needs_object_permission('ingest.view_cohort', (Cohort, 'pk', 'cohort_pk'))
