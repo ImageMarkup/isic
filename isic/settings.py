@@ -205,3 +205,4 @@ class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration
     AWS_CLOUDFRONT_KEY = values.SecretValue()
     AWS_CLOUDFRONT_KEY_ID = values.Value()
     AWS_S3_CUSTOM_DOMAIN = values.Value()
+    DEFAULT_FILE_STORAGE = 'isic.core.storage.CacheableCloudFrontStorage'
