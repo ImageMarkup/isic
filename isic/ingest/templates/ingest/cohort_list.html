@@ -1,0 +1,30 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+
+
+{% block content %}
+<div class="heading-1">Cohorts</div>
+
+<div class="mt-4 overflow-x-auto">
+    <table class="table table-compact table-fixed w-full">
+        <thead>
+            <tr>
+                <th>Contributor</th>
+                <th>Attribution</th>
+                <th>Cohort</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                <td>{% if row.display_contributor %}{{ row.contributor.institution_name }}{% endif %}</td>
+                <td>{% if row.display_attribution %}{{ row.cohort.attribution }}{% endif %}</td>
+                <td><a href="{% url 'cohort-detail' row.cohort.id %}">{{ row.cohort.name }}</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}
