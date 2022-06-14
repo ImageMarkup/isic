@@ -53,6 +53,7 @@ urlpatterns = [
     ),
     path('upload/<int:pk>/publish/', cohort_views.publish_cohort, name='upload/cohort-publish'),
     # Staff pages
+    path('staff/cohorts/', cohort_views.cohort_list, name='cohort-list'),
     path('staff/ingest-review/', review_views.ingest_review, name='ingest-review'),
     path('staff/ingest-review/<int:pk>/', cohort_views.cohort_detail, name='cohort-detail'),
     path(

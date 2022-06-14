@@ -86,14 +86,15 @@ def test_upload_edit_cohort_permissions(
 
 
 @pytest.mark.django_db
-def test_staff_page_permissions(client, authenticated_client, staff_client):
-    r = client.get(reverse('ingest-review'))
+@pytest.mark.parametrize('url_name', ['ingest-review', 'cohort-list'])
+def test_staff_page_permissions(url_name, client, authenticated_client, staff_client):
+    r = client.get(reverse(url_name))
     assert r.status_code == 302
 
-    r = authenticated_client.get(reverse('ingest-review'))
+    r = authenticated_client.get(reverse(url_name))
     assert r.status_code == 302
 
-    r = staff_client.get(reverse('ingest-review'))
+    r = staff_client.get(reverse(url_name))
     assert r.status_code == 200
 
 
