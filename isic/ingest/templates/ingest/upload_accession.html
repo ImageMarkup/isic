@@ -1,18 +1,42 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
+
+<div class="heading-1">Upload to {{ cohort.name }}</div>
+
 {{ form.media }}
 <form method="post">
     {% csrf_token %}
-    {% for field in form.visible_fields %}
-    <div class="mb-4">
-        {{ field.errors }}
-        {{ field.label }}
-        {{ field }}
+
+    <div class="my-4">
+        {{ form.original_blob.errors }}
+        {{ form.original_blob.label }}
+        {{ form.original_blob }}
     </div>
+
+    <div class="divider"></div>
+
+    {% for field in form %}
+        {% if field.name != 'original_blob' %}
+            <div class="mb-4">
+                {{ field.errors }}
+                {{ field.label }}
+                {% if field.name == 'age' %}
+                    {{ field }}
+                {% else %}
+                    <select class="select select-bordered w-full max-w-xs" name="{{ field.name }}">
+                        <option disabled selected>Optional</option>
+                        {% for choice in field.field.choices %}
+                        <option value="{{ choice.0 }}" {% if field.value == choice.0 %}selected="selected"{% endif %}>
+                            {{ choice.1 }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                {% endif %}
+            </div>
+        {% endif %}
     {% endfor %}
-    <button type="submit" class="btn btn-primary">
-        Upload
-    </button>
+
+    <button type="submit" class="btn btn-primary">Upload</button>
 </form>
 {% endblock %}
