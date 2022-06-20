@@ -163,7 +163,10 @@ class ImageSerializer(serializers.ModelSerializer):
     files = ImageFileSerializer(source='*', read_only=True)
 
     def get_metadata(self, image: Image) -> dict:
-        metadata = {'acquisition': {}, 'clinical': {}}
+        metadata = {
+            'acquisition': {'pixels_x': image.accession.width, 'pixels_y': image.accession.height},
+            'clinical': {},
+        }
 
         for key, value in image.accession.redacted_metadata.items():
             # this is the only field that we expose that isn't in the FIELD_REGISTRY
