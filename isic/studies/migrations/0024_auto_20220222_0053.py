@@ -4,9 +4,9 @@ from django.db import migrations
 
 
 def create_base_collections(apps, schema_editor):
-    Study = apps.get_model('studies', 'Study')  # noqa: N806
-    Collection = apps.get_model('core', 'Collection')  # noqa: N806
-    Image = apps.get_model('core', 'Image')  # noqa: N806
+    Study = apps.get_model('studies', 'Study')
+    Collection = apps.get_model('core', 'Collection')
+    Image = apps.get_model('core', 'Image')
 
     for study in Study.objects.all():
         c = Collection.objects.create(

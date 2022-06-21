@@ -4,10 +4,10 @@ from django.db import migrations
 
 
 def create_cohort_collections(apps, schema_editor):
-    Accession = apps.get_model('ingest', 'Accession')  # noqa: N806
-    Cohort = apps.get_model('ingest', 'Cohort')  # noqa: N806
-    Collection = apps.get_model('core', 'Collection')  # noqa: N806
-    Image = apps.get_model('core', 'Image')  # noqa: N806
+    Accession = apps.get_model('ingest', 'Accession')
+    Cohort = apps.get_model('ingest', 'Cohort')
+    Collection = apps.get_model('core', 'Collection')
+    Image = apps.get_model('core', 'Image')
 
     for cohort in Cohort.objects.filter(collection=None):
         try:

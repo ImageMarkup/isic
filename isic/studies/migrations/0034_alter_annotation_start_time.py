@@ -5,7 +5,7 @@ from django.db.models.expressions import F
 
 
 def nullify_start_times(apps, schema_editor):
-    Annotation = apps.get_model('studies', 'Annotation')  # noqa: N806
+    Annotation = apps.get_model('studies', 'Annotation')
 
     # some annotations were filled with fake start times. particularly, the first
     # annotation for each study for each user. go back and nullify these now that

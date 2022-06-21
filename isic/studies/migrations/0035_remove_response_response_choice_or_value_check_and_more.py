@@ -7,7 +7,7 @@ import django.db.models.lookups
 
 
 def migrate_response_values(apps, schema_editor):
-    Response = apps.get_model('studies', 'Response')  # noqa: N806
+    Response = apps.get_model('studies', 'Response')
 
     Response.objects.filter(value={}).update(value=None)
     Response.objects.exclude(value=None).update(value=F('value__value'))

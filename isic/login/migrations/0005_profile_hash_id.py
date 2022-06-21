@@ -7,7 +7,7 @@ from isic.login.models import get_hashid
 
 
 def gen_hashid(apps, schema_editor):
-    Profile = apps.get_model('login', 'Profile')  # noqa: N806
+    Profile = apps.get_model('login', 'Profile')
 
     for row in Profile.objects.all():
         row.hash_id = get_hashid(row.user.pk)

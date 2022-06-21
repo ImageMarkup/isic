@@ -46,7 +46,7 @@ def drf_default_with_modifications_exception_handler(exc, ctx):
 def _oauth2_pkce_required(client_id):
     from oauth2_provider.models import get_application_model
 
-    OAuth2Application = get_application_model()  # noqa: N806
+    OAuth2Application = get_application_model()
     oauth_application = OAuth2Application.objects.get(client_id=client_id)
     # PKCE is only required for public clients, but express the logic this way to make it required
     # by default for any future new client_types
