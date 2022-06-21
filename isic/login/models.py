@@ -41,9 +41,6 @@ class Profile(models.Model):
         null=True,
         validators=[RegexValidator(f'^{MONGO_ID_REGEX}$')],
     )
-    # this may be identical to user.password, but it needs to be retained to
-    # check if the user password has changed.
-    girder_salt = models.CharField(max_length=60, blank=True)
     hash_id = models.CharField(
         max_length=5,
         unique=True,
