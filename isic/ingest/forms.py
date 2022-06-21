@@ -19,9 +19,10 @@ def choice_field_from_enum(field_name: str, enum) -> forms.ChoiceField:
     if 'label' in FIELD_REGISTRY[field_name]:
         label = FIELD_REGISTRY[field_name]['label']
 
-    return forms.ChoiceField(
-        choices=[(i.value, i.value) for i in enum], required=False, label=label
-    )
+    # sort choices by their 'label' even though we don't have labels yet
+    choices = sorted(((i.value, i.value) for i in enum), key=lambda x: x[1])
+
+    return forms.ChoiceField(choices=choices, required=False, label=label)
 
 
 class CohortForm(ModelForm):
