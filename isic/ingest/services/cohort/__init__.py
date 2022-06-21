@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count
+from more_itertools import ichunked
 
 from isic.core.models.image import Image
 from isic.core.services.collection import collection_create
@@ -89,7 +90,15 @@ def cohort_merge(*, dest_cohort: Cohort, other_cohorts: Iterable[Cohort]) -> Non
                         f'Different value for {field}: {dest_cohort_value}(dest) vs {cohort_value}'
                     )
 
-            dest_cohort.accessions.add(*cohort.accessions.all())
+            CohortAccessionM2M = Cohort.accessions.through
+            for accession_batch in ichunked(cohort.accessions.iterator(), 5_000):
+                CohortAccessionM2M.objects.bulk_create(
+                    [
+                        CohortAccessionM2M(cohort=dest_cohort, accession=accession)
+                        for accession in accession_batch
+                    ]
+                )
+
             dest_cohort.zip_uploads.add(*cohort.zip_uploads.all())
             dest_cohort.metadata_files.add(*cohort.metadata_files.all())
 
