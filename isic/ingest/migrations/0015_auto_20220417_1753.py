@@ -5,7 +5,7 @@ from django.db.models.expressions import F
 
 
 def migrate_reviewed_at(apps, schema_editor):
-    AccessionReview = apps.get_model('ingest', 'AccessionReview')  # noqa: N806
+    AccessionReview = apps.get_model('ingest', 'AccessionReview')
     AccessionReview.objects.update(reviewed_at=F('created'))
 
 

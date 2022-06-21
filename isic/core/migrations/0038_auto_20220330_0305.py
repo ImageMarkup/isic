@@ -4,8 +4,8 @@ from django.db import migrations
 
 
 def populate_image_creator(apps, schema_editor):
-    Image = apps.get_model('core', 'Image')  # noqa: N806
-    User = apps.get_model('auth', 'User')  # noqa: N806
+    Image = apps.get_model('core', 'Image')
+    User = apps.get_model('auth', 'User')
 
     if Image.objects.exists() and User.objects.filter(pk=1).exists():
         user = User.objects.get(pk=1)

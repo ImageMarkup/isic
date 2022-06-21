@@ -4,7 +4,7 @@ from django.db import migrations, models
 
 
 def set_collection_locked(apps, schema_editor):
-    Collection = apps.get_model('core', 'Collection')  # noqa: N806
+    Collection = apps.get_model('core', 'Collection')
 
     for collection in Collection.objects.all():
         # 76 is dermatofibroma study
