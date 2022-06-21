@@ -83,8 +83,8 @@ def study_list(request):
 @login_required
 @transaction.atomic()
 def study_create(request):
-    OfficialQuestionFormSet = formset_factory(OfficialQuestionForm, extra=0)  # noqa: N806
-    CustomQuestionFormSet = formset_factory(CustomQuestionForm, extra=0)  # noqa: N806
+    OfficialQuestionFormSet = formset_factory(OfficialQuestionForm, extra=0)
+    CustomQuestionFormSet = formset_factory(CustomQuestionForm, extra=0)
 
     visible_collections = get_visible_objects(request.user, 'core.view_collection').order_by('name')
 

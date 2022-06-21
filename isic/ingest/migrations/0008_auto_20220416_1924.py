@@ -6,8 +6,8 @@ from django.db.models.query_utils import Q
 
 
 def migrate_checks(apps, schema_editor):
-    Accession = apps.get_model('ingest', 'Accession')  # noqa: N806
-    CheckLog = apps.get_model('ingest', 'CheckLog')  # noqa: N806
+    Accession = apps.get_model('ingest', 'Accession')
+    CheckLog = apps.get_model('ingest', 'CheckLog')
 
     failed_review_filter = (
         Q(lesion_check=False)

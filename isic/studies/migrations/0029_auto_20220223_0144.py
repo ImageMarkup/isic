@@ -4,7 +4,7 @@ from django.db import migrations
 
 
 def migrate_question_required(apps, schema_editor):
-    StudyQuestion = apps.get_model('studies', 'StudyQuestion')  # noqa: N806
+    StudyQuestion = apps.get_model('studies', 'StudyQuestion')
 
     for study_question in StudyQuestion.objects.all():
         study_question.required = study_question.question.required

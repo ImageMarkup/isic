@@ -4,7 +4,7 @@ from django.db import migrations, models
 
 
 def set_start_time(apps, schema_editor):
-    Annotation = apps.get_model('studies', 'Annotation')  # noqa: N806
+    Annotation = apps.get_model('studies', 'Annotation')
     for annotation in Annotation.objects.filter(start_time=None):
         previous_annotation = (
             Annotation.objects.filter(

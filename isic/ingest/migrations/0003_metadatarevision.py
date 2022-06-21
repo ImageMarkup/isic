@@ -7,8 +7,8 @@ import django_extensions.db.fields
 
 
 def create_initial_metadata_versions(apps, schema_editor):
-    Accession = apps.get_model('ingest', 'Accession')  # noqa: N806
-    User = apps.get_model('auth', 'User')  # noqa: N806
+    Accession = apps.get_model('ingest', 'Accession')
+    User = apps.get_model('auth', 'User')
     accessions = Accession.objects.exclude(metadata={}, unstructured_metadata={})
     if accessions.exists():
         user = User.objects.get(pk=1)

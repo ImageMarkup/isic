@@ -54,7 +54,7 @@ DEFAULT_SEARCH_AGGREGATES['age_approx'] = {
 @lru_cache
 def get_elasticsearch_client() -> OpenSearch:
     # TODO: investigate using retryable requests with transport_class
-    RetryOnTimeoutTransport = partial(Transport, retry_on_timeout=True)  # noqa: N806
+    RetryOnTimeoutTransport = partial(Transport, retry_on_timeout=True)
     return OpenSearch(settings.ISIC_ELASTICSEARCH_URI, transport_class=RetryOnTimeoutTransport)
 
 
