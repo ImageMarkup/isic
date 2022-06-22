@@ -337,36 +337,6 @@ class Annotation(TimeStampedModel):
             return self.created - self.start_time
 
 
-class AnnotationPermissions:
-    model = Annotation
-    perms = ['view_annotation']
-    filters = {'view_annotation': 'view_annotation_list'}
-
-    @staticmethod
-    def view_annotation_list(
-        user_obj: User, qs: QuerySet[Annotation] | None = None
-    ) -> QuerySet[Annotation]:
-        qs = qs if qs is not None else Annotation._default_manager.all()
-
-        if user_obj.is_staff:
-            return qs
-        elif user_obj.is_authenticated:
-            # Note: this allows people who can't see the image to see it if it's part of an
-            # annotation. This is similar to StudyTaskPermissions
-            return qs.filter(
-                Q(study__public=True) | Q(annotator=user_obj) | Q(study__owners=user_obj)
-            )
-        else:
-            return qs.filter(study__public=True)
-
-    @staticmethod
-    def view_annotation(user_obj, obj):
-        return AnnotationPermissions.view_annotation_list(user_obj).contains(obj)
-
-
-Annotation.perms_class = AnnotationPermissions
-
-
 class ResponseQuerySet(models.QuerySet):
     def for_display(self) -> list:
         for response in (
