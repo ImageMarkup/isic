@@ -3,7 +3,14 @@ import pytest
 from isic.core.forms.doi import CreateDoiForm
 from isic.core.models.doi import Doi
 from isic.core.models.image import Image
-from isic.core.services.collection.doi import collection_build_doi
+from isic.core.services.collection.doi import collection_build_doi, collection_create_doi
+
+
+@pytest.fixture
+def mock_datacite_create_doi(mocker):
+    yield mocker.patch(
+        'isic.core.services.collection.doi._datacite_create_doi', lambda doi: {'doi': '123456'}
+    )
 
 
 @pytest.fixture
@@ -16,6 +23,17 @@ def public_collection_with_public_images(image_factory, collection_factory):
 @pytest.fixture
 def staff_user_request(staff_user, mocker):
     return mocker.MagicMock(user=staff_user)
+
+
+@pytest.mark.django_db
+def test_collection_create_doi(
+    public_collection_with_public_images, staff_user, mock_datacite_create_doi
+):
+    collection_create_doi(user=staff_user, collection=public_collection_with_public_images)
+
+    public_collection_with_public_images.refresh_from_db()
+    assert public_collection_with_public_images.locked
+    assert public_collection_with_public_images.doi
 
 
 @pytest.mark.django_db
@@ -38,10 +56,9 @@ def test_doi_form_requires_no_existing_doi(public_collection, staff_user_request
 
 
 @pytest.mark.django_db
-def test_doi_form_creation(public_collection_with_public_images, staff_user_request, mocker):
-    mocker.patch(
-        'isic.core.services.collection.doi._datacite_create_doi', lambda doi: {'doi': '123456'}
-    )
+def test_doi_form_creation(
+    public_collection_with_public_images, staff_user_request, mock_datacite_create_doi
+):
     form = CreateDoiForm(
         data={},
         collection=public_collection_with_public_images,
