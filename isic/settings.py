@@ -181,6 +181,8 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
         'from opensearchpy import OpenSearch',
         'from isic.core.search import *',
     ]
+    SHELL_PLUS_PRINT_SQL_TRUNCATE = None
+    RUNSERVER_PLUS_PRINT_SQL_TRUNCATE = None
     ISIC_MONGO_URI = values.Value(None)
     # Allow developers to run tasks synchronously for easy debugging
     CELERY_TASK_ALWAYS_EAGER = values.BooleanValue(False)
