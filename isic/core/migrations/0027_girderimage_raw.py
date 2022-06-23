@@ -4,8 +4,8 @@ from django.db import migrations, models
 
 
 def move_duplicate_images(apps, schema_editor):
-    DuplicateImage = apps.get_model('core', 'DuplicateImage')  # noqa
-    GirderImage = apps.get_model('core', 'GirderImage')  # noqa
+    DuplicateImage = apps.get_model('core', 'DuplicateImage')
+    GirderImage = apps.get_model('core', 'GirderImage')
 
     for duplicate_image in DuplicateImage.objects.all():
         gi = GirderImage.objects.get(item_id=duplicate_image.girder_id)

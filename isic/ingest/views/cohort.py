@@ -71,13 +71,17 @@ def publish_cohort(request, pk):
     cohort = get_object_or_404(Cohort, pk=pk)
 
     if request.method == 'POST':
+        # define the count before publishing so it's accurate in development when
+        # accessions are published synchronously.
+        publishable_accession_count = cohort.accessions.publishable().count()
+
         public = True if 'public' in request.POST else False
         cohort_publish_initialize(cohort=cohort, publisher=request.user, public=public)
 
         messages.add_message(
             request,
             messages.SUCCESS,
-            f'Publishing {intcomma(cohort.accessions.publishable().count())} images. This may take several minutes.',  # noqa: E501
+            f'Publishing {intcomma(publishable_accession_count)} images. This may take several minutes.',  # noqa: E501
         )
         return HttpResponseRedirect(reverse('cohort-detail', args=[cohort.pk]))
     else:

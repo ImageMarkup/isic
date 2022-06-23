@@ -169,7 +169,7 @@ class ImagePermissions:
 
         if user_obj.is_staff:
             return qs
-        elif not user_obj.is_anonymous:
+        elif user_obj.is_authenticated:
             # Note: permissions here must be also modified in build_elasticsearch_query
             return qs.filter(
                 Q(public=True)
