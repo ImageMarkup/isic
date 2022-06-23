@@ -30,8 +30,13 @@ def collection_add_images(
     with transaction.atomic():
         CollectionImageM2M = Collection.images.through
         for image_batch in ichunked(qs.iterator(), 5_000):
+            # ignore_conflicts is necessary to make this method idempotent (consistent with
+            # collection.images.add) ignore_conflicts only ignores primary key, duplicate, and
+            # exclusion constraints. we don't use primary key or exclusion here, so this should
+            # only ignore duplicate entries.
             CollectionImageM2M.objects.bulk_create(
-                [CollectionImageM2M(collection=collection, image=image) for image in image_batch]
+                [CollectionImageM2M(collection=collection, image=image) for image in image_batch],
+                ignore_conflicts=True,
             )
 
 
