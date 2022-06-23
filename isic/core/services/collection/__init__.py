@@ -21,9 +21,13 @@ def _require_unlocked_collection(collection: Collection) -> None:
 
 
 def collection_create(*, creator: User, name: str, description: str, public: bool, locked: bool):
-    return Collection.objects.create(
+    collection = Collection(
         creator=creator, name=name, description=description, public=public, locked=locked
     )
+    collection.full_clean()
+    collection.save()
+
+    return collection
 
 
 def collection_update(collection: Collection, ignore_lock: bool = False, **fields):
@@ -34,6 +38,7 @@ def collection_update(collection: Collection, ignore_lock: bool = False, **field
         setattr(collection, field, value)
 
     collection.full_clean()
+
     return collection.save(update_fields=fields)
 
 
@@ -110,6 +115,6 @@ def collection_merge(
                 collection=collection, cohort=dest_collection.cohort, ignore_lock=True
             )
             collection_add_images(
-                collection=dest_collection, qs=collection.images.iterator(), ignore_lock=True
+                collection=dest_collection, qs=collection.images.all(), ignore_lock=True
             )
             collection_delete(collection=collection, ignore_lock=True)
