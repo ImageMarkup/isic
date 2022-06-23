@@ -7,9 +7,9 @@ from django.db import transaction
 from django.db.models import Count
 from more_itertools import ichunked
 
-from isic.core.models.image import Image
 from isic.core.services.collection import collection_create
 from isic.core.services.collection.image import collection_add_images
+from isic.core.services.image import image_create
 from isic.core.tasks import sync_elasticsearch_index_task
 from isic.ingest.models.cohort import Cohort
 
@@ -32,14 +32,10 @@ def cohort_publish_initialize(*, cohort: Cohort, publisher: User, public: bool) 
     transaction.on_commit(lambda: publish_cohort_task.delay(cohort.pk, publisher.pk, public=public))
 
 
+@transaction.atomic()
 def cohort_publish(*, cohort: Cohort, publisher: User, public: bool) -> None:
     for accession in cohort.accessions.publishable().iterator():
-        # use get_or_create so the function is idempotent in case of failure
-        image, _ = Image.objects.get_or_create(
-            creator=publisher,
-            accession=accession,
-            public=public,
-        )
+        image = image_create(creator=publisher, accession=accession, public=public)
         collection_add_images(collection=cohort.collection, image=image, ignore_lock=True)
 
     transaction.on_commit(lambda: sync_elasticsearch_index_task.delay())
