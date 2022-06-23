@@ -10,7 +10,11 @@ from requests.exceptions import HTTPError
 
 from isic.core.models.collection import Collection
 from isic.core.models.doi import Doi
-from isic.core.services.collection import collection_get_creators_in_attribution_order
+from isic.core.services.collection import (
+    collection_get_creators_in_attribution_order,
+    collection_lock,
+    collection_update,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +86,7 @@ def _datacite_create_doi(doi: dict) -> None:
     r.raise_for_status()
 
 
-def collection_create_doi(*, user: User, collection: Collection) -> None:
+def collection_create_doi(*, user: User, collection: Collection) -> Doi:
     collection_check_create_doi_allowed(user=user, collection=collection)
     doi_id = collection_generate_random_doi_id()
     doi = collection_build_doi(collection=collection, doi_id=doi_id)
@@ -94,7 +98,8 @@ def collection_create_doi(*, user: User, collection: Collection) -> None:
         raise ValidationError('Something went wrong creating the DOI.')
     else:
         with transaction.atomic():
-            collection.locked = True
-            collection.doi = Doi.objects.create(id=id, url=f'https://doi.org/{doi_id}')
-            collection.full_clean()
-            collection.save(update_fields=['doi', 'locked'])
+            doi = Doi.objects.create(id=id, url=f'https://doi.org/{doi_id}')
+            collection_lock(collection=collection)
+            collection_update(collection=collection, doi=doi, ignore_lock=True)
+
+    return doi
