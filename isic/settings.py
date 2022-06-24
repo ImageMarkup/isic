@@ -188,6 +188,7 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
     CELERY_TASK_ALWAYS_EAGER = values.BooleanValue(False)
     CELERY_TASK_EAGER_PROPAGATES = values.BooleanValue(False)
     ISIC_DATACITE_DOI_PREFIX = '10.80222'
+    DEFAULT_FILE_STORAGE = 'isic.core.storage.MinioS3ProxyStorage'
 
 
 class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
