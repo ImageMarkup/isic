@@ -1,6 +1,5 @@
 from django.contrib import messages
 from django.contrib.auth.models import User
-from django.db import transaction
 from django.http.response import JsonResponse
 from django.utils.decorators import method_decorator
 from django_filters.rest_framework import DjangoFilterBackend
@@ -55,11 +54,7 @@ class CollectionViewSet(ReadOnlyModelViewSet):
 
         # Pass data instead of validated_data because the celery task is going to revalidate.
         # This avoids re encoding collections as a comma delimited string.
-        transaction.on_commit(
-            lambda: populate_collection_from_search_task.delay(
-                kwargs['pk'], request.user.pk, serializer.data
-            )
-        )
+        populate_collection_from_search_task.delay(kwargs['pk'], request.user.pk, serializer.data)
 
         # TODO: this is a weird mixture of concerns between SSR and an API, figure out a better
         # way to handle this.
