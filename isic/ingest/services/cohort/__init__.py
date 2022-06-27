@@ -29,7 +29,7 @@ def cohort_publish_initialize(*, cohort: Cohort, publisher: User, public: bool) 
         )
         cohort.save(update_fields=['collection'])
 
-    transaction.on_commit(lambda: publish_cohort_task.delay(cohort.pk, publisher.pk, public=public))
+    publish_cohort_task.delay(cohort.pk, publisher.pk, public=public)
 
 
 @transaction.atomic()
@@ -38,7 +38,7 @@ def cohort_publish(*, cohort: Cohort, publisher: User, public: bool) -> None:
         image = image_create(creator=publisher, accession=accession, public=public)
         collection_add_images(collection=cohort.collection, image=image, ignore_lock=True)
 
-    transaction.on_commit(lambda: sync_elasticsearch_index_task.delay())
+    sync_elasticsearch_index_task.delay()
 
 
 def cohort_delete(*, cohort: Cohort) -> None:
