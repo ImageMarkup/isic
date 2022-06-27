@@ -1,7 +1,6 @@
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files.base import File
-from django.db import transaction
 from s3_file_field.widgets import S3PlaceholderFile
 
 from isic.ingest.models.accession import Accession
@@ -35,6 +34,6 @@ def accession_create(
         original_blob_size=original_blob_size,
     )
 
-    transaction.on_commit(lambda: accession_generate_blob_task.delay(accession.pk))
+    accession_generate_blob_task.delay(accession.pk)
 
     return accession
