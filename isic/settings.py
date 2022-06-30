@@ -188,6 +188,7 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
     CELERY_TASK_ALWAYS_EAGER = values.BooleanValue(False)
     CELERY_TASK_EAGER_PROPAGATES = values.BooleanValue(False)
     ISIC_DATACITE_DOI_PREFIX = '10.80222'
+    MINIO_STORAGE_MEDIA_OBJECT_METADATA = {'Content-Disposition': 'attachment'}
 
 
 class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
@@ -208,3 +209,5 @@ class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration
     AWS_CLOUDFRONT_KEY_ID = values.Value()
     AWS_S3_CUSTOM_DOMAIN = values.Value()
     DEFAULT_FILE_STORAGE = 'isic.core.storage.CacheableCloudFrontStorage'
+
+    AWS_S3_OBJECT_PARAMETERS = {'ContentDisposition': 'attachment'}
