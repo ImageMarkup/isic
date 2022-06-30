@@ -211,3 +211,5 @@ class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration
     DEFAULT_FILE_STORAGE = 'isic.core.storage.CacheableCloudFrontStorage'
 
     AWS_S3_OBJECT_PARAMETERS = {'ContentDisposition': 'attachment'}
+
+    SENTRY_TRACES_SAMPLE_RATE = 0.01  # sample 1% of requests for performance monitoring
