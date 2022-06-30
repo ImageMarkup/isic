@@ -11,7 +11,7 @@ client = boto3.client('s3')
 @click.command()
 def migrate_content_disposition():
     with transaction.atomic():
-        accessions = Accession.objects.all()
+        accessions = Accession.objects.ingested()
 
         with click.progressbar(accessions.iterator(), length=accessions.count()) as bar:
             for accession in bar:
