@@ -111,7 +111,7 @@ def image_browser(request):
         request,
         'core/image_browser.html',
         {
-            'total_images': qs.count(),
+            'total_images': page.paginator.count,
             'images': page,
             # The user can only add images to collections that are theirs and unlocked.
             'collections': addable_collections,
