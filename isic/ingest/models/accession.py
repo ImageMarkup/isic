@@ -117,7 +117,8 @@ class Accession(CreationSortedTimeStampedModel):
                     width__isnull=False,
                     height__isnull=False,
                 )
-                & ~Q(thumbnail_256='', blob_name='')
+                & ~Q(thumbnail_256='')
+                & ~Q(blob_name='')
                 | ~Q(status=AccessionStatus.SUCCEEDED),
             ),
         ]
@@ -232,7 +233,7 @@ class Accession(CreationSortedTimeStampedModel):
                 self.height = img.height
                 self.width = img.width
 
-                self.save(update_fields=['blob', 'blob_size', 'height', 'width'])
+                self.save(update_fields=['blob_name', 'blob', 'blob_size', 'height', 'width'])
 
             self.generate_thumbnail()
 
