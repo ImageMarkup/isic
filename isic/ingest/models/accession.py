@@ -102,6 +102,10 @@ class Accession(CreationSortedTimeStampedModel):
             ),
             # blob should be unique when it's filled out
             UniqueConstraint(name='accession_unique_blob', fields=['blob'], condition=~Q(blob='')),
+            # blob_name should be unique when it's filled out
+            UniqueConstraint(
+                name='accession_unique_blob_name', fields=['blob_name'], condition=~Q(blob_name='')
+            ),
             # the original blob name should always be hidden, so blob_name shouldn't be the same
             CheckConstraint(
                 name='accession_blob_name_not_original_blob_name',
@@ -117,7 +121,8 @@ class Accession(CreationSortedTimeStampedModel):
                     width__isnull=False,
                     height__isnull=False,
                 )
-                & ~Q(thumbnail_256='', blob_name='')
+                & ~Q(thumbnail_256='')
+                & ~Q(blob_name='')
                 | ~Q(status=AccessionStatus.SUCCEEDED),
             ),
         ]
@@ -232,7 +237,7 @@ class Accession(CreationSortedTimeStampedModel):
                 self.height = img.height
                 self.width = img.width
 
-                self.save(update_fields=['blob', 'blob_size', 'height', 'width'])
+                self.save(update_fields=['blob_name', 'blob', 'blob_size', 'height', 'width'])
 
             self.generate_thumbnail()
 
