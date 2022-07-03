@@ -102,6 +102,10 @@ class Accession(CreationSortedTimeStampedModel):
             ),
             # blob should be unique when it's filled out
             UniqueConstraint(name='accession_unique_blob', fields=['blob'], condition=~Q(blob='')),
+            # blob_name should be unique when it's filled out
+            UniqueConstraint(
+                name='accession_unique_blob_name', fields=['blob_name'], condition=~Q(blob_name='')
+            ),
             # the original blob name should always be hidden, so blob_name shouldn't be the same
             CheckConstraint(
                 name='accession_blob_name_not_original_blob_name',
