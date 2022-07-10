@@ -1,6 +1,8 @@
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models.query import QuerySet
+from more_itertools.more import ichunked
 
 from isic.core.models.collection import Collection
 from isic.core.models.image import Image
@@ -25,7 +27,17 @@ def collection_add_images(
     if collection.public and qs.private().exists():
         raise ValidationError("Can't add private images to a public collection.")
 
-    collection.images.add(*qs)
+    with transaction.atomic():
+        CollectionImageM2M = Collection.images.through
+        for image_batch in ichunked(qs.iterator(), 5_000):
+            # ignore_conflicts is necessary to make this method idempotent (consistent with
+            # collection.images.add) ignore_conflicts only ignores primary key, duplicate, and
+            # exclusion constraints. we don't use primary key or exclusion here, so this should
+            # only ignore duplicate entries.
+            CollectionImageM2M.objects.bulk_create(
+                [CollectionImageM2M(collection=collection, image=image) for image in image_batch],
+                ignore_conflicts=True,
+            )
 
 
 def collection_remove_images(
@@ -43,7 +55,7 @@ def collection_remove_images(
     if collection.locked and not ignore_lock:
         raise ValidationError("Can't remove images from a locked collection.")
 
-    collection.images.remove(*qs)
+    Collection.images.through.objects.filter(collection=collection, image__in=qs).delete()
 
 
 def collection_add_images_from_isic_ids(

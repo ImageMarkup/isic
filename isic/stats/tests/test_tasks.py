@@ -75,8 +75,10 @@ def test_cdn_access_log_parsing(mocker):
     }
 
 
-@pytest.mark.django_db(transaction=True)
-def test_collect_image_download_records_task(mocker, eager_celery, image_factory):
+@pytest.mark.django_db
+def test_collect_image_download_records_task(
+    mocker, eager_celery, image_factory, django_capture_on_commit_callbacks
+):
     # TODO: overriding the blob name requires passing the size manually.
     image = image_factory(
         accession__blob='some/exists.jpg', accession__blob_name='exists.jpg', accession__blob_size=1
@@ -125,7 +127,8 @@ def test_collect_image_download_records_task(mocker, eager_celery, image_factory
         ],
     )
 
-    collect_image_download_records_task()
+    with django_capture_on_commit_callbacks(execute=True):
+        collect_image_download_records_task()
 
     assert ImageDownload.objects.count() == 1
     assert image.downloads.count() == 1

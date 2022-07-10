@@ -45,7 +45,9 @@ def extract_zip_task(zip_pk: int):
             for accession_id in throttled_iterator(
                 zip_upload.accessions.values_list('id', flat=True).iterator()
             ):
-                accession_generate_blob_task.delay(accession_id)
+                # avoid .delay since we want to avoid putting tens of thousands of elements
+                # into the transaction.on_commit list.
+                accession_generate_blob_task.apply_async(args=[accession_id])
 
         transaction.on_commit(generate_blobs)
 
@@ -63,7 +65,7 @@ def accession_generate_blob_task(accession_pk: int):
 
     # Prevent skipped accessions from being passed to this task
     if accession.status == AccessionStatus.SUCCEEDED:
-        transaction.on_commit(lambda: process_distinctness_measure_task.delay(accession.pk))
+        process_distinctness_measure_task.delay(accession.pk)
 
 
 @shared_task(soft_time_limit=60, time_limit=90)

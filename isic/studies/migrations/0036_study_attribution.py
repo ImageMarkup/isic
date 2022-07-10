@@ -4,7 +4,7 @@ from django.db import migrations, models
 
 
 def migrate_study_attributions(apps, schema_editor):
-    Study = apps.get_model('studies', 'Study')  # noqa: N806
+    Study = apps.get_model('studies', 'Study')
     for study in Study.objects.all():
         if study.id == 92:
             study.attribution = (

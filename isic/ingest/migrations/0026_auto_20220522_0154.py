@@ -6,7 +6,7 @@ from isic.ingest.models.accession import AccessionStatus
 
 
 def reset_blob_name(apps, schema_editor):
-    Accession = apps.get_model('ingest', 'Accession')  # noqa: N806
+    Accession = apps.get_model('ingest', 'Accession')
     Accession.objects.exclude(status=AccessionStatus.SUCCEEDED).update(blob_name='')
 
 

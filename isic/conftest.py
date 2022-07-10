@@ -1,3 +1,4 @@
+from django.contrib.auth.models import Group, User
 from django.test.client import Client
 import pytest
 from pytest_factoryboy import register
@@ -24,6 +25,17 @@ from isic.studies.tests.factories import (
 )
 
 from .factories import ProfileFactory, UserFactory
+
+
+@pytest.fixture(autouse=True)
+def setup_groups(request):
+    # TODO: figure out how to avoid this and how to get serialized_rollback working.
+    if 'django_db_setup' in request.fixturenames:
+        for group_name in ['Public', 'ISIC Staff']:
+            Group.objects.get_or_create(name=group_name)
+
+        public = Group.objects.get(name='Public')
+        public.user_set.set(User.objects.all())
 
 
 @pytest.fixture

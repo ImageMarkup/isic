@@ -25,11 +25,14 @@ def publishable_cohort(cohort_factory, accession_factory, accession_review_facto
     return cohort
 
 
-@pytest.mark.django_db(transaction=True)
-def test_publish_cohort(staff_client, eager_celery, publishable_cohort):
-    staff_client.post(
-        reverse('upload/cohort-publish', args=[publishable_cohort.pk]), {'private': True}
-    )
+@pytest.mark.django_db
+def test_publish_cohort(
+    staff_client, eager_celery, publishable_cohort, django_capture_on_commit_callbacks
+):
+    with django_capture_on_commit_callbacks(execute=True):
+        staff_client.post(
+            reverse('upload/cohort-publish', args=[publishable_cohort.pk]), {'private': True}
+        )
 
     published_images = Image.objects.filter(accession__cohort=publishable_cohort)
 

@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 
 def migrate_owners(apps, schema_editor):
-    Study = apps.get_model('studies', 'Study')  # noqa: N806
+    Study = apps.get_model('studies', 'Study')
     for study in Study.objects.all():
         study.owners.add(study.creator)
 

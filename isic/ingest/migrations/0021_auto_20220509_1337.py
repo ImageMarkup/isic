@@ -5,7 +5,7 @@ from django.db.models.expressions import F
 
 
 def populate_original_blob_name(apps, schema_editor):
-    Accession = apps.get_model('ingest', 'Accession')  # noqa: N806
+    Accession = apps.get_model('ingest', 'Accession')
     Accession.objects.filter(original_blob_name__isnull=True).update(
         original_blob_name=F('blob_name')
     )

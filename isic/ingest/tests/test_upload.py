@@ -44,8 +44,15 @@ def zip_stream_garbage() -> BinaryIO:
         lazy_fixture('zip_stream_garbage'),
     ],
 )
-@pytest.mark.django_db(transaction=True)
-def test_upload_zip(cohort_factory, user, authenticated_client, zip_stream, eager_celery):
+@pytest.mark.django_db
+def test_upload_zip(
+    cohort_factory,
+    user,
+    authenticated_client,
+    zip_stream,
+    eager_celery,
+    django_capture_on_commit_callbacks,
+):
     cohort = cohort_factory(creator=user, contributor__creator=user)
     zip_stream.seek(0)
     zipfile = SimpleUploadedFile(
@@ -54,11 +61,12 @@ def test_upload_zip(cohort_factory, user, authenticated_client, zip_stream, eage
         'application/zip',
     )
 
-    authenticated_client.post(
-        reverse('upload/zip', args=[cohort.pk]),
-        {
-            'blob': zipfile,
-        },
-    )
+    with django_capture_on_commit_callbacks(execute=True):
+        authenticated_client.post(
+            reverse('upload/zip', args=[cohort.pk]),
+            {
+                'blob': zipfile,
+            },
+        )
 
     assert cohort.accessions.filter(status=AccessionStatus.SUCCEEDED).count() == 5
