@@ -30,13 +30,16 @@ for key, definition in FIELD_REGISTRY.items():
 # Additional fields here need to update the checks in isic_field on isic-metadata.
 INDEX_MAPPINGS['properties'].update(
     {
+        'age_approx': {'type': 'integer'},
+        'collections': {'type': 'integer'},
+        'contributor_owner_ids': {'type': 'integer'},
         'created': {'type': 'date'},
+        'id': {'type': 'integer'},
         'isic_id': {'type': 'text'},
         'public': {'type': 'boolean'},
-        'age_approx': {'type': 'integer'},
+        'shared_to': {'type': 'integer'},
     }
 )
-
 
 DEFAULT_SEARCH_AGGREGATES['age_approx'] = {
     'histogram': {
@@ -54,7 +57,7 @@ DEFAULT_SEARCH_AGGREGATES['age_approx'] = {
 @lru_cache
 def get_elasticsearch_client() -> OpenSearch:
     # TODO: investigate using retryable requests with transport_class
-    RetryOnTimeoutTransport = partial(Transport, retry_on_timeout=True)  # noqa: N806
+    RetryOnTimeoutTransport = partial(Transport, retry_on_timeout=True)
     return OpenSearch(settings.ISIC_ELASTICSEARCH_URI, transport_class=RetryOnTimeoutTransport)
 
 

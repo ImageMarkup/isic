@@ -4,10 +4,10 @@ from django.db import migrations
 
 
 def add_questions(apps, schema_editor):
-    YES_NO_CHOICES = ['Yes', 'No']  # noqa: N806
+    YES_NO_CHOICES = ['Yes', 'No']
 
-    Question = apps.get_model('studies', 'Question')  # noqa: N806
-    QuestionChoice = apps.get_model('studies', 'QuestionChoice')  # noqa: N806
+    Question = apps.get_model('studies', 'Question')
+    QuestionChoice = apps.get_model('studies', 'QuestionChoice')
 
     questions = {
         'Can this be used for the desired application/study?': YES_NO_CHOICES,

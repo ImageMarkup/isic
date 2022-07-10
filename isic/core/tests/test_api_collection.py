@@ -69,16 +69,23 @@ def test_core_api_collection_detail_permissions(client, collection, visible):
         assert r.status_code == 404, r.data
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 def test_core_api_collection_populate_from_search(
-    eager_celery, authenticated_client, collection_factory, image_factory, user
+    eager_celery,
+    authenticated_client,
+    collection_factory,
+    image_factory,
+    user,
+    django_capture_on_commit_callbacks,
 ):
     collection = collection_factory(locked=False, creator=user, public=True)
     image_factory(accession__metadata={'sex': 'male'}, public=True)
     image_factory(accession__metadata={'sex': 'female'}, public=True)
-    r = authenticated_client.post(
-        f'/api/v2/collections/{collection.pk}/populate-from-search/', {'query': 'sex:male'}
-    )
+
+    with django_capture_on_commit_callbacks(execute=True):
+        r = authenticated_client.post(
+            f'/api/v2/collections/{collection.pk}/populate-from-search/', {'query': 'sex:male'}
+        )
 
     assert r.status_code == 202, r.data
     assert collection.images.count() == 1

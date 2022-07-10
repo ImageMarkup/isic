@@ -2,7 +2,6 @@ from collections import defaultdict
 from datetime import timedelta
 import gzip
 from io import BytesIO
-import itertools
 import json
 from types import SimpleNamespace
 from typing import Iterable
@@ -17,6 +16,7 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from googleapiclient.errors import HttpError
+from more_itertools.more import chunked
 from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
 import pycountry
@@ -189,42 +189,42 @@ def collect_image_download_records_task():
     # gather all request log entries and group them by path
     for s3_log_object in _cdn_log_objects(s3):
         # break this out into subtasks as a single log file can consume a large amount of ram.
-        transaction.on_commit(lambda: process_s3_log_file_task.delay(s3_log_object['Key']))
+        process_s3_log_file_task.delay(s3_log_object['Key'])
 
 
-@shared_task(soft_time_limit=300, time_limit=360)
+@shared_task(soft_time_limit=90, time_limit=120)
 def process_s3_log_file_task(s3_log_object_key: str):
     s3 = _s3_client()
-    image_downloads: list[ImageDownload] = []
-    requests_by_path: dict[str, list[dict]] = defaultdict(list)
-
-    for request in itertools.filterfalse(
-        lambda r: r['status'] != 200, _cdn_access_log_records(s3, s3_log_object_key)
-    ):
-        requests_by_path[request['path']].append(request)
-
-    # go through just the images that mapped onto request paths
-    # (this ignores thumbnails and other files)
-    downloaded_images = (
-        Image.objects.select_related('accession')
-        # note this filter includes the path, because blob_name isn't unique but
-        # blob.name (the s3ff) is.
-        .filter(accession__blob__in=requests_by_path.keys()).iterator()
-    )
-    for downloaded_image in downloaded_images:
-        for download_request in requests_by_path[downloaded_image.accession.blob.name]:
-            image_downloads.append(
-                ImageDownload(
-                    download_time=download_request['download_time'],
-                    ip_address=download_request['ip_address'],
-                    user_agent=download_request['user_agent'],
-                    request_id=download_request['request_id'],
-                    image=downloaded_image,
-                )
-            )
 
     with transaction.atomic():
-        ImageDownload.objects.bulk_create(image_downloads, batch_size=1_000)
+        # go through only the images that mapped onto request paths (this ignores thumbnails and
+        # other files). this can create a query with tens of thousands of elements in the "where in"
+        # clause, so it needs to be batched.
+        for download_logs in chunked(
+            filter(lambda r: r['status'] == 200, _cdn_access_log_records(s3, s3_log_object_key)),
+            1_000,
+        ):
+            downloaded_paths_to_image_id: dict[str, int] = dict(
+                Image.objects.filter(
+                    accession__blob__in=[download_log['path'] for download_log in download_logs]
+                ).values_list('accession__blob', 'id')
+            )
+
+            image_downloads: list[ImageDownload] = []
+
+            for download_log in download_logs:
+                if download_log['path'] in downloaded_paths_to_image_id:
+                    image_downloads.append(
+                        ImageDownload(
+                            download_time=download_log['download_time'],
+                            ip_address=download_log['ip_address'],
+                            user_agent=download_log['user_agent'],
+                            request_id=download_log['request_id'],
+                            image_id=downloaded_paths_to_image_id[download_log['path']],
+                        )
+                    )
+
+            ImageDownload.objects.bulk_create(image_downloads)
 
     delete = s3.delete_object(
         Bucket=settings.CDN_LOG_BUCKET,

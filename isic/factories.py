@@ -5,7 +5,6 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 import factory
 import factory.django
-from passlib.hash import bcrypt
 
 from isic.login.models import Profile, get_hashid
 
@@ -16,9 +15,6 @@ class ProfileFactory(factory.django.DjangoModelFactory):
         model = Profile
 
     girder_id = factory.LazyFunction(ObjectId)
-    girder_salt = factory.LazyAttribute(
-        lambda o: bcrypt.using(rounds=4).hash(o.raw_password) if o.raw_password else ''
-    )
     hash_id = factory.LazyAttribute(lambda o: get_hashid(o.user.pk))
     accepted_terms = None
 

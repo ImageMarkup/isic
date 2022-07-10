@@ -46,7 +46,7 @@ def drf_default_with_modifications_exception_handler(exc, ctx):
 def _oauth2_pkce_required(client_id):
     from oauth2_provider.models import get_application_model
 
-    OAuth2Application = get_application_model()  # noqa: N806
+    OAuth2Application = get_application_model()
     oauth_application = OAuth2Application.objects.get(client_id=client_id)
     # PKCE is only required for public clients, but express the logic this way to make it required
     # by default for any future new client_types
@@ -181,11 +181,14 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
         'from opensearchpy import OpenSearch',
         'from isic.core.search import *',
     ]
+    SHELL_PLUS_PRINT_SQL_TRUNCATE = None
+    RUNSERVER_PLUS_PRINT_SQL_TRUNCATE = None
     ISIC_MONGO_URI = values.Value(None)
     # Allow developers to run tasks synchronously for easy debugging
     CELERY_TASK_ALWAYS_EAGER = values.BooleanValue(False)
     CELERY_TASK_EAGER_PROPAGATES = values.BooleanValue(False)
     ISIC_DATACITE_DOI_PREFIX = '10.80222'
+    MINIO_STORAGE_MEDIA_OBJECT_METADATA = {'Content-Disposition': 'attachment'}
 
 
 class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
@@ -206,3 +209,7 @@ class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration
     AWS_CLOUDFRONT_KEY_ID = values.Value()
     AWS_S3_CUSTOM_DOMAIN = values.Value()
     DEFAULT_FILE_STORAGE = 'isic.core.storage.CacheableCloudFrontStorage'
+
+    AWS_S3_OBJECT_PARAMETERS = {'ContentDisposition': 'attachment'}
+
+    SENTRY_TRACES_SAMPLE_RATE = 0.01  # sample 1% of requests for performance monitoring

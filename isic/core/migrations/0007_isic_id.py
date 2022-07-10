@@ -8,17 +8,17 @@ import isic.core.models.isic_id
 
 
 def copy_isic_id(apps, schema_editor):
-    IsicId = apps.get_model('core', 'IsicId')  # noqa: N806
+    IsicId = apps.get_model('core', 'IsicId')
 
-    Image = apps.get_model('core', 'Image')  # noqa: N806
+    Image = apps.get_model('core', 'Image')
     for image in Image.objects.all():
         isic_id = IsicId.objects.create(id=image.isic_id_string)
 
         image.isic = isic_id
         image.save(update_fields=['isic'])
 
-    DuplicateImage = apps.get_model('core', 'DuplicateImage')  # noqa: N806
-    ImageRedirect = apps.get_model('core', 'ImageRedirect')  # noqa: N806
+    DuplicateImage = apps.get_model('core', 'DuplicateImage')
+    ImageRedirect = apps.get_model('core', 'ImageRedirect')
     for duplicate_image in DuplicateImage.objects.all():
         isic_id = IsicId.objects.create(id=duplicate_image.isic_id_string)
 
