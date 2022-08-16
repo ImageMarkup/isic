@@ -133,7 +133,6 @@ class IsicMixin(ConfigMixin):
 
     ISIC_NOINDEX = values.BooleanValue(False)
     ISIC_SANDBOX_BANNER = values.BooleanValue(False)
-    ISIC_MONGO_URI = values.SecretValue()
     ISIC_ELASTICSEARCH_URI = values.SecretValue()
     ISIC_ELASTICSEARCH_INDEX = 'isic'
     ISIC_GUI_URL = 'https://www.isic-archive.com'
@@ -186,7 +185,6 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
     ]
     SHELL_PLUS_PRINT_SQL_TRUNCATE = None
     RUNSERVER_PLUS_PRINT_SQL_TRUNCATE = None
-    ISIC_MONGO_URI = values.Value(None)
     # Allow developers to run tasks synchronously for easy debugging
     CELERY_TASK_ALWAYS_EAGER = values.BooleanValue(False)
     CELERY_TASK_EAGER_PROPAGATES = values.BooleanValue(False)
@@ -195,7 +193,6 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
 
 
 class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
-    ISIC_MONGO_URI = None
     ISIC_ELASTICSEARCH_INDEX = 'isic-testing'
     ISIC_DATACITE_USERNAME = None
     ISIC_DATACITE_PASSWORD = None
