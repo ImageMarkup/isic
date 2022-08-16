@@ -117,6 +117,9 @@ class IsicMixin(ConfigMixin):
         configuration.REST_FRAMEWORK[
             'EXCEPTION_HANDLER'
         ] = 'isic.settings.drf_default_with_modifications_exception_handler'
+        configuration.REST_FRAMEWORK[
+            'DEFAULT_PAGINATION_CLASS'
+        ] = 'isic.core.pagination.CursorWithCountPagination'
 
     AUTHENTICATION_BACKENDS = [
         'allauth.account.auth_backends.AuthenticationBackend',
