@@ -1,10 +1,7 @@
 from django import forms
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.http import HttpRequest
 from django.utils.translation import gettext_lazy as _
-
-from isic.login.girder import create_girder_user
 
 
 class RealNameSignupForm(forms.Form):
@@ -42,15 +39,4 @@ class RealNameSignupForm(forms.Form):
 
     def signup(self, request: HttpRequest, user: User):
         # Allauth requires this method to be defined
-
-        # It would be more semantically appropriate to do this on the
-        # allauth.account.signals.user_signed_up signal, but the raw password from the form is
-        # necessary
-        if settings.ISIC_MONGO_URI:
-            user.profile.girder_id = create_girder_user(
-                email=user.email,
-                first_name=user.first_name,
-                last_name=user.last_name,
-                password=self.cleaned_data['password1'],
-            )
-            user.profile.save(update_fields=['girder_id'])
+        pass

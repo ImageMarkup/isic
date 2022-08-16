@@ -1,4 +1,3 @@
-from bson import ObjectId
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Q
@@ -6,7 +5,6 @@ from django.db.models import Q
 from isic.core.constants import MONGO_ID_REGEX
 from isic.core.models.isic_id import IsicId
 from isic.ingest.models import Accession
-from isic.login.girder import get_girder_db
 
 
 class GirderImageStatus(models.TextChoices):
@@ -31,18 +29,6 @@ class GirderDataset(models.Model):
 
     def __str__(self) -> str:
         return self.name
-
-    @classmethod
-    def get_or_create(cls, dataset_id: str):
-        girder_db = get_girder_db()
-
-        dataset = girder_db['dataset'].find_one({'_id': ObjectId(dataset_id)})
-        if not dataset:
-            raise Exception(f'Could not find dataset_id: {dataset_id}')
-
-        return cls.objects.get_or_create(
-            id=str(dataset['_id']), defaults={'name': dataset['name'], 'public': dataset['public']}
-        )[0]
 
 
 class GirderImage(models.Model):

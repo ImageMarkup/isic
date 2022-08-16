@@ -10,7 +10,6 @@ from rest_framework import permissions, routers
 
 from isic.core.api import CollectionViewSet, ImageViewSet
 from isic.ingest.api import CohortViewSet, ContributorViewSet, MetadataFileViewSet
-from isic.login.views import get_girder_token
 from isic.studies.api import AnnotationViewSet, StudyTaskViewSet, StudyViewSet
 
 router = routers.SimpleRouter()
@@ -47,7 +46,6 @@ urlpatterns = [
     path('oauth/', include('oauth2_provider.urls')),
     path('admin/', admin.site.urls),
     path('api/v2/s3-upload/', include('s3_file_field.urls')),
-    path('api/v2/token/legacy/', get_girder_token),
     path('api/v2/', include(router.urls)),
     path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),
     path('api/docs/swagger/', schema_view.with_ui('swagger'), name='docs-swagger'),
