@@ -6,7 +6,6 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from isic.core.models.collection import Collection
 from isic.core.models.image import Image
-from isic.core.pagination import CursorWithCountPagination
 from isic.core.permissions import IsicObjectPermissionsFilter, get_visible_objects
 from isic.core.search import build_elasticsearch_query, facets
 from isic.core.serializers import ImageSerializer, SearchQuerySerializer
@@ -28,12 +27,6 @@ class ImageViewSet(ReadOnlyModelViewSet):
     )
     filter_backends = [IsicObjectPermissionsFilter]
     lookup_field = 'isic_id'
-
-    def pagination_class(self):
-        if self.request.query_params.get('use_cursor_pagination'):
-            return CursorWithCountPagination()
-
-        return super().pagination_class()
 
     @swagger_auto_schema(auto_schema=None)
     @action(detail=False, methods=['get'], pagination_class=None)
