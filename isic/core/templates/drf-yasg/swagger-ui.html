@@ -1,0 +1,29 @@
+{% extends "drf-yasg/swagger-ui.html" %}
+
+{% block extra_styles %}
+  {{ block.super }}
+  <style type="text/css">
+      .welcome-api-banner {
+          background-color: #85bffc;
+          color: #2e2e2e;
+          display: block;
+          line-height: 35px;
+          text-align: center;
+          top: 0;
+          z-index: 1000;
+      }
+
+      .topbar,
+      .filter-container,
+      section.models {
+          display: none;
+      }
+  </style>
+{% endblock %}
+
+{% block extra_body %}
+  <div class="welcome-api-banner">
+      This is the official V2 API of the ISIC Archive. The V1 API has been retired.
+      Any problems can be reported at the <a href="https://forum.isic-archive.com/c/archive/13">ISIC Forum</a>.
+  </div>
+{% endblock %}
