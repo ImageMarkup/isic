@@ -180,17 +180,16 @@ class CohortAdmin(admin.ModelAdmin):
 
         writer.writeheader()
         for cohort in queryset.select_related('contributor').prefetch_related(
-            Prefetch('zip_uploads__accessions', queryset=Accession.objects.select_related('image'))
+            Prefetch('accessions', queryset=Accession.objects.select_related('image'))
         ):
-            for zip_upload in cohort.zip_uploads.all():
-                for accession in zip_upload.accessions.all():
-                    d = {
-                        'contributor': cohort.contributor.institution_name,
-                        'cohort': cohort.name,
-                        'filename': accession.original_blob_name,
-                        'isic_id': accession.image.isic_id if hasattr(accession, 'image') else '',
-                    }
-                    writer.writerow(d)
+            for accession in cohort.accessions.iterator():
+                d = {
+                    'contributor': cohort.contributor.institution_name,
+                    'cohort': cohort.name,
+                    'filename': accession.original_blob_name,
+                    'isic_id': accession.image.isic_id if accession.published else '',
+                }
+                writer.writerow(d)
         return response
 
 
