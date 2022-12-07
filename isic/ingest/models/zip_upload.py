@@ -6,6 +6,8 @@ from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.core.validators import FileExtensionValidator
 from django.db import models, transaction
+from django.db.models.constraints import UniqueConstraint
+from django.db.models.query_utils import Q
 from django.template.loader import render_to_string
 from s3_file_field import S3FileField
 import sentry_sdk
@@ -19,6 +21,11 @@ logger = logging.getLogger(__name__)
 
 
 class ZipUpload(CreationSortedTimeStampedModel):
+    class Meta(CreationSortedTimeStampedModel.Meta):
+        constraints = [
+            UniqueConstraint(name='zipupload_unique_blob', fields=['blob'], condition=~Q(blob='')),
+        ]
+
     class Status(models.TextChoices):
         CREATED = 'created', 'Created'
         EXTRACTING = 'extracting', 'Extracting'
