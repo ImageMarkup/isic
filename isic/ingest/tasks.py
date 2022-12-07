@@ -3,6 +3,7 @@ from typing import Iterable
 
 from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
+from celery.utils.log import get_task_logger
 from django.contrib.auth.models import User
 from django.db import transaction
 from more_itertools import ichunked
@@ -17,6 +18,8 @@ from isic.ingest.models import (
 )
 from isic.ingest.services.cohort import cohort_publish
 
+logger = get_task_logger(__name__)
+
 
 def throttled_iterator(iterable: Iterable, chunk_size: int = 100, sleep_time: int = 1) -> Iterable:
     for chunk in ichunked(iterable, chunk_size):
@@ -27,6 +30,8 @@ def throttled_iterator(iterable: Iterable, chunk_size: int = 100, sleep_time: in
 
 @shared_task(soft_time_limit=7200, time_limit=8100)
 def extract_zip_task(zip_pk: int):
+    logger.info(f'Extracting zip {zip_pk}.')
+
     zip_upload = ZipUpload.objects.get(pk=zip_pk)
 
     try:
