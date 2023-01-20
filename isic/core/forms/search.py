@@ -22,13 +22,17 @@ class ImageSearchForm(forms.Form):
         # This is a little bit ugly but it allows us to keep putting the repeated logic of finding
         # images from a search query in a single place. Unfortunately the input to collections is a
         # comma delimited string - so build one even though we already have the collection objects.
+        if 'collections' in self.cleaned_data:
+            collections = ','.join(
+                map(str, self.cleaned_data['collections'].values_list('pk', flat=True))
+            )
+        else:
+            # handle the case of a malformed input to the collections field
+            collections = ''
+
         serializer_input = {
             **self.cleaned_data,
-            **{
-                'collections': ','.join(
-                    map(str, self.cleaned_data['collections'].values_list('pk', flat=True))
-                )
-            },
+            **{'collections': collections},
         }
         serializer = SearchQuerySerializer(data=serializer_input, context={'user': self.user})
         serializer.is_valid(raise_exception=True)
