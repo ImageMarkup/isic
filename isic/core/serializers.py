@@ -2,8 +2,9 @@ import re
 from typing import Optional
 
 from django.conf import settings
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AnonymousUser, User
 from django.db.models.query import QuerySet
+from django.shortcuts import get_object_or_404
 from isic_metadata import FIELD_REGISTRY
 from pyparsing.exceptions import ParseException
 from rest_framework import serializers
@@ -95,6 +96,27 @@ class SearchQuerySerializer(serializers.Serializer):
         required=False,
         help_text='A list of collection IDs to filter a query by, separated with a comma.',
     )
+
+    def to_token_representation(self):
+        assert self.is_valid()
+        user = None
+        if 'user' in self.context:
+            user = self.context['user'].pk
+
+        return {
+            'user': user,
+            'query': self.data.get('query', ''),
+            'collections': self.data.get('collections', ''),
+        }
+
+    @classmethod
+    def from_token_representation(cls, token):
+        user = token.pop('user')
+        if user:
+            user = get_object_or_404(User, pk=user)
+        else:
+            user = AnonymousUser()
+        return cls(data=token, context={'user': user})
 
     def to_queryset(self, qs: Optional[QuerySet[Image]] = None) -> QuerySet[Image]:
         qs = qs if qs is not None else Image._default_manager.all()
