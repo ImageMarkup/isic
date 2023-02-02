@@ -16,6 +16,7 @@ from django_object_actions import DjangoObjectActions
 from django_object_actions.utils import takes_instance_or_queryset
 from girder_utils.admin import ReadonlyTabularInline
 
+from isic.core.admin import StaffReadonlyAdmin
 from isic.ingest.models import (
     Accession,
     AccessionReview,
@@ -59,7 +60,7 @@ class ZipInline(ReadonlyTabularInline):
 
 
 @admin.register(Contributor)
-class ContributorAdmin(admin.ModelAdmin):
+class ContributorAdmin(StaffReadonlyAdmin):
     list_select_related = ['creator']
     list_display = ['id', 'institution_name', 'creator', 'created', 'cohorts', 'accessions']
     search_fields = ['institution_name', 'creator__username']
@@ -86,7 +87,7 @@ class ContributorAdmin(admin.ModelAdmin):
 
 
 @admin.register(Cohort)
-class CohortAdmin(admin.ModelAdmin):
+class CohortAdmin(StaffReadonlyAdmin):
     list_select_related = ['creator', 'contributor']
     list_display = [
         'id',
@@ -194,7 +195,7 @@ class CohortAdmin(admin.ModelAdmin):
 
 
 @admin.register(MetadataFile)
-class MetadataFileAdmin(admin.ModelAdmin):
+class MetadataFileAdmin(StaffReadonlyAdmin):
     list_select_related = ['creator', 'cohort']
     list_display = ['id', 'blob_name', 'human_blob_size', 'creator', 'created', 'cohort']
     search_fields = ['blob_name', 'creator__username']
@@ -227,7 +228,7 @@ class AccessionReviewedFilter(admin.SimpleListFilter):
 
 
 @admin.register(Accession)
-class AccessionAdmin(admin.ModelAdmin):
+class AccessionAdmin(StaffReadonlyAdmin):
     list_select_related = ['cohort']
     list_display = [
         'id',
@@ -261,7 +262,7 @@ class AccessionAdmin(admin.ModelAdmin):
 
 
 @admin.register(AccessionReview)
-class AccessionReviewAdmin(admin.ModelAdmin):
+class AccessionReviewAdmin(StaffReadonlyAdmin):
     list_select_related = ['accession', 'creator', 'accession__cohort']
     list_display = ['id', 'cohort', 'accession', 'creator', 'reviewed_at', 'value']
 
@@ -273,7 +274,7 @@ class AccessionReviewAdmin(admin.ModelAdmin):
 
 
 @admin.register(ZipUpload)
-class ZipAdmin(DjangoObjectActions, admin.ModelAdmin):
+class ZipAdmin(DjangoObjectActions, StaffReadonlyAdmin):
     list_select_related = ['creator', 'cohort']
     list_display = ['id', 'blob_name', 'human_blob_size', 'creator', 'created', 'status', 'cohort']
     list_filter = ['status']

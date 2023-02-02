@@ -4,6 +4,7 @@ from django.db.models.expressions import F
 from girder_utils.admin import ReadonlyInlineMixin, ReadonlyTabularInline
 import nested_admin
 
+from isic.core.admin import StaffReadonlyAdmin
 from isic.studies.models import (
     Annotation,
     Feature,
@@ -59,12 +60,12 @@ class AnnotationInline(ReadonlyInlineMixin, nested_admin.NestedTabularInline):
 
 
 @admin.register(Markup)
-class MarkupAdmin(admin.ModelAdmin):
+class MarkupAdmin(StaffReadonlyAdmin):
     list_display = ['annotation', 'feature', 'present']
 
 
 @admin.register(QuestionChoice)
-class QuestionChoiceAdmin(admin.ModelAdmin):
+class QuestionChoiceAdmin(StaffReadonlyAdmin):
     list_display = ['question', 'text', 'responded']
 
     def get_queryset(self, request):
@@ -78,7 +79,7 @@ class QuestionChoiceAdmin(admin.ModelAdmin):
 
 
 @admin.register(Response)
-class ResponseAdmin(admin.ModelAdmin):
+class ResponseAdmin(StaffReadonlyAdmin):
     list_display = ['study', 'annotator', 'question', 'choice']
 
     def study(self, obj):
@@ -89,7 +90,7 @@ class ResponseAdmin(admin.ModelAdmin):
 
 
 @admin.register(Annotation)
-class AnnotationAdmin(admin.ModelAdmin):
+class AnnotationAdmin(StaffReadonlyAdmin):
     list_display = ['study', 'annotator', 'image', 'duration']
     list_filter = ['study']
     search_fields = ['annotator__email', 'image__isic__id', 'image__accession__girder_id']
@@ -109,7 +110,7 @@ class AnnotationAdmin(admin.ModelAdmin):
 
 
 @admin.register(StudyTask)
-class StudyTaskAdmin(nested_admin.NestedModelAdmin):
+class StudyTaskAdmin(nested_admin.NestedModelAdmin, StaffReadonlyAdmin):
     list_display = ['study', 'annotator', 'image', 'complete', 'created']
     list_filter = ['study', IsStudyTaskCompleteFilter]
     search_fields = [
@@ -133,7 +134,7 @@ class StudyTaskAdmin(nested_admin.NestedModelAdmin):
 
 
 @admin.register(Study)
-class StudyAdmin(admin.ModelAdmin):
+class StudyAdmin(StaffReadonlyAdmin):
     list_display = [
         'created',
         'creator',
@@ -182,7 +183,7 @@ class StudyAdmin(admin.ModelAdmin):
 
 
 @admin.register(Feature)
-class FeatureAdmin(admin.ModelAdmin):
+class FeatureAdmin(StaffReadonlyAdmin):
     list_display = ['label', 'official']
 
 
@@ -198,7 +199,7 @@ class ReferencedStudyInline(ReadonlyTabularInline):
 
 
 @admin.register(Question)
-class QuestionAdmin(admin.ModelAdmin):
+class QuestionAdmin(StaffReadonlyAdmin):
     list_display = ['prompt', 'type', 'official', 'num_choices', 'used_in']
     list_filter = ['type', 'official']
     search_fields = ['prompt']
