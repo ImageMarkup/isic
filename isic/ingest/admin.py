@@ -7,7 +7,6 @@ from django.contrib.humanize.templatetags.humanize import intcomma
 from django.db import models
 from django.db.models import Count
 from django.db.models.query import Prefetch
-from django.db.models.query_utils import Q
 from django.http import HttpResponse
 from django.template.defaultfilters import filesizeformat
 from django.utils.safestring import mark_safe
@@ -20,7 +19,6 @@ from isic.core.admin import StaffReadonlyAdmin
 from isic.ingest.models import (
     Accession,
     AccessionReview,
-    AccessionStatus,
     Cohort,
     Contributor,
     MetadataFile,
@@ -96,11 +94,6 @@ class CohortAdmin(StaffReadonlyAdmin):
         "created",
         "zips",
         "metadata_files",
-        "accessions",
-        "pending_accessions",
-        "skipped_accessions",
-        "failed_accessions",
-        "successful_accessions",
         "contributor",
     ]
     search_fields = ["name", "creator__username"]
@@ -115,28 +108,6 @@ class CohortAdmin(StaffReadonlyAdmin):
         qs = qs.annotate(
             zip_uploads_count=Count("zip_uploads", distinct=True),
             metadata_files_count=Count("metadata_files", distinct=True),
-            accessions_count=Count("accessions", distinct=True),
-            pending_accessions_count=Count(
-                "accessions",
-                filter=Q(accessions__status=AccessionStatus.CREATING)
-                | Q(accessions__status=AccessionStatus.CREATED),
-                distinct=True,
-            ),
-            skipped_accessions_count=Count(
-                "accessions",
-                filter=Q(accessions__status=AccessionStatus.SKIPPED),
-                distinct=True,
-            ),
-            failed_accessions_count=Count(
-                "accessions",
-                filter=Q(accessions__status=AccessionStatus.FAILED),
-                distinct=True,
-            ),
-            successful_accessions_count=Count(
-                "accessions",
-                filter=Q(accessions__status=AccessionStatus.SUCCEEDED),
-                distinct=True,
-            ),
         )
         return qs
 
@@ -147,26 +118,6 @@ class CohortAdmin(StaffReadonlyAdmin):
     @admin.display(ordering="metadata_files_count")
     def metadata_files(self, obj):
         return intcomma(obj.metadata_files_count)
-
-    @admin.display(ordering="accessions_count")
-    def accessions(self, obj):
-        return intcomma(obj.accessions_count)
-
-    @admin.display(ordering="pending_accessions_count")
-    def pending_accessions(self, obj):
-        return intcomma(obj.pending_accessions_count)
-
-    @admin.display(ordering="skipped_accessions_count")
-    def skipped_accessions(self, obj):
-        return intcomma(obj.skipped_accessions_count)
-
-    @admin.display(ordering="failed_accessions_count")
-    def failed_accessions(self, obj):
-        return intcomma(obj.failed_accessions_count)
-
-    @admin.display(ordering="successful_accessions_count")
-    def successful_accessions(self, obj):
-        return intcomma(obj.successful_accessions_count)
 
     @admin.action(description="Export original file mapping")
     @takes_instance_or_queryset
