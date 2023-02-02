@@ -17,6 +17,27 @@ admin.site.index_title = ''
 # TODO: unregister unnecessary apps from admin site
 
 
+class StaffReadonlyAdmin(admin.ModelAdmin):
+    """
+    Give staff readonly access to the admin class.
+
+    This only impacts django actions if they've been specified with the permissions
+    flag (e.g. the core delete action).
+    """
+
+    def has_add_permission(self, request):
+        check = super().has_add_permission(request)
+        return check and request.user.is_superuser
+
+    def has_delete_permission(self, request, obj=None):
+        check = super().has_delete_permission(request, obj=obj)
+        return check and request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        check = super().has_change_permission(request, obj=obj)
+        return check and request.user.is_superuser
+
+
 class HasMaskFilter(admin.SimpleListFilter):
     title = 'mask'
     parameter_name = 'mask'
@@ -42,7 +63,7 @@ class SegmentationReviewInline(ReadonlyTabularInline):
 
 
 @admin.register(SegmentationReview)
-class SegmentationReviewAdmin(admin.ModelAdmin):
+class SegmentationReviewAdmin(StaffReadonlyAdmin):
     list_display = ['id', 'created', 'creator', 'skill', 'approved']
     list_filter = ['approved', 'skill']
 
@@ -51,7 +72,7 @@ class SegmentationReviewAdmin(admin.ModelAdmin):
 
 
 @admin.register(Segmentation)
-class SegmentationAdmin(admin.ModelAdmin):
+class SegmentationAdmin(StaffReadonlyAdmin):
     list_display = ['id', 'created', 'creator', 'image', 'num_reviews']
     list_filter = [HasMaskFilter]
     inlines = [SegmentationReviewInline]
@@ -79,7 +100,7 @@ class SegmentationAdmin(admin.ModelAdmin):
 
 
 @admin.register(GirderDataset)
-class GirderDatasetAdmin(admin.ModelAdmin):
+class GirderDatasetAdmin(StaffReadonlyAdmin):
     list_display = ['id', 'name', 'public', 'images']
     search_fields = ['name']
 
@@ -96,7 +117,7 @@ class GirderDatasetAdmin(admin.ModelAdmin):
 
 
 @admin.register(GirderImage)
-class GirderImageAdmin(admin.ModelAdmin):
+class GirderImageAdmin(StaffReadonlyAdmin):
     list_select_related = ['isic', 'dataset']
     list_display = ['id', 'isic', 'item_id', 'dataset', 'original_blob_dm', 'status', 'pre_review']
     list_filter = ['status', 'pre_review']
@@ -118,7 +139,7 @@ class GirderImageAdmin(admin.ModelAdmin):
 
 
 @admin.register(Image)
-class ImageAdmin(admin.ModelAdmin):
+class ImageAdmin(StaffReadonlyAdmin):
     # Using "isic_id" will not allow ordering
     list_display = ['isic', 'created', 'public']
     list_filter = ['public']
@@ -134,7 +155,7 @@ class ImageAdmin(admin.ModelAdmin):
 
 
 @admin.register(ImageAlias)
-class ImageAliasAdmin(admin.ModelAdmin):
+class ImageAliasAdmin(StaffReadonlyAdmin):
     list_display = ['isic_id', 'image']
     search_fields = ['isic__id']
 
@@ -142,7 +163,7 @@ class ImageAliasAdmin(admin.ModelAdmin):
 
 
 @admin.register(Collection)
-class CollectionAdmin(admin.ModelAdmin):
+class CollectionAdmin(StaffReadonlyAdmin):
     list_select_related = ['creator', 'doi']
     list_filter = ['public', 'pinned', 'locked']
     list_display = ['creator', 'name', 'num_images', 'public', 'pinned', 'locked', 'doi']
@@ -166,6 +187,6 @@ class CollectionAdmin(admin.ModelAdmin):
 
 
 @admin.register(Doi)
-class DoiAdmin(admin.ModelAdmin):
+class DoiAdmin(StaffReadonlyAdmin):
     list_select_related = ['collection']
     list_display = ['id', 'url', 'collection']
