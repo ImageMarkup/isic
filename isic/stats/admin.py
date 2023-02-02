@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.db.models.expressions import F
 
+from isic.core.admin import StaffReadonlyAdmin
 from isic.stats.models import ImageDownload
 
 
@@ -24,7 +25,7 @@ class DownloadedWithIsicCliFilter(admin.SimpleListFilter):
 
 
 @admin.register(ImageDownload)
-class ImageDownloadAdmin(admin.ModelAdmin):
+class ImageDownloadAdmin(StaffReadonlyAdmin):
     list_display = ['isic_id', 'download_time', 'ip_address']
     list_select_related = ['image']
     search_fields = ['image__isic__id', 'ip_address', 'user_agent']

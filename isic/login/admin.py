@@ -2,8 +2,10 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 
+from isic.core.admin import StaffReadonlyAdmin
 
-class UserAdmin(BaseUserAdmin):
+
+class UserAdmin(BaseUserAdmin, StaffReadonlyAdmin):
     list_select_related = ['profile']
     list_display = [
         'date_joined',
