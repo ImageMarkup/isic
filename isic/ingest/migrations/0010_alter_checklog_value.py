@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('ingest', '0009_rename_change_to_checklog_value_and_more'),
+        ("ingest", "0009_rename_change_to_checklog_value_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='checklog',
-            name='value',
+            model_name="checklog",
+            name="value",
             field=models.BooleanField(),
         ),
     ]

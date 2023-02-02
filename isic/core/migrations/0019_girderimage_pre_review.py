@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0018_auto_20210607_1305'),
+        ("core", "0018_auto_20210607_1305"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='girderimage',
-            name='pre_review',
+            model_name="girderimage",
+            name="pre_review",
             field=models.BooleanField(null=True),
         ),
     ]

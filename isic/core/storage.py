@@ -20,18 +20,18 @@ class CacheableCloudFrontStorage(S3Boto3Storage):
     # This is copied from upstream with minor modifications, subclassing in a cleaner way wasn't
     # possible.
     def url(self, name, parameters=None, expire=None, http_method=None):
-        assert expire is None and http_method is None, 'Arguments not supported by custom storage.'
+        assert expire is None and http_method is None, "Arguments not supported by custom storage."
 
         # Preserve the trailing slash after normalizing the path.
         name = self._normalize_name(self._clean_name(name))
         params = parameters.copy() if parameters else {}
 
         if self.custom_domain:
-            url = '{}//{}/{}{}'.format(
+            url = "{}//{}/{}{}".format(
                 self.url_protocol,
                 self.custom_domain,
                 filepath_to_uri(name),
-                f'?{urlencode(params)}' if params else '',
+                f"?{urlencode(params)}" if params else "",
             )
 
             if self.querystring_auth and self.cloudfront_signer:

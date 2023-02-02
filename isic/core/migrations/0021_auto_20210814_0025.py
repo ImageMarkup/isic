@@ -7,61 +7,60 @@ import django_extensions.db.fields
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('core', '0020_auto_20210807_0228'),
+        ("core", "0020_auto_20210807_0228"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='ImageShare',
+            name="ImageShare",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
                 (
-                    'created',
+                    "created",
                     django_extensions.db.fields.CreationDateTimeField(
-                        auto_now_add=True, verbose_name='created'
+                        auto_now_add=True, verbose_name="created"
                     ),
                 ),
                 (
-                    'modified',
+                    "modified",
                     django_extensions.db.fields.ModificationDateTimeField(
-                        auto_now=True, verbose_name='modified'
+                        auto_now=True, verbose_name="modified"
                     ),
                 ),
                 (
-                    'creator',
+                    "creator",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
-                        related_name='shares',
+                        related_name="shares",
                         to=settings.AUTH_USER_MODEL,
                     ),
                 ),
                 (
-                    'image',
-                    models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='core.image'),
+                    "image",
+                    models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="core.image"),
                 ),
                 (
-                    'recipient',
+                    "recipient",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL
                     ),
                 ),
             ],
             options={
-                'get_latest_by': 'modified',
-                'abstract': False,
+                "get_latest_by": "modified",
+                "abstract": False,
             },
         ),
         migrations.AddField(
-            model_name='image',
-            name='shares',
-            field=models.ManyToManyField(through='core.ImageShare', to=settings.AUTH_USER_MODEL),
+            model_name="image",
+            name="shares",
+            field=models.ManyToManyField(through="core.ImageShare", to=settings.AUTH_USER_MODEL),
         ),
     ]

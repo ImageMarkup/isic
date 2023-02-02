@@ -5,19 +5,18 @@ import django_extensions.db.fields
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0019_girderimage_pre_review'),
+        ("core", "0019_girderimage_pre_review"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='image',
-            options={'get_latest_by': 'created', 'ordering': ['-created']},
+            name="image",
+            options={"get_latest_by": "created", "ordering": ["-created"]},
         ),
         migrations.AlterField(
-            model_name='image',
-            name='created',
+            model_name="image",
+            name="created",
             field=django_extensions.db.fields.CreationDateTimeField(
                 auto_now_add=True, db_index=True
             ),

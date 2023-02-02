@@ -10,21 +10,21 @@ class Migration(migrations.Migration):
     run_before = [
         # The IsicOAuthApplication table must be created before any upstream OAuth Toolkit tables
         # (which reference it via swappable foreign keys) are created
-        ('oauth2_provider', '0001_initial')
+        ("oauth2_provider", "0001_initial")
     ]
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('core', '0042_collection_collection_name_gin_image_isic_name_gin'),
+        ("core", "0042_collection_collection_name_gin_image_isic_name_gin"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='IsicOAuthApplication',
+            name="IsicOAuthApplication",
             fields=[
-                ('id', models.BigAutoField(primary_key=True, serialize=False)),
+                ("id", models.BigAutoField(primary_key=True, serialize=False)),
                 (
-                    'client_id',
+                    "client_id",
                     models.CharField(
                         db_index=True,
                         default=oauth2_provider.generators.generate_client_id,
@@ -33,31 +33,31 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    'redirect_uris',
-                    models.TextField(blank=True, help_text='Allowed URIs list, space separated'),
+                    "redirect_uris",
+                    models.TextField(blank=True, help_text="Allowed URIs list, space separated"),
                 ),
                 (
-                    'client_type',
+                    "client_type",
                     models.CharField(
-                        choices=[('confidential', 'Confidential'), ('public', 'Public')],
+                        choices=[("confidential", "Confidential"), ("public", "Public")],
                         max_length=32,
                     ),
                 ),
                 (
-                    'authorization_grant_type',
+                    "authorization_grant_type",
                     models.CharField(
                         choices=[
-                            ('authorization-code', 'Authorization code'),
-                            ('implicit', 'Implicit'),
-                            ('password', 'Resource owner password-based'),
-                            ('client-credentials', 'Client credentials'),
-                            ('openid-hybrid', 'OpenID connect hybrid'),
+                            ("authorization-code", "Authorization code"),
+                            ("implicit", "Implicit"),
+                            ("password", "Resource owner password-based"),
+                            ("client-credentials", "Client credentials"),
+                            ("openid-hybrid", "OpenID connect hybrid"),
                         ],
                         max_length=32,
                     ),
                 ),
                 (
-                    'client_secret',
+                    "client_secret",
                     models.CharField(
                         blank=True,
                         db_index=True,
@@ -65,36 +65,36 @@ class Migration(migrations.Migration):
                         max_length=255,
                     ),
                 ),
-                ('name', models.CharField(blank=True, max_length=255)),
-                ('skip_authorization', models.BooleanField(default=False)),
-                ('created', models.DateTimeField(auto_now_add=True)),
-                ('updated', models.DateTimeField(auto_now=True)),
+                ("name", models.CharField(blank=True, max_length=255)),
+                ("skip_authorization", models.BooleanField(default=False)),
+                ("created", models.DateTimeField(auto_now_add=True)),
+                ("updated", models.DateTimeField(auto_now=True)),
                 (
-                    'algorithm',
+                    "algorithm",
                     models.CharField(
                         blank=True,
                         choices=[
-                            ('', 'No OIDC support'),
-                            ('RS256', 'RSA with SHA-2 256'),
-                            ('HS256', 'HMAC with SHA-2 256'),
+                            ("", "No OIDC support"),
+                            ("RS256", "RSA with SHA-2 256"),
+                            ("HS256", "HMAC with SHA-2 256"),
                         ],
-                        default='',
+                        default="",
                         max_length=5,
                     ),
                 ),
                 (
-                    'user',
+                    "user",
                     models.ForeignKey(
                         blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='%(app_label)s_%(class)s',
+                        related_name="%(app_label)s_%(class)s",
                         to=settings.AUTH_USER_MODEL,
                     ),
                 ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
     ]

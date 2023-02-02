@@ -5,23 +5,22 @@ from django.db import migrations, models
 
 
 def migrate_owners(apps, schema_editor):
-    Study = apps.get_model('studies', 'Study')
+    Study = apps.get_model("studies", "Study")
     for study in Study.objects.all():
         study.owners.add(study.creator)
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('studies', '0020_auto_20211214_2225'),
+        ("studies", "0020_auto_20211214_2225"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='study',
-            name='owners',
-            field=models.ManyToManyField(related_name='owned_studies', to=settings.AUTH_USER_MODEL),
+            model_name="study",
+            name="owners",
+            field=models.ManyToManyField(related_name="owned_studies", to=settings.AUTH_USER_MODEL),
         ),
         migrations.RunPython(migrate_owners),
     ]

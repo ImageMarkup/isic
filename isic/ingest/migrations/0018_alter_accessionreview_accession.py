@@ -5,19 +5,18 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('ingest', '0017_remove_metadataversion_metadata_version_needs_meta_or_unstructured_meta'),
+        ("ingest", "0017_remove_metadataversion_metadata_version_needs_meta_or_unstructured_meta"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='accessionreview',
-            name='accession',
+            model_name="accessionreview",
+            name="accession",
             field=models.OneToOneField(
                 on_delete=django.db.models.deletion.CASCADE,
-                related_name='review',
-                to='ingest.accession',
+                related_name="review",
+                to="ingest.accession",
             ),
         ),
     ]

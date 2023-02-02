@@ -4,16 +4,15 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('login', '0003_remove_profile_email_verified'),
+        ("login", "0003_remove_profile_email_verified"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='profile',
-            name='girder_salt',
-            field=models.CharField(blank=True, default='', max_length=60),
+            model_name="profile",
+            name="girder_salt",
+            field=models.CharField(blank=True, default="", max_length=60),
             preserve_default=False,
         ),
     ]

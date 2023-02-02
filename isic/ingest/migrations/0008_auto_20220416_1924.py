@@ -6,8 +6,8 @@ from django.db.models.query_utils import Q
 
 
 def migrate_checks(apps, schema_editor):
-    Accession = apps.get_model('ingest', 'Accession')
-    CheckLog = apps.get_model('ingest', 'CheckLog')
+    Accession = apps.get_model("ingest", "Accession")
+    CheckLog = apps.get_model("ingest", "CheckLog")
 
     failed_review_filter = (
         Q(lesion_check=False)
@@ -35,9 +35,9 @@ def migrate_checks(apps, schema_editor):
 
     published_accessions = Accession.objects.exclude(image=None)
     keep_checklogs = set(
-        published_accessions.annotate(last_passed_checklog=Max('checklogs__id'))
+        published_accessions.annotate(last_passed_checklog=Max("checklogs__id"))
         .exclude(last_passed_checklog=None)
-        .values_list('last_passed_checklog', flat=True)
+        .values_list("last_passed_checklog", flat=True)
     )
     checklog_delete = set()
     for checklog in CheckLog.objects.filter(accession__in=published_accessions).iterator():
@@ -47,9 +47,8 @@ def migrate_checks(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('ingest', '0007_auto_20220413_1820'),
+        ("ingest", "0007_auto_20220413_1820"),
     ]
 
     operations = [

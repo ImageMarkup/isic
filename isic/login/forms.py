@@ -13,28 +13,28 @@ class RealNameSignupForm(forms.Form):
 
     first_name = forms.CharField(
         max_length=150,
-        label=_('First name'),
+        label=_("First name"),
         widget=forms.TextInput(
-            attrs={'placeholder': _('First name'), 'autocomplete': 'given-name'}
+            attrs={"placeholder": _("First name"), "autocomplete": "given-name"}
         ),
     )
     last_name = forms.CharField(
         max_length=150,
-        label=_('Last name'),
+        label=_("Last name"),
         widget=forms.TextInput(
-            attrs={'placeholder': _('Last name'), 'auto complete': 'family-name'}
+            attrs={"placeholder": _("Last name"), "auto complete": "family-name"}
         ),
     )
 
     field_order = [
         # fields are ignored when not present
-        'first_name',
-        'last_name',
-        'email',
-        'email2',
-        'username',
-        'password1',
-        'password2',
+        "first_name",
+        "last_name",
+        "email",
+        "email2",
+        "username",
+        "password1",
+        "password2",
     ]
 
     def signup(self, request: HttpRequest, user: User):

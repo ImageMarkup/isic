@@ -13,9 +13,9 @@ from .cohort import Cohort
 
 class MetadataFile(CreationSortedTimeStampedModel):
     creator = models.ForeignKey(User, on_delete=models.CASCADE)
-    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name='metadata_files')
+    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name="metadata_files")
 
-    blob = S3FileField(validators=[FileExtensionValidator(allowed_extensions=['csv'])])
+    blob = S3FileField(validators=[FileExtensionValidator(allowed_extensions=["csv"])])
     blob_name = models.CharField(max_length=255, editable=False)
     blob_size = models.PositiveBigIntegerField(editable=False)
 
@@ -34,8 +34,8 @@ class MetadataFile(CreationSortedTimeStampedModel):
 
 class MetadataFilePermissions:
     model = MetadataFile
-    perms = ['view_metadatafile']
-    filters = {'view_metadatafile': 'view_metadatafile_list'}
+    perms = ["view_metadatafile"]
+    filters = {"view_metadatafile": "view_metadatafile_list"}
 
     @staticmethod
     def view_metadatafile_list(

@@ -7,48 +7,47 @@ import django_extensions.db.fields
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0025_alter_imagealias_options'),
+        ("core", "0025_alter_imagealias_options"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Doi',
+            name="Doi",
             fields=[
                 (
-                    'created',
+                    "created",
                     django_extensions.db.fields.CreationDateTimeField(
-                        auto_now_add=True, verbose_name='created'
+                        auto_now_add=True, verbose_name="created"
                     ),
                 ),
                 (
-                    'modified',
+                    "modified",
                     django_extensions.db.fields.ModificationDateTimeField(
-                        auto_now=True, verbose_name='modified'
+                        auto_now=True, verbose_name="modified"
                     ),
                 ),
                 (
-                    'id',
+                    "id",
                     models.CharField(
                         max_length=30,
                         primary_key=True,
                         serialize=False,
-                        validators=[django.core.validators.RegexValidator('^\\d+\\.\\d+/\\d+$')],
+                        validators=[django.core.validators.RegexValidator("^\\d+\\.\\d+/\\d+$")],
                     ),
                 ),
-                ('url', models.CharField(max_length=200)),
+                ("url", models.CharField(max_length=200)),
             ],
             options={
-                'get_latest_by': 'modified',
-                'abstract': False,
+                "get_latest_by": "modified",
+                "abstract": False,
             },
         ),
         migrations.AddField(
-            model_name='collection',
-            name='doi',
+            model_name="collection",
+            name="doi",
             field=models.OneToOneField(
-                blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='core.doi'
+                blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to="core.doi"
             ),
         ),
     ]

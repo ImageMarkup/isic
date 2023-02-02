@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0022_alter_image_isic'),
+        ("core", "0022_alter_image_isic"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='collection',
-            name='public',
+            model_name="collection",
+            name="public",
             field=models.BooleanField(default=False),
         ),
     ]

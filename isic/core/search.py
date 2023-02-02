@@ -16,36 +16,36 @@ from isic.core.utils.logging import LoggingContext
 
 logger = logging.getLogger(__name__)
 
-INDEX_MAPPINGS = {'properties': {}}
+INDEX_MAPPINGS = {"properties": {}}
 DEFAULT_SEARCH_AGGREGATES = {}
 
 # TODO: include private meta fields (e.g. patient/lesion id)
 for key, definition in FIELD_REGISTRY.items():
-    if definition.get('search'):
-        INDEX_MAPPINGS['properties'][key] = definition['search']['es_property']
-        DEFAULT_SEARCH_AGGREGATES[key] = definition['search']['es_facet']
+    if definition.get("search"):
+        INDEX_MAPPINGS["properties"][key] = definition["search"]["es_property"]
+        DEFAULT_SEARCH_AGGREGATES[key] = definition["search"]["es_facet"]
 
 
 # Reserved mappings that can only be set by the archive
 # Additional fields here need to update the checks in isic_field on isic-metadata.
-INDEX_MAPPINGS['properties'].update(
+INDEX_MAPPINGS["properties"].update(
     {
-        'age_approx': {'type': 'integer'},
-        'collections': {'type': 'integer'},
-        'contributor_owner_ids': {'type': 'integer'},
-        'created': {'type': 'date'},
-        'id': {'type': 'integer'},
-        'isic_id': {'type': 'text'},
-        'public': {'type': 'boolean'},
-        'shared_to': {'type': 'integer'},
+        "age_approx": {"type": "integer"},
+        "collections": {"type": "integer"},
+        "contributor_owner_ids": {"type": "integer"},
+        "created": {"type": "date"},
+        "id": {"type": "integer"},
+        "isic_id": {"type": "text"},
+        "public": {"type": "boolean"},
+        "shared_to": {"type": "integer"},
     }
 )
 
-DEFAULT_SEARCH_AGGREGATES['age_approx'] = {
-    'histogram': {
-        'field': 'age_approx',
-        'interval': 5,
-        'extended_bounds': {'min': 0, 'max': 85},
+DEFAULT_SEARCH_AGGREGATES["age_approx"] = {
+    "histogram": {
+        "field": "age_approx",
+        "interval": 5,
+        "extended_bounds": {"min": 0, "max": 85},
     }
 }
 
@@ -67,12 +67,12 @@ def maybe_create_index() -> None:
     except NotFoundError:
         # Need to create
         get_elasticsearch_client().indices.create(
-            index=settings.ISIC_ELASTICSEARCH_INDEX, body={'mappings': INDEX_MAPPINGS}
+            index=settings.ISIC_ELASTICSEARCH_INDEX, body={"mappings": INDEX_MAPPINGS}
         )
     else:
         # "indices" also contains "settings", which are unspecified by us, so only compare
         # "mappings"
-        if indices[settings.ISIC_ELASTICSEARCH_INDEX]['mappings'] != INDEX_MAPPINGS:
+        if indices[settings.ISIC_ELASTICSEARCH_INDEX]["mappings"] != INDEX_MAPPINGS:
             # Existing fields cannot be mutated.
             # TODO: It's possible to add new fields if none of the existing fields are modified.
             # https://www.elastic.co/guide/en/elasticsearch/reference/7.14/indices-put-mapping.html
@@ -98,7 +98,7 @@ def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 2000) -> Non
 
     # The opensearch logger is very noisy when updating records,
     # set it to warning during this operation.
-    with LoggingContext(logging.getLogger('opensearch'), level=logging.WARN):
+    with LoggingContext(logging.getLogger("opensearch"), level=logging.WARN):
         for success, info in parallel_bulk(
             client=get_elasticsearch_client(),
             index=settings.ISIC_ELASTICSEARCH_INDEX,
@@ -108,26 +108,26 @@ def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 2000) -> Non
             chunk_size=chunk_size,
         ):
             if not success:
-                logger.error('Failed to insert document into elasticsearch', info)
+                logger.error("Failed to insert document into elasticsearch", info)
 
 
 def facets(query: dict | None = None, collections: list[int] | None = None) -> dict:
     body = {
-        'size': 0,
-        'aggs': DEFAULT_SEARCH_AGGREGATES,
+        "size": 0,
+        "aggs": DEFAULT_SEARCH_AGGREGATES,
     }
 
     if collections is not None:
         # Note this include statement means we can only filter by ~65k collections. See:
         # "By default, Elasticsearch limits the terms query to a maximum of 65,536 terms.
         # You can change this limit using the index.max_terms_count setting."
-        body['aggs']['collections'] = {'terms': {'field': 'collections', 'include': collections}}
+        body["aggs"]["collections"] = {"terms": {"field": "collections", "include": collections}}
 
     if query:
-        body['query'] = query
+        body["query"] = query
 
     return get_elasticsearch_client().search(index=settings.ISIC_ELASTICSEARCH_INDEX, body=body)[
-        'aggregations'
+        "aggregations"
     ]
 
 
@@ -146,34 +146,34 @@ def build_elasticsearch_query(
     if collection_pks is not None:
         visible_collection_pks = list(
             get_visible_objects(
-                user, 'core.view_collection', Collection.objects.filter(pk__in=collection_pks)
-            ).values_list('pk', flat=True)
+                user, "core.view_collection", Collection.objects.filter(pk__in=collection_pks)
+            ).values_list("pk", flat=True)
         )
     else:
         visible_collection_pks = None
 
-    query_dict = {'bool': {}}
+    query_dict = {"bool": {}}
 
     if visible_collection_pks is not None:
-        query_dict['bool'].setdefault('filter', {})
-        query_dict['bool']['filter']['terms'] = {'collections': visible_collection_pks}
+        query_dict["bool"].setdefault("filter", {})
+        query_dict["bool"]["filter"]["terms"] = {"collections": visible_collection_pks}
 
     if query:
-        query_dict['bool'].setdefault('must', {})
-        query_dict['bool']['must']['query_string'] = {'query': query}
+        query_dict["bool"].setdefault("must", {})
+        query_dict["bool"]["must"]["query_string"] = {"query": query}
 
     # Note: permissions here must be also modified in ImagePermissions.view_image_list
     if user.is_anonymous:
-        query_dict['bool']['should'] = [{'term': {'public': 'true'}}]
+        query_dict["bool"]["should"] = [{"term": {"public": "true"}}]
         # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html#bool-min-should-match
-        query_dict['bool']['minimum_should_match'] = 1
+        query_dict["bool"]["minimum_should_match"] = 1
     elif not user.is_staff:
-        query_dict['bool']['should'] = [
-            {'term': {'public': 'true'}},
-            {'terms': {'shared_to': [user.pk]}},
-            {'terms': {'contributor_owner_ids': [user.pk]}},
+        query_dict["bool"]["should"] = [
+            {"term": {"public": "true"}},
+            {"terms": {"shared_to": [user.pk]}},
+            {"terms": {"contributor_owner_ids": [user.pk]}},
         ]
         # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html#bool-min-should-match
-        query_dict['bool']['minimum_should_match'] = 1
+        query_dict["bool"]["minimum_should_match"] = 1
 
     return query_dict

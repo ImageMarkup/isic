@@ -17,11 +17,11 @@ def accession_create(
     original_blob_size: int,
 ) -> Accession:
     # TODO: should the user this is acting on behalf of be the same as the creator?
-    if not creator.has_perm('ingest.add_accession', cohort):
-        raise ValidationError('You do not have permission to add an image to this cohort.')
+    if not creator.has_perm("ingest.add_accession", cohort):
+        raise ValidationError("You do not have permission to add an image to this cohort.")
 
     if cohort.accessions.filter(original_blob_name=original_blob_name).exists():
-        raise ValidationError('An accession with this name already exists.')
+        raise ValidationError("An accession with this name already exists.")
 
     if isinstance(original_blob, S3PlaceholderFile):
         original_blob = original_blob.name

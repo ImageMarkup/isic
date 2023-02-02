@@ -5,9 +5,8 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0040_remove_collection_collection_official_has_unique_name_and_more'),
+        ("core", "0040_remove_collection_collection_official_has_unique_name_and_more"),
     ]
 
     operations = [TrigramExtension()]

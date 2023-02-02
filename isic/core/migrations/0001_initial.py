@@ -7,64 +7,63 @@ import django_extensions.db.fields
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('ingest', '0001_initial_squashed'),
+        ("ingest", "0001_initial_squashed"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='DuplicateImage',
+            name="DuplicateImage",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
                 (
-                    'created',
+                    "created",
                     django_extensions.db.fields.CreationDateTimeField(
-                        auto_now_add=True, verbose_name='created'
+                        auto_now_add=True, verbose_name="created"
                     ),
                 ),
                 (
-                    'modified',
+                    "modified",
                     django_extensions.db.fields.ModificationDateTimeField(
-                        auto_now=True, verbose_name='modified'
+                        auto_now=True, verbose_name="modified"
                     ),
                 ),
                 (
-                    'girder_id',
+                    "girder_id",
                     models.CharField(
                         max_length=24,
                         unique=True,
-                        validators=[django.core.validators.RegexValidator('^[0-9a-f]{24}$')],
+                        validators=[django.core.validators.RegexValidator("^[0-9a-f]{24}$")],
                     ),
                 ),
                 (
-                    'isic_id',
+                    "isic_id",
                     models.CharField(
                         max_length=12,
                         unique=True,
-                        validators=[django.core.validators.RegexValidator('^ISIC_[0-9]{7}$')],
+                        validators=[django.core.validators.RegexValidator("^ISIC_[0-9]{7}$")],
                     ),
                 ),
-                ('metadata', models.JSONField(default=dict)),
+                ("metadata", models.JSONField(default=dict)),
                 (
-                    'accession',
+                    "accession",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='duplicates',
-                        to='ingest.accession',
+                        related_name="duplicates",
+                        to="ingest.accession",
                     ),
                 ),
             ],
             options={
-                'get_latest_by': 'modified',
-                'abstract': False,
+                "get_latest_by": "modified",
+                "abstract": False,
             },
         ),
     ]

@@ -8,7 +8,6 @@ import django_extensions.db.fields
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -17,368 +16,368 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Annotation',
+            name="Annotation",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
                 (
-                    'created',
+                    "created",
                     django_extensions.db.fields.CreationDateTimeField(
-                        auto_now_add=True, verbose_name='created'
+                        auto_now_add=True, verbose_name="created"
                     ),
                 ),
                 (
-                    'modified',
+                    "modified",
                     django_extensions.db.fields.ModificationDateTimeField(
-                        auto_now=True, verbose_name='modified'
+                        auto_now=True, verbose_name="modified"
                     ),
                 ),
                 (
-                    'annotator',
+                    "annotator",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL
                     ),
                 ),
             ],
             options={
-                'get_latest_by': 'modified',
-                'abstract': False,
+                "get_latest_by": "modified",
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='Feature',
+            name="Feature",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
                 (
-                    'created',
+                    "created",
                     django_extensions.db.fields.CreationDateTimeField(
-                        auto_now_add=True, verbose_name='created'
+                        auto_now_add=True, verbose_name="created"
                     ),
                 ),
                 (
-                    'modified',
+                    "modified",
                     django_extensions.db.fields.ModificationDateTimeField(
-                        auto_now=True, verbose_name='modified'
+                        auto_now=True, verbose_name="modified"
                     ),
                 ),
-                ('required', models.BooleanField(default=False)),
+                ("required", models.BooleanField(default=False)),
                 (
-                    'name',
+                    "name",
                     django.contrib.postgres.fields.ArrayField(
                         base_field=models.CharField(max_length=200), size=None
                     ),
                 ),
-                ('official', models.BooleanField()),
+                ("official", models.BooleanField()),
             ],
             options={
-                'ordering': ['name'],
+                "ordering": ["name"],
             },
         ),
         migrations.CreateModel(
-            name='Image',
+            name="Image",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
                 (
-                    'created',
+                    "created",
                     django_extensions.db.fields.CreationDateTimeField(
-                        auto_now_add=True, verbose_name='created'
+                        auto_now_add=True, verbose_name="created"
                     ),
                 ),
                 (
-                    'modified',
+                    "modified",
                     django_extensions.db.fields.ModificationDateTimeField(
-                        auto_now=True, verbose_name='modified'
+                        auto_now=True, verbose_name="modified"
                     ),
                 ),
-                ('object_id', models.CharField(max_length=24, unique=True)),
+                ("object_id", models.CharField(max_length=24, unique=True)),
             ],
             options={
-                'get_latest_by': 'modified',
-                'abstract': False,
+                "get_latest_by": "modified",
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='Question',
+            name="Question",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
                 (
-                    'created',
+                    "created",
                     django_extensions.db.fields.CreationDateTimeField(
-                        auto_now_add=True, verbose_name='created'
+                        auto_now_add=True, verbose_name="created"
                     ),
                 ),
                 (
-                    'modified',
+                    "modified",
                     django_extensions.db.fields.ModificationDateTimeField(
-                        auto_now=True, verbose_name='modified'
+                        auto_now=True, verbose_name="modified"
                     ),
                 ),
-                ('required', models.BooleanField(default=True)),
-                ('prompt', models.CharField(max_length=400, unique=True)),
+                ("required", models.BooleanField(default=True)),
+                ("prompt", models.CharField(max_length=400, unique=True)),
                 (
-                    'type',
+                    "type",
                     models.CharField(
-                        choices=[('select', 'Select')], default='select', max_length=6
+                        choices=[("select", "Select")], default="select", max_length=6
                     ),
                 ),
-                ('official', models.BooleanField()),
+                ("official", models.BooleanField()),
             ],
             options={
-                'ordering': ['prompt'],
+                "ordering": ["prompt"],
             },
         ),
         migrations.CreateModel(
-            name='QuestionChoice',
+            name="QuestionChoice",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
                 (
-                    'created',
+                    "created",
                     django_extensions.db.fields.CreationDateTimeField(
-                        auto_now_add=True, verbose_name='created'
+                        auto_now_add=True, verbose_name="created"
                     ),
                 ),
                 (
-                    'modified',
+                    "modified",
                     django_extensions.db.fields.ModificationDateTimeField(
-                        auto_now=True, verbose_name='modified'
+                        auto_now=True, verbose_name="modified"
                     ),
                 ),
-                ('text', models.CharField(max_length=100)),
+                ("text", models.CharField(max_length=100)),
                 (
-                    'question',
+                    "question",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='choices',
-                        to='studies.question',
+                        related_name="choices",
+                        to="studies.question",
                     ),
                 ),
             ],
             options={
-                'get_latest_by': 'modified',
-                'abstract': False,
+                "get_latest_by": "modified",
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='Study',
+            name="Study",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
                 (
-                    'created',
+                    "created",
                     django_extensions.db.fields.CreationDateTimeField(
-                        auto_now_add=True, verbose_name='created'
+                        auto_now_add=True, verbose_name="created"
                     ),
                 ),
                 (
-                    'modified',
+                    "modified",
                     django_extensions.db.fields.ModificationDateTimeField(
-                        auto_now=True, verbose_name='modified'
+                        auto_now=True, verbose_name="modified"
                     ),
                 ),
-                ('name', models.CharField(max_length=100, unique=True)),
-                ('description', models.TextField()),
+                ("name", models.CharField(max_length=100, unique=True)),
+                ("description", models.TextField()),
                 (
-                    'creator',
+                    "creator",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL
                     ),
                 ),
-                ('features', models.ManyToManyField(to='studies.Feature')),
-                ('questions', models.ManyToManyField(to='studies.Question')),
+                ("features", models.ManyToManyField(to="studies.Feature")),
+                ("questions", models.ManyToManyField(to="studies.Question")),
             ],
             options={
-                'verbose_name_plural': 'Studies',
+                "verbose_name_plural": "Studies",
             },
         ),
         migrations.CreateModel(
-            name='StudyTask',
+            name="StudyTask",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
                 (
-                    'created',
+                    "created",
                     django_extensions.db.fields.CreationDateTimeField(
-                        auto_now_add=True, verbose_name='created'
+                        auto_now_add=True, verbose_name="created"
                     ),
                 ),
                 (
-                    'modified',
+                    "modified",
                     django_extensions.db.fields.ModificationDateTimeField(
-                        auto_now=True, verbose_name='modified'
+                        auto_now=True, verbose_name="modified"
                     ),
                 ),
                 (
-                    'annotator',
+                    "annotator",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL
                     ),
                 ),
                 (
-                    'image',
+                    "image",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.PROTECT, to='studies.image'
+                        on_delete=django.db.models.deletion.PROTECT, to="studies.image"
                     ),
                 ),
                 (
-                    'study',
+                    "study",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
-                        related_name='tasks',
-                        to='studies.study',
+                        related_name="tasks",
+                        to="studies.study",
                     ),
                 ),
             ],
             options={
-                'unique_together': {('study', 'annotator', 'image')},
+                "unique_together": {("study", "annotator", "image")},
             },
         ),
         migrations.CreateModel(
-            name='Response',
+            name="Response",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
                 (
-                    'created',
+                    "created",
                     django_extensions.db.fields.CreationDateTimeField(
-                        auto_now_add=True, verbose_name='created'
+                        auto_now_add=True, verbose_name="created"
                     ),
                 ),
                 (
-                    'modified',
+                    "modified",
                     django_extensions.db.fields.ModificationDateTimeField(
-                        auto_now=True, verbose_name='modified'
+                        auto_now=True, verbose_name="modified"
                     ),
                 ),
                 (
-                    'annotation',
+                    "annotation",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='responses',
-                        to='studies.annotation',
+                        related_name="responses",
+                        to="studies.annotation",
                     ),
                 ),
                 (
-                    'choice',
+                    "choice",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to='studies.questionchoice'
+                        on_delete=django.db.models.deletion.CASCADE, to="studies.questionchoice"
                     ),
                 ),
                 (
-                    'question',
+                    "question",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='responses',
-                        to='studies.question',
+                        related_name="responses",
+                        to="studies.question",
                     ),
                 ),
             ],
             options={
-                'get_latest_by': 'modified',
-                'abstract': False,
+                "get_latest_by": "modified",
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='Markup',
+            name="Markup",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
                 (
-                    'created',
+                    "created",
                     django_extensions.db.fields.CreationDateTimeField(
-                        auto_now_add=True, verbose_name='created'
+                        auto_now_add=True, verbose_name="created"
                     ),
                 ),
                 (
-                    'modified',
+                    "modified",
                     django_extensions.db.fields.ModificationDateTimeField(
-                        auto_now=True, verbose_name='modified'
+                        auto_now=True, verbose_name="modified"
                     ),
                 ),
-                ('mask', models.BinaryField()),
-                ('present', models.BooleanField()),
+                ("mask", models.BinaryField()),
+                ("present", models.BooleanField()),
                 (
-                    'annotation',
+                    "annotation",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='markups',
-                        to='studies.annotation',
+                        related_name="markups",
+                        to="studies.annotation",
                     ),
                 ),
                 (
-                    'feature',
+                    "feature",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
-                        related_name='markups',
-                        to='studies.feature',
+                        related_name="markups",
+                        to="studies.feature",
                     ),
                 ),
             ],
             options={
-                'get_latest_by': 'modified',
-                'abstract': False,
+                "get_latest_by": "modified",
+                "abstract": False,
             },
         ),
         migrations.AddField(
-            model_name='annotation',
-            name='image',
+            model_name="annotation",
+            name="image",
             field=models.ForeignKey(
-                on_delete=django.db.models.deletion.PROTECT, to='studies.image'
+                on_delete=django.db.models.deletion.PROTECT, to="studies.image"
             ),
         ),
         migrations.AddField(
-            model_name='annotation',
-            name='study',
+            model_name="annotation",
+            name="study",
             field=models.ForeignKey(
-                on_delete=django.db.models.deletion.CASCADE, to='studies.study'
+                on_delete=django.db.models.deletion.CASCADE, to="studies.study"
             ),
         ),
         migrations.AddField(
-            model_name='annotation',
-            name='task',
+            model_name="annotation",
+            name="task",
             field=models.OneToOneField(
                 on_delete=django.db.models.deletion.CASCADE,
-                related_name='annotation',
-                to='studies.studytask',
+                related_name="annotation",
+                to="studies.studytask",
             ),
         ),
     ]

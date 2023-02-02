@@ -5,27 +5,26 @@ import django.utils.timezone
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('ingest', '0018_alter_accessionreview_accession'),
+        ("ingest", "0018_alter_accessionreview_accession"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='accessionreview',
-            options={'get_latest_by': 'reviewed_at', 'ordering': ['-reviewed_at']},
+            name="accessionreview",
+            options={"get_latest_by": "reviewed_at", "ordering": ["-reviewed_at"]},
         ),
         migrations.RemoveField(
-            model_name='accessionreview',
-            name='created',
+            model_name="accessionreview",
+            name="created",
         ),
         migrations.RemoveField(
-            model_name='accessionreview',
-            name='modified',
+            model_name="accessionreview",
+            name="modified",
         ),
         migrations.AlterField(
-            model_name='accessionreview',
-            name='reviewed_at',
+            model_name="accessionreview",
+            name="reviewed_at",
             field=models.DateTimeField(default=django.utils.timezone.now),
         ),
     ]

@@ -23,20 +23,20 @@ logger = logging.getLogger(__name__)
 class ZipUpload(CreationSortedTimeStampedModel):
     class Meta(CreationSortedTimeStampedModel.Meta):
         constraints = [
-            UniqueConstraint(name='zipupload_unique_blob', fields=['blob'], condition=~Q(blob='')),
+            UniqueConstraint(name="zipupload_unique_blob", fields=["blob"], condition=~Q(blob="")),
         ]
 
     class Status(models.TextChoices):
-        CREATED = 'created', 'Created'
-        EXTRACTING = 'extracting', 'Extracting'
-        EXTRACTED = 'extracted', 'Extracted'
-        FAILED = 'failed', 'Failed'
+        CREATED = "created", "Created"
+        EXTRACTING = "extracting", "Extracting"
+        EXTRACTED = "extracted", "Extracted"
+        FAILED = "failed", "Failed"
 
-    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name='zip_uploads')
+    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name="zip_uploads")
 
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
 
-    blob = S3FileField(validators=[FileExtensionValidator(allowed_extensions=['zip'])])
+    blob = S3FileField(validators=[FileExtensionValidator(allowed_extensions=["zip"])])
     blob_name = models.CharField(max_length=255, editable=False)
     blob_size = models.PositiveBigIntegerField(editable=False)
 
@@ -51,7 +51,7 @@ class ZipUpload(CreationSortedTimeStampedModel):
         original_blob_names_in_zip = set()
         original_blob_name_duplicates = set()
 
-        with self.blob.open('rb') as zip_blob_stream:
+        with self.blob.open("rb") as zip_blob_stream:
             for original_filename in file_names_in_zip(zip_blob_stream):
                 if original_filename in original_blob_names_in_zip:
                     original_blob_name_duplicates.add(original_filename)
@@ -59,7 +59,7 @@ class ZipUpload(CreationSortedTimeStampedModel):
 
         original_blob_name_preexisting = Accession.objects.filter(
             cohort=self.cohort, original_blob_name__in=original_blob_names_in_zip
-        ).values_list('original_blob_name', flat=True)
+        ).values_list("original_blob_name", flat=True)
 
         return sorted(original_blob_name_preexisting), sorted(original_blob_name_duplicates)
 
@@ -76,12 +76,12 @@ class ZipUpload(CreationSortedTimeStampedModel):
         from .accession import Accession, AccessionStatus
 
         if self.status != ZipUpload.Status.CREATED:
-            raise Exception('Can not extract zip %d with status %s', self.pk, self.status)
+            raise Exception("Can not extract zip %d with status %s", self.pk, self.status)
 
         try:
             with transaction.atomic():
                 self.status = ZipUpload.Status.EXTRACTING
-                self.save(update_fields=['status'])
+                self.save(update_fields=["status"])
 
                 (
                     original_blob_name_preexisting,
@@ -92,7 +92,7 @@ class ZipUpload(CreationSortedTimeStampedModel):
                         original_blob_name_preexisting, original_blob_name_duplicates
                     )
 
-                with self.blob.open('rb') as zip_blob_stream:
+                with self.blob.open("rb") as zip_blob_stream:
                     for zip_item in items_in_zip(zip_blob_stream):
                         accession = Accession.from_blob(zip_item)
                         accession.creator = self.creator
@@ -102,29 +102,29 @@ class ZipUpload(CreationSortedTimeStampedModel):
                 self.accessions.update(status=AccessionStatus.CREATED)
 
         except zipfile.BadZipFile as e:
-            logger.warning('Failed zip extraction: %d <%s>: invalid zip: %s', self.pk, self, e)
+            logger.warning("Failed zip extraction: %d <%s>: invalid zip: %s", self.pk, self, e)
             sentry_sdk.capture_exception(e)
             self.status = ZipUpload.Status.FAILED
             raise ZipUpload.InvalidExtractError
         except ZipUpload.DuplicateExtractError:
-            logger.info('Failed zip extraction: %d <%s>: duplicates', self.pk, self)
+            logger.info("Failed zip extraction: %d <%s>: duplicates", self.pk, self)
             self.status = ZipUpload.Status.FAILED
             raise
         else:
             self.status = ZipUpload.Status.EXTRACTED
         finally:
-            self.save(update_fields=['status'])
+            self.save(update_fields=["status"])
 
     def extract_and_notify(self):
         try:
             self.extract()
         except ZipUpload.InvalidExtractError:
             send_mail(
-                'A problem processing your zip file',
+                "A problem processing your zip file",
                 render_to_string(
-                    'ingest/email/zip_invalid.txt',
+                    "ingest/email/zip_invalid.txt",
                     {
-                        'zip': self,
+                        "zip": self,
                     },
                 ),
                 settings.DEFAULT_FROM_EMAIL,
@@ -134,13 +134,13 @@ class ZipUpload(CreationSortedTimeStampedModel):
         except ZipUpload.DuplicateExtractError as e:
             original_blob_name_preexisting, original_blob_name_duplicates = e.args
             send_mail(
-                'A problem processing your zip file',
+                "A problem processing your zip file",
                 render_to_string(
-                    'ingest/email/zip_duplicates.txt',
+                    "ingest/email/zip_duplicates.txt",
                     {
-                        'zip': self,
-                        'original_blob_name_preexisting': original_blob_name_preexisting,
-                        'original_blob_name_duplicates': original_blob_name_duplicates,
+                        "zip": self,
+                        "original_blob_name_preexisting": original_blob_name_preexisting,
+                        "original_blob_name_duplicates": original_blob_name_duplicates,
                     },
                 ),
                 settings.DEFAULT_FROM_EMAIL,
@@ -149,11 +149,11 @@ class ZipUpload(CreationSortedTimeStampedModel):
             raise
         else:
             send_mail(
-                'Zip file extracted',
+                "Zip file extracted",
                 render_to_string(
-                    'ingest/email/zip_success.txt',
+                    "ingest/email/zip_success.txt",
                     {
-                        'zip': self,
+                        "zip": self,
                     },
                 ),
                 settings.DEFAULT_FROM_EMAIL,
@@ -164,4 +164,4 @@ class ZipUpload(CreationSortedTimeStampedModel):
         with transaction.atomic():
             self.accessions.all().delete()
             self.status = ZipUpload.Status.CREATED
-            self.save(update_fields=['status'])
+            self.save(update_fields=["status"])

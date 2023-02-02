@@ -4,15 +4,14 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('studies', '0016_remove_markup_mask'),
+        ("studies", "0016_remove_markup_mask"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='markup',
-            old_name='mask_blob',
-            new_name='mask',
+            model_name="markup",
+            old_name="mask_blob",
+            new_name="mask",
         ),
     ]

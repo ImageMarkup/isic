@@ -34,22 +34,22 @@ class Collection(TimeStampedModel):
     """
 
     class Meta(TimeStampedModel.Meta):
-        unique_together = [['creator', 'name']]
+        unique_together = [["creator", "name"]]
         constraints = [
             UniqueConstraint(
-                name='collection_pinned_has_unique_name',
-                fields=['name'],
+                name="collection_pinned_has_unique_name",
+                fields=["name"],
                 condition=Q(pinned=True),
             )
         ]
         indexes = [
             # icontains uses Upper(name) for searching
-            GinIndex(OpClass(Upper('name'), name='gin_trgm_ops'), name='collection_name_gin')
+            GinIndex(OpClass(Upper("name"), name="gin_trgm_ops"), name="collection_name_gin")
         ]
 
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
 
-    images = models.ManyToManyField(Image, related_name='collections')
+    images = models.ManyToManyField(Image, related_name="collections")
 
     # unique per user. names of pinned collections can't be used.
     name = models.CharField(max_length=200)
@@ -59,9 +59,9 @@ class Collection(TimeStampedModel):
 
     shares = models.ManyToManyField(
         User,
-        through='CollectionShare',
-        through_fields=['collection', 'recipient'],
-        related_name='collection_shares',
+        through="CollectionShare",
+        through_fields=["collection", "recipient"],
+        related_name="collection_shares",
     )
 
     pinned = models.BooleanField(default=False)
@@ -76,7 +76,7 @@ class Collection(TimeStampedModel):
         return self.name
 
     def get_absolute_url(self):
-        return reverse('core/collection-detail', args=[self.pk])
+        return reverse("core/collection-detail", args=[self.pk])
 
     @property
     def has_doi(self) -> bool:
@@ -85,7 +85,7 @@ class Collection(TimeStampedModel):
     @property
     def doi_url(self):
         if self.doi:
-            return f'https://doi.org/{self.doi}'
+            return f"https://doi.org/{self.doi}"
 
     def full_clean(self, exclude=None, validate_unique=True):
         if self.pk and self.public and self.images.private().exists():
@@ -98,24 +98,24 @@ class CollectionShare(TimeStampedModel):
     class Meta(TimeStampedModel.Meta):
         constraints = [
             CheckConstraint(
-                name='collectionshare_creator_recipient_diff_check',
-                check=~Q(creator=F('recipient')),
+                name="collectionshare_creator_recipient_diff_check",
+                check=~Q(creator=F("recipient")),
             )
         ]
 
     creator = models.ForeignKey(
-        User, on_delete=models.PROTECT, related_name='collection_shares_given'
+        User, on_delete=models.PROTECT, related_name="collection_shares_given"
     )
     collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
     recipient = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='collection_shares_received'
+        User, on_delete=models.CASCADE, related_name="collection_shares_received"
     )
 
 
 class CollectionPermissions:
     model = Collection
-    perms = ['view_collection', 'edit_collection', 'create_doi', 'add_images', 'remove_images']
-    filters = {'view_collection': 'view_collection_list', 'create_doi': 'create_doi_list'}
+    perms = ["view_collection", "edit_collection", "create_doi", "add_images", "remove_images"]
+    filters = {"view_collection": "view_collection_list", "create_doi": "create_doi_list"}
 
     @staticmethod
     def _is_creator_list(
