@@ -8,4 +8,4 @@ def get_key(value, arg):
     if value and arg in value:
         return value[arg]
     else:
-        return ''
+        return ""

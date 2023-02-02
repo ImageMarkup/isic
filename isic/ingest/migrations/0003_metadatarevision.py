@@ -7,8 +7,8 @@ import django_extensions.db.fields
 
 
 def create_initial_metadata_versions(apps, schema_editor):
-    Accession = apps.get_model('ingest', 'Accession')
-    User = apps.get_model('auth', 'User')
+    Accession = apps.get_model("ingest", "Accession")
+    User = apps.get_model("auth", "User")
     accessions = Accession.objects.exclude(metadata={}, unstructured_metadata={})
     if accessions.exists():
         user = User.objects.get(pk=1)
@@ -23,54 +23,54 @@ def create_initial_metadata_versions(apps, schema_editor):
 class Migration(migrations.Migration):
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('ingest', '0002_remove_accession_accession_wh_status_check_and_more'),
+        ("ingest", "0002_remove_accession_accession_wh_status_check_and_more"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='MetadataRevision',
+            name="MetadataRevision",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
                 (
-                    'modified',
+                    "modified",
                     django_extensions.db.fields.ModificationDateTimeField(
-                        auto_now=True, verbose_name='modified'
+                        auto_now=True, verbose_name="modified"
                     ),
                 ),
                 (
-                    'created',
+                    "created",
                     django_extensions.db.fields.CreationDateTimeField(
                         auto_now_add=True, db_index=True
                     ),
                 ),
-                ('metadata', models.JSONField()),
-                ('unstructured_metadata', models.JSONField()),
+                ("metadata", models.JSONField()),
+                ("unstructured_metadata", models.JSONField()),
                 (
-                    'accession',
+                    "accession",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
-                        related_name='metadata_versions',
-                        to='ingest.accession',
+                        related_name="metadata_versions",
+                        to="ingest.accession",
                     ),
                 ),
                 (
-                    'creator',
+                    "creator",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
-                        related_name='metadata_versions',
+                        related_name="metadata_versions",
                         to=settings.AUTH_USER_MODEL,
                     ),
                 ),
             ],
             options={
-                'ordering': ['-created'],
-                'get_latest_by': 'created',
-                'abstract': False,
+                "ordering": ["-created"],
+                "get_latest_by": "created",
+                "abstract": False,
             },
         ),
         migrations.RunPython(create_initial_metadata_versions),

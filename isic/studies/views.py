@@ -34,17 +34,17 @@ from isic.studies.tasks import populate_study_tasks_task
 def study_list(request):
     studies = get_visible_objects(
         request.user,
-        'studies.view_study',
-        Study.objects.select_related('creator').distinct().order_by('-created'),
+        "studies.view_study",
+        Study.objects.select_related("creator").distinct().order_by("-created"),
     )
     paginator = Paginator(studies, 10)
-    studies_page = paginator.get_page(request.GET.get('page'))
+    studies_page = paginator.get_page(request.GET.get("page"))
 
     num_participants = dict(
-        StudyTask.objects.values('study')
+        StudyTask.objects.values("study")
         .filter(study__in=studies_page)
-        .annotate(count=Count('annotator', distinct=True))
-        .values_list('study', 'count')
+        .annotate(count=Count("annotator", distinct=True))
+        .values_list("study", "count")
     )
 
     if request.user.is_authenticated:
@@ -52,17 +52,17 @@ def study_list(request):
         # generated SQL is extremely inefficient.
         # Map the study id -> num pending tasks a user has to complete on a study
         num_pending_tasks = dict(
-            StudyTask.objects.values('study')
+            StudyTask.objects.values("study")
             .filter(study__in=studies_page, annotator=request.user, annotation=None)
             .annotate(count=Count(1))
-            .values_list('study', 'count')
+            .values_list("study", "count")
         )
         num_completed_tasks = dict(
-            StudyTask.objects.values('study')
+            StudyTask.objects.values("study")
             .filter(study__in=studies_page, annotator=request.user)
             .exclude(annotation=None)
             .annotate(count=Count(1))
-            .values_list('study', 'count')
+            .values_list("study", "count")
         )
     else:
         num_pending_tasks = None
@@ -70,12 +70,12 @@ def study_list(request):
 
     return render(
         request,
-        'studies/study_list.html',
+        "studies/study_list.html",
         {
-            'studies': studies_page,
-            'num_pending_tasks': num_pending_tasks,
-            'num_completed_tasks': num_completed_tasks,
-            'num_participants': num_participants,
+            "studies": studies_page,
+            "num_pending_tasks": num_pending_tasks,
+            "num_completed_tasks": num_completed_tasks,
+            "num_participants": num_participants,
         },
     )
 
@@ -86,15 +86,15 @@ def study_create(request):
     OfficialQuestionFormSet = formset_factory(OfficialQuestionForm, extra=0)
     CustomQuestionFormSet = formset_factory(CustomQuestionForm, extra=0)
 
-    visible_collections = get_visible_objects(request.user, 'core.view_collection').order_by('name')
+    visible_collections = get_visible_objects(request.user, "core.view_collection").order_by("name")
 
     base_form = BaseStudyForm(
         request.POST or None, user=request.user, collections=visible_collections
     )
-    custom_question_formset = CustomQuestionFormSet(request.POST or None, prefix='custom')
-    official_question_formset = OfficialQuestionFormSet(request.POST or None, prefix='official')
+    custom_question_formset = CustomQuestionFormSet(request.POST or None, prefix="custom")
+    official_question_formset = OfficialQuestionFormSet(request.POST or None, prefix="official")
 
-    if request.method == 'POST':
+    if request.method == "POST":
         if (
             base_form.is_valid()
             and custom_question_formset.is_valid()
@@ -105,142 +105,142 @@ def study_create(request):
 
             for question in official_question_formset.cleaned_data:
                 study.questions.add(
-                    Question.objects.get(pk=question['question_id']),
-                    through_defaults={'required': question['required']},
+                    Question.objects.get(pk=question["question_id"]),
+                    through_defaults={"required": question["required"]},
                 )
 
             for custom_question in custom_question_formset.cleaned_data:
-                q = Question.objects.create(prompt=custom_question['prompt'], official=False)
-                for choice in custom_question['choices']:
+                q = Question.objects.create(prompt=custom_question["prompt"], official=False)
+                for choice in custom_question["choices"]:
                     QuestionChoice.objects.create(question=q, text=choice)
-                study.questions.add(q, through_defaults={'required': custom_question['required']})
+                study.questions.add(q, through_defaults={"required": custom_question["required"]})
 
             messages.add_message(
-                request, messages.INFO, 'Creating study, this may take a few minutes.'
+                request, messages.INFO, "Creating study, this may take a few minutes."
             )
             transaction.on_commit(
                 lambda: populate_study_tasks_task.delay(
-                    study.pk, base_form.cleaned_data['annotators']
+                    study.pk, base_form.cleaned_data["annotators"]
                 )
             )
 
-            return HttpResponseRedirect(reverse('study-detail', args=[study.pk]))
+            return HttpResponseRedirect(reverse("study-detail", args=[study.pk]))
 
     questions = list(
         Question.objects.filter(official=True)
-        .annotate(choice_array=ArrayAgg('choices__text'))
-        .values('id', 'prompt', 'choice_array')
+        .annotate(choice_array=ArrayAgg("choices__text"))
+        .values("id", "prompt", "choice_array")
     )
 
     return render(
         request,
-        'studies/study_create.html',
+        "studies/study_create.html",
         {
-            'existing_questions': questions,
-            'visible_collections': visible_collections,
-            'base_form': base_form,
-            'official_question_formset': official_question_formset,
-            'custom_question_formset': custom_question_formset,
+            "existing_questions": questions,
+            "visible_collections": visible_collections,
+            "base_form": base_form,
+            "official_question_formset": official_question_formset,
+            "custom_question_formset": custom_question_formset,
         },
     )
 
 
 @staff_member_required
 def view_mask(request, markup_id):
-    markup = get_object_or_404(Markup.objects.values('mask'), pk=markup_id)
-    return HttpResponseRedirect(markup['mask'].url)
+    markup = get_object_or_404(Markup.objects.values("mask"), pk=markup_id)
+    return HttpResponseRedirect(markup["mask"].url)
 
 
 @staff_member_required
 def annotation_detail(request, pk):
     annotation = get_object_or_404(
-        Annotation.objects.select_related('image', 'study', 'annotator')
-        .prefetch_related('markups__feature')
-        .prefetch_related('responses__choice')
-        .prefetch_related('responses__question'),
+        Annotation.objects.select_related("image", "study", "annotator")
+        .prefetch_related("markups__feature")
+        .prefetch_related("responses__choice")
+        .prefetch_related("responses__question"),
         pk=pk,
     )
     return render(
         request,
-        'studies/annotation_detail.html',
-        {'annotation': annotation},
+        "studies/annotation_detail.html",
+        {"annotation": annotation},
     )
 
 
-@needs_object_permission('studies.view_study', (Study, 'pk', 'pk'))
+@needs_object_permission("studies.view_study", (Study, "pk", "pk"))
 def study_detail(request, pk):
     ctx = {}
-    ctx['study'] = get_object_or_404(
+    ctx["study"] = get_object_or_404(
         Study.objects.annotate(
-            num_annotators=Count('tasks__annotator', distinct=True),
-            num_features=Count('features', distinct=True),
-            num_questions=Count('questions', distinct=True),
+            num_annotators=Count("tasks__annotator", distinct=True),
+            num_features=Count("features", distinct=True),
+            num_questions=Count("questions", distinct=True),
         )
-        .select_related('creator')
+        .select_related("creator")
         .prefetch_related(
             # the entire point of this prefetch is to select the questions ordered by the
             # StudyQuestion.order field. This is pretty contrived but there doesn't appear
             # to be an easier way.
             Prefetch(
-                'questions',
-                queryset=Question.objects.prefetch_related('choices')
+                "questions",
+                queryset=Question.objects.prefetch_related("choices")
                 .filter(studyquestion__study_id=pk)
-                .order_by('studyquestion__order', 'prompt'),
+                .order_by("studyquestion__order", "prompt"),
             )
         )
-        .prefetch_related('features'),
+        .prefetch_related("features"),
         pk=pk,
     )
 
     # Note: there is no permission checking here because access to the study means
     # access to the images when viewing the study. See Study.public comment as well.
-    images = Image.objects.filter(pk__in=ctx['study'].tasks.values('image').distinct())
-    paginator = Paginator(images.select_related('accession'), 30)
-    ctx['num_images'] = images.count()
-    ctx['images'] = paginator.get_page(request.GET.get('page'))
+    images = Image.objects.filter(pk__in=ctx["study"].tasks.values("image").distinct())
+    paginator = Paginator(images.select_related("accession"), 30)
+    ctx["num_images"] = images.count()
+    ctx["images"] = paginator.get_page(request.GET.get("page"))
 
     if request.user.is_authenticated:
-        ctx['pending_tasks'] = ctx['study'].tasks.pending().for_user(request.user)
-        ctx['next_task'] = ctx['pending_tasks'].random_next()
+        ctx["pending_tasks"] = ctx["study"].tasks.pending().for_user(request.user)
+        ctx["next_task"] = ctx["pending_tasks"].random_next()
 
     annotator_counts = list(
-        ctx['study']
-        .tasks.values('annotator')
-        .annotate(completed=Count('pk', filter=~Q(annotation=None)), total=Count('pk'))
-        .order_by('annotator__last_name', 'annotator__first_name')
+        ctx["study"]
+        .tasks.values("annotator")
+        .annotate(completed=Count("pk", filter=~Q(annotation=None)), total=Count("pk"))
+        .order_by("annotator__last_name", "annotator__first_name")
     )
     annotators = list(
-        User.objects.select_related('profile')
-        .filter(pk__in=[x['annotator'] for x in annotator_counts])
-        .order_by('last_name', 'first_name')
+        User.objects.select_related("profile")
+        .filter(pk__in=[x["annotator"] for x in annotator_counts])
+        .order_by("last_name", "first_name")
     )
     # TODO: Fix brittleness - both of the lists have to be ordered by the same thing for this to
     # work.
-    ctx['annotators'] = zip(annotators, annotator_counts)
+    ctx["annotators"] = zip(annotators, annotator_counts)
 
     # TODO: create a formal permission for this?
     # Using view_study_results would make all public studies show real user names.
-    ctx['show_real_names'] = request.user.is_staff or request.user in ctx['study'].owners.all()
+    ctx["show_real_names"] = request.user.is_staff or request.user in ctx["study"].owners.all()
 
     # passing request.user to a queryset requires an authenticated user, so wrap
     # the entire block in request.user.is_authenticated check anyway.
     if request.user.is_authenticated and (
         request.user.is_staff
-        or request.user in ctx['study'].owners.all()
-        or ctx['study'].tasks.filter(annotator=request.user).exists()
+        or request.user in ctx["study"].owners.all()
+        or ctx["study"].tasks.filter(annotator=request.user).exists()
     ):
-        ctx['owners'] = [user_nicename(u) for u in ctx['study'].owners.all()]
+        ctx["owners"] = [user_nicename(u) for u in ctx["study"].owners.all()]
 
-    return render(request, 'studies/study_detail.html', ctx)
+    return render(request, "studies/study_detail.html", ctx)
 
 
-@needs_object_permission('studies.view_study_results', (Study, 'pk', 'pk'))
+@needs_object_permission("studies.view_study_results", (Study, "pk", "pk"))
 def study_responses_csv(request, pk):
     study: Study = get_object_or_404(Study, pk=pk)
-    current_time = datetime.utcnow().strftime('%Y-%m-%d')
-    response = HttpResponse(content_type='text/csv')
+    current_time = datetime.utcnow().strftime("%Y-%m-%d")
+    response = HttpResponse(content_type="text/csv")
     response[
-        'Content-Disposition'
+        "Content-Disposition"
     ] = f'attachment; filename="{slugify(study.name)}_responses_{current_time}.csv"'
     study.write_responses_csv(response)
     return response
@@ -250,28 +250,28 @@ def maybe_redirect_to_next_study_task(user: User, study: Study):
     next_task = study.tasks.pending().for_user(user).random_next()
 
     if not next_task:
-        return HttpResponseRedirect(reverse('study-detail', args=[study.pk]))
+        return HttpResponseRedirect(reverse("study-detail", args=[study.pk]))
     else:
-        return HttpResponseRedirect(reverse('study-task-detail', args=[next_task.pk]))
+        return HttpResponseRedirect(reverse("study-task-detail", args=[next_task.pk]))
 
 
-@needs_object_permission('studies.view_study_task', (StudyTask, 'pk', 'pk'))
+@needs_object_permission("studies.view_study_task", (StudyTask, "pk", "pk"))
 def study_task_detail(request, pk):
     study_task: StudyTask = get_object_or_404(
-        StudyTask.objects.select_related('annotator', 'image', 'study'),
+        StudyTask.objects.select_related("annotator", "image", "study"),
         pk=pk,
     )
     questions = (
-        study_task.study.questions.prefetch_related('choices')
-        .annotate(required=F('studyquestion__required'))  # required for StudyTaskForm
-        .order_by('studyquestion__order')
+        study_task.study.questions.prefetch_related("choices")
+        .annotate(required=F("studyquestion__required"))  # required for StudyTaskForm
+        .order_by("studyquestion__order")
         .all()
     )
 
     if study_task.complete:
         return maybe_redirect_to_next_study_task(request.user, study_task.study)
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = StudyTaskForm(request.POST, questions=questions)
         if form.is_valid():
             with transaction.atomic():
@@ -280,14 +280,14 @@ def study_task_detail(request, pk):
                     image=study_task.image,
                     task=study_task,
                     annotator=request.user,
-                    start_time=form.cleaned_data['start_time'],
+                    start_time=form.cleaned_data["start_time"],
                 )
 
-                del form.cleaned_data['start_time']
+                del form.cleaned_data["start_time"]
 
                 # TODO: markups, one day?
                 for question_pk, choice_pk in form.cleaned_data.items():
-                    if choice_pk == '':  # ignore optional questions
+                    if choice_pk == "":  # ignore optional questions
                         continue
                     question = form.questions[int(question_pk)]
                     choices = {x.pk: x for x in question.choices.all()}
@@ -295,21 +295,21 @@ def study_task_detail(request, pk):
 
             return maybe_redirect_to_next_study_task(request.user, study_task.study)
     else:
-        form = StudyTaskForm(initial={'start_time': timezone.now()}, questions=questions)
+        form = StudyTaskForm(initial={"start_time": timezone.now()}, questions=questions)
 
     context = {
-        'study_task': study_task,
-        'form': form,
-        'tasks_remaining': study_task.study.tasks.pending().for_user(request.user).count(),
+        "study_task": study_task,
+        "form": form,
+        "tasks_remaining": study_task.study.tasks.pending().for_user(request.user).count(),
     }
 
-    return render(request, 'studies/study_task_detail.html', context)
+    return render(request, "studies/study_task_detail.html", context)
 
 
-@needs_object_permission('studies.view_study', (Study, 'pk', 'pk'))
+@needs_object_permission("studies.view_study", (Study, "pk", "pk"))
 def study_task_detail_preview(request, pk):
     study = get_object_or_404(Study, pk=pk)
-    image = Image.objects.filter(pk__in=study.tasks.values('image')).order_by('?').first()
+    image = Image.objects.filter(pk__in=study.tasks.values("image")).order_by("?").first()
 
     # note: a studytask can't be built with an AnonymousUser, so use a dummy User object
     annotator = request.user if not isinstance(request.user, AnonymousUser) else User()
@@ -317,20 +317,20 @@ def study_task_detail_preview(request, pk):
     study_task = StudyTask(study=study, annotator=annotator, image=image)
 
     questions = (
-        study_task.study.questions.prefetch_related('choices')
-        .annotate(required=F('studyquestion__required'))  # required for StudyTaskForm
-        .order_by('studyquestion__order')
+        study_task.study.questions.prefetch_related("choices")
+        .annotate(required=F("studyquestion__required"))  # required for StudyTaskForm
+        .order_by("studyquestion__order")
         .all()
     )
 
-    form = StudyTaskForm(initial={'start_time': timezone.now()}, questions=questions)
+    form = StudyTaskForm(initial={"start_time": timezone.now()}, questions=questions)
 
     return render(
         request,
-        'studies/study_task_detail.html',
+        "studies/study_task_detail.html",
         {
-            'study_task': study_task,
-            'form': form,
-            'preview_mode': True,
+            "study_task": study_task,
+            "form": form,
+            "preview_mode": True,
         },
     )

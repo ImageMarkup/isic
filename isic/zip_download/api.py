@@ -27,7 +27,7 @@ def get_attributions(attributions: Iterable[str]) -> list[str]:
     # sort by the number of images descending, then the name of the institution ascending
     attributions = sorted(counter.most_common(), key=lambda v: (-v[1], v[0]))
     # push anonymous attributions to the end
-    attributions = sorted(attributions, key=lambda v: 1 if v[0] == 'Anonymous' else 0)
+    attributions = sorted(attributions, key=lambda v: 1 if v[0] == "Anonymous" else 0)
     return [x[0] for x in attributions]
 
 
@@ -44,71 +44,71 @@ def get_zip_download_token(token: str | None = None) -> dict:
         raise PermissionDenied
 
 
-@swagger_auto_schema(methods=['POST'], auto_schema=None)
-@api_view(['POST'])
+@swagger_auto_schema(methods=["POST"], auto_schema=None)
+@api_view(["POST"])
 @permission_classes([AllowAny])
 def create_zip_download_url(request):
-    serializer = SearchQuerySerializer(data=request.data, context={'user': request.user})
+    serializer = SearchQuerySerializer(data=request.data, context={"user": request.user})
     serializer.is_valid(raise_exception=True)
 
     if serializer.to_queryset().count() > 1_000:
         raise serializers.ValidationError(
-            'Only a maximum of 1,000 images can be downloaded per zip.'
+            "Only a maximum of 1,000 images can be downloaded per zip."
         )
 
     token = TimestampSigner().sign_object(serializer.to_token_representation())
 
-    return Response(f'{settings.ZIP_DOWNLOAD_SERVICE_URL}/download?zsid={token}')
+    return Response(f"{settings.ZIP_DOWNLOAD_SERVICE_URL}/download?zsid={token}")
 
 
-@swagger_auto_schema(methods=['GET'], auto_schema=None)
-@api_view(['GET'])
+@swagger_auto_schema(methods=["GET"], auto_schema=None)
+@api_view(["GET"])
 @permission_classes([AllowAny])
 def zip_file_descriptor(request):
-    token = request.query_params.get('token')
+    token = request.query_params.get("token")
     download_info = get_zip_download_token(token)
     serializer = SearchQuerySerializer.from_token_representation(download_info)
     serializer.is_valid(raise_exception=True)
 
     descriptor = {
-        'suggestedFilename': 'isic-data.zip',
-        'files': [
+        "suggestedFilename": "isic-data.zip",
+        "files": [
             {
-                'url': f'http://{Site.objects.get_current().domain}'
-                + reverse('zip-download/api/metadata-file')
-                + f'?token={token}',
-                'zipPath': 'metadata.csv',
+                "url": f"http://{Site.objects.get_current().domain}"
+                + reverse("zip-download/api/metadata-file")
+                + f"?token={token}",
+                "zipPath": "metadata.csv",
             },
             {
-                'url': f'http://{Site.objects.get_current().domain}'
-                + reverse('zip-download/api/attribution-file')
-                + f'?token={token}',
-                'zipPath': 'attribution.txt',
+                "url": f"http://{Site.objects.get_current().domain}"
+                + reverse("zip-download/api/attribution-file")
+                + f"?token={token}",
+                "zipPath": "attribution.txt",
             },
         ],
     }
 
-    qs = serializer.to_queryset(Image.objects.select_related('accession'))
+    qs = serializer.to_queryset(Image.objects.select_related("accession"))
     for image in qs.iterator():
-        descriptor['files'].append(
+        descriptor["files"].append(
             {
-                'url': image.accession.blob.url,
-                'zipPath': f'{image.isic_id}.JPG',
+                "url": image.accession.blob.url,
+                "zipPath": f"{image.isic_id}.JPG",
             }
         )
     return JsonResponse(ZipFileDescriptorSerializer(descriptor).data)
 
 
-@swagger_auto_schema(methods=['GET'], auto_schema=None)
-@api_view(['GET'])
+@swagger_auto_schema(methods=["GET"], auto_schema=None)
+@api_view(["GET"])
 @permission_classes([AllowAny])
 def zip_file_metadata_file(request):
-    download_info = get_zip_download_token(request.query_params.get('token'))
+    download_info = get_zip_download_token(request.query_params.get("token"))
     serializer = SearchQuerySerializer.from_token_representation(download_info)
     serializer.is_valid(raise_exception=True)
 
-    qs = serializer.to_queryset(Image.objects.select_related('accession__cohort').distinct())
-    response = HttpResponse(content_type='text/csv')
+    qs = serializer.to_queryset(Image.objects.select_related("accession__cohort").distinct())
+    response = HttpResponse(content_type="text/csv")
     writer = csv.DictWriter(response, _image_metadata_csv_headers(qs=qs))
     writer.writeheader()
 
@@ -118,14 +118,14 @@ def zip_file_metadata_file(request):
     return response
 
 
-@swagger_auto_schema(methods=['GET'], auto_schema=None)
-@api_view(['GET'])
+@swagger_auto_schema(methods=["GET"], auto_schema=None)
+@api_view(["GET"])
 @permission_classes([AllowAny])
 def zip_file_attribution_file(request):
-    download_info = get_zip_download_token(request.query_params.get('token'))
+    download_info = get_zip_download_token(request.query_params.get("token"))
     serializer = SearchQuerySerializer.from_token_representation(download_info)
     serializer.is_valid(raise_exception=True)
 
-    qs = serializer.to_queryset(Image.objects.select_related('accession__cohort').distinct())
-    attributions = get_attributions(qs.values_list('accession__cohort__attribution', flat=True))
-    return HttpResponse('\n\n'.join(attributions), content_type='text/plain')
+    qs = serializer.to_queryset(Image.objects.select_related("accession__cohort").distinct())
+    attributions = get_attributions(qs.values_list("accession__cohort__attribution", flat=True))
+    return HttpResponse("\n\n".join(attributions), content_type="text/plain")

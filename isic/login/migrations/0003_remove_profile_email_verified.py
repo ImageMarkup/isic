@@ -5,12 +5,12 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('login', '0002_merge_default_site'),
+        ("login", "0002_merge_default_site"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='profile',
-            name='email_verified',
+            model_name="profile",
+            name="email_verified",
         ),
     ]

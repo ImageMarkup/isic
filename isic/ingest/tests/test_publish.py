@@ -31,7 +31,7 @@ def test_publish_cohort(
 ):
     with django_capture_on_commit_callbacks(execute=True):
         staff_client.post(
-            reverse('upload/cohort-publish', args=[publishable_cohort.pk]), {'private': True}
+            reverse("upload/cohort-publish", args=[publishable_cohort.pk]), {"private": True}
         )
 
     published_images = Image.objects.filter(accession__cohort=publishable_cohort)

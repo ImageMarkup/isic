@@ -6,26 +6,26 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('ingest', '0008_auto_20220416_1924'),
+        ("ingest", "0008_auto_20220416_1924"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='checklog',
-            old_name='change_to',
-            new_name='value',
+            model_name="checklog",
+            old_name="change_to",
+            new_name="value",
         ),
         migrations.RemoveField(
-            model_name='checklog',
-            name='change_field',
+            model_name="checklog",
+            name="change_field",
         ),
         migrations.AlterField(
-            model_name='checklog',
-            name='accession',
+            model_name="checklog",
+            name="accession",
             field=models.OneToOneField(
                 on_delete=django.db.models.deletion.PROTECT,
-                related_name='checklogs',
-                to='ingest.accession',
+                related_name="checklogs",
+                to="ingest.accession",
             ),
         ),
     ]

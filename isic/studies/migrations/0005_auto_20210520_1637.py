@@ -8,31 +8,31 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('core', '0004_auto_20210519_2247'),
-        ('studies', '0004_auto_20210520_0446'),
+        ("core", "0004_auto_20210519_2247"),
+        ("studies", "0004_auto_20210520_0446"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='annotation',
-            name='image',
+            model_name="annotation",
+            name="image",
         ),
         migrations.AlterField(
-            model_name='annotation',
-            name='image2',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='core.image'),
+            model_name="annotation",
+            name="image2",
+            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to="core.image"),
         ),
         migrations.AlterField(
-            model_name='studytask',
-            name='image2',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='core.image'),
+            model_name="studytask",
+            name="image2",
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="core.image"),
         ),
         migrations.AlterUniqueTogether(
-            name='studytask',
-            unique_together={('study', 'annotator', 'image2')},
+            name="studytask",
+            unique_together={("study", "annotator", "image2")},
         ),
         migrations.RemoveField(
-            model_name='studytask',
-            name='image',
+            model_name="studytask",
+            name="image",
         ),
     ]

@@ -7,8 +7,8 @@ from .isic_id import IsicId
 
 class ImageAlias(TimeStampedModel):
     class Meta:
-        verbose_name_plural = 'Image aliases'
+        verbose_name_plural = "Image aliases"
 
     # This should typically be referenced as ".isic_id"
     isic = models.OneToOneField(IsicId, on_delete=models.PROTECT, editable=False)
-    image = models.ForeignKey(Image, on_delete=models.PROTECT, related_name='aliases')
+    image = models.ForeignKey(Image, on_delete=models.PROTECT, related_name="aliases")

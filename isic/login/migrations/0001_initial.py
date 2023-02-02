@@ -15,28 +15,28 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Profile',
+            name="Profile",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
                 (
-                    'girder_id',
+                    "girder_id",
                     models.CharField(
                         blank=True,
                         max_length=24,
                         null=True,
                         unique=True,
-                        validators=[django.core.validators.RegexValidator('^[0-9a-f]{24}$')],
+                        validators=[django.core.validators.RegexValidator("^[0-9a-f]{24}$")],
                     ),
                 ),
-                ('girder_salt', models.CharField(blank=True, max_length=60, null=True)),
-                ('email_verified', models.BooleanField(blank=True, null=True)),
+                ("girder_salt", models.CharField(blank=True, max_length=60, null=True)),
+                ("email_verified", models.BooleanField(blank=True, null=True)),
                 (
-                    'user',
+                    "user",
                     models.OneToOneField(
                         on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL
                     ),

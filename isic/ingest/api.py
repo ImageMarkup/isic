@@ -27,10 +27,10 @@ class AccessionPermissions(BasePermission):
         if request.user.is_staff:
             return True
 
-        if request.method == 'POST':
-            if 'cohort' in request.data:
-                cohort = get_object_or_404(Cohort, pk=request.data['cohort'])
-                return request.user.has_perm('ingest.add_accession', cohort)
+        if request.method == "POST":
+            if "cohort" in request.data:
+                cohort = get_object_or_404(Cohort, pk=request.data["cohort"])
+                return request.user.has_perm("ingest.add_accession", cohort)
 
         return False
 
@@ -42,7 +42,7 @@ class S3FileWithSizeSerializerField(FileSerializerField):
         # Check the signature and load an S3PlaceholderFile
         file_object = S3PlaceholderFile.from_field(data)
         if file_object is None:
-            self.fail('invalid')
+            self.fail("invalid")
 
         # This checks validity of the file name and size
         file_object = super().to_internal_value(file_object)
@@ -57,13 +57,13 @@ class AccessionCreateInputSerializer(serializers.Serializer):
 class AccessionCreateOutputSerializer(serializers.ModelSerializer):
     class Meta:
         model = Accession
-        fields = ['id']
+        fields = ["id"]
 
 
 @method_decorator(
-    name='post',
+    name="post",
     decorator=swagger_auto_schema(
-        operation_summary='Create an Accession.',
+        operation_summary="Create an Accession.",
         request_body=AccessionCreateInputSerializer,
         responses={201: AccessionCreateOutputSerializer},
     ),
@@ -76,8 +76,8 @@ class AccessionCreateApi(APIView):
         serializer.is_valid(raise_exception=True)
         accession = accession_create(
             creator=request.user,
-            original_blob_name=os.path.basename(serializer.validated_data['original_blob'].name),
-            original_blob_size=serializer.validated_data['original_blob'].size,
+            original_blob_name=os.path.basename(serializer.validated_data["original_blob"].name),
+            original_blob_size=serializer.validated_data["original_blob"].size,
             **serializer.validated_data,
         )
         return HttpResponse(
@@ -90,7 +90,7 @@ class AccessionCreateReviewBulkInputSerializer(serializers.Serializer):
     value = serializers.BooleanField()
 
 
-@method_decorator(name='post', decorator=swagger_auto_schema(auto_schema=None))
+@method_decorator(name="post", decorator=swagger_auto_schema(auto_schema=None))
 class AccessionCreateReviewBulkApi(APIView):
     permission_classes = [AccessionPermissions]
 
@@ -100,22 +100,22 @@ class AccessionCreateReviewBulkApi(APIView):
 
         accession_review_bulk_create(
             reviewer=request.user,
-            accession_ids_values={x['id']: x['value'] for x in serializer.validated_data},
+            accession_ids_values={x["id"]: x["value"] for x in serializer.validated_data},
         )
 
         return Response({}, status=status.HTTP_201_CREATED)
 
 
 @method_decorator(
-    name='create',
+    name="create",
     decorator=swagger_auto_schema(auto_schema=None),
 )
 @method_decorator(
-    name='list', decorator=swagger_auto_schema(operation_summary='Return a list of cohorts.')
+    name="list", decorator=swagger_auto_schema(operation_summary="Return a list of cohorts.")
 )
 @method_decorator(
-    name='retrieve',
-    decorator=swagger_auto_schema(operation_summary='Retrieve a single cohort by ID.'),
+    name="retrieve",
+    decorator=swagger_auto_schema(operation_summary="Retrieve a single cohort by ID."),
 )
 class CohortViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
     serializer_class = CohortSerializer
@@ -124,15 +124,15 @@ class CohortViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
 
 
 @method_decorator(
-    name='create',
+    name="create",
     decorator=swagger_auto_schema(auto_schema=None),
 )
 @method_decorator(
-    name='list', decorator=swagger_auto_schema(operation_summary='Return a list of contributors.')
+    name="list", decorator=swagger_auto_schema(operation_summary="Return a list of contributors.")
 )
 @method_decorator(
-    name='retrieve',
-    decorator=swagger_auto_schema(operation_summary='Retrieve a single contributor by ID.'),
+    name="retrieve",
+    decorator=swagger_auto_schema(operation_summary="Retrieve a single contributor by ID."),
 )
 class ContributorViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
     serializer_class = ContributorSerializer
@@ -155,7 +155,7 @@ class MetadataFileViewSet(
         super().perform_destroy(instance)
 
     @swagger_auto_schema(auto_schema=None)
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=["post"])
     def update_metadata(self, request, pk=None):
         metadata_file = self.get_object()
         update_metadata_task.delay(request.user.pk, metadata_file.pk)

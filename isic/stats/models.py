@@ -12,7 +12,7 @@ class GaMetrics(TimeStampedModel):
     class Meta(TimeStampedModel.Meta):
         constraints = [
             CheckConstraint(
-                name='range_end_gt_range_start', check=Q(range_start__lt=F('range_end'))
+                name="range_end_gt_range_start", check=Q(range_start__lt=F("range_end"))
             )
         ]
 
@@ -28,7 +28,7 @@ class ImageDownload(CreationSortedTimeStampedModel):
     class Meta(TimeStampedModel.Meta):
         constraints = [
             CheckConstraint(
-                name='download_occurred_before_tracking', check=Q(download_time__lt=F('created'))
+                name="download_occurred_before_tracking", check=Q(download_time__lt=F("created"))
             ),
         ]
 
@@ -36,4 +36,4 @@ class ImageDownload(CreationSortedTimeStampedModel):
     ip_address = models.GenericIPAddressField()
     user_agent = models.CharField(null=True, max_length=400)
     request_id = models.CharField(unique=True, max_length=200)
-    image = models.ForeignKey(Image, on_delete=models.PROTECT, related_name='downloads')
+    image = models.ForeignKey(Image, on_delete=models.PROTECT, related_name="downloads")

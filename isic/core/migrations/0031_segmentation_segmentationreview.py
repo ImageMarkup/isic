@@ -11,104 +11,104 @@ import s3_file_field.fields
 class Migration(migrations.Migration):
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('core', '0030_alter_girderimage_accession'),
+        ("core", "0030_alter_girderimage_accession"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Segmentation',
+            name="Segmentation",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
                 (
-                    'created',
+                    "created",
                     django_extensions.db.fields.CreationDateTimeField(
-                        auto_now_add=True, verbose_name='created'
+                        auto_now_add=True, verbose_name="created"
                     ),
                 ),
                 (
-                    'modified',
+                    "modified",
                     django_extensions.db.fields.ModificationDateTimeField(
-                        auto_now=True, verbose_name='modified'
+                        auto_now=True, verbose_name="modified"
                     ),
                 ),
                 (
-                    'girder_id',
+                    "girder_id",
                     models.CharField(
                         max_length=24,
                         unique=True,
-                        validators=[django.core.validators.RegexValidator('^[0-9a-f]{24}$')],
+                        validators=[django.core.validators.RegexValidator("^[0-9a-f]{24}$")],
                     ),
                 ),
-                ('mask', s3_file_field.fields.S3FileField(null=True)),
-                ('meta', models.JSONField(default=dict)),
+                ("mask", s3_file_field.fields.S3FileField(null=True)),
+                ("meta", models.JSONField(default=dict)),
                 (
-                    'creator',
+                    "creator",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.RESTRICT, to=settings.AUTH_USER_MODEL
                     ),
                 ),
                 (
-                    'image',
+                    "image",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.RESTRICT, to='core.image'
+                        on_delete=django.db.models.deletion.RESTRICT, to="core.image"
                     ),
                 ),
             ],
             options={
-                'ordering': ['id'],
+                "ordering": ["id"],
             },
         ),
         migrations.CreateModel(
-            name='SegmentationReview',
+            name="SegmentationReview",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
                 (
-                    'created',
+                    "created",
                     django_extensions.db.fields.CreationDateTimeField(
-                        auto_now_add=True, verbose_name='created'
+                        auto_now_add=True, verbose_name="created"
                     ),
                 ),
                 (
-                    'modified',
+                    "modified",
                     django_extensions.db.fields.ModificationDateTimeField(
-                        auto_now=True, verbose_name='modified'
+                        auto_now=True, verbose_name="modified"
                     ),
                 ),
-                ('approved', models.BooleanField()),
+                ("approved", models.BooleanField()),
                 (
-                    'skill',
+                    "skill",
                     models.CharField(
-                        choices=[('novice', 'novice'), ('expert', 'expert')], max_length=6
+                        choices=[("novice", "novice"), ("expert", "expert")], max_length=6
                     ),
                 ),
                 (
-                    'creator',
+                    "creator",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.RESTRICT, to=settings.AUTH_USER_MODEL
                     ),
                 ),
                 (
-                    'segmentation',
+                    "segmentation",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
-                        related_name='reviews',
-                        to='core.segmentation',
+                        related_name="reviews",
+                        to="core.segmentation",
                     ),
                 ),
             ],
             options={
-                'get_latest_by': 'modified',
-                'abstract': False,
+                "get_latest_by": "modified",
+                "abstract": False,
             },
         ),
     ]

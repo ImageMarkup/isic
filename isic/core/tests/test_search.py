@@ -13,7 +13,7 @@ def private_searchable_image(image_factory, search_index):
     add_to_search_index(image)
 
     # Ensure that the images are available in the index for search
-    get_elasticsearch_client().indices.refresh(index='_all')
+    get_elasticsearch_client().indices.refresh(index="_all")
 
     return image
 
@@ -21,25 +21,25 @@ def private_searchable_image(image_factory, search_index):
 @pytest.fixture
 def searchable_images(image_factory, search_index):
     images = [
-        image_factory(public=True, accession__metadata={'diagnosis': 'melanoma'}),
-        image_factory(public=False, accession__metadata={'diagnosis': 'nevus'}),
+        image_factory(public=True, accession__metadata={"diagnosis": "melanoma"}),
+        image_factory(public=False, accession__metadata={"diagnosis": "nevus"}),
     ]
     for image in images:
         add_to_search_index(image)
 
     # Ensure that the images are available in the index for search
-    get_elasticsearch_client().indices.refresh(index='_all')
+    get_elasticsearch_client().indices.refresh(index="_all")
 
     return images
 
 
 @pytest.fixture
 def searchable_image_with_private_field(image_factory, search_index):
-    image = image_factory(public=True, accession__metadata={'age': 50})
+    image = image_factory(public=True, accession__metadata={"age": 50})
     add_to_search_index(image)
 
     # Ensure that the images are available in the index for search
-    get_elasticsearch_client().indices.refresh(index='_all')
+    get_elasticsearch_client().indices.refresh(index="_all")
 
     return image
 
@@ -48,7 +48,7 @@ def searchable_image_with_private_field(image_factory, search_index):
 def private_and_public_images_collections(search_index, image_factory, collection_factory):
     public_coll, private_coll = collection_factory(public=True), collection_factory(public=False)
     public_image, private_image = image_factory(
-        public=True, accession__metadata={'age': 10}
+        public=True, accession__metadata={"age": 10}
     ), image_factory(public=False)
 
     public_coll.images.add(public_image)
@@ -57,7 +57,7 @@ def private_and_public_images_collections(search_index, image_factory, collectio
     for image in [public_image, private_image]:
         add_to_search_index(image)
 
-    get_elasticsearch_client().indices.refresh(index='_all')
+    get_elasticsearch_client().indices.refresh(index="_all")
 
     yield public_coll, private_coll
 
@@ -65,43 +65,43 @@ def private_and_public_images_collections(search_index, image_factory, collectio
 @pytest.fixture
 def collection_with_image(search_index, image_factory, collection_factory):
     public_coll = collection_factory(public=True)
-    public_image = image_factory(public=True, accession__metadata={'age': 52})
+    public_image = image_factory(public=True, accession__metadata={"age": 52})
     public_coll.images.add(public_image)
     add_to_search_index(public_image)
-    get_elasticsearch_client().indices.refresh(index='_all')
+    get_elasticsearch_client().indices.refresh(index="_all")
     yield public_coll
 
 
 @pytest.mark.django_db
 def test_core_api_image_search(searchable_images, staff_api_client):
-    r = staff_api_client.get('/api/v2/images/search/')
+    r = staff_api_client.get("/api/v2/images/search/")
     assert r.status_code == 200, r.data
-    assert r.data['count'] == 2, r.data
+    assert r.data["count"] == 2, r.data
 
-    r = staff_api_client.get('/api/v2/images/search/', {'query': 'diagnosis:nevus'})
+    r = staff_api_client.get("/api/v2/images/search/", {"query": "diagnosis:nevus"})
     assert r.status_code == 200, r.data
-    assert r.data['count'] == 1, r.data
+    assert r.data["count"] == 1, r.data
 
 
 @pytest.mark.django_db
 def test_core_api_image_search_private_image(private_searchable_image, authenticated_api_client):
-    r = authenticated_api_client.get('/api/v2/images/search/')
+    r = authenticated_api_client.get("/api/v2/images/search/")
     assert r.status_code == 200, r.data
-    assert r.data['count'] == 0, r.data
+    assert r.data["count"] == 0, r.data
 
 
 @pytest.mark.django_db
 def test_core_api_image_search_private_image_as_guest(private_searchable_image, api_client):
-    r = api_client.get('/api/v2/images/search/')
+    r = api_client.get("/api/v2/images/search/")
     assert r.status_code == 200, r.data
-    assert r.data['count'] == 0, r.data
+    assert r.data["count"] == 0, r.data
 
 
 @pytest.mark.django_db
 def test_core_api_image_search_images_as_guest(searchable_images, api_client):
-    r = api_client.get('/api/v2/images/search/')
+    r = api_client.get("/api/v2/images/search/")
     assert r.status_code == 200, r.data
-    assert r.data['count'] == 1, r.data
+    assert r.data["count"] == 1, r.data
 
 
 @pytest.mark.django_db
@@ -110,47 +110,47 @@ def test_core_api_image_search_contributed(
 ):
     private_searchable_image.accession.cohort.contributor.owners.add(user)
     add_to_search_index(private_searchable_image)
-    get_elasticsearch_client().indices.refresh(index='_all')
+    get_elasticsearch_client().indices.refresh(index="_all")
 
-    r = authenticated_api_client.get('/api/v2/images/search/')
+    r = authenticated_api_client.get("/api/v2/images/search/")
     assert r.status_code == 200, r.data
-    assert r.data['count'] == 1, r.data
+    assert r.data["count"] == 1, r.data
 
 
 @pytest.mark.django_db
 def test_core_api_image_search_shares(
     private_searchable_image, authenticated_api_client, user, staff_user
 ):
-    private_searchable_image.shares.add(user, through_defaults={'creator': staff_user})
+    private_searchable_image.shares.add(user, through_defaults={"creator": staff_user})
     private_searchable_image.save()
     add_to_search_index(private_searchable_image)
-    get_elasticsearch_client().indices.refresh(index='_all')
+    get_elasticsearch_client().indices.refresh(index="_all")
 
-    r = authenticated_api_client.get('/api/v2/images/search/')
+    r = authenticated_api_client.get("/api/v2/images/search/")
     assert r.status_code == 200, r.data
-    assert r.data['count'] == 1, r.data
+    assert r.data["count"] == 1, r.data
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize('route', ['images/search/', 'images/facets/'])
+@pytest.mark.parametrize("route", ["images/search/", "images/facets/"])
 def test_core_api_image_search_invalid_query(route, searchable_images, authenticated_api_client):
-    r = authenticated_api_client.get(f'/api/v2/{route}', {'query': 'age_approx:[[[[]]]]'})
+    r = authenticated_api_client.get(f"/api/v2/{route}", {"query": "age_approx:[[[[]]]]"})
     assert r.status_code == 400, r.data
 
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    'restricted_field,route',
-    itertools.product(RESTRICTED_METADATA_FIELDS, ['/api/v2/images/', '/api/v2/images/search/']),
+    "restricted_field,route",
+    itertools.product(RESTRICTED_METADATA_FIELDS, ["/api/v2/images/", "/api/v2/images/search/"]),
 )
 def test_core_api_image_hides_fields(
     authenticated_api_client, searchable_image_with_private_field, restricted_field, route
 ):
     r = authenticated_api_client.get(route)
     assert r.status_code == 200, r.data
-    assert r.data['count'] == 1, r.data
-    for image in r.data['results']:
-        assert restricted_field not in image['metadata']
+    assert r.data["count"] == 1, r.data
+    for image in r.data["results"]:
+        assert restricted_field not in image["metadata"]
 
 
 @pytest.mark.django_db
@@ -158,23 +158,23 @@ def test_core_api_image_search_collection_and_query(
     collection_with_image, authenticated_api_client
 ):
     r = authenticated_api_client.get(
-        '/api/v2/images/search/',
-        {'collections': f'{collection_with_image.pk}', 'query': 'age_approx:50'},
+        "/api/v2/images/search/",
+        {"collections": f"{collection_with_image.pk}", "query": "age_approx:50"},
     )
     assert r.status_code == 200, r.data
-    assert r.data['count'] == 1, r.data
+    assert r.data["count"] == 1, r.data
 
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    'collection_is_public,image_is_public,can_see',
+    "collection_is_public,image_is_public,can_see",
     [
         (True, True, True),
         # Don't leak which images are in a private collection
         (False, True, False),
         (False, False, False),
     ],
-    ids=['all-public', 'private-coll-public-image', 'all-private'],
+    ids=["all-public", "private-coll-public-image", "all-private"],
 )
 def test_core_api_image_search_collection(
     authenticated_api_client,
@@ -189,15 +189,15 @@ def test_core_api_image_search_collection(
     image = image_factory(public=image_is_public)
     collection.images.add(image)
     add_to_search_index(image)
-    get_elasticsearch_client().indices.refresh(index='_all')
+    get_elasticsearch_client().indices.refresh(index="_all")
 
-    r = authenticated_api_client.get('/api/v2/images/search/', {'collections': str(collection.pk)})
+    r = authenticated_api_client.get("/api/v2/images/search/", {"collections": str(collection.pk)})
     assert r.status_code == 200, r.data
 
     if can_see:
-        assert r.data['count'] == 1, r.data
+        assert r.data["count"] == 1, r.data
     else:
-        assert r.data['count'] == 0, r.data
+        assert r.data["count"] == 0, r.data
 
 
 @pytest.mark.django_db
@@ -207,17 +207,17 @@ def test_core_api_image_search_collection_parsing(
     public_coll, private_coll = private_and_public_images_collections
 
     r = authenticated_api_client.get(
-        '/api/v2/images/search/', {'collections': f'{public_coll.pk},{private_coll.pk}'}
+        "/api/v2/images/search/", {"collections": f"{public_coll.pk},{private_coll.pk}"}
     )
     assert r.status_code == 200, r.data
-    assert r.data['count'] == 1, r.data
+    assert r.data["count"] == 1, r.data
 
 
 @pytest.mark.parametrize(
-    'client_',
+    "client_",
     [
-        lazy_fixture('api_client'),
-        lazy_fixture('authenticated_api_client'),
+        lazy_fixture("api_client"),
+        lazy_fixture("authenticated_api_client"),
     ],
 )
 @pytest.mark.django_db
@@ -225,19 +225,19 @@ def test_core_api_image_faceting_collections(private_and_public_images_collectio
     public_coll, private_coll = private_and_public_images_collections
 
     r = client_.get(
-        '/api/v2/images/facets/', {'collections': f'{public_coll.pk},{private_coll.pk}'}
+        "/api/v2/images/facets/", {"collections": f"{public_coll.pk},{private_coll.pk}"}
     )
     assert r.status_code == 200, r.data
-    buckets = r.data['collections']['buckets']
+    buckets = r.data["collections"]["buckets"]
     assert len(buckets) == 1
-    assert buckets[0] == {'key': public_coll.pk, 'doc_count': 1}
+    assert buckets[0] == {"key": public_coll.pk, "doc_count": 1}
 
 
 @pytest.mark.parametrize(
-    'client_',
+    "client_",
     [
-        lazy_fixture('api_client'),
-        lazy_fixture('authenticated_api_client'),
+        lazy_fixture("api_client"),
+        lazy_fixture("authenticated_api_client"),
     ],
 )
 @pytest.mark.django_db
@@ -245,27 +245,27 @@ def test_core_api_image_faceting(private_and_public_images_collections, client_)
     public_coll, private_coll = private_and_public_images_collections
 
     r = client_.get(
-        '/api/v2/images/facets/',
+        "/api/v2/images/facets/",
     )
     assert r.status_code == 200, r.data
-    buckets = r.data['collections']['buckets']
+    buckets = r.data["collections"]["buckets"]
     assert len(buckets) == 1, buckets
-    assert buckets[0] == {'key': public_coll.pk, 'doc_count': 1}, buckets
+    assert buckets[0] == {"key": public_coll.pk, "doc_count": 1}, buckets
 
 
 @pytest.mark.parametrize(
-    'client_',
+    "client_",
     [
-        lazy_fixture('api_client'),
-        lazy_fixture('authenticated_api_client'),
+        lazy_fixture("api_client"),
+        lazy_fixture("authenticated_api_client"),
     ],
 )
 @pytest.mark.django_db
 def test_core_api_image_faceting_query(private_and_public_images_collections, client_):
     public_coll, private_coll = private_and_public_images_collections
 
-    r = client_.get('/api/v2/images/facets/', {'query': 'age_approx:10'})
+    r = client_.get("/api/v2/images/facets/", {"query": "age_approx:10"})
     assert r.status_code == 200, r.data
-    buckets = r.data['collections']['buckets']
+    buckets = r.data["collections"]["buckets"]
     assert len(buckets) == 1, buckets
-    assert buckets[0] == {'key': public_coll.pk, 'doc_count': 1}, buckets
+    assert buckets[0] == {"key": public_coll.pk, "doc_count": 1}, buckets

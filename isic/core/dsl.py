@@ -18,7 +18,7 @@ class Value:
 
 class BoolValue(Value):
     def __init__(self, toks) -> None:
-        self.value = True if toks[0] == 'true' else False
+        self.value = True if toks[0] == "true" else False
 
 
 class StrValue(Value):
@@ -26,10 +26,10 @@ class StrValue(Value):
         self.value = toks[0]
 
     def to_q(self, key):
-        if self.value.startswith('*'):
-            return Q(**{f'{key}__endswith': self.value[1:]})
-        elif self.value.endswith('*'):
-            return Q(**{f'{key}__startswith': self.value[:-1]})
+        if self.value.startswith("*"):
+            return Q(**{f"{key}__endswith": self.value[1:]})
+        elif self.value.endswith("*"):
+            return Q(**{f"{key}__startswith": self.value[:-1]})
         else:
             return super().to_q(key)
 
@@ -41,12 +41,12 @@ class NumberValue(Value):
 
 class NumberRangeValue(Value):
     def __init__(self, toks) -> None:
-        self.lower_lookup = 'gte' if toks[0] == '[' else 'gt'
-        self.upper_lookup = 'lte' if toks[-1] == ']' else 'lt'
+        self.lower_lookup = "gte" if toks[0] == "[" else "gt"
+        self.upper_lookup = "lte" if toks[-1] == "]" else "lt"
         self.value = (toks[1].value, toks[2].value)
 
     def to_q(self, key):
-        start_key, end_key = f'{key}__{self.lower_lookup}', f'{key}__{self.upper_lookup}'
+        start_key, end_key = f"{key}__{self.lower_lookup}", f"{key}__{self.upper_lookup}"
         start_value, end_value = self.value
         return Q(**{start_key: start_value}, **{end_key: end_value})
 
@@ -66,7 +66,7 @@ def q_and(s, loc, toks):
         # Single search queries come in as a single Q object
         q_objects = [toks[0]]
     else:
-        raise Exception('Something went wrong')
+        raise Exception("Something went wrong")
 
     # Results can be nested one level
     if isinstance(q_objects, list) and isinstance(q_objects[0], list):
@@ -86,25 +86,25 @@ def q_or(s, loc, toks):
 
 
 # Lucene DSL only supports uppercase AND/OR/TO
-AND = Suppress(Keyword('AND'))
-OR = Suppress(Keyword('OR'))
+AND = Suppress(Keyword("AND"))
+OR = Suppress(Keyword("OR"))
 
 # asterisks for wildcard, _ for ISIC ID search
-str_value = (Word(alphas + nums + '*' + '_') | QuotedString('"')).add_parse_action(StrValue)
+str_value = (Word(alphas + nums + "*" + "_") | QuotedString('"')).add_parse_action(StrValue)
 number_value = pyparsing_common.number.add_parse_action(NumberValue)
 number_range_value = (
-    one_of('[ {') + number_value + Suppress(Literal('TO')) + number_value + one_of('] }')
+    one_of("[ {") + number_value + Suppress(Literal("TO")) + number_value + one_of("] }")
 ).add_parse_action(NumberRangeValue)
-bool_value = one_of('true false').add_parse_action(BoolValue)
+bool_value = one_of("true false").add_parse_action(BoolValue)
 
 
 def convert_term(s, loc, toks):
-    if toks[0] in ['isic_id', 'public']:
+    if toks[0] in ["isic_id", "public"]:
         return toks[0]
-    elif toks[0] == 'age_approx':
-        return 'accession__metadata__age__approx'
+    elif toks[0] == "age_approx":
+        return "accession__metadata__age__approx"
     else:
-        return f'accession__metadata__{toks[0]}'
+        return f"accession__metadata__{toks[0]}"
 
 
 def make_term_keyword(name):
@@ -113,7 +113,7 @@ def make_term_keyword(name):
 
 def make_term(name, values):
     term = make_term_keyword(name)
-    term = term + Suppress(Literal(':')) + values
+    term = term + Suppress(Literal(":")) + values
     term.add_parse_action(q)
     return term
 
@@ -132,23 +132,23 @@ def make_bool_term(keyword_name):
 
 # First setup reserved (special) search terms
 TERMS = {
-    'isic_id': make_str_term('isic_id'),
-    'public': make_bool_term('public'),
-    'age_approx': make_number_term('age_approx'),
+    "isic_id": make_str_term("isic_id"),
+    "public": make_bool_term("public"),
+    "age_approx": make_number_term("age_approx"),
 }
 
 for key, definition in FIELD_REGISTRY.items():
-    if definition.get('search'):
-        es_property_type = definition['search']['es_property']['type']
+    if definition.get("search"):
+        es_property_type = definition["search"]["es_property"]["type"]
 
-        if es_property_type == 'keyword':
+        if es_property_type == "keyword":
             term = make_str_term(key)
-        elif es_property_type == 'boolean':
+        elif es_property_type == "boolean":
             term = make_bool_term(key)
-        elif es_property_type in ['integer', 'float']:
+        elif es_property_type in ["integer", "float"]:
             term = make_number_term(key)
         else:
-            raise Exception('Found unknown es property type')
+            raise Exception("Found unknown es property type")
 
         TERMS[key] = term
 

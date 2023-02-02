@@ -5,13 +5,13 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('studies', '0008_auto_20210525_0706'),
+        ("studies", "0008_auto_20210525_0706"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='study',
-            name='public',
+            model_name="study",
+            name="public",
             field=models.BooleanField(default=False),
         ),
     ]

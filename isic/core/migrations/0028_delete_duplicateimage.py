@@ -5,11 +5,11 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('core', '0027_girderimage_raw'),
+        ("core", "0027_girderimage_raw"),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name='DuplicateImage',
+            name="DuplicateImage",
         ),
     ]

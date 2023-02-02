@@ -5,16 +5,16 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('ingest', '0033_remove_accession_accession_succeeded_blob_fields_and_more'),
+        ("ingest", "0033_remove_accession_accession_succeeded_blob_fields_and_more"),
     ]
 
     operations = [
         migrations.AddConstraint(
-            model_name='accession',
+            model_name="accession",
             constraint=models.UniqueConstraint(
-                condition=models.Q(('blob_name', ''), _negated=True),
-                fields=('blob_name',),
-                name='accession_unique_blob_name',
+                condition=models.Q(("blob_name", ""), _negated=True),
+                fields=("blob_name",),
+                name="accession_unique_blob_name",
             ),
         ),
     ]

@@ -5,13 +5,13 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('ingest', '0013_remove_accession_diagnosis_check_and_more'),
+        ("ingest", "0013_remove_accession_diagnosis_check_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='accessionreview',
-            name='reviewed_at',
+            model_name="accessionreview",
+            name="reviewed_at",
             field=models.DateTimeField(null=True),
         ),
     ]

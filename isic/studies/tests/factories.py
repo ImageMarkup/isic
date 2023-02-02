@@ -19,9 +19,9 @@ class QuestionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Question
 
-    prompt = factory.Faker('sentence')
-    type = factory.Faker('random_element', elements=[e[0] for e in Question.QuestionType.choices])
-    official = factory.Faker('boolean')
+    prompt = factory.Faker("sentence")
+    type = factory.Faker("random_element", elements=[e[0] for e in Question.QuestionType.choices])
+    official = factory.Faker("boolean")
 
 
 class QuestionChoiceFactory(factory.django.DjangoModelFactory):
@@ -29,16 +29,16 @@ class QuestionChoiceFactory(factory.django.DjangoModelFactory):
         model = QuestionChoice
 
     question = factory.SubFactory(QuestionFactory)
-    text = factory.Faker('sentence')
+    text = factory.Faker("sentence")
 
 
 class FeatureFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Feature
 
-    required = factory.Faker('boolean')
-    name = factory.Faker('sentence')
-    official = factory.Faker('boolean')
+    required = factory.Faker("boolean")
+    name = factory.Faker("sentence")
+    official = factory.Faker("boolean")
 
 
 class StudyFactory(factory.django.DjangoModelFactory):
@@ -47,11 +47,11 @@ class StudyFactory(factory.django.DjangoModelFactory):
 
     creator = factory.SubFactory(UserFactory)
 
-    name = factory.Faker('text', max_nb_chars=100)
-    description = factory.Faker('sentences')
+    name = factory.Faker("text", max_nb_chars=100)
+    description = factory.Faker("sentences")
     collection = factory.SubFactory(CollectionFactory)
 
-    public = factory.Faker('boolean')
+    public = factory.Faker("boolean")
 
     @factory.post_generation
     def owners(self, create, extracted, **kwargs):
@@ -96,11 +96,11 @@ class AnnotationFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Annotation
 
-    study = factory.SelfAttribute('task.study')
-    image = factory.SelfAttribute('task.image')
+    study = factory.SelfAttribute("task.study")
+    image = factory.SelfAttribute("task.image")
     task = factory.SubFactory(StudyTaskFactory)
-    annotator = factory.SelfAttribute('task.annotator')
-    start_time = factory.Faker('date_time', tzinfo=factory.Faker('pytimezone'))
+    annotator = factory.SelfAttribute("task.annotator")
+    start_time = factory.Faker("date_time", tzinfo=factory.Faker("pytimezone"))
 
 
 class ResponseFactory(factory.django.DjangoModelFactory):
@@ -110,7 +110,7 @@ class ResponseFactory(factory.django.DjangoModelFactory):
     annotation = factory.SubFactory(AnnotationFactory)
     question = factory.SubFactory(QuestionFactory)
     choice = factory.SubFactory(QuestionChoiceFactory)
-    value = factory.Faker('pyint')
+    value = factory.Faker("pyint")
 
 
 class MarkupFactory(factory.django.DjangoModelFactory):
@@ -119,4 +119,4 @@ class MarkupFactory(factory.django.DjangoModelFactory):
 
     annotation = factory.SubFactory(AnnotationFactory)
     feature = factory.SubFactory(FeatureFactory)
-    present = factory.Faker('boolean')
+    present = factory.Faker("boolean")

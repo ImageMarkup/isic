@@ -21,37 +21,37 @@ logger = logging.getLogger(__name__)
 
 def collection_build_doi_preview(*, collection: Collection) -> dict:
     preview = collection_build_doi(
-        collection=collection, doi_id=f'{settings.ISIC_DATACITE_DOI_PREFIX}/123456'
-    )['data']['attributes']
-    preview['creators'] = ', '.join([c['name'] for c in preview['creators']])
+        collection=collection, doi_id=f"{settings.ISIC_DATACITE_DOI_PREFIX}/123456"
+    )["data"]["attributes"]
+    preview["creators"] = ", ".join([c["name"] for c in preview["creators"]])
     return preview
 
 
 def collection_build_doi(*, collection: Collection, doi_id: str) -> dict:
     return {
-        'data': {
-            'type': 'dois',
-            'attributes': {
-                'identifiers': [{'identifierType': 'DOI', 'identifier': doi_id}],
-                'event': 'publish',
-                'doi': doi_id,
-                'creators': [
-                    {'name': creator}
+        "data": {
+            "type": "dois",
+            "attributes": {
+                "identifiers": [{"identifierType": "DOI", "identifier": doi_id}],
+                "event": "publish",
+                "doi": doi_id,
+                "creators": [
+                    {"name": creator}
                     for creator in collection_get_creators_in_attribution_order(
                         collection=collection
                     )
                 ],
-                'contributor': f'{collection.creator.first_name} {collection.creator.last_name}',
-                'titles': [{'title': collection.name}],
-                'publisher': 'ISIC Archive',
-                'publicationYear': collection.images.order_by('created').latest().created.year,
+                "contributor": f"{collection.creator.first_name} {collection.creator.last_name}",
+                "titles": [{"title": collection.name}],
+                "publisher": "ISIC Archive",
+                "publicationYear": collection.images.order_by("created").latest().created.year,
                 # resourceType?
-                'types': {'resourceTypeGeneral': 'Dataset'},
+                "types": {"resourceTypeGeneral": "Dataset"},
                 # TODO: api.?
-                'url': f'https://api.isic-archive.com/collections/{collection.pk}/',
-                'schemaVersion': 'http://datacite.org/schema/kernel-4',
-                'description': collection.description,
-                'descriptionType': 'Other',
+                "url": f"https://api.isic-archive.com/collections/{collection.pk}/",
+                "schemaVersion": "http://datacite.org/schema/kernel-4",
+                "description": collection.description,
+                "descriptionType": "Other",
             },
         }
     }
@@ -59,25 +59,25 @@ def collection_build_doi(*, collection: Collection, doi_id: str) -> dict:
 
 def collection_generate_random_doi_id():
     # pad DOI with leading zeros so all DOIs are prefix/6 digits
-    return f'{settings.ISIC_DATACITE_DOI_PREFIX}/{random.randint(10_000, 999_999):06}'
+    return f"{settings.ISIC_DATACITE_DOI_PREFIX}/{random.randint(10_000, 999_999):06}"
 
 
 def collection_check_create_doi_allowed(*, user: User, collection: Collection) -> None:
-    if not user.has_perm('core.create_doi', collection):
+    if not user.has_perm("core.create_doi", collection):
         raise ValidationError("You don't have permissions to do that.")
     elif collection.doi:
-        raise ValidationError('This collection already has a DOI.')
+        raise ValidationError("This collection already has a DOI.")
     elif not collection.public:
-        raise ValidationError('A collection must be public to issue a DOI.')
+        raise ValidationError("A collection must be public to issue a DOI.")
     elif collection.images.private().exists():
-        raise ValidationError('This collection contains private images.')
+        raise ValidationError("This collection contains private images.")
     elif not collection.images.exists():
-        raise ValidationError('An empty collection cannot be the basis of a DOI.')
+        raise ValidationError("An empty collection cannot be the basis of a DOI.")
 
 
 def _datacite_create_doi(doi: dict) -> None:
     r = requests.post(
-        f'{settings.ISIC_DATACITE_API_URL}/dois',
+        f"{settings.ISIC_DATACITE_API_URL}/dois",
         auth=(settings.ISIC_DATACITE_USERNAME, settings.ISIC_DATACITE_PASSWORD),
         timeout=5,
         json=doi,
@@ -95,10 +95,10 @@ def collection_create_doi(*, user: User, collection: Collection) -> Doi:
         _datacite_create_doi(doi)
     except HTTPError as e:
         logger.error(e)
-        raise ValidationError('Something went wrong creating the DOI.')
+        raise ValidationError("Something went wrong creating the DOI.")
     else:
         with transaction.atomic():
-            doi = Doi(id=doi_id, url=f'https://doi.org/{doi_id}')
+            doi = Doi(id=doi_id, url=f"https://doi.org/{doi_id}")
             doi.full_clean()
             doi.save()
             collection_lock(collection=collection)

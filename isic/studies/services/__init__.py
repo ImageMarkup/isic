@@ -56,7 +56,7 @@ def study_update(*, study: Study, **fields):
 
 def populate_study_tasks(*, study: Study, users: QuerySet[User]) -> None:
     with transaction.atomic():
-        for image_id in study.collection.images.values_list('id', flat=True).iterator():
+        for image_id in study.collection.images.values_list("id", flat=True).iterator():
             for user in users:
                 StudyTask.objects.get_or_create(
                     study_id=study.id,

@@ -10,24 +10,24 @@ class CohortSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cohort
         fields = [
-            'id',
-            'created',
-            'creator',
-            'contributor',
-            'name',
-            'description',
-            'copyright_license',
-            'attribution',
+            "id",
+            "created",
+            "creator",
+            "contributor",
+            "name",
+            "description",
+            "copyright_license",
+            "attribution",
         ]
-        read_only_fields = ['created', 'creator']
+        read_only_fields = ["created", "creator"]
 
     def create(self, validated_data):
-        validated_data['creator'] = self.context['request'].user
+        validated_data["creator"] = self.context["request"].user
         return super().create(validated_data)
 
     # TODO: figure out how to better integrate this into the permissions system
     def validate_contributor(self, value):
-        if not self.context['request'].user.has_perm('ingest.add_cohort', value):
+        if not self.context["request"].user.has_perm("ingest.add_cohort", value):
             raise PermissionDenied
         return value
 
@@ -38,8 +38,8 @@ class CohortSerializer(serializers.ModelSerializer):
         Note: this isn't quite the same as checking permissions because a superuser
         shouldn't be able to create a cohort with a non-contributor owner as the creator.
         """
-        if not data['contributor'].owners.contains(self.context['request'].user):
-            raise ValidationError('Cohort creator is not a contributor owner.')
+        if not data["contributor"].owners.contains(self.context["request"].user):
+            raise ValidationError("Cohort creator is not a contributor owner.")
 
         return data
 
@@ -48,21 +48,21 @@ class ContributorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contributor
         fields = [
-            'id',
-            'created',
-            'creator',
-            'owners',
-            'institution_name',
-            'institution_url',
-            'legal_contact_info',
-            'default_copyright_license',
-            'default_attribution',
+            "id",
+            "created",
+            "creator",
+            "owners",
+            "institution_name",
+            "institution_url",
+            "legal_contact_info",
+            "default_copyright_license",
+            "default_attribution",
         ]
-        read_only_fields = ['created', 'creator', 'owners']
+        read_only_fields = ["created", "creator", "owners"]
 
     def create(self, validated_data):
-        validated_data['creator'] = self.context['request'].user
-        validated_data['owners'] = [self.context['request'].user]
+        validated_data["creator"] = self.context["request"].user
+        validated_data["owners"] = [self.context["request"].user]
         return super().create(validated_data)
 
 
@@ -70,5 +70,5 @@ class MetadataFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = MetadataFile
         fields = [
-            'id',
+            "id",
         ]

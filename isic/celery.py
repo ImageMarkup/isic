@@ -4,8 +4,8 @@ from celery import Celery, Task
 import configurations.importer
 from django.db import transaction
 
-os.environ['DJANGO_SETTINGS_MODULE'] = 'isic.settings'
-if not os.environ.get('DJANGO_CONFIGURATION'):
+os.environ["DJANGO_SETTINGS_MODULE"] = "isic.settings"
+if not os.environ.get("DJANGO_CONFIGURATION"):
     raise ValueError('The environment variable "DJANGO_CONFIGURATION" must be set.')
 configurations.importer.install()
 
@@ -21,8 +21,8 @@ class TransactionOnCommitTask(Task):
 # the configuration object to child processes.
 app = Celery(
     task_cls=TransactionOnCommitTask,
-    config_source='django.conf:settings',
-    namespace='CELERY',
+    config_source="django.conf:settings",
+    namespace="CELERY",
 )
 
 # Load task modules from all registered Django app configs.

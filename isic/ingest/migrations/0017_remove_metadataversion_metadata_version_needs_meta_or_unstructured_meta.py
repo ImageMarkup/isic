@@ -5,12 +5,12 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('ingest', '0016_alter_accessionreview_reviewed_at'),
+        ("ingest", "0016_alter_accessionreview_reviewed_at"),
     ]
 
     operations = [
         migrations.RemoveConstraint(
-            model_name='metadataversion',
-            name='metadata_version_needs_meta_or_unstructured_meta',
+            model_name="metadataversion",
+            name="metadata_version_needs_meta_or_unstructured_meta",
         ),
     ]

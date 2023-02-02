@@ -5,13 +5,13 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('core', '0031_segmentation_segmentationreview'),
+        ("core", "0031_segmentation_segmentationreview"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='image',
-            name='public',
+            model_name="image",
+            name="public",
             field=models.BooleanField(db_index=True, default=False),
         ),
     ]

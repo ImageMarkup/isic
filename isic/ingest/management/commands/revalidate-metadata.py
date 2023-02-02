@@ -4,9 +4,9 @@ from isic_metadata.metadata import MetadataRow
 from isic.ingest.models import Accession
 
 
-@click.command(help='Revalidate all accession metadata')
+@click.command(help="Revalidate all accession metadata")
 def revalidate_metadata():
-    accessions = Accession.objects.values_list('pk', 'metadata')
+    accessions = Accession.objects.values_list("pk", "metadata")
     num_accessions = accessions.count()
     num_errors = 0
 
@@ -19,4 +19,4 @@ def revalidate_metadata():
                 click.echo(pk)
                 click.echo(e.errors())
 
-    click.echo(f'{num_errors}/{num_accessions} accessions had problems.')
+    click.echo(f"{num_errors}/{num_accessions} accessions had problems.")

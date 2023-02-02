@@ -52,9 +52,9 @@ def collection_delete(*, collection: Collection, ignore_lock: bool = False) -> N
         _require_unlocked_collection(collection)
 
     if collection.studies.exists():
-        raise ValidationError('Collections with derived studies cannot be deleted.')
+        raise ValidationError("Collections with derived studies cannot be deleted.")
     elif collection.has_doi:
-        raise ValidationError('Collections with DOIs cannot be deleted.')
+        raise ValidationError("Collections with DOIs cannot be deleted.")
 
     collection.delete()
 
@@ -67,14 +67,14 @@ def collection_get_creators_in_attribution_order(*, collection: Collection) -> l
     alphabetically, except for Anonymous contributions which are always last.
     """
     creators = (
-        collection.images.alias(num_images=Count('accession__image'))
-        .values_list('accession__cohort__attribution', flat=True)
-        .order_by('-num_images', 'accession__cohort__attribution')
+        collection.images.alias(num_images=Count("accession__image"))
+        .values_list("accession__cohort__attribution", flat=True)
+        .order_by("-num_images", "accession__cohort__attribution")
         .distinct()
     )
 
     # Push an Anonymous attribution to the end
-    creators = sorted(creators, key=lambda x: 1 if x == 'Anonymous' else 0)
+    creators = sorted(creators, key=lambda x: 1 if x == "Anonymous" else 0)
 
     return creators
 
@@ -92,23 +92,23 @@ def collection_merge(
     from_collection_filter = Q(collection=dest_collection) | Q(collection__in=other_collections)
 
     if Study.objects.filter(from_collection_filter).exists():
-        raise ValidationError('Collections with derived studies cannot be merged.')
+        raise ValidationError("Collections with derived studies cannot be merged.")
     elif Doi.objects.filter(from_collection_filter).exists():
-        raise ValidationError('Collections with DOIs cannot be merged.')
+        raise ValidationError("Collections with DOIs cannot be merged.")
 
     # TODO: collection shares will need to be handled
 
     with transaction.atomic():
         for collection in other_collections:
             if collection.cohort and collection.cohort != dest_collection.cohort:
-                logger.warning(f'Abandoning cohort {collection.cohort.pk}')
+                logger.warning(f"Abandoning cohort {collection.cohort.pk}")
 
-            for field in ['creator', 'name', 'description', 'public', 'pinned', 'doi', 'locked']:
+            for field in ["creator", "name", "description", "public", "pinned", "doi", "locked"]:
                 dest_collection_value = getattr(dest_collection, field)
                 collection_value = getattr(collection, field)
                 if dest_collection_value != collection_value:
                     logger.warning(
-                        f'Different value for {field}: {dest_collection_value}(dest) vs {collection_value}'  # noqa: E501
+                        f"Different value for {field}: {dest_collection_value}(dest) vs {collection_value}"  # noqa: E501
                     )
 
             collection_update(

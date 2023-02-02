@@ -4,8 +4,8 @@ from isic.stats.views import stats
 
 urlpatterns = [
     path(
-        'stats/',
+        "stats/",
         stats,
-        name='stats/stats',
+        name="stats/stats",
     ),
 ]

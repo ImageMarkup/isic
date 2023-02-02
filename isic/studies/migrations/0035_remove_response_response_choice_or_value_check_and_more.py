@@ -7,41 +7,41 @@ import django.db.models.lookups
 
 
 def migrate_response_values(apps, schema_editor):
-    Response = apps.get_model('studies', 'Response')
+    Response = apps.get_model("studies", "Response")
 
     Response.objects.filter(value={}).update(value=None)
-    Response.objects.exclude(value=None).update(value=F('value__value'))
+    Response.objects.exclude(value=None).update(value=F("value__value"))
 
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('studies', '0034_alter_annotation_start_time'),
+        ("studies", "0034_alter_annotation_start_time"),
     ]
 
     operations = [
         migrations.RemoveConstraint(
-            model_name='response',
-            name='response_choice_or_value_check',
+            model_name="response",
+            name="response_choice_or_value_check",
         ),
         migrations.AlterField(
-            model_name='response',
-            name='value',
+            model_name="response",
+            name="value",
             field=models.JSONField(null=True),
         ),
         migrations.RunPython(migrate_response_values),
         migrations.AddConstraint(
-            model_name='response',
+            model_name="response",
             constraint=models.CheckConstraint(
                 check=django.db.models.lookups.Exact(
                     lhs=django.db.models.expressions.Func(
-                        'choice',
-                        'value',
-                        function='num_nonnulls',
+                        "choice",
+                        "value",
+                        function="num_nonnulls",
                         output_field=models.IntegerField(),
                     ),
                     rhs=django.db.models.expressions.Value(1),
                 ),
-                name='response_choice_or_value_check',
+                name="response_choice_or_value_check",
             ),
         ),
     ]

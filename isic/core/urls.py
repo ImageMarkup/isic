@@ -20,7 +20,7 @@ from isic.login.views import accept_terms_of_use
 
 
 class ImageIdentifierConverter:
-    regex = f'([0-9]+|{MONGO_ID_REGEX}|{ISIC_ID_REGEX})'
+    regex = f"([0-9]+|{MONGO_ID_REGEX}|{ISIC_ID_REGEX})"
 
     def to_python(self, value):
         if value.isnumeric():
@@ -46,55 +46,55 @@ class ImageIdentifierConverter:
         return int(value)
 
 
-register_converter(ImageIdentifierConverter, 'image-identifier')
+register_converter(ImageIdentifierConverter, "image-identifier")
 
 urlpatterns = [
-    path('api/v2/users/me/', user_me, name='core/api/users/me'),
-    path('api/v2/users/accept-terms/', accept_terms_of_use, name='core/api/users/accept-terms'),
-    path('staff/users/', staff_list, name='core/staff-list'),
+    path("api/v2/users/me/", user_me, name="core/api/users/me"),
+    path("api/v2/users/accept-terms/", accept_terms_of_use, name="core/api/users/accept-terms"),
+    path("staff/users/", staff_list, name="core/staff-list"),
     path(
-        'images/',
+        "images/",
         image_browser,
-        name='core/image-browser',
+        name="core/image-browser",
     ),
     path(
-        'collections/',
+        "collections/",
         collection_list,
-        name='core/collection-list',
+        name="core/collection-list",
     ),
     path(
-        'collections/<int:pk>/',
+        "collections/<int:pk>/",
         collection_detail,
-        name='core/collection-detail',
+        name="core/collection-detail",
     ),
     path(
-        'collections/create/',
+        "collections/create/",
         collection_create_,
-        name='core/collection-create',
+        name="core/collection-create",
     ),
     path(
-        'collections/edit/<int:pk>',
+        "collections/edit/<int:pk>",
         collection_edit,
-        name='core/collection-edit',
+        name="core/collection-edit",
     ),
     path(
-        'collections/<int:pk>/create-doi/',
+        "collections/<int:pk>/create-doi/",
         collection_create_doi_,
-        name='core/collection-create-doi',
+        name="core/collection-create-doi",
     ),
     path(
-        'collections/<int:pk>/metadata/',
+        "collections/<int:pk>/metadata/",
         collection_download_metadata,
-        name='core/collection-download-metadata',
+        name="core/collection-download-metadata",
     ),
     path(
-        'images/<image-identifier:pk>/',
+        "images/<image-identifier:pk>/",
         image_detail,
-        name='core/image-detail',
+        name="core/image-detail",
     ),
     path(
-        'users/<int:pk>/',
+        "users/<int:pk>/",
         user_detail,
-        name='core/user-detail',
+        name="core/user-detail",
     ),
 ]

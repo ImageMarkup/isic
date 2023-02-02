@@ -8,54 +8,54 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('studies', '0002_add_study_questions'),
+        ("studies", "0002_add_study_questions"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='annotation',
-            name='annotator',
+            model_name="annotation",
+            name="annotator",
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL
             ),
         ),
         migrations.AlterField(
-            model_name='annotation',
-            name='task',
+            model_name="annotation",
+            name="task",
             field=models.OneToOneField(
                 on_delete=django.db.models.deletion.RESTRICT,
-                related_name='annotation',
-                to='studies.studytask',
+                related_name="annotation",
+                to="studies.studytask",
             ),
         ),
         migrations.AlterField(
-            model_name='study',
-            name='creator',
+            model_name="study",
+            name="creator",
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL
             ),
         ),
         migrations.AlterField(
-            model_name='studytask',
-            name='annotator',
+            model_name="studytask",
+            name="annotator",
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL
             ),
         ),
         migrations.AlterField(
-            model_name='studytask',
-            name='image',
+            model_name="studytask",
+            name="image",
             field=models.ForeignKey(
-                on_delete=django.db.models.deletion.CASCADE, to='studies.image'
+                on_delete=django.db.models.deletion.CASCADE, to="studies.image"
             ),
         ),
         migrations.AlterField(
-            model_name='studytask',
-            name='study',
+            model_name="studytask",
+            name="study",
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.CASCADE,
-                related_name='tasks',
-                to='studies.study',
+                related_name="tasks",
+                to="studies.study",
             ),
         ),
     ]

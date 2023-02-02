@@ -5,12 +5,12 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('core', '0024_alter_imageredirect_image'),
+        ("core", "0024_alter_imageredirect_image"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='imagealias',
-            options={'verbose_name_plural': 'Image aliases'},
+            name="imagealias",
+            options={"verbose_name_plural": "Image aliases"},
         ),
     ]

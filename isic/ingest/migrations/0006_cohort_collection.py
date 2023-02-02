@@ -6,19 +6,19 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('core', '0040_remove_collection_collection_official_has_unique_name_and_more'),
-        ('ingest', '0005_metadataversion_metadata_version_needs_meta_or_unstructured_meta'),
+        ("core", "0040_remove_collection_collection_official_has_unique_name_and_more"),
+        ("ingest", "0005_metadataversion_metadata_version_needs_meta_or_unstructured_meta"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='cohort',
-            name='collection',
+            model_name="cohort",
+            name="collection",
             field=models.OneToOneField(
                 null=True,
                 on_delete=django.db.models.deletion.SET_NULL,
-                related_name='cohort',
-                to='core.collection',
+                related_name="cohort",
+                to="core.collection",
             ),
         ),
     ]

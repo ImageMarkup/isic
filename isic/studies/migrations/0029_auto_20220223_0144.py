@@ -4,16 +4,16 @@ from django.db import migrations
 
 
 def migrate_question_required(apps, schema_editor):
-    StudyQuestion = apps.get_model('studies', 'StudyQuestion')
+    StudyQuestion = apps.get_model("studies", "StudyQuestion")
 
     for study_question in StudyQuestion.objects.all():
         study_question.required = study_question.question.required
-        study_question.save(update_fields=['required'])
+        study_question.save(update_fields=["required"])
 
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('studies', '0028_studyquestion_required'),
+        ("studies", "0028_studyquestion_required"),
     ]
 
     operations = [migrations.RunPython(migrate_question_required)]

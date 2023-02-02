@@ -11,14 +11,14 @@ from isic.ingest.models.accession_review import AccessionReview
 def accession_review_update_or_create(
     *, accession: Accession, reviewer: User, reviewed_at: datetime, value: bool
 ) -> AccessionReview:
-    assert not accession.published, 'Cannot review an accession after publish.'
+    assert not accession.published, "Cannot review an accession after publish."
 
     accession_review, _ = AccessionReview.objects.update_or_create(
         accession=accession,
         defaults={
-            'creator': reviewer,
-            'reviewed_at': reviewed_at,
-            'value': value,
+            "creator": reviewer,
+            "reviewed_at": reviewed_at,
+            "value": value,
         },
     )
 
@@ -29,11 +29,11 @@ def accession_review_bulk_create(*, reviewer: User, accession_ids_values: dict[i
     accession_reviews = []
     reviewed_at = timezone.now()
 
-    for accession in Accession.objects.select_related('image').filter(
+    for accession in Accession.objects.select_related("image").filter(
         pk__in=accession_ids_values.keys()
     ):
         if accession.published:
-            raise ValidationError('Cannot review an accession after publish.')
+            raise ValidationError("Cannot review an accession after publish.")
 
         accession_reviews.append(
             AccessionReview(
@@ -48,5 +48,5 @@ def accession_review_bulk_create(*, reviewer: User, accession_ids_values: dict[i
 
 
 def accession_review_delete(*, accession: Accession):
-    if hasattr(accession, 'review'):
+    if hasattr(accession, "review"):
         accession.review.delete()

@@ -30,11 +30,11 @@ from .factories import ProfileFactory, UserFactory
 @pytest.fixture(autouse=True)
 def setup_groups(request):
     # TODO: figure out how to avoid this and how to get serialized_rollback working.
-    if 'django_db_setup' in request.fixturenames:
-        for group_name in ['Public', 'ISIC Staff']:
+    if "django_db_setup" in request.fixturenames:
+        for group_name in ["Public", "ISIC Staff"]:
             Group.objects.get_or_create(name=group_name)
 
-        public = Group.objects.get(name='Public')
+        public = Group.objects.get(name="Public")
         public.user_set.set(User.objects.all())
 
 
