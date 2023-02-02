@@ -10,7 +10,6 @@ def create_elasticsearch_index(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('core', '0020_auto_20210809_2143'),
     ]

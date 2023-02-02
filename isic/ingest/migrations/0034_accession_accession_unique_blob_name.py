@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ingest', '0033_remove_accession_accession_succeeded_blob_fields_and_more'),
     ]

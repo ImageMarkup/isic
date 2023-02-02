@@ -14,7 +14,6 @@ def set_collection_locked(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('core', '0032_alter_image_public'),
     ]

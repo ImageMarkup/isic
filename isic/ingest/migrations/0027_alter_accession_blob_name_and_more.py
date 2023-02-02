@@ -5,7 +5,6 @@ import django.db.models.expressions
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ingest', '0026_auto_20220522_0154'),
     ]

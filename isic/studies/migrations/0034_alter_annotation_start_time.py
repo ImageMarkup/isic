@@ -14,7 +14,6 @@ def nullify_start_times(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('studies', '0033_response_value_alter_response_choice_and_more'),
     ]

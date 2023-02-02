@@ -36,7 +36,6 @@ def create_cohort_collections(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ingest', '0006_cohort_collection'),
     ]

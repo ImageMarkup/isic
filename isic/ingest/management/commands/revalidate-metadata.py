@@ -11,7 +11,7 @@ def revalidate_metadata():
     num_errors = 0
 
     with click.progressbar(accessions) as bar:
-        for (pk, metadata) in bar:
+        for pk, metadata in bar:
             try:
                 MetadataRow.parse_obj(metadata)
             except Exception as e:

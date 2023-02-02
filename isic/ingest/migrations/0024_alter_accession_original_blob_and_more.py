@@ -5,7 +5,6 @@ import s3_file_field.fields
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ingest', '0023_alter_accession_unique_together'),
     ]

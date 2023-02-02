@@ -11,7 +11,6 @@ def migrate_owners(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('studies', '0020_auto_20211214_2225'),

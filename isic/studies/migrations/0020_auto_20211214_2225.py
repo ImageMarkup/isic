@@ -25,7 +25,6 @@ def set_start_time(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('studies', '0019_annotation_start_time'),
     ]

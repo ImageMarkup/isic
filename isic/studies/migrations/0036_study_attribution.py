@@ -18,7 +18,6 @@ def migrate_study_attributions(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('studies', '0035_remove_response_response_choice_or_value_check_and_more'),
     ]

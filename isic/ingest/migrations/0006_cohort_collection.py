@@ -5,7 +5,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('core', '0040_remove_collection_collection_official_has_unique_name_and_more'),
         ('ingest', '0005_metadataversion_metadata_version_needs_meta_or_unstructured_meta'),

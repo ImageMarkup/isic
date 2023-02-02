@@ -6,7 +6,6 @@ import django.db.models.functions.text
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('core', '0041_auto_20220414_1324'),
     ]
