@@ -21,7 +21,7 @@ class StudyTaskForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         # Note: questions must be annotated with a required attribute
-        questions: QuerySet[Question] = kwargs.pop('questions')
+        questions: QuerySet[Question] = kwargs.pop("questions")
         self.questions = {x.pk: x for x in questions}
         super().__init__(*args, **kwargs)
         for question in questions:
@@ -33,24 +33,24 @@ class BaseStudyForm(forms.ModelForm):
     class Meta:
         model = Study
         fields = [
-            'name',
-            'description',
-            'attribution',
-            'collection',
-            'annotators',
-            'public',
+            "name",
+            "description",
+            "attribution",
+            "collection",
+            "annotators",
+            "public",
         ]
 
     def __init__(self, *args, **kwargs):
-        collections = kwargs.pop('collections')
-        self.user = kwargs.pop('user')
+        collections = kwargs.pop("collections")
+        self.user = kwargs.pop("user")
         super().__init__(*args, **kwargs)
-        self.fields['collection'].initial = collections
+        self.fields["collection"].initial = collections
 
     annotators = forms.CharField()
 
     def clean_annotators(self) -> list[int]:
-        value: str = self.cleaned_data['annotators']
+        value: str = self.cleaned_data["annotators"]
         values = {e.strip() for e in value.splitlines()}
         user_pks = set()
 
@@ -69,16 +69,16 @@ class BaseStudyForm(forms.ModelForm):
         return list(user_pks)
 
     def clean_collection(self) -> bool:
-        value = self.cleaned_data['collection']
+        value = self.cleaned_data["collection"]
 
-        if not self.user.has_perm('core.view_collection', value):
+        if not self.user.has_perm("core.view_collection", value):
             raise ValidationError("You don't have access to create a study for that collection.")
 
         return value
 
     def clean(self):
         cleaned_data = super().clean()
-        if cleaned_data['public'] and not cleaned_data['collection'].public:
+        if cleaned_data["public"] and not cleaned_data["collection"].public:
             # TODO: validate this at the model layer
             raise ValidationError("Can't create a public study for a private collection.")
 
@@ -86,9 +86,9 @@ class BaseStudyForm(forms.ModelForm):
 
     def save(self, commit=True):
         with transaction.atomic():
-            if not self.cleaned_data['collection'].locked:
-                self.cleaned_data['collection'].locked = True
-                self.cleaned_data['collection'].save(update_fields=['locked'])
+            if not self.cleaned_data["collection"].locked:
+                self.cleaned_data["collection"].locked = True
+                self.cleaned_data["collection"].save(update_fields=["locked"])
 
             return super().save(commit=commit)
 
@@ -101,10 +101,10 @@ class OfficialQuestionForm(forms.Form):
 class CustomQuestionForm(forms.Form):
     prompt = forms.CharField()
     choices = forms.CharField(
-        help_text='A list of possible choices, one per line.', widget=forms.Textarea()
+        help_text="A list of possible choices, one per line.", widget=forms.Textarea()
     )
     required = forms.BooleanField(required=False)
 
     def clean_choices(self) -> list[str]:
-        value: str = self.cleaned_data['choices']
+        value: str = self.cleaned_data["choices"]
         return [s.strip() for s in value.splitlines()]

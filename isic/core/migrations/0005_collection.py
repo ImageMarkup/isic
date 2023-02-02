@@ -6,38 +6,38 @@ import django_extensions.db.fields
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('core', '0004_auto_20210519_2247'),
+        ("core", "0004_auto_20210519_2247"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Collection',
+            name="Collection",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
                 (
-                    'created',
+                    "created",
                     django_extensions.db.fields.CreationDateTimeField(
-                        auto_now_add=True, verbose_name='created'
+                        auto_now_add=True, verbose_name="created"
                     ),
                 ),
                 (
-                    'modified',
+                    "modified",
                     django_extensions.db.fields.ModificationDateTimeField(
-                        auto_now=True, verbose_name='modified'
+                        auto_now=True, verbose_name="modified"
                     ),
                 ),
-                ('name', models.CharField(max_length=200, unique=True)),
-                ('description', models.TextField(blank=True)),
-                ('images', models.ManyToManyField(to='core.Image')),
+                ("name", models.CharField(max_length=200, unique=True)),
+                ("description", models.TextField(blank=True)),
+                ("images", models.ManyToManyField(to="core.Image")),
             ],
             options={
-                'get_latest_by': 'modified',
-                'abstract': False,
+                "get_latest_by": "modified",
+                "abstract": False,
             },
         ),
     ]

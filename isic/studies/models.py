@@ -27,18 +27,18 @@ from isic.core.storage import generate_upload_to
 
 class Question(TimeStampedModel):
     class Meta(TimeStampedModel.Meta):
-        ordering = ['prompt']
+        ordering = ["prompt"]
         constraints = [
             UniqueConstraint(
-                name='question_official_prompt_unique',
-                fields=['prompt'],
+                name="question_official_prompt_unique",
+                fields=["prompt"],
                 condition=Q(official=True),
             )
         ]
 
     class QuestionType(models.TextChoices):
-        SELECT = 'select', 'Select'
-        NUMBER = 'number', 'Number'
+        SELECT = "select", "Select"
+        NUMBER = "number", "Number"
 
     prompt = models.CharField(max_length=400)
     type = models.CharField(max_length=6, choices=QuestionType.choices, default=QuestionType.SELECT)
@@ -77,9 +77,9 @@ class Question(TimeStampedModel):
 
 class QuestionChoice(TimeStampedModel):
     class Meta(TimeStampedModel.Meta):
-        unique_together = [['question', 'text']]
+        unique_together = [["question", "text"]]
 
-    question = models.ForeignKey(Question, related_name='choices', on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, related_name="choices", on_delete=models.CASCADE)
     text = models.CharField(max_length=100)
 
     def __str__(self) -> str:
@@ -103,7 +103,7 @@ class QuestionChoice(TimeStampedModel):
 
 class Feature(TimeStampedModel):
     class Meta(TimeStampedModel.Meta):
-        ordering = ['name']
+        ordering = ["name"]
 
     required = models.BooleanField(default=False)
     name = ArrayField(models.CharField(max_length=200))
@@ -111,7 +111,7 @@ class Feature(TimeStampedModel):
 
     @property
     def label(self) -> str:
-        return ' : '.join(self.name)
+        return " : ".join(self.name)
 
     def __str__(self) -> str:
         return self.label
@@ -138,25 +138,25 @@ class StudyQuerySet(models.QuerySet):
 
 class Study(TimeStampedModel):
     class Meta(TimeStampedModel.Meta):
-        verbose_name_plural = 'Studies'
+        verbose_name_plural = "Studies"
 
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
-    owners = models.ManyToManyField(User, related_name='owned_studies')
+    owners = models.ManyToManyField(User, related_name="owned_studies")
     attribution = models.CharField(max_length=200)
 
-    name = models.CharField(max_length=100, unique=True, help_text='The name for your Study.')
-    description = models.TextField(help_text='A description of the methodology behind your Study.')
+    name = models.CharField(max_length=100, unique=True, help_text="The name for your Study.")
+    description = models.TextField(help_text="A description of the methodology behind your Study.")
 
     # TODO: refactor code to get images from here instead of inspecting study tasks
     collection = models.ForeignKey(
         Collection,
         on_delete=models.PROTECT,
-        related_name='studies',
-        help_text='The Collection of images to use in your Study.',
+        related_name="studies",
+        help_text="The Collection of images to use in your Study.",
     )
 
     features = models.ManyToManyField(Feature)
-    questions = models.ManyToManyField(Question, through='StudyQuestion')
+    questions = models.ManyToManyField(Question, through="StudyQuestion")
 
     # public study means that all images in the study must be public
     # and all of the related data to the study is public (responses).
@@ -166,8 +166,8 @@ class Study(TimeStampedModel):
     public = models.BooleanField(
         default=False,
         help_text=(
-            'Whether or not your Study will be public. A study can only be public if '
-            'the images it uses are also public.'
+            "Whether or not your Study will be public. A study can only be public if "
+            "the images it uses are also public."
         ),
     )
 
@@ -177,10 +177,10 @@ class Study(TimeStampedModel):
         return self.name
 
     def get_absolute_url(self) -> str:
-        return reverse('study-detail', args=[self.pk])
+        return reverse("study-detail", args=[self.pk])
 
     def write_responses_csv(self, stream) -> None:
-        fieldnames = ['image', 'annotator', 'annotation_duration', 'question', 'answer']
+        fieldnames = ["image", "annotator", "annotation_duration", "question", "answer"]
         writer = csv.DictWriter(stream, fieldnames)
 
         writer.writeheader()
@@ -191,7 +191,7 @@ class Study(TimeStampedModel):
 
 class StudyQuestion(models.Model):
     class Meta:
-        unique_together = [['study', 'question']]
+        unique_together = [["study", "question"]]
 
     study = models.ForeignKey(Study, on_delete=models.CASCADE)
     question = models.ForeignKey(Question, on_delete=models.PROTECT)
@@ -201,8 +201,8 @@ class StudyQuestion(models.Model):
 
 class StudyPermissions:
     model = Study
-    perms = ['view_study', 'view_study_results']
-    filters = {'view_study': 'view_study_list', 'view_study_results': 'view_study_results_list'}
+    perms = ["view_study", "view_study_results"]
+    filters = {"view_study": "view_study_list", "view_study_results": "view_study_results_list"}
 
     @staticmethod
     def view_study_results_list(
@@ -260,14 +260,14 @@ class StudyTaskSet(models.QuerySet):
         # and getting a set of rows in a random order is pretty hard in SQL.
         # This should always be called once the studytask queryset has been
         # narrowed a lot.
-        return self.order_by('?').first()
+        return self.order_by("?").first()
 
 
 class StudyTask(TimeStampedModel):
     class Meta(TimeStampedModel.Meta):
-        unique_together = [['study', 'annotator', 'image']]
+        unique_together = [["study", "annotator", "image"]]
 
-    study = models.ForeignKey(Study, on_delete=models.CASCADE, related_name='tasks')
+    study = models.ForeignKey(Study, on_delete=models.CASCADE, related_name="tasks")
     # TODO: annotators might become M2M in the future
     annotator = models.ForeignKey(User, on_delete=models.CASCADE)
     image = models.ForeignKey(Image, on_delete=models.CASCADE)
@@ -276,13 +276,13 @@ class StudyTask(TimeStampedModel):
 
     @property
     def complete(self) -> bool:
-        return hasattr(self, 'annotation')
+        return hasattr(self, "annotation")
 
 
 class StudyTaskPermissions:
     model = StudyTask
-    perms = ['view_study_task']
-    filters = {'view_study_task': 'view_study_task_list'}
+    perms = ["view_study_task"]
+    filters = {"view_study_task": "view_study_task_list"}
 
     @staticmethod
     def view_study_task_list(
@@ -312,14 +312,14 @@ class Annotation(TimeStampedModel):
     class Meta:
         constraints = [
             CheckConstraint(
-                name='annotation_start_time_check', check=Q(start_time__lte=F('created'))
+                name="annotation_start_time_check", check=Q(start_time__lte=F("created"))
             ),
         ]
-        unique_together = [['study', 'task', 'image', 'annotator']]
+        unique_together = [["study", "task", "image", "annotator"]]
 
-    study = models.ForeignKey(Study, on_delete=models.CASCADE, related_name='annotations')
+    study = models.ForeignKey(Study, on_delete=models.CASCADE, related_name="annotations")
     image = models.ForeignKey(Image, on_delete=models.PROTECT)
-    task = models.OneToOneField(StudyTask, related_name='annotation', on_delete=models.RESTRICT)
+    task = models.OneToOneField(StudyTask, related_name="annotation", on_delete=models.RESTRICT)
     annotator = models.ForeignKey(User, on_delete=models.PROTECT)
 
     # For the ISIC GUI this time is generated on page load.
@@ -329,7 +329,7 @@ class Annotation(TimeStampedModel):
     start_time = models.DateTimeField(null=True)
 
     def get_absolute_url(self) -> str:
-        return reverse('annotation-detail', args=[self.pk])
+        return reverse("annotation-detail", args=[self.pk])
 
     @property
     def annotation_duration(self) -> Optional[timedelta]:
@@ -341,61 +341,61 @@ class ResponseQuerySet(models.QuerySet):
     def for_display(self) -> list:
         for response in (
             self.annotate(
-                value_answer=Cast(F('value'), CharField()),
-                choice_answer=F('choice__text'),
-                study_id=F('annotation__study__id'),
-                study=F('annotation__study__name'),
-                image=F('annotation__image__isic_id'),
-                annotator=F('annotation__annotator__profile__hash_id'),
-                annotation_duration=F('annotation__created') - F('annotation__start_time'),
-                question_prompt=F('question__prompt'),
+                value_answer=Cast(F("value"), CharField()),
+                choice_answer=F("choice__text"),
+                study_id=F("annotation__study__id"),
+                study=F("annotation__study__name"),
+                image=F("annotation__image__isic_id"),
+                annotator=F("annotation__annotator__profile__hash_id"),
+                annotation_duration=F("annotation__created") - F("annotation__start_time"),
+                question_prompt=F("question__prompt"),
                 answer=Case(
-                    When(question__type=Question.QuestionType.SELECT, then=F('choice_answer')),
-                    default=F('value_answer'),
+                    When(question__type=Question.QuestionType.SELECT, then=F("choice_answer")),
+                    default=F("value_answer"),
                     output_field=CharField(),
                 ),
             )
-            .order_by('annotation__image__isic_id')
+            .order_by("annotation__image__isic_id")
             .values(
-                'study_id',
-                'study',
-                'image',
-                'annotator',
-                'annotation_duration',
-                'question_prompt',
-                'answer',
+                "study_id",
+                "study",
+                "image",
+                "annotator",
+                "annotation_duration",
+                "question_prompt",
+                "answer",
             )
             .iterator()
         ):
-            if response['annotation_duration'] is None:
-                annotation_duration = ''
+            if response["annotation_duration"] is None:
+                annotation_duration = ""
             else:
                 # formatting as total seconds is easier, otherwise long durations get printed as
                 # 2 days, H:M:S.ms
-                annotation_duration = response['annotation_duration'].total_seconds()
+                annotation_duration = response["annotation_duration"].total_seconds()
 
             yield {
-                'study_id': response['study_id'],
-                'study': response['study'],
-                'image': response['image'],
-                'annotator': response['annotator'],
-                'annotation_duration': annotation_duration,
-                'question': response['question_prompt'],
-                'answer': response['answer'],
+                "study_id": response["study_id"],
+                "study": response["study"],
+                "image": response["image"],
+                "annotator": response["annotator"],
+                "annotation_duration": annotation_duration,
+                "question": response["question_prompt"],
+                "answer": response["answer"],
             }
 
 
 class Response(TimeStampedModel):
     class Meta:
-        unique_together = [['annotation', 'question']]
+        unique_together = [["annotation", "question"]]
         constraints = [
             CheckConstraint(
-                name='response_choice_or_value_check',
+                name="response_choice_or_value_check",
                 check=Exact(
                     lhs=Func(
-                        'choice',
-                        'value',
-                        function='num_nonnulls',
+                        "choice",
+                        "value",
+                        function="num_nonnulls",
                         output_field=IntegerField(),
                     ),
                     rhs=Value(1),
@@ -404,8 +404,8 @@ class Response(TimeStampedModel):
         ]
 
     objects = ResponseQuerySet.as_manager()
-    annotation = models.ForeignKey(Annotation, on_delete=models.CASCADE, related_name='responses')
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='responses')
+    annotation = models.ForeignKey(Annotation, on_delete=models.CASCADE, related_name="responses")
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="responses")
     # TODO: investigate limit_choices_to for admin capabilities
     # see: https://code.djangoproject.com/ticket/25306
     choice = models.ForeignKey(QuestionChoice, on_delete=models.CASCADE, null=True)
@@ -415,9 +415,9 @@ class Response(TimeStampedModel):
 
 class Markup(TimeStampedModel):
     class Meta:
-        unique_together = [['annotation', 'feature']]
+        unique_together = [["annotation", "feature"]]
 
-    annotation = models.ForeignKey(Annotation, on_delete=models.CASCADE, related_name='markups')
-    feature = models.ForeignKey(Feature, on_delete=models.PROTECT, related_name='markups')
+    annotation = models.ForeignKey(Annotation, on_delete=models.CASCADE, related_name="markups")
+    feature = models.ForeignKey(Feature, on_delete=models.PROTECT, related_name="markups")
     mask = S3FileField(upload_to=generate_upload_to)
     present = models.BooleanField()

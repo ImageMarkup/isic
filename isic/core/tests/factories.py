@@ -12,7 +12,7 @@ class ImageFactory(factory.django.DjangoModelFactory):
 
     creator = factory.SubFactory(UserFactory)
     accession = factory.SubFactory(AccessionFactory)
-    public = factory.Faker('boolean')
+    public = factory.Faker("boolean")
 
 
 class CollectionFactory(factory.django.DjangoModelFactory):
@@ -20,8 +20,8 @@ class CollectionFactory(factory.django.DjangoModelFactory):
         model = Collection
 
     creator = factory.SubFactory(UserFactory)
-    name = factory.Faker('sentence')
-    description = factory.Faker('paragraph')
-    public = factory.Faker('boolean')
-    pinned = factory.Faker('boolean')
+    name = factory.Faker("sentence")
+    description = factory.Faker("paragraph")
+    public = factory.Faker("boolean")
+    pinned = factory.Faker("boolean")
     locked = False

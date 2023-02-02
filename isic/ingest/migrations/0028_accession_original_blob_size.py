@@ -5,13 +5,13 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('ingest', '0027_alter_accession_blob_name_and_more'),
+        ("ingest", "0027_alter_accession_blob_name_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='accession',
-            name='original_blob_size',
+            model_name="accession",
+            name="original_blob_size",
             field=models.PositiveBigIntegerField(default=None, editable=False, null=True),
         ),
     ]

@@ -4,26 +4,26 @@ from django.db import migrations, models
 
 
 def move_duplicate_images(apps, schema_editor):
-    DuplicateImage = apps.get_model('core', 'DuplicateImage')
-    GirderImage = apps.get_model('core', 'GirderImage')
+    DuplicateImage = apps.get_model("core", "DuplicateImage")
+    GirderImage = apps.get_model("core", "GirderImage")
 
     for duplicate_image in DuplicateImage.objects.all():
         gi = GirderImage.objects.get(item_id=duplicate_image.girder_id)
         assert gi.accession is None
         assert gi.isic == duplicate_image.isic
         gi.raw = duplicate_image.metadata
-        gi.save(update_fields=['raw'])
+        gi.save(update_fields=["raw"])
 
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('core', '0026_auto_20211007_1737'),
+        ("core", "0026_auto_20211007_1737"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='girderimage',
-            name='raw',
+            model_name="girderimage",
+            name="raw",
             field=models.JSONField(blank=True, null=True),
         ),
         migrations.RunPython(move_duplicate_images),

@@ -5,13 +5,13 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('login', '0006_alter_profile_hash_id'),
+        ("login", "0006_alter_profile_hash_id"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='profile',
-            name='accepted_terms',
+            model_name="profile",
+            name="accepted_terms",
             field=models.DateTimeField(null=True),
         ),
     ]

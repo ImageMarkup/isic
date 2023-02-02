@@ -8,20 +8,20 @@ logger = logging.getLogger(__name__)
 
 
 class GirderPasswordHasher(BasePasswordHasher):
-    algorithm = 'bcrypt_girder'
+    algorithm = "bcrypt_girder"
 
     def verify(self, password: str, encoded: str) -> bool:
-        return bcrypt.verify(password, encoded.split('$', 1)[1])
+        return bcrypt.verify(password, encoded.split("$", 1)[1])
 
     def salt(self):
         return bcrypt._generate_salt()
 
     def encode(self, password, salt):
         hashed = bcrypt.using(salt=salt).hash(password)
-        return f'{self.algorithm}${hashed}'
+        return f"{self.algorithm}${hashed}"
 
     def safe_summary(self, encoded: str):
         return {
-            _('algorithm'): self.algorithm,
-            _('checksum'): mask_hash(encoded),
+            _("algorithm"): self.algorithm,
+            _("checksum"): mask_hash(encoded),
         }

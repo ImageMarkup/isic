@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 # Note: this unfortunately has to change in the CLI as well
 # otherwise validation for a hash id would need it's own endpoint.
-HASH_ID_REGEX = '^[A-HJ-NP-Z2-9]{5}$'
+HASH_ID_REGEX = "^[A-HJ-NP-Z2-9]{5}$"
 
 
 def get_hashid_hasher():
@@ -22,7 +22,7 @@ def get_hashid_hasher():
     # Note: changing the alphabet necessitates changing HASH_ID_REGEX
     return Hashids(
         min_length=5,
-        alphabet=list(set(string.ascii_uppercase + string.digits) - {'I', '1', 'O', '0'}),
+        alphabet=list(set(string.ascii_uppercase + string.digits) - {"I", "1", "O", "0"}),
     )
 
 
@@ -39,7 +39,7 @@ class Profile(models.Model):
         blank=True,
         # Make this nullable to allow a uniqueness constraint
         null=True,
-        validators=[RegexValidator(f'^{MONGO_ID_REGEX}$')],
+        validators=[RegexValidator(f"^{MONGO_ID_REGEX}$")],
     )
     hash_id = models.CharField(
         max_length=5,

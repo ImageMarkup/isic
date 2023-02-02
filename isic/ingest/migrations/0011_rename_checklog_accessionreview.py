@@ -7,12 +7,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('ingest', '0010_alter_checklog_value'),
+        ("ingest", "0010_alter_checklog_value"),
     ]
 
     operations = [
         migrations.RenameModel(
-            old_name='CheckLog',
-            new_name='AccessionReview',
+            old_name="CheckLog",
+            new_name="AccessionReview",
         ),
     ]

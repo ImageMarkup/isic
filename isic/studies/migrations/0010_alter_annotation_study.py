@@ -6,17 +6,17 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('studies', '0009_study_public'),
+        ("studies", "0009_study_public"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='annotation',
-            name='study',
+            model_name="annotation",
+            name="study",
             field=models.ForeignKey(
                 on_delete=django.db.models.deletion.CASCADE,
-                related_name='annotations',
-                to='studies.study',
+                related_name="annotations",
+                to="studies.study",
             ),
         ),
     ]

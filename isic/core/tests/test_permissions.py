@@ -6,64 +6,64 @@ from pytest_lazyfixture import lazy_fixture
 
 @pytest.mark.django_db
 def test_core_staff_list(client, authenticated_client, staff_client):
-    r = client.get(reverse('core/staff-list'))
+    r = client.get(reverse("core/staff-list"))
     assert r.status_code == 302
 
-    r = authenticated_client.get(reverse('core/staff-list'))
+    r = authenticated_client.get(reverse("core/staff-list"))
     assert r.status_code == 403
 
-    r = staff_client.get(reverse('core/staff-list'))
+    r = staff_client.get(reverse("core/staff-list"))
     assert r.status_code == 200
 
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    'client_,visible',
+    "client_,visible",
     [
-        [lazy_fixture('client'), False],
-        [lazy_fixture('authenticated_client'), False],
-        [lazy_fixture('staff_client'), True],
+        [lazy_fixture("client"), False],
+        [lazy_fixture("authenticated_client"), False],
+        [lazy_fixture("staff_client"), True],
     ],
 )
 def test_core_user_detail(user, client_, visible):
-    r = client_.get(reverse('core/user-detail', args=[user.pk]))
+    r = client_.get(reverse("core/user-detail", args=[user.pk]))
     assert r.status_code == 200 if visible else 403
 
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    'client_,visible',
+    "client_,visible",
     [
-        [lazy_fixture('client'), False],
-        [lazy_fixture('authenticated_client'), True],
+        [lazy_fixture("client"), False],
+        [lazy_fixture("authenticated_client"), True],
     ],
 )
 def test_core_collection_create(client_, visible):
-    r = client_.get(reverse('core/collection-create'))
+    r = client_.get(reverse("core/collection-create"))
     assert r.status_code == 200 if visible else 403
 
 
 @pytest.mark.django_db
 def test_core_collection_list(client, authenticated_client, staff_client, private_collection):
-    r = client.get(reverse('core/collection-list'))
-    assertQuerysetEqual(r.context['collections'].object_list, [])
+    r = client.get(reverse("core/collection-list"))
+    assertQuerysetEqual(r.context["collections"].object_list, [])
 
-    r = authenticated_client.get(reverse('core/collection-list'))
-    assertQuerysetEqual(r.context['collections'].object_list, [])
+    r = authenticated_client.get(reverse("core/collection-list"))
+    assertQuerysetEqual(r.context["collections"].object_list, [])
 
-    r = staff_client.get(reverse('core/collection-list'))
-    assertQuerysetEqual(r.context['collections'].object_list, [private_collection])
+    r = staff_client.get(reverse("core/collection-list"))
+    assertQuerysetEqual(r.context["collections"].object_list, [private_collection])
 
 
 @pytest.mark.django_db
 def test_core_collection_detail(client, authenticated_client, staff_client, private_collection):
-    r = client.get(reverse('core/collection-detail', args=[private_collection.pk]))
+    r = client.get(reverse("core/collection-detail", args=[private_collection.pk]))
     assert r.status_code == 302
 
-    r = authenticated_client.get(reverse('core/collection-detail', args=[private_collection.pk]))
+    r = authenticated_client.get(reverse("core/collection-detail", args=[private_collection.pk]))
     assert r.status_code == 403
 
-    r = staff_client.get(reverse('core/collection-detail', args=[private_collection.pk]))
+    r = staff_client.get(reverse("core/collection-detail", args=[private_collection.pk]))
     assert r.status_code == 200
 
 
@@ -71,29 +71,29 @@ def test_core_collection_detail(client, authenticated_client, staff_client, priv
 def test_core_collection_list_shares(
     user, client, authenticated_client, staff_client, private_collection
 ):
-    private_collection.shares.add(user, through_defaults={'creator': private_collection.creator})
-    r = client.get(reverse('core/collection-list'))
-    assertQuerysetEqual(r.context['collections'].object_list, [])
+    private_collection.shares.add(user, through_defaults={"creator": private_collection.creator})
+    r = client.get(reverse("core/collection-list"))
+    assertQuerysetEqual(r.context["collections"].object_list, [])
 
-    r = authenticated_client.get(reverse('core/collection-list'))
-    assertQuerysetEqual(r.context['collections'].object_list, [private_collection])
+    r = authenticated_client.get(reverse("core/collection-list"))
+    assertQuerysetEqual(r.context["collections"].object_list, [private_collection])
 
-    r = staff_client.get(reverse('core/collection-list'))
-    assertQuerysetEqual(r.context['collections'].object_list, [private_collection])
+    r = staff_client.get(reverse("core/collection-list"))
+    assertQuerysetEqual(r.context["collections"].object_list, [private_collection])
 
 
 @pytest.mark.django_db
 def test_core_collection_detail_shares(
     user, client, authenticated_client, staff_client, private_collection
 ):
-    private_collection.shares.add(user, through_defaults={'creator': private_collection.creator})
-    r = client.get(reverse('core/collection-detail', args=[private_collection.pk]))
+    private_collection.shares.add(user, through_defaults={"creator": private_collection.creator})
+    r = client.get(reverse("core/collection-detail", args=[private_collection.pk]))
     assert r.status_code == 302
 
-    r = authenticated_client.get(reverse('core/collection-detail', args=[private_collection.pk]))
+    r = authenticated_client.get(reverse("core/collection-detail", args=[private_collection.pk]))
     assert r.status_code == 200
 
-    r = staff_client.get(reverse('core/collection-detail', args=[private_collection.pk]))
+    r = staff_client.get(reverse("core/collection-detail", args=[private_collection.pk]))
     assert r.status_code == 200
 
 
@@ -103,14 +103,14 @@ def test_core_collection_detail_filters_contributors(
 ):
     image = image_factory(public=True)
     public_collection.images.add(image)
-    r = client.get(reverse('core/collection-detail', args=[public_collection.pk]))
+    r = client.get(reverse("core/collection-detail", args=[public_collection.pk]))
     assert r.status_code == 200
-    assert list(r.context['contributors']) == []
+    assert list(r.context["contributors"]) == []
 
-    r = authenticated_client.get(reverse('core/collection-detail', args=[public_collection.pk]))
+    r = authenticated_client.get(reverse("core/collection-detail", args=[public_collection.pk]))
     assert r.status_code == 200
-    assert list(r.context['contributors']) == []
+    assert list(r.context["contributors"]) == []
 
-    r = staff_client.get(reverse('core/collection-detail', args=[public_collection.pk]))
+    r = staff_client.get(reverse("core/collection-detail", args=[public_collection.pk]))
     assert r.status_code == 200
-    assert list(r.context['contributors']) == [image.accession.cohort.contributor]
+    assert list(r.context["contributors"]) == [image.accession.cohort.contributor]

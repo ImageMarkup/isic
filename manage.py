@@ -7,14 +7,14 @@ from django.core.management import execute_from_command_line
 
 
 def main() -> None:
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'isic.settings'
+    os.environ["DJANGO_SETTINGS_MODULE"] = "isic.settings"
     # Production usage runs manage.py for tasks like collectstatic,
     # so DJANGO_CONFIGURATION should always be explicitly set in production
-    os.environ.setdefault('DJANGO_CONFIGURATION', 'DevelopmentConfiguration')
+    os.environ.setdefault("DJANGO_CONFIGURATION", "DevelopmentConfiguration")
     configurations.importer.install(check_options=True)
 
     execute_from_command_line(sys.argv)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

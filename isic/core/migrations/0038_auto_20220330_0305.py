@@ -4,19 +4,19 @@ from django.db import migrations
 
 
 def populate_image_creator(apps, schema_editor):
-    Image = apps.get_model('core', 'Image')
-    User = apps.get_model('auth', 'User')
+    Image = apps.get_model("core", "Image")
+    User = apps.get_model("auth", "User")
 
     if Image.objects.exists() and User.objects.filter(pk=1).exists():
         user = User.objects.get(pk=1)
         for image in Image.objects.filter(creator=None).iterator():
             image.creator = user
-            image.save(update_fields=['creator'])
+            image.save(update_fields=["creator"])
 
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('core', '0037_image_creator'),
+        ("core", "0037_image_creator"),
     ]
 
     operations = [migrations.RunPython(populate_image_creator)]

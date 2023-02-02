@@ -5,12 +5,12 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('ingest', '0022_alter_accession_original_blob_name'),
+        ("ingest", "0022_alter_accession_original_blob_name"),
     ]
 
     operations = [
         migrations.AlterUniqueTogether(
-            name='accession',
-            unique_together={('cohort', 'blob_name'), ('cohort', 'original_blob_name')},
+            name="accession",
+            unique_together={("cohort", "blob_name"), ("cohort", "original_blob_name")},
         ),
     ]

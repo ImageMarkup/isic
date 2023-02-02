@@ -4,24 +4,24 @@ from django.db import migrations, models
 
 
 def set_collection_locked(apps, schema_editor):
-    Collection = apps.get_model('core', 'Collection')
+    Collection = apps.get_model("core", "Collection")
 
     for collection in Collection.objects.all():
         # 76 is dermatofibroma study
-        if collection.doi or collection.name.startswith('Challenge') or collection.pk == 76:
+        if collection.doi or collection.name.startswith("Challenge") or collection.pk == 76:
             collection.locked = True
-            collection.save(update_fields=['locked'])
+            collection.save(update_fields=["locked"])
 
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('core', '0032_alter_image_public'),
+        ("core", "0032_alter_image_public"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='collection',
-            name='locked',
+            model_name="collection",
+            name="locked",
             field=models.BooleanField(default=False),
         ),
         migrations.RunPython(set_collection_locked),

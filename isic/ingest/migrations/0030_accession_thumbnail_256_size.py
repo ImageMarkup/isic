@@ -5,13 +5,13 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('ingest', '0029_alter_accession_original_blob_size'),
+        ("ingest", "0029_alter_accession_original_blob_size"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='accession',
-            name='thumbnail_256_size',
+            model_name="accession",
+            name="thumbnail_256_size",
             field=models.PositiveIntegerField(default=None, editable=False, null=True),
         ),
     ]

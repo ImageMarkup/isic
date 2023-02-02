@@ -5,12 +5,12 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('core', '0043_isicoauthapplication'),
+        ("core", "0043_isicoauthapplication"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='isicoauthapplication',
-            options={'verbose_name': 'ISIC OAuth application'},
+            name="isicoauthapplication",
+            options={"verbose_name": "ISIC OAuth application"},
         ),
     ]

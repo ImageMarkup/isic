@@ -8,13 +8,13 @@ from .metadata_version import MetadataVersion
 from .zip_upload import ZipUpload
 
 __all__ = [
-    'Accession',
-    'AccessionStatus',
-    'AccessionReview',
-    'Cohort',
-    'Contributor',
-    'DistinctnessMeasure',
-    'MetadataFile',
-    'MetadataVersion',
-    'ZipUpload',
+    "Accession",
+    "AccessionStatus",
+    "AccessionReview",
+    "Cohort",
+    "Contributor",
+    "DistinctnessMeasure",
+    "MetadataFile",
+    "MetadataVersion",
+    "ZipUpload",
 ]

@@ -5,13 +5,13 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('studies', '0018_auto_20211129_0737'),
+        ("studies", "0018_auto_20211129_0737"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='annotation',
-            name='start_time',
+            model_name="annotation",
+            name="start_time",
             field=models.DateTimeField(null=True),
         ),
     ]

@@ -6,17 +6,17 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('ingest', '0011_rename_checklog_accessionreview'),
+        ("ingest", "0011_rename_checklog_accessionreview"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='accessionreview',
-            name='accession',
+            model_name="accessionreview",
+            name="accession",
             field=models.OneToOneField(
                 on_delete=django.db.models.deletion.PROTECT,
-                related_name='review',
-                to='ingest.accession',
+                related_name="review",
+                to="ingest.accession",
             ),
         ),
     ]

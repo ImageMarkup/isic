@@ -5,11 +5,11 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('studies', '0005_auto_20210520_1637'),
+        ("studies", "0005_auto_20210520_1637"),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name='Image',
+            name="Image",
         ),
     ]

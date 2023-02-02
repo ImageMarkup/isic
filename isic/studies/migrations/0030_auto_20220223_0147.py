@@ -5,17 +5,17 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('studies', '0029_auto_20220223_0144'),
+        ("studies", "0029_auto_20220223_0144"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='question',
-            name='required',
+            model_name="question",
+            name="required",
         ),
         migrations.AlterField(
-            model_name='studyquestion',
-            name='required',
+            model_name="studyquestion",
+            name="required",
             field=models.BooleanField(),
         ),
     ]

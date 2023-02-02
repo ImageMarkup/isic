@@ -30,7 +30,7 @@ def throttled_iterator(iterable: Iterable, chunk_size: int = 100, sleep_time: in
 
 @shared_task(soft_time_limit=7200, time_limit=8100)
 def extract_zip_task(zip_pk: int):
-    logger.info(f'Extracting zip {zip_pk}.')
+    logger.info(f"Extracting zip {zip_pk}.")
 
     zip_upload = ZipUpload.objects.get(pk=zip_pk)
 
@@ -41,14 +41,14 @@ def extract_zip_task(zip_pk: int):
         pass
     except SoftTimeLimitExceeded:
         zip_upload.status = ZipUpload.Status.FAILED
-        zip_upload.save(update_fields=['status'])
+        zip_upload.save(update_fields=["status"])
         raise
     else:
         # rmq can only handle ~500msg/s - throttle significantly in places
         # where we could be putting many messages onto the queue at once.
         def generate_blobs():
             for accession_id in throttled_iterator(
-                zip_upload.accessions.values_list('id', flat=True).iterator()
+                zip_upload.accessions.values_list("id", flat=True).iterator()
             ):
                 # avoid .delay since we want to avoid putting tens of thousands of elements
                 # into the transaction.on_commit list.
@@ -65,7 +65,7 @@ def accession_generate_blob_task(accession_pk: int):
         accession.generate_blob()
     except SoftTimeLimitExceeded:
         accession.status = AccessionStatus.FAILED
-        accession.save(update_fields=['status'])
+        accession.save(update_fields=["status"])
         raise
 
     # Prevent skipped accessions from being passed to this task
@@ -91,16 +91,16 @@ def update_metadata_task(user_pk: int, metadata_file_pk: int):
     with transaction.atomic():
         for _, row in metadata_file.to_df().iterrows():
             accession = Accession.objects.get(
-                original_blob_name=row['filename'], cohort=metadata_file.cohort
+                original_blob_name=row["filename"], cohort=metadata_file.cohort
             )
             # filename doesn't need to be stored in the metadata since it's equal to
             # original_blob_name
-            del row['filename']
+            del row["filename"]
             accession.update_metadata(user, row)
 
 
 @shared_task(soft_time_limit=3600, time_limit=3660)
 def publish_cohort_task(cohort_pk: int, user_pk: int, *, public: bool):
-    cohort = Cohort.objects.select_related('collection').get(pk=cohort_pk)
+    cohort = Cohort.objects.select_related("collection").get(pk=cohort_pk)
     user = User.objects.get(pk=user_pk)
     cohort_publish(cohort=cohort, publisher=user, public=public)

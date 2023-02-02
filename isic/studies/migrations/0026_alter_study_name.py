@@ -5,15 +5,15 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('studies', '0025_alter_study_collection'),
+        ("studies", "0025_alter_study_collection"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='study',
-            name='name',
+            model_name="study",
+            name="name",
             field=models.CharField(
-                help_text='The name for your study.', max_length=100, unique=True
+                help_text="The name for your study.", max_length=100, unique=True
             ),
         ),
     ]

@@ -16,23 +16,23 @@ from isic.ingest.models import Accession
 
 from .isic_id import IsicId
 
-RESTRICTED_METADATA_FIELDS = ['age']
+RESTRICTED_METADATA_FIELDS = ["age"]
 
 
 class ImageQuerySet(models.QuerySet):
     def from_search_query(self, query: str):
-        if query == '':
+        if query == "":
             return self
         else:
             return self.filter(parse_query(query))
 
     def with_elasticsearch_properties(self):
-        return self.select_related('accession').annotate(
-            coll_pks=ArrayAgg('collections', distinct=True, default=[]),
+        return self.select_related("accession").annotate(
+            coll_pks=ArrayAgg("collections", distinct=True, default=[]),
             contributor_owner_ids=ArrayAgg(
-                'accession__cohort__contributor__owners', distinct=True, default=[]
+                "accession__cohort__contributor__owners", distinct=True, default=[]
             ),
-            shared_to=ArrayAgg('shares', distinct=True, default=[]),
+            shared_to=ArrayAgg("shares", distinct=True, default=[]),
         )
 
     def public(self):
@@ -46,7 +46,7 @@ class Image(CreationSortedTimeStampedModel):
     class Meta(CreationSortedTimeStampedModel.Meta):
         indexes = [
             # icontains uses Upper(name) for searching
-            GinIndex(OpClass(Upper('isic'), name='gin_trgm_ops'), name='isic_name_gin')
+            GinIndex(OpClass(Upper("isic"), name="gin_trgm_ops"), name="isic_name_gin")
         ]
 
     accession = models.OneToOneField(
@@ -59,16 +59,16 @@ class Image(CreationSortedTimeStampedModel):
         on_delete=models.PROTECT,
         default=IsicId.safe_create,
         editable=False,
-        verbose_name='isic id',
+        verbose_name="isic id",
     )
     # The creator is the person who published the accessions.
-    creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name='published_images')
+    creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="published_images")
 
     # index is used because public is filtered in every permissions check
     public = models.BooleanField(default=False, db_index=True)
 
     shares = models.ManyToManyField(
-        User, through='ImageShare', through_fields=['image', 'recipient']
+        User, through="ImageShare", through_fields=["image", "recipient"]
     )
 
     objects = ImageQuerySet.as_manager()
@@ -77,19 +77,19 @@ class Image(CreationSortedTimeStampedModel):
         return self.isic_id
 
     def get_absolute_url(self):
-        return reverse('core/image-detail', args=[self.pk])
+        return reverse("core/image-detail", args=[self.pk])
 
     def to_elasticsearch_document(self, body_only=False) -> dict:
         # Can only be called on images that were fetched with with_elasticsearch_properties.
         document = {
-            'id': self.pk,
-            'created': self.created,
-            'isic_id': self.isic_id,
-            'public': self.public,
+            "id": self.pk,
+            "created": self.created,
+            "isic_id": self.isic_id,
+            "public": self.public,
             # TODO: make sure these fields can't be searched on
-            'contributor_owner_ids': self.contributor_owner_ids,
-            'shared_to': self.shared_to,
-            'collections': self.coll_pks,
+            "contributor_owner_ids": self.contributor_owner_ids,
+            "shared_to": self.shared_to,
+            "collections": self.coll_pks,
         }
 
         # Fields in the search index have to be redacted otherwise the documents that match could
@@ -100,15 +100,15 @@ class Image(CreationSortedTimeStampedModel):
             return document
         else:
             # index the document by image.pk so it can be updated later.
-            return {'_id': self.pk, '_source': document}
+            return {"_id": self.pk, "_source": document}
 
-    def _with_same_metadata(self, metadata_key: str) -> QuerySet['Image']:
+    def _with_same_metadata(self, metadata_key: str) -> QuerySet["Image"]:
         if self.accession.metadata.get(metadata_key):
             return (
                 Image.objects.filter(accession__cohort_id=self.accession.cohort_id)
                 .filter(
                     **{
-                        f'accession__metadata__{metadata_key}': self.accession.metadata[
+                        f"accession__metadata__{metadata_key}": self.accession.metadata[
                             metadata_key
                         ]
                     }
@@ -118,30 +118,30 @@ class Image(CreationSortedTimeStampedModel):
         else:
             return Image.objects.none()
 
-    def same_patient_images(self) -> QuerySet['Image']:
-        return self._with_same_metadata('patient_id')
+    def same_patient_images(self) -> QuerySet["Image"]:
+        return self._with_same_metadata("patient_id")
 
-    def same_lesion_images(self) -> QuerySet['Image']:
-        return self._with_same_metadata('lesion_id')
+    def same_lesion_images(self) -> QuerySet["Image"]:
+        return self._with_same_metadata("lesion_id")
 
 
 class ImageShare(TimeStampedModel):
     class Meta(TimeStampedModel.Meta):
         constraints = [
             CheckConstraint(
-                name='imageshare_creator_recipient_diff_check', check=~Q(creator=F('recipient'))
+                name="imageshare_creator_recipient_diff_check", check=~Q(creator=F("recipient"))
             )
         ]
 
-    creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name='shares')
+    creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="shares")
     image = models.ForeignKey(Image, on_delete=models.CASCADE)
     recipient = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
 class ImagePermissions:
     model = Image
-    perms = ['view_image', 'view_full_metadata']
-    filters = {'view_image': 'view_image_list', 'view_full_metadata': 'view_full_metadata_list'}
+    perms = ["view_image", "view_full_metadata"]
+    filters = {"view_image": "view_image_list", "view_full_metadata": "view_full_metadata_list"}
 
     @staticmethod
     def view_full_metadata_list(

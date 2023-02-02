@@ -5,13 +5,13 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('core', '0005_collection'),
+        ("core", "0005_collection"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='collection',
-            name='images',
-            field=models.ManyToManyField(related_name='collections', to='core.Image'),
+            model_name="collection",
+            name="images",
+            field=models.ManyToManyField(related_name="collections", to="core.Image"),
         ),
     ]

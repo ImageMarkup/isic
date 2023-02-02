@@ -16,7 +16,7 @@ def collection_add_images(
     image: Image = None,
     ignore_lock: bool = False,
 ):
-    assert qs or image, 'qs and image are mutually exclusive arguments.'
+    assert qs or image, "qs and image are mutually exclusive arguments."
 
     if image:
         qs = Image.objects.filter(pk=image.pk)
@@ -47,7 +47,7 @@ def collection_remove_images(
     image: Image = None,
     ignore_lock: bool = False,
 ):
-    assert qs or image, 'qs and image are mutually exclusive arguments.'
+    assert qs or image, "qs and image are mutually exclusive arguments."
 
     if image:
         qs = Image.objects.filter(pk=image.pk)
@@ -63,8 +63,8 @@ def collection_add_images_from_isic_ids(
 ) -> dict:
     isic_ids = list(set(isic_ids))
     visible_images = get_visible_objects(
-        user, 'core.view_image', Image.objects.filter(isic_id__in=isic_ids)
-    ).in_bulk(field_name='isic_id')
+        user, "core.view_image", Image.objects.filter(isic_id__in=isic_ids)
+    ).in_bulk(field_name="isic_id")
 
     no_perms_or_does_not_exist = [isic_id for isic_id in isic_ids if isic_id not in visible_images]
     private_image_public_collection = [
@@ -76,13 +76,13 @@ def collection_add_images_from_isic_ids(
         set(isic_ids) - set(no_perms_or_does_not_exist) - set(private_image_public_collection)
     )
     summary = {
-        'no_perms_or_does_not_exist': no_perms_or_does_not_exist,
-        'private_image_public_collection': private_image_public_collection,
-        'succeeded': succeeded,
+        "no_perms_or_does_not_exist": no_perms_or_does_not_exist,
+        "private_image_public_collection": private_image_public_collection,
+        "succeeded": succeeded,
     }
 
     collection_add_images(
-        collection=collection, qs=Image.objects.filter(isic_id__in=summary['succeeded'])
+        collection=collection, qs=Image.objects.filter(isic_id__in=summary["succeeded"])
     )
 
     return summary
@@ -93,18 +93,18 @@ def collection_remove_images_from_isic_ids(
 ) -> dict:
     isic_ids = list(set(isic_ids))
     visible_images = get_visible_objects(
-        user, 'core.view_image', Image.objects.filter(isic_id__in=isic_ids)
-    ).in_bulk(field_name='isic_id')
+        user, "core.view_image", Image.objects.filter(isic_id__in=isic_ids)
+    ).in_bulk(field_name="isic_id")
 
     summary = {
-        'no_perms_or_does_not_exist': [
+        "no_perms_or_does_not_exist": [
             isic_id for isic_id in isic_ids if isic_id not in visible_images
         ],
-        'succeeded': [isic_id for isic_id in isic_ids if isic_id in visible_images],
+        "succeeded": [isic_id for isic_id in isic_ids if isic_id in visible_images],
     }
 
     collection_remove_images(
-        collection=collection, qs=Image.objects.filter(isic_id__in=summary['succeeded'])
+        collection=collection, qs=Image.objects.filter(isic_id__in=summary["succeeded"])
     )
 
     return summary

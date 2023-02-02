@@ -6,21 +6,21 @@ import s3_file_field.fields
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('ingest', '0023_alter_accession_unique_together'),
+        ("ingest", "0023_alter_accession_unique_together"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='accession',
-            name='original_blob',
+            model_name="accession",
+            name="original_blob",
             field=s3_file_field.fields.S3FileField(unique=True),
         ),
         migrations.AddConstraint(
-            model_name='accession',
+            model_name="accession",
             constraint=models.UniqueConstraint(
-                condition=models.Q(('blob', ''), _negated=True),
-                fields=('blob',),
-                name='accession_unique_blob',
+                condition=models.Q(("blob", ""), _negated=True),
+                fields=("blob",),
+                name="accession_unique_blob",
             ),
         ),
     ]

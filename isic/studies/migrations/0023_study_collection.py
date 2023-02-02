@@ -6,19 +6,19 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('core', '0034_auto_20220217_1853'),
-        ('studies', '0022_auto_20220222_0012'),
+        ("core", "0034_auto_20220217_1853"),
+        ("studies", "0022_auto_20220222_0012"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='study',
-            name='collection',
+            model_name="study",
+            name="collection",
             field=models.ForeignKey(
                 null=True,
                 on_delete=django.db.models.deletion.PROTECT,
-                related_name='studies',
-                to='core.collection',
+                related_name="studies",
+                to="core.collection",
             ),
         ),
     ]

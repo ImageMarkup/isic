@@ -4,8 +4,8 @@ from isic.find.api import quickfind
 
 urlpatterns = [
     path(
-        'api/v2/quickfind/',
+        "api/v2/quickfind/",
         quickfind,
-        name='find/api/quickfind',
+        name="find/api/quickfind",
     ),
 ]

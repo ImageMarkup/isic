@@ -15,7 +15,7 @@ def populate_collection_from_search_task(
 ) -> None:
     user = User.objects.get(pk=user_pk)
     collection = Collection.objects.get(pk=collection_pk)
-    serializer = SearchQuerySerializer(data=search_params, context={'user': user})
+    serializer = SearchQuerySerializer(data=search_params, context={"user": user})
     serializer.is_valid(raise_exception=True)
     collection_add_images(collection=collection, qs=serializer.to_queryset())
 
@@ -26,7 +26,7 @@ def populate_collection_from_search_task(
     autoretry_for=(ConnectionError, TimeoutError),
     retry_backoff=True,
     retry_backoff_max=600,
-    retry_kwargs={'max_retries': 15},
+    retry_kwargs={"max_retries": 15},
 )
 def sync_elasticsearch_index_task():
     bulk_add_to_search_index(Image.objects.with_elasticsearch_properties().iterator())
