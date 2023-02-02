@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('studies', '0015_alter_markup_mask_blob'),
+        ("studies", "0015_alter_markup_mask_blob"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='markup',
-            name='mask',
+            model_name="markup",
+            name="mask",
         ),
     ]

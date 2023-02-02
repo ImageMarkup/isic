@@ -9,7 +9,7 @@ from isic.core.constants import ISIC_ID_REGEX
 
 def _default_id():
     while True:
-        isic_id = f'ISIC_{random.randint(0, 9999999):07}'
+        isic_id = f"ISIC_{random.randint(0, 9999999):07}"
         # This has a race condition, so the actual creation should be retried
         if not IsicId.objects.filter(id=isic_id).exists():
             return isic_id
@@ -19,9 +19,9 @@ class IsicId(models.Model):
     id = models.CharField(
         primary_key=True,
         default=_default_id,
-        verbose_name='ISIC ID',
+        verbose_name="ISIC ID",
         max_length=12,
-        validators=[RegexValidator(f'^{ISIC_ID_REGEX}$')],
+        validators=[RegexValidator(f"^{ISIC_ID_REGEX}$")],
     )
 
     def __str__(self) -> str:

@@ -9,7 +9,7 @@ from isic.core.services.collection.doi import collection_build_doi, collection_c
 @pytest.fixture
 def mock_datacite_create_doi(mocker):
     yield mocker.patch(
-        'isic.core.services.collection.doi._datacite_create_doi', lambda doi: {'doi': '123456'}
+        "isic.core.services.collection.doi._datacite_create_doi", lambda doi: {"doi": "123456"}
     )
 
 
@@ -44,7 +44,7 @@ def test_doi_form_requires_public_collection(private_collection, staff_user_requ
 
 @pytest.mark.django_db
 def test_doi_form_requires_no_existing_doi(public_collection, staff_user_request):
-    public_collection.doi = Doi.objects.create(id='foo', url='foo')
+    public_collection.doi = Doi.objects.create(id="foo", url="foo")
     public_collection.save()
 
     form = CreateDoiForm(
@@ -78,9 +78,9 @@ def collection_with_several_creators(image_factory, collection_factory, cohort_f
     # Cohort B and C have the same number of images in collection
     # Therefore, DOI creation should order A (most), then B and C (alphabetical tie breaker)
     cohort_a, cohort_b, cohort_c = (
-        cohort_factory(attribution='Cohort A'),
-        cohort_factory(attribution='Cohort B'),
-        cohort_factory(attribution='Cohort C'),
+        cohort_factory(attribution="Cohort A"),
+        cohort_factory(attribution="Cohort B"),
+        cohort_factory(attribution="Cohort C"),
     )
     collection = collection_factory(public=True)
 
@@ -102,14 +102,14 @@ def collection_with_several_creators(image_factory, collection_factory, cohort_f
 def test_doi_creators_ordered_by_number_images_contributed(collection_with_several_creators, user):
     collection, cohort_a, cohort_b, cohort_c = collection_with_several_creators
 
-    doi = collection_build_doi(collection=collection, doi_id='foo')
+    doi = collection_build_doi(collection=collection, doi_id="foo")
 
-    creators = doi['data']['attributes']['creators']
+    creators = doi["data"]["attributes"]["creators"]
 
     assert len(creators) == 3
-    assert creators[0]['name'] == cohort_a.attribution
-    assert creators[1]['name'] == cohort_b.attribution
-    assert creators[2]['name'] == cohort_c.attribution
+    assert creators[0]["name"] == cohort_a.attribution
+    assert creators[1]["name"] == cohort_b.attribution
+    assert creators[2]["name"] == cohort_c.attribution
 
 
 @pytest.mark.django_db
@@ -117,16 +117,16 @@ def test_doi_creators_order_anonymous_contributions_last(
     collection_with_several_creators, cohort_factory, image_factory, user
 ):
     collection, *_ = collection_with_several_creators
-    anon_cohort = cohort_factory(attribution='Anonymous')
+    anon_cohort = cohort_factory(attribution="Anonymous")
     # Give anonymous cohort more contributions than others, assert it's still ordered last
     for _ in range(10):
         collection.images.add(image_factory(public=True, accession__cohort=anon_cohort))
 
-    doi = collection_build_doi(collection=collection, doi_id='foo')
+    doi = collection_build_doi(collection=collection, doi_id="foo")
 
-    creators = doi['data']['attributes']['creators']
+    creators = doi["data"]["attributes"]["creators"]
 
-    assert creators[-1]['name'] == 'Anonymous'
+    assert creators[-1]["name"] == "Anonymous"
 
 
 @pytest.fixture
@@ -134,9 +134,9 @@ def collection_with_repeated_creators(image_factory, collection_factory, cohort_
     # Cohort A has the most images in collection
     # Cohort B and C have the same number of images in collection
     # Therefore, DOI creation should order A (most), then B and C (alphabetical tie breaker)
-    cohort_a1 = cohort_factory(attribution='Cohort A')
-    cohort_a2 = cohort_factory(attribution='Cohort A')
-    cohort_b = cohort_factory(attribution='Cohort B')
+    cohort_a1 = cohort_factory(attribution="Cohort A")
+    cohort_a2 = cohort_factory(attribution="Cohort A")
+    cohort_b = cohort_factory(attribution="Cohort B")
     collection = collection_factory(public=True)
 
     for _ in range(3):
@@ -157,11 +157,11 @@ def collection_with_repeated_creators(image_factory, collection_factory, cohort_
 def test_doi_creators_collapse_repeated_creators(collection_with_repeated_creators, user):
     collection, cohort_a1, cohort_a2, cohort_b = collection_with_repeated_creators
 
-    doi = collection_build_doi(collection=collection, doi_id='foo')
+    doi = collection_build_doi(collection=collection, doi_id="foo")
 
-    creators = doi['data']['attributes']['creators']
+    creators = doi["data"]["attributes"]["creators"]
 
-    assert creators[0]['name'] == cohort_a1.attribution
-    assert creators[1]['name'] == cohort_b.attribution
+    assert creators[0]["name"] == cohort_a1.attribution
+    assert creators[1]["name"] == cohort_b.attribution
 
     assert len(creators) == 2

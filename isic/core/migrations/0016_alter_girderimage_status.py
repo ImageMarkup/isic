@@ -4,24 +4,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0015_auto_20210604_1420'),
+        ("core", "0015_auto_20210604_1420"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='girderimage',
-            name='status',
+            model_name="girderimage",
+            name="status",
             field=models.CharField(
                 choices=[
-                    ('unknown', 'Unknown'),
-                    ('non_image', 'Non-Image'),
-                    ('corrupt', 'Corrupt'),
-                    ('migrated', 'Migrated'),
-                    ('true_duplicate', 'True Duplicate'),
+                    ("unknown", "Unknown"),
+                    ("non_image", "Non-Image"),
+                    ("corrupt", "Corrupt"),
+                    ("migrated", "Migrated"),
+                    ("true_duplicate", "True Duplicate"),
                 ],
-                default='unknown',
+                default="unknown",
                 max_length=30,
             ),
         ),

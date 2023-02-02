@@ -7,37 +7,36 @@ import django.db.models.lookups
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('studies', '0032_alter_question_type'),
+        ("studies", "0032_alter_question_type"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='response',
-            name='value',
+            model_name="response",
+            name="value",
             field=models.JSONField(default=dict),
         ),
         migrations.AlterField(
-            model_name='response',
-            name='choice',
+            model_name="response",
+            name="choice",
             field=models.ForeignKey(
-                null=True, on_delete=django.db.models.deletion.CASCADE, to='studies.questionchoice'
+                null=True, on_delete=django.db.models.deletion.CASCADE, to="studies.questionchoice"
             ),
         ),
         migrations.AddConstraint(
-            model_name='response',
+            model_name="response",
             constraint=models.CheckConstraint(
                 check=django.db.models.lookups.Exact(
                     lhs=django.db.models.expressions.Func(
-                        'choice',
-                        'value__value',
-                        function='num_nonnulls',
+                        "choice",
+                        "value__value",
+                        function="num_nonnulls",
                         output_field=models.IntegerField(),
                     ),
                     rhs=django.db.models.expressions.Value(1),
                 ),
-                name='response_choice_or_value_check',
+                name="response_choice_or_value_check",
             ),
         ),
     ]

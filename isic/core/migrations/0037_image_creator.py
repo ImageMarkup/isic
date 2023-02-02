@@ -6,20 +6,19 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('core', '0036_id_big_auto_field'),
+        ("core", "0036_id_big_auto_field"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='image',
-            name='creator',
+            model_name="image",
+            name="creator",
             field=models.ForeignKey(
                 null=True,
                 on_delete=django.db.models.deletion.PROTECT,
-                related_name='published_images',
+                related_name="published_images",
                 to=settings.AUTH_USER_MODEL,
             ),
         ),

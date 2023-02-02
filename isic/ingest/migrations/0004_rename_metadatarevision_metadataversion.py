@@ -5,15 +5,14 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('ingest', '0003_metadatarevision'),
+        ("ingest", "0003_metadatarevision"),
     ]
 
     operations = [
         migrations.RenameModel(
-            old_name='MetadataRevision',
-            new_name='MetadataVersion',
+            old_name="MetadataRevision",
+            new_name="MetadataVersion",
         ),
     ]

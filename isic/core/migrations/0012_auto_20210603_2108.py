@@ -4,20 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0011_alter_girderimage_accession_id'),
+        ("core", "0011_alter_girderimage_accession_id"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='girderimage',
-            name='metadata',
+            model_name="girderimage",
+            name="metadata",
             field=models.JSONField(blank=True, default=dict),
         ),
         migrations.AlterField(
-            model_name='girderimage',
-            name='unstructured_metadata',
+            model_name="girderimage",
+            name="unstructured_metadata",
             field=models.JSONField(blank=True, default=dict),
         ),
     ]

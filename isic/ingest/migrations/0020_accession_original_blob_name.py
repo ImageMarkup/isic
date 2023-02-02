@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('ingest', '0019_alter_accessionreview_options_and_more'),
+        ("ingest", "0019_alter_accessionreview_options_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='accession',
-            name='original_blob_name',
+            model_name="accession",
+            name="original_blob_name",
             field=models.CharField(db_index=True, editable=False, max_length=255, null=True),
         ),
     ]

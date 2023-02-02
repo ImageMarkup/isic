@@ -5,16 +5,15 @@ from django.db.models.expressions import F
 
 
 def populate_original_blob_name(apps, schema_editor):
-    Accession = apps.get_model('ingest', 'Accession')
+    Accession = apps.get_model("ingest", "Accession")
     Accession.objects.filter(original_blob_name__isnull=True).update(
-        original_blob_name=F('blob_name')
+        original_blob_name=F("blob_name")
     )
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('ingest', '0020_accession_original_blob_name'),
+        ("ingest", "0020_accession_original_blob_name"),
     ]
 
     operations = [

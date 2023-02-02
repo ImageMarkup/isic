@@ -19,7 +19,7 @@ def test_api_accession_create(authenticated_api_client, user, cohort_factory, s3
     cohort = cohort_factory(contributor__owners=[user])
 
     resp = authenticated_api_client.post(
-        reverse('accessions:create'), data={'cohort': cohort.pk, 'original_blob': s3ff_field_value}
+        reverse("accessions:create"), data={"cohort": cohort.pk, "original_blob": s3ff_field_value}
     )
 
     assert resp.status_code == 201, resp.data
@@ -33,13 +33,13 @@ def test_api_accession_create_duplicate_blob_name(
     cohort = cohort_factory(contributor__owners=[user])
 
     resp = authenticated_api_client.post(
-        reverse('accessions:create'), data={'cohort': cohort.pk, 'original_blob': s3ff_field_value}
+        reverse("accessions:create"), data={"cohort": cohort.pk, "original_blob": s3ff_field_value}
     )
     assert resp.status_code == 201, resp.data
     assert cohort.accessions.count() == 1
 
     resp = authenticated_api_client.post(
-        reverse('accessions:create'), data={'cohort': cohort.pk, 'original_blob': s3ff_field_value}
+        reverse("accessions:create"), data={"cohort": cohort.pk, "original_blob": s3ff_field_value}
     )
     assert resp.status_code == 400, resp.data
     assert cohort.accessions.count() == 1
@@ -52,8 +52,8 @@ def test_api_accession_create_invalid_cohort(
     invalid_cohort = cohort_factory(contributor__creator=user_factory())
 
     resp = authenticated_api_client.post(
-        reverse('accessions:create'),
-        data={'cohort': invalid_cohort.pk, 'original_blob': s3ff_field_value},
+        reverse("accessions:create"),
+        data={"cohort": invalid_cohort.pk, "original_blob": s3ff_field_value},
     )
 
     assert resp.status_code == 403, resp.data
@@ -64,8 +64,8 @@ def test_api_accession_create_review_bulk(staff_api_client, accession_factory):
     accessions = [accession_factory() for _ in range(4)]
 
     resp = staff_api_client.post(
-        reverse('accessions:create-review-bulk'),
-        data=[{'id': accession.id, 'value': True} for accession in accessions],
+        reverse("accessions:create-review-bulk"),
+        data=[{"id": accession.id, "value": True} for accession in accessions],
     )
 
     assert resp.status_code == 201, resp.data

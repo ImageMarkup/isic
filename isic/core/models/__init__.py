@@ -11,17 +11,17 @@ from .image_alias import ImageAlias
 from .segmentation import Segmentation, SegmentationReview
 
 __all__ = [
-    'Collection',
-    'CopyrightLicense',
-    'CreationSortedTimeStampedModel',
-    'Doi',
-    'GirderDataset',
-    'GirderImage',
-    'Image',
-    'ImageAlias',
-    'IsicOAuthApplication',
-    'Segmentation',
-    'SegmentationReview',
+    "Collection",
+    "CopyrightLicense",
+    "CreationSortedTimeStampedModel",
+    "Doi",
+    "GirderDataset",
+    "GirderImage",
+    "Image",
+    "ImageAlias",
+    "IsicOAuthApplication",
+    "Segmentation",
+    "SegmentationReview",
 ]
 
 
@@ -30,9 +30,9 @@ def add_or_remove_groups(sender: type[User], instance: User, created: bool, **kw
     from django.contrib.auth.models import Group
 
     if created:
-        instance.groups.add(Group.objects.get(name='Public'))
+        instance.groups.add(Group.objects.get(name="Public"))
     else:
-        isic_staff_group = Group.objects.get(name='ISIC Staff')
+        isic_staff_group = Group.objects.get(name="ISIC Staff")
 
         if instance.is_staff:
             instance.groups.add(isic_staff_group)

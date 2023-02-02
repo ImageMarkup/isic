@@ -4,18 +4,17 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('studies', '0017_rename_mask_blob_markup_mask'),
+        ("studies", "0017_rename_mask_blob_markup_mask"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='response',
+            name="response",
             options={},
         ),
         migrations.AlterUniqueTogether(
-            name='response',
-            unique_together={('annotation', 'question')},
+            name="response",
+            unique_together={("annotation", "question")},
         ),
     ]

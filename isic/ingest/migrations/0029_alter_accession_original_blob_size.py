@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('ingest', '0028_accession_original_blob_size'),
+        ("ingest", "0028_accession_original_blob_size"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='accession',
-            name='original_blob_size',
+            model_name="accession",
+            name="original_blob_size",
             field=models.PositiveBigIntegerField(editable=False),
         ),
     ]

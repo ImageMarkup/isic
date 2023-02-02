@@ -9,8 +9,8 @@ from isic.core.services.collection.doi import (
 
 class CreateDoiForm(forms.Form):
     def __init__(self, *args, **kwargs):
-        self.request = kwargs.pop('request', None)
-        self.collection: Collection = kwargs.pop('collection', None)
+        self.request = kwargs.pop("request", None)
+        self.collection: Collection = kwargs.pop("collection", None)
         super().__init__(*args, **kwargs)
 
     def clean(self):

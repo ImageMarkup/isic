@@ -25,11 +25,11 @@ from .zip_upload import ZipUpload
 
 
 class Approx(Transform):
-    lookup_name = 'approx'
+    lookup_name = "approx"
 
     def as_sql(self, compiler, connection):
         lhs, params = compiler.compile(self.lhs)
-        return 'ROUND(CAST(%s as float) / 5.0) * 5' % lhs, params
+        return "ROUND(CAST(%s as float) / 5.0) * 5" % lhs, params
 
 
 JSONField.register_lookup(Approx)
@@ -82,38 +82,38 @@ class AccessionQuerySet(models.QuerySet):
 
 
 class AccessionStatus(models.TextChoices):
-    CREATING = 'creating', 'Creating'
-    CREATED = 'created', 'Created'
-    SKIPPED = 'skipped', 'Skipped'
-    FAILED = 'failed', 'Failed'
-    SUCCEEDED = 'succeeded', 'Succeeded'
+    CREATING = "creating", "Creating"
+    CREATED = "created", "Created"
+    SKIPPED = "skipped", "Skipped"
+    FAILED = "failed", "Failed"
+    SUCCEEDED = "succeeded", "Succeeded"
 
 
 class Accession(CreationSortedTimeStampedModel):
     class Meta(CreationSortedTimeStampedModel.Meta):
         # original_blob_name is unique at the *cohort* level, which also makes it unique at the zip
         # level.
-        unique_together = [['cohort', 'original_blob_name']]
+        unique_together = [["cohort", "original_blob_name"]]
 
         constraints = [
             # girder_id should be unique among nonempty girder_id values
             UniqueConstraint(
-                name='accession_unique_girder_id', fields=['girder_id'], condition=~Q(girder_id='')
+                name="accession_unique_girder_id", fields=["girder_id"], condition=~Q(girder_id="")
             ),
             # blob should be unique when it's filled out
-            UniqueConstraint(name='accession_unique_blob', fields=['blob'], condition=~Q(blob='')),
+            UniqueConstraint(name="accession_unique_blob", fields=["blob"], condition=~Q(blob="")),
             # blob_name should be unique when it's filled out
             UniqueConstraint(
-                name='accession_unique_blob_name', fields=['blob_name'], condition=~Q(blob_name='')
+                name="accession_unique_blob_name", fields=["blob_name"], condition=~Q(blob_name="")
             ),
             # the original blob name should always be hidden, so blob_name shouldn't be the same
             CheckConstraint(
-                name='accession_blob_name_not_original_blob_name',
-                check=~Q(original_blob_name=F('blob_name')),
+                name="accession_blob_name_not_original_blob_name",
+                check=~Q(original_blob_name=F("blob_name")),
             ),
             # require blob_size / width / height for succeeded accessions
             CheckConstraint(
-                name='accession_succeeded_blob_fields',
+                name="accession_succeeded_blob_fields",
                 check=Q(
                     status=AccessionStatus.SUCCEEDED,
                     thumbnail_256_size__isnull=False,
@@ -121,22 +121,22 @@ class Accession(CreationSortedTimeStampedModel):
                     width__isnull=False,
                     height__isnull=False,
                 )
-                & ~Q(thumbnail_256='')
-                & ~Q(blob_name='')
+                & ~Q(thumbnail_256="")
+                & ~Q(blob_name="")
                 | ~Q(status=AccessionStatus.SUCCEEDED),
             ),
         ]
 
     # the creator is either inherited from the zip creator, or directly attached in the
     # case of a single shot upload.
-    creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name='accessions')
+    creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="accessions")
     girder_id = models.CharField(
-        blank=True, max_length=24, help_text='The image_id from Girder.', db_index=True
+        blank=True, max_length=24, help_text="The image_id from Girder.", db_index=True
     )
     zip_upload = models.ForeignKey(
-        ZipUpload, on_delete=models.CASCADE, null=True, related_name='accessions'
+        ZipUpload, on_delete=models.CASCADE, null=True, related_name="accessions"
     )
-    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name='accessions')
+    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name="accessions")
 
     # the original blob is stored in case blobs need to be reprocessed
     original_blob = S3FileField(unique=True)
@@ -172,11 +172,11 @@ class Accession(CreationSortedTimeStampedModel):
 
     @property
     def published(self):
-        return hasattr(self, 'image')
+        return hasattr(self, "image")
 
     @property
     def reviewed(self):
-        return hasattr(self, 'review')
+        return hasattr(self, "review")
 
     @property
     def unreviewed(self):
@@ -190,10 +190,10 @@ class Accession(CreationSortedTimeStampedModel):
         The Accession will be saved and `status` will be updated appropriately.
         """
         try:
-            with self.original_blob.open('rb') as original_blob_stream:
+            with self.original_blob.open("rb") as original_blob_stream:
                 blob_mime_type = guess_mime_type(original_blob_stream, self.original_blob_name)
-            blob_major_mime_type = blob_mime_type.partition('/')[0]
-            if blob_major_mime_type != 'image':
+            blob_major_mime_type = blob_mime_type.partition("/")[0]
+            if blob_major_mime_type != "image":
                 raise InvalidBlobError(f'Blob has a non-image MIME type: "{blob_mime_type}"')
 
             # Set a larger max size, to accommodate confocal images
@@ -202,34 +202,34 @@ class Accession(CreationSortedTimeStampedModel):
             try:
                 img = PIL.Image.open(original_blob_stream)
             except PIL.Image.UnidentifiedImageError:
-                raise InvalidBlobError('Blob cannot be recognized by PIL.')
+                raise InvalidBlobError("Blob cannot be recognized by PIL.")
 
             # Explicitly load the image, so any decoding errors can be caught
             try:
                 img.load()
             except OSError as e:
-                if 'image file is truncated' in str(e):
-                    raise InvalidBlobError('Blob appears truncated.')
+                if "image file is truncated" in str(e):
+                    raise InvalidBlobError("Blob appears truncated.")
                 else:
                     # Any other errors are not expected, so re-raise them natively
                     raise
 
             # Strip any alpha channel
-            img = img.convert('RGB')
+            img = img.convert("RGB")
 
             with tempfile.SpooledTemporaryFile() as stripped_blob_stream:
-                img.save(stripped_blob_stream, format='JPEG')
+                img.save(stripped_blob_stream, format="JPEG")
 
                 stripped_blob_stream.seek(0, io.SEEK_END)
                 stripped_blob_size = stripped_blob_stream.tell()
                 stripped_blob_stream.seek(0)
 
-                self.blob_name = f'{uuid4()}.jpg'
+                self.blob_name = f"{uuid4()}.jpg"
                 self.blob = InMemoryUploadedFile(
                     file=stripped_blob_stream,
                     field_name=None,
                     name=self.blob_name,
-                    content_type='image/jpeg',
+                    content_type="image/jpeg",
                     size=stripped_blob_size,
                     charset=None,
                 )
@@ -237,22 +237,22 @@ class Accession(CreationSortedTimeStampedModel):
                 self.height = img.height
                 self.width = img.width
 
-                self.save(update_fields=['blob_name', 'blob', 'blob_size', 'height', 'width'])
+                self.save(update_fields=["blob_name", "blob", "blob_size", "height", "width"])
 
             self.generate_thumbnail()
 
         except InvalidBlobError:
             self.status = AccessionStatus.SKIPPED
-            self.save(update_fields=['status'])
+            self.save(update_fields=["status"])
             # Expected failure, so return cleanly
         except Exception:
             self.status = AccessionStatus.FAILED
-            self.save(update_fields=['status'])
+            self.save(update_fields=["status"])
             # Unexpected failure, so re-raise
             raise
         else:
             self.status = AccessionStatus.SUCCEEDED
-            self.save(update_fields=['status'])
+            self.save(update_fields=["status"])
 
     def generate_thumbnail(self) -> None:
         with self.blob.open() as blob_stream:
@@ -266,7 +266,7 @@ class Accession(CreationSortedTimeStampedModel):
         with io.BytesIO() as thumbnail_stream:
             # 75 quality uses ~55% as much space as 90 quality, with only a very slight drop in
             # perceptible quality
-            img.save(thumbnail_stream, format='JPEG', quality=75, optimize=True)
+            img.save(thumbnail_stream, format="JPEG", quality=75, optimize=True)
             thumbnail_stream.seek(0)
 
             self.thumbnail_256_size = thumbnail_stream.getbuffer().nbytes
@@ -274,15 +274,15 @@ class Accession(CreationSortedTimeStampedModel):
                 file=thumbnail_stream,
                 field_name=None,
                 name=(
-                    f'{self.image.isic_id}_thumbnail_256.jpg'
-                    if hasattr(self, 'image')
-                    else 'thumbnail_256.jpg'
+                    f"{self.image.isic_id}_thumbnail_256.jpg"
+                    if hasattr(self, "image")
+                    else "thumbnail_256.jpg"
                 ),
-                content_type='image/jpeg',
+                content_type="image/jpeg",
                 size=self.thumbnail_256_size,
                 charset=None,
             )
-            self.save(update_fields=['thumbnail_256', 'thumbnail_256_size'])
+            self.save(update_fields=["thumbnail_256", "thumbnail_256_size"])
 
     @classmethod
     def from_blob(cls, blob: Blob):
@@ -310,14 +310,14 @@ class Accession(CreationSortedTimeStampedModel):
 
     @property
     def age_approx(self) -> int | None:
-        return self._age_approx(self.metadata['age']) if 'age' in self.metadata else None
+        return self._age_approx(self.metadata["age"]) if "age" in self.metadata else None
 
     @staticmethod
     def _redact_metadata(metadata: dict) -> dict:
         from isic.core.models.image import RESTRICTED_METADATA_FIELDS
 
-        if 'age' in metadata:
-            metadata['age_approx'] = Accession._age_approx(metadata['age'])
+        if "age" in metadata:
+            metadata["age_approx"] = Accession._age_approx(metadata["age"])
 
         for f in RESTRICTED_METADATA_FIELDS:
             if f in metadata:
@@ -369,7 +369,7 @@ class Accession(CreationSortedTimeStampedModel):
 
             # update structured metadata
             new_metadata = parsed_metadata.dict(
-                exclude_unset=True, exclude_none=True, exclude={'unstructured'}
+                exclude_unset=True, exclude_none=True, exclude={"unstructured"}
             )
             if new_metadata and original_metadata != new_metadata:
                 modified = True

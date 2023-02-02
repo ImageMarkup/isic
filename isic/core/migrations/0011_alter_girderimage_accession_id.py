@@ -5,21 +5,20 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('ingest', '0001_initial_squashed'),
-        ('core', '0010_auto_20210602_1835'),
+        ("ingest", "0001_initial_squashed"),
+        ("core", "0010_auto_20210602_1835"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='girderimage',
-            name='accession_id',
+            model_name="girderimage",
+            name="accession_id",
             field=models.ForeignKey(
                 blank=True,
                 null=True,
                 on_delete=django.db.models.deletion.CASCADE,
-                to='ingest.accession',
+                to="ingest.accession",
             ),
         ),
     ]

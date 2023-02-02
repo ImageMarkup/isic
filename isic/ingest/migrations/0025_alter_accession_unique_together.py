@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('ingest', '0024_alter_accession_original_blob_and_more'),
+        ("ingest", "0024_alter_accession_original_blob_and_more"),
     ]
 
     operations = [
         migrations.AlterUniqueTogether(
-            name='accession',
-            unique_together={('cohort', 'original_blob_name')},
+            name="accession",
+            unique_together={("cohort", "original_blob_name")},
         ),
     ]

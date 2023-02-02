@@ -6,118 +6,117 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('ingest', '0001_initial_squashed'),
-        ('core', '0008_auto_20210526_0232'),
+        ("ingest", "0001_initial_squashed"),
+        ("core", "0008_auto_20210526_0232"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='GirderDataset',
+            name="GirderDataset",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.CharField(
                         max_length=24,
                         primary_key=True,
                         serialize=False,
-                        validators=[django.core.validators.RegexValidator('^[0-9a-f]{24}$')],
+                        validators=[django.core.validators.RegexValidator("^[0-9a-f]{24}$")],
                     ),
                 ),
-                ('name', models.CharField(max_length=255)),
-                ('public', models.BooleanField()),
+                ("name", models.CharField(max_length=255)),
+                ("public", models.BooleanField()),
             ],
         ),
         migrations.CreateModel(
-            name='GirderImage',
+            name="GirderImage",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
                 (
-                    'status',
+                    "status",
                     models.CharField(
                         choices=[
-                            ('unknown', 'Unknown'),
-                            ('corrupt', 'Corrupt'),
-                            ('migrated', 'Migrated'),
-                            ('true_duplicate', 'True Duplicate'),
+                            ("unknown", "Unknown"),
+                            ("corrupt", "Corrupt"),
+                            ("migrated", "Migrated"),
+                            ("true_duplicate", "True Duplicate"),
                         ],
-                        default='unknown',
+                        default="unknown",
                         max_length=30,
                     ),
                 ),
                 (
-                    'item_id',
+                    "item_id",
                     models.CharField(
                         max_length=24,
                         unique=True,
-                        validators=[django.core.validators.RegexValidator('^[0-9a-f]{24}$')],
+                        validators=[django.core.validators.RegexValidator("^[0-9a-f]{24}$")],
                     ),
                 ),
                 (
-                    'file_id',
+                    "file_id",
                     models.CharField(
                         max_length=24,
                         unique=True,
-                        validators=[django.core.validators.RegexValidator('^[0-9a-f]{24}$')],
+                        validators=[django.core.validators.RegexValidator("^[0-9a-f]{24}$")],
                     ),
                 ),
-                ('original_filename', models.CharField(max_length=255)),
-                ('original_file_relpath', models.CharField(blank=True, max_length=255)),
-                ('metadata', models.JSONField(default=dict)),
-                ('unstructured_metadata', models.JSONField(default=dict)),
+                ("original_filename", models.CharField(max_length=255)),
+                ("original_file_relpath", models.CharField(blank=True, max_length=255)),
+                ("metadata", models.JSONField(default=dict)),
+                ("unstructured_metadata", models.JSONField(default=dict)),
                 (
-                    'original_blob_dm',
+                    "original_blob_dm",
                     models.CharField(
                         max_length=64,
-                        validators=[django.core.validators.RegexValidator('^[0-9a-f]{64}$')],
+                        validators=[django.core.validators.RegexValidator("^[0-9a-f]{64}$")],
                     ),
                 ),
                 (
-                    'stripped_blob_dm',
+                    "stripped_blob_dm",
                     models.CharField(
                         max_length=64,
-                        validators=[django.core.validators.RegexValidator('^[0-9a-f]{64}$')],
+                        validators=[django.core.validators.RegexValidator("^[0-9a-f]{64}$")],
                     ),
                 ),
                 (
-                    'accession_id',
+                    "accession_id",
                     models.ForeignKey(
                         null=True,
                         on_delete=django.db.models.deletion.CASCADE,
-                        to='ingest.accession',
+                        to="ingest.accession",
                     ),
                 ),
                 (
-                    'dataset',
+                    "dataset",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.PROTECT, to='core.girderdataset'
+                        on_delete=django.db.models.deletion.PROTECT, to="core.girderdataset"
                     ),
                 ),
                 (
-                    'isic',
+                    "isic",
                     models.OneToOneField(
                         editable=False,
                         on_delete=django.db.models.deletion.PROTECT,
-                        to='core.isicid',
+                        to="core.isicid",
                     ),
                 ),
             ],
         ),
         migrations.AddConstraint(
-            model_name='girderimage',
+            model_name="girderimage",
             constraint=models.CheckConstraint(
                 check=models.Q(
-                    models.Q(('accession_id__isnull', True), ('status', 'unknown')),
-                    models.Q(('status', 'unknown'), _negated=True),
-                    _connector='OR',
+                    models.Q(("accession_id__isnull", True), ("status", "unknown")),
+                    models.Q(("status", "unknown"), _negated=True),
+                    _connector="OR",
                 ),
-                name='girder_id_notnull',
+                name="girder_id_notnull",
             ),
         ),
     ]

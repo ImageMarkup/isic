@@ -4,23 +4,22 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0013_auto_20210603_2311'),
+        ("core", "0013_auto_20210603_2311"),
     ]
 
     operations = [
         migrations.RemoveConstraint(
-            model_name='girderimage',
-            name='non_unknown_have_accession_id',
+            model_name="girderimage",
+            name="non_unknown_have_accession_id",
         ),
         migrations.AddConstraint(
-            model_name='girderimage',
+            model_name="girderimage",
             constraint=models.CheckConstraint(
                 check=models.Q(
-                    ('status', 'unknown'), ('accession__isnull', False), _connector='OR'
+                    ("status", "unknown"), ("accession__isnull", False), _connector="OR"
                 ),
-                name='non_unknown_have_accession',
+                name="non_unknown_have_accession",
             ),
         ),
     ]

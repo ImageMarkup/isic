@@ -7,108 +7,107 @@ import django_extensions.db.fields
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('ingest', '0001_initial_squashed'),
-        ('core', '0003_alter_duplicateimage_accession'),
+        ("ingest", "0001_initial_squashed"),
+        ("core", "0003_alter_duplicateimage_accession"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Image',
+            name="Image",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
                 (
-                    'created',
+                    "created",
                     django_extensions.db.fields.CreationDateTimeField(
-                        auto_now_add=True, verbose_name='created'
+                        auto_now_add=True, verbose_name="created"
                     ),
                 ),
                 (
-                    'modified',
+                    "modified",
                     django_extensions.db.fields.ModificationDateTimeField(
-                        auto_now=True, verbose_name='modified'
+                        auto_now=True, verbose_name="modified"
                     ),
                 ),
                 (
-                    'isic_id',
+                    "isic_id",
                     models.CharField(
                         max_length=12,
                         unique=True,
-                        validators=[django.core.validators.RegexValidator('^ISIC_[0-9]{7}$')],
-                        verbose_name='ISIC ID',
+                        validators=[django.core.validators.RegexValidator("^ISIC_[0-9]{7}$")],
+                        verbose_name="ISIC ID",
                     ),
                 ),
-                ('public', models.BooleanField(default=False)),
+                ("public", models.BooleanField(default=False)),
                 (
-                    'accession',
+                    "accession",
                     models.OneToOneField(
-                        on_delete=django.db.models.deletion.PROTECT, to='ingest.accession'
+                        on_delete=django.db.models.deletion.PROTECT, to="ingest.accession"
                     ),
                 ),
             ],
             options={
-                'get_latest_by': 'modified',
-                'abstract': False,
+                "get_latest_by": "modified",
+                "abstract": False,
             },
         ),
         migrations.AlterField(
-            model_name='duplicateimage',
-            name='isic_id',
+            model_name="duplicateimage",
+            name="isic_id",
             field=models.CharField(
                 max_length=12,
                 unique=True,
-                validators=[django.core.validators.RegexValidator('^ISIC_[0-9]{7}$')],
-                verbose_name='ISIC ID',
+                validators=[django.core.validators.RegexValidator("^ISIC_[0-9]{7}$")],
+                verbose_name="ISIC ID",
             ),
         ),
         migrations.CreateModel(
-            name='ImageRedirect',
+            name="ImageRedirect",
             fields=[
                 (
-                    'id',
+                    "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name='ID'
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
                 (
-                    'created',
+                    "created",
                     django_extensions.db.fields.CreationDateTimeField(
-                        auto_now_add=True, verbose_name='created'
+                        auto_now_add=True, verbose_name="created"
                     ),
                 ),
                 (
-                    'modified',
+                    "modified",
                     django_extensions.db.fields.ModificationDateTimeField(
-                        auto_now=True, verbose_name='modified'
+                        auto_now=True, verbose_name="modified"
                     ),
                 ),
                 (
-                    'isic_id',
+                    "isic_id",
                     models.CharField(
                         max_length=12,
                         unique=True,
-                        validators=[django.core.validators.RegexValidator('^ISIC_[0-9]{7}$')],
-                        verbose_name='ISIC ID',
+                        validators=[django.core.validators.RegexValidator("^ISIC_[0-9]{7}$")],
+                        verbose_name="ISIC ID",
                     ),
                 ),
                 (
-                    'image',
+                    "image",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
-                        related_name='redirects',
-                        to='core.image',
+                        related_name="redirects",
+                        to="core.image",
                     ),
                 ),
             ],
             options={
-                'get_latest_by': 'modified',
-                'abstract': False,
+                "get_latest_by": "modified",
+                "abstract": False,
             },
         ),
     ]

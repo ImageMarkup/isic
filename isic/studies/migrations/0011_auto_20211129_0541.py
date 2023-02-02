@@ -5,49 +5,48 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('studies', '0010_alter_annotation_study'),
+        ("studies", "0010_alter_annotation_study"),
     ]
 
     operations = [
         migrations.SeparateDatabaseAndState(
             state_operations=[
                 migrations.CreateModel(
-                    name='StudyQuestion',
+                    name="StudyQuestion",
                     fields=[
                         (
-                            'id',
+                            "id",
                             models.AutoField(
                                 auto_created=True,
                                 primary_key=True,
                                 serialize=False,
-                                verbose_name='ID',
+                                verbose_name="ID",
                             ),
                         ),
                         (
-                            'question',
+                            "question",
                             models.ForeignKey(
-                                on_delete=django.db.models.deletion.PROTECT, to='studies.question'
+                                on_delete=django.db.models.deletion.PROTECT, to="studies.question"
                             ),
                         ),
                         (
-                            'study',
+                            "study",
                             models.ForeignKey(
-                                on_delete=django.db.models.deletion.CASCADE, to='studies.study'
+                                on_delete=django.db.models.deletion.CASCADE, to="studies.study"
                             ),
                         ),
                     ],
                     options={
-                        'db_table': 'studies_study_questions',
-                        'unique_together': {('study', 'question')},
+                        "db_table": "studies_study_questions",
+                        "unique_together": {("study", "question")},
                     },
                 ),
                 migrations.AlterField(
-                    model_name='study',
-                    name='questions',
+                    model_name="study",
+                    name="questions",
                     field=models.ManyToManyField(
-                        through='studies.StudyQuestion', to='studies.Question'
+                        through="studies.StudyQuestion", to="studies.Question"
                     ),
                 ),
             ]

@@ -5,19 +5,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('login', '0005_profile_hash_id'),
+        ("login", "0005_profile_hash_id"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='profile',
-            name='hash_id',
+            model_name="profile",
+            name="hash_id",
             field=models.CharField(
                 max_length=5,
                 unique=True,
-                validators=[django.core.validators.RegexValidator('^[A-HJ-NP-Z2-9]{5}')],
+                validators=[django.core.validators.RegexValidator("^[A-HJ-NP-Z2-9]{5}")],
             ),
         ),
     ]

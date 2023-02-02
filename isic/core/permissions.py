@@ -17,7 +17,7 @@ from rest_framework.filters import BaseFilterBackend
 
 class UserPermissions:
     model = User
-    perms = ['view_staff']
+    perms = ["view_staff"]
     filters = {}
 
     @staticmethod
@@ -32,12 +32,12 @@ ISIC_PERMS_MAP = {}
 ISIC_FILTERS_MAP = {}
 for model in django.apps.apps.get_models():
     name = model.__name__
-    if hasattr(model, 'perms_class'):
+    if hasattr(model, "perms_class"):
         for perm in model.perms_class.perms:
-            ISIC_PERMS_MAP[f'{model._meta.app_label}.{perm}'] = getattr(model.perms_class, perm)
+            ISIC_PERMS_MAP[f"{model._meta.app_label}.{perm}"] = getattr(model.perms_class, perm)
 
         for perm, filter_name in model.perms_class.filters.items():
-            ISIC_FILTERS_MAP[f'{model._meta.app_label}.{perm}'] = getattr(
+            ISIC_FILTERS_MAP[f"{model._meta.app_label}.{perm}"] = getattr(
                 model.perms_class, filter_name
             )
 
@@ -52,7 +52,7 @@ class IsicObjectPermissionsFilter(BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
         return get_visible_objects(
             request.user,
-            f'{queryset.model._meta.app_label}.view_{queryset.model._meta.model_name}',
+            f"{queryset.model._meta.app_label}.view_{queryset.model._meta.model_name}",
             queryset,
         )
 
@@ -63,7 +63,7 @@ def get_visible_objects(user, perm, qs=None):
     if filter:
         return filter(user, qs)
     else:
-        raise Exception(f'No permission registered: {perm}')
+        raise Exception(f"No permission registered: {perm}")
 
 
 # this code is adapted from the login_required decorator, it's
@@ -93,10 +93,10 @@ def needs_object_permission(perm: str, lookup_variables=None):
                 model, lookups = lookup_variables[0], lookup_variables[1:]
                 # Parse model
                 if isinstance(model, str):
-                    splitted = model.split('.')
+                    splitted = model.split(".")
                     if len(splitted) != 2:
                         raise Exception(
-                            'If model should be looked up from '
+                            "If model should be looked up from "
                             "string it needs format: 'app_label.ModelClass'"
                         )
                     model = apps.get_model(*splitted)
@@ -104,20 +104,20 @@ def needs_object_permission(perm: str, lookup_variables=None):
                     pass
                 else:
                     raise Exception(
-                        'First lookup argument must always be '
-                        'a model, string pointing at app/model or queryset. '
-                        'Given: %s (type: %s)' % (model, type(model))
+                        "First lookup argument must always be "
+                        "a model, string pointing at app/model or queryset. "
+                        "Given: %s (type: %s)" % (model, type(model))
                     )
                 # Parse lookups
                 if len(lookups) % 2 != 0:
                     raise Exception(
-                        'Lookup variables must be provided '
-                        'as pairs of lookup_string and view_arg'
+                        "Lookup variables must be provided "
+                        "as pairs of lookup_string and view_arg"
                     )
                 lookup_dict = {}
                 for lookup, view_arg in zip(lookups[::2], lookups[1::2]):
                     if view_arg not in kwargs:
-                        raise Exception('Argument %s was not passed into view function' % view_arg)
+                        raise Exception("Argument %s was not passed into view function" % view_arg)
                     lookup_dict[lookup] = kwargs[view_arg]
                 obj = get_object_or_404(model, **lookup_dict)
 

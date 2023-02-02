@@ -7,34 +7,33 @@ import isic.core.models.isic_id
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0007_isic_id'),
+        ("core", "0007_isic_id"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='duplicateimage',
-            name='isic',
+            model_name="duplicateimage",
+            name="isic",
             field=models.OneToOneField(
-                editable=False, on_delete=django.db.models.deletion.PROTECT, to='core.isicid'
+                editable=False, on_delete=django.db.models.deletion.PROTECT, to="core.isicid"
             ),
         ),
         migrations.AlterField(
-            model_name='image',
-            name='isic',
+            model_name="image",
+            name="isic",
             field=models.OneToOneField(
                 default=isic.core.models.isic_id.IsicId.safe_create,
                 editable=False,
                 on_delete=django.db.models.deletion.PROTECT,
-                to='core.isicid',
+                to="core.isicid",
             ),
         ),
         migrations.AlterField(
-            model_name='imageredirect',
-            name='isic',
+            model_name="imageredirect",
+            name="isic",
             field=models.OneToOneField(
-                editable=False, on_delete=django.db.models.deletion.PROTECT, to='core.isicid'
+                editable=False, on_delete=django.db.models.deletion.PROTECT, to="core.isicid"
             ),
         ),
     ]

@@ -12,39 +12,39 @@ from isic.core.serializers import ImageSerializer, SearchQuerySerializer
 
 
 @method_decorator(
-    name='list', decorator=swagger_auto_schema(operation_summary='Return a list of images.')
+    name="list", decorator=swagger_auto_schema(operation_summary="Return a list of images.")
 )
 @method_decorator(
-    name='retrieve',
-    decorator=swagger_auto_schema(operation_summary='Retrieve a single image by ISIC ID.'),
+    name="retrieve",
+    decorator=swagger_auto_schema(operation_summary="Retrieve a single image by ISIC ID."),
 )
 class ImageViewSet(ReadOnlyModelViewSet):
     serializer_class = ImageSerializer
     queryset = (
-        Image.objects.select_related('accession__cohort')
-        .defer('accession__unstructured_metadata')
+        Image.objects.select_related("accession__cohort")
+        .defer("accession__unstructured_metadata")
         .distinct()
     )
     filter_backends = [IsicObjectPermissionsFilter]
-    lookup_field = 'isic_id'
+    lookup_field = "isic_id"
 
     @swagger_auto_schema(auto_schema=None)
-    @action(detail=False, methods=['get'], pagination_class=None)
+    @action(detail=False, methods=["get"], pagination_class=None)
     def facets(self, request):
         serializer = SearchQuerySerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
         query = build_elasticsearch_query(
-            serializer.validated_data.get('query', ''),
+            serializer.validated_data.get("query", ""),
             request.user,
-            serializer.validated_data.get('collections'),
+            serializer.validated_data.get("collections"),
         )
         # Manually pass the list of visible collection PKs through so buckets with
         # counts of 0 aren't included in the facets output for non-visible collections.
         collection_pks = list(
             get_visible_objects(
                 request.user,
-                'core.view_collection',
-                Collection.objects.values_list('pk', flat=True),
+                "core.view_collection",
+                Collection.objects.values_list("pk", flat=True),
             )
         )
         response = facets(query, collection_pks)
@@ -52,7 +52,7 @@ class ImageViewSet(ReadOnlyModelViewSet):
         return Response(response)
 
     @swagger_auto_schema(
-        operation_summary='Search images with a key:value query string.',
+        operation_summary="Search images with a key:value query string.",
         operation_description="""
         The search query uses a simple DSL syntax.
 
@@ -95,10 +95,10 @@ class ImageViewSet(ReadOnlyModelViewSet):
         """,  # noqa: E501
         query_serializer=SearchQuerySerializer,
     )
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def search(self, request):
         serializer = SearchQuerySerializer(
-            data=request.query_params, context={'user': request.user}
+            data=request.query_params, context={"user": request.user}
         )
         serializer.is_valid(raise_exception=True)
         qs = serializer.to_queryset(self.get_queryset())

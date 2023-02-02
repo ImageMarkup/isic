@@ -7,15 +7,14 @@ import isic.core.storage
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('studies', '0013_studyquestion_order'),
+        ("studies", "0013_studyquestion_order"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='markup',
-            name='mask_blob',
+            model_name="markup",
+            name="mask_blob",
             field=s3_file_field.fields.S3FileField(
                 null=True, upload_to=isic.core.storage.generate_upload_to
             ),

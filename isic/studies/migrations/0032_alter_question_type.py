@@ -4,17 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('studies', '0031_id_big_auto_field'),
+        ("studies", "0031_id_big_auto_field"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='question',
-            name='type',
+            model_name="question",
+            name="type",
             field=models.CharField(
-                choices=[('select', 'Select'), ('number', 'Number')], default='select', max_length=6
+                choices=[("select", "Select"), ("number", "Number")], default="select", max_length=6
             ),
         ),
     ]

@@ -10,12 +10,12 @@ from isic.core.models.image import Image
 
 class Segmentation(TimeStampedModel):
     class Meta:
-        ordering = ['id']
+        ordering = ["id"]
 
     girder_id = models.CharField(
         unique=True,
         max_length=24,
-        validators=[RegexValidator(f'^{MONGO_ID_REGEX}$')],
+        validators=[RegexValidator(f"^{MONGO_ID_REGEX}$")],
     )
     creator = models.ForeignKey(User, on_delete=models.RESTRICT)
     image = models.ForeignKey(Image, on_delete=models.RESTRICT)
@@ -25,6 +25,6 @@ class Segmentation(TimeStampedModel):
 
 class SegmentationReview(TimeStampedModel):
     creator = models.ForeignKey(User, on_delete=models.RESTRICT)
-    segmentation = models.ForeignKey(Segmentation, on_delete=models.CASCADE, related_name='reviews')
+    segmentation = models.ForeignKey(Segmentation, on_delete=models.CASCADE, related_name="reviews")
     approved = models.BooleanField()
-    skill = models.CharField(max_length=6, choices=[('novice', 'novice'), ('expert', 'expert')])
+    skill = models.CharField(max_length=6, choices=[("novice", "novice"), ("expert", "expert")])

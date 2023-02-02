@@ -5,25 +5,24 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('core', '0004_auto_20210519_2247'),
-        ('studies', '0003_auto_20210115_2031'),
+        ("core", "0004_auto_20210519_2247"),
+        ("studies", "0003_auto_20210115_2031"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='annotation',
-            name='image2',
+            model_name="annotation",
+            name="image2",
             field=models.ForeignKey(
-                null=True, on_delete=django.db.models.deletion.PROTECT, to='core.image'
+                null=True, on_delete=django.db.models.deletion.PROTECT, to="core.image"
             ),
         ),
         migrations.AddField(
-            model_name='studytask',
-            name='image2',
+            model_name="studytask",
+            name="image2",
             field=models.ForeignKey(
-                null=True, on_delete=django.db.models.deletion.CASCADE, to='core.image'
+                null=True, on_delete=django.db.models.deletion.CASCADE, to="core.image"
             ),
         ),
     ]

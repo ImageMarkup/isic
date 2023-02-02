@@ -7,7 +7,7 @@ from isic.login.models import get_hashid
 
 
 def gen_hashid(apps, schema_editor):
-    Profile = apps.get_model('login', 'Profile')
+    Profile = apps.get_model("login", "Profile")
 
     for row in Profile.objects.all():
         row.hash_id = get_hashid(row.user.pk)
@@ -15,20 +15,19 @@ def gen_hashid(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('login', '0004_user_profile'),
+        ("login", "0004_user_profile"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='profile',
-            name='hash_id',
+            model_name="profile",
+            name="hash_id",
             field=models.CharField(
                 max_length=5,
                 null=True,
                 unique=True,
-                validators=[django.core.validators.RegexValidator('^[A-HJ-NP-Z2-9]{5}')],
+                validators=[django.core.validators.RegexValidator("^[A-HJ-NP-Z2-9]{5}")],
             ),
         ),
         migrations.RunPython(gen_hashid),
