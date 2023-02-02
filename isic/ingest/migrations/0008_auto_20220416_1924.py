@@ -47,7 +47,6 @@ def migrate_checks(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ingest', '0007_auto_20220413_1820'),
     ]

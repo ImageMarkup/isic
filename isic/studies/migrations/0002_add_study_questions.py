@@ -69,7 +69,6 @@ def add_questions(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('studies', '0001_initial'),
     ]

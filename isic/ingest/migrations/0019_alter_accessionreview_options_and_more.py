@@ -5,7 +5,6 @@ import django.utils.timezone
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ingest', '0018_alter_accessionreview_accession'),
     ]

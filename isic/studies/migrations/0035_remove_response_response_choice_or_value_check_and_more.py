@@ -14,7 +14,6 @@ def migrate_response_values(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('studies', '0034_alter_annotation_start_time'),
     ]

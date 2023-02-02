@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('studies', '0015_alter_markup_mask_blob'),
     ]

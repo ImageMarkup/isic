@@ -5,7 +5,6 @@ import django_extensions.db.fields
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('core', '0019_girderimage_pre_review'),
     ]

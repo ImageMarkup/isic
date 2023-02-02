@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ingest', '0009_rename_change_to_checklog_value_and_more'),
     ]

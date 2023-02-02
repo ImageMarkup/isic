@@ -21,7 +21,6 @@ def create_initial_metadata_versions(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('ingest', '0002_remove_accession_accession_wh_status_check_and_more'),

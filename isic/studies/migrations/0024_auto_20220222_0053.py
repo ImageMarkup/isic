@@ -23,7 +23,6 @@ def create_base_collections(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('studies', '0023_study_collection'),
     ]

@@ -368,7 +368,6 @@ class ResponseQuerySet(models.QuerySet):
             .iterator()
         ):
             if response['annotation_duration'] is None:
-
                 annotation_duration = ''
             else:
                 # formatting as total seconds is easier, otherwise long durations get printed as

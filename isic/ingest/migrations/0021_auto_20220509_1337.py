@@ -12,7 +12,6 @@ def populate_original_blob_name(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ingest', '0020_accession_original_blob_name'),
     ]

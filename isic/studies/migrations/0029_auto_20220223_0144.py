@@ -12,7 +12,6 @@ def migrate_question_required(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('studies', '0028_studyquestion_required'),
     ]

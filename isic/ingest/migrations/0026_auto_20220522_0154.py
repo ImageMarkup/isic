@@ -11,7 +11,6 @@ def reset_blob_name(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ingest', '0025_alter_accession_unique_together'),
     ]

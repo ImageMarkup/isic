@@ -31,7 +31,6 @@ def copy_isic_id(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('core', '0006_alter_collection_images'),
     ]

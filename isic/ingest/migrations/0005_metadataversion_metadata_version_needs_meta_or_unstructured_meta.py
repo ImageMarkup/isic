@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ingest', '0004_rename_metadatarevision_metadataversion'),
     ]

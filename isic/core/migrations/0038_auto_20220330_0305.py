@@ -15,7 +15,6 @@ def populate_image_creator(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('core', '0037_image_creator'),
     ]

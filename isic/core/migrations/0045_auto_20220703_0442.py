@@ -15,7 +15,6 @@ def setup_groups(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('core', '0044_alter_isicoauthapplication_options'),
     ]

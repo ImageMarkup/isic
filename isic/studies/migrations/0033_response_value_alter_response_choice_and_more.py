@@ -7,7 +7,6 @@ import django.db.models.lookups
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('studies', '0032_alter_question_type'),
     ]

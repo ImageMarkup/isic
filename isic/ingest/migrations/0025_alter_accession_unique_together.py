@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ingest', '0024_alter_accession_original_blob_and_more'),
     ]

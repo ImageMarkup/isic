@@ -7,7 +7,6 @@ import isic.core.models.isic_id
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('core', '0007_isic_id'),
     ]

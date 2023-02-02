@@ -10,7 +10,6 @@ def migrate_reviewed_at(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ingest', '0014_accessionreview_reviewed_at'),
     ]

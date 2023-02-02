@@ -7,7 +7,6 @@ import isic.core.storage
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('studies', '0014_markup_mask_blob'),
     ]

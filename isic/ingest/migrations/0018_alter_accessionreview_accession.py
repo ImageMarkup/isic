@@ -5,7 +5,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('ingest', '0017_remove_metadataversion_metadata_version_needs_meta_or_unstructured_meta'),
     ]

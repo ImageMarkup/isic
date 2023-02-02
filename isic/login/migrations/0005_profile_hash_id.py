@@ -15,7 +15,6 @@ def gen_hashid(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('login', '0004_user_profile'),
     ]
