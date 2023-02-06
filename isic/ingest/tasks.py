@@ -83,12 +83,14 @@ def process_distinctness_measure_task(accession_pk: int):
     DistinctnessMeasure.objects.create(accession=accession, checksum=checksum)
 
 
-@shared_task(soft_time_limit=300, time_limit=600)
+@shared_task(soft_time_limit=1800, time_limit=1860)
 def update_metadata_task(user_pk: int, metadata_file_pk: int):
     metadata_file = MetadataFile.objects.get(pk=metadata_file_pk)
     user = User.objects.get(pk=user_pk)
 
     with transaction.atomic():
+        # TODO: consider chunking in the future since large CSVs generate a lot of
+        # database traffic.
         for _, row in metadata_file.to_df().iterrows():
             accession = Accession.objects.get(
                 original_blob_name=row["filename"], cohort=metadata_file.cohort
