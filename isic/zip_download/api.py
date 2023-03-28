@@ -1,6 +1,7 @@
 from collections import Counter
 import csv
 from datetime import timedelta
+import logging
 from typing import Iterable
 
 from django.conf import settings
@@ -19,6 +20,8 @@ from isic.core.models.image import Image
 from isic.core.serializers import SearchQuerySerializer
 from isic.core.services import _image_metadata_csv_headers, image_metadata_csv_rows
 from isic.zip_download.serializers import ZipFileDescriptorSerializer
+
+logger = logging.getLogger(__name__)
 
 
 # this is directly mirrored in isic-cli
@@ -69,6 +72,11 @@ def zip_file_descriptor(request):
     download_info = get_zip_download_token(token)
     serializer = SearchQuerySerializer.from_token_representation(download_info)
     serializer.is_valid(raise_exception=True)
+
+    logger.info(
+        f"Creating zip file descriptor for {serializer.to_queryset().count()} images",
+        extra={"download_info": download_info},
+    )
 
     descriptor = {
         "suggestedFilename": "isic-data.zip",
