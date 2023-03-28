@@ -1,6 +1,7 @@
 from collections import Counter
 import csv
 from datetime import timedelta
+import json
 import logging
 from typing import Iterable
 
@@ -68,8 +69,8 @@ def zip_file_descriptor(request):
     serializer.is_valid(raise_exception=True)
 
     logger.info(
-        f"Creating zip file descriptor for {serializer.to_queryset().count()} images",
-        extra={"download_info": download_info},
+        f"Creating zip file descriptor for {serializer.to_queryset().count()} images: "
+        f"{json.dumps(download_info)}"
     )
 
     descriptor = {
