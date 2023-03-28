@@ -10,7 +10,6 @@ from django.core.signing import BadSignature, TimestampSigner
 from django.http.response import HttpResponse, JsonResponse
 from django.urls.base import reverse
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny
@@ -53,11 +52,6 @@ def get_zip_download_token(token: str | None = None) -> dict:
 def create_zip_download_url(request):
     serializer = SearchQuerySerializer(data=request.data, context={"user": request.user})
     serializer.is_valid(raise_exception=True)
-
-    if serializer.to_queryset().count() > 1_000:
-        raise serializers.ValidationError(
-            "Only a maximum of 1,000 images can be downloaded per zip."
-        )
 
     token = TimestampSigner().sign_object(serializer.to_token_representation())
 
