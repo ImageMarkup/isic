@@ -111,7 +111,7 @@ class SearchQuerySerializer(serializers.Serializer):
 
     @classmethod
     def from_token_representation(cls, token):
-        user = token.pop("user")
+        user = token.get("user")
         if user:
             user = get_object_or_404(User, pk=user)
         else:

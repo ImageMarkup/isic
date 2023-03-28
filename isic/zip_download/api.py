@@ -1,6 +1,7 @@
 from collections import Counter
 import csv
 from datetime import timedelta
+import json
 import logging
 from typing import Iterable
 
@@ -10,7 +11,6 @@ from django.core.signing import BadSignature, TimestampSigner
 from django.http.response import HttpResponse, JsonResponse
 from django.urls.base import reverse
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny
@@ -54,11 +54,6 @@ def create_zip_download_url(request):
     serializer = SearchQuerySerializer(data=request.data, context={"user": request.user})
     serializer.is_valid(raise_exception=True)
 
-    if serializer.to_queryset().count() > 1_000:
-        raise serializers.ValidationError(
-            "Only a maximum of 1,000 images can be downloaded per zip."
-        )
-
     token = TimestampSigner().sign_object(serializer.to_token_representation())
 
     return Response(f"{settings.ZIP_DOWNLOAD_SERVICE_URL}/download?zsid={token}")
@@ -74,8 +69,8 @@ def zip_file_descriptor(request):
     serializer.is_valid(raise_exception=True)
 
     logger.info(
-        f"Creating zip file descriptor for {serializer.to_queryset().count()} images",
-        extra={"download_info": download_info},
+        f"Creating zip file descriptor for {serializer.to_queryset().count()} images: "
+        f"{json.dumps(download_info)}"
     )
 
     descriptor = {
