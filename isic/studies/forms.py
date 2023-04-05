@@ -108,3 +108,10 @@ class CustomQuestionForm(forms.Form):
     def clean_choices(self) -> list[str]:
         value: str = self.cleaned_data["choices"]
         return [s.strip() for s in value.splitlines()]
+
+
+class StudyEditForm(forms.Form):
+    fields = forms.fields_for_model(Study)
+
+    name = fields["name"]
+    description = fields["description"]
