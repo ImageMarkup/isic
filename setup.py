@@ -43,7 +43,7 @@ setup(
     install_requires=[
         "celery",
         "deepdiff",
-        "django",
+        "django<4.2",
         "django-allauth",
         "django-click",
         "django-configurations[database,email]",
