@@ -92,6 +92,25 @@
       }
     </script>
 
+    <script type="text/javascript">
+      function downloadAsZip(params) {
+        params = params || Object.fromEntries((new URL(document.location)).searchParams);
+        console.log(params);
+
+        axios.post('/api/v2/zip-download/url/', params, {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+          }
+        }).then((resp) => {
+          window.location.href = resp.data;
+        }).catch(function(error) {
+          alert('Something went wrong, try again.');
+          console.error(error);
+        });
+      }
+    </script>
+
     {% block head_extra %}{% endblock %}
   </head>
 
