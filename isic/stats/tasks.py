@@ -204,6 +204,13 @@ def process_s3_log_file_task(s3_log_object_key: str):
             filter(lambda r: r["status"] == 200, _cdn_access_log_records(s3, s3_log_object_key)),
             1_000,
         ):
+            # if any request_id has already been processed, it means the entire file has been.
+            # this means the task is being executed again, and should avoid processing log files
+            # but needs to delete the log file from s3.
+            if ImageDownload.objects.filter(request_id=download_logs[0]["request_id"]).exists():
+                logger.info("Skipping already processed log file %s", s3_log_object_key)
+                break
+
             downloaded_paths_to_image_id: dict[str, int] = dict(
                 Image.objects.filter(
                     accession__blob__in=[download_log["path"] for download_log in download_logs]
