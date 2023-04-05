@@ -39,21 +39,6 @@ function imageBrowser() {
     },
     copyIsicCliDownloadCommand() {
       navigator.clipboard.writeText(this.isicCliDownloadCommand());
-    },
-    downloadAsZip() {
-      const params = (new URL(document.location)).searchParams;
-
-      axios.post('/api/v2/zip-download/url/', Object.fromEntries(params), {
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': '{{ csrf_token }}'
-        }
-      }).then((resp) => {
-        window.location.href = resp.data;
-      }).catch(function(error) {
-        alert('Something went wrong, try again.');
-        console.error(error);
-      });
     }
   }
 }

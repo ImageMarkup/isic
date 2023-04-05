@@ -99,6 +99,8 @@ class SearchQuerySerializer(serializers.Serializer):
 
     def to_token_representation(self):
         assert self.is_valid()
+        # it's important that user always be generated on the server side and not be passed
+        # in as data to the serializer.
         user = None
         if "user" in self.context:
             user = self.context["user"].pk
