@@ -117,6 +117,28 @@ def test_study_list_objects_annotator_permissions(
         [lazy_fixture("staff_client"), 200],
     ],
 )
+def test_study_edit_public_permissions(client_, status, private_study):
+    r = client_.get(reverse("study-edit", args=[private_study.pk]))
+    assert r.status_code == status
+
+
+@pytest.mark.django_db
+def test_study_edit_creator_permissions(authenticated_client, private_study):
+    for owner in private_study.owners.all():
+        authenticated_client.force_login(owner)
+        r = authenticated_client.get(reverse("study-edit", args=[private_study.pk]))
+        assert r.status_code == 200
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "client_,status",
+    [
+        [lazy_fixture("client"), 302],
+        [lazy_fixture("authenticated_client"), 403],
+        [lazy_fixture("staff_client"), 200],
+    ],
+)
 def test_study_detail_objects_public_permissions(client_, status, private_study):
     r = client_.get(reverse("study-detail", args=[private_study.pk]))
     assert r.status_code == status

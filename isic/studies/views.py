@@ -5,6 +5,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
 from django.contrib.postgres.aggregates.general import ArrayAgg
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count
@@ -25,9 +26,11 @@ from isic.studies.forms import (
     BaseStudyForm,
     CustomQuestionForm,
     OfficialQuestionForm,
+    StudyEditForm,
     StudyTaskForm,
 )
 from isic.studies.models import Annotation, Markup, Question, QuestionChoice, Study, StudyTask
+from isic.studies.services import study_update
 from isic.studies.tasks import populate_study_tasks_task
 
 
@@ -145,6 +148,24 @@ def study_create(request):
     )
 
 
+@needs_object_permission("studies.edit_study", (Study, "pk", "pk"))
+def study_edit(request, pk):
+    study = get_object_or_404(Study, pk=pk)
+    form = StudyEditForm(
+        request.POST or {key: getattr(study, key) for key in ["name", "description"]}
+    )
+
+    if request.method == "POST" and form.is_valid():
+        try:
+            study_update(study=study, **form.cleaned_data)
+        except ValidationError as e:
+            messages.add_message(request, messages.ERROR, e.message)
+        else:
+            return HttpResponseRedirect(reverse("study-detail", args=[study.pk]))
+
+    return render(request, "studies/study_edit.html", {"form": form, "study": study})
+
+
 @staff_member_required
 def view_mask(request, markup_id):
     markup = get_object_or_404(Markup.objects.values("mask"), pk=markup_id)
@@ -169,7 +190,7 @@ def annotation_detail(request, pk):
 
 @needs_object_permission("studies.view_study", (Study, "pk", "pk"))
 def study_detail(request, pk):
-    ctx = {}
+    ctx = {"can_edit": request.user.has_perm("studies.edit_study", Study(pk=pk))}
     ctx["study"] = get_object_or_404(
         Study.objects.annotate(
             num_annotators=Count("tasks__annotator", distinct=True),
