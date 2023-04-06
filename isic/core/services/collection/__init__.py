@@ -7,7 +7,7 @@ from django.db import transaction
 from django.db.models.aggregates import Count
 from django.db.models.query_utils import Q
 
-from isic.core.models.collection import Collection
+from isic.core.models.collection import Collection, CollectionShare
 from isic.core.models.doi import Doi
 from isic.core.services.collection.image import collection_add_images
 from isic.studies.models import Study
@@ -39,7 +39,7 @@ def collection_update(collection: Collection, ignore_lock: bool = False, **field
 
     collection.full_clean()
 
-    return collection.save(update_fields=fields)
+    return collection.save()
 
 
 def collection_lock(*, collection: Collection) -> None:
@@ -95,12 +95,14 @@ def collection_merge(
         raise ValidationError("Collections with derived studies cannot be merged.")
     elif Doi.objects.filter(from_collection_filter).exists():
         raise ValidationError("Collections with DOIs cannot be merged.")
-
-    # TODO: collection shares will need to be handled
+    elif CollectionShare.objects.filter(from_collection_filter).exists():
+        # TODO: This should be allowed, but requires some additional logic
+        raise ValidationError("Collections with shares cannot be merged.")
 
     with transaction.atomic():
         for collection in other_collections:
-            if collection.cohort and collection.cohort != dest_collection.cohort:
+            # TODO: support dest_collection missing a cohort
+            if hasattr(collection, "cohort") and collection.cohort != dest_collection.cohort:
                 logger.warning(f"Abandoning cohort {collection.cohort.pk}")
 
             for field in ["creator", "name", "description", "public", "pinned", "doi", "locked"]:
@@ -111,9 +113,6 @@ def collection_merge(
                         f"Different value for {field}: {dest_collection_value}(dest) vs {collection_value}"  # noqa: E501
                     )
 
-            collection_update(
-                collection=collection, cohort=dest_collection.cohort, ignore_lock=True
-            )
             collection_add_images(
                 collection=dest_collection, qs=collection.images.all(), ignore_lock=True
             )
