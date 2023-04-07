@@ -1,5 +1,4 @@
 from django.contrib import admin
-from django.db.models.expressions import F
 
 from isic.core.admin import StaffReadonlyAdmin
 from isic.stats.models import ImageDownload
@@ -36,9 +35,11 @@ class ImageDownloadAdmin(StaffReadonlyAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        qs = qs.annotate(isic_id=F("image__isic_id"))
+        # .annotate adds a join to the COUNT query which slows down the whole page.
+        # .select_related only adds a join to the data selection query.
+        qs = qs.select_related("image")
         return qs
 
     @admin.display(ordering="isic_id")
     def isic_id(self, obj: ImageDownload):
-        return obj.isic_id
+        return obj.image.isic_id
