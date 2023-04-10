@@ -42,6 +42,7 @@ class FeatureInline(ReadonlyTabularInline):
 
 class QuestionInline(ReadonlyTabularInline):
     model = Study.questions.through
+    autocomplete_fields = ["question"]
 
 
 class MarkupInline(ReadonlyInlineMixin, nested_admin.NestedTabularInline):
@@ -150,6 +151,8 @@ class StudyAdmin(StaffReadonlyAdmin):
 
     exclude = ["questions", "features"]
     inlines = [QuestionInline, FeatureInline]
+
+    autocomplete_fields = ["creator", "owners", "collection"]
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
