@@ -1,4 +1,4 @@
-FROM node:current-alpine
+FROM node:16.20-alpine
 
 # "@parcel/watcher" requires "node-gyp", which requires Python to build for some architectures
 RUN apk update && apk add g++ make python3
