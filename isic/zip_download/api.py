@@ -8,18 +8,19 @@ from typing import Iterable
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.signing import BadSignature, TimestampSigner
-from django.http.response import HttpResponse, JsonResponse
+from django.http.response import HttpResponse
 from django.urls.base import reverse
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from isic.core.models.image import Image
 from isic.core.serializers import SearchQuerySerializer
 from isic.core.services import _image_metadata_csv_headers, image_metadata_csv_rows
-from isic.zip_download.serializers import ZipFileDescriptorSerializer
+from isic.zip_download.serializers import ZipFileEntrySerializer
 
 logger = logging.getLogger(__name__)
 
@@ -62,20 +63,31 @@ def create_zip_download_url(request):
 @swagger_auto_schema(methods=["GET"], auto_schema=None)
 @api_view(["GET"])
 @permission_classes([AllowAny])
-def zip_file_descriptor(request):
+def zip_file_listing(request):
     token = request.query_params.get("token")
     download_info = get_zip_download_token(token)
     serializer = SearchQuerySerializer.from_token_representation(download_info)
     serializer.is_valid(raise_exception=True)
+    qs = serializer.to_queryset(Image.objects.select_related("accession"))
 
-    logger.info(
-        f"Creating zip file descriptor for {serializer.to_queryset().count()} images: "
-        f"{json.dumps(download_info)}"
-    )
+    paginator = CursorPagination()
+    # confusingly, the first page will have a page size of paginator.page_size + 2.
+    # this is because the first page will have the metadata and attribution files and
+    # it's easier to just include them in the first page than to try to override
+    # the paginator's behavior.
+    paginator.page_size = 100
+    page = paginator.paginate_queryset(qs, request) or []
 
-    descriptor = {
-        "suggestedFilename": "isic-data.zip",
-        "files": [
+    files = []
+
+    # initialize files with metadata and attribution files
+    if not paginator.has_previous:
+        logger.info(
+            f"Creating zip file descriptor for {serializer.to_queryset().count()} images: "
+            f"{json.dumps(download_info)}"
+        )
+
+        files = [
             {
                 "url": f"http://{Site.objects.get_current().domain}"
                 + reverse("zip-download/api/metadata-file")
@@ -88,18 +100,12 @@ def zip_file_descriptor(request):
                 + f"?token={token}",
                 "zipPath": "attribution.txt",
             },
-        ],
-    }
+        ]
 
-    qs = serializer.to_queryset(Image.objects.select_related("accession"))
-    for image in qs.iterator():
-        descriptor["files"].append(
-            {
-                "url": image.accession.blob.url,
-                "zipPath": f"{image.isic_id}.JPG",
-            }
-        )
-    return JsonResponse(ZipFileDescriptorSerializer(descriptor).data)
+    for image in page:
+        files.append({"url": image.accession.blob.url, "zipPath": f"{image.isic_id}.JPG"})
+
+    return paginator.get_paginated_response(ZipFileEntrySerializer(files, many=True).data)
 
 
 @swagger_auto_schema(methods=["GET"], auto_schema=None)
