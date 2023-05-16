@@ -37,6 +37,7 @@ def cohort_list(request):
                         "attribution": attribution,
                         "display_attribution": display_attribution,
                         "cohort": cohort,
+                        "num_accessions": cohort.accessions.count(),
                     }
                 )
                 display_contributor = display_attribution = False
