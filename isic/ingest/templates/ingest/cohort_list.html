@@ -4,15 +4,21 @@
 
 
 {% block content %}
-<div class="heading-1">Cohorts</div>
+  <div class="flex justify-between">
+    <div class="heading-1">Cohorts</div>
+    {% include 'ingest/partials/cohort_list_actions.html' %}
+  </div>
+
 
 <div class="mt-4 overflow-x-auto">
-    <table class="table table-compact table-fixed w-full">
+    <table class="table table-compact table-zebra w-full">
         <thead>
             <tr>
                 <th>Contributor</th>
                 <th>Attribution</th>
                 <th>Cohort</th>
+                <th>License</th>
+                <th># of Accessions</th>
             </tr>
         </thead>
         <tbody>
@@ -21,6 +27,8 @@
                 <td>{% if row.display_contributor %}{{ row.contributor.institution_name }}{% endif %}</td>
                 <td>{% if row.display_attribution %}{{ row.cohort.attribution }}{% endif %}</td>
                 <td><a href="{% url 'cohort-detail' row.cohort.id %}">{{ row.cohort.name }}</a></td>
+                <td>{{ row.cohort.copyright_license }}</td>
+                <td>{{ row.cohort.accessions.count|intcomma }}</td>
             </tr>
             {% endfor %}
         </tbody>
