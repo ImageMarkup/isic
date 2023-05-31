@@ -40,6 +40,40 @@ def collection_add_images(
             )
 
 
+def collection_move_images(
+    *,
+    src_collection: Collection,
+    dest_collection: Collection,
+    ignore_lock: bool = False,
+):
+    """
+    Move images from one collection to another.
+
+    This is effectively the same as removing images from one collection and adding them to
+    another, but it's more efficient and does all of the correct safety checks.
+    """
+    if not ignore_lock:
+        if src_collection.locked or dest_collection.locked:
+            raise ValidationError("Can't move images to/from a locked collection.")
+
+    if dest_collection.public and src_collection.images.private().exists():
+        raise ValidationError("Can't move private images to a public collection.")
+
+    with transaction.atomic():
+        CollectionImageM2M = Collection.images.through
+
+        # first remove the images from the source collection that are already in the
+        # destination collection to avoid unique constraint violations.
+        CollectionImageM2M.objects.filter(
+            collection=src_collection, image__in=dest_collection.images.all()
+        ).delete()
+
+        # migrate the remaining images to point to the destination collection
+        CollectionImageM2M.objects.filter(
+            collection=src_collection, image__in=src_collection.images.all()
+        ).exclude(image__in=dest_collection.images.all()).update(collection=dest_collection)
+
+
 def collection_remove_images(
     *,
     collection: Collection,
