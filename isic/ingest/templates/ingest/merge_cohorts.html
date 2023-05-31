@@ -1,0 +1,88 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+{% load accession %}
+
+{% block content %}
+  <div class="flex justify-between">
+    <div class="heading-1">Merge Cohorts</div>
+  </div>
+
+  <div>
+    <form method="POST">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      {{ form.cohort.errors }}
+      {{ form.cohort }}
+      {% comment %}
+      trying to refactor this into an include was difficult because django doesn't allow dynamic
+      code in templates e.g. request.POST.autocomplete_for_$fieldname
+      {% endcomment %}
+      {{ form.cohort.label }}
+      <div x-data="autocompleteInput('{% url 'cohort-autocomplete' %}', '{{ form.cohort.html_name }}', '{{ request.POST.autocomplete_cohort }}')">
+        <input name="autocomplete_cohort" class="input input-sm input-bordered input-primary w-full max-w-xs" x-model="input_value" @input_value.debounce.250ms="fetchResults" />
+
+        {% include 'ingest/partials/merge_cohort_preview.html' %}
+      </div>
+
+      {{ form.cohort_to_merge.errors }}
+      {{ form.cohort_to_merge }}
+      {{ form.cohort_to_merge.label }}
+      <div>
+        The attributes from this Cohort will be merged into the base Cohort.
+        All accessions from this Cohort will be added to the base Cohort.
+      </div>
+      <div x-data="autocompleteInput('{% url 'cohort-autocomplete' %}', '{{ form.cohort_to_merge.html_name }}', '{{ request.POST.autocomplete_cohort_to_merge }}')">
+        <input name="autocomplete_cohort_to_merge" class="input input-sm input-bordered input-primary w-full max-w-xs" x-model="input_value" @input_value.debounce.250ms="fetchResults" />
+
+        {% include 'ingest/partials/merge_cohort_preview.html' %}
+      </div>
+
+      <button type="submit" class="btn btn-primary">Merge Cohorts</button>
+    </form>
+  </div>
+
+
+<script>
+    function autocompleteInput(endpoint, for_input, default_input_value = '') {
+        return {
+          // the hidden input field that will be populated with the id of the selected item
+          for_input: for_input,
+          // the string version of the selected item
+          input_value: default_input_value,
+          // the list of results returned by the autocomplete endpoint
+          results: [],
+          // the preview of the selected item
+          resultPreview: null,
+
+          async init() {
+            // preselect item if the hidden input has a value so that previews
+            // get reloaded on page refresh
+            if (document.getElementsByName(this.for_input)[0].value) {
+              const response = await fetch(`/api/v2/cohorts/${document.getElementsByName(this.for_input)[0].value}/`);
+              this.resultPreview = await response.json();
+            }
+          },
+
+          async fetchResults() {
+            if (this.input_value.length < 3) {
+              this.results = [];
+              return;
+            }
+
+            const response = await fetch(endpoint + '?query=' + this.input_value);
+            this.results = await response.json();
+          },
+
+          async select(item) {
+            this.input_value = item.name;
+            document.getElementsByName(this.for_input)[0].value = item.id;
+            this.results = [];
+            const response = await fetch(`/api/v2/cohorts/${item.id}/`);
+            this.resultPreview = await response.json();
+          },
+        };
+    }
+</script>
+
+{% endblock %}

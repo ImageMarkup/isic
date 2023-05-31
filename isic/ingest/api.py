@@ -1,18 +1,18 @@
 import os
 
-from django.http.response import HttpResponse
+from django.http.response import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import mixins, serializers, status, viewsets
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.fields import FileField as FileSerializerField
-from rest_framework.permissions import BasePermission, IsAdminUser
+from rest_framework.permissions import AllowAny, BasePermission, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from s3_file_field.widgets import S3PlaceholderFile
 
-from isic.core.permissions import IsicObjectPermissionsFilter
+from isic.core.permissions import IsicObjectPermissionsFilter, get_visible_objects
 from isic.ingest.models import Accession, MetadataFile
 from isic.ingest.models.cohort import Cohort
 from isic.ingest.models.contributor import Contributor
@@ -160,3 +160,24 @@ class MetadataFileViewSet(
         metadata_file = self.get_object()
         update_metadata_task.delay(request.user.pk, metadata_file.pk)
         return Response(status=status.HTTP_202_ACCEPTED)
+
+
+class CohortAutocompleteSerializer(serializers.Serializer):
+    query = serializers.CharField(required=True, min_length=3)
+
+
+@swagger_auto_schema(methods=["GET"], auto_schema=None)
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def cohort_autocomplete(request):
+    serializer = CohortAutocompleteSerializer(data=request.query_params)
+    serializer.is_valid(raise_exception=True)
+    cohorts = get_visible_objects(
+        request.user,
+        "ingest.view_cohort",
+        Cohort.objects.filter(name__icontains=serializer.validated_data["query"]),
+    )
+    return JsonResponse(
+        CohortSerializer(cohorts[:100], many=True).data,
+        safe=False,
+    )

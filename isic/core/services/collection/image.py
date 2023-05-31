@@ -16,7 +16,8 @@ def collection_add_images(
     image: Image = None,
     ignore_lock: bool = False,
 ):
-    assert qs or image, "qs and image are mutually exclusive arguments."
+    # is not None is necessary because qs could be an empty queryset
+    assert qs is not None or image is not None, "qs and image are mutually exclusive arguments."
 
     if image:
         qs = Image.objects.filter(pk=image.pk)
@@ -81,7 +82,8 @@ def collection_remove_images(
     image: Image = None,
     ignore_lock: bool = False,
 ):
-    assert qs or image, "qs and image are mutually exclusive arguments."
+    # is not None is necessary because qs could be an empty queryset
+    assert qs is not None or image is not None, "qs and image are mutually exclusive arguments."
 
     if image:
         qs = Image.objects.filter(pk=image.pk)
