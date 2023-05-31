@@ -1,7 +1,9 @@
+from django.core.exceptions import ValidationError
 from django.urls.base import reverse
 import pytest
 
 from isic.core.models.collection import Collection
+from isic.core.services.collection.image import collection_move_images
 
 
 @pytest.fixture
@@ -93,3 +95,56 @@ def test_collection_metadata_download_private_images(
         "copyright_license": image.accession.cohort.copyright_license,
         "age_approx": image.accession.age_approx,
     }
+
+
+@pytest.mark.django_db
+def test_collection_move_images(collection_factory, image_factory):
+    collection_src, collection_dest = collection_factory(public=True), collection_factory(
+        public=True
+    )
+    image = image_factory(public=True)
+    collection_src.images.add(image)
+
+    collection_move_images(src_collection=collection_src, dest_collection=collection_dest)
+
+    assert collection_src.images.count() == 0
+    assert collection_dest.images.count() == 1
+
+
+@pytest.mark.django_db
+def test_collection_move_images_locked_collection(collection_factory, image_factory):
+    collection_src, collection_dest = collection_factory(public=True), collection_factory(
+        public=True, locked=True
+    )
+    image = image_factory(public=True)
+    collection_src.images.add(image)
+
+    with pytest.raises(ValidationError, match="locked collection"):
+        collection_move_images(src_collection=collection_src, dest_collection=collection_dest)
+
+
+@pytest.mark.django_db
+def test_collection_move_images_private_to_public(collection_factory, image_factory):
+    collection_src, collection_dest = collection_factory(public=False), collection_factory(
+        public=True
+    )
+    image = image_factory(public=False)
+    collection_src.images.add(image)
+
+    with pytest.raises(ValidationError, match="private images"):
+        collection_move_images(src_collection=collection_src, dest_collection=collection_dest)
+
+
+@pytest.mark.django_db
+def test_collection_move_images_already_exist_in_collection(collection_factory, image_factory):
+    collection_src, collection_dest = collection_factory(public=True), collection_factory(
+        public=True
+    )
+    image = image_factory(public=True)
+    collection_src.images.add(image)
+    collection_dest.images.add(image)
+
+    collection_move_images(src_collection=collection_src, dest_collection=collection_dest)
+
+    assert collection_src.images.count() == 0
+    assert collection_dest.images.count() == 1
