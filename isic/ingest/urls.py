@@ -1,6 +1,6 @@
 from django.urls import include, path
 
-from isic.ingest.api import AccessionCreateApi, AccessionCreateReviewBulkApi
+from isic.ingest.api import AccessionCreateApi, AccessionCreateReviewBulkApi, cohort_autocomplete
 import isic.ingest.views.cohort as cohort_views
 import isic.ingest.views.metadata as metadata_views
 import isic.ingest.views.review as review_views
@@ -14,6 +14,7 @@ accession_api_patterns = [
 
 urlpatterns = [
     path("api/v2/accessions/", include((accession_api_patterns, "accessions"))),
+    path("api/v2/autocomplete/cohort/", cohort_autocomplete, name="cohort-autocomplete"),
     path(
         "upload/select-or-create-contributor/",
         upload_views.select_or_create_contributor,
@@ -54,6 +55,7 @@ urlpatterns = [
     path("upload/<int:pk>/publish/", cohort_views.publish_cohort, name="upload/cohort-publish"),
     # Staff pages
     path("staff/cohorts/", cohort_views.cohort_list, name="cohort-list"),
+    path("staff/merge-cohorts/", cohort_views.merge_cohorts, name="merge-cohorts"),
     path("staff/ingest-review/", review_views.ingest_review, name="ingest-review"),
     path("staff/ingest-review/<int:pk>/", cohort_views.cohort_detail, name="cohort-detail"),
     path(

@@ -9,7 +9,7 @@ from django.db.models.query_utils import Q
 
 from isic.core.models.collection import Collection, CollectionShare
 from isic.core.models.doi import Doi
-from isic.core.services.collection.image import collection_add_images
+from isic.core.services.collection.image import collection_move_images
 from isic.studies.models import Study
 
 logger = logging.getLogger(__name__)
@@ -79,11 +79,11 @@ def collection_get_creators_in_attribution_order(*, collection: Collection) -> l
     return creators
 
 
-def collection_merge(
+def collection_merge_magic_collections(
     *, dest_collection: Collection, other_collections: Iterable[Collection]
 ) -> None:
     """
-    Merge one or more collections into dest_collection.
+    Merge one or more magic collections into a magical dest_collection.
 
     Note that this method should almost always be used with cohort_merge. Merging
     collections or cohorts with relationships to the other would put the system in
@@ -96,8 +96,18 @@ def collection_merge(
     elif Doi.objects.filter(from_collection_filter).exists():
         raise ValidationError("Collections with DOIs cannot be merged.")
     elif CollectionShare.objects.filter(from_collection_filter).exists():
-        # TODO: This should be allowed, but requires some additional logic
+        # TODO: This should be allowed, but might require some additional logic. I'm not sure it's
+        # clear that merging collection B into A should grant the same shares to A.
         raise ValidationError("Collections with shares cannot be merged.")
+    elif (
+        Collection.objects.filter(
+            id__in=[dest_collection.id] + [collection.id for collection in other_collections]
+        )
+        .regular()
+        .exists()
+    ):
+        # Regular means non-magic collections
+        raise ValidationError("Regular collections cannot be merged.")
 
     with transaction.atomic():
         for collection in other_collections:
@@ -105,7 +115,7 @@ def collection_merge(
             if hasattr(collection, "cohort") and collection.cohort != dest_collection.cohort:
                 logger.warning(f"Abandoning cohort {collection.cohort.pk}")
 
-            for field in ["creator", "name", "description", "public", "pinned", "doi", "locked"]:
+            for field in ["public", "pinned", "doi", "locked"]:
                 dest_collection_value = getattr(dest_collection, field)
                 collection_value = getattr(collection, field)
                 if dest_collection_value != collection_value:
@@ -113,7 +123,7 @@ def collection_merge(
                         f"Different value for {field}: {dest_collection_value}(dest) vs {collection_value}"  # noqa: E501
                     )
 
-            collection_add_images(
-                collection=dest_collection, qs=collection.images.all(), ignore_lock=True
+            collection_move_images(
+                src_collection=collection, dest_collection=dest_collection, ignore_lock=True
             )
             collection_delete(collection=collection, ignore_lock=True)
