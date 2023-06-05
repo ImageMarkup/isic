@@ -142,7 +142,6 @@ class IsicMixin(ConfigMixin):
     ISIC_DATACITE_USERNAME = values.Value(None)
     ISIC_DATACITE_PASSWORD = values.SecretValue(None)
     ISIC_GOOGLE_ANALYTICS_VIEW_IDS = [
-        "110224626",  # ISIC Girder
         "183845203",  # ISIC Gallery
         "217814783",  # ISIC Challenge 2020
         "199577101",  # ISIC Challenge
