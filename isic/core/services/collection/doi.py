@@ -73,6 +73,8 @@ def collection_check_create_doi_allowed(*, user: User, collection: Collection) -
         raise ValidationError("This collection contains private images.")
     elif not collection.images.exists():
         raise ValidationError("An empty collection cannot be the basis of a DOI.")
+    elif collection.is_magic:
+        raise ValidationError("Magic collections cannot be the basis of a DOI.")
 
 
 def _datacite_create_doi(doi: dict) -> None:
