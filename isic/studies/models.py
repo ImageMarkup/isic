@@ -145,7 +145,9 @@ class Study(TimeStampedModel):
     attribution = models.CharField(max_length=200)
 
     name = models.CharField(max_length=100, unique=True, help_text="The name for your Study.")
-    description = models.TextField(help_text="A description of the methodology behind your Study.")
+    description = models.TextField(
+        help_text="A description of the methodology behind your Study.", blank=True
+    )
 
     # TODO: refactor code to get images from here instead of inspecting study tasks
     collection = models.ForeignKey(
