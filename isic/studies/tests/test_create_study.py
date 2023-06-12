@@ -42,6 +42,10 @@ def test_create_study(
         )
     assert Study.objects.count() == 1
     study = Study.objects.first()
+    assert study.name == "foobar"
+    assert study.description == "-"
+    assert study.collection == collection
+    assert study.attribution == "some institution"
     assert not study.public
     assert study.questions.count() == 2
     assert study.tasks.count() == 10

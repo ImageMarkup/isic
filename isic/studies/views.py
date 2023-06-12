@@ -30,7 +30,7 @@ from isic.studies.forms import (
     StudyTaskForm,
 )
 from isic.studies.models import Annotation, Markup, Question, QuestionChoice, Study, StudyTask
-from isic.studies.services import study_update
+from isic.studies.services import study_create, study_update
 from isic.studies.tasks import populate_study_tasks_task
 
 
@@ -85,7 +85,7 @@ def study_list(request):
 
 @login_required
 @transaction.atomic()
-def study_create(request):
+def study_create_view(request):
     OfficialQuestionFormSet = formset_factory(OfficialQuestionForm, extra=0)
     CustomQuestionFormSet = formset_factory(CustomQuestionForm, extra=0)
 
@@ -103,8 +103,15 @@ def study_create(request):
             and custom_question_formset.is_valid()
             and official_question_formset.is_valid()
         ):
-            base_form.instance.creator = request.user
-            study = base_form.save()
+            study = study_create(
+                creator=request.user,
+                owners=[request.user],
+                attribution=base_form.cleaned_data["attribution"],
+                name=base_form.cleaned_data["name"],
+                description=base_form.cleaned_data["description"],
+                collection=base_form.cleaned_data["collection"],
+                public=base_form.cleaned_data["public"],
+            )
 
             for question in official_question_formset.cleaned_data:
                 study.questions.add(
