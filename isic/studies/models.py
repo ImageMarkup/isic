@@ -188,6 +188,13 @@ class Study(TimeStampedModel):
         for response in Response.objects.filter(annotation__study=self).for_display():
             writer.writerow({field: response[field] for field in fieldnames})
 
+    def clean(self):
+        if self.public and not self.collection.public:
+            raise ValidationError("Can't make a study public with a private collection.")
+
+        if self.collection.is_magic:
+            raise ValidationError("Can't make a study from a magic collection.")
+
 
 class StudyQuestion(models.Model):
     class Meta:

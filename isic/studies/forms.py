@@ -1,7 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from django.db import transaction
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 
@@ -29,17 +28,14 @@ class StudyTaskForm(forms.Form):
             self.fields[str(question.pk)] = question.to_form_field(question.required)
 
 
-class BaseStudyForm(forms.ModelForm):
-    class Meta:
-        model = Study
-        fields = [
-            "name",
-            "description",
-            "attribution",
-            "collection",
-            "annotators",
-            "public",
-        ]
+class BaseStudyForm(forms.Form):
+    fields = forms.fields_for_model(Study)
+
+    name = fields["name"]
+    description = fields["description"]
+    attribution = fields["attribution"]
+    collection = fields["collection"]
+    public = fields["public"]
 
     def __init__(self, *args, **kwargs):
         collections = kwargs.pop("collections")
@@ -75,22 +71,6 @@ class BaseStudyForm(forms.ModelForm):
             raise ValidationError("You don't have access to create a study for that collection.")
 
         return value
-
-    def clean(self):
-        cleaned_data = super().clean()
-        if cleaned_data["public"] and not cleaned_data["collection"].public:
-            # TODO: validate this at the model layer
-            raise ValidationError("Can't create a public study for a private collection.")
-
-        return cleaned_data
-
-    def save(self, commit=True):
-        with transaction.atomic():
-            if not self.cleaned_data["collection"].locked:
-                self.cleaned_data["collection"].locked = True
-                self.cleaned_data["collection"].save(update_fields=["locked"])
-
-            return super().save(commit=commit)
 
 
 class OfficialQuestionForm(forms.Form):
