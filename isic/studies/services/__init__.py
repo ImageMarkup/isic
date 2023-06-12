@@ -1,16 +1,10 @@
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models.query import QuerySet
 
 from isic.core.models.collection import Collection
 from isic.core.services.collection import collection_lock
 from isic.studies.models import Study, StudyTask
-
-
-def _validate_study(*, study: Study) -> None:
-    if study.public and not study.collection.public:
-        raise ValidationError("Can't make a study public with a private collection.")
 
 
 def study_create(
@@ -33,8 +27,6 @@ def study_create(
     )
     study.full_clean()
 
-    _validate_study(study=study)
-
     with transaction.atomic():
         study.save()
         study.owners.set(owners)
@@ -48,8 +40,6 @@ def study_update(*, study: Study, **fields):
         setattr(study, field, value)
 
     study.full_clean()
-
-    _validate_study(study=study)
 
     return study.save()
 
