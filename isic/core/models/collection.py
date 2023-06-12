@@ -79,6 +79,11 @@ class Collection(TimeStampedModel):
         return reverse("core/collection-detail", args=[self.pk])
 
     @property
+    def is_magic(self) -> bool:
+        """Magic collections are collections pointed to by a cohort."""
+        return hasattr(self, "cohort")
+
+    @property
     def has_doi(self) -> bool:
         return self.doi is not None
 
