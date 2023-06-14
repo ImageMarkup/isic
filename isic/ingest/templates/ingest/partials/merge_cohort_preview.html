@@ -1,0 +1,19 @@
+<ul x-show="results.length > 0" class="menu bg-base-200 max-w-xs p-4 rounded-box">
+  <template x-for="result in results">
+    <li><a class="p-2" x-text="result.name" x-on:click="select(result)"></a></li>
+  </template>
+</ul>
+
+<div x-show="resultPreview">
+  <div class="my-4 bg-gray-50 p-2 rounded-sm border-gray-200 border">
+    <ul>
+      <li><span class="font-bold">Name: </span><span x-text="resultPreview.name"></span></li>
+      <li><span class="font-bold">Description: </span><span x-text="resultPreview.description"></span></li>
+      <li><span class="font-bold">Attribution: </span><span x-text="resultPreview.attribution"></span></li>
+      <li><span class="font-bold">License: </span><span x-text="resultPreview.copyright_license"></span></li>
+      <li><span class="font-bold">Accessions: </span><span x-text="new Intl.NumberFormat('en-US').format(resultPreview.accession_count)"></span></li>
+    </ul>
+  </div>
+</div>
+
+<hr class="my-4" />
