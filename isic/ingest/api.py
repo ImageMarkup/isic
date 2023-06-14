@@ -107,17 +107,13 @@ class AccessionCreateReviewBulkApi(APIView):
 
 
 @method_decorator(
-    name="create",
-    decorator=swagger_auto_schema(auto_schema=None),
-)
-@method_decorator(
     name="list", decorator=swagger_auto_schema(operation_summary="Return a list of cohorts.")
 )
 @method_decorator(
     name="retrieve",
     decorator=swagger_auto_schema(operation_summary="Retrieve a single cohort by ID."),
 )
-class CohortViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
+class CohortViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = CohortSerializer
     queryset = Cohort.objects.all()
     filter_backends = [IsicObjectPermissionsFilter]
