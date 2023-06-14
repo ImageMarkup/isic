@@ -1,5 +1,6 @@
 import os
 
+from django.db.models.aggregates import Count
 from django.http.response import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
@@ -115,7 +116,7 @@ class AccessionCreateReviewBulkApi(APIView):
 )
 class CohortViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = CohortSerializer
-    queryset = Cohort.objects.all()
+    queryset = Cohort.objects.annotate(accession_count=Count("accessions")).all()
     filter_backends = [IsicObjectPermissionsFilter]
 
 
@@ -171,7 +172,9 @@ def cohort_autocomplete(request):
     cohorts = get_visible_objects(
         request.user,
         "ingest.view_cohort",
-        Cohort.objects.filter(name__icontains=serializer.validated_data["query"]),
+        Cohort.objects.filter(name__icontains=serializer.validated_data["query"])
+        .annotate(accession_count=Count("accessions"))
+        .all(),
     )
     return JsonResponse(
         CohortSerializer(cohorts[:100], many=True).data,
