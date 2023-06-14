@@ -55,3 +55,30 @@ class SingleAccessionUploadForm(forms.Form):
     )
     image_type = choice_field_from_enum("image_type", ImageTypeEnum)
     dermoscopic_type = choice_field_from_enum("dermoscopic_type", DermoscopicTypeEnum)
+
+
+class MergeCohortForm(forms.Form):
+    cohort = forms.ModelChoiceField(
+        widget=forms.HiddenInput(),
+        queryset=Cohort.objects.all(),
+        required=True,
+        label="Cohort to merge into",
+        help_text="The selected cohort will be the one that remains after the merge.",
+    )
+    cohort_to_merge = forms.ModelChoiceField(
+        widget=forms.HiddenInput(),
+        queryset=Cohort.objects.all(),
+        required=True,
+        label="Cohort to merge",
+        help_text="The selected cohort will be deleted after the merge.",
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        cohort = cleaned_data.get("cohort")
+        cohort_to_merge = cleaned_data.get("cohort_to_merge")
+
+        if cohort and cohort_to_merge and cohort == cohort_to_merge:
+            raise forms.ValidationError("The two cohorts must be different.")
+
+        return cleaned_data

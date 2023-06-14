@@ -38,7 +38,9 @@ class CohortFactory(factory.django.DjangoModelFactory):
     creator = factory.SelfAttribute("contributor.creator")
     name = factory.Faker("sentence", nb_words=3, variable_nb_words=True)
     description = factory.Faker("paragraph")
-    copyright_license = CopyrightLicense.CC_BY
+    copyright_license = factory.Faker(
+        "random_element", elements=[e[0] for e in CopyrightLicense.choices]
+    )
     attribution = factory.Faker("sentence")
 
 

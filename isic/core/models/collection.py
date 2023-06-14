@@ -21,6 +21,13 @@ class CollectionQuerySet(models.QuerySet):
     def private(self):
         return self.filter(public=False)
 
+    def magic(self):
+        return self.exclude(cohort=None)
+
+    def regular(self):
+        # regular means not magic
+        return self.filter(cohort=None)
+
 
 class Collection(TimeStampedModel):
     """
