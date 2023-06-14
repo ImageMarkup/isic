@@ -18,8 +18,14 @@ class CohortSerializer(serializers.ModelSerializer):
             "description",
             "copyright_license",
             "attribution",
+            "accession_count",
         ]
-        read_only_fields = ["created", "creator"]
+        read_only_fields = ["created", "creator", "accession_count"]
+
+    accession_count = serializers.SerializerMethodField()
+
+    def get_accession_count(self, obj):
+        return obj.accession_count
 
     def create(self, validated_data):
         validated_data["creator"] = self.context["request"].user

@@ -6,11 +6,14 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count
 
-from isic.core.services.collection import collection_create
+from isic.core.services.collection import collection_create, collection_merge_magic_collections
 from isic.core.services.collection.image import collection_add_images
 from isic.core.services.image import image_create
 from isic.core.tasks import sync_elasticsearch_index_task
+from isic.ingest.models.accession import Accession
 from isic.ingest.models.cohort import Cohort
+from isic.ingest.models.metadata_file import MetadataFile
+from isic.ingest.models.zip_upload import ZipUpload
 
 logger = logging.getLogger(__name__)
 
@@ -48,12 +51,16 @@ def cohort_delete(*, cohort: Cohort) -> None:
     cohort.delete()
 
 
+# TODO: no doi for special collections
+# speicla collections exist why? keeping track of evolving changing cohorts
+
+
 def cohort_merge(*, dest_cohort: Cohort, other_cohorts: Iterable[Cohort]) -> None:
     """
     Merge one or more cohorts into dest_cohort.
 
-    Note that this method should almost always be used with collection_merge. Merging
-    collections or cohorts with relationships to the other would put the system in
+    Note that this method should almost always be used with collection_merge_magic_collections.
+    Merging collections or cohorts with relationships to the other would put the system in
     an unexpected state otherwise.
     """
     overlapping_blob_names = (
@@ -69,27 +76,25 @@ def cohort_merge(*, dest_cohort: Cohort, other_cohorts: Iterable[Cohort]) -> Non
         )
 
     with transaction.atomic():
+        # lock cohorts during merge
+        # TODO: This is kind of awkward because we need to lock all cohorts but only want to
+        # iterate on the other_cohorts.
+        list(
+            Cohort.objects.filter(
+                id__in=[dest_cohort.id] + [cohort.id for cohort in other_cohorts]
+            ).select_for_update()
+        )
+
         for cohort in other_cohorts:
-            for field in [
-                "creator",
-                "name",
-                "description",
-                "girder_id",
-                "copyright_license",
-                "attribution",
-            ]:
-                dest_cohort_value = getattr(dest_cohort, field)
-                cohort_value = getattr(cohort, field)
-                if dest_cohort_value != cohort_value:
-                    logger.warning(
-                        f"Different value for {field}: {dest_cohort_value}(dest) vs {cohort_value}"
-                    )
+            if dest_cohort.copyright_license != cohort.copyright_license:
+                raise ValidationError("Cannot merge cohorts with different licenses.")
 
-            dest_cohort.accessions.add(*cohort.accessions.all())
-            dest_cohort.zip_uploads.add(*cohort.zip_uploads.all())
-            dest_cohort.metadata_files.add(*cohort.metadata_files.all())
+            Accession.objects.filter(cohort=cohort).update(cohort=dest_cohort)
+            ZipUpload.objects.filter(cohort=cohort).update(cohort=dest_cohort)
+            MetadataFile.objects.filter(cohort=cohort).update(cohort=dest_cohort)
 
-            if cohort.collection and cohort.collection != dest_cohort.collection:
-                logger.warning(f"Abandoning collection {cohort.collection.pk}")
+            collection_merge_magic_collections(
+                dest_collection=dest_cohort.collection, other_collections=[cohort.collection]
+            )
 
             cohort.delete()

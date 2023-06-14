@@ -3,6 +3,7 @@ import itertools
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.humanize.templatetags.humanize import intcomma
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db.models.query import Prefetch
 from django.http import HttpResponseRedirect
@@ -10,9 +11,10 @@ from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
 from isic.core.permissions import needs_object_permission
+from isic.ingest.forms import MergeCohortForm
 from isic.ingest.models import Cohort
 from isic.ingest.models.contributor import Contributor
-from isic.ingest.services.cohort import cohort_publish_initialize
+from isic.ingest.services.cohort import cohort_merge, cohort_publish_initialize
 from isic.ingest.views import make_breadcrumbs
 
 
@@ -63,6 +65,28 @@ def cohort_detail(request, pk):
             "accessions": accessions,
             "breadcrumbs": make_breadcrumbs(cohort),
         },
+    )
+
+
+@staff_member_required
+def merge_cohorts(request):
+    form = MergeCohortForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        cohort = form.cleaned_data["cohort"]
+        cohort_to_merge = form.cleaned_data["cohort_to_merge"]
+        try:
+            cohort_merge(dest_cohort=cohort, other_cohorts=[cohort_to_merge])
+        except ValidationError as e:
+            form.add_error(None, e)
+        else:
+            messages.success(request, "Cohort merged successfully.")
+            return HttpResponseRedirect(reverse("cohort-detail", args=[cohort.pk]))
+
+    return render(
+        request,
+        "ingest/merge_cohorts.html",
+        {"form": form},
     )
 
 

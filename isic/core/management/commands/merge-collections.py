@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 import djclick as click
 
 from isic.core.models.collection import Collection
-from isic.core.services.collection import collection_merge
+from isic.core.services.collection import collection_merge_magic_collections
 
 
 @click.command()
@@ -16,7 +16,9 @@ def merge_collections(collection_id):
         collections.append(Collection.objects.get(pk=id_))
 
     try:
-        collection_merge(dest_collection=collections[0], other_collections=collections[1:])
+        collection_merge_magic_collections(
+            dest_collection=collections[0], other_collections=collections[1:]
+        )
     except ValidationError as e:
         click.secho(e.message, color="red", err=True)
         sys.exit(1)

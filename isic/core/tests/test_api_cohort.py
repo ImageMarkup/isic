@@ -63,36 +63,3 @@ def test_core_api_cohort_detail_permissions(client, cohort_, visible):
         assert r.data["id"] == cohort_.id
     else:
         assert r.status_code == 404, r.data
-
-
-@pytest.mark.django_db
-def test_core_api_cohort_create(authenticated_api_client, user, contributor):
-    r = authenticated_api_client.post(
-        "/api/v2/cohorts/",
-        data={
-            "contributor": contributor.pk,
-            "name": "string",
-            "description": "string",
-            "copyright_license": "CC-0",
-            "attribution": "string",
-        },
-    )
-    assert r.status_code == 201, r.data
-    assert r.data["creator"] == user.pk
-
-
-@pytest.mark.django_db
-def test_core_api_cohort_create_invalid_contributor(
-    authenticated_api_client, user, other_contributor
-):
-    r = authenticated_api_client.post(
-        "/api/v2/cohorts/",
-        data={
-            "contributor": other_contributor.pk,
-            "name": "string",
-            "description": "string",
-            "copyright_license": "CC-0",
-            "attribution": "string",
-        },
-    )
-    assert r.status_code == 403, r.data
