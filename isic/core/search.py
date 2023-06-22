@@ -36,10 +36,14 @@ INDEX_MAPPINGS["properties"].update(
         "created": {"type": "date"},
         "id": {"type": "integer"},
         "isic_id": {"type": "text"},
+        "copyright_license": {"type": "keyword"},
         "public": {"type": "boolean"},
         "shared_to": {"type": "integer"},
     }
 )
+
+DEFAULT_SEARCH_AGGREGATES["copyright_license"] = {"terms": {"field": "copyright_license"}}
+
 
 DEFAULT_SEARCH_AGGREGATES["age_approx"] = {
     "histogram": {
