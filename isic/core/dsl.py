@@ -103,6 +103,8 @@ def convert_term(s, loc, toks):
         return toks[0]
     elif toks[0] == "age_approx":
         return "accession__metadata__age__approx"
+    elif toks[0] == "copyright_license":
+        return "accession__cohort__copyright_license"
     else:
         return f"accession__metadata__{toks[0]}"
 
@@ -135,6 +137,8 @@ TERMS = {
     "isic_id": make_str_term("isic_id"),
     "public": make_bool_term("public"),
     "age_approx": make_number_term("age_approx"),
+    # TODO: use one_of to get this validating maybe? it's hard to get this to work with QuotedString
+    "copyright_license": make_str_term("copyright_license"),
 }
 
 for key, definition in FIELD_REGISTRY.items():
