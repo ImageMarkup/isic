@@ -27,7 +27,7 @@ class ImageQuerySet(models.QuerySet):
             return self.filter(parse_query(query))
 
     def with_elasticsearch_properties(self):
-        return self.select_related("accession").annotate(
+        return self.select_related("accession__cohort").annotate(
             coll_pks=ArrayAgg("collections", distinct=True, default=[]),
             contributor_owner_ids=ArrayAgg(
                 "accession__cohort__contributor__owners", distinct=True, default=[]
@@ -86,6 +86,7 @@ class Image(CreationSortedTimeStampedModel):
             "created": self.created,
             "isic_id": self.isic_id,
             "public": self.public,
+            "copyright_license": self.accession.cohort.copyright_license,
             # TODO: make sure these fields can't be searched on
             "contributor_owner_ids": self.contributor_owner_ids,
             "shared_to": self.shared_to,
