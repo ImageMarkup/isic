@@ -40,7 +40,7 @@ def test_merge_cohorts(full_cohort):
     cohort_b_accessions = cohort_b.accessions.values_list("pk", flat=True)
     cohort_b_magic_coll_images = cohort_b.collection.images.values_list("pk", flat=True)
 
-    cohort_merge(dest_cohort=cohort_a, other_cohorts=[cohort_b])
+    cohort_merge(dest_cohort=cohort_a, src_cohort=cohort_b)
 
     cohort_a.refresh_from_db()
     assert not Cohort.objects.filter(pk=cohort_b_pk).exists()
@@ -63,7 +63,7 @@ def test_merge_cohorts_conflicting_fields(full_cohort):
     cohort_b.save()
 
     with pytest.raises(ValidationError, match="license"):
-        cohort_merge(dest_cohort=cohort_a, other_cohorts=[cohort_b])
+        cohort_merge(dest_cohort=cohort_a, src_cohort=cohort_b)
 
 
 @pytest.mark.django_db
@@ -78,7 +78,7 @@ def test_merge_cohorts_conflicting_original_blob_names(full_cohort):
     accession_b.save()
 
     with pytest.raises(ValidationError, match="blob names"):
-        cohort_merge(dest_cohort=cohort_a, other_cohorts=[cohort_b])
+        cohort_merge(dest_cohort=cohort_a, src_cohort=cohort_b)
 
 
 @pytest.fixture
@@ -123,9 +123,7 @@ def test_merge_collections(full_collection):
     collection_b_pk = collection_b.pk
     collection_b_images = collection_b.images.values_list("pk", flat=True)
 
-    collection_merge_magic_collections(
-        dest_collection=collection_a, other_collections=[collection_b]
-    )
+    collection_merge_magic_collections(dest_collection=collection_a, src_collection=collection_b)
 
     collection_a.refresh_from_db()
     assert not Collection.objects.filter(pk=collection_b_pk).exists()
@@ -144,7 +142,7 @@ def test_merge_collections(full_collection):
 def test_merge_collections_unmergeable(collection, unmergeable_collection, error):
     with pytest.raises(ValidationError, match=error):
         collection_merge_magic_collections(
-            dest_collection=collection, other_collections=[unmergeable_collection]
+            dest_collection=collection, src_collection=unmergeable_collection
         )
 
 
@@ -164,5 +162,5 @@ def test_merge_collections_private_images(collection_factory, image_factory, coh
 
     with pytest.raises(ValidationError, match="private"):
         collection_merge_magic_collections(
-            dest_collection=public_collection, other_collections=[private_collection]
+            dest_collection=public_collection, src_collection=private_collection
         )

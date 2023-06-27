@@ -1,5 +1,4 @@
 import logging
-from typing import Iterable
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -80,7 +79,7 @@ def collection_get_creators_in_attribution_order(*, collection: Collection) -> l
 
 
 def collection_merge_magic_collections(
-    *, dest_collection: Collection, other_collections: Iterable[Collection]
+    *, dest_collection: Collection, src_collection: Collection
 ) -> None:
     """
     Merge one or more magic collections into a magical dest_collection.
@@ -89,7 +88,7 @@ def collection_merge_magic_collections(
     collections or cohorts with relationships to the other would put the system in
     an unexpected state otherwise.
     """
-    from_collection_filter = Q(collection=dest_collection) | Q(collection__in=other_collections)
+    from_collection_filter = Q(collection=dest_collection) | Q(collection=src_collection)
 
     if Study.objects.filter(from_collection_filter).exists():
         raise ValidationError("Collections with derived studies cannot be merged.")
@@ -100,30 +99,25 @@ def collection_merge_magic_collections(
         # clear that merging collection B into A should grant the same shares to A.
         raise ValidationError("Collections with shares cannot be merged.")
     elif (
-        Collection.objects.filter(
-            id__in=[dest_collection.id] + [collection.id for collection in other_collections]
-        )
-        .regular()
-        .exists()
+        Collection.objects.filter(id__in=[dest_collection.id, src_collection.id]).regular().exists()
     ):
         # Regular means non-magic collections
         raise ValidationError("Regular collections cannot be merged.")
 
     with transaction.atomic():
-        for collection in other_collections:
-            # TODO: support dest_collection missing a cohort
-            if hasattr(collection, "cohort") and collection.cohort != dest_collection.cohort:
-                logger.warning(f"Abandoning cohort {collection.cohort.pk}")
+        # TODO: support dest_collection missing a cohort
+        if hasattr(src_collection, "cohort") and src_collection.cohort != dest_collection.cohort:
+            logger.info(f"Abandoning cohort {src_collection.cohort.pk}")
 
-            for field in ["public", "pinned", "doi", "locked"]:
-                dest_collection_value = getattr(dest_collection, field)
-                collection_value = getattr(collection, field)
-                if dest_collection_value != collection_value:
-                    logger.warning(
-                        f"Different value for {field}: {dest_collection_value}(dest) vs {collection_value}"  # noqa: E501
-                    )
+        for field in ["public", "pinned", "doi", "locked"]:
+            dest_collection_value = getattr(dest_collection, field)
+            collection_value = getattr(src_collection, field)
+            if dest_collection_value != collection_value:
+                logger.warning(
+                    f"Different value for {field}: {dest_collection_value}(dest) vs {collection_value}"  # noqa: E501
+                )
 
-            collection_move_images(
-                src_collection=collection, dest_collection=dest_collection, ignore_lock=True
-            )
-            collection_delete(collection=collection, ignore_lock=True)
+        collection_move_images(
+            src_collection=src_collection, dest_collection=dest_collection, ignore_lock=True
+        )
+        collection_delete(collection=src_collection, ignore_lock=True)
