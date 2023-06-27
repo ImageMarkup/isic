@@ -13,6 +13,7 @@ from isic.core.tasks import sync_elasticsearch_index_task
 from isic.ingest.models.accession import Accession
 from isic.ingest.models.cohort import Cohort
 from isic.ingest.models.metadata_file import MetadataFile
+from isic.ingest.models.metadata_version import MetadataVersion
 from isic.ingest.models.zip_upload import ZipUpload
 
 logger = logging.getLogger(__name__)
@@ -48,7 +49,10 @@ def cohort_delete(*, cohort: Cohort) -> None:
     if cohort.accessions.published().exists():
         raise ValidationError("Cannot delete a cohort with published images.")
 
-    cohort.delete()
+    with transaction.atomic():
+        # metadata versions are set to RESTRICT on delete, so we need to delete them first
+        MetadataVersion.objects.filter(accession__in=cohort.accessions.all()).delete()
+        cohort.delete()
 
 
 # TODO: no doi for special collections
