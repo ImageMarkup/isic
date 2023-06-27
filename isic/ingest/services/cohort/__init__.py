@@ -1,5 +1,4 @@
 import logging
-from typing import Iterable
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -59,16 +58,16 @@ def cohort_delete(*, cohort: Cohort) -> None:
 # speicla collections exist why? keeping track of evolving changing cohorts
 
 
-def cohort_merge(*, dest_cohort: Cohort, other_cohorts: Iterable[Cohort]) -> None:
+def cohort_merge(*, dest_cohort: Cohort, src_cohort: Cohort) -> None:
     """
-    Merge one or more cohorts into dest_cohort.
+    Merge a src_cohort into dest_cohort.
 
     Note that this method should almost always be used with collection_merge_magic_collections.
     Merging collections or cohorts with relationships to the other would put the system in
     an unexpected state otherwise.
     """
     overlapping_blob_names = (
-        Cohort.objects.filter(id__in=[dest_cohort.id] + [cohort.id for cohort in other_cohorts])
+        Cohort.objects.filter(id__in=[dest_cohort.id, src_cohort.id])
         .values("accessions__original_blob_name")
         .annotate(c=Count("id"))
         .filter(c__gt=1)
@@ -83,22 +82,17 @@ def cohort_merge(*, dest_cohort: Cohort, other_cohorts: Iterable[Cohort]) -> Non
         # lock cohorts during merge
         # TODO: This is kind of awkward because we need to lock all cohorts but only want to
         # iterate on the other_cohorts.
-        list(
-            Cohort.objects.filter(
-                id__in=[dest_cohort.id] + [cohort.id for cohort in other_cohorts]
-            ).select_for_update()
+        list(Cohort.objects.filter(id__in=[dest_cohort.id, src_cohort.id]).select_for_update())
+
+        if dest_cohort.copyright_license != src_cohort.copyright_license:
+            raise ValidationError("Cannot merge cohorts with different licenses.")
+
+        Accession.objects.filter(cohort=src_cohort).update(cohort=dest_cohort)
+        ZipUpload.objects.filter(cohort=src_cohort).update(cohort=dest_cohort)
+        MetadataFile.objects.filter(cohort=src_cohort).update(cohort=dest_cohort)
+
+        collection_merge_magic_collections(
+            dest_collection=dest_cohort.collection, src_collection=src_cohort.collection
         )
 
-        for cohort in other_cohorts:
-            if dest_cohort.copyright_license != cohort.copyright_license:
-                raise ValidationError("Cannot merge cohorts with different licenses.")
-
-            Accession.objects.filter(cohort=cohort).update(cohort=dest_cohort)
-            ZipUpload.objects.filter(cohort=cohort).update(cohort=dest_cohort)
-            MetadataFile.objects.filter(cohort=cohort).update(cohort=dest_cohort)
-
-            collection_merge_magic_collections(
-                dest_collection=dest_cohort.collection, other_collections=[cohort.collection]
-            )
-
-            cohort.delete()
+        src_cohort.delete()

@@ -76,7 +76,7 @@ def merge_cohorts(request):
         cohort = form.cleaned_data["cohort"]
         cohort_to_merge = form.cleaned_data["cohort_to_merge"]
         try:
-            cohort_merge(dest_cohort=cohort, other_cohorts=[cohort_to_merge])
+            cohort_merge(dest_cohort=cohort, src_cohort=cohort_to_merge)
         except ValidationError as e:
             form.add_error(None, e)
         else:
