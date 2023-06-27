@@ -177,6 +177,7 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
         "from isic.ingest.tasks import *",
         "from isic.stats.tasks import *",
         "from isic.studies.tasks import *",
+        "from isic.ingest.services.cohort import *",
         "from django.core.files.uploadedfile import UploadedFile",
         "import pandas as pd",
         "from opensearchpy import OpenSearch",
