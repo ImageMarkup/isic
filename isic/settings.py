@@ -173,15 +173,16 @@ class IsicMixin(ConfigMixin):
 class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
     # Development-only settings
     SHELL_PLUS_IMPORTS = [
+        "from django.core.files.uploadedfile import UploadedFile",
+        "from isic.core.dsl import parse_query",
+        "from isic.core.search import *",
         "from isic.core.tasks import *",
+        "from isic.ingest.services.cohort import *",
         "from isic.ingest.tasks import *",
         "from isic.stats.tasks import *",
         "from isic.studies.tasks import *",
-        "from isic.ingest.services.cohort import *",
-        "from django.core.files.uploadedfile import UploadedFile",
-        "import pandas as pd",
         "from opensearchpy import OpenSearch",
-        "from isic.core.search import *",
+        "import pandas as pd",
     ]
     SHELL_PLUS_PRINT_SQL_TRUNCATE = None
     RUNSERVER_PLUS_PRINT_SQL_TRUNCATE = None
