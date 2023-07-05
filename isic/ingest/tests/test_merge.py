@@ -53,6 +53,23 @@ def test_merge_cohorts(full_cohort):
 
 
 @pytest.mark.django_db
+def test_merge_cohorts_missing_magic_collections(full_cohort):
+    """Test that merging a cohort into a cohort with no magic collections works."""
+    dest_cohort, src_cohort = full_cohort(), full_cohort()
+    # coerce the copyright license to test the happy path
+    dest_cohort.copyright_license = src_cohort.copyright_license
+    dest_cohort.save()
+    dest_cohort.collection.delete()
+    dest_cohort.refresh_from_db()
+
+    total_cohort_images = set(src_cohort.collection.images.values_list("pk", flat=True))
+
+    cohort_merge(dest_cohort=dest_cohort, src_cohort=src_cohort)
+    dest_cohort.refresh_from_db()
+    assert set(dest_cohort.collection.images.values_list("pk", flat=True)) == total_cohort_images
+
+
+@pytest.mark.django_db
 def test_merge_cohorts_conflicting_fields(full_cohort):
     cohort_a, cohort_b = full_cohort(), full_cohort()
 

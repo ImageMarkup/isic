@@ -91,8 +91,14 @@ def cohort_merge(*, dest_cohort: Cohort, src_cohort: Cohort) -> None:
         ZipUpload.objects.filter(cohort=src_cohort).update(cohort=dest_cohort)
         MetadataFile.objects.filter(cohort=src_cohort).update(cohort=dest_cohort)
 
-        collection_merge_magic_collections(
-            dest_collection=dest_cohort.collection, src_collection=src_cohort.collection
-        )
+        if src_cohort.collection and dest_cohort.collection:
+            collection_merge_magic_collections(
+                dest_collection=dest_cohort.collection, src_collection=src_cohort.collection
+            )
+        elif src_cohort.collection:
+            dest_cohort.collection = src_cohort.collection
+        # no point in repointing the src collection to the dest collection since it's going away
 
         src_cohort.delete()
+        # dest_cohort has to be saved after the delete to avoid a unique constraint violation
+        dest_cohort.save()
