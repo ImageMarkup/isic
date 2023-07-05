@@ -71,7 +71,7 @@ def valid_search_query(value: str) -> None:
     try:
         parse_query(value)
     except ParseException:
-        raise serializers.ValidationError("Invalid search query.")
+        raise serializers.ValidationError("Couldn't parse search query.")
 
 
 class IsicIdListSerializer(serializers.Serializer):
