@@ -30,6 +30,7 @@
             {% render_field form.query class+="input input-bordered w-96 max-w-s" %}
             <div>
               <label for="my-modal-4" class="modal-button inline cursor-pointer text-primary">example searches</label>
+	      {{ form.query.errors }}
             </div>
           </div>
 

@@ -35,7 +35,11 @@ class ImageSearchForm(forms.Form):
             **{"collections": collections},
         }
         serializer = SearchQuerySerializer(data=serializer_input, context={"user": self.user})
-        serializer.is_valid(raise_exception=True)
+        valid = serializer.is_valid(raise_exception=False)
+
+        if not valid:
+            raise forms.ValidationError(serializer.errors)
+
         self.results = serializer.to_queryset(Image.objects.select_related("accession").all())
 
         return super().clean()
