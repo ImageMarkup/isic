@@ -89,8 +89,8 @@ def q_or(s, loc, toks):
 AND = Suppress(Keyword("AND"))
 OR = Suppress(Keyword("OR"))
 
-# asterisks for wildcard, _ for ISIC ID search
-str_value = (Word(alphas + nums + "*" + "_") | QuotedString('"')).add_parse_action(StrValue)
+# asterisks for wildcard, _ for ISIC ID search, - for license types
+str_value = (Word(alphas + nums + "*" + "_" + "-") | QuotedString('"')).add_parse_action(StrValue)
 number_value = pyparsing_common.number.add_parse_action(NumberValue)
 number_range_value = (
     one_of("[ {") + number_value + Suppress(Literal("TO")) + number_value + one_of("] }")
