@@ -110,8 +110,7 @@ def zip_file_listing(request):
             files.append(
                 {
                     "url": f"http://{Site.objects.get_current().domain}"
-                    + reverse("zip-download/api/license-file", args=[license])
-                    + f"?token={token}",
+                    + reverse("zip-download/api/license-file", args=[license]),
                     "zipPath": f"licenses/{license}.txt",
                 }
             )
