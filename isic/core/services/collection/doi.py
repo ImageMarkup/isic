@@ -105,5 +105,6 @@ def collection_create_doi(*, user: User, collection: Collection) -> Doi:
             doi.save()
             collection_lock(collection=collection)
             collection_update(collection=collection, doi=doi, ignore_lock=True)
+        logger.info("User %d created DOI %s for collection %d", user.id, doi.id, collection.id)
 
     return doi
