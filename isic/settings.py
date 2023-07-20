@@ -69,6 +69,7 @@ class IsicMixin(ConfigMixin):
             "isic.ingest.apps.IngestConfig",
             "isic.stats.apps.StatsConfig",
             "isic.studies.apps.StudiesConfig",
+            "isic.zip_download.apps.ZipDownloadConfig",
         ] + configuration.INSTALLED_APPS
 
         # Install additional apps
