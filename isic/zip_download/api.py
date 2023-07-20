@@ -8,7 +8,8 @@ from typing import Iterable
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.signing import BadSignature, TimestampSigner
-from django.http.response import HttpResponse
+from django.http.response import Http404, HttpResponse
+from django.shortcuts import render
 from django.urls.base import reverse
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view, permission_classes
@@ -17,6 +18,7 @@ from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
+from isic.core.models.base import CopyrightLicense
 from isic.core.models.image import Image
 from isic.core.serializers import SearchQuerySerializer
 from isic.core.services import _image_metadata_csv_headers, image_metadata_csv_rows
@@ -102,6 +104,18 @@ def zip_file_listing(request):
             },
         ]
 
+        for license in (
+            qs.values_list("accession__cohort__copyright_license", flat=True).order_by().distinct()
+        ):
+            files.append(
+                {
+                    "url": f"http://{Site.objects.get_current().domain}"
+                    + reverse("zip-download/api/license-file", args=[license])
+                    + f"?token={token}",
+                    "zipPath": f"licenses/{license}.txt",
+                }
+            )
+
     for image in page:
         files.append({"url": image.accession.blob.url, "zipPath": f"{image.isic_id}.JPG"})
 
@@ -138,3 +152,13 @@ def zip_file_attribution_file(request):
     qs = serializer.to_queryset(Image.objects.select_related("accession__cohort").distinct())
     attributions = get_attributions(qs.values_list("accession__cohort__attribution", flat=True))
     return HttpResponse("\n\n".join(attributions), content_type="text/plain")
+
+
+@swagger_auto_schema(methods=["GET"], auto_schema=None)
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def zip_file_license_file(request, license_type: str):
+    if license_type not in CopyrightLicense.values:
+        raise Http404
+
+    return render(request, f"zip_download/{license_type}.txt", content_type="text/plain")

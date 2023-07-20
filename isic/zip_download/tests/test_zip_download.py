@@ -5,13 +5,42 @@ import pytest
 
 
 @pytest.fixture
-def random_images(image_factory):
-    image_factory(accession__metadata={"diagnosis": "melanoma"}, public=True)
-    image_factory(accession__metadata={"diagnosis": "nevus"}, public=True)
+def random_images_with_licenses(image_factory):
+    image = image_factory(
+        accession__metadata={"diagnosis": "melanoma"},
+        public=True,
+    )
+    image.accession.cohort.copyright_license = "CC-0"
+    image.accession.cohort.save()
+
+    image = image_factory(
+        accession__metadata={"diagnosis": "nevus"},
+        public=True,
+    )
+    # TODO: factory boy overriding doesn't work for subfields of accession__cohort
+    image.accession.cohort.copyright_license = "CC-BY"
+    image.accession.cohort.save()
 
 
 @pytest.mark.django_db
-def test_zip_download_listing(authenticated_api_client, random_images, mocker):
+def test_zip_download_licenses(authenticated_api_client, random_images_with_licenses):
+    r = authenticated_api_client.post(reverse("zip-download/api/url"), {"query": ""})
+    assert r.status_code == 200, r.data
+    parsed_url = urlparse(r.data)
+    token = parse_qs(parsed_url.query)["zsid"]
+
+    r = authenticated_api_client.get(
+        reverse("zip-download/api/file-listing"), data={"token": token[0]}
+    )
+    assert r.status_code == 200, r.json()
+
+    assert any(["CC-0" in result["url"] for result in r.json()["results"]])
+    assert any(["CC-BY" in result["url"] for result in r.json()["results"]])
+    assert not any(["CC-BY-NC" in result["url"] for result in r.json()["results"]])
+
+
+@pytest.mark.django_db
+def test_zip_download_listing(authenticated_api_client, random_images_with_licenses, mocker):
     r = authenticated_api_client.post(reverse("zip-download/api/url"), {"query": ""})
     assert r.status_code == 200, r.data
     parsed_url = urlparse(r.data)
@@ -26,8 +55,8 @@ def test_zip_download_listing(authenticated_api_client, random_images, mocker):
             reverse("zip-download/api/file-listing"), data={"token": token[0]}
         )
         assert r.status_code == 200, r.json()
-        # the first page is size 3 (1 limit + 1 metadata + 1 attribution)
-        assert len(r.json()["results"]) == 3, r.json()
+        # the first page is size 5 (1 limit + 1 metadata + 1 attribution + 2 licenses)
+        assert len(r.json()["results"]) == 5, r.json()
         assert r.json()["next"], r.json()
 
         r = authenticated_api_client.get(r.json()["next"])
