@@ -359,7 +359,7 @@ class Accession(CreationSortedTimeStampedModel):
             # merge metadata with existing metadata, this is necessary for metadata
             # that has interdependent checks.
             metadata.update(csv_row)
-            parsed_metadata = MetadataRow.parse_obj(metadata)
+            parsed_metadata = MetadataRow.model_validate(metadata)
 
             # update unstructured metadata
             if (
@@ -370,7 +370,7 @@ class Accession(CreationSortedTimeStampedModel):
                 self.unstructured_metadata.update(parsed_metadata.unstructured)
 
             # update structured metadata
-            new_metadata = parsed_metadata.dict(
+            new_metadata = parsed_metadata.model_dump(
                 exclude_unset=True, exclude_none=True, exclude={"unstructured"}
             )
             if new_metadata and original_metadata != new_metadata:
