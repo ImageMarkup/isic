@@ -3,6 +3,8 @@ set -exuo pipefail
 
 export HEROKU_APP=isic
 
+docker-compose start postgres
+
 docker-compose exec postgres bash -c "PGPASSWORD=postgres dropdb --host localhost --username postgres --if-exists django && createdb --host localhost --username postgres django"
 
 # public.stats_imagedownload is large and not usually needed
