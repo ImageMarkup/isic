@@ -10,7 +10,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 from django.utils.safestring import mark_safe
-from pydantic import ValidationError as MetadataValidationError
+from pydantic import ValidationError as PydanticValidationError
 from s3_file_field.widgets import S3FileInput
 
 from isic.core.permissions import get_visible_objects, needs_object_permission
@@ -150,7 +150,7 @@ def upload_single_accession(request, cohort_pk):
                     accession.update_metadata(request.user, metadata)
             except ValidationError as e:
                 messages.add_message(request, messages.ERROR, e.message)
-            except MetadataValidationError as e:
+            except PydanticValidationError as e:
                 for error in e.errors():
                     messages.add_message(request, messages.ERROR, error["msg"])
             else:
