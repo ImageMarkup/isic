@@ -6,12 +6,16 @@ from django.views.generic.base import RedirectView
 from drf_yasg import openapi
 from drf_yasg.generators import OpenAPISchemaGenerator
 from drf_yasg.views import get_schema_view
+from ninja import NinjaAPI
 from rest_framework import permissions, routers
 
 from isic.core.api import CollectionViewSet, ImageViewSet
+from isic.find.api import router as quickfind_router
 from isic.ingest.api import CohortViewSet, ContributorViewSet, MetadataFileViewSet
 from isic.studies.api import AnnotationViewSet, StudyTaskViewSet, StudyViewSet
 
+api = NinjaAPI(title="ISIC Archive", description=render_to_string("core/swagger_description.html"))
+api.add_router("/quickfind/", quickfind_router)
 router = routers.SimpleRouter()
 router.register("annotations", AnnotationViewSet)
 router.register("cohorts", CohortViewSet)
@@ -52,7 +56,6 @@ urlpatterns = [
     # Core app
     path("", RedirectView.as_view(url=reverse_lazy("core/image-browser")), name="index"),
     path("", include("isic.core.urls")),
-    path("", include("isic.find.urls")),
     path("", include("isic.ingest.urls")),
     path("", include("isic.stats.urls")),
     path("", include("isic.studies.urls")),
