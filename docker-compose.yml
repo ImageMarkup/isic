@@ -36,3 +36,10 @@ services:
     ports:
       - ${DOCKER_MINIO_PORT-9000}:9000
       - ${DOCKER_MINIO_CONSOLE_PORT-9001}:9001
+
+  zipstreamer:
+    image: ghcr.io/imagemarkup/isic-zipstreamer:master
+    environment:
+      ZS_LISTFILE_URL_PREFIX: "http://django/api/v2/zip-download/file-descriptor/?token="
+    ports:
+      - 4008:4008
