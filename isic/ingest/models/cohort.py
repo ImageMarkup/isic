@@ -39,9 +39,9 @@ class Cohort(CreationSortedTimeStampedModel):
         )
     )
 
-    copyright_license = models.CharField(choices=CopyrightLicense.choices, max_length=255)
+    default_copyright_license = models.CharField(choices=CopyrightLicense.choices, max_length=255)
 
-    # required if copyright_license is CC-BY-*
+    # required if default_copyright_license is CC-BY-*
     attribution = models.CharField(
         help_text="The institution name that should be attributed.", max_length=200
     )

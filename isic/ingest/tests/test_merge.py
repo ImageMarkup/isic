@@ -29,7 +29,7 @@ def test_merge_cohorts(full_cohort):
     cohort_a, cohort_b = full_cohort(), full_cohort()
 
     # coerce the copyright license to test the happy path
-    cohort_a.copyright_license = cohort_b.copyright_license
+    cohort_a.default_copyright_license = cohort_b.default_copyright_license
     cohort_a.save()
 
     # make sure that the zip_uploads, metadata_files, and accessions from cohort_b are
@@ -57,7 +57,7 @@ def test_merge_cohorts_missing_magic_collections(full_cohort):
     """Test that merging a cohort into a cohort with no magic collections works."""
     dest_cohort, src_cohort = full_cohort(), full_cohort()
     # coerce the copyright license to test the happy path
-    dest_cohort.copyright_license = src_cohort.copyright_license
+    dest_cohort.default_copyright_license = src_cohort.default_copyright_license
     dest_cohort.save()
     dest_cohort.collection.delete()
     dest_cohort.refresh_from_db()
@@ -74,9 +74,9 @@ def test_merge_cohorts_conflicting_fields(full_cohort):
     cohort_a, cohort_b = full_cohort(), full_cohort()
 
     # set up mismatching copyright license fields
-    cohort_a.copyright_license = CopyrightLicense.CC_0
+    cohort_a.default_copyright_license = CopyrightLicense.CC_0
     cohort_a.save()
-    cohort_b.copyright_license = CopyrightLicense.CC_BY
+    cohort_b.default_copyright_license = CopyrightLicense.CC_BY
     cohort_b.save()
 
     with pytest.raises(ValidationError, match="license"):

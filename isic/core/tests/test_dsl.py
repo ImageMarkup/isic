@@ -8,7 +8,7 @@ from isic.core.dsl import parse_query
 @pytest.mark.parametrize(
     "query,filter_or_exception",
     [
-        ['copyright_license:"CC-0"', Q(accession__cohort__copyright_license="CC-0")],
+        ['copyright_license:"CC-0"', Q(accession__cohort__default_copyright_license="CC-0")],
         ["diagnosis:foobar", Q(accession__metadata__diagnosis="foobar")],
         ['diagnosis:"foo bar"', Q(accession__metadata__diagnosis="foo bar")],
         ["diagnosis:foo*", Q(accession__metadata__diagnosis__startswith="foo")],

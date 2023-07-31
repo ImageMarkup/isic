@@ -105,7 +105,9 @@ def zip_file_listing(request):
         ]
 
         for license in (
-            qs.values_list("accession__cohort__copyright_license", flat=True).order_by().distinct()
+            qs.values_list("accession__cohort__default_copyright_license", flat=True)
+            .order_by()
+            .distinct()
         ):
             files.append(
                 {

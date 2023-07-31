@@ -16,7 +16,7 @@ class CohortSerializer(serializers.ModelSerializer):
             "contributor",
             "name",
             "description",
-            "copyright_license",
+            "default_copyright_license",
             "attribution",
             "accession_count",
         ]
