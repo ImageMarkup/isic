@@ -198,7 +198,10 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
 
     ZIP_DOWNLOAD_SERVICE_URL = "http://localhost:4008"
 
-    ISIC_PLACEHOLDER_IMAGES = False
+    ISIC_PLACEHOLDER_IMAGES = True
+    # Use the MinioS3ProxyStorage for local development with ISIC_PLACEHOLDER_IMAGES
+    # set to False to view real images in development.
+    # DEFAULT_FILE_STORAGE = "isic.core.storage.MinioS3ProxyStorage"
 
 
 class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
