@@ -144,7 +144,7 @@ class ImageFileSerializer(serializers.Serializer):
     thumbnail_256 = serializers.SerializerMethodField()
 
     def get_full(self, obj: Image) -> dict:
-        if settings.DEBUG:
+        if settings.ISIC_PLACEHOLDER_IMAGES:
             url = f"https://picsum.photos/seed/{ obj.id }/1000"
         else:
             url = obj.accession.blob.url
@@ -155,8 +155,7 @@ class ImageFileSerializer(serializers.Serializer):
         }
 
     def get_thumbnail_256(self, obj: Image) -> dict:
-        # TODO: add a custom setting for using placeholder images
-        if settings.DEBUG:
+        if settings.ISIC_PLACEHOLDER_IMAGES:
             url = f"https://picsum.photos/seed/{ obj.id }/256"
         else:
             url = obj.accession.thumbnail_256.url
