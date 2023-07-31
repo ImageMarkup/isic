@@ -7,3 +7,7 @@ def noindex(request):
 
 def sandbox_banner(request):
     return {"SANDBOX_BANNER": settings.ISIC_SANDBOX_BANNER}
+
+
+def placeholder_images(request):
+    return {"PLACEHOLDER_IMAGES": settings.ISIC_PLACEHOLDER_IMAGES}

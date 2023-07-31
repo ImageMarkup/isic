@@ -28,7 +28,7 @@
       <div class="flex justify-between pt-4">
         <div>
           <a href="{{ image.accession.blob.url }}">
-            {% if debug %}
+            {% if PLACEHOLDER_IMAGES %}
               <img src="https://picsum.photos/seed/{{image.accession.id}}/256" style="object-fit: cover;" />
             {% else %}
               <img src="{{ image.accession.thumbnail_256.url }}" style="object-fit: cover;" />

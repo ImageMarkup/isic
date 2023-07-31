@@ -113,6 +113,7 @@ class IsicMixin(ConfigMixin):
         configuration.TEMPLATES[0]["OPTIONS"]["context_processors"] += [
             "isic.core.context_processors.noindex",
             "isic.core.context_processors.sandbox_banner",
+            "isic.core.context_processors.placeholder_images",
         ]
 
         configuration.REST_FRAMEWORK[
@@ -134,6 +135,8 @@ class IsicMixin(ConfigMixin):
 
     ISIC_NOINDEX = values.BooleanValue(False)
     ISIC_SANDBOX_BANNER = values.BooleanValue(False)
+    ISIC_PLACEHOLDER_IMAGES = values.BooleanValue(False)
+
     ISIC_ELASTICSEARCH_URI = values.SecretValue()
     ISIC_ELASTICSEARCH_INDEX = "isic"
     ISIC_GUI_URL = "https://www.isic-archive.com"
@@ -194,6 +197,8 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
     MINIO_STORAGE_MEDIA_OBJECT_METADATA = {"Content-Disposition": "attachment"}
 
     ZIP_DOWNLOAD_SERVICE_URL = "http://localhost:4008"
+
+    ISIC_PLACEHOLDER_IMAGES = False
 
 
 class TestingConfiguration(IsicMixin, TestingBaseConfiguration):

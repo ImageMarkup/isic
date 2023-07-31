@@ -9,7 +9,7 @@
 
   <div @click.away="open = false" class="h-screen overflow-hidden max-w-max mx-auto p-8 transform transition-all" role="dialog" aria-modal="true" aria-labelledby="modal-headline">
     <div class="bg-white h-full relative p-8 rounded-lg text-left shadow-xl">
-      {% if debug %}
+      {% if PLACEHOLDER_IMAGES %}
         <template x-if="hovered">
           <img src="https://picsum.photos/seed/{{image.id}}/4000" class="max-h-full max-w-full w-auto mx-auto">
         </template>
