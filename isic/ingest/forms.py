@@ -28,7 +28,7 @@ def choice_field_from_enum(field_name: str, enum) -> forms.ChoiceField:
 class CohortForm(ModelForm):
     class Meta:
         model = Cohort
-        fields = ["name", "description", "copyright_license", "attribution"]
+        fields = ["name", "description", "default_copyright_license", "attribution"]
 
 
 class ContributorForm(ModelForm):

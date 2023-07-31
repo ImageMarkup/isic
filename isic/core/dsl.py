@@ -104,7 +104,7 @@ def convert_term(s, loc, toks):
     elif toks[0] == "age_approx":
         return "accession__metadata__age__approx"
     elif toks[0] == "copyright_license":
-        return "accession__cohort__copyright_license"
+        return "accession__cohort__default_copyright_license"
     else:
         return f"accession__metadata__{toks[0]}"
 

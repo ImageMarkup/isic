@@ -37,14 +37,14 @@ def image_metadata_csv_rows(*, qs: QuerySet[Image]) -> Iterator[dict]:
     for image in qs.order_by("isic_id").values(
         "isic_id",
         "accession__cohort__attribution",
-        "accession__cohort__copyright_license",
+        "accession__cohort__default_copyright_license",
         "accession__metadata",
     ):
         yield {
             **{
                 "isic_id": image["isic_id"],
                 "attribution": image["accession__cohort__attribution"],
-                "copyright_license": image["accession__cohort__copyright_license"],
+                "copyright_license": image["accession__cohort__default_copyright_license"],
                 **Accession._redact_metadata(image["accession__metadata"]),
             }
         }

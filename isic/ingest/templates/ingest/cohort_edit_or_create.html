@@ -47,15 +47,15 @@
           </div>
 
           <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
-            <label for="{{ form.copyright_license.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
-              {{ form.copyright_license.label }}
+            <label for="{{ form.default_copyright_license.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
+              {{ form.default_copyright_license.label }}
             </label>
             <div class="mt-1 mt-0 col-span-2">
-              <select id="{{ form.copyright_license.html_name }}" name="{{ form.copyright_license.html_name }}"  class="border max-w-lg px-3 py-2 block focus:ring-primary-500 focus:border-primary-500 w-full shadow-sm max-w-xs text-sm border-gray-400 rounded-md">
+              <select id="{{ form.default_copyright_license.html_name }}" name="{{ form.default_copyright_license.html_name }}"  class="border max-w-lg px-3 py-2 block focus:ring-primary-500 focus:border-primary-500 w-full shadow-sm max-w-xs text-sm border-gray-400 rounded-md">
                 <option value="">--</option>
-                <option value="CC-0" {% if form.copyright_license.value == "CC-0" %}selected="selected"{% endif %}>CC-0</option>
-                <option value="CC-BY" {% if form.copyright_license.value == "CC-BY" %}selected="selected"{% endif %}>CC-BY</option>
-                <option value="CC-BY-NC" {% if form.copyright_license.value == "CC-BY-NC" %}selected="selected"{% endif %}>CC-BY-NC (Not recommended)</option>
+                <option value="CC-0" {% if form.default_copyright_license.value == "CC-0" %}selected="selected"{% endif %}>CC-0</option>
+                <option value="CC-BY" {% if form.default_copyright_license.value == "CC-BY" %}selected="selected"{% endif %}>CC-BY</option>
+                <option value="CC-BY-NC" {% if form.default_copyright_license.value == "CC-BY-NC" %}selected="selected"{% endif %}>CC-BY-NC (Not recommended)</option>
               </select>
               <div x-data="{ open: false }" class="pb-4">
                 <span @click="open = true" class="cursor-pointer my-3 text-xs text-primary-500">help me choose</span>
@@ -63,7 +63,7 @@
                   {% include 'ingest/partials/help_me_choose_modal.html' %}
                 </div>
               </div>
-              {{ form.copyright_license.errors }}
+              {{ form.default_copyright_license.errors }}
             </div>
           </div>
 

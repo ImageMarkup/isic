@@ -179,7 +179,7 @@ class ImageSerializer(serializers.ModelSerializer):
         ]
 
     copyright_license = serializers.CharField(
-        source="accession.cohort.copyright_license", read_only=True
+        source="accession.cohort.default_copyright_license", read_only=True
     )
     attribution = serializers.CharField(source="accession.cohort.attribution", read_only=True)
     metadata = serializers.SerializerMethodField(read_only=True)

@@ -10,7 +10,7 @@ def random_images_with_licenses(image_factory):
         accession__metadata={"diagnosis": "melanoma"},
         public=True,
     )
-    image.accession.cohort.copyright_license = "CC-0"
+    image.accession.cohort.default_copyright_license = "CC-0"
     image.accession.cohort.save()
 
     image = image_factory(
@@ -18,7 +18,7 @@ def random_images_with_licenses(image_factory):
         public=True,
     )
     # TODO: factory boy overriding doesn't work for subfields of accession__cohort
-    image.accession.cohort.copyright_license = "CC-BY"
+    image.accession.cohort.default_copyright_license = "CC-BY"
     image.accession.cohort.save()
 
 

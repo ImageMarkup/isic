@@ -43,7 +43,9 @@ class ImageQuickfindResultSerializer(QuickfindResultSerializer):
     title = serializers.CharField(source="isic_id")
 
     def get_subtitle(self, obj):
-        return f"{obj.accession.cohort.attribution} ({obj.accession.cohort.copyright_license})"
+        return (
+            f"{obj.accession.cohort.attribution} ({obj.accession.cohort.default_copyright_license})"
+        )
 
     def get_icon(self, obj):
         return "ri-image-line"
