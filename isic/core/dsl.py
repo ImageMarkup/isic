@@ -26,6 +26,14 @@ class StrValue(Value):
         self.value = toks[0]
 
     def to_q(self, key):
+        # Special casing for image type renaming, see
+        # https://linear.app/isic/issue/ISIC-138#comment-93029f64
+        # TODO: Remove this once better error messages are put in place.
+        if key == "accession__metadata__image_type" and self.value == "clinical":
+            self.value = "clinical: close-up"
+        elif key == "accession__metadata__image_type" and self.value == "overview":
+            self.value = "clinical: overview"
+
         if self.value.startswith("*"):
             return Q(**{f"{key}__endswith": self.value[1:]})
         elif self.value.endswith("*"):
