@@ -12,6 +12,24 @@ from .contributor import Contributor
 
 
 class Cohort(CreationSortedTimeStampedModel):
+    """
+    A Cohort is a container for Accessions belonging to a particular Contributor.
+
+    A Cohort acts as a firewall for accessions, preventing specific information (like the
+    Contributor) from ever being revealed. The act of publishing a Cohort creates top level Image
+    objects which can be visible beyond uploaders.
+
+    A Cohort is necessary for namespacing Accessions due to the metadata upload process
+    which depends on a unique name for each Accession (see Accession.original_blob_name).
+
+    Cohorts can point to a "magic" Collection which is used to keep track of the Accessions
+    after they've been published. This is particularly useful for Cohorts that are long lived
+    and receive regular data uploads.
+
+    Cohorts can be merged together, which will transfer all of the Accessions, ZipUploads, and
+    MetadataFiles. It will also merge magic Collections if possible.
+    """
+
     class Meta(CreationSortedTimeStampedModel.Meta):
         constraints = [
             UniqueConstraint(
