@@ -178,9 +178,7 @@ class ImageSerializer(serializers.ModelSerializer):
             "files",
         ]
 
-    copyright_license = serializers.CharField(
-        source="accession.cohort.default_copyright_license", read_only=True
-    )
+    copyright_license = serializers.CharField(source="accession.copyright_license", read_only=True)
     attribution = serializers.CharField(source="accession.cohort.attribution", read_only=True)
     metadata = serializers.SerializerMethodField(read_only=True)
     files = ImageFileSerializer(source="*", read_only=True)

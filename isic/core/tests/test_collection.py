@@ -55,7 +55,7 @@ def test_collection_metadata_download(staff_client, collection_with_images, mock
     assert mock_writer.method_calls[1].args[0] == {
         "isic_id": first_image.isic_id,
         "attribution": first_image.accession.cohort.attribution,
-        "copyright_license": first_image.accession.cohort.default_copyright_license,
+        "copyright_license": first_image.accession.copyright_license,
         "age_approx": first_image.accession.age_approx,
     }
 
@@ -63,7 +63,7 @@ def test_collection_metadata_download(staff_client, collection_with_images, mock
     assert mock_writer.method_calls[2].args[0] == {
         "isic_id": second_image.isic_id,
         "attribution": second_image.accession.cohort.attribution,
-        "copyright_license": second_image.accession.cohort.default_copyright_license,
+        "copyright_license": second_image.accession.copyright_license,
         "age_approx": second_image.accession.age_approx,
     }
 
@@ -92,7 +92,7 @@ def test_collection_metadata_download_private_images(
     assert mock_writer.method_calls[1].args[0] == {
         "isic_id": image.isic_id,
         "attribution": image.accession.cohort.attribution,
-        "copyright_license": image.accession.cohort.default_copyright_license,
+        "copyright_license": image.accession.copyright_license,
         "age_approx": image.accession.age_approx,
     }
 
