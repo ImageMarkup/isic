@@ -80,7 +80,7 @@ def upload_cohort_create(request, contributor_pk):
         form = CohortForm(
             initial={
                 "contributor": contributor.pk,
-                "copyright_license": contributor.default_copyright_license,
+                "default_copyright_license": contributor.default_copyright_license,
                 "attribution": contributor.default_attribution,
             }
         )

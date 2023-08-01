@@ -16,7 +16,7 @@ from django.db.models.query_utils import Q
 from isic_metadata.metadata import MetadataRow
 from s3_file_field import S3FileField
 
-from isic.core.models import CreationSortedTimeStampedModel
+from isic.core.models import CopyrightLicense, CreationSortedTimeStampedModel
 from isic.ingest.models.cohort import Cohort
 from isic.ingest.utils.mime import guess_mime_type
 from isic.ingest.utils.zip import Blob
@@ -137,6 +137,8 @@ class Accession(CreationSortedTimeStampedModel):
         ZipUpload, on_delete=models.CASCADE, null=True, related_name="accessions"
     )
     cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name="accessions")
+
+    copyright_license = models.CharField(choices=CopyrightLicense.choices, max_length=255)
 
     # the original blob is stored in case blobs need to be reprocessed
     original_blob = S3FileField(unique=True)
