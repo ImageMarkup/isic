@@ -76,3 +76,14 @@ def test_dsl_parser(query, filter_or_exception):
     else:
         with pytest.raises(filter_or_exception):
             parse_query(query)
+
+
+@pytest.mark.parametrize(
+    "query,filter",
+    [
+        ["image_type:clinical", Q(accession__metadata__image_type="clinical: close-up")],
+        ["image_type:overview", Q(accession__metadata__image_type="clinical: overview")],
+    ],
+)
+def test_dsl_image_type_backwards_compatible(query, filter):
+    assert parse_query(query) == filter
