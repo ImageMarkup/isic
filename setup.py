@@ -62,7 +62,7 @@ setup(
         "drf-yasg",
         "google-api-python-client",
         "hashids",
-        "isic-metadata>=0.0.6",
+        "isic-metadata>=0.0.8",
         "jaro-winkler",
         "more_itertools",
         "oauth2client",
