@@ -17,7 +17,7 @@
                 <th>Contributor</th>
                 <th>Attribution</th>
                 <th>Cohort</th>
-                <th>License</th>
+                <th>Default License</th>
                 <th># of Accessions</th>
             </tr>
         </thead>
@@ -27,7 +27,7 @@
                 <td>{% if row.display_contributor %}{{ row.contributor.institution_name }}{% endif %}</td>
                 <td>{% if row.display_attribution %}{{ row.cohort.attribution }}{% endif %}</td>
                 <td><a href="{% url 'cohort-detail' row.cohort.id %}">{{ row.cohort.name }}</a></td>
-                <td>{{ row.cohort.copyright_license }}</td>
+                <td>{{ row.cohort.default_copyright_license }}</td>
                 <td>{{ row.cohort.accessions.count|intcomma }}</td>
             </tr>
             {% endfor %}

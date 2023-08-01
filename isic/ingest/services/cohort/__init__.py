@@ -84,9 +84,6 @@ def cohort_merge(*, dest_cohort: Cohort, src_cohort: Cohort) -> None:
         # iterate on the other_cohorts.
         list(Cohort.objects.filter(id__in=[dest_cohort.id, src_cohort.id]).select_for_update())
 
-        if dest_cohort.copyright_license != src_cohort.copyright_license:
-            raise ValidationError("Cannot merge cohorts with different licenses.")
-
         Accession.objects.filter(cohort=src_cohort).update(cohort=dest_cohort)
         ZipUpload.objects.filter(cohort=src_cohort).update(cohort=dest_cohort)
         MetadataFile.objects.filter(cohort=src_cohort).update(cohort=dest_cohort)

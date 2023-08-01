@@ -28,10 +28,6 @@ def full_cohort(cohort_factory, accession_factory, image_factory, collection_fac
 def test_merge_cohorts(full_cohort):
     cohort_a, cohort_b = full_cohort(), full_cohort()
 
-    # coerce the copyright license to test the happy path
-    cohort_a.copyright_license = cohort_b.copyright_license
-    cohort_a.save()
-
     # make sure that the zip_uploads, metadata_files, and accessions from cohort_b are
     # transferred to cohort_a.
     cohort_b_pk = cohort_b.pk
@@ -56,9 +52,7 @@ def test_merge_cohorts(full_cohort):
 def test_merge_cohorts_missing_magic_collections(full_cohort):
     """Test that merging a cohort into a cohort with no magic collections works."""
     dest_cohort, src_cohort = full_cohort(), full_cohort()
-    # coerce the copyright license to test the happy path
-    dest_cohort.copyright_license = src_cohort.copyright_license
-    dest_cohort.save()
+
     dest_cohort.collection.delete()
     dest_cohort.refresh_from_db()
 
@@ -67,20 +61,6 @@ def test_merge_cohorts_missing_magic_collections(full_cohort):
     cohort_merge(dest_cohort=dest_cohort, src_cohort=src_cohort)
     dest_cohort.refresh_from_db()
     assert set(dest_cohort.collection.images.values_list("pk", flat=True)) == total_cohort_images
-
-
-@pytest.mark.django_db
-def test_merge_cohorts_conflicting_fields(full_cohort):
-    cohort_a, cohort_b = full_cohort(), full_cohort()
-
-    # set up mismatching copyright license fields
-    cohort_a.copyright_license = CopyrightLicense.CC_0
-    cohort_a.save()
-    cohort_b.copyright_license = CopyrightLicense.CC_BY
-    cohort_b.save()
-
-    with pytest.raises(ValidationError, match="license"):
-        cohort_merge(dest_cohort=cohort_a, src_cohort=cohort_b)
 
 
 @pytest.mark.django_db
@@ -96,6 +76,25 @@ def test_merge_cohorts_conflicting_original_blob_names(full_cohort):
 
     with pytest.raises(ValidationError, match="blob names"):
         cohort_merge(dest_cohort=cohort_a, src_cohort=cohort_b)
+
+
+@pytest.mark.django_db
+def test_merge_cohorts_heterogeneous_licenses(full_cohort):
+    cohort_a, cohort_b = full_cohort(), full_cohort()
+
+    accession_a, accession_b = cohort_a.accessions.first(), cohort_b.accessions.first()
+    accession_a.copyright_license = CopyrightLicense.CC_0
+    accession_a.save()
+    accession_b.copyright_license = CopyrightLicense.CC_BY
+    accession_b.save()
+
+    cohort_merge(dest_cohort=cohort_a, src_cohort=cohort_b)
+    cohort_a.refresh_from_db()
+    assert cohort_a.accessions.count() == 2
+    assert set(cohort_a.accessions.values_list("copyright_license", flat=True)) == {
+        CopyrightLicense.CC_0,
+        CopyrightLicense.CC_BY,
+    }
 
 
 @pytest.fixture
@@ -161,10 +160,6 @@ def test_merge_collections_unmergeable(collection, unmergeable_collection, error
         collection_merge_magic_collections(
             dest_collection=collection, src_collection=unmergeable_collection
         )
-
-
-def test_merge_collections_conflicting_fields():
-    pass
 
 
 @pytest.mark.django_db

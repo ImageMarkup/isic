@@ -29,6 +29,7 @@ def accession_create(
     accession = Accession.objects.create(
         creator=creator,
         cohort=cohort,
+        copyright_license=cohort.default_copyright_license,
         original_blob=original_blob,
         original_blob_name=original_blob_name,
         original_blob_size=original_blob_size,
