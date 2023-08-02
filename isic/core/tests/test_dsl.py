@@ -8,6 +8,9 @@ from isic.core.dsl import parse_query
 @pytest.mark.parametrize(
     "query,filter_or_exception",
     [
+        # test isic_id especially due to the weirdness of the foreign key
+        ["isic_id:ISIC_123*", Q(isic__id__startswith="ISIC_123")],
+        ["isic_id:*123", Q(isic__id__endswith="123")],
         ['copyright_license:"CC-0"', Q(accession__copyright_license="CC-0")],
         ["diagnosis:foobar", Q(accession__metadata__diagnosis="foobar")],
         ['diagnosis:"foo bar"', Q(accession__metadata__diagnosis="foo bar")],
