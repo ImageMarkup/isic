@@ -107,8 +107,12 @@ bool_value = one_of("true false").add_parse_action(BoolValue)
 
 
 def convert_term(s, loc, toks):
-    if toks[0] in ["isic_id", "public"]:
+    if toks[0] == "public":
         return toks[0]
+    elif toks[0] == "isic_id":
+        # isic_id can't be used with wildcards since it's a foreign key, so join the table and
+        # refer to the __id.
+        return "isic__id"
     elif toks[0] == "age_approx":
         return "accession__metadata__age__approx"
     elif toks[0] == "copyright_license":
