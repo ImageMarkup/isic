@@ -2,6 +2,7 @@ from functools import partial
 from typing import Optional
 
 from django.contrib.auth.models import AnonymousUser, User
+from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 from jaro import jaro_winkler_metric
 
@@ -104,3 +105,22 @@ def quickfind_execute(query: str, user: Optional[User] = None) -> list[dict]:
             ret.append(serializer.data)
 
     return ret
+
+
+def text_search(value: str, category_limit: int = 10) -> dict:
+    return {
+        "collections": Collection.objects.text_search(value)[:category_limit],
+        "images": Image.objects.text_search(value)[:category_limit],
+        "studies": Study.objects.text_search(value)[:category_limit],
+    }
+
+
+def smart_text_search(value: str, limit: int = 10) -> QuerySet[Collection | Image | Study]:
+    """Try to figure out the most relevant category based on the given search value."""
+
+    def category_relevance(qs: QuerySet):
+        # Simplistic example algorithm: sum of top k result ranks.
+        # Naturally penalizes categories that return fewer than `limit` results.
+        return sum(obj.search_rank for obj in qs)
+
+    return max(text_search(value, category_limit=limit).values(), key=category_relevance)

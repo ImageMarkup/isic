@@ -4,6 +4,7 @@ from typing import Optional
 
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Case, CharField, Value, When
@@ -134,6 +135,14 @@ class StudyQuerySet(models.QuerySet):
 
     def private(self):
         return self.filter(public=False)
+
+    def text_search(self, value: str, rank_threshold: float = 0.0):
+        vector = SearchVector("name", weight="A") + SearchVector("description", weight="B")
+        return (
+            self.annotate(search_rank=SearchRank(vector, SearchQuery(value)))
+            .order_by("-search_rank")
+            .filter(search_rank__gt=rank_threshold)
+        )
 
 
 class Study(TimeStampedModel):

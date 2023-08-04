@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.contrib.postgres.indexes import GinIndex, OpClass
+from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
@@ -28,6 +29,14 @@ class CollectionQuerySet(models.QuerySet):
         # regular means not magic
         return self.filter(cohort=None)
 
+    def text_search(self, value: str, rank_threshold: float = 0.0):
+        vector = SearchVector("name", weight="A") + SearchVector("description", weight="B")
+        return (
+            self.annotate(search_rank=SearchRank(vector, SearchQuery(value)))
+            .order_by("-search_rank")
+            .filter(search_rank__gt=rank_threshold)
+        )
+
 
 class Collection(TimeStampedModel):
     """
@@ -51,7 +60,7 @@ class Collection(TimeStampedModel):
         ]
         indexes = [
             # icontains uses Upper(name) for searching
-            GinIndex(OpClass(Upper("name"), name="gin_trgm_ops"), name="collection_name_gin")
+            GinIndex(OpClass(Upper("name"), name="gin_trgm_ops"), name="collection_name_gin"),
         ]
 
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
