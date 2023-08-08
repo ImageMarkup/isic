@@ -211,7 +211,7 @@ def test_accession_metadata_versions(user, accession):
 @pytest.mark.django_db
 def test_accession_metadata_versions_remove(user, imageless_accession):
     imageless_accession.update_metadata(user, {"foo": "bar", "baz": "qux"})
-    imageless_accession.remove_metadata(user, ["nonexistent"])
+    imageless_accession.remove_unstructured_metadata(user, ["nonexistent"])
     assert imageless_accession.unstructured_metadata == {"foo": "bar", "baz": "qux"}
     assert imageless_accession.metadata_versions.count() == 1
 
@@ -236,18 +236,18 @@ def test_accession_update_metadata_idempotent(user, imageless_accession):
 
 
 @pytest.mark.django_db
-def test_accession_remove_metadata(user, imageless_accession):
+def test_accession_remove_unstructured_metadata(user, imageless_accession):
     imageless_accession.update_metadata(user, {"foo": "bar", "baz": "qux"})
-    imageless_accession.remove_metadata(user, ["foo"])
+    imageless_accession.remove_unstructured_metadata(user, ["foo"])
     assert imageless_accession.unstructured_metadata == {"baz": "qux"}
     assert imageless_accession.metadata_versions.count() == 2
 
 
 @pytest.mark.django_db
-def test_accession_remove_metadata_idempotent(user, imageless_accession):
+def test_accession_remove_unstructured_metadata_idempotent(user, imageless_accession):
     imageless_accession.update_metadata(user, {"foo": "bar", "baz": "qux"})
-    imageless_accession.remove_metadata(user, ["foo"])
-    imageless_accession.remove_metadata(user, ["foo"])
+    imageless_accession.remove_unstructured_metadata(user, ["foo"])
+    imageless_accession.remove_unstructured_metadata(user, ["foo"])
     assert imageless_accession.unstructured_metadata == {"baz": "qux"}
     assert imageless_accession.metadata_versions.count() == 2
 
@@ -281,15 +281,3 @@ def test_update_unstructured_metadata_does_not_reset_checks(user, unpublished_ac
     unpublished_accepted_accession.update_metadata(user, {"foobar": "baz"})
     unpublished_accepted_accession.refresh_from_db()
     assert unpublished_accepted_accession.reviewed
-
-
-@pytest.mark.django_db
-@pytest.mark.parametrize("reset_review", [True, False])
-def test_remove_metadata_resets_checks(user, unpublished_accepted_accession, reset_review):
-    unpublished_accepted_accession.remove_metadata(user, ["diagnosis"], reset_review=reset_review)
-    unpublished_accepted_accession.refresh_from_db()
-
-    if reset_review:
-        assert not unpublished_accepted_accession.reviewed
-    else:
-        assert unpublished_accepted_accession.reviewed
