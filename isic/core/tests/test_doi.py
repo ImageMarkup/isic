@@ -34,6 +34,7 @@ def test_collection_create_doi(
     public_collection_with_public_images.refresh_from_db()
     assert public_collection_with_public_images.locked
     assert public_collection_with_public_images.doi
+    assert public_collection_with_public_images.doi.creator == staff_user
 
 
 @pytest.mark.django_db
@@ -44,7 +45,7 @@ def test_doi_form_requires_public_collection(private_collection, staff_user_requ
 
 @pytest.mark.django_db
 def test_doi_form_requires_no_existing_doi(public_collection, staff_user_request):
-    public_collection.doi = Doi.objects.create(id="foo", url="foo")
+    public_collection.doi = Doi.objects.create(id="foo", creator=staff_user_request.user, url="foo")
     public_collection.save()
 
     form = CreateDoiForm(
