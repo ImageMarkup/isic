@@ -100,7 +100,7 @@ def collection_create_doi(*, user: User, collection: Collection) -> Doi:
         raise ValidationError("Something went wrong creating the DOI.")
     else:
         with transaction.atomic():
-            doi = Doi(id=doi_id, url=f"https://doi.org/{doi_id}")
+            doi = Doi(id=doi_id, creator=user, url=f"https://doi.org/{doi_id}")
             doi.full_clean()
             doi.save()
             collection_lock(collection=collection)
