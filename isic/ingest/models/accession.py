@@ -392,24 +392,11 @@ class Accession(CreationSortedTimeStampedModel):
                 )
                 self.save()
 
-    def remove_metadata(
-        self, user: User, metadata_fields: list[str], *, ignore_image_check=False, reset_review=True
-    ):
-        """Remove metadata from an accession."""
-        if self.pk and not ignore_image_check:
-            self._require_unpublished()
-
+    def remove_unstructured_metadata(self, user: User, unstructured_metadata_fields: list[str]):
+        """Remove unstructured metadata from an accession."""
         modified = False
         with transaction.atomic():
-            for field in metadata_fields:
-                if self.metadata.pop(field, None) is not None:
-                    modified = True
-
-                    if reset_review:
-                        from isic.ingest.services.accession.review import accession_review_delete
-
-                        accession_review_delete(accession=self)
-
+            for field in unstructured_metadata_fields:
                 if self.unstructured_metadata.pop(field, None) is not None:
                     modified = True
 
