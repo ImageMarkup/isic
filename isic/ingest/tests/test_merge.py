@@ -104,8 +104,10 @@ def collection_with_studies(collection, study_factory):
 
 
 @pytest.fixture
-def collection_with_doi(collection):
-    collection.doi = Doi.objects.create(id="10.1000/xyz123", url="https://doi.org/10.1000/xyz123")
+def collection_with_doi(collection, user):
+    collection.doi = Doi.objects.create(
+        id="10.1000/xyz123", creator=user, url="https://doi.org/10.1000/xyz123"
+    )
     collection.save()
     return collection
 
