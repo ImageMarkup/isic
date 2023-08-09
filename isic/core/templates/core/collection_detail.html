@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load localtime %}
 {% load spurl %}
 {% load get_key %}
 {% load humanize %}
@@ -23,6 +24,16 @@
         <span class="font-bold">Name:</span>
         {{ collection.name }}
       </li>
+      {% if request.user.is_staff %}
+        <li>
+          <span class="font-bold">Creator:</span>
+          {{ collection.creator }}
+        </li>
+        <li>
+          <span class="font-bold">Created:</span>
+          {% localtime collection.created %}
+        </li>
+      {% endif %}
       {% if collection.doi %}
         <li>
           <span class="font-bold">DOI:</span>
@@ -32,9 +43,9 @@
       {% if contributors %}
         <li>
           <span class="font-bold">Contributors:</span>
-          <ul>
+          <ul class="list-disc">
             {% for contributor in contributors %}
-              <li>
+              <li class="ml-6">
                 <a href="{% url 'admin:ingest_contributor_change' contributor.pk %}">{{ contributor.institution_name }}</a>
               </li>
             {% endfor %}
