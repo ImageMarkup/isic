@@ -1,105 +1,124 @@
 from django.contrib import messages
-from django.contrib.auth.models import User
+from django.db.models.query import QuerySet
 from django.http.response import JsonResponse
-from django.utils.decorators import method_decorator
-from django_filters.rest_framework import DjangoFilterBackend
-from drf_yasg.utils import swagger_auto_schema
-from rest_framework import status
-from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
-from rest_framework.response import Response
-from rest_framework.viewsets import ReadOnlyModelViewSet
+from django.shortcuts import get_object_or_404
+from ninja import ModelSchema, Router, Schema
+from pydantic.types import conlist, constr
 
+from isic.core.constants import ISIC_ID_REGEX
 from isic.core.models.collection import Collection
-from isic.core.permissions import IsicObjectPermissionsFilter
-from isic.core.serializers import CollectionSerializer, IsicIdListSerializer, SearchQuerySerializer
+from isic.core.models.image import Image
+from isic.core.permissions import get_visible_objects
+from isic.core.serializers import SearchQueryIn
 from isic.core.services.collection.image import (
     collection_add_images_from_isic_ids,
     collection_remove_images_from_isic_ids,
 )
 from isic.core.tasks import populate_collection_from_search_task
 
-from .exceptions import Conflict
+router = Router()
 
 
-@method_decorator(
-    name="list", decorator=swagger_auto_schema(operation_summary="Return a list of collections.")
-)
-@method_decorator(
-    name="retrieve",
-    decorator=swagger_auto_schema(operation_summary="Retrieve a single collection by ID."),
-)
-class CollectionViewSet(ReadOnlyModelViewSet):
-    serializer_class = CollectionSerializer
+class CollectionOut(ModelSchema):
+    class Config:
+        model = Collection
+        model_fields = ["id", "name", "description", "public", "pinned", "locked", "doi"]
+
+    doi_url: str | None
+
+    def resolve_doi_url(self, obj: Collection):
+        return obj.doi_url
+
+
+@router.get("/", response=list[CollectionOut])
+def collection_list(request, pinned: bool | None = None) -> list[CollectionOut]:
     queryset = Collection.objects.all()
-    filter_backends = [IsicObjectPermissionsFilter, DjangoFilterBackend]
-    filterset_fields = ["pinned"]
+    if pinned is not None:
+        queryset = queryset.filter(pinned=pinned)
+    return queryset
 
-    def _enforce_write_checks(self, user: User):
-        if self.get_object().locked:
-            raise Conflict("Collection is locked for changes.")
 
-    @swagger_auto_schema(auto_schema=None)
-    @action(detail=True, methods=["post"], pagination_class=None, url_path="populate-from-search")
-    def populate_from_search(self, request, *args, **kwargs):
-        if not request.user.has_perm("core.add_images", self.get_object()):
-            raise PermissionDenied
+# TODO: permissions filter
 
-        self._enforce_write_checks(request.user)
-        serializer = SearchQuerySerializer(data=request.data, context={"user": request.user})
-        serializer.is_valid(raise_exception=True)
 
-        if self.get_object().public and serializer.to_queryset().private().exists():
-            raise Conflict("You are attempting to add private images to a public collection.")
+@router.get("/{id}", response=CollectionOut)
+def collection_detail(request, id) -> CollectionOut:
+    collection = get_object_or_404(Collection, id=id)
+    return collection
 
-        # Pass data instead of validated_data because the celery task is going to revalidate.
-        # This avoids re encoding collections as a comma delimited string.
-        populate_collection_from_search_task.delay(kwargs["pk"], request.user.pk, serializer.data)
 
-        # TODO: this is a weird mixture of concerns between SSR and an API, figure out a better
-        # way to handle this.
-        messages.add_message(
-            request, messages.INFO, "Adding images to collection, this may take a few minutes."
-        )
-        return Response(status=status.HTTP_202_ACCEPTED)
+@router.post("/{id}/populate-from-search/", response={202: None, 403: dict, 409: dict})
+def collection_populate_from_search(request, id, payload: SearchQueryIn):
+    collection = get_object_or_404(Collection, id=id)
 
-    # TODO: refactor *-from-list methods
-    @swagger_auto_schema(auto_schema=None)
-    @action(detail=True, methods=["post"], pagination_class=None, url_path="populate-from-list")
-    def populate_from_list(self, request, *args, **kwargs):
-        if not request.user.has_perm("core.add_images", self.get_object()):
-            raise PermissionDenied
+    if not request.user.has_perm("core.add_images", collection):
+        return 403, {"error": "You do not have permission to add images to this collection."}
 
-        self._enforce_write_checks(request.user)
-        serializer = IsicIdListSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    if collection.locked:
+        return 409, {"error": "Collection is locked"}
 
-        summary = collection_add_images_from_isic_ids(
-            user=request.user,
-            collection=self.get_object(),
-            isic_ids=serializer.validated_data["isic_ids"],
-        )
+    if collection.public and payload.to_queryset(request.user).private().exists():
+        return 409, {"error": "Collection is public and cannot contain private images."}
 
-        return JsonResponse(summary)
+    # Pass data instead of validated_data because the celery task is going to revalidate.
+    # This avoids re encoding collections as a comma delimited string.
+    populate_collection_from_search_task.delay(id, request.user.pk, payload.dict())
 
-    @swagger_auto_schema(auto_schema=None)
-    @action(detail=True, methods=["post"], pagination_class=None, url_path="remove-from-list")
-    def remove_from_list(self, request, *args, **kwargs):
-        if not request.user.has_perm("core.remove_images", self.get_object()):
-            raise PermissionDenied
+    # TODO: this is a weird mixture of concerns between SSR and an API, figure out a better
+    # way to handle this.
+    messages.add_message(
+        request, messages.INFO, "Adding images to collection, this may take a few minutes."
+    )
+    return 202, {}
 
-        self._enforce_write_checks(request.user)
-        serializer = IsicIdListSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
 
-        summary = collection_remove_images_from_isic_ids(
-            user=request.user,
-            collection=self.get_object(),
-            isic_ids=serializer.validated_data["isic_ids"],
-        )
+class IsicIdList(Schema):
+    isic_ids: conlist(constr(regex=ISIC_ID_REGEX), max_items=500)
 
-        # TODO: this is a weird mixture of concerns between SSR and an API, figure out a better
-        # way to handle this.
-        messages.add_message(request, messages.INFO, f'Removed {len(summary["succeeded"])} images.')
+    def to_queryset(self, user, qs: QuerySet[Image] | None = None) -> QuerySet[Image]:
+        qs = qs if qs is not None else Image._default_manager.all()
+        qs = qs.filter(isic_id__in=self.isic_ids)
+        return get_visible_objects(user, "core.view_image", qs)
 
-        return JsonResponse(summary)
+
+# TODO: refactor *-from-list methods
+@router.post("/{id}/populate-from-list/", response={200: None, 403: dict, 409: dict})
+def collection_populate_from_list(request, id, payload: IsicIdList):
+    collection = get_object_or_404(Collection, id=id)
+
+    if not request.user.has_perm("core.add_images", collection):
+        return 403, {"error": "You do not have permission to add images to this collection."}
+
+    if collection.locked:
+        return 409, {"error": "Collection is locked"}
+
+    summary = collection_add_images_from_isic_ids(
+        user=request.user,
+        collection=collection,
+        isic_ids=payload.to_queryset(request.user).values_list("isic_id", flat=True),
+    )
+
+    return JsonResponse(summary)
+
+
+@router.post("/{id}/remove-from-list/", response={200: None, 403: dict, 409: dict})
+def remove_from_list(request, id, payload: IsicIdList):
+    collection = get_object_or_404(Collection, id=id)
+
+    if not request.user.has_perm("core.remove_images", collection):
+        return 403, {"error": "You do not have permission to add images to this collection."}
+
+    if collection.locked:
+        return 409, {"error": "Collection is locked"}
+
+    summary = collection_remove_images_from_isic_ids(
+        user=request.user,
+        collection=collection,
+        isic_ids=payload.isic_ids,
+    )
+
+    # TODO: this is a weird mixture of concerns between SSR and an API, figure out a better
+    # way to handle this.
+    messages.add_message(request, messages.INFO, f'Removed {len(summary["succeeded"])} images.')
+
+    return JsonResponse(summary)
