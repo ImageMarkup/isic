@@ -6,6 +6,8 @@ from django.contrib.auth.models import AnonymousUser, User
 from django.db.models.query import QuerySet
 from django.shortcuts import get_object_or_404
 from isic_metadata import FIELD_REGISTRY
+from ninja import Schema
+from pydantic import validator
 from pyparsing.exceptions import ParseException
 from rest_framework import serializers
 from rest_framework.fields import Field
@@ -81,6 +83,74 @@ class IsicIdListSerializer(serializers.Serializer):
         qs = qs if qs is not None else Image._default_manager.all()
         qs = qs.filter(isic_id__in=self.validated_data["isic_ids"])
         return get_visible_objects(self.context["user"], "core.view_image", qs)
+
+
+# TODO: https://github.com/vitalik/django-ninja/issues/526#issuecomment-1283984292
+# Update this to use context for the user once django-ninja supports it
+class SearchQueryIn(Schema):
+    query: str | None
+    collections: list[int] | None
+
+    @validator("query")
+    @classmethod
+    def valid_search_query(cls, value: str):
+        if value.strip() == "":
+            return None
+
+        try:
+            parse_query(value)
+        except ParseException:
+            raise ValueError("Couldn't parse search query.")
+        return value
+
+    @validator("collections", pre=True)
+    @classmethod
+    def collections_to_list(cls, value: str | list[int]):
+        if isinstance(value, str):
+            return [int(x) for x in value.split(",")]
+        elif isinstance(value, list):
+            # TODO: this is a hack to get around the fact that ninja uses a swagger array input
+            # field for list types regardless.
+            return value
+
+    def to_token_representation(self, user=None):
+        # it's important that user always be generated on the server side and not be passed
+        # in as data tm the serializer.
+        user = user.pk if user else None
+
+        return {
+            "user": user,
+            "query": self.query,
+            "collections": self.collections,
+        }
+
+    @classmethod
+    def from_token_representation(cls, token):
+        user = token.get("user")
+        if user:
+            user = get_object_or_404(User, pk=user)
+        else:
+            user = AnonymousUser()
+        # TODO
+        return cls(data=token, context={"user": user})
+
+    def to_queryset(self, user, qs: Optional[QuerySet[Image]] = None) -> QuerySet[Image]:
+        qs = qs if qs is not None else Image._default_manager.all()
+
+        if self.query:
+            # the serializer has already validated the query will parse
+            qs = qs.from_search_query(self.query)
+
+        if self.collections:
+            qs = qs.filter(
+                collections__in=get_visible_objects(
+                    user,
+                    "core.view_collection",
+                    Collection.objects.filter(pk__in=self.collections),
+                )
+            )
+
+        return get_visible_objects(user, "core.view_image", qs).distinct()
 
 
 class SearchQuerySerializer(serializers.Serializer):

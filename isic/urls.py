@@ -9,17 +9,20 @@ from drf_yasg.views import get_schema_view
 from ninja import NinjaAPI
 from rest_framework import permissions, routers
 
-from isic.core.api import CollectionViewSet, ImageViewSet
+from isic.core.api import ImageViewSet
+from isic.core.api.collection import router as collection_router
 from isic.find.api import router as quickfind_router
 from isic.ingest.api import CohortViewSet, ContributorViewSet, MetadataFileViewSet
 from isic.studies.api import AnnotationViewSet, StudyTaskViewSet, StudyViewSet
 
 api = NinjaAPI(title="ISIC Archive", description=render_to_string("core/swagger_description.html"))
 api.add_router("/quickfind/", quickfind_router)
+api.add_router("/collections/", collection_router)
+
+
 router = routers.SimpleRouter()
 router.register("annotations", AnnotationViewSet)
 router.register("cohorts", CohortViewSet)
-router.register("collections", CollectionViewSet)
 router.register("contributors", ContributorViewSet)
 router.register("images", ImageViewSet)
 router.register("metadata-files", MetadataFileViewSet)
