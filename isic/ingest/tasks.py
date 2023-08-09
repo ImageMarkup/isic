@@ -6,7 +6,6 @@ from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 from django.contrib.auth.models import User
 from django.db import transaction
-from more_itertools import ichunked
 
 from isic.ingest.models import (
     Accession,
@@ -21,11 +20,10 @@ from isic.ingest.services.cohort import cohort_publish
 logger = get_task_logger(__name__)
 
 
-def throttled_iterator(iterable: Iterable, chunk_size: int = 100, sleep_time: int = 1) -> Iterable:
-    for chunk in ichunked(iterable, chunk_size):
-        for item in chunk:
-            yield item
-            time.sleep(sleep_time / chunk_size)
+def throttled_iterator(iterable: Iterable, max_per_second: int = 100) -> Iterable:
+    for item in iterable:
+        yield item
+        time.sleep(1 / max_per_second)
 
 
 @shared_task(soft_time_limit=7200, time_limit=8100)
