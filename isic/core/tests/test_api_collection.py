@@ -27,8 +27,8 @@ def collections(public_collection, private_collection):
 def test_core_api_collection_list_permissions(client, colls, num_visible):
     r = client.get("/api/v2/collections/")
 
-    assert r.status_code == 200, r.data
-    assert r.data["count"] == num_visible
+    assert r.status_code == 200, r.json()
+    assert r.json()["count"] == num_visible
 
 
 @pytest.mark.django_db
@@ -63,10 +63,10 @@ def test_core_api_collection_detail_permissions(client, collection, visible):
     r = client.get(f"/api/v2/collections/{collection.pk}/")
 
     if visible:
-        assert r.status_code == 200, r.data
-        assert r.data["id"] == collection.id
+        assert r.status_code == 200, r.json()
+        assert r.json()["id"] == collection.id
     else:
-        assert r.status_code == 404, r.data
+        assert r.status_code == 404, r.json()
 
 
 @pytest.mark.django_db
@@ -87,7 +87,7 @@ def test_core_api_collection_populate_from_search(
             f"/api/v2/collections/{collection.pk}/populate-from-search/", {"query": "sex:male"}
         )
 
-    assert r.status_code == 202, r.data
+    assert r.status_code == 202, r.json()
     assert collection.images.count() == 1
     assert collection.images.first().accession.metadata["sex"] == "male"
 
@@ -106,7 +106,7 @@ def test_core_api_collection_modify_locked(endpoint, data, staff_client, collect
 
     r = staff_client.post(f"/api/v2/collections/{collection.pk}/{endpoint}/", data)
 
-    assert r.status_code == 409, r.data
+    assert r.status_code == 409, r.json()
 
 
 @pytest.mark.django_db
