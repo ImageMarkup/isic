@@ -3,11 +3,13 @@ from django.db.models.query import QuerySet
 from django.http.response import JsonResponse
 from django.shortcuts import get_object_or_404
 from ninja import ModelSchema, Router, Schema
+from ninja.pagination import paginate
 from pydantic.types import conlist, constr
 
 from isic.core.constants import ISIC_ID_REGEX
 from isic.core.models.collection import Collection
 from isic.core.models.image import Image
+from isic.core.pagination import CursorPagination
 from isic.core.permissions import get_visible_objects
 from isic.core.serializers import SearchQueryIn
 from isic.core.services.collection.image import (
@@ -26,11 +28,13 @@ class CollectionOut(ModelSchema):
 
     doi_url: str | None
 
-    def resolve_doi_url(self, obj: Collection):
+    @staticmethod
+    def resolve_doi_url(obj: Collection):
         return obj.doi_url
 
 
 @router.get("/", response=list[CollectionOut])
+@paginate(CursorPagination)
 def collection_list(request, pinned: bool | None = None) -> list[CollectionOut]:
     queryset = Collection.objects.all()
     if pinned is not None:
@@ -73,7 +77,7 @@ def collection_populate_from_search(request, id, payload: SearchQueryIn):
 
 
 class IsicIdList(Schema):
-    isic_ids: conlist(constr(regex=ISIC_ID_REGEX), max_items=500)
+    isic_ids: conlist(constr(pattern=ISIC_ID_REGEX), max_length=500)
 
     def to_queryset(self, user, qs: QuerySet[Image] | None = None) -> QuerySet[Image]:
         qs = qs if qs is not None else Image._default_manager.all()

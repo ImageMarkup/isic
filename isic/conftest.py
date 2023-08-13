@@ -40,6 +40,7 @@ def setup_groups(request):
 
 @pytest.fixture
 def api_client() -> APIClient:
+    # TODO have this return a django.test.Client instead of DRF's APIClient
     return APIClient()
 
 
