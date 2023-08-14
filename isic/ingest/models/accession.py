@@ -337,7 +337,7 @@ class Accession(CreationSortedTimeStampedModel):
 
     def update_metadata(
         self, user: User, csv_row: dict, *, ignore_image_check=False, reset_review=True
-    ):
+    ) -> bool:
         """
         Apply metadata to an accession from a row in a CSV.
 
@@ -392,7 +392,11 @@ class Accession(CreationSortedTimeStampedModel):
                 )
                 self.save()
 
-    def remove_unstructured_metadata(self, user: User, unstructured_metadata_fields: list[str]):
+        return modified
+
+    def remove_unstructured_metadata(
+        self, user: User, unstructured_metadata_fields: list[str]
+    ) -> bool:
         """Remove unstructured metadata from an accession."""
         modified = False
         with transaction.atomic():
@@ -407,3 +411,5 @@ class Accession(CreationSortedTimeStampedModel):
                     unstructured_metadata=self.unstructured_metadata,
                 )
                 self.save()
+
+        return modified
