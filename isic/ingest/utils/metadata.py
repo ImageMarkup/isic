@@ -3,6 +3,7 @@ from collections import defaultdict
 from django.forms.models import ModelForm
 from isic_metadata.metadata import MetadataRow
 import pandas as pd
+from pydantic import ValidationError as PydanticValidationError
 from pydantic.main import BaseModel
 from s3_file_field.widgets import S3FileInput
 
@@ -17,8 +18,8 @@ class MetadataForm(ModelForm):
 
 
 class Problem(BaseModel):
-    message: str | None
-    context: list | None
+    message: str | None = None
+    context: list | None = None
     type: str | None = "error"
 
 
@@ -61,8 +62,8 @@ def validate_internal_consistency(df):
 
     for i, (_, row) in enumerate(df.iterrows(), start=2):
         try:
-            MetadataRow.parse_obj(row)
-        except Exception as e:
+            MetadataRow.model_validate(row.to_dict())
+        except PydanticValidationError as e:
             for error in e.errors():
                 column = error["loc"][0]
                 column_problems[(column, error["msg"])].append(i)
@@ -85,8 +86,8 @@ def validate_archive_consistency(df, cohort):
         row = existing | {k: v for k, v in row.items() if v is not None}
 
         try:
-            MetadataRow.parse_obj(row)
-        except Exception as e:
+            MetadataRow.model_validate(row)
+        except PydanticValidationError as e:
             for error in e.errors():
                 column = error["loc"][0]
 

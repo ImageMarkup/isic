@@ -1,5 +1,6 @@
 import djclick as click
 from isic_metadata.metadata import MetadataRow
+from pydantic import ValidationError as PydanticValidationError
 
 from isic.ingest.models import Accession
 
@@ -13,8 +14,8 @@ def revalidate_metadata():
     with click.progressbar(accessions) as bar:
         for pk, metadata in bar:
             try:
-                MetadataRow.parse_obj(metadata)
-            except Exception as e:
+                MetadataRow.model_validate(metadata)
+            except PydanticValidationError as e:
                 num_errors += 1
                 click.echo(pk)
                 click.echo(e.errors())
