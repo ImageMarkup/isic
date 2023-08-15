@@ -30,6 +30,8 @@ class ImageDownloadAdmin(StaffReadonlyAdmin):
     search_fields = ["image__isic__id", "ip_address", "user_agent"]
     search_help_text = "Search by ISIC ID, IP Address, or User Agent."
     list_filter = [DownloadedWithIsicCliFilter]
+    # Don't show the full count on filtered admin pages, since it's slow.
+    show_full_result_count = False
 
     autocomplete_fields = ["image"]
 
