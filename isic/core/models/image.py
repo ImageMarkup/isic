@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates.general import ArrayAgg
 from django.contrib.postgres.indexes import GinIndex, OpClass
+from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
 from django.db import models
 from django.db.models.constraints import CheckConstraint
 from django.db.models.expressions import F
@@ -41,12 +42,21 @@ class ImageQuerySet(models.QuerySet):
     def private(self):
         return self.filter(public=False)
 
+    def text_search(self, value: str, rank_threshold: float = 0.0):
+        vector = SearchVector("isic", "accession__metadata__diagnosis")
+        return (
+            self.select_related("accession")
+            .annotate(search_rank=SearchRank(vector, SearchQuery(value)))
+            .order_by("-search_rank")
+            .filter(search_rank__gt=rank_threshold)
+        )
+
 
 class Image(CreationSortedTimeStampedModel):
     class Meta(CreationSortedTimeStampedModel.Meta):
         indexes = [
             # icontains uses Upper(name) for searching
-            GinIndex(OpClass(Upper("isic"), name="gin_trgm_ops"), name="isic_name_gin")
+            GinIndex(OpClass(Upper("isic"), name="gin_trgm_ops"), name="isic_name_gin"),
         ]
 
     accession = models.OneToOneField(
