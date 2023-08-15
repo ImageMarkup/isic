@@ -1,3 +1,5 @@
+import secrets
+
 from django.conf import settings
 import pytest
 
@@ -6,6 +8,8 @@ from isic.core.search import get_elasticsearch_client, maybe_create_index
 
 @pytest.fixture
 def search_index():
+    # Use a random index name to avoid collisions when running tests in parallel
+    settings.ISIC_ELASTICSEARCH_INDEX = f"test-{secrets.token_hex(8)}"
     es = get_elasticsearch_client()
     maybe_create_index()
     yield
