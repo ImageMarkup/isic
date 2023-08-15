@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count
 
+from isic.core.models.base import CopyrightLicense
 from isic.core.services.collection import collection_create, collection_merge_magic_collections
 from isic.core.services.collection.image import collection_add_images
 from isic.core.services.image import image_create
@@ -99,3 +100,34 @@ def cohort_merge(*, dest_cohort: Cohort, src_cohort: Cohort) -> None:
         src_cohort.delete()
         # dest_cohort has to be saved after the delete to avoid a unique constraint violation
         dest_cohort.save()
+
+
+def cohort_relicense(*, cohort: Cohort, to_license: str) -> int:
+    """
+    Relicenses all the accessions in a cohort to the new license.
+
+    It also changes the default license for the cohort. This is a one way ratchet, licenses can
+    only be made more permissive. It returns the number of accessions that were relicensed.
+    """
+    assert to_license in CopyrightLicense
+
+    with transaction.atomic():
+        cohort = (
+            Cohort.objects.filter(id=cohort.id)
+            .prefetch_related("accessions")
+            .select_for_update()
+            .first()
+        )
+
+        more_permissive_licenses = CopyrightLicense.values[
+            : CopyrightLicense.values.index(to_license)
+        ]
+        if (
+            more_permissive_licenses
+            and cohort.accessions.filter(copyright_license__in=more_permissive_licenses).exists()
+        ):
+            raise ValidationError("Unable to make images more restrictive.")
+
+        return cohort.accessions.exclude(copyright_license=to_license).update(
+            copyright_license=to_license
+        )

@@ -17,6 +17,8 @@ class CreationSortedTimeStampedModel(TimeStampedModel):
 
 
 class CopyrightLicense(models.TextChoices):
+    # Note: the order of these licenses is significant, as it is used to determine
+    # the relative permissiveness.
     CC_0 = "CC-0", "CC-0"
 
     # These 2 require attribution
