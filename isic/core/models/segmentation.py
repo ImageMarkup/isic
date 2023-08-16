@@ -12,6 +12,12 @@ class Segmentation(TimeStampedModel):
     class Meta:
         ordering = ["id"]
 
+        constraints = [
+            models.UniqueConstraint(
+                fields=["mask"], condition=~models.Q(mask=""), name="segmentation_unique_mask"
+            ),
+        ]
+
     girder_id = models.CharField(
         unique=True,
         max_length=24,
@@ -19,7 +25,7 @@ class Segmentation(TimeStampedModel):
     )
     creator = models.ForeignKey(User, on_delete=models.RESTRICT)
     image = models.ForeignKey(Image, on_delete=models.RESTRICT)
-    mask = S3FileField(null=True)
+    mask = S3FileField(blank=True)
     meta = models.JSONField(default=dict)
 
 
