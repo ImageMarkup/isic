@@ -15,6 +15,10 @@ def populate_collection_from_search_task(
 ) -> None:
     user = User.objects.get(pk=user_pk)
     collection = Collection.objects.get(pk=collection_pk)
+
+    if "collections" in search_params and not search_params["collections"]:
+        del search_params["collections"]
+
     serializer = SearchQuerySerializer(data=search_params, context={"user": user})
     serializer.is_valid(raise_exception=True)
     collection_add_images(collection=collection, qs=serializer.to_queryset())
