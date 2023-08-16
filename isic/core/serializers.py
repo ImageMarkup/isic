@@ -7,7 +7,7 @@ from django.db.models.query import QuerySet
 from django.shortcuts import get_object_or_404
 from isic_metadata import FIELD_REGISTRY
 from ninja import Schema
-from pydantic import validator
+from pydantic import field_validator, validator
 from pyparsing.exceptions import ParseException
 from rest_framework import serializers
 from rest_framework.fields import Field
@@ -89,7 +89,7 @@ class IsicIdListSerializer(serializers.Serializer):
 # Update this to use context for the user once django-ninja supports it
 class SearchQueryIn(Schema):
     query: str | None
-    collections: list[int] | None
+    collections: list[int] | None = None
 
     @validator("query")
     @classmethod
@@ -100,6 +100,7 @@ class SearchQueryIn(Schema):
         try:
             parse_query(value)
         except ParseException:
+            # TODO this doesn't do the right thing in ninja...
             raise ValueError("Couldn't parse search query.")
         return value
 
