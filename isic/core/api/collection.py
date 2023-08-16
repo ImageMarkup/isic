@@ -42,7 +42,7 @@ def collection_list(request, pinned: bool | None = None) -> list[CollectionOut]:
     return queryset
 
 
-@router.get("/{id}", response=CollectionOut)
+@router.get("/{id}/", response=CollectionOut)
 def collection_detail(request, id) -> CollectionOut:
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
     collection = get_object_or_404(qs, id=id)
@@ -51,6 +51,7 @@ def collection_detail(request, id) -> CollectionOut:
 
 @router.post("/{id}/populate-from-search/", response={202: None, 403: dict, 409: dict})
 def collection_populate_from_search(request, id, payload: SearchQueryIn):
+    breakpoint()
     collection = get_object_or_404(Collection, id=id)
 
     if not request.user.has_perm("core.add_images", collection):

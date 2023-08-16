@@ -45,6 +45,11 @@ def api_client() -> APIClient:
 
 
 @pytest.fixture
+def client() -> Client:
+    return Client()
+
+
+@pytest.fixture
 def authenticated_client(user):
     # Do not use the client fixture, to prevent mutating its state
     client = Client()
