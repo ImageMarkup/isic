@@ -106,7 +106,9 @@ def test_core_api_collection_populate_from_search(
 def test_core_api_collection_modify_locked(endpoint, data, staff_client, collection_factory, user):
     collection = collection_factory(locked=True, creator=user)
 
-    r = staff_client.post(f"/api/v2/collections/{collection.pk}/{endpoint}/", data)
+    r = staff_client.post(
+        f"/api/v2/collections/{collection.pk}/{endpoint}/", data, content_type="application/json"
+    )
 
     assert r.status_code == 409, r.json()
 
@@ -134,6 +136,7 @@ def test_core_api_collection_populate_from_list(
                 "ISIC_0000000",
             ]
         },
+        content_type="application/json",
     )
 
     assert r.status_code == 200, r.json()
@@ -170,6 +173,7 @@ def test_core_api_collection_remove_from_list(
                 "ISIC_0000000",
             ]
         },
+        content_type="application/json",
     )
 
     assert r.status_code == 200, r.json()
