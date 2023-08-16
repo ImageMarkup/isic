@@ -79,8 +79,7 @@ class IsicIdList(Schema):
 
     def to_queryset(self, user, qs: QuerySet[Image] | None = None) -> QuerySet[Image]:
         qs = qs if qs is not None else Image._default_manager.all()
-        qs = qs.filter(isic_id__in=self.isic_ids)
-        return get_visible_objects(user, "core.view_image", qs)
+        return qs.filter(isic_id__in=self.isic_ids)
 
 
 # TODO: refactor *-from-list methods
@@ -97,7 +96,7 @@ def collection_populate_from_list(request, id, payload: IsicIdList):
     summary = collection_add_images_from_isic_ids(
         user=request.user,
         collection=collection,
-        isic_ids=payload.to_queryset(request.user).values_list("isic_id", flat=True),
+        isic_ids=payload.isic_ids,
     )
 
     return JsonResponse(summary)
