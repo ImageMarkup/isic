@@ -36,18 +36,16 @@ class CollectionOut(ModelSchema):
 @router.get("/", response=list[CollectionOut])
 @paginate(CursorPagination)
 def collection_list(request, pinned: bool | None = None) -> list[CollectionOut]:
-    queryset = Collection.objects.all()
+    queryset = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
     if pinned is not None:
         queryset = queryset.filter(pinned=pinned)
     return queryset
 
 
-# TODO: permissions filter
-
-
 @router.get("/{id}", response=CollectionOut)
 def collection_detail(request, id) -> CollectionOut:
-    collection = get_object_or_404(Collection, id=id)
+    qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
+    collection = get_object_or_404(qs, id=id)
     return collection
 
 
