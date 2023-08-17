@@ -8,7 +8,6 @@ from django.shortcuts import get_object_or_404
 from isic_metadata import FIELD_REGISTRY
 from ninja import Schema
 from pydantic import validator
-from pydantic_core import PydanticCustomError
 from pyparsing.exceptions import ParseException
 from rest_framework import serializers
 from rest_framework.fields import Field
@@ -101,9 +100,7 @@ class SearchQueryIn(Schema):
         try:
             parse_query(value)
         except ParseException:
-            # TODO normally we should raise a ValueError, but django-ninja 1.0a2 has a bug
-            # https://github.com/vitalik/django-ninja/issues/825
-            raise PydanticCustomError("invalid_query", "Couldn't parse search query.")
+            raise ValueError("Couldn't parse search query.")
         return value
 
     @validator("collections", pre=True)
