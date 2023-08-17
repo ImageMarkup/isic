@@ -1,5 +1,4 @@
 from django.contrib import messages
-from django.db.models.query import QuerySet
 from django.http.response import JsonResponse
 from django.shortcuts import get_object_or_404
 from ninja import ModelSchema, Router, Schema
@@ -8,7 +7,6 @@ from pydantic.types import conlist, constr
 
 from isic.core.constants import ISIC_ID_REGEX
 from isic.core.models.collection import Collection
-from isic.core.models.image import Image
 from isic.core.pagination import CursorPagination
 from isic.core.permissions import get_visible_objects
 from isic.core.serializers import SearchQueryIn
@@ -51,7 +49,8 @@ def collection_detail(request, id: int) -> CollectionOut:
 
 @router.post("/{id}/populate-from-search/", response={202: None, 403: dict, 409: dict})
 def collection_populate_from_search(request, id: int, payload: SearchQueryIn):
-    collection = get_object_or_404(Collection, id=id)
+    qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
+    collection = get_object_or_404(qs, id=id)
 
     if not request.user.has_perm("core.add_images", collection):
         return 403, {"error": "You do not have permission to add images to this collection."}
@@ -77,15 +76,12 @@ def collection_populate_from_search(request, id: int, payload: SearchQueryIn):
 class IsicIdList(Schema):
     isic_ids: conlist(constr(pattern=ISIC_ID_REGEX), max_length=500)
 
-    def to_queryset(self, user, qs: QuerySet[Image] | None = None) -> QuerySet[Image]:
-        qs = qs if qs is not None else Image._default_manager.all()
-        return qs.filter(isic_id__in=self.isic_ids)
-
 
 # TODO: refactor *-from-list methods
 @router.post("/{id}/populate-from-list/", response={200: None, 403: dict, 409: dict})
 def collection_populate_from_list(request, id, payload: IsicIdList):
-    collection = get_object_or_404(Collection, id=id)
+    qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
+    collection = get_object_or_404(qs, id=id)
 
     if not request.user.has_perm("core.add_images", collection):
         return 403, {"error": "You do not have permission to add images to this collection."}
@@ -104,7 +100,8 @@ def collection_populate_from_list(request, id, payload: IsicIdList):
 
 @router.post("/{id}/remove-from-list/", response={200: None, 403: dict, 409: dict})
 def remove_from_list(request, id, payload: IsicIdList):
-    collection = get_object_or_404(Collection, id=id)
+    qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
+    collection = get_object_or_404(qs, id=id)
 
     if not request.user.has_perm("core.remove_images", collection):
         return 403, {"error": "You do not have permission to add images to this collection."}
