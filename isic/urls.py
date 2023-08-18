@@ -14,6 +14,7 @@ from rest_framework import permissions, routers
 
 from isic.core.api import ImageViewSet
 from isic.core.api.collection import router as collection_router
+from isic.core.api.user import router as user_router
 from isic.find.api import router as quickfind_router
 from isic.ingest.api import CohortViewSet, ContributorViewSet, MetadataFileViewSet
 from isic.studies.api import AnnotationViewSet, StudyTaskViewSet, StudyViewSet
@@ -23,11 +24,13 @@ api = NinjaAPI(
     description=render_to_string("core/swagger_description.html"),
     version="v2",
     docs_url=None,  # we want to serve the docs next to the ninja root rather than under it
+    csrf=True,
 )
 swagger_view = partial(openapi_view, api=api)
 
 api.add_router("/quickfind/", quickfind_router, tags=["quickfind"])
 api.add_router("/collections/", collection_router, tags=["collections"])
+api.add_router("/users", user_router, tags=["users"])
 
 
 router = routers.SimpleRouter()
