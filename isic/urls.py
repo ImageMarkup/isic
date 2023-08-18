@@ -1,3 +1,5 @@
+from functools import partial
+
 from django.conf import settings
 from django.contrib import admin
 from django.template.loader import render_to_string
@@ -7,6 +9,7 @@ from drf_yasg import openapi
 from drf_yasg.generators import OpenAPISchemaGenerator
 from drf_yasg.views import get_schema_view
 from ninja import NinjaAPI
+from ninja.openapi.views import openapi_view
 from rest_framework import permissions, routers
 
 from isic.core.api import ImageViewSet
@@ -15,9 +18,16 @@ from isic.find.api import router as quickfind_router
 from isic.ingest.api import CohortViewSet, ContributorViewSet, MetadataFileViewSet
 from isic.studies.api import AnnotationViewSet, StudyTaskViewSet, StudyViewSet
 
-api = NinjaAPI(title="ISIC Archive", description=render_to_string("core/swagger_description.html"))
-api.add_router("/quickfind/", quickfind_router)
-api.add_router("/collections/", collection_router)
+api = NinjaAPI(
+    title="ISIC Archive",
+    description=render_to_string("core/swagger_description.html"),
+    version="v2",
+    docs_url=None,  # we want to serve the docs next to the ninja root rather than under it
+)
+swagger_view = partial(openapi_view, api=api)
+
+api.add_router("/quickfind/", quickfind_router, tags=["quickfind"])
+api.add_router("/collections/", collection_router, tags=["collections"])
 
 
 router = routers.SimpleRouter()
@@ -55,8 +65,7 @@ urlpatterns = [
     path("api/v2/s3-upload/", include("s3_file_field.urls")),
     path("api/v2/", include(router.urls)),
     path("api/v2/", api.urls),
-    path("api/docs/redoc/", schema_view.with_ui("redoc"), name="docs-redoc"),
-    path("api/docs/swagger/", schema_view.with_ui("swagger"), name="docs-swagger"),
+    path("api/docs/swagger/", swagger_view, name="docs-swagger"),
     # Core app
     path("", RedirectView.as_view(url=reverse_lazy("core/image-browser")), name="index"),
     path("", include("isic.core.urls")),

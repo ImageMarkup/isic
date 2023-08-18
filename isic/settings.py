@@ -70,6 +70,7 @@ class IsicMixin(ConfigMixin):
             "isic.stats.apps.StatsConfig",
             "isic.studies.apps.StudiesConfig",
             "isic.zip_download.apps.ZipDownloadConfig",
+            "ninja",  # required because we overwrite ninja/swagger.html
         ] + configuration.INSTALLED_APPS
 
         # Install additional apps
