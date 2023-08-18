@@ -31,7 +31,7 @@ class CollectionOut(ModelSchema):
         return obj.doi_url
 
 
-@router.get("/", response=list[CollectionOut])
+@router.get("/", response=list[CollectionOut], summary="Return a list of collections.")
 @paginate(CursorPagination)
 def collection_list(request, pinned: bool | None = None) -> list[CollectionOut]:
     queryset = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
@@ -40,14 +40,18 @@ def collection_list(request, pinned: bool | None = None) -> list[CollectionOut]:
     return queryset
 
 
-@router.get("/{id}/", response=CollectionOut)
+@router.get("/{id}/", response=CollectionOut, summary="Retrieve a single collection by ID.")
 def collection_detail(request, id: int) -> CollectionOut:
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
     collection = get_object_or_404(qs, id=id)
     return collection
 
 
-@router.post("/{id}/populate-from-search/", response={202: None, 403: dict, 409: dict})
+@router.post(
+    "/{id}/populate-from-search/",
+    response={202: None, 403: dict, 409: dict},
+    include_in_schema=False,
+)
 def collection_populate_from_search(request, id: int, payload: SearchQueryIn):
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
     collection = get_object_or_404(qs, id=id)
@@ -78,7 +82,9 @@ class IsicIdList(Schema):
 
 
 # TODO: refactor *-from-list methods
-@router.post("/{id}/populate-from-list/", response={200: None, 403: dict, 409: dict})
+@router.post(
+    "/{id}/populate-from-list/", response={200: None, 403: dict, 409: dict}, include_in_schema=False
+)
 def collection_populate_from_list(request, id, payload: IsicIdList):
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
     collection = get_object_or_404(qs, id=id)
@@ -98,7 +104,9 @@ def collection_populate_from_list(request, id, payload: IsicIdList):
     return JsonResponse(summary)
 
 
-@router.post("/{id}/remove-from-list/", response={200: None, 403: dict, 409: dict})
+@router.post(
+    "/{id}/remove-from-list/", response={200: None, 403: dict, 409: dict}, include_in_schema=False
+)
 def remove_from_list(request, id, payload: IsicIdList):
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
     collection = get_object_or_404(qs, id=id)

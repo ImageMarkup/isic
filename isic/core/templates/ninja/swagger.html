@@ -1,0 +1,48 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <link type="text/css" rel="stylesheet" href="{% static 'ninja/swagger-ui.css' %}">
+    <style type="text/css">
+        .welcome-api-banner {
+            background-color: #85bffc;
+            color: #2e2e2e;
+            display: block;
+            line-height: 35px;
+            text-align: center;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .topbar,
+        .information-container a.link,
+        .scheme-container,
+        .filter-container,
+        section.models {
+            display: none;
+        }
+
+        body {
+            margin: 0;
+        }
+    </style>
+    <link rel="shortcut icon" href="{% static 'ninja/favicon.png' %}">
+    <title>{{ api.title }}</title>
+</head>
+<body
+    data-openapi-url="{{ openapi_json_url }}"
+    data-csrf-token="{% if add_csrf %}{{ csrf_token }}{% endif %}"
+    data-api-csrf="{% if add_csrf %}true{% endif %}">
+
+    <div class="welcome-api-banner">
+        This is the official V2 API of the ISIC Archive. The V1 API has been retired.
+        Any problems can be reported at the <a href="https://forum.isic-archive.com/c/archive/13">ISIC Forum</a>.
+    </div>
+
+    <div id="swagger-ui"></div>
+
+    <script src="{% static 'ninja/swagger-ui-bundle.js' %}"></script>
+    <script src="{% static 'ninja/swagger-ui-init.js' %}"></script>
+
+</body>
+</html>
