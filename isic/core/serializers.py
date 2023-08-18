@@ -19,29 +19,6 @@ from isic.core.models.collection import Collection
 from isic.core.permissions import get_visible_objects
 
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = [
-            "id",
-            "created",
-            "email",
-            "full_name",
-            "first_name",
-            "last_name",
-            "hash_id",
-            "accepted_terms",
-        ]
-
-    created = serializers.DateTimeField(source="date_joined")
-    hash_id = serializers.CharField(source="profile.hash_id")
-    accepted_terms = serializers.DateTimeField(source="profile.accepted_terms")
-    full_name = serializers.SerializerMethodField()
-
-    def get_full_name(self, obj: User) -> str:
-        return f"{obj.first_name} {obj.last_name}"
-
-
 class CollectionsField(Field):
     """A field for comma separated collection ids."""
 
