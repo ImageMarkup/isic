@@ -1,11 +1,9 @@
 import re
 from typing import Optional
 
-from django.conf import settings
 from django.contrib.auth.models import AnonymousUser, User
 from django.db.models.query import QuerySet
 from django.shortcuts import get_object_or_404
-from isic_metadata import FIELD_REGISTRY
 from ninja import Schema
 from pydantic import validator
 from pyparsing.exceptions import ParseException
@@ -65,7 +63,7 @@ class IsicIdListSerializer(serializers.Serializer):
 # TODO: https://github.com/vitalik/django-ninja/issues/526#issuecomment-1283984292
 # Update this to use context for the user once django-ninja supports it
 class SearchQueryIn(Schema):
-    query: str | None
+    query: str | None = None
     collections: list[int] | None = None
 
     @validator("query")
@@ -111,7 +109,7 @@ class SearchQueryIn(Schema):
         # TODO
         return cls(data=token, context={"user": user})
 
-    def to_queryset(self, user, qs: Optional[QuerySet[Image]] = None) -> QuerySet[Image]:
+    def to_queryset(self, user: User, qs: Optional[QuerySet[Image]] = None) -> QuerySet[Image]:
         qs = qs if qs is not None else Image._default_manager.all()
 
         if self.query:
@@ -184,80 +182,3 @@ class SearchQuerySerializer(serializers.Serializer):
             )
 
         return get_visible_objects(self.context["user"], "core.view_image", qs).distinct()
-
-
-class ImageFileSerializer(serializers.Serializer):
-    full = serializers.SerializerMethodField()
-    thumbnail_256 = serializers.SerializerMethodField()
-
-    def get_full(self, obj: Image) -> dict:
-        if settings.ISIC_PLACEHOLDER_IMAGES:
-            url = f"https://picsum.photos/seed/{ obj.id }/1000"
-        else:
-            url = obj.accession.blob.url
-
-        return {
-            "url": url,
-            "size": obj.accession.blob_size,
-        }
-
-    def get_thumbnail_256(self, obj: Image) -> dict:
-        if settings.ISIC_PLACEHOLDER_IMAGES:
-            url = f"https://picsum.photos/seed/{ obj.id }/256"
-        else:
-            url = obj.accession.thumbnail_256.url
-
-        return {
-            "url": url,
-            "size": obj.accession.thumbnail_256_size,
-        }
-
-
-class ImageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Image
-        fields = [
-            "isic_id",
-            "public",
-            "copyright_license",
-            "attribution",
-            "metadata",
-            "files",
-        ]
-
-    copyright_license = serializers.CharField(source="accession.copyright_license", read_only=True)
-    attribution = serializers.CharField(source="accession.cohort.attribution", read_only=True)
-    metadata = serializers.SerializerMethodField(read_only=True)
-    files = ImageFileSerializer(source="*", read_only=True)
-
-    def get_metadata(self, image: Image) -> dict:
-        metadata = {
-            "acquisition": {"pixels_x": image.accession.width, "pixels_y": image.accession.height},
-            "clinical": {},
-        }
-
-        for key, value in image.accession.redacted_metadata.items():
-            # this is the only field that we expose that isn't in the FIELD_REGISTRY
-            # since it's a derived field.
-            if key == "age_approx":
-                metadata["clinical"][key] = value
-            else:
-                metadata[FIELD_REGISTRY[key]["type"]][key] = value
-
-        return metadata
-
-
-class CollectionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Collection
-        fields = [
-            "id",
-            "name",
-            "description",
-            "public",
-            "pinned",
-            "locked",
-            "doi",
-        ]
-
-    doi = serializers.URLField(source="doi_url")

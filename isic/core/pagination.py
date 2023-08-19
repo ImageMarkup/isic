@@ -6,7 +6,7 @@ from urllib import parse
 
 from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
-from ninja import Schema
+from ninja import Field, Schema
 from ninja.pagination import PaginationBase
 from rest_framework.pagination import CursorPagination
 from rest_framework.response import Response
@@ -71,14 +71,14 @@ def _replace_query_param(url: str, key: str, val: str):
 
 class CursorPagination(PaginationBase):
     class Input(Schema):
-        limit: int | None = None
-        cursor: str | None = None
+        limit: int | None = Field(None, description="Number of results to return per page.")
+        cursor: str | None = Field(None, description="The pagination cursor value.")
 
     class Output(Schema):
-        results: list[Any]
-        count: int
-        next: str | None
-        previous: str | None
+        results: list[Any] = Field(description="The page of objects.")
+        count: int = Field(description="The total number of results across all pages.")
+        next: str | None = Field(description="URL of next page of results if there is one.")
+        previous: str | None = Field(description="URL of previous page of results if there is one.")
 
     items_attribute = "results"
     default_ordering = ("-created",)

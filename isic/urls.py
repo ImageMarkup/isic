@@ -12,8 +12,8 @@ from ninja import NinjaAPI
 from ninja.openapi.views import openapi_view
 from rest_framework import permissions, routers
 
-from isic.core.api import ImageViewSet
 from isic.core.api.collection import router as collection_router
+from isic.core.api.image import router as image_router
 from isic.core.api.user import router as user_router
 from isic.find.api import router as quickfind_router
 from isic.ingest.api import CohortViewSet, ContributorViewSet, MetadataFileViewSet
@@ -28,8 +28,9 @@ api = NinjaAPI(
 )
 swagger_view = partial(openapi_view, api=api)
 
-api.add_router("/quickfind/", quickfind_router, tags=["quickfind"])
 api.add_router("/collections/", collection_router, tags=["collections"])
+api.add_router("/images/", image_router, tags=["images"])
+api.add_router("/quickfind/", quickfind_router, tags=["quickfind"])
 api.add_router("/users", user_router, tags=["users"])
 
 
@@ -37,7 +38,6 @@ router = routers.SimpleRouter()
 router.register("annotations", AnnotationViewSet)
 router.register("cohorts", CohortViewSet)
 router.register("contributors", ContributorViewSet)
-router.register("images", ImageViewSet)
 router.register("metadata-files", MetadataFileViewSet)
 router.register("studies", StudyViewSet)
 router.register("study-tasks", StudyTaskViewSet)
