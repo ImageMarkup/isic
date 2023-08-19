@@ -1,109 +1,118 @@
-from django.utils.decorators import method_decorator
-from drf_yasg.utils import swagger_auto_schema
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework.viewsets import ReadOnlyModelViewSet
+from django.conf import settings
+from django.http.request import HttpRequest
+from django.shortcuts import get_object_or_404
+from django.template.loader import render_to_string
+from isic_metadata import FIELD_REGISTRY
+from ninja import Field, ModelSchema, Query, Router, Schema
+from ninja.pagination import paginate
 
-from isic.core.models.collection import Collection
-from isic.core.models.image import Image
-from isic.core.permissions import IsicObjectPermissionsFilter, get_visible_objects
+from isic.core.models import Collection, Image
+from isic.core.pagination import CursorPagination
+from isic.core.permissions import get_visible_objects
 from isic.core.search import build_elasticsearch_query, facets
-from isic.core.serializers import ImageSerializer, SearchQuerySerializer
+from isic.core.serializers import SearchQueryIn
+
+router = Router()
+
+# TODO this originally had "distinct()" on it; I don't think that's needed though
+default_qs = Image.objects.select_related("accession__cohort").defer(
+    "accession__unstructured_metadata"
+)
 
 
-@method_decorator(
-    name="list", decorator=swagger_auto_schema(operation_summary="Return a list of images.")
+class FileOut(Schema):
+    url: str
+    size: int
+
+
+class ImageFilesOut(Schema):
+    full: FileOut
+    thumbnail_256: FileOut
+
+
+class ImageOut(ModelSchema):
+    class Config:
+        model = Image
+        model_fields = ["public"]
+
+    isic_id: str = Field(alias="isic_id")
+    copyright_license: str = Field(alias="accession.copyright_license")
+    attribution: str = Field(alias="accession.cohort.attribution")
+    files: ImageFilesOut
+    metadata: dict
+
+    @staticmethod
+    def resolve_files(image: Image) -> dict:
+        if settings.ISIC_PLACEHOLDER_IMAGES:
+            full_url = f"https://picsum.photos/seed/{image.id}/1000"
+            thumbnail_url = f"https://picsum.photos/seed/{image.id}/256"
+        else:
+            full_url = image.accession.blob.url
+            thumbnail_url = image.accession.thumbnail_256.url
+
+        full_size = image.accession.blob_size
+        thumbnail_size = image.accession.thumbnail_256_size
+
+        return ImageFilesOut(
+            full=FileOut(url=full_url, size=full_size),
+            thumbnail_256=FileOut(url=thumbnail_url, size=thumbnail_size),
+        )
+
+    @staticmethod
+    def resolve_metadata(image: Image) -> dict:
+        metadata = {
+            "acquisition": {"pixels_x": image.accession.width, "pixels_y": image.accession.height},
+            "clinical": {},
+        }
+
+        for key, value in image.accession.redacted_metadata.items():
+            # this is the only field that we expose that isn't in the FIELD_REGISTRY
+            # since it's a derived field.
+            if key == "age_approx":
+                metadata["clinical"][key] = value
+            else:
+                metadata[FIELD_REGISTRY[key]["type"]][key] = value
+
+        return metadata
+
+
+@router.get("/", response=list[ImageOut], summary="Return a list of images.")
+@paginate(CursorPagination)
+def list_images(request: HttpRequest):
+    return get_visible_objects(request.user, "core.view_image", default_qs)
+
+
+@router.get(
+    "/search/",
+    response=list[ImageOut],
+    summary="Search images with a key:value query string.",
+    description=render_to_string("core/swagger_image_search_description.html"),
 )
-@method_decorator(
-    name="retrieve",
-    decorator=swagger_auto_schema(operation_summary="Retrieve a single image by ISIC ID."),
-)
-class ImageViewSet(ReadOnlyModelViewSet):
-    serializer_class = ImageSerializer
-    queryset = (
-        Image.objects.select_related("accession__cohort")
-        .defer("accession__unstructured_metadata")
-        .distinct()
+@paginate(CursorPagination)
+def search_images(request: HttpRequest, search: SearchQueryIn = Query(...)):  # noqa: B008
+    return search.to_queryset(user=request.user, qs=default_qs)
+
+
+@router.get("/facets/", response=dict, include_in_schema=False)
+def get_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):  # noqa: B008
+    query = build_elasticsearch_query(
+        search.query or "",
+        request.user,
+        search.collections,
     )
-    filter_backends = [IsicObjectPermissionsFilter]
-    lookup_field = "isic_id"
-
-    @swagger_auto_schema(auto_schema=None)
-    @action(detail=False, methods=["get"], pagination_class=None)
-    def facets(self, request):
-        serializer = SearchQuerySerializer(data=request.query_params)
-        serializer.is_valid(raise_exception=True)
-        query = build_elasticsearch_query(
-            serializer.validated_data.get("query", ""),
+    # Manually pass the list of visible collection PKs through so buckets with
+    # counts of 0 aren't included in the facets output for non-visible collections.
+    collection_pks = list(
+        get_visible_objects(
             request.user,
-            serializer.validated_data.get("collections"),
+            "core.view_collection",
+            Collection.objects.values_list("pk", flat=True),
         )
-        # Manually pass the list of visible collection PKs through so buckets with
-        # counts of 0 aren't included in the facets output for non-visible collections.
-        collection_pks = list(
-            get_visible_objects(
-                request.user,
-                "core.view_collection",
-                Collection.objects.values_list("pk", flat=True),
-            )
-        )
-        response = facets(query, collection_pks)
-
-        return Response(response)
-
-    @swagger_auto_schema(
-        operation_summary="Search images with a key:value query string.",
-        operation_description="""
-        The search query uses a simple DSL syntax.
-
-        Some example queries are:
-        <pre>
-            # Display images diagnosed as melanoma from patients that are approximately 50 years old.
-            age_approx:50 AND diagnosis:melanoma
-        </pre>
-        <pre>
-            # Display images from male patients that are approximately 20 to 40 years old.
-            age_approx:[20 TO 40] AND sex:male
-        </pre>
-        <pre>
-            # Display images from the anterior, posterior, or lateral torso anatomical site where the diagnosis was confirmed by single image expert consensus.
-            anatom_site_general:*torso AND diagnosis_confirm_type:"single image expert consensus"
-        </pre>
-
-        The following fields are exposed to the query parameter:
-        <ul>
-            <li>diagnosis</li>
-            <li>age_approx</li>
-            <li>sex</li>
-            <li>benign_malignant</li>
-            <li>diagnosis_confirm_type</li>
-            <li>personal_hx_mm</li>
-            <li>family_hx_mm</li>
-            <li>clin_size_long_diam_mm</li>
-            <li>melanocytic</li>
-            <li>acquisition_day</li>
-            <li>nevus_type</li>
-            <li>image_type</li>
-            <li>dermoscopic_type</li>
-            <li>anatom_site_general</li>
-            <li>mel_class</li>
-            <li>mel_mitotic_index</li>
-            <li>mel_thick_mm</li>
-            <li>mel_type</li>
-            <li>mel_ulcer</li>
-        </ul>
-        """,  # noqa: E501
-        query_serializer=SearchQuerySerializer,
     )
-    @action(detail=False, methods=["get"])
-    def search(self, request):
-        serializer = SearchQuerySerializer(
-            data=request.query_params, context={"user": request.user}
-        )
-        serializer.is_valid(raise_exception=True)
-        qs = serializer.to_queryset(self.get_queryset())
-        page = self.paginate_queryset(qs)
-        serializer = self.get_serializer(page, many=True)
-        paginated_response = self.get_paginated_response(serializer.data)
+    return facets(query, collection_pks)
 
-        return paginated_response
+
+@router.get("/{isic_id}/", response=ImageOut, summary="Retrieve a single image by ISIC ID.")
+def retrieve_image(request: HttpRequest, isic_id: str):
+    qs = get_visible_objects(request.user, "core.view_image", default_qs)
+    return get_object_or_404(qs, isic_id=isic_id)
