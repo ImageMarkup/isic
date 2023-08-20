@@ -1,20 +1,11 @@
-from django.urls import include, path
+from django.urls import path
 
-from isic.ingest.api import AccessionCreateApi, AccessionCreateReviewBulkApi, cohort_autocomplete
 import isic.ingest.views.cohort as cohort_views
 import isic.ingest.views.metadata as metadata_views
 import isic.ingest.views.review as review_views
 import isic.ingest.views.upload as upload_views
 
-accession_api_patterns = [
-    path("", AccessionCreateApi.as_view(), name="create"),
-    path("create-review-bulk/", AccessionCreateReviewBulkApi.as_view(), name="create-review-bulk"),
-]
-
-
 urlpatterns = [
-    path("api/v2/accessions/", include((accession_api_patterns, "accessions"))),
-    path("api/v2/autocomplete/cohort/", cohort_autocomplete, name="cohort-autocomplete"),
     path(
         "upload/select-or-create-contributor/",
         upload_views.select_or_create_contributor,
