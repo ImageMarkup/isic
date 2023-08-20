@@ -10,9 +10,19 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Model
 from django.db.models.base import ModelBase
 from django.db.models.query import QuerySet
+from django.http.request import HttpRequest
 from django.shortcuts import get_object_or_404, resolve_url
 from django.utils.functional import wraps
+from ninja.security.session import SessionAuth
 from rest_framework.filters import BaseFilterBackend
+
+
+class SessionAuthStaffUser(SessionAuth):
+    def authenticate(self, request: HttpRequest, key: str | None) -> User | None:
+        if request.user.is_staff:
+            return request.user
+
+        return None
 
 
 class UserPermissions:

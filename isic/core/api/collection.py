@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.http.response import JsonResponse
 from django.shortcuts import get_object_or_404
-from ninja import ModelSchema, Router, Schema
+from ninja import Field, ModelSchema, Router, Schema
 from ninja.pagination import paginate
 from pydantic.types import conlist, constr
 
@@ -24,11 +24,7 @@ class CollectionOut(ModelSchema):
         model = Collection
         model_fields = ["id", "name", "description", "public", "pinned", "locked", "doi"]
 
-    doi_url: str | None
-
-    @staticmethod
-    def resolve_doi_url(obj: Collection):
-        return obj.doi_url
+    doi_url: str | None = Field(alias="doi_url")
 
 
 @router.get("/", response=list[CollectionOut], summary="Return a list of collections.")
