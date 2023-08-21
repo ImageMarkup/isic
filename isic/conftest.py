@@ -2,7 +2,6 @@ from django.contrib.auth.models import Group, User
 from django.test.client import Client
 import pytest
 from pytest_factoryboy import register
-from rest_framework.test import APIClient
 
 from isic.core.tests.factories import CollectionFactory, ImageFactory
 from isic.ingest.tests.factories import (
@@ -39,12 +38,6 @@ def setup_groups(request):
 
 
 @pytest.fixture
-def api_client() -> APIClient:
-    # TODO have this return a django.test.Client instead of DRF's APIClient
-    return APIClient()
-
-
-@pytest.fixture
 def client() -> Client:
     return Client()
 
@@ -59,13 +52,6 @@ def authenticated_client(user):
 
 
 @pytest.fixture
-def authenticated_api_client(user) -> APIClient:
-    api_client = APIClient()
-    api_client.force_authenticate(user=user)
-    return api_client
-
-
-@pytest.fixture
 def staff_user(user_factory):
     return user_factory(is_staff=True)
 
@@ -75,13 +61,6 @@ def staff_client(staff_user):
     client = Client()
     client.force_login(staff_user)
     return client
-
-
-@pytest.fixture
-def staff_api_client(staff_user) -> APIClient:
-    api_client = APIClient()
-    api_client.force_authenticate(user=staff_user)
-    return api_client
 
 
 @pytest.fixture

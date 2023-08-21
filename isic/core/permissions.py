@@ -14,7 +14,6 @@ from django.http.request import HttpRequest
 from django.shortcuts import get_object_or_404, resolve_url
 from django.utils.functional import wraps
 from ninja.security.session import SessionAuth
-from rest_framework.filters import BaseFilterBackend
 
 
 class SessionAuthStaffUser(SessionAuth):
@@ -56,15 +55,6 @@ class IsicObjectPermissionsBackend(BaseBackend):
     def has_perm(self, user_obj, perm, obj=None):
         if ISIC_PERMS_MAP.get(perm):
             return ISIC_PERMS_MAP[perm](user_obj, obj)
-
-
-class IsicObjectPermissionsFilter(BaseFilterBackend):
-    def filter_queryset(self, request, queryset, view):
-        return get_visible_objects(
-            request.user,
-            f"{queryset.model._meta.app_label}.view_{queryset.model._meta.model_name}",
-            queryset,
-        )
 
 
 def get_visible_objects(user, perm, qs=None):
