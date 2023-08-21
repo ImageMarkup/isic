@@ -69,14 +69,7 @@ class SearchQueryIn(Schema):
     @validator("query")
     @classmethod
     def valid_search_query(cls, value: str):
-        if value.strip() == "":
-            return None
-
-        try:
-            parse_query(value)
-        except ParseException:
-            raise ValueError("Couldn't parse search query.")
-        return value
+        return value.strip() or None
 
     @validator("collections", pre=True)
     @classmethod
@@ -113,7 +106,6 @@ class SearchQueryIn(Schema):
         qs = qs if qs is not None else Image._default_manager.all()
 
         if self.query:
-            # the serializer has already validated the query will parse
             qs = qs.from_search_query(self.query)
 
         if self.collections:
