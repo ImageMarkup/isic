@@ -93,7 +93,7 @@ class StudyTaskOut(ModelSchema):
 
 
 @study_task_router.get(
-    "/", response=list[StudyTaskOut], include_in_schema=True, auth=SessionAuthStaffUser
+    "/", response=list[StudyTaskOut], include_in_schema=False, auth=SessionAuthStaffUser
 )
 @paginate(CursorPagination)
 def study_task_list(request: HttpRequest):

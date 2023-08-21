@@ -5,7 +5,9 @@ from django.template.loader import render_to_string
 from isic_metadata import FIELD_REGISTRY
 from ninja import Field, ModelSchema, Query, Router, Schema
 from ninja.pagination import paginate
+from pyparsing.exceptions import ParseException
 
+from isic.core.dsl import parse_query
 from isic.core.models import Collection, Image
 from isic.core.pagination import CursorPagination
 from isic.core.permissions import get_visible_objects
@@ -18,6 +20,10 @@ router = Router()
 default_qs = Image.objects.select_related("accession__cohort").defer(
     "accession__unstructured_metadata"
 )
+
+
+class ImageSearchParseError(Exception):
+    pass
 
 
 class FileOut(Schema):
@@ -84,17 +90,30 @@ def list_images(request: HttpRequest):
 
 @router.get(
     "/search/",
-    response=list[ImageOut],
+    response={200: list[ImageOut], 400: dict},
     summary="Search images with a key:value query string.",
     description=render_to_string("core/swagger_image_search_description.html"),
 )
 @paginate(CursorPagination)
 def search_images(request: HttpRequest, search: SearchQueryIn = Query(...)):  # noqa: B008
-    return search.to_queryset(user=request.user, qs=default_qs)
+    try:
+        return search.to_queryset(user=request.user, qs=default_qs)
+    except ParseException:
+        # Normally we'd like this to be handled by the input serializer validation, but
+        # for backwards compatibility we must return 400 rather than 422.
+        # The pagination wrapper means we can't just return the response we'd like from here.
+        # The handler for this exception type is defined in urls.py.
+        raise ImageSearchParseError()
 
 
 @router.get("/facets/", response=dict, include_in_schema=False)
 def get_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):  # noqa: B008
+    if search.query:
+        try:
+            parse_query(search.query)
+        except ParseException:
+            raise ImageSearchParseError()
+
     query = build_elasticsearch_query(
         search.query or "",
         request.user,

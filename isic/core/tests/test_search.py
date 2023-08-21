@@ -133,7 +133,7 @@ def test_core_api_image_search_shares(
 @pytest.mark.parametrize("route", ["images/search/", "images/facets/"])
 def test_core_api_image_search_invalid_query(route, searchable_images, authenticated_client):
     r = authenticated_client.get(f"/api/v2/{route}", {"query": "age_approx:[[[[]]]]"})
-    assert r.status_code == 422, r.json()
+    assert r.status_code == 400, r.json()
 
 
 @pytest.mark.django_db

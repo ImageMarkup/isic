@@ -10,7 +10,7 @@ from ninja import NinjaAPI
 from ninja.openapi.views import openapi_view
 
 from isic.core.api.collection import router as collection_router
-from isic.core.api.image import router as image_router
+from isic.core.api.image import ImageSearchParseError, router as image_router
 from isic.core.api.user import router as user_router
 from isic.find.api import router as quickfind_router
 from isic.ingest.api import (
@@ -51,6 +51,15 @@ def handle_django_validation_error(request, exc: ValidationError):
     return api.create_response(
         request,
         {"message": exc.message},
+        status=400,
+    )
+
+
+@api.exception_handler(ImageSearchParseError)
+def handle_image_search_parse_error(request, exc: ImageSearchParseError):
+    return api.create_response(
+        request,
+        {"message": "Could not parse search query."},
         status=400,
     )
 
