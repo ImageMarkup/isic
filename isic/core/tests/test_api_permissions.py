@@ -62,3 +62,12 @@ def test_core_api_image_detail(images, authenticated_client, staff_client):
     assert r.status_code == 200, r.json()
     r = staff_client.get(f"/api/v2/images/{private_image_id}/")
     assert r.status_code == 200, r.json()
+
+
+@pytest.mark.django_db
+def test_api_auth_staff_user(authenticated_client, staff_client, metadata_file):
+    r = authenticated_client.delete(f"/api/v2/metadata-files/{metadata_file.pk}/")
+    assert r.status_code == 401, r.json()
+
+    r = staff_client.delete(f"/api/v2/metadata-files/{metadata_file.pk}/")
+    assert r.status_code == 204, r.json()
