@@ -131,7 +131,7 @@ def zip_file_attribution_file(request: HttpRequest, token: str = Query(...)):  #
     return HttpResponse("\n\n".join(attributions), content_type="text/plain")
 
 
-@zip_router.get("/license-file/{license_type}/")
+@zip_router.get("/license-file/{license_type}/", include_in_schema=False)
 def zip_file_license_file(request: HttpRequest, license_type: str):
     if license_type not in CopyrightLicense.values:
         raise Http404
