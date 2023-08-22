@@ -5,7 +5,7 @@ from urllib3.exceptions import ConnectionError, TimeoutError
 from isic.core.models.collection import Collection
 from isic.core.models.image import Image
 from isic.core.search import bulk_add_to_search_index
-from isic.core.serializers import SearchQuerySerializer
+from isic.core.serializers import SearchQueryIn
 from isic.core.services.collection.image import collection_add_images
 
 
@@ -19,9 +19,8 @@ def populate_collection_from_search_task(
     if "collections" in search_params and not search_params["collections"]:
         del search_params["collections"]
 
-    serializer = SearchQuerySerializer(data=search_params, context={"user": user})
-    serializer.is_valid(raise_exception=True)
-    collection_add_images(collection=collection, qs=serializer.to_queryset())
+    serializer = SearchQueryIn(**search_params)
+    collection_add_images(collection=collection, qs=serializer.to_queryset(user))
 
 
 @shared_task(
