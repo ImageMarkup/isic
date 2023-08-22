@@ -10,7 +10,6 @@ from pyparsing.exceptions import ParseException
 from rest_framework import serializers
 from rest_framework.fields import Field
 
-from isic.core.constants import ISIC_ID_REGEX
 from isic.core.dsl import parse_query
 from isic.core.models import Image
 from isic.core.models.collection import Collection
@@ -51,25 +50,16 @@ def valid_search_query(value: str) -> None:
         raise serializers.ValidationError("Couldn't parse search query.")
 
 
-class IsicIdListSerializer(serializers.Serializer):
-    isic_ids = serializers.ListField(child=serializers.RegexField(ISIC_ID_REGEX), max_length=500)
-
-    def to_queryset(self, qs: Optional[QuerySet[Image]] = None) -> QuerySet[Image]:
-        qs = qs if qs is not None else Image._default_manager.all()
-        qs = qs.filter(isic_id__in=self.validated_data["isic_ids"])
-        return get_visible_objects(self.context["user"], "core.view_image", qs)
-
-
-# TODO: https://github.com/vitalik/django-ninja/issues/526#issuecomment-1283984292
-# Update this to use context for the user once django-ninja supports it
 class SearchQueryIn(Schema):
     query: str | None = None
     collections: list[int] | None = None
 
     @validator("query")
     @classmethod
-    def valid_search_query(cls, value: str):
-        return value.strip() or None
+    def valid_search_query(cls, value: str | None):
+        if value:
+            value = value.strip()
+        return value
 
     @validator("collections", pre=True)
     @classmethod
@@ -93,14 +83,13 @@ class SearchQueryIn(Schema):
         }
 
     @classmethod
-    def from_token_representation(cls, token):
+    def from_token_representation(cls, token) -> tuple[User, "SearchQueryIn"]:
         user = token.get("user")
         if user:
             user = get_object_or_404(User, pk=user)
         else:
             user = AnonymousUser()
-        # TODO
-        return cls(data=token, context={"user": user})
+        return user, cls(query=token["query"], collections=token["collections"])
 
     def to_queryset(self, user: User, qs: Optional[QuerySet[Image]] = None) -> QuerySet[Image]:
         qs = qs if qs is not None else Image._default_manager.all()
