@@ -21,6 +21,7 @@ from isic.ingest.api import (
     metadata_file_router,
 )
 from isic.studies.api import annotation_router, study_router, study_task_router
+from isic.zip_download.api import zip_router
 
 api = NinjaAPI(
     title="ISIC Archive",
@@ -44,6 +45,7 @@ api.add_router("/quickfind/", quickfind_router, tags=["quickfind"])
 api.add_router("/studies/", study_router, tags=["studies"])
 api.add_router("/study-tasks/", study_task_router, tags=["study-tasks"])
 api.add_router("/users/", user_router, tags=["users"])
+api.add_router("/zip-download/", zip_router, tags=["zip-downloads"])
 
 
 @api.exception_handler(ValidationError)
@@ -77,7 +79,6 @@ urlpatterns = [
     path("", include("isic.ingest.urls")),
     path("", include("isic.stats.urls")),
     path("", include("isic.studies.urls")),
-    path("", include("isic.zip_download.urls")),
 ]
 
 if settings.DEBUG:
