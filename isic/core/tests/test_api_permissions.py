@@ -48,6 +48,18 @@ def test_core_api_image_list_shares(private_image, authenticated_client, user, s
     assert r.json()["count"] == 1
 
 
+# Can be removed once https://github.com/ImageMarkup/tracker/issues/77 is resolved
+@pytest.mark.django_db
+def test_core_api_image_list_no_duplicates(private_image, authenticated_client, user, staff_user):
+    private_image.accession.cohort.contributor.owners.add(user)
+    private_image.shares.add(user, through_defaults={"creator": staff_user})
+    private_image.save()
+
+    r = authenticated_client.get("/api/v2/images/")
+    assert r.status_code == 200, r.json()
+    assert r.json()["count"] == 1
+
+
 @pytest.mark.django_db
 def test_core_api_image_detail(images, authenticated_client, staff_client):
     public_image_id = images[0].isic_id
