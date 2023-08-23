@@ -139,7 +139,7 @@ class IsicMixin(ConfigMixin):
 
     ISIC_ELASTICSEARCH_URI = values.SecretValue()
     ISIC_ELASTICSEARCH_INDEX = "isic"
-    ISIC_GUI_URL = "https://www.isic-archive.com"
+    ISIC_GUI_URL = "https://www.isic-archive.com/"
     ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = ISIC_GUI_URL
     ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = ISIC_GUI_URL
     ISIC_DATACITE_API_URL = values.Value("https://api.test.datacite.org")
