@@ -16,9 +16,10 @@ from isic.core.serializers import SearchQueryIn
 
 router = Router()
 
-# TODO this originally had "distinct()" on it; I don't think that's needed though
-default_qs = Image.objects.select_related("accession__cohort").defer(
-    "accession__unstructured_metadata"
+default_qs = (
+    Image.objects.select_related("accession__cohort")
+    .defer("accession__unstructured_metadata")
+    .distinct()
 )
 
 
