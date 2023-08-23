@@ -29,5 +29,5 @@ class QueryIn(Schema):
 
 
 @router.get("/", include_in_schema=False)
-def quickfind(request, payload: QueryIn = Query(...)):  # noqa: B008
+def quickfind(request, payload: QueryIn = Query(...)):
     return JsonResponse(quickfind_execute(payload.query, request.user), safe=False)

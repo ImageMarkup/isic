@@ -45,8 +45,8 @@ def create_zip_download_url(request: HttpRequest, payload: SearchQueryIn):
 @zip_router.get("/file-listing/", include_in_schema=False)
 def zip_file_listing(
     request: HttpRequest,
-    token: str = Query(..., min_length=1),  # noqa B008
-    pagination: CursorPagination.Input = Query(...),  # noqa B008
+    token: str = Query(..., min_length=1),
+    pagination: CursorPagination.Input = Query(...),
 ):
     try:
         download_info = get_zip_download_token(token)
@@ -100,7 +100,7 @@ def zip_file_listing(
 
 
 @zip_router.get("/metadata-file/", include_in_schema=False)
-def zip_file_metadata_file(request: HttpRequest, token: str = Query(...)):  # noqa B008
+def zip_file_metadata_file(request: HttpRequest, token: str = Query(...)):
     try:
         download_info = get_zip_download_token(token)
     except BadSignature:
@@ -119,7 +119,7 @@ def zip_file_metadata_file(request: HttpRequest, token: str = Query(...)):  # no
 
 
 @zip_router.get("/attribution-file/", include_in_schema=False)
-def zip_file_attribution_file(request: HttpRequest, token: str = Query(...)):  # noqa B008
+def zip_file_attribution_file(request: HttpRequest, token: str = Query(...)):
     try:
         download_info = get_zip_download_token(token)
     except BadSignature:

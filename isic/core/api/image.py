@@ -96,7 +96,7 @@ def list_images(request: HttpRequest):
     description=render_to_string("core/swagger_image_search_description.html"),
 )
 @paginate(CursorPagination)
-def search_images(request: HttpRequest, search: SearchQueryIn = Query(...)):  # noqa: B008
+def search_images(request: HttpRequest, search: SearchQueryIn = Query(...)):
     try:
         return search.to_queryset(user=request.user, qs=default_qs)
     except ParseException:
@@ -108,7 +108,7 @@ def search_images(request: HttpRequest, search: SearchQueryIn = Query(...)):  # 
 
 
 @router.get("/facets/", response=dict, include_in_schema=False)
-def get_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):  # noqa: B008
+def get_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):
     if search.query:
         try:
             parse_query(search.query)
