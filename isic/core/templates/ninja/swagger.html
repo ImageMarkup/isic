@@ -1,0 +1,32 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <link type="text/css" rel="stylesheet" href="{% static 'ninja/swagger-ui.css' %}">
+    <style type="text/css">
+        .topbar,
+        .information-container a.link,
+        .scheme-container,
+        .filter-container,
+        section.models {
+            display: none;
+        }
+
+        body {
+            margin: 0;
+        }
+    </style>
+    <title>{{ api.title }}</title>
+</head>
+<body
+    data-openapi-url="{{ openapi_json_url }}"
+    data-csrf-token="{% if add_csrf %}{{ csrf_token }}{% endif %}"
+    data-api-csrf="{% if add_csrf %}true{% endif %}">
+
+    <div id="swagger-ui"></div>
+
+    <script src="{% static 'ninja/swagger-ui-bundle.js' %}"></script>
+    <script src="{% static 'ninja/swagger-ui-init.js' %}"></script>
+
+</body>
+</html>

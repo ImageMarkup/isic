@@ -1,7 +1,9 @@
 from django import forms
+import pydantic_core
+from pyparsing.exceptions import ParseException
 
 from isic.core.models.image import Image
-from isic.core.serializers import SearchQuerySerializer
+from isic.core.serializers import SearchQueryIn
 
 
 class ImageSearchForm(forms.Form):
@@ -34,12 +36,16 @@ class ImageSearchForm(forms.Form):
             **self.cleaned_data,
             **{"collections": collections},
         }
-        serializer = SearchQuerySerializer(data=serializer_input, context={"user": self.user})
-        valid = serializer.is_valid(raise_exception=False)
+        try:
+            serializer = SearchQueryIn(**serializer_input)
+        except pydantic_core.ValidationError as exc:
+            raise forms.ValidationError([e["msg"] for e in exc.errors()])
 
-        if not valid:
-            raise forms.ValidationError(serializer.errors)
-
-        self.results = serializer.to_queryset(Image.objects.select_related("accession").all())
+        try:
+            self.results = serializer.to_queryset(
+                self.user, Image.objects.select_related("accession")
+            )
+        except ParseException:
+            raise forms.ValidationError("Invalid search query.")
 
         return super().clean()

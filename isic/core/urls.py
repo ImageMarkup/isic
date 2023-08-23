@@ -1,7 +1,6 @@
 from django.http.response import Http404
 from django.urls import path, register_converter
 
-from isic.core.api import user_me
 from isic.core.constants import ISIC_ID_REGEX, MONGO_ID_REGEX
 from isic.core.models.image import Image
 from isic.core.models.image_alias import ImageAlias
@@ -16,7 +15,6 @@ from isic.core.views.collections import (
 from isic.core.views.images import image_browser, image_detail
 from isic.core.views.users import staff_list, user_detail
 from isic.ingest.models.accession import Accession
-from isic.login.views import accept_terms_of_use
 
 
 class ImageIdentifierConverter:
@@ -49,8 +47,6 @@ class ImageIdentifierConverter:
 register_converter(ImageIdentifierConverter, "image-identifier")
 
 urlpatterns = [
-    path("api/v2/users/me/", user_me, name="core/api/users/me"),
-    path("api/v2/users/accept-terms/", accept_terms_of_use, name="core/api/users/accept-terms"),
     path("staff/users/", staff_list, name="core/staff-list"),
     path(
         "images/",
