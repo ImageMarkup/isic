@@ -12,6 +12,8 @@ from django.http.request import HttpRequest
 from django.http.response import Http404, HttpResponse
 from django.shortcuts import render
 from ninja import Query, Router
+from ninja.errors import AuthenticationError
+from ninja.security import APIKeyQuery
 
 from isic.core.models import CopyrightLicense, Image
 from isic.core.pagination import CursorPagination
@@ -32,8 +34,18 @@ def get_attributions(attributions: Iterable[str]) -> list[str]:
     return [x[0] for x in attributions]
 
 
-def get_zip_download_token(token: str) -> dict:
-    return TimestampSigner().unsign_object(token, max_age=timedelta(days=1))
+class ZipDownloadTokenAuth(APIKeyQuery):
+    param_name = "token"
+
+    def authenticate(self, request: HttpRequest, key: str) -> dict:
+        try:
+            token_dict = TimestampSigner().unsign_object(key, max_age=timedelta(days=1))
+        except BadSignature:
+            logger.exception("Bad zip download token passed")
+            raise AuthenticationError
+
+        token_dict["token"] = key
+        return token_dict
 
 
 @zip_router.post("/url/", response=str, include_in_schema=False)
@@ -42,18 +54,13 @@ def create_zip_download_url(request: HttpRequest, payload: SearchQueryIn):
     return f"{settings.ZIP_DOWNLOAD_SERVICE_URL}/download?zsid={token}"
 
 
-@zip_router.get("/file-listing/", include_in_schema=False)
+@zip_router.get("/file-listing/", include_in_schema=False, auth=ZipDownloadTokenAuth())
 def zip_file_listing(
     request: HttpRequest,
-    token: str = Query(..., min_length=1),
     pagination: CursorPagination.Input = Query(...),
 ):
-    try:
-        download_info = get_zip_download_token(token)
-    except BadSignature:
-        return HttpResponse(status=403)
-
-    user, search = SearchQueryIn.from_token_representation(download_info)
+    token = request.auth["token"]
+    user, search = SearchQueryIn.from_token_representation(request.auth)
     qs = search.to_queryset(user, Image.objects.select_related("accession"))
 
     paginator = CursorPagination()
@@ -71,7 +78,7 @@ def zip_file_listing(
     # initialize files with metadata and attribution files
     if resp_data["previous"] is None:
         logger.info(
-            f"Creating zip file descriptor for {qs.count()} images: " f"{json.dumps(download_info)}"
+            f"Creating zip file descriptor for {qs.count()} images: " f"{json.dumps(request.auth)}"
         )
         domain = Site.objects.get_current().domain
         files += [
@@ -99,14 +106,9 @@ def zip_file_listing(
     return resp_data
 
 
-@zip_router.get("/metadata-file/", include_in_schema=False)
-def zip_file_metadata_file(request: HttpRequest, token: str = Query(...)):
-    try:
-        download_info = get_zip_download_token(token)
-    except BadSignature:
-        return HttpResponse(status=403)
-
-    user, search = SearchQueryIn.from_token_representation(download_info)
+@zip_router.get("/metadata-file/", include_in_schema=False, auth=ZipDownloadTokenAuth())
+def zip_file_metadata_file(request: HttpRequest):
+    user, search = SearchQueryIn.from_token_representation(request.auth)
     qs = search.to_queryset(user, Image.objects.select_related("accession__cohort").distinct())
     response = HttpResponse(content_type="text/csv")
     writer = csv.DictWriter(response, _image_metadata_csv_headers(qs=qs))
@@ -118,14 +120,9 @@ def zip_file_metadata_file(request: HttpRequest, token: str = Query(...)):
     return response
 
 
-@zip_router.get("/attribution-file/", include_in_schema=False)
-def zip_file_attribution_file(request: HttpRequest, token: str = Query(...)):
-    try:
-        download_info = get_zip_download_token(token)
-    except BadSignature:
-        return HttpResponse(status=403)
-
-    user, search = SearchQueryIn.from_token_representation(download_info)
+@zip_router.get("/attribution-file/", include_in_schema=False, auth=ZipDownloadTokenAuth())
+def zip_file_attribution_file(request: HttpRequest):
+    user, search = SearchQueryIn.from_token_representation(request.auth)
     qs = search.to_queryset(user, Image.objects.select_related("accession__cohort").distinct())
     attributions = get_attributions(qs.values_list("accession__cohort__attribution", flat=True))
     return HttpResponse("\n\n".join(attributions), content_type="text/plain")
