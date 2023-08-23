@@ -203,7 +203,7 @@ autocomplete_router = Router()
 
 
 @autocomplete_router.get("/cohort/", response=list[CohortOut], include_in_schema=False)
-def cohort_autocomplete(request: HttpRequest, query=Query(..., min_length=3)):  # noqa B008
+def cohort_autocomplete(request: HttpRequest, query=Query(..., min_length=3)):
     return get_visible_objects(
         request.user,
         "ingest.view_cohort",
