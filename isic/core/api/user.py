@@ -30,7 +30,7 @@ class UserOut(ModelSchema):
 
 
 @router.get(
-    "/me/", summary="Retrieve the currently loggin in user.", response=UserOut, auth=django_auth
+    "/me/", summary="Retrieve the currently logged in user.", response=UserOut, auth=django_auth
 )
 def user_me(request: HttpRequest):
     return request.user
