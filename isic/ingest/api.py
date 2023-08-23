@@ -1,182 +1,211 @@
 import os
 
+from django.db import transaction
 from django.db.models.aggregates import Count
-from django.http.response import HttpResponse, JsonResponse
+from django.http.request import HttpRequest
 from django.shortcuts import get_object_or_404
-from django.utils.decorators import method_decorator
-from drf_yasg.utils import swagger_auto_schema
-from rest_framework import mixins, serializers, status, viewsets
-from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.fields import FileField as FileSerializerField
-from rest_framework.permissions import AllowAny, BasePermission, IsAdminUser
-from rest_framework.response import Response
-from rest_framework.views import APIView
+from ninja import Field, ModelSchema, Query, Router, Schema
+from ninja.pagination import paginate
+from ninja.security import django_auth
+from pydantic import validator
 from s3_file_field.widgets import S3PlaceholderFile
 
-from isic.core.permissions import IsicObjectPermissionsFilter, get_visible_objects
-from isic.ingest.models import Accession, MetadataFile
-from isic.ingest.models.cohort import Cohort
-from isic.ingest.models.contributor import Contributor
-from isic.ingest.serializers import CohortSerializer, ContributorSerializer, MetadataFileSerializer
+from isic.core.pagination import CursorPagination
+from isic.core.permissions import SessionAuthStaffUser, get_visible_objects
+from isic.ingest.models import Accession, Cohort, Contributor, MetadataFile
 from isic.ingest.services.accession import accession_create
 from isic.ingest.services.accession.review import accession_review_bulk_create
 from isic.ingest.tasks import update_metadata_task
 
-
-class AccessionPermissions(BasePermission):
-    def has_permission(self, request, view):
-        if request.user.is_staff:
-            return True
-
-        if request.method == "POST":
-            if "cohort" in request.data:
-                cohort = get_object_or_404(Cohort, pk=request.data["cohort"])
-                return request.user.has_perm("ingest.add_accession", cohort)
-
-        return False
+accession_router = Router()
 
 
-class S3FileWithSizeSerializerField(FileSerializerField):
-    # see S3FileSerializerField for implementation details
+class AccessionIn(Schema):
+    cohort: int
+    original_blob: str = Field(..., description="S3 file field value.")
 
-    def to_internal_value(self, data):
-        # Check the signature and load an S3PlaceholderFile
-        file_object = S3PlaceholderFile.from_field(data)
-        if file_object is None:
-            self.fail("invalid")
-
-        # This checks validity of the file name and size
-        file_object = super().to_internal_value(file_object)
-        return file_object
-
-
-class AccessionCreateInputSerializer(serializers.Serializer):
-    cohort = serializers.PrimaryKeyRelatedField(queryset=Cohort.objects.all())
-    original_blob = S3FileWithSizeSerializerField()
+    @validator("original_blob")
+    @classmethod
+    def validate_s3_file(cls, value: str) -> S3PlaceholderFile:
+        s3_file = S3PlaceholderFile.from_field(value)
+        if s3_file is None:
+            raise ValueError("Invalid S3 file field value.")
+        return s3_file
 
 
-class AccessionCreateOutputSerializer(serializers.ModelSerializer):
-    class Meta:
+class AccessionOut(ModelSchema):
+    class Config:
         model = Accession
-        fields = ["id"]
+        model_fields = ["id"]
 
 
-@method_decorator(
-    name="post",
-    decorator=swagger_auto_schema(
-        operation_summary="Create an Accession.",
-        request_body=AccessionCreateInputSerializer,
-        responses={201: AccessionCreateOutputSerializer},
-    ),
+@accession_router.post(
+    "/", response={201: AccessionOut, 403: dict, 400: dict}, summary="Create an Accession."
 )
-class AccessionCreateApi(APIView):
-    permission_classes = [AccessionPermissions]
+def create_accession(request: HttpRequest, payload: AccessionIn):
+    cohort = get_object_or_404(Cohort, pk=payload.cohort)
+    if not request.user.is_staff and not request.user.has_perm("ingest.add_accession", cohort):
+        return 403, {"error": "You do not have permission to add accessions to this cohort."}
 
-    def post(self, request):
-        serializer = AccessionCreateInputSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        accession = accession_create(
-            creator=request.user,
-            original_blob_name=os.path.basename(serializer.validated_data["original_blob"].name),
-            original_blob_size=serializer.validated_data["original_blob"].size,
-            **serializer.validated_data,
-        )
-        return HttpResponse(
-            AccessionCreateOutputSerializer(accession).data, status=status.HTTP_201_CREATED
-        )
+    return 201, accession_create(
+        cohort=cohort,
+        creator=request.user,
+        original_blob=payload.original_blob,
+        original_blob_name=os.path.basename(payload.original_blob.name),
+        original_blob_size=payload.original_blob.size,
+    )
 
 
-class AccessionCreateReviewBulkInputSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    value = serializers.BooleanField()
+class AccessionReview(Schema):
+    id: int
+    value: bool
 
 
-@method_decorator(name="post", decorator=swagger_auto_schema(auto_schema=None))
-class AccessionCreateReviewBulkApi(APIView):
-    permission_classes = [AccessionPermissions]
-
-    def post(self, request):
-        serializer = AccessionCreateReviewBulkInputSerializer(data=request.data, many=True)
-        serializer.is_valid(raise_exception=True)
-
-        accession_review_bulk_create(
-            reviewer=request.user,
-            accession_ids_values={x["id"]: x["value"] for x in serializer.validated_data},
-        )
-
-        return Response({}, status=status.HTTP_201_CREATED)
-
-
-@method_decorator(
-    name="list", decorator=swagger_auto_schema(operation_summary="Return a list of cohorts.")
+@accession_router.post(
+    "/create-review-bulk/", response={403: dict, 201: dict}, include_in_schema=False
 )
-@method_decorator(
-    name="retrieve",
-    decorator=swagger_auto_schema(operation_summary="Retrieve a single cohort by ID."),
+def create_review_bulk(request: HttpRequest, payload: list[AccessionReview]):
+    if not request.user.is_staff:
+        return 403, {"error": "Only staff users may bulk create reviews."}
+
+    accession_review_bulk_create(
+        reviewer=request.user,
+        accession_ids_values={x.id: x.value for x in payload},
+    )
+    return 201, {}
+
+
+cohort_router = Router()
+default_cohort_qs = Cohort.objects.annotate(accession_count=Count("accessions"))
+
+
+class CohortOut(ModelSchema):
+    class Config:
+        model = Cohort
+        model_fields = [
+            "id",
+            "created",
+            "creator",
+            "contributor",
+            "name",
+            "description",
+            "default_copyright_license",
+            "attribution",
+        ]
+
+    accession_count: int = Field(alias="accession_count")
+
+
+@cohort_router.get("/", response=list[CohortOut], summary="Return a list of cohorts.")
+@paginate(CursorPagination)
+def cohort_list(request: HttpRequest):
+    return get_visible_objects(request.user, "ingest.view_cohort", default_cohort_qs)
+
+
+@cohort_router.get("/{id}/", response=CohortOut, summary="Retrieve a single cohort by ID.")
+def cohort_detail(request: HttpRequest, id: int):
+    qs = get_visible_objects(request.user, "ingest.view_cohort", default_cohort_qs)
+    return get_object_or_404(qs, id=id)
+
+
+contributor_router = Router()
+
+
+class ContributorIn(ModelSchema):
+    class Config:
+        model = Contributor
+        model_fields = [
+            "institution_name",
+            "institution_url",
+            "legal_contact_info",
+            "default_copyright_license",
+            "default_attribution",
+        ]
+
+
+class ContributorOut(ModelSchema):
+    class Config:
+        model = Contributor
+        model_fields = [
+            "id",
+            "created",
+            "creator",
+            "owners",
+            "institution_name",
+            "institution_url",
+            "legal_contact_info",
+            "default_copyright_license",
+            "default_attribution",
+        ]
+
+
+@contributor_router.get(
+    "/", response=list[ContributorOut], summary="Return a list of contributors."
 )
-class CohortViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = CohortSerializer
-    queryset = Cohort.objects.annotate(accession_count=Count("accessions")).all()
-    filter_backends = [IsicObjectPermissionsFilter]
+@paginate(CursorPagination)
+def contributor_list(request: HttpRequest):
+    return get_visible_objects(
+        request.user, "ingest.view_contributor", Contributor.objects.prefetch_related("owners")
+    )
 
 
-@method_decorator(
-    name="create",
-    decorator=swagger_auto_schema(auto_schema=None),
+@contributor_router.get(
+    "/{id}/", response=ContributorOut, summary="Retrieve a single contributor by ID."
 )
-@method_decorator(
-    name="list", decorator=swagger_auto_schema(operation_summary="Return a list of contributors.")
+def contributor_detail(request: HttpRequest, id: int):
+    qs = get_visible_objects(request.user, "ingest.view_contributor", Contributor.objects.all())
+    return get_object_or_404(qs, id=id)
+
+
+@contributor_router.post(
+    "/", response={201: ContributorOut}, include_in_schema=False, auth=django_auth
 )
-@method_decorator(
-    name="retrieve",
-    decorator=swagger_auto_schema(operation_summary="Retrieve a single contributor by ID."),
+@transaction.atomic
+def create_contributor(request: HttpRequest, payload: ContributorIn):
+    contributor = Contributor.objects.create(creator=request.user, **payload.dict())
+    contributor.owners.add(request.user)
+    return 201, contributor
+
+
+metadata_file_router = Router()
+
+
+class MetadataFileOut(ModelSchema):
+    class Config:
+        model = MetadataFile
+        model_fields = ["id"]
+
+
+@metadata_file_router.delete(
+    "/{id}/", response={204: None}, include_in_schema=False, auth=SessionAuthStaffUser()
 )
-class ContributorViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
-    serializer_class = ContributorSerializer
-    queryset = Contributor.objects.all()
-    filter_backends = [IsicObjectPermissionsFilter]
+def delete_metadata_file(request: HttpRequest, id: int):
+    metadata_file = get_object_or_404(MetadataFile, id=id)
+    # Delete the blob from S3
+    metadata_file.blob.delete()
+    metadata_file.delete()
+    return 204, None
 
 
-class MetadataFileViewSet(
-    mixins.UpdateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet
-):
-    serializer_class = MetadataFileSerializer
-    queryset = MetadataFile.objects.all()
-    permission_classes = [IsAdminUser]
-
-    swagger_schema = None
-
-    def perform_destroy(self, instance):
-        # Delete the blob from S3
-        instance.blob.delete()
-        super().perform_destroy(instance)
-
-    @swagger_auto_schema(auto_schema=None)
-    @action(detail=True, methods=["post"])
-    def update_metadata(self, request, pk=None):
-        metadata_file = self.get_object()
-        update_metadata_task.delay(request.user.pk, metadata_file.pk)
-        return Response(status=status.HTTP_202_ACCEPTED)
+@metadata_file_router.post(
+    "/{id}/update_metadata",
+    response={202: None},
+    include_in_schema=False,
+    auth=SessionAuthStaffUser(),
+)
+def update_metadata(request: HttpRequest, id: int):
+    metadata_file = get_object_or_404(MetadataFile, id=id)
+    update_metadata_task.delay(request.user.pk, metadata_file.pk)
+    return 202, None
 
 
-class CohortAutocompleteSerializer(serializers.Serializer):
-    query = serializers.CharField(required=True, min_length=3)
+autocomplete_router = Router()
 
 
-@swagger_auto_schema(methods=["GET"], auto_schema=None)
-@api_view(["GET"])
-@permission_classes([AllowAny])
-def cohort_autocomplete(request):
-    serializer = CohortAutocompleteSerializer(data=request.query_params)
-    serializer.is_valid(raise_exception=True)
-    cohorts = get_visible_objects(
+@autocomplete_router.get("/cohort/", response=list[CohortOut], include_in_schema=False)
+def cohort_autocomplete(request: HttpRequest, query=Query(..., min_length=3)):
+    return get_visible_objects(
         request.user,
         "ingest.view_cohort",
-        Cohort.objects.filter(name__icontains=serializer.validated_data["query"])
-        .annotate(accession_count=Count("accessions"))
-        .all(),
-    )
-    return JsonResponse(
-        CohortSerializer(cohorts[:100], many=True).data,
-        safe=False,
+        Cohort.objects.filter(name__icontains=query).annotate(accession_count=Count("accessions")),
     )

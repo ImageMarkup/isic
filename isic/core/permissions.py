@@ -10,9 +10,18 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Model
 from django.db.models.base import ModelBase
 from django.db.models.query import QuerySet
+from django.http.request import HttpRequest
 from django.shortcuts import get_object_or_404, resolve_url
 from django.utils.functional import wraps
-from rest_framework.filters import BaseFilterBackend
+from ninja.security.session import SessionAuth
+
+
+class SessionAuthStaffUser(SessionAuth):
+    def authenticate(self, request: HttpRequest, key: str | None) -> User | None:
+        if request.user.is_staff:
+            return request.user
+
+        return None
 
 
 class UserPermissions:
@@ -46,15 +55,6 @@ class IsicObjectPermissionsBackend(BaseBackend):
     def has_perm(self, user_obj, perm, obj=None):
         if ISIC_PERMS_MAP.get(perm):
             return ISIC_PERMS_MAP[perm](user_obj, obj)
-
-
-class IsicObjectPermissionsFilter(BaseFilterBackend):
-    def filter_queryset(self, request, queryset, view):
-        return get_visible_objects(
-            request.user,
-            f"{queryset.model._meta.app_label}.view_{queryset.model._meta.model_name}",
-            queryset,
-        )
 
 
 def get_visible_objects(user, perm, qs=None):
