@@ -7,6 +7,7 @@ from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
 from ninja import Field, Schema
 from ninja.pagination import PaginationBase
+from pydantic import field_validator
 
 
 @dataclass
@@ -45,7 +46,31 @@ def _replace_query_param(url: str, key: str, val: str):
 class CursorPagination(PaginationBase):
     class Input(Schema):
         limit: int | None = Field(None, description="Number of results to return per page.")
-        cursor: str | None = Field(None, description="The pagination cursor value.")
+        cursor: str | None = Field(
+            None, description="The pagination cursor value.", validate_default=True
+        )
+
+        @field_validator("cursor")
+        @classmethod
+        def decode_cursor(cls, encoded_cursor: str | None) -> Cursor:
+            if encoded_cursor is None:
+                return Cursor()
+
+            try:
+                querystring = b64decode(encoded_cursor).decode()
+                tokens = parse.parse_qs(querystring, keep_blank_values=True)
+
+                offset = int(tokens.get("o", ["0"])[0])
+                offset = _clamp(offset, 0, CursorPagination._offset_cutoff)
+
+                reverse = tokens.get("r", ["0"])[0]
+                reverse = bool(int(reverse))
+
+                position = tokens.get("p", [None])[0]
+            except (TypeError, ValueError):
+                raise ValueError("Invalid cursor.")
+
+            return Cursor(offset=offset, reverse=reverse, position=position)
 
     class Output(Schema):
         results: list[Any] = Field(description="The page of objects.")
@@ -70,7 +95,7 @@ class CursorPagination(PaginationBase):
         total_count = queryset.count()
 
         base_url = request.build_absolute_uri()
-        cursor = self._decode_cursor(pagination.cursor)
+        cursor = pagination.cursor
 
         if cursor.reverse:
             queryset = queryset.order_by(*_reverse_order(order))
@@ -127,27 +152,6 @@ class CursorPagination(PaginationBase):
             if has_previous
             else None,
         }
-
-    def _decode_cursor(self, encoded_cursor: str | None) -> Cursor:
-        if encoded_cursor is None:
-            return Cursor()
-
-        try:
-            querystring = b64decode(encoded_cursor).decode()
-            tokens = parse.parse_qs(querystring, keep_blank_values=True)
-
-            offset = int(tokens.get("o", ["0"])[0])
-            offset = _clamp(offset, 0, self._offset_cutoff)
-
-            reverse = tokens.get("r", ["0"])[0]
-            reverse = bool(int(reverse))
-
-            position = tokens.get("p", [None])[0]
-        except (TypeError, ValueError):
-            # TODO what should be done here if someone passed an invalid cursor string?
-            raise
-
-        return Cursor(offset=offset, reverse=reverse, position=position)
 
     def _encode_cursor(self, cursor: Cursor, base_url: str) -> str:
         tokens = {}
