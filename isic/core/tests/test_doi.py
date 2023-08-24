@@ -8,9 +8,11 @@ from isic.core.services.collection.doi import collection_build_doi, collection_c
 
 @pytest.fixture
 def mock_datacite_create_doi(mocker):
-    yield mocker.patch(
+    mocker.patch(
         "isic.core.services.collection.doi._datacite_create_doi", lambda doi: {"doi": "123456"}
     )
+    mocker.patch("isic.core.services.collection.doi._datacite_update_doi")
+    yield
 
 
 @pytest.fixture
