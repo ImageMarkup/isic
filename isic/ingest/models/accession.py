@@ -329,13 +329,25 @@ class Accession(CreationSortedTimeStampedModel):
         """
         Apply metadata to an accession from a row in a CSV.
 
-        ALL metadata modifications must go through update_metadata/remove_metadata since they:
-        1) Check to see if the accession can be modified
-        2) Manage audit trails (MetadataVersion records)
-        3) Reset the review
+        ALL metadata modifications must go through update_metadata since it:
+        1) Checks to see if the accession can be modified
+        2) Manages audit trails (MetadataVersion records)
+        3) Resets the review
+        4) Manages remapping longitudinal fields
         """
         if self.pk and not ignore_image_check:
             self._require_unpublished()
+
+        def maybe_map_lesion_id(parsed_lesion_id: str | None) -> bool:
+            if not parsed_lesion_id:
+                return False
+
+            if self.lesion and self.lesion.private_lesion_id == parsed_lesion_id:
+                return False
+
+            self.lesion, _ = self.cohort.lesions.get_or_create(private_lesion_id=parsed_lesion_id)
+
+            return True
 
         with transaction.atomic():
             modified = False
@@ -361,7 +373,14 @@ class Accession(CreationSortedTimeStampedModel):
             new_metadata = parsed_metadata.model_dump(
                 exclude_unset=True, exclude_none=True, exclude={"unstructured"}
             )
-            if new_metadata and original_metadata != new_metadata:
+            new_lesion_id = maybe_map_lesion_id(new_metadata.get("lesion_id"))
+
+            # this information has already been captured by maybe_map_lesion_id, so
+            # remove it from the metadata to avoid exposing the private lesion_id.
+            if "lesion_id" in new_metadata:
+                del new_metadata["lesion_id"]
+
+            if (new_metadata and original_metadata != new_metadata) or new_lesion_id:
                 modified = True
                 self.metadata.update(new_metadata)
 
