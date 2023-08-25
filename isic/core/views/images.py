@@ -57,14 +57,12 @@ def image_detail(request, pk):
         "studies": studies,
     }
 
+    ctx["metadata"] = dict(sorted(image.metadata.items()))
     if request.user.has_perm("core.view_full_metadata", image):
-        ctx["metadata"] = dict(sorted(image.accession.metadata.items()))
         ctx["unstructured_metadata"] = dict(sorted(image.accession.unstructured_metadata.items()))
         ctx["metadata_versions"] = image.accession.metadata_versions.select_related(
             "creator"
         ).differences()
-    else:
-        ctx["metadata"] = dict(sorted(image.accession.redacted_metadata.items()))
 
     ctx["sections"] = {
         "metadata": "Metadata",
