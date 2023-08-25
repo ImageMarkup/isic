@@ -18,6 +18,7 @@ from s3_file_field import S3FileField
 
 from isic.core.models import CopyrightLicense, CreationSortedTimeStampedModel
 from isic.ingest.models.cohort import Cohort
+from isic.ingest.models.lesion import Lesion
 from isic.ingest.utils.mime import guess_mime_type
 from isic.ingest.utils.zip import Blob
 
@@ -166,6 +167,10 @@ class Accession(CreationSortedTimeStampedModel):
 
     metadata = models.JSONField(default=dict)
     unstructured_metadata = models.JSONField(default=dict)
+
+    lesion = models.ForeignKey(
+        Lesion, on_delete=models.SET_NULL, null=True, related_name="accessions"
+    )
 
     objects = AccessionQuerySet.as_manager()
 
