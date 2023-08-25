@@ -2,8 +2,6 @@ from django.urls.base import reverse
 import pytest
 from pytest_lazyfixture import lazy_fixture
 
-from isic.core.models.image import RESTRICTED_METADATA_FIELDS
-
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
@@ -64,8 +62,7 @@ def test_view_image_detail_public(client, detailed_image):
     assert "unstructured_metadata" not in r.context
     assert "metadata_versions" not in r.context
 
-    for field in RESTRICTED_METADATA_FIELDS:
-        assert field not in r.context["metadata"]
+    assert "age" not in r.context["metadata"]
 
     assert all([coll.public for coll in r.context["pinned_collections"]])
     assert len(r.context["pinned_collections"]) == 1
@@ -88,8 +85,7 @@ def test_view_image_detail_uploader(client, detailed_image):
     # TODO: uploaders can see all metadata added to their images forever?
     assert "metadata_versions" in r.context
 
-    for field in RESTRICTED_METADATA_FIELDS:
-        assert field in r.context["metadata"]
+    assert "age" not in r.context["metadata"]
 
     assert all([coll.public for coll in r.context["pinned_collections"]])
     assert len(r.context["pinned_collections"]) == 1

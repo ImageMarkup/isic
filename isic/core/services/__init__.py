@@ -24,7 +24,7 @@ def _image_metadata_csv_headers(*, qs: QuerySet[Image]) -> list[str]:
         .distinct()
     )
 
-    # TODO: this is a very leaky part of RESTRICTED_METADATA_FIELDS that
+    # TODO: this is a very leaky part of sensitive metadata handling that
     # should be refactored.
     if "age" in used_metadata_keys:
         used_metadata_keys.append("age_approx")
@@ -45,6 +45,6 @@ def image_metadata_csv_rows(*, qs: QuerySet[Image]) -> Iterator[dict]:
                 "isic_id": image["isic_id"],
                 "attribution": image["accession__cohort__attribution"],
                 "copyright_license": image["accession__copyright_license"],
-                **Accession._redact_metadata(image["accession__metadata"]),
+                **Image._image_metadata(image["accession__metadata"]),
             }
         }
