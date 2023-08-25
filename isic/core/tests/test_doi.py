@@ -8,11 +8,12 @@ from isic.core.services.collection.doi import collection_build_doi, collection_c
 
 @pytest.fixture
 def mock_datacite_create_doi(mocker):
-    mocker.patch(
-        "isic.core.services.collection.doi._datacite_create_doi", lambda doi: {"doi": "123456"}
-    )
-    mocker.patch("isic.core.services.collection.doi._datacite_update_doi")
-    yield
+    yield mocker.patch("isic.core.services.collection.doi._datacite_create_doi")
+
+
+@pytest.fixture
+def mock_datacite_update_doi(mocker):
+    yield mocker.patch("isic.core.services.collection.doi._datacite_update_doi")
 
 
 @pytest.fixture
@@ -29,7 +30,10 @@ def staff_user_request(staff_user, mocker):
 
 @pytest.mark.django_db
 def test_collection_create_doi(
-    public_collection_with_public_images, staff_user, mock_datacite_create_doi
+    public_collection_with_public_images,
+    staff_user,
+    mock_datacite_create_doi,
+    mock_datacite_update_doi,
 ):
     collection_create_doi(user=staff_user, collection=public_collection_with_public_images)
 
@@ -37,6 +41,8 @@ def test_collection_create_doi(
     assert public_collection_with_public_images.locked
     assert public_collection_with_public_images.doi
     assert public_collection_with_public_images.doi.creator == staff_user
+    mock_datacite_create_doi.assert_called_once()
+    mock_datacite_update_doi.assert_called_once()
 
 
 @pytest.mark.django_db
@@ -60,7 +66,10 @@ def test_doi_form_requires_no_existing_doi(public_collection, staff_user_request
 
 @pytest.mark.django_db
 def test_doi_form_creation(
-    public_collection_with_public_images, staff_user_request, mock_datacite_create_doi
+    public_collection_with_public_images,
+    staff_user_request,
+    mock_datacite_create_doi,
+    mock_datacite_update_doi,
 ):
     form = CreateDoiForm(
         data={},
@@ -73,6 +82,8 @@ def test_doi_form_creation(
     public_collection_with_public_images.refresh_from_db()
     assert public_collection_with_public_images.doi is not None
     assert public_collection_with_public_images.locked
+    mock_datacite_create_doi.assert_called_once()
+    mock_datacite_update_doi.assert_called_once()
 
 
 @pytest.fixture
