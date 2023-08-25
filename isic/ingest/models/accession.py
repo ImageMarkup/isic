@@ -314,23 +314,6 @@ class Accession(CreationSortedTimeStampedModel):
     def age_approx(self) -> int | None:
         return self._age_approx(self.metadata["age"]) if "age" in self.metadata else None
 
-    @staticmethod
-    def _redact_metadata(metadata: dict) -> dict:
-        from isic.core.models.image import RESTRICTED_METADATA_FIELDS
-
-        if "age" in metadata:
-            metadata["age_approx"] = Accession._age_approx(metadata["age"])
-
-        for f in RESTRICTED_METADATA_FIELDS:
-            if f in metadata:
-                del metadata[f]
-
-        return metadata
-
-    @property
-    def redacted_metadata(self) -> dict:
-        return self._redact_metadata(dict(self.metadata))
-
     def _require_unpublished(self):
         if self.published:
             raise ValidationError("Can't modify the accession as it's already been published.")

@@ -72,7 +72,7 @@ class ImageOut(ModelSchema):
             "clinical": {},
         }
 
-        for key, value in image.accession.redacted_metadata.items():
+        for key, value in image.metadata.items():
             # this is the only field that we expose that isn't in the FIELD_REGISTRY
             # since it's a derived field.
             if key == "age_approx":

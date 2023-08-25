@@ -41,7 +41,7 @@
           </div>
 
           <div class="my-2 bg-gray-100 p-4">
-            <pre x-show="selectedTab == 'Metadata'">{{ image.accession.redacted_metadata|formatted }}</pre>
+            <pre x-show="selectedTab == 'Metadata'">{{ image.metadata|formatted }}</pre>
           </div>
         </div>
       {% endif %}

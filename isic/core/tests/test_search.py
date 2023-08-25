@@ -1,9 +1,6 @@
-import itertools
-
 import pytest
 from pytest_lazyfixture import lazy_fixture
 
-from isic.core.models.image import RESTRICTED_METADATA_FIELDS
 from isic.core.search import add_to_search_index, get_elasticsearch_client
 
 
@@ -138,17 +135,17 @@ def test_core_api_image_search_invalid_query(route, searchable_images, authentic
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    "restricted_field,route",
-    itertools.product(RESTRICTED_METADATA_FIELDS, ["/api/v2/images/", "/api/v2/images/search/"]),
+    "route",
+    ["/api/v2/images/", "/api/v2/images/search/"],
 )
 def test_core_api_image_hides_fields(
-    authenticated_client, searchable_image_with_private_field, restricted_field, route
+    authenticated_client, searchable_image_with_private_field, route
 ):
     r = authenticated_client.get(route)
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == 1, r.json()
     for image in r.json()["results"]:
-        assert restricted_field not in image["metadata"]
+        assert "age" not in image["metadata"]
 
 
 @pytest.mark.django_db

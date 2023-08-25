@@ -16,8 +16,6 @@ from isic.ingest.models import Accession
 
 from .isic_id import IsicId
 
-RESTRICTED_METADATA_FIELDS = ["age"]
-
 
 class ImageQuerySet(models.QuerySet):
     def from_search_query(self, query: str):
@@ -79,6 +77,26 @@ class Image(CreationSortedTimeStampedModel):
     def get_absolute_url(self):
         return reverse("core/image-detail", args=[self.pk])
 
+    @staticmethod
+    def _image_metadata(accession_metadata: dict) -> dict:
+        """
+        Return the metadata for an image given its accession metadata.
+
+        Note that the metadata for the image includes a rounded age approximation, but not the
+        original age.
+
+        The static version of this method is useful when dealing with dictionary representations.
+        """
+        if "age" in accession_metadata:
+            accession_metadata["age_approx"] = Accession._age_approx(accession_metadata["age"])
+            del accession_metadata["age"]
+
+        return accession_metadata
+
+    @property
+    def metadata(self) -> dict:
+        return Image._image_metadata(self.accession.metadata)
+
     def to_elasticsearch_document(self, body_only=False) -> dict:
         # Can only be called on images that were fetched with with_elasticsearch_properties.
         document = {
@@ -93,9 +111,7 @@ class Image(CreationSortedTimeStampedModel):
             "collections": self.coll_pks,
         }
 
-        # Fields in the search index have to be redacted otherwise the documents that match could
-        # leak what their true metadata values are.
-        document.update(self.accession.redacted_metadata)
+        document.update(self.metadata)
 
         if body_only:
             return document
@@ -148,7 +164,7 @@ class ImagePermissions:
     def view_full_metadata_list(
         user_obj: User, qs: QuerySet[Image] | None = None
     ) -> QuerySet[Image]:
-        # Allows viewing unstructured metadata as well as the redacted metadata fields.
+        # Allows viewing unstructured metadata as well as the metadata history.
         #
         # This is only used in an SSR context, the API doesn't yet reveal more.
         qs = qs if qs is not None else Image._default_manager.all()
