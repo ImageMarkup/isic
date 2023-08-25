@@ -41,7 +41,6 @@ class ZipDownloadTokenAuth(APIKeyQuery):
         try:
             token_dict = TimestampSigner().unsign_object(key, max_age=timedelta(days=1))
         except BadSignature:
-            logger.exception("Bad zip download token passed")
             raise AuthenticationError
 
         token_dict["token"] = key
