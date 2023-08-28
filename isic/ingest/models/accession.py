@@ -128,6 +128,15 @@ class Accession(CreationSortedTimeStampedModel):
             ),
         ]
 
+        indexes = [
+            # useful for improving the performance of the cohort list page which needs per-cohort
+            # lesion counts.
+            models.Index(fields=["lesion_id", "id", "cohort_id"]),
+            # useful for improving the performance of the cohort detail page which needs to provide
+            # accession-wise status breakdowns.
+            models.Index(fields=["cohort_id", "status", "created"]),
+        ]
+
     # the creator is either inherited from the zip creator, or directly attached in the
     # case of a single shot upload.
     creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="accessions")
