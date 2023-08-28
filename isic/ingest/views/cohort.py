@@ -5,7 +5,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
-from django.db.models.query import Prefetch
+from django.db.models import Count
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
@@ -20,9 +20,7 @@ from isic.ingest.views import make_breadcrumbs
 
 @staff_member_required
 def cohort_list(request):
-    contributors = Contributor.objects.prefetch_related(
-        Prefetch("cohorts", queryset=Cohort.objects.order_by("attribution", "name"))
-    ).order_by("institution_name")
+    contributors = Contributor.objects.prefetch_related("cohorts").order_by("institution_name")
 
     rows = []
     for contributor in contributors.all():
@@ -32,6 +30,10 @@ def cohort_list(request):
         ):
             display_attribution = True
             for cohort in cohorts:
+                aggregate_data = cohort.accessions.aggregate(
+                    lesion_count=Count("lesion", distinct=True),
+                    accession_count=Count("pk"),
+                )
                 rows.append(
                     {
                         "contributor": contributor,
@@ -39,7 +41,8 @@ def cohort_list(request):
                         "attribution": attribution,
                         "display_attribution": display_attribution,
                         "cohort": cohort,
-                        "num_accessions": cohort.accessions.count(),
+                        "accession_count": aggregate_data["accession_count"],
+                        "lesion_count": aggregate_data["lesion_count"],
                     }
                 )
                 display_contributor = display_attribution = False

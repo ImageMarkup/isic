@@ -19,6 +19,7 @@
                 <th>Cohort</th>
                 <th>Default License</th>
                 <th># of Accessions</th>
+                <th># of Lesions</th>
             </tr>
         </thead>
         <tbody>
@@ -28,7 +29,8 @@
                 <td>{% if row.display_attribution %}{{ row.cohort.attribution }}{% endif %}</td>
                 <td><a href="{% url 'cohort-detail' row.cohort.id %}">{{ row.cohort.name }}</a></td>
                 <td>{{ row.cohort.default_copyright_license }}</td>
-                <td>{{ row.cohort.accessions.count|intcomma }}</td>
+                <td>{{ row.accession_count|intcomma }}</td>
+                <td>{{ row.lesion_count|intcomma }}</td>
             </tr>
             {% endfor %}
         </tbody>
