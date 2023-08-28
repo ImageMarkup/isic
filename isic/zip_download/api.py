@@ -18,7 +18,7 @@ from ninja.security import APIKeyQuery
 from isic.core.models import CopyrightLicense, Image
 from isic.core.pagination import CursorPagination
 from isic.core.serializers import SearchQueryIn
-from isic.core.services import _image_metadata_csv_headers, image_metadata_csv_rows
+from isic.core.services import image_metadata_csv_headers, image_metadata_csv_rows
 
 logger = logging.getLogger(__name__)
 zip_router = Router()
@@ -113,7 +113,7 @@ def zip_file_metadata_file(request: HttpRequest):
     user, search = SearchQueryIn.from_token_representation(request.auth)
     qs = search.to_queryset(user, Image.objects.select_related("accession__cohort").distinct())
     response = HttpResponse(content_type="text/csv")
-    writer = csv.DictWriter(response, _image_metadata_csv_headers(qs=qs))
+    writer = csv.DictWriter(response, image_metadata_csv_headers(qs=qs))
     writer.writeheader()
 
     for metadata_row in image_metadata_csv_rows(qs=qs):

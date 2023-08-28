@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates.general import ArrayAgg
 from django.contrib.postgres.indexes import GinIndex, OpClass
@@ -77,25 +79,25 @@ class Image(CreationSortedTimeStampedModel):
     def get_absolute_url(self):
         return reverse("core/image-detail", args=[self.pk])
 
-    @staticmethod
-    def _image_metadata(accession_metadata: dict) -> dict:
-        """
-        Return the metadata for an image given its accession metadata.
-
-        Note that the metadata for the image includes a rounded age approximation, but not the
-        original age.
-
-        The static version of this method is useful when dealing with dictionary representations.
-        """
-        if "age" in accession_metadata:
-            accession_metadata["age_approx"] = Accession._age_approx(accession_metadata["age"])
-            del accession_metadata["age"]
-
-        return accession_metadata
-
     @property
     def metadata(self) -> dict:
-        return Image._image_metadata(self.accession.metadata)
+        """
+        Return the metadata for an image.
+
+        Note that the metadata for the image is sanitized unlike the metadata for the accession
+        which is behind the "firewall" of ingest. This includes rounded ages and obfuscated
+        longitudinal IDs.
+        """
+        image_metadata = deepcopy(self.accession.metadata)
+
+        if "age" in image_metadata:
+            image_metadata["age_approx"] = Accession._age_approx(image_metadata["age"])
+            del image_metadata["age"]
+
+        if hasattr(self.accession, "lesion_id"):
+            image_metadata["lesion_id"] = self.accession.lesion_id
+
+        return image_metadata
 
     def to_elasticsearch_document(self, body_only=False) -> dict:
         # Can only be called on images that were fetched with with_elasticsearch_properties.
@@ -139,7 +141,11 @@ class Image(CreationSortedTimeStampedModel):
         return self._with_same_metadata("patient_id")
 
     def same_lesion_images(self) -> QuerySet["Image"]:
-        return self._with_same_metadata("lesion_id")
+        return (
+            Image.objects.filter(accession__cohort_id=self.accession.cohort_id)
+            .filter(**{"accession__lesion_id": self.accession.lesion_id})
+            .exclude(pk=self.pk)
+        )
 
 
 class ImageShare(TimeStampedModel):

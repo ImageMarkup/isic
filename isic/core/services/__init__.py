@@ -11,18 +11,22 @@ class JsonKeys(Func):
     function = "jsonb_object_keys"
 
 
-def _image_metadata_csv_headers(*, qs: QuerySet[Image]) -> list[str]:
+def image_metadata_csv_headers(*, qs: QuerySet[Image]) -> list[str]:
     headers = ["isic_id", "attribution", "copyright_license"]
+
+    accession_qs = Accession.objects.filter(image__in=qs)
 
     # depending on which queryset is passed in, the set of headers is different.
     # get the superset of headers for this particular queryset.
     used_metadata_keys = list(
-        Accession.objects.filter(image__in=qs)
-        .annotate(metadata_keys=JsonKeys("metadata"))
+        accession_qs.annotate(metadata_keys=JsonKeys("metadata"))
         .order_by()
         .values_list("metadata_keys", flat=True)
         .distinct()
     )
+
+    if accession_qs.exclude(lesion=None).exists():
+        used_metadata_keys.append("lesion_id")
 
     # TODO: this is a very leaky part of sensitive metadata handling that
     # should be refactored.
@@ -34,17 +38,29 @@ def _image_metadata_csv_headers(*, qs: QuerySet[Image]) -> list[str]:
 
 
 def image_metadata_csv_rows(*, qs: QuerySet[Image]) -> Iterator[dict]:
+    # Note this uses .values because populating django ORM objects is very slow, and doing this on
+    # large querysets can add ~5s per 100k images to the request time.
     for image in qs.order_by("isic_id").values(
         "isic_id",
         "accession__cohort__attribution",
         "accession__copyright_license",
         "accession__metadata",
+        "accession__lesion_id",
     ):
+        if "age" in image["accession__metadata"]:
+            image["accession__metadata"]["age_approx"] = Accession._age_approx(
+                image["accession__metadata"]["age"]
+            )
+            del image["accession__metadata"]["age"]
+
+        if image["accession__lesion_id"]:
+            image["accession__metadata"]["lesion_id"] = image["accession__lesion_id"]
+
         yield {
             **{
                 "isic_id": image["isic_id"],
                 "attribution": image["accession__cohort__attribution"],
                 "copyright_license": image["accession__copyright_license"],
-                **Image._image_metadata(image["accession__metadata"]),
+                **image["accession__metadata"],
             }
         }
