@@ -113,6 +113,8 @@ def convert_term(s, loc, toks):
         # isic_id can't be used with wildcards since it's a foreign key, so join the table and
         # refer to the __id.
         return "isic__id"
+    elif toks[0] == "lesion_id":
+        return "accession__lesion__id"
     elif toks[0] == "age_approx":
         return "accession__metadata__age__approx"
     elif toks[0] == "copyright_license":
