@@ -20,7 +20,11 @@ from isic.core.models.base import CopyrightLicense
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.core.services import _image_metadata_csv_headers, image_metadata_csv_rows
 from isic.core.services.collection import collection_create, collection_update
-from isic.core.services.collection.doi import collection_build_doi_preview, collection_create_doi
+from isic.core.services.collection.doi import (
+    collection_build_doi_preview,
+    collection_check_create_doi_allowed,
+    collection_create_doi,
+)
 from isic.ingest.models import Contributor
 from isic.ingest.models.accession import Accession
 
@@ -126,16 +130,21 @@ def collection_download_metadata(request, pk):
 @needs_object_permission("core.create_doi", (Collection, "pk", "pk"))
 def collection_create_doi_(request, pk):
     collection = get_object_or_404(Collection, pk=pk)
-    context = {"collection": collection}
+    context = {"collection": collection, "error": None}
 
     if request.method == "POST":
         try:
             collection_create_doi(user=request.user, collection=collection)
             return HttpResponseRedirect(reverse("core/collection-detail", args=[collection.pk]))
-        except ValidationError:
-            pass
+        except ValidationError as e:
+            context["error"] = e.message
     else:
-        context["preview"] = collection_build_doi_preview(collection=collection)
+        try:
+            collection_check_create_doi_allowed(user=request.user, collection=collection)
+        except ValidationError as e:
+            context["error"] = e.message
+        else:
+            context["preview"] = collection_build_doi_preview(collection=collection)
 
     return render(
         request,
