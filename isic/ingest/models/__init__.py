@@ -6,6 +6,7 @@ from .distinctness_measure import DistinctnessMeasure
 from .lesion import Lesion
 from .metadata_file import MetadataFile
 from .metadata_version import MetadataVersion
+from .patient import Patient
 from .zip_upload import ZipUpload
 
 __all__ = [
@@ -18,5 +19,6 @@ __all__ = [
     "Lesion",
     "MetadataFile",
     "MetadataVersion",
+    "Patient",
     "ZipUpload",
 ]

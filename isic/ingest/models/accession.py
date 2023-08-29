@@ -6,6 +6,7 @@ from uuid import uuid4
 
 import PIL.Image
 from django.contrib.auth.models import User
+from django.contrib.postgres.constraints import ExclusionConstraint
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models, transaction
@@ -19,6 +20,7 @@ from s3_file_field import S3FileField
 from isic.core.models import CopyrightLicense, CreationSortedTimeStampedModel
 from isic.ingest.models.cohort import Cohort
 from isic.ingest.models.lesion import Lesion
+from isic.ingest.models.patient import Patient
 from isic.ingest.utils.mime import guess_mime_type
 from isic.ingest.utils.zip import Blob
 
@@ -126,6 +128,15 @@ class Accession(CreationSortedTimeStampedModel):
                 & ~Q(blob_name="")
                 | ~Q(status=AccessionStatus.SUCCEEDED),
             ),
+            # identical lesion_id implies identical patient_id
+            ExclusionConstraint(
+                name="accession_lesion_id_patient_id_exclusion",
+                expressions=[
+                    ("lesion_id", "="),
+                    ("patient_id", "<>"),
+                ],
+                condition=Q(lesion_id__isnull=False) & Q(patient_id__isnull=False),
+            ),
         ]
 
         indexes = [
@@ -179,6 +190,9 @@ class Accession(CreationSortedTimeStampedModel):
 
     lesion = models.ForeignKey(
         Lesion, on_delete=models.SET_NULL, null=True, related_name="accessions"
+    )
+    patient = models.ForeignKey(
+        Patient, on_delete=models.SET_NULL, null=True, related_name="accessions"
     )
 
     objects = AccessionQuerySet.as_manager()
