@@ -53,6 +53,9 @@ def create_zip_download_url(request: HttpRequest, payload: SearchQueryIn):
     return f"{settings.ZIP_DOWNLOAD_SERVICE_URL}/download?zsid={token}"
 
 
+create_zip_download_url.csrf_exempt = True
+
+
 @zip_router.get("/file-listing/", include_in_schema=False, auth=ZipDownloadTokenAuth())
 def zip_file_listing(
     request: HttpRequest,
