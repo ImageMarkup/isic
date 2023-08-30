@@ -422,6 +422,12 @@ class Accession(CreationSortedTimeStampedModel):
                     lesion={"internal": self.lesion.private_lesion_id, "external": self.lesion_id}
                     if hasattr(self, "lesion") and self.lesion
                     else {},
+                    patient={
+                        "internal": self.patient.private_patient_id,
+                        "external": self.patient_id,
+                    }
+                    if hasattr(self, "patient") and self.patient
+                    else {},
                 )
                 self.save()
 
