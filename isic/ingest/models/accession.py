@@ -405,6 +405,9 @@ class Accession(CreationSortedTimeStampedModel):
                     creator=user,
                     metadata=self.metadata,
                     unstructured_metadata=self.unstructured_metadata,
+                    lesion={"internal": self.lesion.private_lesion_id, "external": self.lesion_id}
+                    if hasattr(self, "lesion") and self.lesion
+                    else {},
                 )
                 self.save()
 
