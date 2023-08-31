@@ -6,12 +6,12 @@ from django.http.request import HttpRequest
 from django.shortcuts import get_object_or_404
 from ninja import Field, ModelSchema, Query, Router, Schema
 from ninja.pagination import paginate
-from ninja.security import django_auth
 from pydantic import validator
 from s3_file_field.widgets import S3PlaceholderFile
 
+from isic.auth import is_authenticated, is_staff
 from isic.core.pagination import CursorPagination
-from isic.core.permissions import SessionAuthStaffUser, get_visible_objects
+from isic.core.permissions import get_visible_objects
 from isic.ingest.models import Accession, Cohort, Contributor, MetadataFile
 from isic.ingest.services.accession import accession_create
 from isic.ingest.services.accession.review import accession_review_bulk_create
@@ -158,7 +158,7 @@ def contributor_detail(request: HttpRequest, id: int):
 
 
 @contributor_router.post(
-    "/", response={201: ContributorOut}, include_in_schema=False, auth=django_auth
+    "/", response={201: ContributorOut}, include_in_schema=False, auth=is_authenticated
 )
 @transaction.atomic
 def create_contributor(request: HttpRequest, payload: ContributorIn):
@@ -176,9 +176,7 @@ class MetadataFileOut(ModelSchema):
         model_fields = ["id"]
 
 
-@metadata_file_router.delete(
-    "/{id}/", response={204: None}, include_in_schema=False, auth=SessionAuthStaffUser()
-)
+@metadata_file_router.delete("/{id}/", response={204: None}, include_in_schema=False, auth=is_staff)
 def delete_metadata_file(request: HttpRequest, id: int):
     metadata_file = get_object_or_404(MetadataFile, id=id)
     # Delete the blob from S3
@@ -191,7 +189,7 @@ def delete_metadata_file(request: HttpRequest, id: int):
     "/{id}/update_metadata",
     response={202: None},
     include_in_schema=False,
-    auth=SessionAuthStaffUser(),
+    auth=is_staff,
 )
 def update_metadata(request: HttpRequest, id: int):
     metadata_file = get_object_or_404(MetadataFile, id=id)
