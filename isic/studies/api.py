@@ -3,8 +3,8 @@ from django.shortcuts import get_object_or_404
 from ninja import Field, ModelSchema, Router
 from ninja.pagination import paginate
 
+from isic.auth import is_staff
 from isic.core.pagination import CursorPagination
-from isic.core.permissions import SessionAuthStaffUser
 from isic.studies.models import Annotation, Feature, Question, QuestionChoice, Study, StudyTask
 
 annotation_router = Router()
@@ -18,17 +18,13 @@ class AnnotationOut(ModelSchema):
         model_fields = ["id", "study", "image", "task", "annotator"]
 
 
-@annotation_router.get(
-    "/", response=list[AnnotationOut], include_in_schema=False, auth=SessionAuthStaffUser
-)
+@annotation_router.get("/", response=list[AnnotationOut], include_in_schema=False, auth=is_staff)
 @paginate(CursorPagination)
 def annotation_list(request: HttpRequest):
     return Annotation.objects.all()
 
 
-@annotation_router.get(
-    "/{id}/", response=AnnotationOut, include_in_schema=False, auth=SessionAuthStaffUser
-)
+@annotation_router.get("/{id}/", response=AnnotationOut, include_in_schema=False, auth=is_staff)
 def annotation_detail(request: HttpRequest, id: int):
     return get_object_or_404(Annotation, id=id)
 
@@ -73,13 +69,13 @@ class StudyOut(ModelSchema):
         return vals
 
 
-@study_router.get("/", response=list[StudyOut], include_in_schema=False, auth=SessionAuthStaffUser)
+@study_router.get("/", response=list[StudyOut], include_in_schema=False, auth=is_staff)
 @paginate(CursorPagination)
 def study_list(request: HttpRequest):
     return Study.objects.prefetch_related("features", "studyquestion_set__question__choices")
 
 
-@study_router.get("/{id}/", response=StudyOut, include_in_schema=False, auth=SessionAuthStaffUser)
+@study_router.get("/{id}/", response=StudyOut, include_in_schema=False, auth=is_staff)
 def study_detail(request: HttpRequest, id: int):
     return get_object_or_404(Study, id=id)
 
@@ -92,16 +88,12 @@ class StudyTaskOut(ModelSchema):
     complete: bool = Field(alias="complete")
 
 
-@study_task_router.get(
-    "/", response=list[StudyTaskOut], include_in_schema=False, auth=SessionAuthStaffUser
-)
+@study_task_router.get("/", response=list[StudyTaskOut], include_in_schema=False, auth=is_staff)
 @paginate(CursorPagination)
 def study_task_list(request: HttpRequest):
     return StudyTask.objects.prefetch_related("annotation")
 
 
-@study_task_router.get(
-    "/{id}/", response=StudyTaskOut, include_in_schema=False, auth=SessionAuthStaffUser
-)
+@study_task_router.get("/{id}/", response=StudyTaskOut, include_in_schema=False, auth=is_staff)
 def study_task_detail(request: HttpRequest, id: int):
     return get_object_or_404(StudyTask, id=id)

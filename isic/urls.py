@@ -9,6 +9,7 @@ from django.views.generic.base import RedirectView
 from ninja import NinjaAPI
 from ninja.openapi.views import openapi_view
 
+from isic.auth import allow_any
 from isic.core.api.collection import router as collection_router
 from isic.core.api.image import ImageSearchParseError, router as image_router
 from isic.core.api.user import router as user_router
@@ -28,6 +29,7 @@ api = NinjaAPI(
     description=render_to_string("core/swagger_description.html"),
     version="v2",
     docs_url=None,  # we want to serve the docs next to the ninja root rather than under it
+    auth=allow_any,
     csrf=True,
     urls_namespace="api",
 )
