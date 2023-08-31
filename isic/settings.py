@@ -31,6 +31,11 @@ class IsicMixin(ConfigMixin):
 
     @staticmethod
     def mutate_configuration(configuration: ComposedConfiguration) -> None:
+        # These are injected by composed configuration, but aren't needed for ISIC
+        for app in ["rest_framework.authtoken", "drf_yasg"]:
+            if app in configuration.INSTALLED_APPS:
+                configuration.INSTALLED_APPS.remove(app)
+
         # Install local apps first, to ensure any overridden resources are found first
         configuration.INSTALLED_APPS = [
             "isic.core.apps.CoreConfig",

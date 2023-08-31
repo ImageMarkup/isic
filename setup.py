@@ -59,8 +59,6 @@ setup(
         "django-object-actions",
         "django-spurl",
         "django-widget-tweaks",
-        "djangorestframework",
-        "drf-yasg",
         "google-api-python-client",
         "hashids",
         "isic-metadata>=0.1.0",
