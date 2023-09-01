@@ -4,7 +4,8 @@ from django.contrib.auth.models import User
 from django.http.request import HttpRequest
 from django.utils import timezone
 from ninja import Field, ModelSchema, Router
-from ninja.security import django_auth
+
+from isic.auth import is_authenticated
 
 router = Router()
 
@@ -30,13 +31,16 @@ class UserOut(ModelSchema):
 
 
 @router.get(
-    "/me/", summary="Retrieve the currently logged in user.", response=UserOut, auth=django_auth
+    "/me/",
+    summary="Retrieve the currently logged in user.",
+    response=UserOut,
+    auth=is_authenticated,
 )
 def user_me(request: HttpRequest):
     return request.user
 
 
-@router.put("/accept-terms/", include_in_schema=False, auth=django_auth)
+@router.put("/accept-terms/", include_in_schema=False, auth=is_authenticated)
 def accept_terms_of_use(request: HttpRequest):
     if not request.user.profile.accepted_terms:
         request.user.profile.accepted_terms = timezone.now()
