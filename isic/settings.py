@@ -48,6 +48,12 @@ class IsicMixin(ConfigMixin):
             "ninja",  # required because we overwrite ninja/swagger.html
         ] + configuration.INSTALLED_APPS
 
+        # Insert the ExemptBearerAuthFromCSRFMiddleware just before the CsrfViewMiddleware
+        configuration.MIDDLEWARE.insert(
+            configuration.MIDDLEWARE.index("django.middleware.csrf.CsrfViewMiddleware"),
+            "isic.middleware.ExemptBearerAuthFromCSRFMiddleware",
+        )
+
         # Install additional apps
         configuration.INSTALLED_APPS += [
             "s3_file_field",
