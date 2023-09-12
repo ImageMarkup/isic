@@ -361,16 +361,28 @@ class Accession(CreationSortedTimeStampedModel):
         if self.pk and not ignore_image_check:
             self._require_unpublished()
 
-        def maybe_map_lesion_id(parsed_lesion_id: str | None) -> bool:
-            if not parsed_lesion_id:
-                return False
+        def maybe_map_longitudinal_metadata(metadata: dict) -> bool:
+            mapped = False
+            parsed_lesion_id = metadata.get("lesion_id")
+            parsed_patient_id = metadata.get("patient_id")
 
-            if self.lesion and self.lesion.private_lesion_id == parsed_lesion_id:
-                return False
+            if parsed_lesion_id and (
+                not self.lesion or self.lesion.private_lesion_id != parsed_lesion_id
+            ):
+                mapped = True
+                self.lesion, _ = self.cohort.lesions.get_or_create(
+                    private_lesion_id=parsed_lesion_id
+                )
 
-            self.lesion, _ = self.cohort.lesions.get_or_create(private_lesion_id=parsed_lesion_id)
+            if parsed_patient_id and (
+                not self.patient or self.patient.private_patient_id != parsed_patient_id
+            ):
+                mapped = True
+                self.patient, _ = self.cohort.patients.get_or_create(
+                    private_patient_id=parsed_patient_id
+                )
 
-            return True
+            return mapped
 
         with transaction.atomic():
             modified = False
@@ -396,14 +408,17 @@ class Accession(CreationSortedTimeStampedModel):
             new_metadata = parsed_metadata.model_dump(
                 exclude_unset=True, exclude_none=True, exclude={"unstructured"}
             )
-            new_lesion_id = maybe_map_lesion_id(new_metadata.get("lesion_id"))
+            new_longitudinal_metadata = maybe_map_longitudinal_metadata(new_metadata)
 
-            # this information has already been captured by maybe_map_lesion_id, so
-            # remove it from the metadata to avoid exposing the private lesion_id.
+            # longitudinal metadata has already been captured, so strip it to prevent it from
+            # being added to the metadata and exposing the internal IDs.
             if "lesion_id" in new_metadata:
                 del new_metadata["lesion_id"]
 
-            if (new_metadata and original_metadata != new_metadata) or new_lesion_id:
+            if "patient_id" in new_metadata:
+                del new_metadata["patient_id"]
+
+            if (new_metadata and original_metadata != new_metadata) or new_longitudinal_metadata:
                 modified = True
                 self.metadata.update(new_metadata)
 

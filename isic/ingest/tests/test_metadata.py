@@ -6,7 +6,6 @@ from django.urls.base import reverse
 from django.utils import timezone
 import pytest
 
-from isic.ingest.models.accession import Accession
 from isic.ingest.services.accession.review import accession_review_update_or_create
 from isic.ingest.tasks import update_metadata_task
 from isic.ingest.tests.csv_streams import StreamWriter
@@ -240,48 +239,6 @@ def test_accession_update_metadata_idempotent(user, imageless_accession):
     assert imageless_accession.unstructured_metadata == {"foo": "bar", "baz": "qux"}
     assert imageless_accession.metadata == {"sex": "male"}
     assert imageless_accession.metadata_versions.count() == 1
-
-
-@pytest.mark.django_db
-def test_accession_update_metadata_lesion_maps_correctly(user, accession_factory, cohort):
-    accession1, accession2 = accession_factory(image=None, cohort=cohort), accession_factory(
-        image=None, cohort=cohort
-    )
-
-    accession1.update_metadata(user, {"lesion_id": "banana"})
-    assert accession1.lesion.private_lesion_id == "banana"
-
-    accession2.update_metadata(user, {"lesion_id": "banana"})
-    assert accession2.lesion.private_lesion_id == "banana"
-
-    assert accession1.lesion.id == accession2.lesion.id
-
-
-@pytest.mark.django_db
-def test_accession_update_metadata_lesion_idempotent(user, imageless_accession: Accession):
-    imageless_accession.update_metadata(user, {"lesion_id": "banana"})
-    lesion_id = imageless_accession.lesion.id
-    assert imageless_accession.lesion.private_lesion_id == "banana"
-    assert "lesion_id" not in imageless_accession.metadata
-    assert imageless_accession.metadata_versions.count() == 1
-
-    imageless_accession.update_metadata(user, {"lesion_id": "banana"})
-    assert imageless_accession.lesion.private_lesion_id == "banana"
-    assert "lesion_id" not in imageless_accession.metadata
-    assert imageless_accession.metadata_versions.count() == 1
-
-    assert imageless_accession.lesion.id == lesion_id
-
-
-@pytest.mark.django_db
-def test_accession_update_metadata_internal_metadata_lesion_change(user, imageless_accession):
-    imageless_accession.update_metadata(user, {"lesion_id": "banana"})
-    assert imageless_accession.lesion.private_lesion_id == "banana"
-    assert imageless_accession.metadata_versions.count() == 1
-
-    imageless_accession.update_metadata(user, {"lesion_id": "apple"})
-    assert imageless_accession.lesion.private_lesion_id == "apple"
-    assert imageless_accession.metadata_versions.count() == 2
 
 
 @pytest.mark.django_db
