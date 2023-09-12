@@ -80,6 +80,10 @@ class Cohort(CreationSortedTimeStampedModel):
     def num_lesions(self):
         return self.accessions.exclude(lesion=None).values("lesion__id").distinct().count()
 
+    @property
+    def num_patients(self):
+        return self.accessions.exclude(patient=None).values("patient__id").distinct().count()
+
 
 class CohortPermissions:
     model = Cohort

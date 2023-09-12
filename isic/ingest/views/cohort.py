@@ -32,6 +32,7 @@ def cohort_list(request):
             for cohort in cohorts:
                 aggregate_data = cohort.accessions.aggregate(
                     lesion_count=Count("lesion", distinct=True),
+                    patient_count=Count("patient", distinct=True),
                     accession_count=Count("pk"),
                 )
                 rows.append(
@@ -43,6 +44,7 @@ def cohort_list(request):
                         "cohort": cohort,
                         "accession_count": aggregate_data["accession_count"],
                         "lesion_count": aggregate_data["lesion_count"],
+                        "patient_count": aggregate_data["patient_count"],
                     }
                 )
                 display_contributor = display_attribution = False
