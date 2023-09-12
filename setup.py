@@ -44,7 +44,7 @@ setup(
         "celery",
         "deepdiff",
         "django<4.2",
-        "django-allauth",
+        "django-allauth>=0.56.0",
         "django-click",
         "django-configurations[database,email]",
         "django-extensions",
