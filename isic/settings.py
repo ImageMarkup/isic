@@ -54,6 +54,11 @@ class IsicMixin(ConfigMixin):
             "isic.middleware.ExemptBearerAuthFromCSRFMiddleware",
         )
 
+        # TODO: Remove when https://github.com/girder/django-composed-configuration/issues/188 is
+        # resolved.
+        if "allauth.account.middleware.AccountMiddleware" not in configuration.MIDDLEWARE:
+            configuration.MIDDLEWARE.append("allauth.account.middleware.AccountMiddleware")
+
         # Install additional apps
         configuration.INSTALLED_APPS += [
             "s3_file_field",
