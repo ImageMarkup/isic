@@ -108,6 +108,15 @@ class Collection(TimeStampedModel):
             .count()
         )
 
+    @property
+    def num_patients(self):
+        return (
+            self.images.exclude(accession__patient_id=None)
+            .values("accession__patient_id")
+            .distinct()
+            .count()
+        )
+
     def full_clean(self, exclude=None, validate_unique=True):
         if self.pk and self.public and self.images.private().exists():
             raise ValidationError("Can't make collection public, it contains private images.")

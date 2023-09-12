@@ -97,6 +97,9 @@ class Image(CreationSortedTimeStampedModel):
         if hasattr(self.accession, "lesion_id"):
             image_metadata["lesion_id"] = self.accession.lesion_id
 
+        if hasattr(self.accession, "patient_id"):
+            image_metadata["patient_id"] = self.accession.patient_id
+
         return image_metadata
 
     def to_elasticsearch_document(self, body_only=False) -> dict:
@@ -121,24 +124,12 @@ class Image(CreationSortedTimeStampedModel):
             # index the document by image.pk so it can be updated later.
             return {"_id": self.pk, "_source": document}
 
-    def _with_same_metadata(self, metadata_key: str) -> QuerySet["Image"]:
-        if self.accession.metadata.get(metadata_key):
-            return (
-                Image.objects.filter(accession__cohort_id=self.accession.cohort_id)
-                .filter(
-                    **{
-                        f"accession__metadata__{metadata_key}": self.accession.metadata[
-                            metadata_key
-                        ]
-                    }
-                )
-                .exclude(pk=self.pk)
-            )
-        else:
-            return Image.objects.none()
-
     def same_patient_images(self) -> QuerySet["Image"]:
-        return self._with_same_metadata("patient_id")
+        return (
+            Image.objects.filter(accession__cohort_id=self.accession.cohort_id)
+            .filter(**{"accession__patient_id": self.accession.patient_id})
+            .exclude(pk=self.pk)
+        )
 
     def same_lesion_images(self) -> QuerySet["Image"]:
         return (

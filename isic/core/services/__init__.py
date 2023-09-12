@@ -28,6 +28,9 @@ def image_metadata_csv_headers(*, qs: QuerySet[Image]) -> list[str]:
     if accession_qs.exclude(lesion=None).exists():
         used_metadata_keys.append("lesion_id")
 
+    if accession_qs.exclude(patient=None).exists():
+        used_metadata_keys.append("patient_id")
+
     # TODO: this is a very leaky part of sensitive metadata handling that
     # should be refactored.
     if "age" in used_metadata_keys:
@@ -46,6 +49,7 @@ def image_metadata_csv_rows(*, qs: QuerySet[Image]) -> Iterator[dict]:
         "accession__copyright_license",
         "accession__metadata",
         "accession__lesion_id",
+        "accession__patient_id",
     ):
         if "age" in image["accession__metadata"]:
             image["accession__metadata"]["age_approx"] = Accession._age_approx(
@@ -55,6 +59,9 @@ def image_metadata_csv_rows(*, qs: QuerySet[Image]) -> Iterator[dict]:
 
         if image["accession__lesion_id"]:
             image["accession__metadata"]["lesion_id"] = image["accession__lesion_id"]
+
+        if image["accession__patient_id"]:
+            image["accession__metadata"]["patient_id"] = image["accession__patient_id"]
 
         yield {
             **{
