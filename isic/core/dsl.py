@@ -115,6 +115,8 @@ def convert_term(s, loc, toks):
         return "isic__id"
     elif toks[0] == "lesion_id":
         return "accession__lesion__id"
+    elif toks[0] == "patient_id":
+        return "accession__patient__id"
     elif toks[0] == "age_approx":
         return "accession__metadata__age__approx"
     elif toks[0] == "copyright_license":
