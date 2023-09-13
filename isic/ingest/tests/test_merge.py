@@ -79,6 +79,19 @@ def test_merge_cohorts_conflicting_original_blob_names(full_cohort):
 
 
 @pytest.mark.django_db
+def test_merge_cohorts_with_longitudinal_metadata(full_cohort):
+    cohort_a, cohort_b = full_cohort(), full_cohort()
+
+    # set up longitudinal metadata
+    accession_a, accession_b = cohort_a.accessions.first(), cohort_b.accessions.first()
+    accession_a.update_metadata(accession_a.creator, {"patient_id": "foo"}, ignore_image_check=True)
+    accession_b.update_metadata(accession_b.creator, {"patient_id": "foo"}, ignore_image_check=True)
+
+    with pytest.raises(ValidationError, match="patients"):
+        cohort_merge(dest_cohort=cohort_a, src_cohort=cohort_b)
+
+
+@pytest.mark.django_db
 def test_merge_cohorts_heterogeneous_licenses(full_cohort):
     cohort_a, cohort_b = full_cohort(), full_cohort()
 
