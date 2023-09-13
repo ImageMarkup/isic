@@ -79,6 +79,14 @@ def cohort_merge(*, dest_cohort: Cohort, src_cohort: Cohort) -> None:
             f"Found {overlapping_blob_names.count()} conflicting original blob names."
         )
 
+    if (
+        src_cohort.lesions.exists()
+        or dest_cohort.lesions.exists()
+        or src_cohort.patients.exists()
+        or dest_cohort.patients.exists()
+    ):
+        raise ValidationError("Unable to merge cohorts with lesions or patients.")
+
     with transaction.atomic():
         # lock cohorts during merge
         # TODO: This is kind of awkward because we need to lock all cohorts but only want to
