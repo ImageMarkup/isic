@@ -244,6 +244,27 @@ def test_accession_remove_unstructured_metadata(user, imageless_accession):
 
 
 @pytest.mark.django_db
+def test_accession_remove_metadata(user, imageless_accession):
+    imageless_accession.update_metadata(
+        user, {"diagnosis": "melanoma", "benign_malignant": "malignant"}
+    )
+    imageless_accession.remove_metadata(user, ["diagnosis"])
+    assert imageless_accession.metadata == {"benign_malignant": "malignant"}
+    assert imageless_accession.metadata_versions.count() == 2
+
+
+@pytest.mark.django_db
+def test_accession_remove_metadata_idempotent(user, imageless_accession):
+    imageless_accession.update_metadata(
+        user, {"diagnosis": "melanoma", "benign_malignant": "malignant"}
+    )
+    imageless_accession.remove_metadata(user, ["diagnosis"])
+    imageless_accession.remove_metadata(user, ["diagnosis"])
+    assert imageless_accession.metadata == {"benign_malignant": "malignant"}
+    assert imageless_accession.metadata_versions.count() == 2
+
+
+@pytest.mark.django_db
 def test_accession_remove_unstructured_metadata_idempotent(user, imageless_accession):
     imageless_accession.update_metadata(user, {"foo": "bar", "baz": "qux"})
     imageless_accession.remove_unstructured_metadata(user, ["foo"])
