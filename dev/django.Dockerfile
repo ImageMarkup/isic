@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
 # Install system librarires for Python packages:
 # * libmagic1
 # * psycopg2

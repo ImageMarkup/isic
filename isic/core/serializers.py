@@ -1,5 +1,3 @@
-from typing import Optional
-
 from django.contrib.auth.models import AnonymousUser, User
 from django.db.models.query import QuerySet
 from django.shortcuts import get_object_or_404
@@ -53,7 +51,7 @@ class SearchQueryIn(Schema):
             user = AnonymousUser()
         return user, cls(query=token["query"], collections=token["collections"])
 
-    def to_queryset(self, user: User, qs: Optional[QuerySet[Image]] = None) -> QuerySet[Image]:
+    def to_queryset(self, user: User, qs: QuerySet[Image] | None = None) -> QuerySet[Image]:
         qs = qs if qs is not None else Image._default_manager.all()
 
         if self.query:

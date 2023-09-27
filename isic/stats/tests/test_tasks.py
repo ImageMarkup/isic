@@ -66,7 +66,7 @@ def test_cdn_access_log_parsing(mocker):
 
     assert len(records) == 24
     assert records[0] == {
-        "download_time": datetime.datetime(2022, 3, 16, 3, 28, tzinfo=datetime.timezone.utc),
+        "download_time": datetime.datetime(2022, 3, 16, 3, 28, tzinfo=datetime.UTC),
         "path": "22f1e9e4-bd31-4053-9362-f8891a2b307d/17.jpg",
         "ip_address": "112.208.241.149",
         "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.51 Safari/537.36",  # noqa: E501

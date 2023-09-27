@@ -1,9 +1,9 @@
 from collections import Counter
+from collections.abc import Iterable
 import csv
 from datetime import timedelta
 import json
 import logging
-from typing import Iterable
 
 from django.conf import settings
 from django.contrib.sites.models import Site
