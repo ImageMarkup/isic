@@ -3,7 +3,7 @@
 from django.db import migrations
 import s3_file_field.fields
 
-import isic.core.storage
+import isic.core.storages.utils
 
 
 class Migration(migrations.Migration):
@@ -15,6 +15,8 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="markup",
             name="mask_blob",
-            field=s3_file_field.fields.S3FileField(upload_to=isic.core.storage.generate_upload_to),
+            field=s3_file_field.fields.S3FileField(
+                upload_to=isic.core.storages.utils.generate_upload_to
+            ),
         ),
     ]
