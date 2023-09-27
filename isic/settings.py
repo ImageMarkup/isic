@@ -181,7 +181,7 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
     ISIC_PLACEHOLDER_IMAGES = True
     # Use the MinioS3ProxyStorage for local development with ISIC_PLACEHOLDER_IMAGES
     # set to False to view real images in development.
-    # DEFAULT_FILE_STORAGE = "isic.core.storage.MinioS3ProxyStorage"
+    # DEFAULT_FILE_STORAGE = "isic.core.storages.minio.MinioS3ProxyStorage"
 
 
 class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
@@ -201,7 +201,7 @@ class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration
     AWS_CLOUDFRONT_KEY = values.SecretValue()
     AWS_CLOUDFRONT_KEY_ID = values.Value()
     AWS_S3_CUSTOM_DOMAIN = values.Value()
-    DEFAULT_FILE_STORAGE = "isic.core.storage.CacheableCloudFrontStorage"
+    DEFAULT_FILE_STORAGE = "isic.core.storages.s3.CacheableCloudFrontStorage"
 
     AWS_S3_OBJECT_PARAMETERS = {"ContentDisposition": "attachment"}
 

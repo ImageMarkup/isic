@@ -58,6 +58,7 @@ setup(
         "django-oauth-toolkit<2.0.0",
         "django-object-actions",
         "django-spurl",
+        "django-storages>=1.14",
         "django-widget-tweaks",
         "google-api-python-client",
         "hashids",
