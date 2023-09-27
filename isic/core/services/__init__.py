@@ -1,4 +1,4 @@
-from typing import Iterator
+from collections.abc import Iterator
 
 from django.db.models import Func
 from django.db.models.query import QuerySet

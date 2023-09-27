@@ -1,10 +1,10 @@
 from collections import defaultdict
+from collections.abc import Iterable
 from datetime import timedelta
 import gzip
 from io import BytesIO
 import json
 from types import SimpleNamespace
-from typing import Iterable
 import urllib.parse
 
 from apiclient.discovery import build

@@ -1,6 +1,7 @@
+from collections.abc import Generator
 from dataclasses import dataclass
 import os
-from typing import IO, Generator
+from typing import IO
 
 import zipfile_deflate64 as zipfile
 

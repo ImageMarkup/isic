@@ -1,5 +1,5 @@
+from collections.abc import Iterable
 import time
-from typing import Iterable
 
 from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
