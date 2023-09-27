@@ -6,14 +6,15 @@ from uuid import uuid4
 import boto3
 from botocore.exceptions import ClientError
 from django.utils.encoding import filepath_to_uri
-from storages.backends.s3boto3 import S3Boto3Storage
+from storages.backends.s3 import S3Storage
+from storages.utils import clean_name
 
 
 def generate_upload_to(instance, filename) -> str:
     return str(uuid4())
 
 
-class CacheableCloudFrontStorage(S3Boto3Storage):
+class CacheableCloudFrontStorage(S3Storage):
     @staticmethod
     def next_expiration_time(now=None):
         # returns a time > 6 days but <= 7.
@@ -26,7 +27,7 @@ class CacheableCloudFrontStorage(S3Boto3Storage):
         assert expire is None and http_method is None, "Arguments not supported by custom storage."
 
         # Preserve the trailing slash after normalizing the path.
-        name = self._normalize_name(self._clean_name(name))
+        name = self._normalize_name(clean_name(name))
         params = parameters.copy() if parameters else {}
 
         if self.custom_domain:
