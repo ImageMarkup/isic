@@ -21,7 +21,7 @@ from s3_file_field.fields import S3FileField
 
 from isic.core.models import Image
 from isic.core.models.collection import Collection
-from isic.core.storage import generate_upload_to
+from isic.core.storages.utils import generate_upload_to
 
 
 class Question(TimeStampedModel):

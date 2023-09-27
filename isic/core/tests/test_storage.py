@@ -3,7 +3,7 @@ from datetime import timedelta
 from django.utils import timezone
 from hypothesis import given, strategies as st
 
-from isic.core.storage import CacheableCloudFrontStorage
+from isic.core.storages.s3 import CacheableCloudFrontStorage
 
 
 @given(t_now=st.datetimes(timezones=st.just(None)))
