@@ -1,6 +1,5 @@
 import csv
 from datetime import timedelta
-from typing import Optional
 
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
@@ -360,7 +359,7 @@ class Annotation(TimeStampedModel):
         return reverse("annotation-detail", args=[self.pk])
 
     @property
-    def annotation_duration(self) -> Optional[timedelta]:
+    def annotation_duration(self) -> timedelta | None:
         if self.start_time:
             return self.created - self.start_time
 
