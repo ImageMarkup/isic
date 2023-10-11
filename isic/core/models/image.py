@@ -80,6 +80,14 @@ class Image(CreationSortedTimeStampedModel):
         return reverse("core/image-detail", args=[self.pk])
 
     @property
+    def has_patient(self) -> bool:
+        return self.accession.patient_id is not None
+
+    @property
+    def has_lesion(self) -> bool:
+        return self.accession.lesion_id is not None
+
+    @property
     def metadata(self) -> dict:
         """
         Return the metadata for an image.
@@ -94,10 +102,10 @@ class Image(CreationSortedTimeStampedModel):
             image_metadata["age_approx"] = Accession._age_approx(image_metadata["age"])
             del image_metadata["age"]
 
-        if hasattr(self.accession, "lesion_id"):
+        if self.has_lesion:
             image_metadata["lesion_id"] = self.accession.lesion_id
 
-        if hasattr(self.accession, "patient_id"):
+        if self.has_patient:
             image_metadata["patient_id"] = self.accession.patient_id
 
         return image_metadata
@@ -125,6 +133,9 @@ class Image(CreationSortedTimeStampedModel):
             return {"_id": self.pk, "_source": document}
 
     def same_patient_images(self) -> QuerySet["Image"]:
+        if not self.has_patient:
+            return Image.objects.none()
+
         return (
             Image.objects.filter(accession__cohort_id=self.accession.cohort_id)
             .filter(**{"accession__patient_id": self.accession.patient_id})
@@ -132,6 +143,9 @@ class Image(CreationSortedTimeStampedModel):
         )
 
     def same_lesion_images(self) -> QuerySet["Image"]:
+        if not self.has_lesion:
+            return Image.objects.none()
+
         return (
             Image.objects.filter(accession__cohort_id=self.accession.cohort_id)
             .filter(**{"accession__lesion_id": self.accession.lesion_id})
