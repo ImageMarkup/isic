@@ -10,6 +10,8 @@
     <li><span class="font-bold">Created by:</span> {{ cohort.creator }}</li>
     <li><span class="font-bold">Created on:</span> {% localtime cohort.created %}</li>
     <li><span class="font-bold">Number of accessions:</span> {{ cohort.accessions.count|intcomma }}</li>
+    <li><span class="font-bold">Number of patients:</span> {{ cohort.num_patients | intcomma }}</li>
+    <li><span class="font-bold">Number of lesions:</span> {{ cohort.num_lesions | intcomma }}</li>
     <li><span class="font-bold">Published:</span> {{ cohort.accessions.published.count|intcomma }}</li>
     <li><span class="font-bold">Unreviewed:</span> {{ cohort.accessions.unreviewed.count|intcomma }}</li>
     <li><span class="font-bold">Accepted:</span> {{ cohort.accessions.accepted.count|intcomma }}</li>

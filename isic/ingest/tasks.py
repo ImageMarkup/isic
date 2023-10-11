@@ -12,7 +12,9 @@ from isic.ingest.models import (
     AccessionStatus,
     Cohort,
     DistinctnessMeasure,
+    Lesion,
     MetadataFile,
+    Patient,
     ZipUpload,
 )
 from isic.ingest.services.cohort import cohort_publish
@@ -87,6 +89,10 @@ def update_metadata_task(user_pk: int, metadata_file_pk: int):
     user = User.objects.get(pk=user_pk)
 
     with transaction.atomic():
+        # Lock the longitudinal tables during metadata assignment
+        (_ for _ in Lesion.objects.select_for_update().all())
+        (_ for _ in Patient.objects.select_for_update().all())
+
         # TODO: consider chunking in the future since large CSVs generate a lot of
         # database traffic.
         for _, row in metadata_file.to_df().iterrows():
