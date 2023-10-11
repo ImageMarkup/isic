@@ -99,6 +99,24 @@ class Collection(TimeStampedModel):
         if self.doi:
             return f"https://doi.org/{self.doi}"
 
+    @property
+    def num_lesions(self):
+        return (
+            self.images.exclude(accession__lesion_id=None)
+            .values("accession__lesion_id")
+            .distinct()
+            .count()
+        )
+
+    @property
+    def num_patients(self):
+        return (
+            self.images.exclude(accession__patient_id=None)
+            .values("accession__patient_id")
+            .distinct()
+            .count()
+        )
+
     def full_clean(self, exclude=None, validate_unique=True):
         if self.pk and self.public and self.images.private().exists():
             raise ValidationError("Can't make collection public, it contains private images.")

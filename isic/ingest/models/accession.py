@@ -6,6 +6,7 @@ from uuid import uuid4
 
 import PIL.Image
 from django.contrib.auth.models import User
+from django.contrib.postgres.constraints import ExclusionConstraint
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models, transaction
@@ -18,6 +19,8 @@ from s3_file_field import S3FileField
 
 from isic.core.models import CopyrightLicense, CreationSortedTimeStampedModel
 from isic.ingest.models.cohort import Cohort
+from isic.ingest.models.lesion import Lesion
+from isic.ingest.models.patient import Patient
 from isic.ingest.utils.mime import guess_mime_type
 from isic.ingest.utils.zip import Blob
 
@@ -125,6 +128,24 @@ class Accession(CreationSortedTimeStampedModel):
                 & ~Q(blob_name="")
                 | ~Q(status=AccessionStatus.SUCCEEDED),
             ),
+            # identical lesion_id implies identical patient_id
+            ExclusionConstraint(
+                name="accession_lesion_id_patient_id_exclusion",
+                expressions=[
+                    ("lesion_id", "="),
+                    ("patient_id", "<>"),
+                ],
+                condition=Q(lesion_id__isnull=False) & Q(patient_id__isnull=False),
+            ),
+        ]
+
+        indexes = [
+            # useful for improving the performance of the cohort list page which needs per-cohort
+            # lesion counts.
+            models.Index(fields=["lesion_id", "id", "cohort_id"]),
+            # useful for improving the performance of the cohort detail page which needs to provide
+            # accession-wise status breakdowns.
+            models.Index(fields=["cohort_id", "status", "created"]),
         ]
 
     # the creator is either inherited from the zip creator, or directly attached in the
@@ -166,6 +187,13 @@ class Accession(CreationSortedTimeStampedModel):
 
     metadata = models.JSONField(default=dict)
     unstructured_metadata = models.JSONField(default=dict)
+
+    lesion = models.ForeignKey(
+        Lesion, on_delete=models.SET_NULL, null=True, related_name="accessions"
+    )
+    patient = models.ForeignKey(
+        Patient, on_delete=models.SET_NULL, null=True, related_name="accessions"
+    )
 
     objects = AccessionQuerySet.as_manager()
 
@@ -324,13 +352,37 @@ class Accession(CreationSortedTimeStampedModel):
         """
         Apply metadata to an accession from a row in a CSV.
 
-        ALL metadata modifications must go through update_metadata/remove_metadata since they:
-        1) Check to see if the accession can be modified
-        2) Manage audit trails (MetadataVersion records)
-        3) Reset the review
+        ALL metadata modifications must go through update_metadata since it:
+        1) Checks to see if the accession can be modified
+        2) Manages audit trails (MetadataVersion records)
+        3) Resets the review
+        4) Manages remapping longitudinal fields
         """
         if self.pk and not ignore_image_check:
             self._require_unpublished()
+
+        def maybe_map_longitudinal_metadata(metadata: dict) -> bool:
+            mapped = False
+            parsed_lesion_id = metadata.get("lesion_id")
+            parsed_patient_id = metadata.get("patient_id")
+
+            if parsed_lesion_id and (
+                not self.lesion or self.lesion.private_lesion_id != parsed_lesion_id
+            ):
+                mapped = True
+                self.lesion, _ = self.cohort.lesions.get_or_create(
+                    private_lesion_id=parsed_lesion_id
+                )
+
+            if parsed_patient_id and (
+                not self.patient or self.patient.private_patient_id != parsed_patient_id
+            ):
+                mapped = True
+                self.patient, _ = self.cohort.patients.get_or_create(
+                    private_patient_id=parsed_patient_id
+                )
+
+            return mapped
 
         with transaction.atomic():
             modified = False
@@ -356,7 +408,17 @@ class Accession(CreationSortedTimeStampedModel):
             new_metadata = parsed_metadata.model_dump(
                 exclude_unset=True, exclude_none=True, exclude={"unstructured"}
             )
-            if new_metadata and original_metadata != new_metadata:
+            new_longitudinal_metadata = maybe_map_longitudinal_metadata(new_metadata)
+
+            # longitudinal metadata has already been captured, so strip it to prevent it from
+            # being added to the metadata and exposing the internal IDs.
+            if "lesion_id" in new_metadata:
+                del new_metadata["lesion_id"]
+
+            if "patient_id" in new_metadata:
+                del new_metadata["patient_id"]
+
+            if (new_metadata and original_metadata != new_metadata) or new_longitudinal_metadata:
                 modified = True
                 self.metadata.update(new_metadata)
 
@@ -372,6 +434,15 @@ class Accession(CreationSortedTimeStampedModel):
                     creator=user,
                     metadata=self.metadata,
                     unstructured_metadata=self.unstructured_metadata,
+                    lesion={"internal": self.lesion.private_lesion_id, "external": self.lesion_id}
+                    if hasattr(self, "lesion") and self.lesion
+                    else {},
+                    patient={
+                        "internal": self.patient.private_patient_id,
+                        "external": self.patient_id,
+                    }
+                    if hasattr(self, "patient") and self.patient
+                    else {},
                 )
                 self.save()
 

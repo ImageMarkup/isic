@@ -25,9 +25,11 @@ class SearchQueryIn(Schema):
     def collections_to_list(cls, value: str | list[int]):
         if isinstance(value, str) and value:
             return [int(x) for x in value.split(",")]
-        elif isinstance(value, list):
+        elif isinstance(value, list) and len(value) == 1 and isinstance(value[0], str):
             # TODO: this is a hack to get around the fact that ninja uses a swagger array input
             # field for list types regardless.
+            return cls.collections_to_list(value[0])
+        elif isinstance(value, list) and value:
             return value
         return None
 

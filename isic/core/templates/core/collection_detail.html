@@ -57,6 +57,14 @@
         {{ num_images|intcomma }}
       </li>
       <li>
+        <span class="font-bold">Number of patients:</span>
+        {{ collection.num_patients|intcomma }}
+      </li>
+      <li>
+        <span class="font-bold">Number of lesions:</span>
+        {{ collection.num_lesions|intcomma }}
+      </li>
+      <li>
         <span class="font-bold">Licenses:</span>
           <ul class="list-disc">
             {% for license, count in license_counts.items %}

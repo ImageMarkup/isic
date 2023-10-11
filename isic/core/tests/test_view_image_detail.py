@@ -2,6 +2,8 @@ from django.urls.base import reverse
 import pytest
 from pytest_lazyfixture import lazy_fixture
 
+from isic.core.models.image import Image
+
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
@@ -25,24 +27,29 @@ def detailed_image(
     image_factory, user_factory, study_factory, study_task_factory, collection_factory
 ):
     user = user_factory()
+
     metadata = {
         "age": 32,
-        "lesion_id": "IL_123456",
-        "patient_id": "IP_123456",
+        "lesion_id": "IL_1234567",
+        "patient_id": "IP_1234567",
     }
 
     private_collection = collection_factory(public=False, pinned=True)
     public_collection = collection_factory(public=True, pinned=True)
     private_study = study_factory(public=False)
     public_study = study_factory(public=True)
-    main_image = image_factory(
-        public=True, accession__metadata=metadata, accession__cohort__contributor__owners=[user]
+    main_image: Image = image_factory(
+        public=True,
+        accession__cohort__contributor__owners=[user],
     )
 
-    # create an image w/ the same lesion/patient ID
-    image_factory(
-        public=True, accession__metadata=metadata, accession__cohort__contributor__owners=[user]
+    # create an image w/ the same longitudinal information
+    secondary_image: Image = image_factory(
+        public=True,
+        accession__cohort__contributor__owners=[user],
     )
+    main_image.accession.update_metadata(user, metadata, ignore_image_check=True)
+    secondary_image.accession.update_metadata(user, metadata, ignore_image_check=True)
 
     private_collection.images.add(main_image)
     public_collection.images.add(main_image)

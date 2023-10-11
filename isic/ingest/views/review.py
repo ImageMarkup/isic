@@ -63,12 +63,12 @@ def cohort_review(request, cohort_pk):
 def _cohort_review_grouped_by_lesion(request, cohort: Cohort):
     lesions_with_unreviewed_accessions = (
         cohort.accessions.unreviewed()
-        .values("metadata__lesion_id")
+        .values("lesion_id")
         .alias(num_unreviewed_accessions=Count(1, filter=Q(review=None)))
         .filter(num_unreviewed_accessions__gt=0)
-        .values_list("metadata__lesion_id", flat=True)
+        .values_list("lesion_id", flat=True)
         .distinct()
-        .order_by("metadata__lesion_id")
+        .order_by("lesion_id")
     )
     paginator = Paginator(lesions_with_unreviewed_accessions, 50)
     page = paginator.get_page(request.GET.get("page"))
@@ -83,7 +83,7 @@ def _cohort_review_grouped_by_lesion(request, cohort: Cohort):
         .order_by("metadata__acquisition_day")
     )
     for accession in relevant_accessions:
-        grouped_accessions[accession.metadata["lesion_id"]].append(accession)
+        grouped_accessions[accession.lesion_id].append(accession)
 
     return render(
         request,
