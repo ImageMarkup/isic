@@ -80,14 +80,14 @@ setup(
         "zipfile-deflate64",
         # Production-only
         "django-composed-configuration[prod]>=0.21.0",
-        "django-s3-file-field[boto3]",
+        "django-s3-file-field[s3]>=1",
         "gunicorn",
     ],
     extras_require={
         "dev": [
             "django-composed-configuration[dev]",
             "django-debug-toolbar",
-            "django-s3-file-field[minio]",
+            "django-s3-file-field[minio]>=1",
             "ipython",
             "tox",
             "werkzeug",
