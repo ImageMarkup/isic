@@ -174,6 +174,7 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
     MINIO_STORAGE_MEDIA_OBJECT_METADATA = {"Content-Disposition": "attachment"}
 
     ZIP_DOWNLOAD_SERVICE_URL = "http://localhost:4008"
+    ZIP_DOWNLOAD_AUTH_TOKEN = "insecurezipdownloadauthtoken"
 
     ISIC_PLACEHOLDER_IMAGES = True
     # Use the MinioS3ProxyStorage for local development with ISIC_PLACEHOLDER_IMAGES
@@ -189,6 +190,7 @@ class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
     CELERY_TASK_EAGER_PROPAGATES = values.BooleanValue(False)
     ISIC_DATACITE_DOI_PREFIX = "10.80222"
     ZIP_DOWNLOAD_SERVICE_URL = "http://service-url.test"
+    ZIP_DOWNLOAD_AUTH_TOKEN = "insecuretestzipdownloadauthtoken"
 
 
 class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration):
@@ -205,3 +207,4 @@ class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration
     SENTRY_TRACES_SAMPLE_RATE = 0.01  # sample 1% of requests for performance monitoring
 
     ZIP_DOWNLOAD_SERVICE_URL = values.Value()
+    ZIP_DOWNLOAD_AUTH_TOKEN = values.SecretValue()

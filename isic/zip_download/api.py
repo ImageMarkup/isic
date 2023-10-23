@@ -13,7 +13,7 @@ from django.http.response import Http404, HttpResponse
 from django.shortcuts import render
 from ninja import Query, Router
 from ninja.errors import AuthenticationError
-from ninja.security import APIKeyQuery
+from ninja.security import APIKeyQuery, HttpBasicAuth
 
 from isic.core.models import CopyrightLicense, Image
 from isic.core.pagination import CursorPagination
@@ -34,10 +34,21 @@ def get_attributions(attributions: Iterable[str]) -> list[str]:
     return [x[0] for x in attributions]
 
 
+class ZipDownloadBasicAuth(HttpBasicAuth):
+    def authenticate(self, request, username, password):
+        if username == "" and password == settings.ZIP_DOWNLOAD_AUTH_TOKEN:
+            return True
+
+        raise AuthenticationError
+
+
 class ZipDownloadTokenAuth(APIKeyQuery):
     param_name = "token"
 
-    def authenticate(self, request: HttpRequest, key: str) -> dict:
+    def authenticate(self, request: HttpRequest, key: str | None) -> dict:
+        if not key:
+            raise AuthenticationError
+
         try:
             token_dict = TimestampSigner().unsign_object(key, max_age=timedelta(days=1))
         except BadSignature:
@@ -45,6 +56,15 @@ class ZipDownloadTokenAuth(APIKeyQuery):
 
         token_dict["token"] = key
         return token_dict
+
+
+def zip_api_auth(request: HttpRequest) -> bool:
+    # the default auth argument for ninja routes checks if ANY of the backends validate,
+    # but we want to check that ALL of them validate.
+    if not ZipDownloadBasicAuth()(request):
+        return False
+
+    return ZipDownloadTokenAuth()(request)
 
 
 @zip_router.post("/url/", response=str, include_in_schema=False)
@@ -56,7 +76,7 @@ def create_zip_download_url(request: HttpRequest, payload: SearchQueryIn):
 create_zip_download_url.csrf_exempt = True
 
 
-@zip_router.get("/file-listing/", include_in_schema=False, auth=ZipDownloadTokenAuth())
+@zip_router.get("/file-listing/", include_in_schema=False, auth=zip_api_auth)
 def zip_file_listing(
     request: HttpRequest,
     pagination: CursorPagination.Input = Query(...),
@@ -108,7 +128,7 @@ def zip_file_listing(
     return resp_data
 
 
-@zip_router.get("/metadata-file/", include_in_schema=False, auth=ZipDownloadTokenAuth())
+@zip_router.get("/metadata-file/", include_in_schema=False, auth=zip_api_auth)
 def zip_file_metadata_file(request: HttpRequest):
     user, search = SearchQueryIn.from_token_representation(request.auth)
     qs = search.to_queryset(user, Image.objects.select_related("accession__cohort").distinct())
@@ -122,7 +142,7 @@ def zip_file_metadata_file(request: HttpRequest):
     return response
 
 
-@zip_router.get("/attribution-file/", include_in_schema=False, auth=ZipDownloadTokenAuth())
+@zip_router.get("/attribution-file/", include_in_schema=False, auth=zip_api_auth)
 def zip_file_attribution_file(request: HttpRequest):
     user, search = SearchQueryIn.from_token_representation(request.auth)
     qs = search.to_queryset(user, Image.objects.select_related("accession__cohort").distinct())
