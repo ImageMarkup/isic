@@ -175,6 +175,8 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
 
     ZIP_DOWNLOAD_SERVICE_URL = "http://localhost:4008"
     ZIP_DOWNLOAD_AUTH_TOKEN = "insecurezipdownloadauthtoken"
+    # Requires CloudFront configuration
+    ZIP_DOWNLOAD_WILDCARD_URLS = False
 
     ISIC_PLACEHOLDER_IMAGES = True
     # Use the MinioS3ProxyStorage for local development with ISIC_PLACEHOLDER_IMAGES
@@ -191,6 +193,7 @@ class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
     ISIC_DATACITE_DOI_PREFIX = "10.80222"
     ZIP_DOWNLOAD_SERVICE_URL = "http://service-url.test"
     ZIP_DOWNLOAD_AUTH_TOKEN = "insecuretestzipdownloadauthtoken"
+    ZIP_DOWNLOAD_WILDCARD_URLS = False
 
 
 class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration):
@@ -208,3 +211,4 @@ class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration
 
     ZIP_DOWNLOAD_SERVICE_URL = values.Value()
     ZIP_DOWNLOAD_AUTH_TOKEN = values.SecretValue()
+    ZIP_DOWNLOAD_WILDCARD_URLS = True

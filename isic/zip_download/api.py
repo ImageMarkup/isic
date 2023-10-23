@@ -1,22 +1,24 @@
 from collections import Counter
 from collections.abc import Iterable
 import csv
-from datetime import timedelta
+from datetime import datetime, timedelta
 import json
 import logging
 
+from botocore.signers import CloudFrontSigner
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.signing import BadSignature, TimestampSigner
 from django.http.request import HttpRequest
 from django.http.response import Http404, HttpResponse
 from django.shortcuts import render
-from ninja import Query, Router
+from django.urls import reverse
+from ninja import Router
 from ninja.errors import AuthenticationError
 from ninja.security import APIKeyQuery, HttpBasicAuth
+import rsa
 
 from isic.core.models import CopyrightLicense, Image
-from isic.core.pagination import CursorPagination
 from isic.core.serializers import SearchQueryIn
 from isic.core.services import image_metadata_csv_headers, image_metadata_csv_rows
 
@@ -59,6 +61,15 @@ class ZipDownloadTokenAuth(APIKeyQuery):
 
 
 def zip_api_auth(request: HttpRequest) -> bool:
+    """
+    Protects the zip listing endpoint with basic auth.
+
+    This requires both basic auth and a valid token auth. The basic auth credential is shared
+    with the zipstreamer service and can't be intercepted. This is necessary because the signed
+    URLs from zip_file_listing are wildcard signed, so they grant access to all files in the bucket.
+    Without an additional layer of security, anyone who can see the zipstreamer url could download
+    any file in the bucket.
+    """
     # the default auth argument for ninja routes checks if ANY of the backends validate,
     # but we want to check that ALL of them validate.
     if not ZipDownloadBasicAuth()(request):
@@ -76,59 +87,77 @@ def create_zip_download_url(request: HttpRequest, payload: SearchQueryIn):
 create_zip_download_url.csrf_exempt = True
 
 
+def _cloudfront_signer(message: str):
+    # See the documentation for CloudFrontSigner
+    return rsa.sign(
+        message, rsa.PrivateKey.load_pkcs1(settings.AWS_CLOUDFRONT_KEY.encode("utf8")), "SHA-1"
+    )
+
+
 @zip_router.get("/file-listing/", include_in_schema=False, auth=zip_api_auth)
 def zip_file_listing(
     request: HttpRequest,
-    pagination: CursorPagination.Input = Query(...),
 ):
     token = request.auth["token"]
     user, search = SearchQueryIn.from_token_representation(request.auth)
     qs = search.to_queryset(user, Image.objects.select_related("accession"))
 
-    paginator = CursorPagination()
-    # confusingly, the first page will have a page size of at least paginator.page_size + 2.
-    # this is because the first page will have the metadata and attribution files and
-    # it's easier to just include them in the first page than to try to override
-    # the paginator's behavior.
-    resp_data = paginator.paginate_queryset(qs, pagination, request)
-
-    files = [
-        {"url": image.accession.blob.url, "zipPath": f"{image.isic_id}.JPG"}
-        for image in resp_data["results"]
-    ]
+    if settings.ZIP_DOWNLOAD_WILDCARD_URLS:
+        # this is a performance optimization. repeated signing of individual urls
+        # is slow when generating large descriptors. this allows generating one signature and
+        # using it for all urls.
+        signer = CloudFrontSigner(settings.AWS_CLOUDFRONT_KEY_ID, _cloudfront_signer)
+        # create a wildcard signature that allows access to * and pass this to the zipstreamer.
+        # since zip_api_auth uses a shared secret that only it and the zipstreamer know, this
+        # can't be intercepted by someone looking at the zipstreamer url.
+        url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/*"
+        policy = signer.build_policy(url, date_less_than=datetime.utcnow() + timedelta(days=1))
+        signed_url = signer.generate_presigned_url(url, policy=policy)
+        files = [
+            {
+                "url": signed_url.replace("*", image.accession.blob.name),
+                "zipPath": f"{image.isic_id}.JPG",
+            }
+            for image in qs
+        ]
+    else:
+        # development doesn't have any cloudfront frontend so we need to sign each url individually
+        files = [
+            {"url": image.accession.blob.url, "zipPath": f"{image.isic_id}.JPG"} for image in qs
+        ]
 
     # initialize files with metadata and attribution files
-    if resp_data["previous"] is None:
-        logger.info(
-            f"Creating zip file descriptor for {qs.count()} images: " f"{json.dumps(request.auth)}"
-        )
-        domain = Site.objects.get_current().domain
-        files += [
+    logger.info(
+        f"Creating zip file descriptor for {qs.count()} images: " f"{json.dumps(request.auth)}"
+    )
+    domain = Site.objects.get_current().domain
+    for endpoint, zip_path in [
+        [reverse("api:zip_file_metadata_file"), "metadata.csv"],
+        [reverse("api:zip_file_attribution_file"), "attribution.txt"],
+    ]:
+        files.append(
             {
-                "url": f"http://{domain}/api/v2/zip-download/metadata-file/?token={token}",
-                "zipPath": "metadata.csv",
-            },
-            {
-                "url": f"http://{domain}/api/v2/zip-download/attribution-file/?token={token}",
-                "zipPath": "attribution.txt",
-            },
-        ]
-
-        files += [
-            {
-                "url": f"http://{domain}/api/v2/zip-download/license-file/{license}",
-                "zipPath": f"licenses/{license}.txt",
+                "url": f"http://{domain}{endpoint}?search_token={token}&auth_token",
+                "zipPath": zip_path,
             }
-            for license in (
-                qs.values_list("accession__copyright_license", flat=True).order_by().distinct()
-            )
-        ]
+        )
 
-    resp_data["results"] = files
-    return resp_data
+    files += [
+        {
+            "url": f"http://{domain}{reverse('api:zip_file_license_file', args=[license])}",
+            "zipPath": f"licenses/{license}.txt",
+        }
+        for license in (
+            qs.values_list("accession__copyright_license", flat=True).order_by().distinct()
+        )
+    ]
+
+    return {
+        "files": files,
+    }
 
 
-@zip_router.get("/metadata-file/", include_in_schema=False, auth=zip_api_auth)
+@zip_router.get("/metadata-file/", include_in_schema=False, auth=ZipDownloadTokenAuth())
 def zip_file_metadata_file(request: HttpRequest):
     user, search = SearchQueryIn.from_token_representation(request.auth)
     qs = search.to_queryset(user, Image.objects.select_related("accession__cohort").distinct())
@@ -142,7 +171,7 @@ def zip_file_metadata_file(request: HttpRequest):
     return response
 
 
-@zip_router.get("/attribution-file/", include_in_schema=False, auth=zip_api_auth)
+@zip_router.get("/attribution-file/", include_in_schema=False, auth=ZipDownloadTokenAuth())
 def zip_file_attribution_file(request: HttpRequest):
     user, search = SearchQueryIn.from_token_representation(request.auth)
     qs = search.to_queryset(user, Image.objects.select_related("accession__cohort").distinct())
