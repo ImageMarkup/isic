@@ -10,6 +10,34 @@ from isic.core.dsl import parse_query
     [
         # test isic_id especially due to the weirdness of the foreign key
         ["isic_id:ISIC_123*", Q(isic__id__startswith="ISIC_123")],
+        # test negation and present/missing values
+        ["-isic_id:*", ~Q(isic__id__isnull=False)],
+        ["-lesion_id:*", ~Q(accession__lesion__id__isnull=False)],
+        [
+            "-diagnosis:* OR diagnosis:foobar",
+            ~Q(accession__metadata__diagnosis__isnull=False)
+            | Q(accession__metadata__diagnosis="foobar"),
+        ],
+        ["age_approx:[50 TO *]", ParseException],
+        ["-melanocytic:*", ~Q(accession__metadata__melanocytic__isnull=False)],
+        ["melanocytic:*", Q(accession__metadata__melanocytic__isnull=False)],
+        ["-age_approx:50", ~Q(accession__metadata__age__approx=50)],
+        ["-diagnosis:foo*", ~Q(accession__metadata__diagnosis__startswith="foo")],
+        [
+            "-age_approx:[50 TO 70]",
+            ~Q(accession__metadata__age__approx__gte=50, accession__metadata__age__approx__lte=70),
+        ],
+        [
+            "-diagnosis:foobar OR (diagnosis:foobaz AND (-diagnosis:foo* OR age_approx:50))",
+            ~Q(accession__metadata__diagnosis="foobar")
+            | (
+                Q(accession__metadata__diagnosis="foobaz")
+                & (
+                    ~Q(accession__metadata__diagnosis__startswith="foo")
+                    | Q(accession__metadata__age__approx=50)
+                )
+            ),
+        ],
         ["isic_id:*123", Q(isic__id__endswith="123")],
         ["lesion_id:IL_123*", Q(accession__lesion__id__startswith="IL_123")],
         ["lesion_id:*123", Q(accession__lesion__id__endswith="123")],
