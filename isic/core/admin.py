@@ -166,7 +166,7 @@ class ImageAliasAdmin(StaffReadonlyAdmin):
 class CollectionAdmin(StaffReadonlyAdmin):
     list_select_related = ["creator", "doi"]
     list_filter = ["public", "pinned", "locked", ("doi", admin.EmptyFieldListFilter)]
-    list_display = ["creator", "name", "created", "num_images", "public", "pinned", "locked", "doi"]
+    list_display = ["name", "created", "creator", "num_images", "public", "pinned", "locked", "doi"]
     search_fields = ["creator__email", "name", "doi__id"]
     search_help_text = "Search collections by name, or creator email."
 
