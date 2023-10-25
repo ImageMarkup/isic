@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 class CohortInline(ReadonlyTabularInline):
     model = Cohort
-    fields = ["id", "name", "description", "creator", "created"]
+    fields = ["id", "name", "created", "creator", "description"]
 
 
 class AccessionInline(ReadonlyTabularInline):
@@ -60,7 +60,7 @@ class ZipInline(ReadonlyTabularInline):
 @admin.register(Contributor)
 class ContributorAdmin(StaffReadonlyAdmin):
     list_select_related = ["creator"]
-    list_display = ["id", "institution_name", "creator", "created", "cohorts", "accessions"]
+    list_display = ["institution_name", "created", "creator", "cohorts", "accessions"]
     search_fields = ["institution_name", "creator__username"]
 
     autocomplete_fields = ["creator", "owners"]
@@ -148,7 +148,7 @@ class CohortAdmin(StaffReadonlyAdmin):
 @admin.register(MetadataFile)
 class MetadataFileAdmin(StaffReadonlyAdmin):
     list_select_related = ["creator", "cohort"]
-    list_display = ["id", "blob_name", "human_blob_size", "creator", "created", "cohort"]
+    list_display = ["blob_name", "human_blob_size", "created", "creator", "cohort"]
     search_fields = ["blob_name", "creator__username"]
 
     autocomplete_fields = ["creator", "cohort"]
@@ -227,7 +227,7 @@ class AccessionReviewAdmin(StaffReadonlyAdmin):
 @admin.register(ZipUpload)
 class ZipAdmin(DjangoObjectActions, StaffReadonlyAdmin):
     list_select_related = ["creator", "cohort"]
-    list_display = ["id", "blob_name", "human_blob_size", "creator", "created", "status", "cohort"]
+    list_display = ["blob_name", "human_blob_size", "created", "creator", "status", "cohort"]
     list_filter = ["status"]
     search_fields = ["blob_name", "creator__username"]
     actions = ["extract_zip"]
