@@ -60,7 +60,7 @@ setup(
         "django-spurl",
         "django-storages>=1.14",
         "django-widget-tweaks",
-        "google-api-python-client",
+        "google-analytics-data",
         "hashids",
         "isic-metadata>=0.2.0",
         "jaro-winkler",
