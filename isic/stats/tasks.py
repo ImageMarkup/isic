@@ -7,7 +7,6 @@ import json
 from types import SimpleNamespace
 import urllib.parse
 
-from apiclient.discovery import build
 import boto3
 from botocore.config import Config
 from celery import shared_task
@@ -15,17 +14,15 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
-from googleapiclient.errors import HttpError
+from google.analytics.data_v1beta import BetaAnalyticsDataClient
+from google.analytics.data_v1beta.types import DateRange, Dimension, Metric, RunReportRequest
+from google.oauth2 import service_account
 from more_itertools.more import chunked
-from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
 import pycountry
 
 from isic.core.models.image import Image
 from isic.stats.models import GaMetrics, ImageDownload
-
-SCOPES = ["https://www.googleapis.com/auth/analytics.readonly"]
-
 
 logger = get_task_logger(__name__)
 
@@ -36,52 +33,33 @@ def _s3_client():
     )
 
 
-def _initialize_analyticsreporting():
-    credentials = ServiceAccountCredentials.from_json_keyfile_dict(
-        json.loads(settings.ISIC_GOOGLE_API_JSON_KEY), SCOPES
+def _get_analytics_client():
+    json_acct_info = json.loads(settings.ISIC_GOOGLE_API_JSON_KEY)
+    credentials = service_account.Credentials.from_service_account_info(json_acct_info)
+    scoped_credentials = credentials.with_scopes(
+        ["https://www.googleapis.com/auth/analytics.readonly"]
     )
-    analytics = build("analyticsreporting", "v4", credentials=credentials)
-    return analytics
+    return BetaAnalyticsDataClient(credentials=scoped_credentials)
 
 
-def _get_google_analytics_report(analytics, view_id: str) -> dict:
+def _get_google_analytics_report(client, property_id: str) -> dict:
     results = {
         "num_sessions": 0,
         "sessions_per_country": defaultdict(int),
     }
-    response = (
-        analytics.reports()
-        .batchGet(
-            body={
-                "reportRequests": [
-                    {
-                        "viewId": view_id,
-                        "dateRanges": [{"startDate": "30daysAgo", "endDate": "today"}],
-                        "metrics": [{"expression": "ga:sessions"}],
-                        "dimensions": [{"name": "ga:countryIsoCode"}],
-                    }
-                ]
-            }
-        )
-        .execute()
+
+    request = RunReportRequest(
+        property=f"properties/{property_id}",
+        dimensions=[Dimension(name="countryId")],
+        metrics=[Metric(name="sessions")],
+        date_ranges=[DateRange(start_date="30daysAgo", end_date="today")],
     )
+    response = client.run_report(request)
 
-    for report in response.get("reports", []):
-        column_header = report.get("columnHeader", {})
-        metric_headers = column_header.get("metricHeader", {}).get("metricHeaderEntries", [])
-
-        for row in report.get("data", {}).get("rows", []):
-            dimensions = row.get("dimensions", [])
-            date_range_values = row.get("metrics", [])
-
-            for _, values in enumerate(date_range_values):
-                for _, value in zip(metric_headers, values.get("values")):
-                    if dimensions[0] != "ZZ":  # unknown country
-                        results["sessions_per_country"][dimensions[0]] += int(value)
-
-        results["num_sessions"] += int(
-            report.get("data", {}).get("totals", [{}])[0].get("values", ["0"])[0]
-        )
+    for row in response.rows:
+        country_id, sessions = row.dimension_values[0].value, row.metric_values[0].value
+        results["sessions_per_country"][country_id] += int(sessions)
+        results["num_sessions"] += int(sessions)
 
     return results
 
@@ -106,9 +84,6 @@ def _country_from_iso_code(iso_code: str) -> dict:
 @shared_task(
     soft_time_limit=60,
     time_limit=120,
-    # Figuring out retries within googleapiclient is a bit cumbersome, use celery.
-    autoretry_for=(HttpError,),
-    retry_backoff=True,
 )
 def collect_google_analytics_metrics_task():
     if not settings.ISIC_GOOGLE_API_JSON_KEY:
@@ -117,19 +92,22 @@ def collect_google_analytics_metrics_task():
         )
         return
 
-    analytics = _initialize_analyticsreporting()
+    client = _get_analytics_client()
     num_sessions = 0
     sessions_per_country = []
     sessions_per_iso_code: dict[str, int] = defaultdict(int)
 
-    for view_id in settings.ISIC_GOOGLE_ANALYTICS_VIEW_IDS:
-        results = _get_google_analytics_report(analytics, view_id)
+    for property_id in settings.ISIC_GOOGLE_ANALYTICS_PROPERTY_IDS:
+        results = _get_google_analytics_report(client, property_id)
         num_sessions += results["num_sessions"]
         for key, value in results["sessions_per_country"].items():
             sessions_per_iso_code[key] += value
 
     for iso_code, sessions in sessions_per_iso_code.items():
-        sessions_per_country.append({**{"sessions": sessions}, **_country_from_iso_code(iso_code)})
+        if iso_code != "(not set)":
+            sessions_per_country.append(
+                {**{"sessions": sessions}, **_country_from_iso_code(iso_code)}
+            )
 
     GaMetrics.objects.create(
         range_start=timezone.now() - timedelta(days=30),
