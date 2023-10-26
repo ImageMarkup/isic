@@ -79,7 +79,7 @@ setup(
         "tenacity",
         "zipfile-deflate64",
         # Production-only
-        "django-composed-configuration[prod]>=0.21.0",
+        "django-composed-configuration[prod]>=0.23.0",
         "django-s3-file-field[s3]>=1",
         "gunicorn",
     ],
