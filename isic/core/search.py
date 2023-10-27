@@ -1,3 +1,4 @@
+from copy import deepcopy
 from functools import lru_cache, partial
 import logging
 
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 INDEX_MAPPINGS = {"properties": {}}
 DEFAULT_SEARCH_AGGREGATES = {}
+COUNTS_AGGREGATES = {}
 
 # TODO: include private meta fields (e.g. patient/lesion id)
 for key, definition in FIELD_REGISTRY.items():
@@ -52,6 +54,9 @@ DEFAULT_SEARCH_AGGREGATES["age_approx"] = {
         "extended_bounds": {"min": 0, "max": 85},
     }
 }
+for key, _ in DEFAULT_SEARCH_AGGREGATES.items():
+    COUNTS_AGGREGATES[f"{key}_missing"] = {"missing": {"field": key}}
+    COUNTS_AGGREGATES[f"{key}_present"] = {"value_count": {"field": key}}
 
 
 # These are all approaching 10 unique values, which would require passing a size attribute
@@ -116,23 +121,52 @@ def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 2000) -> Non
 
 
 def facets(query: dict | None = None, collections: list[int] | None = None) -> dict:
-    body = {
+    """
+    Generate the facet counts for a given query.
+
+    This has to perform 2 elasticsearch queries, one for computing the present/absent
+    counts for each facet, and another for generating the buckets themselves.
+    """
+    counts_body = {
         "size": 0,
-        "aggs": DEFAULT_SEARCH_AGGREGATES,
+        "aggs": COUNTS_AGGREGATES,
     }
+
+    if query:
+        counts_body["query"] = query
+
+    counts = get_elasticsearch_client().search(
+        index=settings.ISIC_ELASTICSEARCH_INDEX,
+        body=counts_body,
+    )["aggregations"]
+
+    facets_body = {
+        "size": 0,
+        "aggs": deepcopy(DEFAULT_SEARCH_AGGREGATES),
+    }
+
+    # pass the counts through as metadata in the final aggregation query
+    # https://www.elastic.co/guide/en/elasticsearch/reference/8.10/search-aggregations.html#add-metadata-to-an-agg
+    for field in facets_body["aggs"]:
+        facets_body["aggs"][field]["meta"] = {
+            "missing_count": counts[f"{field}_missing"]["doc_count"],
+            "present_count": counts[f"{field}_present"]["value"],
+        }
 
     if collections is not None:
         # Note this include statement means we can only filter by ~65k collections. See:
         # "By default, Elasticsearch limits the terms query to a maximum of 65,536 terms.
         # You can change this limit using the index.max_terms_count setting."
-        body["aggs"]["collections"] = {"terms": {"field": "collections", "include": collections}}
+        facets_body["aggs"]["collections"] = {
+            "terms": {"field": "collections", "include": collections}
+        }
 
     if query:
-        body["query"] = query
+        facets_body["query"] = query
 
-    return get_elasticsearch_client().search(index=settings.ISIC_ELASTICSEARCH_INDEX, body=body)[
-        "aggregations"
-    ]
+    return get_elasticsearch_client().search(
+        index=settings.ISIC_ELASTICSEARCH_INDEX, body=facets_body
+    )["aggregations"]
 
 
 def build_elasticsearch_query(
