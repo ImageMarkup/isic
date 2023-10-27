@@ -20,9 +20,9 @@ router = Router()
 
 
 class CollectionOut(ModelSchema):
-    class Config:
+    class Meta:
         model = Collection
-        model_fields = ["id", "name", "description", "public", "pinned", "locked", "doi"]
+        fields = ["id", "name", "description", "public", "pinned", "locked", "doi"]
 
     doi_url: str | None = Field(alias="doi_url")
 
