@@ -11,9 +11,9 @@ router = Router()
 
 
 class UserOut(ModelSchema):
-    class Config:
+    class Meta:
         model = User
-        model_fields = [
+        fields = [
             "id",
             "email",
             "first_name",

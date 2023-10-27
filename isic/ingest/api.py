@@ -6,7 +6,7 @@ from django.http.request import HttpRequest
 from django.shortcuts import get_object_or_404
 from ninja import Field, ModelSchema, Query, Router, Schema
 from ninja.pagination import paginate
-from pydantic import validator
+from pydantic import field_validator
 from s3_file_field.widgets import S3PlaceholderFile
 
 from isic.auth import is_authenticated, is_staff
@@ -24,7 +24,7 @@ class AccessionIn(Schema):
     cohort: int
     original_blob: str = Field(..., description="S3 file field value.")
 
-    @validator("original_blob")
+    @field_validator("original_blob")
     @classmethod
     def validate_s3_file(cls, value: str) -> S3PlaceholderFile:
         s3_file = S3PlaceholderFile.from_field(value)
@@ -34,9 +34,9 @@ class AccessionIn(Schema):
 
 
 class AccessionOut(ModelSchema):
-    class Config:
+    class Meta:
         model = Accession
-        model_fields = ["id"]
+        fields = ["id"]
 
 
 @accession_router.post(
@@ -80,9 +80,9 @@ default_cohort_qs = Cohort.objects.annotate(accession_count=Count("accessions"))
 
 
 class CohortOut(ModelSchema):
-    class Config:
+    class Meta:
         model = Cohort
-        model_fields = [
+        fields = [
             "id",
             "created",
             "creator",
@@ -112,9 +112,9 @@ contributor_router = Router()
 
 
 class ContributorIn(ModelSchema):
-    class Config:
+    class Meta:
         model = Contributor
-        model_fields = [
+        fields = [
             "institution_name",
             "institution_url",
             "legal_contact_info",
@@ -124,9 +124,9 @@ class ContributorIn(ModelSchema):
 
 
 class ContributorOut(ModelSchema):
-    class Config:
+    class Meta:
         model = Contributor
-        model_fields = [
+        fields = [
             "id",
             "created",
             "creator",
@@ -171,9 +171,9 @@ metadata_file_router = Router()
 
 
 class MetadataFileOut(ModelSchema):
-    class Config:
+    class Meta:
         model = MetadataFile
-        model_fields = ["id"]
+        fields = ["id"]
 
 
 @metadata_file_router.delete("/{id}/", response={204: None}, include_in_schema=False, auth=is_staff)

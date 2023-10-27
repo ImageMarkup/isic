@@ -1,6 +1,6 @@
 from django.http.response import JsonResponse
 from ninja import Query, Router, Schema
-from pydantic import validator
+from pydantic import field_validator
 
 from isic.find.find import quickfind_execute
 
@@ -10,14 +10,14 @@ router = Router()
 class QueryIn(Schema):
     query: str
 
-    @validator("query")
+    @field_validator("query")
     @classmethod
     def query_min_length(cls, v: str):
         if len(v) < 3:
             raise ValueError("Query too short.")
         return v
 
-    @validator("query")
+    @field_validator("query")
     @classmethod
     def query_too_common(cls, v: str):
         if v.lower() in "isic_":

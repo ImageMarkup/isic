@@ -2,7 +2,7 @@ from django.contrib.auth.models import AnonymousUser, User
 from django.db.models.query import QuerySet
 from django.shortcuts import get_object_or_404
 from ninja import Schema
-from pydantic import validator
+from pydantic import field_validator
 
 from isic.core.models import Image
 from isic.core.models.collection import Collection
@@ -13,14 +13,14 @@ class SearchQueryIn(Schema):
     query: str | None = None
     collections: list[int] | None = None
 
-    @validator("query")
+    @field_validator("query")
     @classmethod
     def valid_search_query(cls, value: str | None):
         if value:
             value = value.strip()
         return value
 
-    @validator("collections", pre=True)
+    @field_validator("collections", mode="before")
     @classmethod
     def collections_to_list(cls, value: str | list[int]):
         if isinstance(value, str) and value:

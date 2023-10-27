@@ -13,9 +13,9 @@ study_task_router = Router()
 
 
 class AnnotationOut(ModelSchema):
-    class Config:
+    class Meta:
         model = Annotation
-        model_fields = ["id", "study", "image", "task", "annotator"]
+        fields = ["id", "study", "image", "task", "annotator"]
 
 
 @annotation_router.get("/", response=list[AnnotationOut], include_in_schema=False, auth=is_staff)
@@ -30,30 +30,30 @@ def annotation_detail(request: HttpRequest, id: int):
 
 
 class FeatureOut(ModelSchema):
-    class Config:
+    class Meta:
         model = Feature
-        model_fields = ["id", "required", "name", "official"]
+        fields = ["id", "required", "name", "official"]
 
 
 class QuestionChoiceOut(ModelSchema):
-    class Config:
+    class Meta:
         model = QuestionChoice
-        model_fields = ["id", "question", "text"]
+        fields = ["id", "question", "text"]
 
 
 class QuestionOut(ModelSchema):
     choices: list[QuestionChoiceOut]
     required: bool = Field(alias="required")
 
-    class Config:
+    class Meta:
         model = Question
-        model_fields = ["id", "type", "prompt", "official"]
+        fields = ["id", "type", "prompt", "official"]
 
 
 class StudyOut(ModelSchema):
-    class Config:
+    class Meta:
         model = Study
-        model_fields = ["id", "created", "creator", "name", "description"]
+        fields = ["id", "created", "creator", "name", "description"]
 
     features: list[FeatureOut]
     questions: list[QuestionOut] = Field(alias="questions")
@@ -81,9 +81,9 @@ def study_detail(request: HttpRequest, id: int):
 
 
 class StudyTaskOut(ModelSchema):
-    class Config:
+    class Meta:
         model = StudyTask
-        model_fields = ["id", "study", "image", "annotator"]
+        fields = ["id", "study", "image", "annotator"]
 
     complete: bool = Field(alias="complete")
 
