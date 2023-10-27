@@ -1,8 +1,10 @@
 from __future__ import barry_as_FLUFL
 
+from dataclasses import dataclass
+
 from django.db.models.query_utils import Q
 from isic_metadata import FIELD_REGISTRY
-from pyparsing import Keyword, ParserElement, Word, alphas, infixNotation, nums, opAssoc
+from pyparsing import Keyword, Optional, ParserElement, Word, alphas, infixNotation, nums, opAssoc
 from pyparsing.common import pyparsing_common
 from pyparsing.core import Literal, OneOrMore, Or, QuotedString, Suppress
 from pyparsing.helpers import one_of
@@ -11,33 +13,48 @@ from pyparsing.results import ParseResults
 ParserElement.enablePackrat()
 
 
+@dataclass(frozen=True)
+class SearchTermKey:
+    field_lookup: str
+    negated: bool = False
+
+
 class Value:
-    def to_q(self, key):
-        return Q(**{key: self.value})
+    def to_q(self, key: SearchTermKey) -> Q:
+        if self.value == "*":
+            return Q(**{f"{key.field_lookup}__isnull": False}, _negated=key.negated)
+        else:
+            return Q(**{key.field_lookup: self.value}, _negated=key.negated)
 
 
 class BoolValue(Value):
     def __init__(self, toks) -> None:
-        self.value = True if toks[0] == "true" else False
+        if toks[0] == "*":
+            self.value = "*"
+        else:
+            self.value = True if toks[0] == "true" else False
 
 
 class StrValue(Value):
     def __init__(self, toks) -> None:
         self.value = toks[0]
 
-    def to_q(self, key):
+    def to_q(self, key: SearchTermKey) -> Q:
         # Special casing for image type renaming, see
         # https://linear.app/isic/issue/ISIC-138#comment-93029f64
         # TODO: Remove this once better error messages are put in place.
-        if key == "accession__metadata__image_type" and self.value == "clinical":
+        if key.field_lookup == "accession__metadata__image_type" and self.value == "clinical":
             self.value = "clinical: close-up"
-        elif key == "accession__metadata__image_type" and self.value == "overview":
+        elif key.field_lookup == "accession__metadata__image_type" and self.value == "overview":
             self.value = "clinical: overview"
 
+        # so asterisk is any present value
+        if self.value == "*":
+            return Q(**{f"{key.field_lookup}__isnull": False}, _negated=key.negated)
         if self.value.startswith("*"):
-            return Q(**{f"{key}__endswith": self.value[1:]})
+            return Q(**{f"{key.field_lookup}__endswith": self.value[1:]}, _negated=key.negated)
         elif self.value.endswith("*"):
-            return Q(**{f"{key}__startswith": self.value[:-1]})
+            return Q(**{f"{key.field_lookup}__startswith": self.value[:-1]}, _negated=key.negated)
         else:
             return super().to_q(key)
 
@@ -53,10 +70,13 @@ class NumberRangeValue(Value):
         self.upper_lookup = "lte" if toks[-1] == "]" else "lt"
         self.value = (toks[1].value, toks[2].value)
 
-    def to_q(self, key):
-        start_key, end_key = f"{key}__{self.lower_lookup}", f"{key}__{self.upper_lookup}"
+    def to_q(self, key: SearchTermKey) -> Q:
+        start_key, end_key = (
+            f"{key.field_lookup}__{self.lower_lookup}",
+            f"{key.field_lookup}__{self.upper_lookup}",
+        )
         start_value, end_value = self.value
-        return Q(**{start_key: start_value}, **{end_key: end_value})
+        return Q(**{start_key: start_value}, **{end_key: end_value}, _negated=key.negated)
 
 
 def q(s, loc, toks):
@@ -97,36 +117,50 @@ def q_or(s, loc, toks):
 AND = Suppress(Keyword("AND"))
 OR = Suppress(Keyword("OR"))
 
+# Note that the Lucene DSL treats a single asterisk as a replacement for whether
+# the field exists and has a non null value.
+# https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-wildcard
+EXISTS = Literal("*")
+
 # asterisks for wildcard, _ for ISIC ID search, - for license types
 str_value = (Word(alphas + nums + "*" + "_" + "-") | QuotedString('"')).add_parse_action(StrValue)
 number_value = pyparsing_common.number.add_parse_action(NumberValue)
 number_range_value = (
     one_of("[ {") + number_value + Suppress(Literal("TO")) + number_value + one_of("] }")
 ).add_parse_action(NumberRangeValue)
-bool_value = one_of("true false").add_parse_action(BoolValue)
+bool_value = one_of("true false *").add_parse_action(BoolValue)
 
 
 def convert_term(s, loc, toks):
+    negate = False
+
+    if len(toks) == 2 and toks[0] == "-":
+        negate = True
+        toks = toks[1:]
+
+    if len(toks) > 1:
+        raise Exception("Something went wrong")
+
     if toks[0] == "public":
-        return toks[0]
+        return SearchTermKey(toks[0], negate)
     elif toks[0] == "isic_id":
         # isic_id can't be used with wildcards since it's a foreign key, so join the table and
         # refer to the __id.
-        return "isic__id"
+        return SearchTermKey("isic__id", negate)
     elif toks[0] == "lesion_id":
-        return "accession__lesion__id"
+        return SearchTermKey("accession__lesion__id", negate)
     elif toks[0] == "patient_id":
-        return "accession__patient__id"
+        return SearchTermKey("accession__patient__id", negate)
     elif toks[0] == "age_approx":
-        return "accession__metadata__age__approx"
+        return SearchTermKey("accession__metadata__age__approx", negate)
     elif toks[0] == "copyright_license":
-        return "accession__copyright_license"
+        return SearchTermKey("accession__copyright_license", negate)
     else:
-        return f"accession__metadata__{toks[0]}"
+        return SearchTermKey(f"accession__metadata__{toks[0]}", negate)
 
 
 def make_term_keyword(name):
-    return Keyword(name).add_parse_action(convert_term)
+    return (Optional("-") + Keyword(name)).add_parse_action(convert_term)
 
 
 def make_term(name, values):
