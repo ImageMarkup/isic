@@ -246,6 +246,16 @@ def test_core_api_image_faceting(private_and_public_images_collections, client_)
     assert buckets[0] == {"key": public_coll.pk, "doc_count": 1}, buckets
 
 
+@pytest.mark.django_db
+def test_core_api_image_faceting_structure(searchable_images, client):
+    r = client.get(
+        "/api/v2/images/facets/",
+    )
+    assert r.status_code == 200, r.json()
+    assert len(r.json()["diagnosis"]["buckets"]) == 1, r.json()
+    assert r.json()["diagnosis"]["meta"] == {"missing_count": 0, "present_count": 1}, r.json()
+
+
 @pytest.mark.parametrize(
     "client_",
     [
