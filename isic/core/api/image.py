@@ -38,9 +38,9 @@ class ImageFilesOut(Schema):
 
 
 class ImageOut(ModelSchema):
-    class Config:
+    class Meta:
         model = Image
-        model_fields = ["public"]
+        fields = ["public"]
 
     isic_id: str = Field(alias="isic_id")
     copyright_license: str = Field(alias="accession.copyright_license")
