@@ -13,6 +13,7 @@ from isic.core.dsl import parse_query
         # test negation and present/missing values
         ["-isic_id:*", ~Q(isic__id__isnull=False)],
         ["-lesion_id:*", ~Q(accession__lesion__id__isnull=False)],
+        ["-mel_thick_mm:*", ~Q(accession__metadata__mel_thick_mm__isnull=False)],
         [
             "-diagnosis:* OR diagnosis:foobar",
             ~Q(accession__metadata__diagnosis__isnull=False)
