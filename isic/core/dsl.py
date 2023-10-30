@@ -61,7 +61,10 @@ class StrValue(Value):
 
 class NumberValue(Value):
     def __init__(self, toks) -> None:
-        self.value = toks[0]
+        if toks[0] == "*":
+            self.value = "*"
+        else:
+            self.value = toks[0]
 
 
 class NumberRangeValue(Value):
@@ -124,9 +127,14 @@ EXISTS = Literal("*")
 
 # asterisks for wildcard, _ for ISIC ID search, - for license types
 str_value = (Word(alphas + nums + "*" + "_" + "-") | QuotedString('"')).add_parse_action(StrValue)
-number_value = pyparsing_common.number.add_parse_action(NumberValue)
+number_value = (pyparsing_common.number.copy() | EXISTS).add_parse_action(NumberValue)
+concrete_number_value = pyparsing_common.number.copy().add_parse_action(NumberValue)
 number_range_value = (
-    one_of("[ {") + number_value + Suppress(Literal("TO")) + number_value + one_of("] }")
+    one_of("[ {")
+    + concrete_number_value
+    + Suppress(Literal("TO"))
+    + concrete_number_value
+    + one_of("] }")
 ).add_parse_action(NumberRangeValue)
 bool_value = one_of("true false *").add_parse_action(BoolValue)
 
