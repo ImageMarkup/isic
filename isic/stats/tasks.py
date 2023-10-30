@@ -104,7 +104,7 @@ def collect_google_analytics_metrics_task():
             sessions_per_iso_code[key] += value
 
     for iso_code, sessions in sessions_per_iso_code.items():
-        if iso_code != "(not set)":
+        if iso_code not in ["(not set)", ""]:
             sessions_per_country.append(
                 {**{"sessions": sessions}, **_country_from_iso_code(iso_code)}
             )
