@@ -38,7 +38,7 @@ def get_attributions(attributions: Iterable[str]) -> list[str]:
 
 class ZipDownloadBasicAuth(HttpBasicAuth):
     def authenticate(self, request, username, password):
-        if username == "" and password == settings.ZIP_DOWNLOAD_AUTH_TOKEN:
+        if username == "" and password == settings.ZIP_DOWNLOAD_BASIC_AUTH_TOKEN:
             return True
 
         raise AuthenticationError
