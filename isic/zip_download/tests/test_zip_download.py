@@ -29,7 +29,7 @@ def random_images_with_licenses(image_factory):
 def zip_basic_auth():
     return {
         "HTTP_AUTHORIZATION": "Basic "
-        + b64encode(b":" + settings.ZIP_DOWNLOAD_AUTH_TOKEN.encode()).decode()
+        + b64encode(b":" + settings.ZIP_DOWNLOAD_BASIC_AUTH_TOKEN.encode()).decode()
     }
 
 
@@ -46,7 +46,7 @@ def test_zip_download_licenses(authenticated_client, random_images_with_licenses
         "/api/v2/zip-download/file-listing/",
         data={"token": token[0]},
         HTTP_AUTHORIZATION="Basic "
-        + b64encode(b":" + settings.ZIP_DOWNLOAD_AUTH_TOKEN.encode()).decode(),
+        + b64encode(b":" + settings.ZIP_DOWNLOAD_BASIC_AUTH_TOKEN.encode()).decode(),
     )
     assert r.status_code == 200, r.json()
 
