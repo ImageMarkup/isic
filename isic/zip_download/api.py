@@ -101,6 +101,8 @@ def zip_file_listing(
     token = request.auth["token"]
     user, search = SearchQueryIn.from_token_representation(request.auth)
     qs = search.to_queryset(user, Image.objects.select_related("accession"))
+    file_count = qs.count()
+    suggested_filename = f"{qs.first().isic_id}.zip" if file_count == 1 else "ISIC-images.zip"
 
     if settings.ZIP_DOWNLOAD_WILDCARD_URLS:
         # this is a performance optimization. repeated signing of individual urls
@@ -153,6 +155,7 @@ def zip_file_listing(
     ]
 
     return {
+        "suggestedFilename": suggested_filename,
         "files": files,
     }
 
