@@ -139,7 +139,7 @@ def zip_file_listing(
     ]:
         files.append(
             {
-                "url": f"http://{domain}{endpoint}?search_token={token}&auth_token",
+                "url": f"http://{domain}{endpoint}?token={token}",
                 "zipPath": zip_path,
             }
         )
