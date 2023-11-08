@@ -117,10 +117,10 @@ def zip_file_listing(
         signed_url = signer.generate_presigned_url(url, policy=policy)
         files = [
             {
-                "url": signed_url.replace("*", image.accession.blob.name),
-                "zipPath": f"{image.isic_id}.JPG",
+                "url": signed_url.replace("*", image["accession__blob"]),
+                "zipPath": f"{image['isic_id']}.JPG",
             }
-            for image in qs
+            for image in qs.values("accession__blob", "isic_id").iterator()
         ]
     else:
         # development doesn't have any cloudfront frontend so we need to sign each url individually
