@@ -1,6 +1,6 @@
 import csv
 import io
-from typing import BinaryIO
+from typing import BinaryIO, cast
 
 from django.urls.base import reverse
 from django.utils import timezone
@@ -10,6 +10,7 @@ from isic.ingest.services.accession.review import accession_review_update_or_cre
 from isic.ingest.tasks import update_metadata_task
 from isic.ingest.tests.csv_streams import StreamWriter
 from isic.ingest.utils.metadata import validate_csv_format_and_filenames
+from isic.ingest.views.metadata import ApplyMetadataContext
 
 
 @pytest.fixture
@@ -28,6 +29,45 @@ def csv_stream_diagnosis_sex() -> BinaryIO:
     writer = csv.DictWriter(file_stream, fieldnames=["filename", "diagnosis", "sex"])
     writer.writeheader()
     writer.writerow({"filename": "filename.jpg", "diagnosis": "melanoma", "sex": "female"})
+    return file_stream
+
+
+@pytest.fixture
+def csv_stream_diagnosis_sex_lesion_patient() -> BinaryIO:
+    file_stream = StreamWriter(io.BytesIO())
+    writer = csv.DictWriter(
+        file_stream, fieldnames=["filename", "diagnosis", "sex", "lesion_id", "patient_id"]
+    )
+    writer.writeheader()
+    writer.writerow(
+        {
+            "filename": "filename.jpg",
+            "diagnosis": "melanoma",
+            "sex": "female",
+            "lesion_id": "lesion1",
+            "patient_id": "patient1",
+        }
+    )
+    return file_stream
+
+
+@pytest.fixture
+def csv_stream_diagnosis_sex_disagreeing_lesion_patient() -> BinaryIO:
+    # a version that maps the same lesion to a different patient
+    file_stream = StreamWriter(io.BytesIO())
+    writer = csv.DictWriter(
+        file_stream, fieldnames=["filename", "diagnosis", "sex", "lesion_id", "patient_id"]
+    )
+    writer.writeheader()
+    writer.writerow(
+        {
+            "filename": "filename2.jpg",
+            "diagnosis": "nevus",
+            "sex": "male",
+            "lesion_id": "lesion1",
+            "patient_id": "patient2",
+        }
+    )
     return file_stream
 
 
@@ -52,6 +92,7 @@ def csv_stream_diagnosis_sex_invalid() -> BinaryIO:
 @pytest.fixture
 def cohort_with_accession(cohort, accession_factory):
     cohort.accessions.add(accession_factory(cohort=cohort, original_blob_name="filename.jpg"))
+    cohort.accessions.add(accession_factory(cohort=cohort, original_blob_name="filename2.jpg"))
     return cohort
 
 
@@ -130,13 +171,15 @@ def test_apply_metadata_step2_invalid(
         reverse("validate-metadata", args=[cohort_with_accession.pk]),
         {"metadata_file": metadatafile.pk},
     )
+    r.context = cast(ApplyMetadataContext, r.context)
+
     assert not r.context["form"].errors, r.context["form"].errors
     assert r.status_code == 200, r.status_code
-    assert r.context["checkpoint"][1]["problems"] == []
+    assert r.context["csv_check"] == []
     # Ensure there's an error with the diagnosis field in step 2
-    assert r.context["checkpoint"][2]["problems"]
-    assert list(r.context["checkpoint"][2]["problems"].items())[0][0][0] == "diagnosis"
-    assert r.context["checkpoint"][3]["problems"] == {}
+    assert r.context["internal_check"]
+    assert list(r.context["internal_check"][0].keys())[0][0] == "diagnosis"
+    assert not r.context["archive_check"]
 
 
 @pytest.mark.django_db
@@ -171,12 +214,54 @@ def test_apply_metadata_step3(
         reverse("validate-metadata", args=[cohort_with_accession.pk]),
         {"metadata_file": benign_metadatafile.pk},
     )
+    r.context = cast(ApplyMetadataContext, r.context)
     assert not r.context["form"].errors, r.context["form"].errors
     assert r.status_code == 200, r.status_code
-    assert r.context["checkpoint"][1]["problems"] == []
-    assert r.context["checkpoint"][2]["problems"] == {}
-    assert r.context["checkpoint"][3]["problems"]
-    assert list(r.context["checkpoint"][3]["problems"].items())[0][0][0] == "diagnosis"
+    assert r.context["csv_check"] == []
+    assert r.context["internal_check"] and not any(r.context["internal_check"])
+    assert r.context["archive_check"]
+    assert list(r.context["archive_check"][0].keys())[0][0] == "diagnosis"
+
+
+@pytest.mark.django_db
+def test_apply_metadata_step3_full_cohort(
+    user,
+    staff_client,
+    cohort_with_accession,
+    csv_stream_diagnosis_sex_lesion_patient,
+    csv_stream_diagnosis_sex_disagreeing_lesion_patient,
+    metadata_file_factory,
+):
+    metadatafile = metadata_file_factory(
+        blob__from_func=lambda: csv_stream_diagnosis_sex_lesion_patient,
+        cohort=cohort_with_accession,
+    )
+
+    r = staff_client.post(
+        reverse("validate-metadata", args=[cohort_with_accession.pk]),
+        {"metadata_file": metadatafile.pk},
+    )
+    assert not r.context["form"].errors, r.context["form"].errors
+    assert r.status_code == 200, r.status_code
+
+    update_metadata_task(user.pk, metadatafile.pk)
+
+    # test step 3 by trying to upload a disagreeing lesion/patient pair.
+    disagreeing_metadatafile = metadata_file_factory(
+        blob__from_func=lambda: csv_stream_diagnosis_sex_disagreeing_lesion_patient,
+        cohort=cohort_with_accession,
+    )
+
+    r = staff_client.post(
+        reverse("validate-metadata", args=[cohort_with_accession.pk]),
+        {"metadata_file": disagreeing_metadatafile.pk},
+    )
+    r.context = cast(ApplyMetadataContext, r.context)
+    assert not r.context["form"].errors, r.context["form"].errors
+    assert r.context["csv_check"] == []
+    assert r.context["internal_check"] and not any(r.context["internal_check"])
+    assert r.context["archive_check"]
+    assert "belong to multiple patients" in str(r.context["archive_check"][1][0].message)
 
 
 @pytest.mark.django_db
