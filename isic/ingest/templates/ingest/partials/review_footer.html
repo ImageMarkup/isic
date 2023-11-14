@@ -37,7 +37,7 @@
         });
 
         try {
-          const { data } = await axiosSession.post('{% url "accessions:create-review-bulk" %}',
+          const { data } = await axiosSession.post('{% url "api:create_review_bulk" %}',
                                                    accessionReviews);
           this.submitted = true;
           this.submitting = false;
