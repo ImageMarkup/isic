@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import Callable
 
 from django.forms.models import ModelForm
 from isic_metadata.metadata import MetadataRow
@@ -56,42 +57,41 @@ def validate_csv_format_and_filenames(df, cohort):
     return problems
 
 
-def validate_internal_consistency(df):
+def _validate_df_consistency(df, row_preprocessor: Callable[[dict], dict] | None = None) -> dict:
     # keyed by column, message
     column_problems: dict[tuple[str, str], list[int]] = defaultdict(list)
 
     for i, (_, row) in enumerate(df.iterrows(), start=2):
         try:
-            MetadataRow.model_validate(row.to_dict())
+            row_dict = row.to_dict()
+            if row_preprocessor is not None:
+                row_dict = row_preprocessor(row_dict)
+
+            MetadataRow.model_validate(row_dict)
         except PydanticValidationError as e:
             for error in e.errors():
                 column = error["loc"][0]
-                column_problems[(column, error["msg"])].append(i)
+                column_problems[(str(column), error["msg"])].append(i)
 
-    # TODO: defaultdict doesn't work in django templates?
-    return dict(column_problems)
+    # defaultdict doesn't work with django templates, see https://stackoverflow.com/a/12842716
+    column_problems.default_factory = None
+
+    return column_problems
+
+
+def validate_internal_consistency(df):
+    return _validate_df_consistency(df)
 
 
 def validate_archive_consistency(df, cohort):
-    # keyed by column, message
-    column_problems: dict[tuple[str, str], list[int]] = defaultdict(list)
     accessions = Accession.objects.filter(
         cohort=cohort, original_blob_name__in=df["filename"]
     ).values_list("original_blob_name", "metadata")
     # TODO: easier way to do this?
     accessions_dict = {x[0]: x[1] for x in accessions}
 
-    for i, (_, row) in enumerate(df.iterrows(), start=2):
+    def prepopulate_row(row: dict) -> dict:
         existing = accessions_dict[row["filename"]]
-        row = existing | {k: v for k, v in row.items() if v is not None}
+        return existing | {k: v for k, v in row.items() if v is not None}
 
-        try:
-            MetadataRow.model_validate(row)
-        except PydanticValidationError as e:
-            for error in e.errors():
-                column = error["loc"][0]
-
-                column_problems[(column, error["msg"])].append(i)
-
-    # TODO: defaultdict doesn't work in django templates?
-    return dict(column_problems)
+    return _validate_df_consistency(df, row_preprocessor=prepopulate_row)
