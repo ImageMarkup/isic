@@ -87,7 +87,7 @@ def create_zip_download_url(request: HttpRequest, payload: SearchQueryIn):
 create_zip_download_url.csrf_exempt = True
 
 
-def _cloudfront_signer(message: str):
+def _cloudfront_signer(message: bytes) -> bytes:
     # See the documentation for CloudFrontSigner
     return rsa.sign(
         message, rsa.PrivateKey.load_pkcs1(settings.AWS_CLOUDFRONT_KEY.encode("utf8")), "SHA-1"
