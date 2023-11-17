@@ -37,7 +37,7 @@ INDEX_MAPPINGS["properties"].update(
         "contributor_owner_ids": {"type": "integer"},
         "created": {"type": "date"},
         "id": {"type": "integer"},
-        "isic_id": {"type": "text"},
+        "isic_id": {"type": "keyword"},
         "copyright_license": {"type": "keyword"},
         "public": {"type": "boolean"},
         "shared_to": {"type": "integer"},
