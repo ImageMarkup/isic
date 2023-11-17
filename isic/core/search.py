@@ -170,10 +170,10 @@ def facets(query: dict | None = None, collections: list[int] | None = None) -> d
 
 
 def build_elasticsearch_query(
-    query: str, user: User, collection_pks: list[int] | None = None
+    query: dict, user: User, collection_pks: list[int] | None = None
 ) -> dict:
     """
-    Build an elasticsearch query from a DSL query string, a user, and collection ids.
+    Build an elasticsearch query from an elasticsearch query body, a user, and collection ids.
 
     collection_pks is the confusing bit here. None indicates the user doesn't want to do any
     filtering of collections. An empty list would instead indicate that the user wants images that
@@ -190,15 +190,14 @@ def build_elasticsearch_query(
     else:
         visible_collection_pks = None
 
-    query_dict = {"bool": {}}
+    if query:
+        query_dict = {"bool": {"filter": [query]}}
+    else:
+        query_dict = {"bool": {}}
 
     if visible_collection_pks is not None:
-        query_dict["bool"].setdefault("filter", {})
-        query_dict["bool"]["filter"]["terms"] = {"collections": visible_collection_pks}
-
-    if query:
-        query_dict["bool"].setdefault("must", {})
-        query_dict["bool"]["must"]["query_string"] = {"query": query}
+        query_dict["bool"].setdefault("filter", [])
+        query_dict["bool"]["filter"].append({"terms": {"collections": visible_collection_pks}})
 
     # Note: permissions here must be also modified in ImagePermissions.view_image_list
     if user.is_anonymous:
