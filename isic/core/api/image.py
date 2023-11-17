@@ -1,3 +1,5 @@
+from typing import cast
+
 from django.conf import settings
 from django.http.request import HttpRequest
 from django.shortcuts import get_object_or_404
@@ -7,7 +9,7 @@ from ninja import Field, ModelSchema, Query, Router, Schema
 from ninja.pagination import paginate
 from pyparsing.exceptions import ParseException
 
-from isic.core.dsl import parse_query
+from isic.core.dsl import es_parser, parse_query
 from isic.core.models import Collection, Image
 from isic.core.pagination import CursorPagination
 from isic.core.permissions import get_visible_objects
@@ -109,14 +111,16 @@ def search_images(request: HttpRequest, search: SearchQueryIn = Query(...)):
 
 @router.get("/facets/", response=dict, include_in_schema=False)
 def get_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):
+    es_query: dict | None = None
     if search.query:
         try:
-            parse_query(search.query)
+            # we know it can't be a Q object because we're using es_parser
+            es_query = cast(dict | None, parse_query(es_parser, search.query))
         except ParseException:
             raise ImageSearchParseError()
 
     query = build_elasticsearch_query(
-        search.query or "",
+        es_query or {},
         request.user,
         search.collections,
     )
