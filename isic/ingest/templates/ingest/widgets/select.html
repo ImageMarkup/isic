@@ -1,6 +1,6 @@
 <select class="mt-1 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-  name="{{ widget.name }}"{% include "django/forms/widgets/attrs.html" %}>{% for group_name, group_choices, group_index in widget.optgroups %}{% if group_name %}
+        name="{{ widget.name }}"{% include "django/forms/widgets/attrs.html" %}>{% for group_name, group_choices, group_index in widget.optgroups %}{% if group_name %}
   <optgroup label="{{ group_name }}">{% endif %}{% for widget in group_choices %}
-  {% include widget.template_name %}{% endfor %}{% if group_name %}
-  </optgroup>{% endif %}{% endfor %}
+    {% include widget.template_name %}{% endfor %}{% if group_name %}
+      </optgroup>{% endif %}{% endfor %}
 </select>

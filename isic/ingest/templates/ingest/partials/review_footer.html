@@ -38,7 +38,7 @@
 
         try {
           const { data } = await axiosSession.post('{% url "api:create_review_bulk" %}',
-                                                   accessionReviews);
+            accessionReviews);
           this.submitted = true;
           this.submitting = false;
           // reload the page. use this instead of .reload() since this

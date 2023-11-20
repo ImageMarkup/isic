@@ -43,46 +43,46 @@
   </div>
 
 
-<script>
+  <script>
     function autocompleteInput(endpoint, for_input, default_input_value = '') {
-        return {
+      return {
           // the hidden input field that will be populated with the id of the selected item
-          for_input: for_input,
+        for_input: for_input,
           // the string version of the selected item
-          input_value: default_input_value,
+        input_value: default_input_value,
           // the list of results returned by the autocomplete endpoint
-          results: [],
+        results: [],
           // the preview of the selected item
-          resultPreview: null,
+        resultPreview: null,
 
-          async init() {
+        async init() {
             // preselect item if the hidden input has a value so that previews
             // get reloaded on page refresh
-            if (document.getElementsByName(this.for_input)[0].value) {
-              const response = await fetch(`/api/v2/cohorts/${document.getElementsByName(this.for_input)[0].value}/`);
-              this.resultPreview = await response.json();
-            }
-          },
-
-          async fetchResults() {
-            if (this.input_value.length < 3) {
-              this.results = [];
-              return;
-            }
-
-            const response = await fetch(endpoint + '?query=' + this.input_value);
-            this.results = await response.json();
-          },
-
-          async select(item) {
-            this.input_value = item.name;
-            document.getElementsByName(this.for_input)[0].value = item.id;
-            this.results = [];
-            const response = await fetch(`/api/v2/cohorts/${item.id}/`);
+          if (document.getElementsByName(this.for_input)[0].value) {
+            const response = await fetch(`/api/v2/cohorts/${document.getElementsByName(this.for_input)[0].value}/`);
             this.resultPreview = await response.json();
-          },
-        };
+          }
+        },
+
+        async fetchResults() {
+          if (this.input_value.length < 3) {
+            this.results = [];
+            return;
+          }
+
+          const response = await fetch(endpoint + '?query=' + this.input_value);
+          this.results = await response.json();
+        },
+
+        async select(item) {
+          this.input_value = item.name;
+          document.getElementsByName(this.for_input)[0].value = item.id;
+          this.results = [];
+          const response = await fetch(`/api/v2/cohorts/${item.id}/`);
+          this.resultPreview = await response.json();
+        },
+      };
     }
-</script>
+  </script>
 
 {% endblock %}
