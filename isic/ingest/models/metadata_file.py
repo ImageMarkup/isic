@@ -26,8 +26,9 @@ class MetadataFile(CreationSortedTimeStampedModel):
         with self.blob.open() as csv:
             df = pd.read_csv(csv, header=0)
 
-        # pydantic expects None for the absence of a value, not NaN
-        df = df.replace({np.nan: None})
+        # pydantic expects None for the absence of a value, not "" or NaN
+        df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+        df = df.replace({np.nan: None, "": None})
 
         return df
 
