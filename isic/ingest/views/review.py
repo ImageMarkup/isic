@@ -45,7 +45,7 @@ def cohort_review(request, cohort_pk):
     if request.GET.get("grouped_by_lesion"):
         return _cohort_review_grouped_by_lesion(request, cohort)
 
-    paginator = Paginator(cohort.accessions.unreviewed(), 100)
+    paginator = Paginator(cohort.accessions.unreviewed().order_by("original_blob_name"), 100)
     page = paginator.get_page(request.GET.get("page"))
 
     return render(
