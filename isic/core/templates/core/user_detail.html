@@ -34,7 +34,7 @@
     {% for section, qs in sections.items %}
       <a class="text-white" @click.prevent="activeTab = '{{ section }}'">
         <button class="btn gap-2 my-2 mx-2"
-               :class="activeTab == '{{section}}' ? 'btn-primary' : 'btn-secondary'">
+                :class="activeTab == '{{section}}' ? 'btn-primary' : 'btn-secondary'">
           {{ section }}
           <div class="badge badge-accent">{{ qs.count|intcomma }}</div>
         </button>

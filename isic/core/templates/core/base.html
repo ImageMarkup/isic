@@ -42,98 +42,98 @@
     {% endif %}
 
     <script>
-      document.addEventListener('alpine:init', () => {
-        Alpine.store('accessions', {
-          items: {},
-          setReview(id, value) {
-            this.items[id] = value;
-          },
-          addItem(id) {
-            this.items[id] = null;
-          },
-        });
+    document.addEventListener('alpine:init', () => {
+      Alpine.store('accessions', {
+        items: {},
+        setReview(id, value) {
+          this.items[id] = value;
+        },
+        addItem(id) {
+          this.items[id] = null;
+        },
       });
+    });
 
-      const axiosSession = axios.create({
+    const axiosSession = axios.create({
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token }}'
+      }
+    });
+  </script>
+
+  <script type="text/javascript">
+    function quickfind() {
+      const controller = new AbortController();
+
+      return {
+        quickfindOpen: false,
+        findText: '',
+        results: {},
+        openQuickfindModal() {
+          this.$nextTick(() => this.$refs.quickfind.focus());
+          this.quickfindOpen = true;
+        },
+        closeQuickfindModal() {
+          this.quickfindOpen = false;
+        },
+        async performFind() {
+          if (this.findText.length < 3) {
+            this.results = {};
+            return;
+          }
+
+          const { data } = await axiosSession.get(`/api/v2/quickfind/?query=${this.findText}`, {
+            signal: controller.signal,
+          });
+          this.results = data;
+        }
+      }
+    }
+  </script>
+
+  <script type="text/javascript">
+    function downloadAsZip(params) {
+      params = params || Object.fromEntries((new URL(document.location)).searchParams);
+      console.log(params);
+
+      axios.post('/api/v2/zip-download/url/', params, {
         headers: {
           'Content-Type': 'application/json',
           'X-CSRFToken': '{{ csrf_token }}'
         }
+      }).then((resp) => {
+        window.location.href = resp.data;
+      }).catch(function(error) {
+        alert('Something went wrong, try again.');
+        console.error(error);
       });
-    </script>
+    }
+  </script>
 
-    <script type="text/javascript">
-      function quickfind() {
-        const controller = new AbortController();
+  {% block head_extra %}{% endblock %}
+</head>
 
-        return {
-          quickfindOpen: false,
-          findText: '',
-          results: {},
-          openQuickfindModal() {
-            this.$nextTick(() => this.$refs.quickfind.focus());
-            this.quickfindOpen = true;
-          },
-          closeQuickfindModal() {
-            this.quickfindOpen = false;
-          },
-          async performFind() {
-            if (this.findText.length < 3) {
-              this.results = {};
-              return;
-            }
+<body x-data="quickfind()" @keydown.escape="closeQuickfindModal()">
+  {% if SANDBOX_BANNER %}
+    <div class="fixed-banner">
+      This is a testing sandbox for the ISIC Archive.
+      The ISIC Archive is at <a href="https://www.isic-archive.com/">https://isic-archive.com</a>.
+    </div>
+  {% endif %}
 
-            const { data } = await axiosSession.get(`/api/v2/quickfind/?query=${this.findText}`, {
-              signal: controller.signal,
-            });
-            this.results = data;
-          }
-        }
-      }
-    </script>
+  {% include 'core/partials/navbar.html' %}
 
-    <script type="text/javascript">
-      function downloadAsZip(params) {
-        params = params || Object.fromEntries((new URL(document.location)).searchParams);
-        console.log(params);
-
-        axios.post('/api/v2/zip-download/url/', params, {
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
-          }
-        }).then((resp) => {
-          window.location.href = resp.data;
-        }).catch(function(error) {
-          alert('Something went wrong, try again.');
-          console.error(error);
-        });
-      }
-    </script>
-
-    {% block head_extra %}{% endblock %}
-  </head>
-
-  <body x-data="quickfind()" @keydown.escape="closeQuickfindModal()">
-    {% if SANDBOX_BANNER %}
-      <div class="fixed-banner">
-        This is a testing sandbox for the ISIC Archive.
-        The ISIC Archive is at <a href="https://www.isic-archive.com/">https://isic-archive.com</a>.
-      </div>
+  <div class="container max-w-7xl mx-auto p-8">
+    {% if messages %}
+      {% include 'core/partials/messages.html' %}
     {% endif %}
 
-    {% include 'core/partials/navbar.html' %}
+    {% block content %}{% endblock %}
 
-    <div class="container max-w-7xl mx-auto p-8">
-      {% if messages %}
-        {% include 'core/partials/messages.html' %}
-      {% endif %}
+    {% include 'find/quickfind_modal.html' %}
+  </div>
 
-      {% block content %}{% endblock %}
-
-      {% include 'find/quickfind_modal.html' %}
-    </div>
-
-    <script type="module" src="https://unpkg.com/@github/time-elements@3.1.2?module"></script>
-  </body>
+  <script type="module" src="https://unpkg.com/@github/time-elements@3.1.2?module"></script>
+</body>
 </html>

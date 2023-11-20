@@ -33,16 +33,16 @@
         let _this = this; // eek
         if (confirm(`Are you sure you want to remove ${this.images.size} images from this collection?`)) {
           axios.post(`/api/v2/collections/${this.collectionId}/remove-from-list/`, {'isic_ids': this._imagesToArray()},
-                         { headers: {
-                           'Content-Type': 'application/json',
-                           'X-CSRFToken': '{{ csrf_token }}'
-                         }
-          }).then((resp) => {
-            this.resetImages(`/collections/${this.collectionId}/`);
-          }).catch(function(error) {
-            console.error(error);
-            alert('Something went wrong.');
-        });
+            { headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': '{{ csrf_token }}'
+            }
+            }).then((resp) => {
+              this.resetImages(`/collections/${this.collectionId}/`);
+            }).catch(function(error) {
+              console.error(error);
+              alert('Something went wrong.');
+            });
         }
       },
       resetImages(url) {
