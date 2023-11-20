@@ -2,7 +2,6 @@ from django.contrib.auth.models import User
 from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.db.models.query import QuerySet
-import numpy as np
 import pandas as pd
 from s3_file_field import S3FileField
 
@@ -25,10 +24,6 @@ class MetadataFile(CreationSortedTimeStampedModel):
     def to_df(self):
         with self.blob.open() as csv:
             df = pd.read_csv(csv, header=0)
-
-        # pydantic expects None for the absence of a value, not "" or NaN
-        df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-        df = df.replace({np.nan: None, "": None})
 
         return df
 
