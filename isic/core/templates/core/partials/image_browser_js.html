@@ -1,45 +1,45 @@
 {% load humanize %}
 
 <script type="text/javascript">
-function imageBrowser() {
-  return {
-    modalOpen: false,
-    open: false,
-    selectedCollection:'',
-    errorMessage: '',
-    addSearchResultsToCollection() {
-      let _this = this; // eek
-      if (confirm('Are you sure you want to add {{ total_images|intcomma }} images to this collection?')) {
-        axios.post(`/api/v2/collections/${this.selectedCollection}/populate-from-search/`, '{{ search_body|safe }}', {
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
-          }
-        }).then((resp) => {
-          window.location.href = `/collections/${this.selectedCollection}/`;
-        }).catch(function(error) {
-          _this.errorMessage = error.response.data[0];
-        });
+  function imageBrowser() {
+    return {
+      modalOpen: false,
+      open: false,
+      selectedCollection:'',
+      errorMessage: '',
+      addSearchResultsToCollection() {
+        let _this = this; // eek
+        if (confirm('Are you sure you want to add {{ total_images|intcomma }} images to this collection?')) {
+          axios.post(`/api/v2/collections/${this.selectedCollection}/populate-from-search/`, '{{ search_body|safe }}', {
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': '{{ csrf_token }}'
+            }
+          }).then((resp) => {
+            window.location.href = `/collections/${this.selectedCollection}/`;
+          }).catch(function(error) {
+            _this.errorMessage = error.response.data[0];
+          });
+        }
+      },
+      isicCliDownloadCommand() {
+
+        const params = (new URL(document.location)).searchParams;
+        let base = 'isic image download';
+
+        if (params.has('query')) {
+          base += ` --search "${params.get('query').replace(/"/g, '\\\"')}"`;
+        }
+
+        if (params.has('collections')) {
+          base += ` --collections "${params.getAll('collections').join(',')}"`;
+        }
+
+        return base + ' --limit 0 myimages/';
+      },
+      copyIsicCliDownloadCommand() {
+        navigator.clipboard.writeText(this.isicCliDownloadCommand());
       }
-    },
-    isicCliDownloadCommand() {
-
-      const params = (new URL(document.location)).searchParams;
-      let base = 'isic image download';
-
-      if (params.has('query')) {
-        base += ` --search "${params.get('query').replace(/"/g, '\\\"')}"`;
-      }
-
-      if (params.has('collections')) {
-        base += ` --collections "${params.getAll('collections').join(',')}"`;
-      }
-
-      return base + ' --limit 0 myimages/';
-    },
-    copyIsicCliDownloadCommand() {
-      navigator.clipboard.writeText(this.isicCliDownloadCommand());
     }
   }
-}
 </script>
