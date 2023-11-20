@@ -317,17 +317,17 @@
             Create Study
           </button>
         </div>
-  </form>
+      </form>
 
-  <script type="text/javascript">
-    document.querySelectorAll(`#custom-questions input[type="text"]`).forEach((function(x) {
-      x.setAttribute('required', true);
-    }));
+      <script type="text/javascript">
+        document.querySelectorAll(`#custom-questions input[type="text"]`).forEach((function(x) {
+          x.setAttribute('required', true);
+        }));
 
-    document.querySelectorAll(`#official-questions input[type="text"]`).forEach((function(x) {
-      x.setAttribute('required', true);
-    }));
+        document.querySelectorAll(`#official-questions input[type="text"]`).forEach((function(x) {
+          x.setAttribute('required', true);
+        }));
 
-    displayOfficialQuestions();
-  </script>
+        displayOfficialQuestions();
+      </script>
 {% endblock %}

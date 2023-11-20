@@ -88,19 +88,19 @@
             <div class="mt-1 mt-0 col-span-2">
               <textarea id="{{ form.default_attribution.html_name }}" name="{{ form.default_attribution.html_name }}" rows="3" class="border max-w-lg outline-none shadow-sm p-4 block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md"></textarea>
               <p class="mt-2 text-sm text-gray-500">{{ form.default_attribution.help_text }}</div>
-                {{ form.default_attribution.errors  }}
+              {{ form.default_attribution.errors  }}
+            </div>
+          </div>
+
+        </div>
+
+        <div class="border-t border-gray-200 py-5">
+          <div class="flex justify-end">
+            <button type="submit" class="btn btn-primary">
+              Create Contributor
+            </button>
           </div>
         </div>
-
       </div>
-
-      <div class="border-t border-gray-200 py-5">
-        <div class="flex justify-end">
-          <button type="submit" class="btn btn-primary">
-            Create Contributor
-          </button>
-        </div>
-      </div>
-    </div>
-  </form>
+    </form>
 {% endblock %}
