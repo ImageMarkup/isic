@@ -1,6 +1,7 @@
 from __future__ import barry_as_FLUFL
 
 from dataclasses import dataclass
+from typing import Any, Callable
 
 from django.db.models.query_utils import Q
 from isic_metadata import FIELD_REGISTRY
@@ -20,11 +21,28 @@ class SearchTermKey:
 
 
 class Value:
+    value: Any
+
     def to_q(self, key: SearchTermKey) -> Q:
         if self.value == "*":
             return Q(**{f"{key.field_lookup}__isnull": False}, _negated=key.negated)
         else:
+            if key.negated:
+                return ~Q(**{key.field_lookup: self.value}) | Q(
+                    **{f"{key.field_lookup}__isnull": True}
+                )
             return Q(**{key.field_lookup: self.value}, _negated=key.negated)
+
+    def to_es(self, key: SearchTermKey) -> dict:
+        if self.value == "*":
+            term = {"exists": {"field": key.field_lookup}}
+        else:
+            term = {"term": {key.field_lookup: self.value}}
+
+        if key.negated:
+            return {"bool": {"must_not": term}}
+        else:
+            return term
 
 
 class BoolValue(Value):
@@ -52,11 +70,46 @@ class StrValue(Value):
         if self.value == "*":
             return Q(**{f"{key.field_lookup}__isnull": False}, _negated=key.negated)
         if self.value.startswith("*"):
-            return Q(**{f"{key.field_lookup}__endswith": self.value[1:]}, _negated=key.negated)
+            if key.negated:
+                return ~Q(**{f"{key.field_lookup}__startswith": self.value[1:]}) | Q(
+                    **{f"{key.field_lookup}__isnull": True}
+                )
+            else:
+                return Q(**{f"{key.field_lookup}__endswith": self.value[1:]}, _negated=key.negated)
         elif self.value.endswith("*"):
-            return Q(**{f"{key.field_lookup}__startswith": self.value[:-1]}, _negated=key.negated)
+            if key.negated:
+                return ~Q(**{f"{key.field_lookup}__startswith": self.value[:-1]}) | Q(
+                    **{f"{key.field_lookup}__isnull": True}
+                )
+            else:
+                return Q(
+                    **{f"{key.field_lookup}__startswith": self.value[:-1]}, _negated=key.negated
+                )
         else:
             return super().to_q(key)
+
+    def to_es(self, key: SearchTermKey) -> dict:
+        # Special casing for image type renaming, see
+        # https://linear.app/isic/issue/ISIC-138#comment-93029f64
+        # TODO: Remove this once better error messages are put in place.
+        if key.field_lookup == "image_type" and self.value == "clinical":
+            self.value = "clinical: close-up"
+        elif key.field_lookup == "image_type" and self.value == "overview":
+            self.value = "clinical: overview"
+
+        if self.value == "*":
+            term = {"exists": {"field": key.field_lookup}}
+        elif self.value.startswith("*"):
+            term = {"wildcard": {key.field_lookup: {"value": f"*{self.value[1:]}"}}}
+        elif self.value.endswith("*"):
+            term = {"wildcard": {key.field_lookup: {"value": f"{self.value[:-1]}*"}}}
+        else:
+            term = {"term": {key.field_lookup: self.value}}
+
+        if key.negated:
+            return {"bool": {"must_not": term}}
+        else:
+            return term
 
 
 class NumberValue(Value):
@@ -79,7 +132,62 @@ class NumberRangeValue(Value):
             f"{key.field_lookup}__{self.upper_lookup}",
         )
         start_value, end_value = self.value
-        return Q(**{start_key: start_value}, **{end_key: end_value}, _negated=key.negated)
+        if key.negated:
+            return ~Q(**{start_key: start_value, end_key: end_value}) | Q(
+                **{f"{key.field_lookup}__isnull": True}
+            )
+        else:
+            return Q(**{start_key: start_value}, **{end_key: end_value}, _negated=key.negated)
+
+    def to_es(self, key: SearchTermKey) -> dict:
+        start_value, end_value = self.value
+        term = {
+            "range": {
+                key.field_lookup: {
+                    self.lower_lookup: start_value,
+                    self.upper_lookup: end_value,
+                }
+            }
+        }
+
+        if key.negated:
+            return {"bool": {"must_not": term}}
+        else:
+            return term
+
+
+def es_query(s, loc, toks):
+    key = toks[0]
+    value = toks[1]
+    return value.to_es(key)
+
+
+def es_query_and(s, loc, toks):
+    ret = {"bool": {"filter": []}}
+    if isinstance(toks, ParseResults):
+        # Explicit ANDs come in as parse results
+        q_objects = toks.asList()
+    elif isinstance(toks[0], Q):
+        # Single search queries come in as a single Q object
+        q_objects = [toks[0]]
+    else:
+        raise Exception("Something went wrong")
+
+    # Results can be nested one level
+    if isinstance(q_objects, list) and isinstance(q_objects[0], list):
+        q_objects = q_objects[0]
+
+    for q in q_objects:
+        ret["bool"]["filter"].append(q)
+
+    return ret
+
+
+def es_query_or(s, loc, toks):
+    ret = {"bool": {"should": []}}
+    for tok in toks[0]:
+        ret["bool"]["should"].append(tok)
+    toks[0] = ret
 
 
 def q(s, loc, toks):
@@ -167,63 +275,82 @@ def convert_term(s, loc, toks):
         return SearchTermKey(f"accession__metadata__{toks[0]}", negate)
 
 
-def make_term_keyword(name):
-    return (Optional("-") + Keyword(name)).add_parse_action(convert_term)
+def es_convert_term(s, loc, toks):
+    negate = False
+
+    if len(toks) == 2 and toks[0] == "-":
+        negate = True
+        toks = toks[1:]
+
+    if len(toks) > 1:
+        raise Exception("Something went wrong")
+
+    return SearchTermKey(toks[0], negate)
 
 
-def make_term(name, values):
-    term = make_term_keyword(name)
-    term = term + Suppress(Literal(":")) + values
-    term.add_parse_action(q)
-    return term
+def make_parser(
+    element=q, conjunctive=q_and, disjunctive=q_or, term_converter: Callable = convert_term
+) -> ParserElement:
+    def make_term_keyword(name):
+        term = Optional("-") + Keyword(name)
+        if term_converter:
+            term.add_parse_action(term_converter)
+        return term
+
+    def make_term(name, values):
+        term = make_term_keyword(name)
+        term = term + Suppress(Literal(":")) + values
+        term.add_parse_action(element)
+        return term
+
+    def make_number_term(keyword_name):
+        return make_term(keyword_name, number_range_value | number_value)
+
+    def make_str_term(keyword_name):
+        return make_term(keyword_name, str_value)
+
+    def make_bool_term(keyword_name):
+        return make_term(keyword_name, bool_value)
+
+    # First setup reserved (special) search terms
+    TERMS = {
+        "isic_id": make_str_term("isic_id"),
+        "public": make_bool_term("public"),
+        "age_approx": make_number_term("age_approx"),
+        # TODO: use one_of to get this validating maybe? it's hard to get this to work
+        # with QuotedString
+        "copyright_license": make_str_term("copyright_license"),
+    }
+
+    for key, definition in FIELD_REGISTRY.items():
+        if definition.get("search"):
+            es_property_type = definition["search"]["es_property"]["type"]
+
+            if es_property_type == "keyword":
+                term = make_str_term(key)
+            elif es_property_type == "boolean":
+                term = make_bool_term(key)
+            elif es_property_type in ["integer", "float"]:
+                term = make_number_term(key)
+            else:
+                raise Exception("Found unknown es property type")
+
+            TERMS[key] = term
+
+    parser = OneOrMore(Or(TERMS.values())).add_parse_action(conjunctive)
+
+    # TODO: ZeroOrMore?
+    return infixNotation(
+        parser, [(AND, 2, opAssoc.LEFT, conjunctive), (OR, 2, opAssoc.LEFT, disjunctive)]
+    )
 
 
-def make_number_term(keyword_name):
-    return make_term(keyword_name, number_range_value | number_value)
-
-
-def make_str_term(keyword_name):
-    return make_term(keyword_name, str_value)
-
-
-def make_bool_term(keyword_name):
-    return make_term(keyword_name, bool_value)
-
-
-# First setup reserved (special) search terms
-TERMS = {
-    "isic_id": make_str_term("isic_id"),
-    "public": make_bool_term("public"),
-    "age_approx": make_number_term("age_approx"),
-    # TODO: use one_of to get this validating maybe? it's hard to get this to work with QuotedString
-    "copyright_license": make_str_term("copyright_license"),
-}
-
-for key, definition in FIELD_REGISTRY.items():
-    if definition.get("search"):
-        es_property_type = definition["search"]["es_property"]["type"]
-
-        if es_property_type == "keyword":
-            term = make_str_term(key)
-        elif es_property_type == "boolean":
-            term = make_bool_term(key)
-        elif es_property_type in ["integer", "float"]:
-            term = make_number_term(key)
-        else:
-            raise Exception("Found unknown es property type")
-
-        TERMS[key] = term
-
-parser = OneOrMore(Or(TERMS.values())).add_parse_action(q_and)
-
-# TODO: ZeroOrMore?
-e = infixNotation(parser, [(AND, 2, opAssoc.LEFT, q_and), (OR, 2, opAssoc.LEFT, q_or)])
+django_parser = make_parser()
+es_parser = make_parser(es_query, es_query_and, es_query_or, es_convert_term)
 
 
 # Takes ~16ms to parse a fairly complex query
-def parse_query(query) -> Q:
-    parse_results = e.parse_string(query, parse_all=True)
+def parse_query(parser, query) -> Q | dict | None:
+    parse_results = parser.parse_string(query, parse_all=True)
     if parse_results:
         return parse_results[0]
-    else:
-        return Q()

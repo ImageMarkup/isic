@@ -12,7 +12,7 @@ from django.db.models.query_utils import Q
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
-from isic.core.dsl import parse_query
+from isic.core.dsl import django_parser, parse_query
 from isic.core.models.base import CreationSortedTimeStampedModel
 from isic.ingest.models import Accession
 
@@ -24,7 +24,7 @@ class ImageQuerySet(models.QuerySet):
         if query == "":
             return self
         else:
-            return self.filter(parse_query(query))
+            return self.filter(parse_query(django_parser, query) or Q())
 
     def with_elasticsearch_properties(self):
         return self.select_related("accession__cohort").annotate(
