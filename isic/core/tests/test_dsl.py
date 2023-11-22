@@ -2,7 +2,9 @@ from django.db.models.query_utils import Q
 from pyparsing.exceptions import ParseException
 import pytest
 
-from isic.core.dsl import parse_query
+from isic.core.dsl import django_parser, es_parser, parse_query
+
+# test null problem
 
 
 @pytest.mark.parametrize(
@@ -22,19 +24,34 @@ from isic.core.dsl import parse_query
         ["age_approx:[50 TO *]", ParseException],
         ["-melanocytic:*", ~Q(accession__metadata__melanocytic__isnull=False)],
         ["melanocytic:*", Q(accession__metadata__melanocytic__isnull=False)],
-        ["-age_approx:50", ~Q(accession__metadata__age__approx=50)],
-        ["-diagnosis:foo*", ~Q(accession__metadata__diagnosis__startswith="foo")],
+        [
+            "-age_approx:50",
+            ~Q(accession__metadata__age__approx=50)
+            | Q(accession__metadata__age__approx__isnull=True),
+        ],
+        [
+            "-diagnosis:foo*",
+            ~Q(accession__metadata__diagnosis__startswith="foo")
+            | Q(accession__metadata__diagnosis__isnull=True),
+        ],
         [
             "-age_approx:[50 TO 70]",
-            ~Q(accession__metadata__age__approx__gte=50, accession__metadata__age__approx__lte=70),
+            ~Q(accession__metadata__age__approx__gte=50, accession__metadata__age__approx__lte=70)
+            | Q(accession__metadata__age__approx__isnull=True),
         ],
         [
             "-diagnosis:foobar OR (diagnosis:foobaz AND (-diagnosis:foo* OR age_approx:50))",
-            ~Q(accession__metadata__diagnosis="foobar")
+            (
+                ~Q(accession__metadata__diagnosis="foobar")
+                | Q(accession__metadata__diagnosis__isnull=True)
+            )
             | (
                 Q(accession__metadata__diagnosis="foobaz")
                 & (
-                    ~Q(accession__metadata__diagnosis__startswith="foo")
+                    (
+                        ~Q(accession__metadata__diagnosis__startswith="foo")
+                        | Q(accession__metadata__diagnosis__isnull=True)
+                    )
                     | Q(accession__metadata__age__approx=50)
                 )
             ),
@@ -106,12 +123,68 @@ from isic.core.dsl import parse_query
         ],
     ],
 )
-def test_dsl_parser(query, filter_or_exception):
+def test_dsl_django_parser(query, filter_or_exception):
     if isinstance(filter_or_exception, Q):
-        assert parse_query(query) == filter_or_exception
+        assert parse_query(django_parser, query) == filter_or_exception
     else:
         with pytest.raises(filter_or_exception):
-            parse_query(query)
+            parse_query(django_parser, query)
+
+
+@pytest.mark.parametrize(
+    "query,filter",
+    [
+        [
+            "isic_id:ISIC_123*",
+            {"bool": {"filter": [{"wildcard": {"isic_id": {"value": "ISIC_123*"}}}]}},
+        ],
+        [
+            "-isic_id:*",
+            {"bool": {"filter": [{"bool": {"must_not": {"exists": {"field": "isic_id"}}}}]}},
+        ],
+        [
+            "diagnosis:foobar OR (diagnosis:foobaz AND (diagnosis:foo* OR age_approx:50))",
+            {
+                "bool": {
+                    "should": [
+                        {"bool": {"filter": [{"term": {"diagnosis": "foobar"}}]}},
+                        {
+                            "bool": {
+                                "filter": [
+                                    {"bool": {"filter": [{"term": {"diagnosis": "foobaz"}}]}},
+                                    {
+                                        "bool": {
+                                            "should": [
+                                                {
+                                                    "bool": {
+                                                        "filter": [
+                                                            {
+                                                                "wildcard": {
+                                                                    "diagnosis": {"value": "foo*"}
+                                                                }
+                                                            }
+                                                        ]
+                                                    }
+                                                },
+                                                {
+                                                    "bool": {
+                                                        "filter": [{"term": {"age_approx": 50}}]
+                                                    }
+                                                },
+                                            ]
+                                        }
+                                    },
+                                ]
+                            }
+                        },
+                    ]
+                }
+            },
+        ],
+    ],
+)
+def test_dsl_es_parser(query, filter):
+    assert parse_query(es_parser, query) == filter
 
 
 @pytest.mark.parametrize(
@@ -122,4 +195,4 @@ def test_dsl_parser(query, filter_or_exception):
     ],
 )
 def test_dsl_image_type_backwards_compatible(query, filter):
-    assert parse_query(query) == filter
+    assert parse_query(django_parser, query) == filter
