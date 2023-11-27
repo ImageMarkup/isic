@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.urls import reverse
 import pytest
 from pytest_lazyfixture import lazy_fixture
 
@@ -108,6 +109,17 @@ def test_merge_cohorts_heterogeneous_licenses(full_cohort):
         CopyrightLicense.CC_0,
         CopyrightLicense.CC_BY,
     }
+
+
+@pytest.mark.django_db
+def test_merge_cohorts_view(full_cohort, staff_client):
+    cohort_a, cohort_b = full_cohort(), full_cohort()
+
+    r = staff_client.post(
+        reverse("merge-cohorts"), data={"cohort": cohort_a.pk, "cohort_to_merge": cohort_b.pk}
+    )
+    assert r.status_code == 302
+    assert r.url == reverse("cohort-detail", args=[cohort_a.pk])
 
 
 @pytest.fixture
