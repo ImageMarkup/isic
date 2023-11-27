@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.urls import reverse
 import pytest
 
 from isic.ingest.services.cohort import cohort_delete, cohort_relicense
@@ -49,3 +50,9 @@ def test_cohort_relicense_some_accessions_more_restrictive(
     accession.save()
     with pytest.raises(ValidationError, match="more restrictive"):
         cohort_relicense(cohort=cohort_with_cc_by_accession, to_license="CC-BY")
+
+
+@pytest.mark.django_db
+def test_cohort_list_view(staff_client, cohort, user):
+    r = staff_client.get(reverse("cohort-list"))
+    assert r.status_code == 200
