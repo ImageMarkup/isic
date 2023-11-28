@@ -186,7 +186,7 @@ def delete_metadata_file(request: HttpRequest, id: int):
 
 
 @metadata_file_router.post(
-    "/{id}/update_metadata",
+    "/{id}/update_metadata/",
     response={202: None},
     include_in_schema=False,
     auth=is_staff,
