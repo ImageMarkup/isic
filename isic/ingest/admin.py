@@ -21,7 +21,9 @@ from isic.ingest.models import (
     AccessionReview,
     Cohort,
     Contributor,
+    Lesion,
     MetadataFile,
+    Patient,
     ZipUpload,
 )
 from isic.ingest.models.metadata_version import MetadataVersion
@@ -178,6 +180,18 @@ class AccessionReviewedFilter(admin.SimpleListFilter):
         return queryset
 
 
+@admin.register(Lesion)
+class LesionAdmin(StaffReadonlyAdmin):
+    list_display = ["cohort", "private_lesion_id", "id"]
+    search_fields = ["id", "private_lesion_id"]
+
+
+@admin.register(Patient)
+class PatientAdmin(StaffReadonlyAdmin):
+    list_display = ["cohort", "private_patient_id", "id"]
+    search_fields = ["id", "private_patient_id"]
+
+
 @admin.register(Accession)
 class AccessionAdmin(StaffReadonlyAdmin):
     list_select_related = ["cohort"]
@@ -189,6 +203,7 @@ class AccessionAdmin(StaffReadonlyAdmin):
         "status",
         "cohort",
     ]
+    autocomplete_fields = ["lesion", "patient"]
     list_filter = ["status", AccessionReviewedFilter]
     search_fields = ["cohort__name", "original_blob_name", "girder_id"]
     search_help_text = "Search by cohort name, original blob name, or Girder ID."
