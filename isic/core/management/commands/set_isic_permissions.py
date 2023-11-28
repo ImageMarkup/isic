@@ -2,14 +2,16 @@ from django.contrib.auth.models import Group, Permission, User
 from django.contrib.contenttypes.models import ContentType
 import djclick as click
 
-from isic.core.models import Collection, DuplicateImage, Image, ImageAlias
+from isic.core.models import Collection, Image, ImageAlias
 from isic.ingest.models import (
     Accession,
     AccessionReview,
     Cohort,
     Contributor,
     DistinctnessMeasure,
+    Lesion,
     MetadataFile,
+    Patient,
     ZipUpload,
 )
 from isic.studies.models import (
@@ -30,18 +32,19 @@ def add_staff_group():
 
     for model in [
         Accession,
-        Annotation,
         AccessionReview,
+        Annotation,
         Cohort,
         Collection,
         Contributor,
         DistinctnessMeasure,
-        DuplicateImage,
         Feature,
         Image,
         ImageAlias,
+        Lesion,
         Markup,
         MetadataFile,
+        Patient,
         Question,
         QuestionChoice,
         Response,
