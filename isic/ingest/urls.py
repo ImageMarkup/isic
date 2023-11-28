@@ -22,12 +22,12 @@ urlpatterns = [
         name="upload/select-or-create-cohort",
     ),
     path(
-        "upload/create-cohort/<int:contributor_pk>",
+        "upload/create-cohort/<int:contributor_pk>/",
         upload_views.upload_cohort_create,
         name="upload/create-cohort",
     ),
     path(
-        "upload/edit-cohort/<int:cohort_pk>",
+        "upload/edit-cohort/<int:cohort_pk>/",
         upload_views.upload_cohort_edit,
         name="upload/edit-cohort",
     ),

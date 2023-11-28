@@ -33,7 +33,11 @@
               'Content-Type': 'application/json',
               'X-CSRFToken': '{{ csrf_token }}'
             },
-          }).then(() => {
+          }).then((resp) => {
+            if (!resp.ok) {
+              throw new Error('Something went wrong.');
+            }
+
             window.location.reload();
           }).catch((error) => {
             alert('There was a problem deleting the file.');
