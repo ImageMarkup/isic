@@ -130,9 +130,17 @@
           },
           body: JSON.stringify({})
         }).then((resp) => {
+          if (!resp.ok) {
+            throw new Error('Something went wrong.');
+          }
+
           this.applied = true;
           this.applying = false;
           window.location.href = '{% url "cohort-detail" cohort.id %}';
+        }).catch((err) => {
+          this.applying = false;
+          console.error(err);
+          alert('Something went wrong.');
         });
       }
     }
