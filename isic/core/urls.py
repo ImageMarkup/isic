@@ -69,7 +69,7 @@ urlpatterns = [
         name="core/collection-create",
     ),
     path(
-        "collections/edit/<int:pk>",
+        "collections/edit/<int:pk>/",
         collection_edit,
         name="core/collection-edit",
     ),
