@@ -28,36 +28,42 @@
 <div id="checkpoint-problems">
 
   <div>
-    <div class="heading-4">Checkpoint 1 - {{ checkpoint.1.title }}</div>
+    <div class="heading-4">Checkpoint 1 - Filename checks</div>
   </div>
-  {% if checkpoint.1.run %}
-    {% for problem in checkpoint.1.problems %}
-      <div>
-        {{ problem.message  }}
-        {% if problem.context %}
-          <div>
-            {{ problem.context }}
-          </div>
-        {% endif %}
-      </div>
-    {% empty %}
-      passed.
-
-    {% endfor %}
-  {% endif %}
+  {% for problem in csv_check %}
+    <div>
+      {{ problem.message  }}
+      {% if problem.context %}
+        <div>
+          {{ problem.context }}
+        </div>
+      {% endif %}
+    </div>
+  {% empty %}
+    passed.
+  {% endfor %}
 
   <div>
-    <div class="heading-4">Checkpoint 2 - {{ checkpoint.2.title }}</div>
+    <div class="heading-4">Checkpoint 2 - Internal Consistency</div>
   </div>
-  {% if checkpoint.2.run %}
-    {% if checkpoint.2.problems %}
+  {% if internal_check is not None %}
+    {% if internal_check.0 or internal_check.1 %}
       <ul>
-        {% for key, values in checkpoint.2.problems.items %}
+        {% for key, values in internal_check.0.items %}
           <li>
             <strong>{{ key.0 }}</strong> - {{ key.1 }} - lines: {{ values|slice:"5"|join:", " }}
             {% if values|length > 5 %}(and {{ values|length|add:"-5" }} more){% endif %}
           </li>
         {% endfor %}
+
+        {% for batch_problem in internal_check.1 %}
+          <li>
+            <strong>{{ batch_problem.message }}</strong>
+            - instances: {{ batch_problem.context|slice:"5"|join:", " }}
+            {% if batch_problem.context|length > 5 %}(and {{batch_problem.context|length|add:"-5" }} more){% endif %}
+          </li>
+        {% endfor %}
+
       </ul>
     {% else %}
       passed.
@@ -67,15 +73,23 @@
   {% endif %}
 
   <div>
-    <div class="heading-4">Checkpoint 3 - {{ checkpoint.3.title }}</div>
+    <div class="heading-4">Checkpoint 3 - Archive Consistency</div>
   </div>
-  {% if checkpoint.3.run %}
-    {% if checkpoint.3.problems %}
+  {% if archive_check is not None %}
+    {% if archive_check.0 or archive_check.1 %}
       <ul>
-        {% for key, values in checkpoint.3.problems.items %}
+        {% for key, values in archive_check.0 %}
           <li>
             <strong>{{ key.0 }}</strong> - {{ key.1 }} - lines: {{ values|slice:"5"|join:", " }}
             {% if values|length > 5 %}(and {{ values|length|add:"-5" }} more){% endif %}
+          </li>
+        {% endfor %}
+
+        {% for batch_problem in archive_check.1 %}
+          <li>
+            <strong>{{ batch_problem.message }}</strong>
+            - instances: {{ batch_problem.context|slice:"5"|join:", " }}
+            {% if batch_problem.context|length > 5 %}(and {{batch_problem.context|length|add:"-5" }} more){% endif %}
           </li>
         {% endfor %}
       </ul>
