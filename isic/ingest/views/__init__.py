@@ -3,7 +3,7 @@ from django.urls.base import reverse
 from isic.ingest.models.cohort import Cohort
 
 
-def make_breadcrumbs(cohort: Cohort | None = None) -> list:
+def make_breadcrumbs(cohort: Cohort | None = None) -> list[list[str]]:
     ret = [[reverse("ingest-review"), "Ingest Review"]]
 
     if cohort:
