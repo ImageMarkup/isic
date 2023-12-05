@@ -1,3 +1,6 @@
+from collections.abc import Generator
+import csv
+from datetime import datetime
 import itertools
 
 from django.contrib import messages
@@ -6,13 +9,15 @@ from django.contrib.humanize.templatetags.humanize import intcomma
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Count
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
 from isic.core.permissions import needs_object_permission
+from isic.core.services import accession_metadata_csv_headers, accession_metadata_csv_rows
 from isic.ingest.forms import MergeCohortForm
 from isic.ingest.models import Cohort
+from isic.ingest.models.accession import Accession
 from isic.ingest.models.contributor import Contributor
 from isic.ingest.services.cohort import cohort_merge, cohort_publish_initialize
 from isic.ingest.views import make_breadcrumbs
@@ -54,6 +59,32 @@ def cohort_list(request):
         "ingest/cohort_list.html",
         {"rows": rows},
     )
+
+
+@staff_member_required
+def cohort_download_all_metadata(request):
+    # StreamingHttpResponse requires a File-like class that has a 'write' method
+    class Buffer(object):
+        def write(self, value: str) -> bytes:
+            return value.encode("utf-8")
+
+    qs = Accession.objects
+
+    def csv_rows(buffer: Buffer) -> Generator[bytes, None, None]:
+        headers = accession_metadata_csv_headers(qs=qs)
+        writer = csv.DictWriter(buffer, headers)
+        yield writer.writeheader()
+
+        for metadata_row in accession_metadata_csv_rows(qs=qs):
+            yield writer.writerow(metadata_row)
+
+    current_time = datetime.utcnow().strftime("%Y-%m-%d")
+    response = StreamingHttpResponse(csv_rows(Buffer()), content_type="text/csv")
+    response[
+        "Content-Disposition"
+    ] = f'attachment; filename="isic_accession_metadata_{current_time}.csv"'
+
+    return response
 
 
 @staff_member_required
