@@ -51,6 +51,7 @@ class ZipUpload(CreationSortedTimeStampedModel):
         original_blob_names_in_zip = set()
         original_blob_name_duplicates = set()
 
+        logger.info("Zip upload %d checking for duplicates", self.pk)
         with self.blob.open("rb") as zip_blob_stream:
             for original_filename in file_names_in_zip(zip_blob_stream):
                 if original_filename in original_blob_names_in_zip:
@@ -93,7 +94,10 @@ class ZipUpload(CreationSortedTimeStampedModel):
                     )
 
                 with self.blob.open("rb") as zip_blob_stream:
-                    for zip_item in items_in_zip(zip_blob_stream):
+                    logger.info("Zip upload %d extracting", self.pk)
+                    for i, zip_item in enumerate(items_in_zip(zip_blob_stream)):
+                        if i % 5_000 == 0:
+                            logger.info("Zip upload %d progress: %d", self.pk, i)
                         accession = Accession.from_blob(zip_item)
                         accession.creator = self.creator
                         accession.cohort = self.cohort
