@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Callable, Iterable
+from typing import Iterable
 
 from django.forms.models import ModelForm
 from isic_metadata.metadata import MetadataBatch, MetadataRow
@@ -61,9 +61,7 @@ def validate_csv_format_and_filenames(df: pd.DataFrame, cohort: Cohort) -> list[
     return problems
 
 
-def _validate_df_consistency(
-    batch: Iterable[dict], row_preprocessor: Callable[[dict], dict] | None = None
-) -> tuple[ColumnRowErrors, list[Problem]]:
+def _validate_df_consistency(batch: Iterable[dict]) -> tuple[ColumnRowErrors, list[Problem]]:
     column_error_rows: ColumnRowErrors = defaultdict(list)
     batch_problems: list[Problem] = []
 
@@ -72,9 +70,6 @@ def _validate_df_consistency(
 
     for i, row in enumerate(batch):
         try:
-            if row_preprocessor is not None:
-                row = row_preprocessor(row)
-
             MetadataRow.model_validate(row)
         except PydanticValidationError as e:
             for error in e.errors():
