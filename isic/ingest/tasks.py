@@ -6,6 +6,8 @@ from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 from django.contrib.auth.models import User
 from django.db import transaction
+from django.template.loader import render_to_string
+from isic_metadata.utils import get_unstructured_columns
 
 from isic.ingest.models import (
     Accession,
@@ -18,6 +20,13 @@ from isic.ingest.models import (
     ZipUpload,
 )
 from isic.ingest.services.cohort import cohort_publish
+from isic.ingest.utils.metadata import (
+    ColumnRowErrors,
+    Problem,
+    validate_archive_consistency,
+    validate_csv_format_and_filenames,
+    validate_internal_consistency,
+)
 
 logger = get_task_logger(__name__)
 
@@ -81,6 +90,50 @@ def process_distinctness_measure_task(accession_pk: int):
         checksum = DistinctnessMeasure.compute_checksum(blob_stream)
 
     DistinctnessMeasure.objects.create(accession=accession, checksum=checksum)
+
+
+@shared_task(soft_time_limit=300, time_limit=360)
+def validate_metadata_task(metadata_file_pk: int):
+    metadata_file = MetadataFile.objects.select_related("cohort").get(pk=metadata_file_pk)
+
+    try:
+        df = metadata_file.to_df()
+        successful: bool = False
+        unstructured_columns: list[str] = get_unstructured_columns(df)
+        csv_check: list[Problem] | None = None
+        internal_check: tuple[ColumnRowErrors, list[Problem]] | None = None
+        archive_check: tuple[ColumnRowErrors, list[Problem]] | None = None
+
+        csv_check = validate_csv_format_and_filenames(df, metadata_file.cohort)
+
+        if not any(csv_check):
+            internal_check = validate_internal_consistency(df)
+
+            if not any(internal_check):
+                archive_check = validate_archive_consistency(df, metadata_file.cohort)
+
+                if not any(archive_check):
+                    successful = True
+
+        metadata_file.validation_errors = render_to_string(
+            "ingest/partials/metadata_validation.html",
+            {
+                "cohort": metadata_file.cohort,  # needs cohort for assembling a redirect url
+                "metadata_file_id": metadata_file.pk,
+                "successful": successful,
+                "unstructured_columns": unstructured_columns,
+                "csv_check": csv_check,
+                "internal_check": internal_check,
+                "archive_check": archive_check,
+            },
+        )
+        metadata_file.validation_completed = True
+        metadata_file.save()
+    except Exception:
+        metadata_file.validation_errors = "An unexpected error occurred during validation."
+        metadata_file.validation_completed = True
+        metadata_file.save()
+        raise
 
 
 @shared_task(soft_time_limit=1800, time_limit=1860)
