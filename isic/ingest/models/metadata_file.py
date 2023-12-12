@@ -18,6 +18,9 @@ class MetadataFile(CreationSortedTimeStampedModel):
     blob_name = models.CharField(max_length=255, editable=False)
     blob_size = models.PositiveBigIntegerField(editable=False)
 
+    validation_errors = models.TextField(blank=True)
+    validation_completed = models.BooleanField(default=False)
+
     def __str__(self) -> str:
         return self.blob_name
 

@@ -155,31 +155,39 @@ def test_apply_metadata_step2(
         reverse("validate-metadata", args=[cohort_with_accession.pk]),
         {"metadata_file": metadatafile.pk},
     )
-    assert not r.context["form"].errors, r.context["form"].errors
-    assert r.status_code == 200, r.status_code
+
+    assert r.status_code == 302, r.status_code
 
 
 @pytest.mark.django_db
 def test_apply_metadata_step2_invalid(
-    staff_client, cohort_with_accession, csv_stream_diagnosis_sex_invalid, metadata_file_factory
+    staff_client,
+    cohort_with_accession,
+    csv_stream_diagnosis_sex_invalid,
+    metadata_file_factory,
+    mocker,
+    eager_celery,
+    django_capture_on_commit_callbacks,
 ):
     metadatafile = metadata_file_factory(
         blob__from_func=lambda: csv_stream_diagnosis_sex_invalid, cohort=cohort_with_accession
     )
 
-    r = staff_client.post(
-        reverse("validate-metadata", args=[cohort_with_accession.pk]),
-        {"metadata_file": metadatafile.pk},
-    )
-    r.context = cast(ApplyMetadataContext, r.context)
+    render_to_string = mocker.patch("isic.ingest.tasks.render_to_string")
 
-    assert not r.context["form"].errors, r.context["form"].errors
+    with django_capture_on_commit_callbacks(execute=True):
+        r = staff_client.post(
+            reverse("validate-metadata", args=[cohort_with_accession.pk]),
+            {"metadata_file": metadatafile.pk},
+            follow=True,
+        )
+    r.context = cast(ApplyMetadataContext, r.context)
     assert r.status_code == 200, r.status_code
-    assert r.context["csv_check"] == []
-    # Ensure there's an error with the diagnosis field in step 2
-    assert r.context["internal_check"]
-    assert list(r.context["internal_check"][0].keys())[0][0] == "diagnosis"
-    assert not r.context["archive_check"]
+    assert render_to_string.call_args[0][1]["successful"] is False
+    assert render_to_string.call_args[0][1]["csv_check"] == []
+    assert render_to_string.call_args[0][1]["internal_check"]
+    assert list(render_to_string.call_args[0][1]["internal_check"][0].keys())[0][0] == "diagnosis"
+    assert render_to_string.call_args[0][1]["archive_check"] is None
 
 
 @pytest.mark.django_db
@@ -190,37 +198,54 @@ def test_apply_metadata_step3(
     csv_stream_diagnosis_sex,
     csv_stream_benign,
     metadata_file_factory,
+    mocker,
+    django_capture_on_commit_callbacks,
+    eager_celery,
 ):
     # TODO: refactor this test to split out the first half
     metadatafile = metadata_file_factory(
         blob__from_func=lambda: csv_stream_diagnosis_sex, cohort=cohort_with_accession
     )
 
-    r = staff_client.post(
-        reverse("validate-metadata", args=[cohort_with_accession.pk]),
-        {"metadata_file": metadatafile.pk},
-    )
-    assert not r.context["form"].errors, r.context["form"].errors
+    # must use spy here because the results of render_to_string need to get
+    # saved in the database.
+    import isic.ingest.tasks
+
+    render_to_string = mocker.spy(isic.ingest.tasks, "render_to_string")
+
+    with django_capture_on_commit_callbacks(execute=True):
+        r = staff_client.post(
+            reverse("validate-metadata", args=[cohort_with_accession.pk]),
+            {"metadata_file": metadatafile.pk},
+            follow=True,
+        )
     assert r.status_code == 200, r.status_code
+    assert render_to_string.call_args[0][1]["successful"]
 
     update_metadata_task(user.pk, metadatafile.pk)
+
+    render_to_string.reset_mock()
 
     # test step 3 by trying to make a melanoma benign
     benign_metadatafile = metadata_file_factory(
         blob__from_func=lambda: csv_stream_benign, cohort=cohort_with_accession
     )
 
-    r = staff_client.post(
-        reverse("validate-metadata", args=[cohort_with_accession.pk]),
-        {"metadata_file": benign_metadatafile.pk},
-    )
+    with django_capture_on_commit_callbacks(execute=True):
+        r = staff_client.post(
+            reverse("validate-metadata", args=[cohort_with_accession.pk]),
+            {"metadata_file": benign_metadatafile.pk},
+            follow=True,
+        )
     r.context = cast(ApplyMetadataContext, r.context)
-    assert not r.context["form"].errors, r.context["form"].errors
     assert r.status_code == 200, r.status_code
-    assert r.context["csv_check"] == []
-    assert r.context["internal_check"] and not any(r.context["internal_check"])
-    assert r.context["archive_check"]
-    assert list(r.context["archive_check"][0].keys())[0][0] == "diagnosis"
+    assert render_to_string.call_args[0][1]["successful"] is False
+    assert render_to_string.call_args[0][1]["csv_check"] == []
+    assert render_to_string.call_args[0][1]["internal_check"] and not any(
+        render_to_string.call_args[0][1]["internal_check"]
+    )
+    assert render_to_string.call_args[0][1]["archive_check"]
+    assert list(render_to_string.call_args[0][1]["archive_check"][0].keys())[0][0] == "diagnosis"
 
 
 @pytest.mark.django_db
@@ -231,20 +256,31 @@ def test_apply_metadata_step3_full_cohort(
     csv_stream_diagnosis_sex_lesion_patient,
     csv_stream_diagnosis_sex_disagreeing_lesion_patient,
     metadata_file_factory,
+    mocker,
+    eager_celery,
+    django_capture_on_commit_callbacks,
 ):
     metadatafile = metadata_file_factory(
         blob__from_func=lambda: csv_stream_diagnosis_sex_lesion_patient,
         cohort=cohort_with_accession,
     )
 
-    r = staff_client.post(
-        reverse("validate-metadata", args=[cohort_with_accession.pk]),
-        {"metadata_file": metadatafile.pk},
-    )
-    assert not r.context["form"].errors, r.context["form"].errors
+    # must use spy here - see above.
+    import isic.ingest.tasks
+
+    render_to_string = mocker.spy(isic.ingest.tasks, "render_to_string")
+
+    with django_capture_on_commit_callbacks(execute=True):
+        r = staff_client.post(
+            reverse("validate-metadata", args=[cohort_with_accession.pk]),
+            {"metadata_file": metadatafile.pk},
+            follow=True,
+        )
     assert r.status_code == 200, r.status_code
+    assert render_to_string.call_args[0][1]["successful"]
 
     update_metadata_task(user.pk, metadatafile.pk)
+    render_to_string.reset_mock()
 
     # test step 3 by trying to upload a disagreeing lesion/patient pair.
     disagreeing_metadatafile = metadata_file_factory(
@@ -252,16 +288,22 @@ def test_apply_metadata_step3_full_cohort(
         cohort=cohort_with_accession,
     )
 
-    r = staff_client.post(
-        reverse("validate-metadata", args=[cohort_with_accession.pk]),
-        {"metadata_file": disagreeing_metadatafile.pk},
-    )
+    with django_capture_on_commit_callbacks(execute=True):
+        r = staff_client.post(
+            reverse("validate-metadata", args=[cohort_with_accession.pk]),
+            {"metadata_file": disagreeing_metadatafile.pk},
+            follow=True,
+        )
     r.context = cast(ApplyMetadataContext, r.context)
-    assert not r.context["form"].errors, r.context["form"].errors
-    assert r.context["csv_check"] == []
-    assert r.context["internal_check"] and not any(r.context["internal_check"])
-    assert r.context["archive_check"]
-    assert "belong to multiple patients" in str(r.context["archive_check"][1][0].message)
+    assert render_to_string.call_args[0][1]["successful"] is False
+    assert render_to_string.call_args[0][1]["csv_check"] == []
+    assert render_to_string.call_args[0][1]["internal_check"] and not any(
+        render_to_string.call_args[0][1]["internal_check"]
+    )
+    assert render_to_string.call_args[0][1]["archive_check"]
+    assert "belong to multiple patients" in str(
+        render_to_string.call_args[0][1]["archive_check"][1][0].message
+    )
 
 
 @pytest.mark.django_db
