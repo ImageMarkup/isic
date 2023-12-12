@@ -64,4 +64,9 @@ urlpatterns = [
         metadata_views.apply_metadata,
         name="validate-metadata",
     ),
+    path(
+        "staff/ingest-review/metadata-file/<int:metadata_file_pk>/",
+        metadata_views.metadata_file_detail,
+        name="metadata-file-detail",
+    ),
 ]
