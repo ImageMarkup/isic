@@ -8,18 +8,12 @@ from django.forms.models import ModelForm
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
-from isic_metadata.utils import get_unstructured_columns
 from s3_file_field.widgets import S3FileInput
 
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.ingest.models import Cohort, MetadataFile
-from isic.ingest.utils.metadata import (
-    ColumnRowErrors,
-    Problem,
-    validate_archive_consistency,
-    validate_csv_format_and_filenames,
-    validate_internal_consistency,
-)
+from isic.ingest.tasks import validate_metadata_task
+from isic.ingest.utils.metadata import ColumnRowErrors, Problem
 
 from . import make_breadcrumbs
 
@@ -69,6 +63,22 @@ def metadata_file_create(request, cohort_pk):
     return render(request, "ingest/metadata_file_create.html", {"form": form})
 
 
+@staff_member_required
+def metadata_file_detail(request, metadata_file_pk: int):
+    metadata_file = get_object_or_404(
+        MetadataFile.objects.select_related("cohort"),
+        pk=metadata_file_pk,
+    )
+
+    ctx = {
+        "cohort": metadata_file.cohort,
+        "breadcrumbs": make_breadcrumbs(metadata_file.cohort),
+        "metadata_file": metadata_file,
+    }
+
+    return render(request, "ingest/metadata_file.html", ctx)
+
+
 class ApplyMetadataContext(TypedDict):
     cohort: Cohort
     breadcrumbs: list[list[str]]
@@ -98,35 +108,18 @@ def apply_metadata(request, cohort_pk):
         "cohort": cohort,
         "breadcrumbs": make_breadcrumbs(cohort)
         + [[reverse("validate-metadata", args=[cohort.pk]), "Validate Metadata"]],
+        "form": ValidateMetadataForm(request.user, cohort),
     }
-
-    csv_check: list[Problem] | None = None
-    internal_check: tuple[ColumnRowErrors, list[Problem]] | None = None
-    archive_check: tuple[ColumnRowErrors, list[Problem]] | None = None
 
     if request.method == "POST":
         form = ValidateMetadataForm(request.user, cohort, request.POST)
         if form.is_valid():
-            metadata_file = MetadataFile.objects.get(id=int(form.cleaned_data["metadata_file"]))
-            ctx["metadata_file_id"] = metadata_file.pk
-            df = metadata_file.to_df()
-            ctx["unstructured_columns"] = get_unstructured_columns(df)
+            MetadataFile.objects.filter(pk=form.cleaned_data["metadata_file"]).update(
+                validation_completed=False, validation_errors=""
+            )
+            validate_metadata_task.delay(form.cleaned_data["metadata_file"])
+            return HttpResponseRedirect(
+                reverse("metadata-file-detail", args=[form.cleaned_data["metadata_file"]])
+            )
 
-            csv_check = validate_csv_format_and_filenames(df, cohort)
-
-            if not any(csv_check):
-                internal_check = validate_internal_consistency(df)
-
-                if not any(internal_check):
-                    archive_check = validate_archive_consistency(df, cohort)
-
-                    if not any(archive_check):
-                        ctx["successful"] = True
-    else:
-        form = ValidateMetadataForm(request.user, cohort)
-
-    ctx["form"] = form
-    ctx["csv_check"] = csv_check
-    ctx["internal_check"] = internal_check
-    ctx["archive_check"] = archive_check
     return render(request, "ingest/apply_metadata.html", ctx)

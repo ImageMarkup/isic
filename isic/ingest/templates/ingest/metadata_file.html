@@ -1,0 +1,14 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+  {% include 'ingest/partials/breadcrumbs.html' %}
+
+  <h3>{{ metadata_file.blob_name }}</h3>
+
+  {% if not metadata_file.validation_completed %}
+    <div>Pending metadata validation... refresh for updated status.</div>
+  {% else %}
+    {{ metadata_file.validation_errors|safe }}
+  {% endif %}
+
+{% endblock %}
