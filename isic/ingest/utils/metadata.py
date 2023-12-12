@@ -65,10 +65,15 @@ def _validate_df_consistency(batch: Iterable[dict]) -> tuple[ColumnRowErrors, li
     column_error_rows: ColumnRowErrors = defaultdict(list)
     batch_problems: list[Problem] = []
 
-    # Since rows have to be evaluated twice, we need to convert the iterator to a list
-    batch = list(batch)
+    # since batch can be exhausted, keep track of all the batch level metadata rows
+    # so we can validate them after exhausting the batch.
+    metadata_rows: list[MetadataRow] = []
 
     for i, row in enumerate(batch):
+        metadata_rows.append(
+            MetadataRow(patient_id=row.get("patient_id"), lesion_id=row.get("lesion_id"))
+        )
+
         try:
             MetadataRow.model_validate(row)
         except PydanticValidationError as e:
@@ -80,12 +85,7 @@ def _validate_df_consistency(batch: Iterable[dict]) -> tuple[ColumnRowErrors, li
     # currently only applies to patient/lesion checks, we can sparsely populate the MetadataRow
     # objects to save on memory.
     try:
-        MetadataBatch(
-            items=[
-                MetadataRow(patient_id=row.get("patient_id"), lesion_id=row.get("lesion_id"))
-                for row in batch
-            ]
-        )
+        MetadataBatch(items=metadata_rows)
     except PydanticValidationError as e:
         for error in e.errors():
             examples = error["ctx"]["examples"] if "ctx" in error else []
@@ -111,7 +111,7 @@ def validate_archive_consistency(
     a lesion doesn't belong to more than one patient.
     """
     # this is used to speed up the random access we need below
-    df = df.set_index("filename")
+    df.set_index("filename", inplace=True)
 
     def cohort_df_merged_metadata_rows():
         """
