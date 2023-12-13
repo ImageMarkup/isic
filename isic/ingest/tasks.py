@@ -136,7 +136,7 @@ def validate_metadata_task(metadata_file_pk: int):
         raise
 
 
-@shared_task(soft_time_limit=1800, time_limit=1860)
+@shared_task(soft_time_limit=3600, time_limit=3600 + 60)
 def update_metadata_task(user_pk: int, metadata_file_pk: int):
     metadata_file = MetadataFile.objects.get(pk=metadata_file_pk)
     user = User.objects.get(pk=user_pk)
