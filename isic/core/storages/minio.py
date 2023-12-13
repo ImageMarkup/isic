@@ -2,10 +2,33 @@ import io
 
 import boto3
 from botocore.exceptions import ClientError
+from minio_storage.files import ReadOnlySpooledTemporaryFile
 from minio_storage.storage import MinioMediaStorage
 
 
-class MinioS3ProxyStorage(MinioMediaStorage):
+class StringableReadOnlySpooledTemporaryFile(ReadOnlySpooledTemporaryFile):
+    def read(self, *args, **kwargs):
+        if "r" not in self._mode:
+            raise AttributeError("File was not opened in read mode.")
+        if "b" in self._mode:
+            return super().read(*args, **kwargs)
+        else:
+            return super().read(*args, **kwargs).decode()
+
+    def readline(self, *args, **kwargs):
+        if "r" not in self._mode:
+            raise AttributeError("File was not opened in read mode.")
+        if "b" in self._mode:
+            return super().readline(*args, **kwargs)
+        else:
+            return super().readline(*args, **kwargs).decode()
+
+
+class StringableMinioMediaStorage(MinioMediaStorage):
+    file_class = StringableReadOnlySpooledTemporaryFile
+
+
+class MinioS3ProxyStorage(StringableMinioMediaStorage):
     """
     A storage backend that proxies to S3 if the file doesn't exist in Minio.
 

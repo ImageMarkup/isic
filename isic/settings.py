@@ -150,6 +150,8 @@ class IsicMixin(ConfigMixin):
         },
     }
 
+    DEFAULT_FILE_STORAGE = "isic.core.storages.minio.StringableMinioMediaStorage"
+
 
 class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
     # Development-only settings
