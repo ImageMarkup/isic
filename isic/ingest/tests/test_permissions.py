@@ -179,15 +179,3 @@ def test_merge_cohort_permissions(client, authenticated_client, staff_client):
 
     r = staff_client.get(reverse("merge-cohorts"))
     assert r.status_code == 200
-
-
-@pytest.mark.django_db
-def test_cohort_download_all_metadata_permissions(client, authenticated_client, staff_client):
-    r = client.get(reverse("cohort-all-metadata"))
-    assert r.status_code == 302
-
-    r = authenticated_client.get(reverse("cohort-all-metadata"))
-    assert r.status_code == 302
-
-    r = staff_client.get(reverse("cohort-all-metadata"))
-    assert r.status_code == 200

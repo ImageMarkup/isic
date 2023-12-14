@@ -1,14 +1,21 @@
+import csv
+from datetime import datetime
 import json
+from typing import Iterable
 
+from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
+from django.db import connection, transaction
 from django.db.models import Count
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
+from django.http import HttpRequest, HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404, render
 
 from isic.core.forms.search import ImageSearchForm
 from isic.core.models import Collection, Image
 from isic.core.permissions import get_visible_objects, needs_object_permission
+from isic.core.services import full_image_metadata_csv_headers, full_image_metadata_csv_rows
 from isic.studies.models import Study
 
 
@@ -118,3 +125,38 @@ def image_browser(request):
             "form": search_form,
         },
     )
+
+
+@staff_member_required
+def image_list_export(request: HttpRequest) -> HttpResponse:
+    return render(request, "core/image_list_export.html")
+
+
+@staff_member_required
+def image_list_metadata_download(request: HttpRequest):
+    # StreamingHttpResponse requires a File-like class that has a 'write' method
+    class Buffer(object):
+        def write(self, value: str) -> bytes:
+            return value.encode("utf-8")
+
+    def csv_rows(buffer: Buffer) -> Iterable[bytes]:
+        # use repeatable read for the headers and rows to make sure they match
+        with transaction.atomic():
+            cursor = connection.cursor()
+            cursor.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+
+            qs = Image.objects.all()
+            headers = full_image_metadata_csv_headers(qs=qs)
+            writer = csv.DictWriter(buffer, headers)
+            yield writer.writeheader()
+
+            for metadata_row in full_image_metadata_csv_rows(qs=qs):
+                yield writer.writerow(metadata_row)
+
+    current_time = datetime.utcnow().strftime("%Y-%m-%d")
+    response = StreamingHttpResponse(csv_rows(Buffer()), content_type="text/csv")
+    response[
+        "Content-Disposition"
+    ] = f'attachment; filename="isic_accession_metadata_{current_time}.csv"'
+
+    return response
