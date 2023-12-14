@@ -34,10 +34,10 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Programming Language :: Python",
     ],
-    python_requires=">=3.11",
+    python_requires=">=3.12",
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
@@ -51,7 +51,6 @@ setup(
         "django-filter",
         "django-girder-utils",
         "django-json-widget",
-        "django-nested-admin",
         "django-ninja>=1.0a3",
         # v2 removed OOB support
         # https://github.com/jazzband/django-oauth-toolkit/pull/1124
