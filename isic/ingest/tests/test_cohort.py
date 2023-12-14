@@ -2,7 +2,6 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 import pytest
 
-from isic.ingest.models.accession import Accession
 from isic.ingest.services.cohort import cohort_delete, cohort_relicense
 
 
@@ -57,17 +56,3 @@ def test_cohort_relicense_some_accessions_more_restrictive(
 def test_cohort_list_view(staff_client, cohort, user):
     r = staff_client.get(reverse("cohort-list"))
     assert r.status_code == 200
-
-
-@pytest.mark.django_db
-def test_cohort_download_all_metadata_view(staff_client, user, cohort_with_cc_by_accession):
-    a: Accession = cohort_with_cc_by_accession.accessions.first()
-    r = staff_client.get(reverse("cohort-all-metadata"))
-    assert r.status_code == 200
-    actual = r.getvalue().decode("utf-8")
-    expected = (
-        "original_filename,cohort_id,cohort,attribution,copyright_license,public,lesion_id,patient_id\r\n"  # noqa: E501
-        f"{a.original_blob_name},{a.cohort_id},{a.cohort.name},{a.cohort.attribution},{a.cohort.default_copyright_license},,,\r\n"  # noqa: E501
-    )
-
-    assert actual == expected

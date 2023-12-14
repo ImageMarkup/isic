@@ -114,3 +114,27 @@ def test_core_collection_detail_filters_contributors(
     r = staff_client.get(reverse("core/collection-detail", args=[public_collection.pk]))
     assert r.status_code == 200
     assert list(r.context["contributors"]) == [image.accession.cohort.contributor]
+
+
+@pytest.mark.django_db
+def test_image_list_export_permissions(client, authenticated_client, staff_client):
+    r = client.get(reverse("core/image-list-export"))
+    assert r.status_code == 302
+
+    r = authenticated_client.get(reverse("core/image-list-export"))
+    assert r.status_code == 302
+
+    r = staff_client.get(reverse("core/image-list-export"))
+    assert r.status_code == 200
+
+
+@pytest.mark.django_db
+def test_image_list_metadata_download_permissions(client, authenticated_client, staff_client):
+    r = client.get(reverse("core/image-list-metadata-download"))
+    assert r.status_code == 302
+
+    r = authenticated_client.get(reverse("core/image-list-metadata-download"))
+    assert r.status_code == 302
+
+    r = staff_client.get(reverse("core/image-list-metadata-download"))
+    assert r.status_code == 200
