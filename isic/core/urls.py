@@ -12,7 +12,12 @@ from isic.core.views.collections import (
     collection_edit,
     collection_list,
 )
-from isic.core.views.images import image_browser, image_detail
+from isic.core.views.images import (
+    image_browser,
+    image_detail,
+    image_list_export,
+    image_list_metadata_download,
+)
 from isic.core.views.users import staff_list, user_detail
 from isic.ingest.models.accession import Accession
 
@@ -92,5 +97,11 @@ urlpatterns = [
         "users/<int:pk>/",
         user_detail,
         name="core/user-detail",
+    ),
+    path("staff/image-list/", image_list_export, name="core/image-list-export"),
+    path(
+        "staff/image-list/metadata-download/",
+        image_list_metadata_download,
+        name="core/image-list-metadata-download",
     ),
 ]
