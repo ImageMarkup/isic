@@ -1,8 +1,7 @@
 from django.contrib import admin
 from django.db.models import Count, Exists, OuterRef
 from django.db.models.expressions import F
-from girder_utils.admin import ReadonlyInlineMixin, ReadonlyTabularInline
-import nested_admin
+from girder_utils.admin import ReadonlyTabularInline
 
 from isic.core.admin import StaffReadonlyAdmin
 from isic.studies.models import (
@@ -45,15 +44,15 @@ class QuestionInline(ReadonlyTabularInline):
     autocomplete_fields = ["question"]
 
 
-class MarkupInline(ReadonlyInlineMixin, nested_admin.NestedTabularInline):
+class MarkupInline(ReadonlyTabularInline):
     model = Markup
 
 
-class ResponseInline(ReadonlyInlineMixin, nested_admin.NestedTabularInline):
+class ResponseInline(ReadonlyTabularInline):
     model = Response
 
 
-class AnnotationInline(ReadonlyInlineMixin, nested_admin.NestedTabularInline):
+class AnnotationInline(ReadonlyTabularInline):
     model = Annotation
     extra = 0
     inlines = [ResponseInline, MarkupInline]
@@ -111,7 +110,7 @@ class AnnotationAdmin(StaffReadonlyAdmin):
 
 
 @admin.register(StudyTask)
-class StudyTaskAdmin(nested_admin.NestedModelAdmin, StaffReadonlyAdmin):
+class StudyTaskAdmin(StaffReadonlyAdmin):
     list_display = ["study", "annotator", "image", "complete", "created"]
     list_filter = ["study", IsStudyTaskCompleteFilter]
     search_fields = [

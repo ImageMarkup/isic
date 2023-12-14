@@ -51,7 +51,6 @@ setup(
         "django-filter",
         "django-girder-utils",
         "django-json-widget",
-        "django-nested-admin",
         "django-ninja>=1.0a3",
         # v2 removed OOB support
         # https://github.com/jazzband/django-oauth-toolkit/pull/1124
