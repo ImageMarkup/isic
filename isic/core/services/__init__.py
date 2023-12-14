@@ -1,4 +1,4 @@
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 
 from django.db.models import Func
 from django.db.models.query import QuerySet
@@ -11,27 +11,30 @@ class JsonKeys(Func):
     function = "jsonb_object_keys"
 
 
-def accession_metadata_csv_headers(*, qs: QuerySet[Accession]) -> list[str]:
+def full_image_metadata_csv_headers(*, qs: QuerySet[Image]) -> list[str]:
     headers = [
         "original_filename",
+        "isic_id",
         "cohort_id",
         "cohort",
         "attribution",
         "copyright_license",
         "public",
+        "age_approx",
     ]
+    accession_qs = Accession.objects.filter(image__in=qs)
 
     # depending on which queryset is passed in, the set of headers is different.
     # get the superset of headers for this particular queryset.
     used_metadata_keys = list(
-        qs.annotate(metadata_keys=JsonKeys("metadata"))
+        accession_qs.annotate(metadata_keys=JsonKeys("metadata"))
         .order_by()
         .values_list("metadata_keys", flat=True)
         .distinct()
     )
 
     used_unstructured_metadata_keys = list(
-        qs.annotate(unstructured_metadata_keys=JsonKeys("unstructured_metadata"))
+        accession_qs.annotate(unstructured_metadata_keys=JsonKeys("unstructured_metadata"))
         .order_by()
         .values_list("unstructured_metadata_keys", flat=True)
         .distinct()
@@ -39,42 +42,55 @@ def accession_metadata_csv_headers(*, qs: QuerySet[Accession]) -> list[str]:
 
     return (
         headers
-        + sorted(used_metadata_keys + ["lesion_id", "patient_id"])
+        + sorted(used_metadata_keys)
+        + ["private_lesion_id", "lesion_id", "private_patient_id", "patient_id"]
         + sorted([f"unstructured.{key}" for key in used_unstructured_metadata_keys])
     )
 
 
-def accession_metadata_csv_rows(*, qs: QuerySet[Accession]) -> Iterator[dict]:
+def full_image_metadata_csv_rows(*, qs: QuerySet[Image]) -> Iterable[dict]:
     # Note this uses .values because populating django ORM objects is very slow, and doing this on
     # large querysets can add ~5s per 100k images to the request time.
-    for accession in (
-        qs.order_by("created")
+    for image in (
+        qs.order_by("isic_id")
         .values(
-            "original_blob_name",
-            "cohort_id",
-            "cohort__name",
-            "cohort__attribution",
-            "copyright_license",
-            "image__public",
-            "metadata",
-            "unstructured_metadata",
-            "lesion__private_lesion_id",
-            "patient__private_patient_id",
+            "accession__original_blob_name",
+            "isic_id",
+            "accession__cohort_id",
+            "accession__cohort__name",
+            "accession__cohort__attribution",
+            "accession__copyright_license",
+            "public",
+            "accession__metadata",
+            "accession__lesion__private_lesion_id",
+            "accession__lesion_id",
+            "accession__patient__private_patient_id",
+            "accession__patient_id",
+            "accession__unstructured_metadata",
         )
         .iterator()
     ):
         yield {
             **{
-                "original_filename": accession["original_blob_name"],
-                "cohort_id": accession["cohort_id"],
-                "cohort": accession["cohort__name"],
-                "public": accession["image__public"],
-                "attribution": accession["cohort__attribution"],
-                "copyright_license": accession["copyright_license"],
-                "lesion_id": accession["lesion__private_lesion_id"],
-                "patient_id": accession["patient__private_patient_id"],
-                **accession["metadata"],
-                **{f"unstructured.{k}": v for k, v in accession["unstructured_metadata"].items()},
+                "original_filename": image["accession__original_blob_name"],
+                "isic_id": image["isic_id"],
+                "cohort_id": image["accession__cohort_id"],
+                "cohort": image["accession__cohort__name"],
+                "attribution": image["accession__cohort__attribution"],
+                "copyright_license": image["accession__copyright_license"],
+                "public": image["public"],
+                "age_approx": Accession._age_approx(image["accession__metadata"]["age"])
+                if image["accession__metadata"].get("age")
+                else None,
+                **image["accession__metadata"],
+                "private_lesion_id": image["accession__lesion__private_lesion_id"],
+                "lesion_id": image["accession__lesion_id"],
+                "private_patient_id": image["accession__patient__private_patient_id"],
+                "patient_id": image["accession__patient_id"],
+                **{
+                    f"unstructured.{k}": v
+                    for k, v in image["accession__unstructured_metadata"].items()
+                },
             }
         }
 
