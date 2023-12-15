@@ -22,9 +22,7 @@ def _cohort_review_progress(cohort: Cohort) -> dict:
     return {
         "num_reviewed": num_reviewed,
         "num_reviewable": num_reviewable,
-        "percentage": 0
-        if num_reviewable == 0
-        else math.floor(num_reviewed / num_reviewable * REVIEW_PER_PAGE),
+        "percentage": 0 if num_reviewable == 0 else math.floor(num_reviewed / num_reviewable * 100),
     }
 
 
