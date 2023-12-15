@@ -5,7 +5,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
@@ -13,9 +13,23 @@ from django.urls.base import reverse
 from isic.core.permissions import needs_object_permission
 from isic.ingest.forms import MergeCohortForm
 from isic.ingest.models import Cohort
+from isic.ingest.models.accession import AccessionStatus
 from isic.ingest.models.contributor import Contributor
 from isic.ingest.services.cohort import cohort_merge, cohort_publish_initialize
 from isic.ingest.views import make_breadcrumbs
+
+
+def cohort_counts(cohort: Cohort) -> dict[str, int]:
+    reviewable = Q(image__isnull=True, status=AccessionStatus.SUCCEEDED)
+    return cohort.accessions.aggregate(
+        accession_count=Count("pk"),
+        patient_count=Count("patient", distinct=True),
+        lesion_count=Count("lesion", distinct=True),
+        published_count=Count("pk", filter=Q(image__isnull=False)),
+        unreviewed_count=Count("pk", filter=reviewable & Q(review=None)),
+        accepted_count=Count("pk", filter=reviewable & Q(review__value=True)),
+        rejected_count=Count("pk", filter=reviewable & Q(review__value=False)),
+    )
 
 
 @staff_member_required
@@ -67,6 +81,7 @@ def cohort_detail(request, pk):
         "ingest/cohort_detail.html",
         {
             "cohort": cohort,
+            "counts": cohort_counts(cohort),
             "accessions": accessions,
             "breadcrumbs": make_breadcrumbs(cohort),
         },
