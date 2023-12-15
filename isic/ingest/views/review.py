@@ -9,6 +9,7 @@ from django.shortcuts import get_object_or_404, render
 
 from isic.core.permissions import needs_object_permission
 from isic.ingest.models import Cohort
+from isic.ingest.models.accession import AccessionStatus
 
 from . import make_breadcrumbs
 
@@ -16,13 +17,18 @@ REVIEW_PER_PAGE = 500
 
 
 def _cohort_review_progress(cohort: Cohort) -> dict:
-    num_reviewed = cohort.accessions.reviewed().count()
-    num_reviewable = cohort.accessions.reviewable().count()
+    ingested_and_publishable = Q(image__isnull=True, status=AccessionStatus.SUCCEEDED)
+    counts = cohort.accessions.aggregate(
+        reviewed=Count("id", filter=ingested_and_publishable & ~Q(review=None)),
+        reviewable=Count("id", filter=ingested_and_publishable),
+    )
 
     return {
-        "num_reviewed": num_reviewed,
-        "num_reviewable": num_reviewable,
-        "percentage": 0 if num_reviewable == 0 else math.floor(num_reviewed / num_reviewable * 100),
+        "num_reviewed": counts["reviewed"],
+        "num_reviewable": counts["reviewable"],
+        "percentage": 0
+        if counts["reviewable"] == 0
+        else math.floor(counts["reviewed"] / counts["reviewable"] * 100),
     }
 
 
