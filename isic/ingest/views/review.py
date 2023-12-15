@@ -12,6 +12,8 @@ from isic.ingest.models import Cohort
 
 from . import make_breadcrumbs
 
+REVIEW_PER_PAGE = 500
+
 
 def _cohort_review_progress(cohort: Cohort) -> dict:
     num_reviewed = cohort.accessions.reviewed().count()
@@ -20,7 +22,9 @@ def _cohort_review_progress(cohort: Cohort) -> dict:
     return {
         "num_reviewed": num_reviewed,
         "num_reviewable": num_reviewable,
-        "percentage": 0 if num_reviewable == 0 else math.floor(num_reviewed / num_reviewable * 100),
+        "percentage": 0
+        if num_reviewable == 0
+        else math.floor(num_reviewed / num_reviewable * REVIEW_PER_PAGE),
     }
 
 
@@ -45,7 +49,9 @@ def cohort_review(request, cohort_pk):
     if request.GET.get("grouped_by_lesion"):
         return _cohort_review_grouped_by_lesion(request, cohort)
 
-    paginator = Paginator(cohort.accessions.unreviewed().order_by("original_blob_name"), 100)
+    paginator = Paginator(
+        cohort.accessions.unreviewed().order_by("original_blob_name"), REVIEW_PER_PAGE
+    )
     page = paginator.get_page(request.GET.get("page"))
 
     return render(
