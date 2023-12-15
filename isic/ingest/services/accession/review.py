@@ -2,6 +2,7 @@ from datetime import datetime
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.utils import timezone
 
 from isic.ingest.models.accession import Accession
@@ -29,22 +30,25 @@ def accession_review_bulk_create(*, reviewer: User, accession_ids_values: dict[i
     accession_reviews = []
     reviewed_at = timezone.now()
 
-    for accession in Accession.objects.select_related("image").filter(
-        pk__in=accession_ids_values.keys()
-    ):
-        if accession.published:
-            raise ValidationError("Cannot review an accession after publish.")
+    with transaction.atomic():
+        for accession in (
+            Accession.objects.select_related("image")
+            .filter(pk__in=accession_ids_values.keys())
+            .select_for_update(of=("self",))
+        ):
+            if accession.published:
+                raise ValidationError("Cannot review an accession after publish.")
 
-        accession_reviews.append(
-            AccessionReview(
-                accession=accession,
-                creator=reviewer,
-                reviewed_at=reviewed_at,
-                value=accession_ids_values[accession.pk],
+            accession_reviews.append(
+                AccessionReview(
+                    accession=accession,
+                    creator=reviewer,
+                    reviewed_at=reviewed_at,
+                    value=accession_ids_values[accession.pk],
+                )
             )
-        )
 
-    AccessionReview.objects.bulk_create(accession_reviews)
+        AccessionReview.objects.bulk_create(accession_reviews)
 
 
 def accession_review_delete(*, accession: Accession):
