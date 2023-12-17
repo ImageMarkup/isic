@@ -130,7 +130,7 @@ def zip_file_listing(
 
     # initialize files with metadata and attribution files
     logger.info(
-        f"Creating zip file descriptor for {qs.count()} images: " f"{json.dumps(request.auth)}"
+        f"Creating zip file descriptor for {file_count} images: " f"{json.dumps(request.auth)}"
     )
     domain = Site.objects.get_current().domain
     for endpoint, zip_path in [
