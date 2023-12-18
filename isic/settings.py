@@ -184,6 +184,10 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
     # set to False to view real images in development.
     # DEFAULT_FILE_STORAGE = "isic.core.storages.minio.MinioS3ProxyStorage"
 
+    @staticmethod
+    def mutate_configuration(configuration: ComposedConfiguration):
+        configuration.INSTALLED_APPS.append("django_fastdev")
+
 
 class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
     ISIC_ELASTICSEARCH_INDEX = "isic-testing"
