@@ -75,6 +75,7 @@ setup(
         "pyparsing",
         "python-magic",
         "requests",
+        "sentry-sdk[pure_eval]",
         "tenacity",
         "zipfile-deflate64",
         # Production-only
