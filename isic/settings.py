@@ -213,3 +213,8 @@ class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration
     ZIP_DOWNLOAD_SERVICE_URL = values.Value()
     ZIP_DOWNLOAD_BASIC_AUTH_TOKEN = values.SecretValue()
     ZIP_DOWNLOAD_WILDCARD_URLS = True
+
+    @staticmethod
+    def mutate_configuration(configuration: ComposedConfiguration):
+        # We're configuring sentry by hand since we need to pass custom options
+        configuration.INSTALLED_APPS.remove("composed_configuration.sentry.apps.SentryConfig")
