@@ -87,8 +87,11 @@ setup(
         "dev": [
             "django-composed-configuration[dev]",
             "django-debug-toolbar",
+            "django-fastdev",
             "django-s3-file-field[minio]>=1",
             "ipython",
+            "memray",
+            "pyinstrument",
             "tox",
             "werkzeug",
         ]
