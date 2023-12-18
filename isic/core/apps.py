@@ -6,6 +6,7 @@ import sentry_sdk
 from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
+from sentry_sdk.integrations.pure_eval import PureEvalIntegration
 
 
 class CoreConfig(AppConfig):
@@ -64,6 +65,7 @@ class CoreConfig(AppConfig):
                     LoggingIntegration(level=logging.INFO, event_level=logging.WARNING),
                     DjangoIntegration(),
                     CeleryIntegration(),
+                    PureEvalIntegration(),
                 ],
                 in_app_include=["isic"],
                 # Send traces for non-exception events too
