@@ -6,8 +6,10 @@ from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 from django.contrib.auth.models import User
 from django.db import transaction
+from django.db.models import QuerySet
 from django.template.loader import render_to_string
 from isic_metadata.utils import get_unstructured_columns
+from more_itertools.more import chunked
 
 from isic.ingest.models import (
     Accession,
@@ -146,16 +148,25 @@ def update_metadata_task(user_pk: int, metadata_file_pk: int):
         (_ for _ in Lesion.objects.select_for_update().all())
         (_ for _ in Patient.objects.select_for_update().all())
 
-        # TODO: consider chunking in the future since large CSVs generate a lot of
-        # database traffic.
-        for _, row in metadata_file.to_df().iterrows():
-            accession = Accession.objects.get(
-                original_blob_name=row["filename"], cohort=metadata_file.cohort
-            )
-            # filename doesn't need to be stored in the metadata since it's equal to
-            # original_blob_name
-            del row["filename"]
-            accession.update_metadata(user, row)
+        rows = metadata_file.to_iterable()
+        headers = next(rows)
+        filename_index = headers.index("filename")
+
+        for chunk in chunked(rows, 1_000):
+            accessions: QuerySet[Accession] = metadata_file.cohort.accessions.select_related(
+                "image", "review", "lesion", "patient", "cohort"
+            ).filter(original_blob_name__in=[row[filename_index] for row in chunk])
+            accessions_by_filename: dict[str, Accession] = {
+                accession.original_blob_name: accession for accession in accessions
+            }
+
+            for row in chunk:
+                # filename doesn't need to be stored in the metadata since it's equal to
+                # original_blob_name
+                accession = accessions_by_filename[row[filename_index]]
+                row = dict(zip(headers, row))
+                del row["filename"]
+                accession.update_metadata(user, row)
 
 
 @shared_task(soft_time_limit=3600, time_limit=3660)

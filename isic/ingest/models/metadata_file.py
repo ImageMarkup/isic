@@ -1,3 +1,6 @@
+import csv
+from typing import Generator
+
 from django.contrib.auth.models import User
 from django.core.validators import FileExtensionValidator
 from django.db import models
@@ -29,6 +32,12 @@ class MetadataFile(CreationSortedTimeStampedModel):
             df = pd.read_csv(csv, header=0)
 
         return df
+
+    def to_iterable(self) -> Generator[list[str], None, None]:
+        with self.blob.open("r") as blob:
+            reader = csv.reader(blob)
+            for row in reader:
+                yield row
 
 
 class MetadataFilePermissions:
