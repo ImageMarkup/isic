@@ -1,8 +1,12 @@
 import os
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.contrib.sites.models import Site
 from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
 from django.db import transaction
 from django.db.models.query import Prefetch
 from django.forms.models import ModelForm
@@ -187,6 +191,16 @@ def upload_zip(request, cohort_pk):
             form.instance.blob_name = os.path.basename(form.instance.blob.name)
             form.instance.cohort = cohort
             form.save(commit=True)
+            domain = Site.objects.get_current().domain
+            path = reverse("admin:ingest_zipupload_change", args=[form.instance.pk])
+            send_mail(
+                subject="New zip upload",
+                message=f"New zip upload: http://{domain}{path}",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=list(
+                    User.objects.filter(is_superuser=True).values_list("email", flat=True)
+                ),
+            )
             extract_zip_task.delay(form.instance.pk)
             return HttpResponseRedirect(reverse("upload/cohort-files", args=[cohort.pk]))
     else:
