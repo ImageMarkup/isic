@@ -61,7 +61,7 @@ setup(
         "django-widget-tweaks",
         "google-analytics-data",
         "hashids",
-        "isic-metadata>=0.7.0",
+        "isic-metadata>=0.7.0,<1.0.0",
         "jaro-winkler",
         "more_itertools",
         "oauth2client",
