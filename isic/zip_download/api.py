@@ -13,6 +13,7 @@ from django.http.request import HttpRequest
 from django.http.response import Http404, HttpResponse
 from django.shortcuts import render
 from django.urls import reverse
+from django.utils.crypto import constant_time_compare
 from ninja import Router
 from ninja.errors import AuthenticationError
 from ninja.security import APIKeyQuery, HttpBasicAuth
@@ -38,7 +39,9 @@ def get_attributions(attributions: Iterable[str]) -> list[str]:
 
 class ZipDownloadBasicAuth(HttpBasicAuth):
     def authenticate(self, request, username, password):
-        if username == "" and password == settings.ZIP_DOWNLOAD_BASIC_AUTH_TOKEN:
+        if username == "" and constant_time_compare(
+            password, settings.ZIP_DOWNLOAD_BASIC_AUTH_TOKEN
+        ):
             return True
 
         raise AuthenticationError
