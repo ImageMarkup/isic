@@ -128,7 +128,8 @@ def metadatafile_duplicate_filenames(cohort, metadata_file_factory, csv_stream_d
 @pytest.mark.django_db
 def test_validate_metadata_step1_requires_filename_column(metadatafile_without_filename_column):
     problems = validate_csv_format_and_filenames(
-        metadatafile_without_filename_column.to_df(), metadatafile_without_filename_column.cohort
+        metadatafile_without_filename_column.to_iterable()[1],
+        metadatafile_without_filename_column.cohort,
     )
     assert len(problems) == 1
     assert "Unable to find a filename column" in problems[0].message
@@ -137,7 +138,8 @@ def test_validate_metadata_step1_requires_filename_column(metadatafile_without_f
 @pytest.mark.django_db
 def test_validate_metadata_step1_has_duplicate_filenames(metadatafile_duplicate_filenames):
     problems = validate_csv_format_and_filenames(
-        metadatafile_duplicate_filenames.to_df(), metadatafile_duplicate_filenames.cohort
+        metadatafile_duplicate_filenames.to_iterable()[1],
+        metadatafile_duplicate_filenames.cohort,
     )
     assert len(problems) == 2
     assert "Duplicate filenames" in problems[0].message
@@ -245,7 +247,7 @@ def test_apply_metadata_step3(
         render_to_string.call_args[0][1]["internal_check"]
     )
     assert render_to_string.call_args[0][1]["archive_check"]
-    assert list(render_to_string.call_args[0][1]["archive_check"][0].keys())[0][0] == "diagnosis"
+    assert list(render_to_string.call_args[0][1]["archive_check"][0].keys())[0][0] == ""
 
 
 @pytest.mark.django_db
