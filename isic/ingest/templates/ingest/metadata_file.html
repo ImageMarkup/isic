@@ -11,4 +11,41 @@
     {{ metadata_file.validation_errors|safe }}
   {% endif %}
 
+{% comment %}
+This has to be included in this file even though the errors are stored as HTML in the
+database because a csrf_token is only available for templates rendered within a request context,
+not for templates rendered with render_to_string.
+{% endcomment %}
+  <script type="text/javascript">
+    function applyMetadataButton() {
+      return {
+        applying: false,
+        applied: false,
+        apply() {
+          this.applying = true;
+
+          fetch(`/api/v2/metadata-files/{{ metadata_file.id }}/update_metadata/`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({})
+          }).then((resp) => {
+            if (!resp.ok) {
+              throw new Error('Something went wrong.');
+            }
+
+            this.applied = true;
+            this.applying = false;
+            window.location.href = '{% url "cohort-detail" cohort.id %}';
+          }).catch((err) => {
+            this.applying = false;
+            console.error(err);
+            alert('Something went wrong.');
+          });
+        }
+      }
+    }
+  </script>
 {% endblock %}
