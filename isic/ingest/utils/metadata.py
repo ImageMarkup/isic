@@ -78,7 +78,7 @@ def _validate_df_consistency(
     # so we can validate them after exhausting the batch.
     metadata_rows: list[MetadataRow] = []
 
-    for i, row in enumerate(batch):
+    for i, row in enumerate(batch, start=2):
         if row.get("patient_id") or row.get("lesion_id"):
             metadata_rows.append(
                 MetadataRow(patient_id=row.get("patient_id"), lesion_id=row.get("lesion_id"))
