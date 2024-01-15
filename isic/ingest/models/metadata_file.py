@@ -1,8 +1,10 @@
+import csv
+
 from django.contrib.auth.models import User
+from django.core.files.base import File
 from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.db.models.query import QuerySet
-import pandas as pd
 from s3_file_field import S3FileField
 
 from isic.core.models import CreationSortedTimeStampedModel
@@ -24,11 +26,9 @@ class MetadataFile(CreationSortedTimeStampedModel):
     def __str__(self) -> str:
         return self.blob_name
 
-    def to_df(self):
-        with self.blob.open() as csv:
-            df = pd.read_csv(csv, header=0)
-
-        return df
+    def to_iterable(self) -> tuple[File, csv.DictReader]:
+        with self.blob.open("r") as blob:
+            return blob, csv.DictReader(blob)
 
 
 class MetadataFilePermissions:

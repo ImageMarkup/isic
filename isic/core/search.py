@@ -23,9 +23,9 @@ COUNTS_AGGREGATES = {}
 
 # TODO: include private meta fields (e.g. patient/lesion id)
 for key, definition in FIELD_REGISTRY.items():
-    if definition.get("search"):
-        INDEX_MAPPINGS["properties"][key] = definition["search"]["es_property"]
-        DEFAULT_SEARCH_AGGREGATES[key] = definition["search"]["es_facet"]
+    if definition.search:
+        INDEX_MAPPINGS["properties"][key] = definition.search.es_property
+        DEFAULT_SEARCH_AGGREGATES[key] = definition.search.es_facet
 
 
 # Reserved mappings that can only be set by the archive
