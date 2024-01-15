@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from csv import DictReader
 import time
 
 from celery import shared_task
@@ -99,23 +100,28 @@ def validate_metadata_task(metadata_file_pk: int):
     metadata_file = MetadataFile.objects.select_related("cohort").get(pk=metadata_file_pk)
 
     try:
-        df = metadata_file.to_df()
+        fh, reader = metadata_file.to_iterable()
         successful: bool = False
-        unstructured_columns: list[str] = get_unstructured_columns(df)
+        unstructured_columns: list[str] = get_unstructured_columns(reader.fieldnames)
         csv_check: list[Problem] | None = None
         internal_check: tuple[ColumnRowErrors, list[Problem]] | None = None
         archive_check: tuple[ColumnRowErrors, list[Problem]] | None = None
 
-        csv_check = validate_csv_format_and_filenames(df, metadata_file.cohort)
+        with metadata_file.blob.open("r") as fh:
+            csv_check = validate_csv_format_and_filenames(DictReader(fh), metadata_file.cohort)
 
-        if not any(csv_check):
-            internal_check = validate_internal_consistency(df)
+            if not any(csv_check):
+                fh.seek(0)
+                internal_check = validate_internal_consistency(DictReader(fh))
 
-            if not any(internal_check):
-                archive_check = validate_archive_consistency(df, metadata_file.cohort)
+                if not any(internal_check):
+                    fh.seek(0)
+                    archive_check = validate_archive_consistency(
+                        DictReader(fh), metadata_file.cohort
+                    )
 
-                if not any(archive_check):
-                    successful = True
+                    if not any(archive_check):
+                        successful = True
 
         metadata_file.validation_errors = render_to_string(
             "ingest/partials/metadata_validation.html",
@@ -148,14 +154,12 @@ def update_metadata_task(user_pk: int, metadata_file_pk: int):
         (_ for _ in Lesion.objects.select_for_update().all())
         (_ for _ in Patient.objects.select_for_update().all())
 
-        rows = metadata_file.to_iterable()
-        headers = next(rows)
-        filename_index = headers.index("filename")
+        _, rows = metadata_file.to_iterable()
 
         for chunk in chunked(rows, 1_000):
             accessions: QuerySet[Accession] = metadata_file.cohort.accessions.select_related(
                 "image", "review", "lesion", "patient", "cohort"
-            ).filter(original_blob_name__in=[row[filename_index] for row in chunk])
+            ).filter(original_blob_name__in=[row["filename"] for row in chunk])
             accessions_by_filename: dict[str, Accession] = {
                 accession.original_blob_name: accession for accession in accessions
             }
@@ -163,8 +167,7 @@ def update_metadata_task(user_pk: int, metadata_file_pk: int):
             for row in chunk:
                 # filename doesn't need to be stored in the metadata since it's equal to
                 # original_blob_name
-                accession = accessions_by_filename[row[filename_index]]
-                row = dict(zip(headers, row))
+                accession = accessions_by_filename[row["filename"]]
                 del row["filename"]
                 accession.update_metadata(user, row)
 
