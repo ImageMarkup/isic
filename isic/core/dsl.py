@@ -323,8 +323,8 @@ def make_parser(
     }
 
     for key, definition in FIELD_REGISTRY.items():
-        if definition.get("search"):
-            es_property_type = definition["search"]["es_property"]["type"]
+        if definition.search:
+            es_property_type = definition.search.es_property["type"]
 
             if es_property_type == "keyword":
                 term = make_str_term(key)

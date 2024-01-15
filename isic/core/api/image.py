@@ -1,4 +1,4 @@
-from typing import cast
+from typing import Any, cast
 
 from django.conf import settings
 from django.http.request import HttpRequest
@@ -69,7 +69,7 @@ class ImageOut(ModelSchema):
 
     @staticmethod
     def resolve_metadata(image: Image) -> dict:
-        metadata = {
+        metadata: dict[str, dict[str, Any]] = {
             "acquisition": {"pixels_x": image.accession.width, "pixels_y": image.accession.height},
             "clinical": {},
         }
@@ -80,7 +80,7 @@ class ImageOut(ModelSchema):
             if key == "age_approx":
                 metadata["clinical"][key] = value
             else:
-                metadata[FIELD_REGISTRY[key]["type"]][key] = value
+                metadata[FIELD_REGISTRY[key].type][key] = value
 
         return metadata
 
