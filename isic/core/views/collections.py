@@ -113,9 +113,9 @@ def collection_download_metadata(request, pk):
     )
     current_time = datetime.utcnow().strftime("%Y-%m-%d")
     response = HttpResponse(content_type="text/csv")
-    response[
-        "Content-Disposition"
-    ] = f'attachment; filename="{slugify(collection.name)}_metadata_{current_time}.csv"'
+    response["Content-Disposition"] = (
+        f'attachment; filename="{slugify(collection.name)}_metadata_{current_time}.csv"'
+    )
 
     writer = csv.DictWriter(response, image_metadata_csv_headers(qs=qs))
     writer.writeheader()

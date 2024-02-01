@@ -24,13 +24,11 @@ class QuickfindResultOut(Schema, ABC):
 
     @staticmethod
     @abstractmethod
-    def resolve_icon(obj) -> str:
-        ...
+    def resolve_icon(obj) -> str: ...  # noqa: E704
 
     @staticmethod
     @abstractmethod
-    def resolve_result_type(obj) -> str:
-        ...
+    def resolve_result_type(obj) -> str: ...  # noqa: E704
 
     def set_yours(self, obj, user: User) -> None:
         self.yours = obj.creator == user
