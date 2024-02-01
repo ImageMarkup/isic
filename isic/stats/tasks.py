@@ -13,6 +13,7 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.db import transaction
+from django.db.utils import IntegrityError
 from django.utils import timezone
 from google.analytics.data_v1beta import BetaAnalyticsDataClient
 from google.analytics.data_v1beta.types import DateRange, Dimension, Metric, RunReportRequest
@@ -170,7 +171,7 @@ def collect_image_download_records_task():
         process_s3_log_file_task.delay(s3_log_object["Key"])
 
 
-@shared_task(soft_time_limit=600, time_limit=610)
+@shared_task(soft_time_limit=600, time_limit=630, max_retries=5, retry_backoff=True)
 def process_s3_log_file_task(s3_log_object_key: str):
     s3 = _s3_client()
 
@@ -209,7 +210,14 @@ def process_s3_log_file_task(s3_log_object_key: str):
                         )
                     )
 
-            ImageDownload.objects.bulk_create(image_downloads)
+            try:
+                ImageDownload.objects.bulk_create(image_downloads)
+            except IntegrityError as e:
+                # Ignore duplicate entries, this is necessary because another transaction can be
+                # committed between the time of the earlier check and now.
+                # See https://www.postgresql.org/docs/current/errcodes-appendix.html
+                if e.__cause__.pgcode != "23505":
+                    raise
 
     delete = s3.delete_object(
         Bucket=settings.CDN_LOG_BUCKET,
