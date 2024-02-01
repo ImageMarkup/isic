@@ -141,16 +141,27 @@ class CursorPagination(PaginationBase):
         return {
             "results": page,
             "count": total_count,
-            "next": self.next_link(
-                base_url, page, cursor, order, has_previous, limit, next_position, previous_position
-            )
-            if has_next
-            else None,
-            "previous": self.previous_link(
-                base_url, page, cursor, order, has_next, limit, next_position, previous_position
-            )
-            if has_previous
-            else None,
+            "next": (
+                self.next_link(
+                    base_url,
+                    page,
+                    cursor,
+                    order,
+                    has_previous,
+                    limit,
+                    next_position,
+                    previous_position,
+                )
+                if has_next
+                else None
+            ),
+            "previous": (
+                self.previous_link(
+                    base_url, page, cursor, order, has_next, limit, next_position, previous_position
+                )
+                if has_previous
+                else None
+            ),
         }
 
     def _encode_cursor(self, cursor: Cursor, base_url: str) -> str:

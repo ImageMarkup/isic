@@ -267,9 +267,9 @@ def study_responses_csv(request, pk):
     study: Study = get_object_or_404(Study, pk=pk)
     current_time = datetime.utcnow().strftime("%Y-%m-%d")
     response = HttpResponse(content_type="text/csv")
-    response[
-        "Content-Disposition"
-    ] = f'attachment; filename="{slugify(study.name)}_responses_{current_time}.csv"'
+    response["Content-Disposition"] = (
+        f'attachment; filename="{slugify(study.name)}_responses_{current_time}.csv"'
+    )
     study.write_responses_csv(response)
     return response
 

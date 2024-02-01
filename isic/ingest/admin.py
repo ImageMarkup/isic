@@ -126,9 +126,9 @@ class CohortAdmin(StaffReadonlyAdmin):
     def export_file_mapping(self, request, queryset):
         current_time = datetime.utcnow().strftime("%Y-%m-%d")
         response = HttpResponse(content_type="text/csv")
-        response[
-            "Content-Disposition"
-        ] = f'attachment; filename="cohort_file_mapping_{current_time}.csv"'
+        response["Content-Disposition"] = (
+            f'attachment; filename="cohort_file_mapping_{current_time}.csv"'
+        )
 
         writer = csv.DictWriter(response, ["contributor", "cohort", "filename", "isic_id"])
 

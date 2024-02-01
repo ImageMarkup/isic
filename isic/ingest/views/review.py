@@ -26,9 +26,11 @@ def _cohort_review_progress(cohort: Cohort) -> dict:
     return {
         "num_reviewed": counts["reviewed"],
         "num_reviewable": counts["reviewable"],
-        "percentage": 0
-        if counts["reviewable"] == 0
-        else math.floor(counts["reviewed"] / counts["reviewable"] * 100),
+        "percentage": (
+            0
+            if counts["reviewable"] == 0
+            else math.floor(counts["reviewed"] / counts["reviewable"] * 100)
+        ),
     }
 
 
