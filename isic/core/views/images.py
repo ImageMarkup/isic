@@ -155,8 +155,8 @@ def image_list_metadata_download(request: HttpRequest):
 
     current_time = datetime.utcnow().strftime("%Y-%m-%d")
     response = StreamingHttpResponse(csv_rows(Buffer()), content_type="text/csv")
-    response[
-        "Content-Disposition"
-    ] = f'attachment; filename="isic_accession_metadata_{current_time}.csv"'
+    response["Content-Disposition"] = (
+        f'attachment; filename="isic_accession_metadata_{current_time}.csv"'
+    )
 
     return response
