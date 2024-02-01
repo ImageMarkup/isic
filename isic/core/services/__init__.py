@@ -79,9 +79,11 @@ def full_image_metadata_csv_rows(*, qs: QuerySet[Image]) -> Iterable[dict]:
                 "attribution": image["accession__cohort__attribution"],
                 "copyright_license": image["accession__copyright_license"],
                 "public": image["public"],
-                "age_approx": Accession._age_approx(image["accession__metadata"]["age"])
-                if image["accession__metadata"].get("age")
-                else None,
+                "age_approx": (
+                    Accession._age_approx(image["accession__metadata"]["age"])
+                    if image["accession__metadata"].get("age")
+                    else None
+                ),
                 **image["accession__metadata"],
                 "private_lesion_id": image["accession__lesion__private_lesion_id"],
                 "lesion_id": image["accession__lesion_id"],

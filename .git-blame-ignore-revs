@@ -1,3 +1,5 @@
+# black formatting changes
+8567775b98187c7eba56b8e52dfd1ba1d46d9fe8
 # applied black formatting changes for 2023 style
 e107a5f18199575ba224c68f6f872a77f6b725e7
 # removed skip-string-normalization from black
