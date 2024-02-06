@@ -1,5 +1,6 @@
 from django.http.response import Http404
 from django.urls import path, register_converter
+from django.views.generic.base import TemplateView
 
 from isic.core.constants import ISIC_ID_REGEX, MONGO_ID_REGEX
 from isic.core.models.image import Image
@@ -52,6 +53,10 @@ class ImageIdentifierConverter:
 register_converter(ImageIdentifierConverter, "image-identifier")
 
 urlpatterns = [
+    path(
+        "robots.txt",
+        TemplateView.as_view(template_name="core/robots.txt", content_type="text/plain"),
+    ),
     path("staff/users/", staff_list, name="core/staff-list"),
     path(
         "images/",
