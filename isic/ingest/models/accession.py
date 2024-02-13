@@ -155,7 +155,7 @@ class Accession(CreationSortedTimeStampedModel):
         blank=True, max_length=24, help_text="The image_id from Girder.", db_index=True
     )
     zip_upload = models.ForeignKey(
-        ZipUpload, on_delete=models.CASCADE, null=True, related_name="accessions"
+        ZipUpload, on_delete=models.CASCADE, null=True, blank=True, related_name="accessions"
     )
     cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name="accessions")
 
@@ -174,25 +174,27 @@ class Accession(CreationSortedTimeStampedModel):
     # WHERE blob_name IN (...) queries
     blob_name = models.CharField(max_length=255, db_index=True, editable=False, blank=True)
     # blob_size/width/height are nullable unless status is succeeded
-    blob_size = models.PositiveBigIntegerField(null=True, default=None, editable=False)
-    width = models.PositiveIntegerField(null=True)
-    height = models.PositiveIntegerField(null=True)
+    blob_size = models.PositiveBigIntegerField(null=True, blank=True, default=None, editable=False)
+    width = models.PositiveIntegerField(null=True, blank=True)
+    height = models.PositiveIntegerField(null=True, blank=True)
 
     status = models.CharField(
         choices=AccessionStatus.choices, max_length=20, default=AccessionStatus.CREATING
     )
 
     thumbnail_256 = S3FileField(blank=True)
-    thumbnail_256_size = models.PositiveIntegerField(null=True, default=None, editable=False)
+    thumbnail_256_size = models.PositiveIntegerField(
+        null=True, blank=True, default=None, editable=False
+    )
 
-    metadata = models.JSONField(default=dict)
-    unstructured_metadata = models.JSONField(default=dict)
+    metadata = models.JSONField(default=dict, blank=True)
+    unstructured_metadata = models.JSONField(default=dict, blank=True)
 
     lesion = models.ForeignKey(
-        Lesion, on_delete=models.SET_NULL, null=True, related_name="accessions"
+        Lesion, on_delete=models.SET_NULL, null=True, blank=True, related_name="accessions"
     )
     patient = models.ForeignKey(
-        Patient, on_delete=models.SET_NULL, null=True, related_name="accessions"
+        Patient, on_delete=models.SET_NULL, null=True, blank=True, related_name="accessions"
     )
 
     objects = AccessionQuerySet.as_manager()
