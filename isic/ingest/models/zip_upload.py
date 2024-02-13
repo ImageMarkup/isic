@@ -101,6 +101,8 @@ class ZipUpload(CreationSortedTimeStampedModel):
                         accession = Accession.from_blob(zip_item)
                         accession.creator = self.creator
                         accession.cohort = self.cohort
+                        accession.copyright_license = accession.cohort.default_copyright_license
+                        accession.full_clean(validate_constraints=False)
                         self.accessions.add(accession, bulk=False)
 
                 self.accessions.update(status=AccessionStatus.CREATED)

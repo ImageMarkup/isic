@@ -8,6 +8,7 @@ from isic.ingest.models.cohort import Cohort
 from isic.ingest.tasks import accession_generate_blob_task
 
 
+# Note: this method isn't used when creating accessions as part of a zip extraction.
 def accession_create(
     *,
     creator: User,
@@ -26,7 +27,7 @@ def accession_create(
     if isinstance(original_blob, S3PlaceholderFile):
         original_blob = original_blob.name
 
-    accession = Accession.objects.create(
+    accession = Accession(
         creator=creator,
         cohort=cohort,
         copyright_license=cohort.default_copyright_license,
@@ -34,6 +35,8 @@ def accession_create(
         original_blob_name=original_blob_name,
         original_blob_size=original_blob_size,
     )
+    accession.full_clean(validate_constraints=False)
+    accession.save()
 
     accession_generate_blob_task.delay(accession.pk)
 
