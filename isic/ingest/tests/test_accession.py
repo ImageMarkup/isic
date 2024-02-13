@@ -43,6 +43,8 @@ def test_accession_without_zip_upload(user, jpg_blob, cohort):
     accession = Accession.from_blob(jpg_blob)
     accession.creator = user
     accession.cohort = cohort
+    accession.copyright_license = cohort.default_copyright_license
+    accession.full_clean(validate_constraints=False)
     accession.save()
 
 
@@ -99,6 +101,7 @@ def test_accession_upload_invalid_cohort(
 def test_accession_mutable_before_publish(user, accession_factory):
     accession = accession_factory(image=None)
     accession.update_metadata(user, {"foo": "bar"})
+    accession.full_clean(validate_constraints=False)
     accession.save()
 
 
