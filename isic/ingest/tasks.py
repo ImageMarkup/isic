@@ -95,7 +95,7 @@ def process_distinctness_measure_task(accession_pk: int):
     DistinctnessMeasure.objects.create(accession=accession, checksum=checksum)
 
 
-@shared_task(soft_time_limit=300, time_limit=360)
+@shared_task(soft_time_limit=3600 * 2, time_limit=(3600 * 2) + 60)
 def validate_metadata_task(metadata_file_pk: int):
     metadata_file = MetadataFile.objects.select_related("cohort").get(pk=metadata_file_pk)
 
@@ -144,7 +144,7 @@ def validate_metadata_task(metadata_file_pk: int):
         raise
 
 
-@shared_task(soft_time_limit=3600, time_limit=3600 + 60)
+@shared_task(soft_time_limit=3600 * 6, time_limit=(3600 * 6) + 60)
 def update_metadata_task(user_pk: int, metadata_file_pk: int):
     metadata_file = MetadataFile.objects.get(pk=metadata_file_pk)
     user = User.objects.get(pk=user_pk)
