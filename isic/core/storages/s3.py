@@ -1,12 +1,20 @@
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
+from botocore.config import Config
 from django.utils.encoding import filepath_to_uri
 from storages.backends.s3 import S3Storage
 from storages.utils import clean_name
 
 
 class CacheableCloudFrontStorage(S3Storage):
+    def __init__(self, **settings):
+        super().__init__(**settings)
+
+        self.config = self.config.merge(
+            Config(connect_timeout=5, read_timeout=10, retries={"max_attempts": 5})
+        )
+
     @staticmethod
     def next_expiration_time(now=None):
         # returns a time > 6 days but <= 7.
