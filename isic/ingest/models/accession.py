@@ -197,6 +197,8 @@ class Accession(CreationSortedTimeStampedModel):
         Patient, on_delete=models.SET_NULL, null=True, blank=True, related_name="accessions"
     )
 
+    primary_biopsy = models.BooleanField(default=False, db_index=True)
+
     objects = AccessionQuerySet.as_manager()
 
     def __str__(self) -> str:
@@ -499,3 +501,15 @@ class Accession(CreationSortedTimeStampedModel):
                 self.save()
 
         return modified
+
+    def full_clean(self, *args, **kwargs):
+        if (
+            self.lesion
+            and self.primary_biopsy
+            and self.cohort.accessions.filter(lesion=self.lesion, primary_biopsy=True).exclude(
+                pk=self.pk
+            )
+        ):
+            raise ValidationError("Lesion already has a primary biopsy.")
+
+        return super().full_clean(*args, **kwargs)
