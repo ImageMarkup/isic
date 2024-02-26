@@ -9,6 +9,7 @@ from isic.ingest.tests.factories import (
     AccessionReviewFactory,
     CohortFactory,
     ContributorFactory,
+    LesionFactory,
     MetadataFileFactory,
     ZipUploadFactory,
 )
@@ -81,6 +82,7 @@ register(AccessionFactory)
 register(AccessionReviewFactory)
 register(CohortFactory)
 register(ContributorFactory)
+register(LesionFactory)
 register(MetadataFileFactory)
 register(ZipUploadFactory)
 
