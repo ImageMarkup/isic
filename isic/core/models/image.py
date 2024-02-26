@@ -198,7 +198,8 @@ class ImagePermissions:
         if user_obj.is_staff:
             return qs
         elif user_obj.is_authenticated:
-            # Note: permissions here must be also modified in build_elasticsearch_query
+            # Note: permissions here must be also modified in build_elasticsearch_query and
+            # LesionPermissions.view_lesion_list.
             return qs.filter(
                 Q(public=True)
                 | Q(accession__cohort__contributor__owners=user_obj)
