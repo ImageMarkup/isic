@@ -1,3 +1,4 @@
+from collections import defaultdict
 import itertools
 
 from django.contrib import messages
@@ -13,7 +14,7 @@ from django.urls.base import reverse
 from isic.core.permissions import needs_object_permission
 from isic.ingest.forms import MergeCohortForm
 from isic.ingest.models import Cohort
-from isic.ingest.models.accession import AccessionStatus
+from isic.ingest.models.accession import Accession, AccessionStatus
 from isic.ingest.models.contributor import Contributor
 from isic.ingest.services.cohort import cohort_merge, cohort_publish_initialize
 from isic.ingest.views import make_breadcrumbs
@@ -36,6 +37,13 @@ def cohort_counts(cohort: Cohort) -> dict[str, int]:
 def cohort_list(request):
     contributors = Contributor.objects.prefetch_related("cohorts").order_by("institution_name")
 
+    counts_by_cohort = Accession.objects.values("cohort_id").annotate(
+        lesion_count=Count("lesion", distinct=True),
+        patient_count=Count("patient", distinct=True),
+        accession_count=Count("pk"),
+    )
+    counts_by_cohort = {row["cohort_id"]: row for row in counts_by_cohort}
+
     rows = []
     for contributor in contributors.all():
         display_contributor = True
@@ -44,11 +52,7 @@ def cohort_list(request):
         ):
             display_attribution = True
             for cohort in cohorts:
-                aggregate_data = cohort.accessions.aggregate(
-                    lesion_count=Count("lesion", distinct=True),
-                    patient_count=Count("patient", distinct=True),
-                    accession_count=Count("pk"),
-                )
+                aggregate_data = counts_by_cohort.get(cohort.pk, defaultdict(int))
                 rows.append(
                     {
                         "contributor": contributor,

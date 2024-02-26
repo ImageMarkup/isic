@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, render
 
 from isic.core.permissions import needs_object_permission
 from isic.ingest.models import Cohort
-from isic.ingest.models.accession import AccessionStatus
+from isic.ingest.models.accession import Accession, AccessionStatus
 
 from . import make_breadcrumbs
 
@@ -39,11 +39,27 @@ def ingest_review(request):
     cohorts = Cohort.objects.select_related("contributor", "creator").order_by("-created")
     paginator = Paginator(cohorts, 10)
     cohorts_page = paginator.get_page(request.GET.get("page"))
+    unreviewed_counts = (
+        Accession.objects.filter(cohort__in=cohorts_page)
+        .values("cohort_id")
+        .annotate(
+            unreviewed_count=Count("id", filter=Q(review=None, status=AccessionStatus.SUCCEEDED))
+        )
+    )
+    unreviewed_counts = {row["cohort_id"]: row["unreviewed_count"] for row in unreviewed_counts}
+
+    for cohort in cohorts_page:
+        cohort.unreviewed_count = unreviewed_counts.get(cohort.pk, 0)
 
     return render(
         request,
         "ingest/ingest_review.html",
-        {"cohorts": cohorts_page, "num_cohorts": paginator.count, "paginator": paginator},
+        {
+            "cohorts": cohorts_page,
+            "num_cohorts": paginator.count,
+            "paginator": paginator,
+            "unreviewed_counts": unreviewed_counts,
+        },
     )
 
 
