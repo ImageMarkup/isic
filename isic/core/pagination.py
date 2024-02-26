@@ -74,7 +74,9 @@ class CursorPagination(PaginationBase):
 
     class Output(Schema):
         results: list[Any] = Field(description="The page of objects.")
-        count: int = Field(description="The total number of results across all pages.")
+        count: int | None = Field(
+            description="The total number of results across all pages. Only available on the first page."  # noqa: E501
+        )
         next: str | None = Field(description="URL of next page of results if there is one.")
         previous: str | None = Field(description="URL of previous page of results if there is one.")
 
@@ -92,7 +94,13 @@ class CursorPagination(PaginationBase):
             queryset = queryset.order_by(*self.default_ordering)
 
         order = queryset.query.order_by
-        total_count = queryset.count()
+
+        # only count the total number of results if a position is absent, usually indicating that
+        # we're on the first page. this improves performance for larger queries.
+        if pagination.cursor.position is None:
+            total_count = queryset.count()
+        else:
+            total_count = None
 
         base_url = request.build_absolute_uri()
         cursor = pagination.cursor
