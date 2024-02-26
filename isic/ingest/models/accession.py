@@ -128,6 +128,14 @@ class Accession(CreationSortedTimeStampedModel):
                 & ~Q(blob_name="")
                 | ~Q(status=AccessionStatus.SUCCEEDED),
             ),
+            CheckConstraint(
+                name="accession_concomitant_biopsy_diagnosis_confirm_type",
+                check=Q(
+                    concomitant_biopsy=True,
+                    metadata__diagnosis_confirm_type="histopathology",
+                )
+                | ~Q(concomitant_biopsy=True),
+            ),
             # identical lesion_id implies identical patient_id
             ExclusionConstraint(
                 name="accession_lesion_id_patient_id_exclusion",
@@ -197,7 +205,7 @@ class Accession(CreationSortedTimeStampedModel):
         Patient, on_delete=models.SET_NULL, null=True, blank=True, related_name="accessions"
     )
 
-    primary_biopsy = models.BooleanField(default=False, db_index=True)
+    concomitant_biopsy = models.BooleanField(default=False, db_index=True)
 
     objects = AccessionQuerySet.as_manager()
 
@@ -501,15 +509,3 @@ class Accession(CreationSortedTimeStampedModel):
                 self.save()
 
         return modified
-
-    def full_clean(self, *args, **kwargs):
-        if (
-            self.lesion
-            and self.primary_biopsy
-            and self.cohort.accessions.filter(lesion=self.lesion, primary_biopsy=True).exclude(
-                pk=self.pk
-            )
-        ):
-            raise ValidationError("Lesion already has a primary biopsy.")
-
-        return super().full_clean(*args, **kwargs)
