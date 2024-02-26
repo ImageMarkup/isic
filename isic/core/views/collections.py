@@ -34,10 +34,9 @@ def collection_list(request):
     collections = get_visible_objects(
         request.user,
         "core.view_collection",
-        Collection.objects.annotate(num_images=Count("images", distinct=True)).order_by(
-            "-pinned", "name"
-        ),
+        Collection.objects.order_by("-pinned", "name"),
     )
+
     if request.user.is_authenticated:
         counts = collections.aggregate(
             pinned=Count("pk", filter=Q(pinned=True)),
@@ -54,6 +53,19 @@ def collection_list(request):
     filter = CollectionFilter(request.GET, queryset=collections, user=request.user)
     paginator = Paginator(filter.qs, 25)
     page = paginator.get_page(request.GET.get("page"))
+
+    collection_counts = (
+        Collection.images.through.objects.filter(
+            collection_id__in=page.object_list.values_list("pk", flat=True)
+        )
+        .values("collection_id")
+        .annotate(num_images=Count("image_id"))
+    )
+
+    collection_counts = {c["collection_id"]: c["num_images"] for c in collection_counts}
+
+    for collection in page:
+        collection.num_images = collection_counts.get(collection.pk, 0)
 
     return render(
         request,
