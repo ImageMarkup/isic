@@ -1,8 +1,13 @@
 import random
 
+from django.contrib.auth.models import User
+from django.contrib.postgres.aggregates import BoolAnd
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
+from django.db.models.expressions import F
+from django.db.models.functions.comparison import Coalesce
+from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 
 from isic.core.constants import LESION_ID_REGEX
@@ -38,3 +43,49 @@ class Lesion(models.Model):
 
     def __str__(self):
         return f"{self.private_lesion_id}->{self.id}"
+
+
+class LesionPermissions:
+    model = Lesion
+    perms = ["view_lesion"]
+    filters = {"view_lesion": "view_lesion_list"}
+
+    @staticmethod
+    def view_lesion_list(user_obj: User, qs: QuerySet[Lesion] | None = None) -> QuerySet[Lesion]:
+        qs = qs if qs is not None else Lesion.objects.all()
+
+        if user_obj.is_staff:
+            return qs
+        elif user_obj.is_authenticated:
+            return qs.filter(
+                id__in=Lesion.objects.values("id")
+                # if an image doesn't have shares it will return null which is skipped by BoolAnd.
+                # this can lead to a scenario where a lesion has a private image without shares but
+                # is still visible because bool_and(null, true) = true.
+                # coalesce it so that bool_and always has non-null values to work with.
+                .alias(user_share_id=Coalesce(F("accessions__image__shares"), -1))
+                .annotate(
+                    # note that these requirements are copied from ImagePermissions.view_image_list
+                    visible=BoolAnd(
+                        Q(accessions__image__public=True)
+                        | Q(cohort__contributor__owners=user_obj)
+                        | Q(user_share_id=user_obj.id)
+                    )
+                )
+                .filter(visible=True)
+                .values("id")
+            )
+        else:
+            return qs.filter(
+                id__in=Lesion.objects.values("id")
+                .annotate(visible=BoolAnd(Q(accessions__image__public=True)))
+                .filter(visible=True)
+                .values("id")
+            )
+
+    @staticmethod
+    def view_lesion(user_obj: User, obj: Lesion) -> bool:
+        return LesionPermissions.view_lesion_list(user_obj).contains(obj)
+
+
+Lesion.perms_class = LesionPermissions
