@@ -5,7 +5,7 @@ import factory.django
 
 from isic.core.models import CopyrightLicense
 from isic.factories import UserFactory
-from isic.ingest.models import Accession, Cohort, Contributor, MetadataFile, ZipUpload
+from isic.ingest.models import Accession, Cohort, Contributor, Lesion, MetadataFile, ZipUpload
 from isic.ingest.models.accession_review import AccessionReview
 
 from .csv_streams import csv_stream_without_filename_column
@@ -109,3 +109,12 @@ class AccessionReviewFactory(factory.django.DjangoModelFactory):
     accession = factory.SubFactory(AccessionFactory)
     reviewed_at = factory.Faker("date_time", tzinfo=factory.Faker("pytimezone"))
     value = factory.Faker("boolean")
+
+
+class LesionFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Lesion
+
+    id = factory.Sequence(lambda n: f"IL_{n:07}")
+    cohort = factory.SubFactory(CohortFactory)
+    private_lesion_id = factory.Faker("uuid4")
