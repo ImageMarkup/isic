@@ -19,6 +19,7 @@ from isic.ingest.api import (
     autocomplete_router,
     cohort_router,
     contributor_router,
+    lesion_router,
     metadata_file_router,
 )
 from isic.studies.api import annotation_router, study_router, study_task_router
@@ -42,6 +43,7 @@ api.add_router("/cohorts/", cohort_router, tags=["cohorts"])
 api.add_router("/collections/", collection_router, tags=["collections"])
 api.add_router("/contributors/", contributor_router, tags=["contributors"])
 api.add_router("/images/", image_router, tags=["images"])
+api.add_router("/lesions/", lesion_router, tags=["lesions"])
 api.add_router("/metadata-files/", metadata_file_router, tags=["metadata-files"])
 api.add_router("/quickfind/", quickfind_router, tags=["quickfind"])
 api.add_router("/studies/", study_router, tags=["studies"])

@@ -10,12 +10,45 @@ from pydantic import field_validator
 from s3_file_field.widgets import S3PlaceholderFile
 
 from isic.auth import is_authenticated, is_staff
+from isic.core.api.image import ImageOut
 from isic.core.pagination import CursorPagination
 from isic.core.permissions import get_visible_objects
-from isic.ingest.models import Accession, Cohort, Contributor, MetadataFile
+from isic.ingest.models import Accession, Cohort, Contributor, Lesion, MetadataFile
 from isic.ingest.services.accession import accession_create
 from isic.ingest.services.accession.review import accession_review_bulk_create
 from isic.ingest.tasks import update_metadata_task
+
+lesion_router = Router()
+
+
+class LesionOut(ModelSchema):
+    class Meta:
+        model = Lesion
+        fields = ["id"]
+
+    images: list[ImageOut]
+
+    @staticmethod
+    def resolve_images(obj: Lesion) -> list[ImageOut]:
+        return [accession.image for accession in obj.accessions.all() if accession.published]
+
+
+@lesion_router.get(
+    "/", response=list[LesionOut], summary="Return a list of lesions.", include_in_schema=False
+)
+@paginate(CursorPagination)
+def lesion_list(request: HttpRequest):
+    # ordering is necessary for the paginator
+    return get_visible_objects(
+        request.user,
+        "ingest.view_lesion",
+        Lesion.objects.alias(c=Count("accessions__image"))
+        .prefetch_related("accessions__image")
+        .prefetch_related("accessions__cohort")
+        .filter(c__gt=0)
+        .order_by("id"),
+    )
+
 
 accession_router = Router()
 
