@@ -26,6 +26,7 @@ class LesionOut(ModelSchema):
         model = Lesion
         fields = ["id"]
 
+    diagnosis: str | None
     images: list[ImageOut]
 
     @staticmethod
@@ -34,7 +35,10 @@ class LesionOut(ModelSchema):
 
 
 @lesion_router.get(
-    "/", response=list[LesionOut], summary="Return a list of lesions.", include_in_schema=False
+    "/",
+    response=list[LesionOut],
+    summary="Return a list of lesions with diagnoses.",
+    include_in_schema=False,
 )
 @paginate(CursorPagination)
 def lesion_list(request: HttpRequest):
@@ -42,10 +46,8 @@ def lesion_list(request: HttpRequest):
     return get_visible_objects(
         request.user,
         "ingest.view_lesion",
-        Lesion.objects.alias(c=Count("accessions__image"))
-        .prefetch_related("accessions__image")
-        .prefetch_related("accessions__cohort")
-        .filter(c__gt=0)
+        Lesion.objects.with_diagnosis()
+        .prefetch_related("accessions__image", "accessions__cohort")
         .order_by("id"),
     )
 
