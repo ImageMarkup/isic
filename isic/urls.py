@@ -22,6 +22,7 @@ from isic.ingest.api import (
     lesion_router,
     metadata_file_router,
 )
+from isic.stats.api import stats_router
 from isic.studies.api import annotation_router, study_router, study_task_router
 from isic.zip_download.api import zip_router
 
@@ -46,6 +47,7 @@ api.add_router("/images/", image_router, tags=["images"])
 api.add_router("/lesions/", lesion_router, tags=["lesions"])
 api.add_router("/metadata-files/", metadata_file_router, tags=["metadata-files"])
 api.add_router("/quickfind/", quickfind_router, tags=["quickfind"])
+api.add_router("/stats/", stats_router, tags=["stats"])
 api.add_router("/studies/", study_router, tags=["studies"])
 api.add_router("/study-tasks/", study_task_router, tags=["study-tasks"])
 api.add_router("/users/", user_router, tags=["users"])

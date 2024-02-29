@@ -40,7 +40,7 @@
     <canvas id="canvas" width="1200" height="400"></canvas>
   </div>
 
-  {{ sessions_last_30_days_per_country|json_script:"country_data" }}
+  {{ 30_day_sessions_per_country|json_script:"country_data" }}
 
   <script type="text/javascript">
     const country_values = JSON.parse(document.getElementById("country_data").textContent);
