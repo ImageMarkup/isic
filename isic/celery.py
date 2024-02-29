@@ -1,8 +1,13 @@
 import os
 
 from celery import Celery, Task
+import celery.app.trace
 import configurations.importer
 from django.db import transaction
+
+celery.app.trace.LOG_RECEIVED = """\
+Task %(name)s[%(id)s] received: (%(args)s, %(kwargs)s)\
+"""
 
 os.environ["DJANGO_SETTINGS_MODULE"] = "isic.settings"
 if not os.environ.get("DJANGO_CONFIGURATION"):
