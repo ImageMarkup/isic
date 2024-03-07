@@ -19,7 +19,7 @@
       code in templates e.g. request.POST.autocomplete_for_$fieldname
       {% endcomment %}
       {{ form.cohort.label }}
-      <div x-data="autocompleteInput('{% url 'api:cohort_autocomplete' %}', '{{ form.cohort.html_name }}', '{{ request.POST.autocomplete_cohort }}')">
+      <div x-data="autocompleteInput('{% url 'api:cohort_autocomplete' %}', '{{ form.cohort.html_name }}', '{% if request.POST.autocomplete_cohort %}{{ request.POST.autocomplete_cohort }}{% endif %}')">
         <input name="autocomplete_cohort" class="input input-sm input-bordered input-primary w-full max-w-xs" x-model="input_value" @input_value.debounce.250ms="fetchResults" />
 
         {% include 'ingest/partials/merge_cohort_preview.html' %}
@@ -32,7 +32,7 @@
         The attributes from this Cohort will be merged into the base Cohort.
         All accessions from this Cohort will be added to the base Cohort.
       </div>
-      <div x-data="autocompleteInput('{% url 'api:cohort_autocomplete' %}', '{{ form.cohort_to_merge.html_name }}', '{{ request.POST.autocomplete_cohort_to_merge }}')">
+      <div x-data="autocompleteInput('{% url 'api:cohort_autocomplete' %}', '{{ form.cohort_to_merge.html_name }}', '{% if request.POST.autocomplete_cohort_to_merge %}{{ request.POST.autocomplete_cohort_to_merge }}{% endif %}')">
         <input name="autocomplete_cohort_to_merge" class="input input-sm input-bordered input-primary w-full max-w-xs" x-model="input_value" @input_value.debounce.250ms="fetchResults" />
 
         {% include 'ingest/partials/merge_cohort_preview.html' %}

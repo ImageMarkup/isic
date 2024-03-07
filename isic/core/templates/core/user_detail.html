@@ -22,7 +22,11 @@
         <tr>
           <th>{{ user.pk }}</th>
           <td>{% localtime user.date_joined %}</td>
-          <td>{% localtime user.last_login %}</td>
+          {% if user.last_login %}
+            <td>{% localtime user.last_login %}</td>
+          {% else %}
+            <td>Never</td>
+          {% endif %}
           <td>{{ user.is_staff }}</td>
           <td>{{ email_addresses|join:"<br />" }}</td>
         </tr>
