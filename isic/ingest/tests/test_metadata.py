@@ -102,7 +102,7 @@ def test_apply_metadata(accession_factory, valid_metadatafile, cohort, user):
     update_metadata_task(user.pk, valid_metadatafile.pk)
     accession.refresh_from_db()
     assert accession.metadata == {"benign_malignant": "benign"}
-    assert accession.unstructured_metadata == {"foo": "bar"}
+    assert accession.unstructured_metadata.value == {"foo": "bar"}
     assert accession.metadata_versions.count() == 1
     version = accession.metadata_versions.first()
     assert version.metadata == {"benign_malignant": "benign"}
@@ -347,14 +347,14 @@ def test_accession_metadata_versions(user, accession):
 def test_accession_metadata_versions_remove(user, imageless_accession):
     imageless_accession.update_metadata(user, {"foo": "bar", "baz": "qux"})
     imageless_accession.remove_unstructured_metadata(user, ["nonexistent"])
-    assert imageless_accession.unstructured_metadata == {"foo": "bar", "baz": "qux"}
+    assert imageless_accession.unstructured_metadata.value == {"foo": "bar", "baz": "qux"}
     assert imageless_accession.metadata_versions.count() == 1
 
 
 @pytest.mark.django_db
 def test_accession_update_metadata(user, imageless_accession):
     imageless_accession.update_metadata(user, {"sex": "male", "foo": "bar", "baz": "qux"})
-    assert imageless_accession.unstructured_metadata == {"foo": "bar", "baz": "qux"}
+    assert imageless_accession.unstructured_metadata.value == {"foo": "bar", "baz": "qux"}
     assert imageless_accession.metadata == {"sex": "male"}
     assert imageless_accession.metadata_versions.count() == 1
 
@@ -365,7 +365,7 @@ def test_accession_update_metadata_idempotent(user, imageless_accession):
     imageless_accession.update_metadata(user, {"sex": "male", "foo": "bar", "baz": "qux"})
     # test the case where meta/unstructured are different, but updating wouldn't change anything
     imageless_accession.update_metadata(user, {})
-    assert imageless_accession.unstructured_metadata == {"foo": "bar", "baz": "qux"}
+    assert imageless_accession.unstructured_metadata.value == {"foo": "bar", "baz": "qux"}
     assert imageless_accession.metadata == {"sex": "male"}
     assert imageless_accession.metadata_versions.count() == 1
 
@@ -374,7 +374,7 @@ def test_accession_update_metadata_idempotent(user, imageless_accession):
 def test_accession_remove_unstructured_metadata(user, imageless_accession):
     imageless_accession.update_metadata(user, {"foo": "bar", "baz": "qux"})
     imageless_accession.remove_unstructured_metadata(user, ["foo"])
-    assert imageless_accession.unstructured_metadata == {"baz": "qux"}
+    assert imageless_accession.unstructured_metadata.value == {"baz": "qux"}
     assert imageless_accession.metadata_versions.count() == 2
 
 
@@ -404,7 +404,7 @@ def test_accession_remove_unstructured_metadata_idempotent(user, imageless_acces
     imageless_accession.update_metadata(user, {"foo": "bar", "baz": "qux"})
     imageless_accession.remove_unstructured_metadata(user, ["foo"])
     imageless_accession.remove_unstructured_metadata(user, ["foo"])
-    assert imageless_accession.unstructured_metadata == {"baz": "qux"}
+    assert imageless_accession.unstructured_metadata.value == {"baz": "qux"}
     assert imageless_accession.metadata_versions.count() == 2
 
 

@@ -7,6 +7,7 @@ from .lesion import Lesion
 from .metadata_file import MetadataFile
 from .metadata_version import MetadataVersion
 from .patient import Patient
+from .unstructured_metadata import UnstructuredMetadata
 from .zip_upload import ZipUpload
 
 __all__ = [
@@ -20,5 +21,6 @@ __all__ = [
     "MetadataFile",
     "MetadataVersion",
     "Patient",
+    "UnstructuredMetadata",
     "ZipUpload",
 ]
