@@ -72,7 +72,10 @@ def cohort_review(request, cohort_pk):
         return _cohort_review_grouped_by_lesion(request, cohort)
 
     paginator = Paginator(
-        cohort.accessions.unreviewed().order_by("original_blob_name"), REVIEW_PER_PAGE
+        cohort.accessions.select_related("unstructured_metadata")
+        .unreviewed()
+        .order_by("original_blob_name"),
+        REVIEW_PER_PAGE,
     )
     page = paginator.get_page(request.GET.get("page"))
 
@@ -90,7 +93,8 @@ def cohort_review(request, cohort_pk):
 
 def _cohort_review_grouped_by_lesion(request, cohort: Cohort):
     lesions_with_unreviewed_accessions = (
-        cohort.accessions.unreviewed()
+        cohort.accessions.select_related("unstructured_metadata")
+        .unreviewed()
         .values("lesion_id")
         .alias(num_unreviewed_accessions=Count(1, filter=Q(review=None)))
         .filter(num_unreviewed_accessions__gt=0)

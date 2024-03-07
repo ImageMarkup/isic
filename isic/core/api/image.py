@@ -18,11 +18,7 @@ from isic.core.serializers import SearchQueryIn
 
 router = Router()
 
-default_qs = (
-    Image.objects.select_related("accession__cohort")
-    .defer("accession__unstructured_metadata")
-    .distinct()
-)
+default_qs = Image.objects.select_related("accession__cohort").distinct()
 
 
 class ImageSearchParseError(Exception):

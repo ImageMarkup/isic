@@ -196,7 +196,6 @@ class Accession(CreationSortedTimeStampedModel):
     )
 
     metadata = models.JSONField(default=dict, blank=True)
-    unstructured_metadata = models.JSONField(default=dict, blank=True)
 
     lesion = models.ForeignKey(
         Lesion, on_delete=models.SET_NULL, null=True, blank=True, related_name="accessions"
@@ -411,10 +410,10 @@ class Accession(CreationSortedTimeStampedModel):
             # update unstructured metadata
             if (
                 parsed_metadata.unstructured
-                and self.unstructured_metadata != parsed_metadata.unstructured
+                and self.unstructured_metadata.value != parsed_metadata.unstructured
             ):
                 modified = True
-                self.unstructured_metadata.update(parsed_metadata.unstructured)
+                self.unstructured_metadata.value.update(parsed_metadata.unstructured)
 
             # update structured metadata
             new_metadata = parsed_metadata.model_dump(
@@ -445,7 +444,7 @@ class Accession(CreationSortedTimeStampedModel):
                 self.metadata_versions.create(
                     creator=user,
                     metadata=self.metadata,
-                    unstructured_metadata=self.unstructured_metadata,
+                    unstructured_metadata=self.unstructured_metadata.value,
                     lesion=(
                         {"internal": self.lesion.private_lesion_id, "external": self.lesion_id}
                         if hasattr(self, "lesion") and self.lesion
@@ -460,6 +459,7 @@ class Accession(CreationSortedTimeStampedModel):
                         else {}
                     ),
                 )
+                self.unstructured_metadata.save()
                 self.save()
 
         return modified
@@ -486,7 +486,7 @@ class Accession(CreationSortedTimeStampedModel):
                 self.metadata_versions.create(
                     creator=user,
                     metadata=self.metadata,
-                    unstructured_metadata=self.unstructured_metadata,
+                    unstructured_metadata=self.unstructured_metadata.value,
                 )
                 self.save()
 
@@ -497,15 +497,24 @@ class Accession(CreationSortedTimeStampedModel):
         modified = False
         with transaction.atomic():
             for field in unstructured_metadata_fields:
-                if self.unstructured_metadata.pop(field, None) is not None:
+                if self.unstructured_metadata.value.pop(field, None) is not None:
                     modified = True
 
             if modified:
                 self.metadata_versions.create(
                     creator=user,
                     metadata=self.metadata,
-                    unstructured_metadata=self.unstructured_metadata,
+                    unstructured_metadata=self.unstructured_metadata.value,
                 )
-                self.save()
+                self.unstructured_metadata.save()
 
         return modified
+
+    def full_clean(self, *args, **kwargs):
+        if "unstructured_metadata" not in kwargs.get("exclude", {}).get(
+            "unstructured_metadata", []
+        ):
+            if not self.unstructured_metadata:
+                raise Exception("unstructured_metadata is required")
+
+        super().full_clean(*args, **kwargs)
