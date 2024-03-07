@@ -24,7 +24,12 @@ def test_core_image_detail(client_, image_, can_see):
 
 @pytest.fixture
 def detailed_image(
-    image_factory, user_factory, study_factory, study_task_factory, collection_factory
+    image_factory,
+    user_factory,
+    study_factory,
+    study_task_factory,
+    collection_factory,
+    reviewed_image_factory,
 ):
     user = user_factory()
 
@@ -38,13 +43,13 @@ def detailed_image(
     public_collection = collection_factory(public=True, pinned=True)
     private_study = study_factory(public=False)
     public_study = study_factory(public=True)
-    main_image: Image = image_factory(
+    main_image: Image = reviewed_image_factory()(
         public=True,
         accession__cohort__contributor__owners=[user],
     )
 
     # create an image w/ the same longitudinal information
-    secondary_image: Image = image_factory(
+    secondary_image: Image = reviewed_image_factory()(
         public=True,
         accession__cohort__contributor__owners=[user],
     )
