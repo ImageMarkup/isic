@@ -200,6 +200,10 @@ class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
     ZIP_DOWNLOAD_BASIC_AUTH_TOKEN = "insecuretestzipdownloadauthtoken"
     ZIP_DOWNLOAD_WILDCARD_URLS = False
 
+    @staticmethod
+    def mutate_configuration(configuration: ComposedConfiguration):
+        configuration.INSTALLED_APPS.append("django_fastdev")
+
 
 class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration):
     ISIC_DATACITE_DOI_PREFIX = "10.34970"

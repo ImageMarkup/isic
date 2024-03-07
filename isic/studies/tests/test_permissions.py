@@ -21,8 +21,10 @@ def private_study(study_factory, user_factory):
 
 
 @pytest.fixture
-def private_study_and_guest(private_study, user_factory):
-    return private_study, user_factory()
+def private_study_and_guest(private_study, user_factory, study_task_factory):
+    u = user_factory()
+    study_task_factory(annotator=user_factory(), study=private_study)
+    return private_study, u
 
 
 @pytest.fixture
@@ -33,7 +35,8 @@ def private_study_and_annotator(private_study, user_factory, study_task_factory)
 
 
 @pytest.fixture
-def private_study_and_owner(private_study):
+def private_study_and_owner(private_study, study_task_factory):
+    study_task_factory(annotator=private_study.owners.first(), study=private_study)
     return private_study, private_study.owners.first()
 
 
@@ -205,8 +208,11 @@ def test_study_view_responses_csv_public_permissions(client_, public_study):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("client_", [lazy_fixture("client"), lazy_fixture("authenticated_client")])
-def test_study_task_detail_preview_public(client_, public_study):
-    r = client_.get(reverse("study-task-detail-preview", args=[public_study.pk]))
+def test_study_task_detail_preview_public(client_, study_task_with_user):
+    study_task_with_user.study.public = True
+    study_task_with_user.study.save()
+
+    r = client_.get(reverse("study-task-detail-preview", args=[study_task_with_user.study.pk]))
     assert r.status_code == 200
 
 
