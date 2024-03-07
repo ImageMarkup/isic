@@ -48,7 +48,7 @@
 
         <div class="my-2 bg-gray-100 p-4">
             <pre x-show="selectedTab == 'Metadata'">{{ accession.metadata|formatted }}</pre>
-            <pre x-show="selectedTab == 'Unstructured Metadata'">{{ accession.unstructured_metadata|formatted }}</pre>
+            <pre x-show="selectedTab == 'Unstructured Metadata'">{{ accession.unstructured_metadata.value|formatted }}</pre>
         </div>
       </div>
 

@@ -5,6 +5,7 @@ from s3_file_field.widgets import S3PlaceholderFile
 
 from isic.ingest.models.accession import Accession
 from isic.ingest.models.cohort import Cohort
+from isic.ingest.models.unstructured_metadata import UnstructuredMetadata
 from isic.ingest.tasks import accession_generate_blob_task
 
 
@@ -35,6 +36,7 @@ def accession_create(
         original_blob_name=original_blob_name,
         original_blob_size=original_blob_size,
     )
+    UnstructuredMetadata(accession=accession)
     accession.full_clean(validate_constraints=False)
     accession.save()
 
