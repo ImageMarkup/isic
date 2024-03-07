@@ -109,7 +109,8 @@ def _cohort_review_grouped_by_lesion(request, cohort: Cohort):
     relevant_accessions = (
         # show accessions even if they've been reviewed or published, because there are *unreviewed*
         # accessions with this lesion id still. displaying the entire context is necessary.
-        cohort.accessions.ingested()
+        cohort.accessions.select_related("unstructured_metadata")
+        .ingested()
         .select_related("review")
         .filter(lesion_id__in=page)
         .order_by("metadata__acquisition_day")
