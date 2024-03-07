@@ -6,6 +6,7 @@ from django.urls.base import reverse
 import pytest
 
 from isic.ingest.models.accession import Accession
+from isic.ingest.models.unstructured_metadata import UnstructuredMetadata
 from isic.ingest.utils.zip import Blob
 
 data_dir = pathlib.Path(__file__).parent / "data"
@@ -44,6 +45,7 @@ def test_accession_without_zip_upload(user, jpg_blob, cohort):
     accession.creator = user
     accession.cohort = cohort
     accession.copyright_license = cohort.default_copyright_license
+    accession.unstructured_metadata = UnstructuredMetadata(accession=accession)
     accession.full_clean(validate_constraints=False)
     accession.save()
 

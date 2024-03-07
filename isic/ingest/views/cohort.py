@@ -77,7 +77,7 @@ def cohort_list(request):
 @staff_member_required
 def cohort_detail(request, pk):
     cohort = get_object_or_404(Cohort.objects.select_related("creator"), pk=pk)
-    paginator = Paginator(cohort.accessions.ingested(), 50)
+    paginator = Paginator(cohort.accessions.select_related("unstructured_metadata").ingested(), 50)
     accessions = paginator.get_page(request.GET.get("page"))
 
     return render(

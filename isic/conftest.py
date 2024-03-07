@@ -11,6 +11,7 @@ from isic.ingest.tests.factories import (
     ContributorFactory,
     LesionFactory,
     MetadataFileFactory,
+    UnstructuredMetadataFactory,
     ZipUploadFactory,
 )
 from isic.studies.tests.factories import (
@@ -84,6 +85,7 @@ register(CohortFactory)
 register(ContributorFactory)
 register(LesionFactory)
 register(MetadataFileFactory)
+register(UnstructuredMetadataFactory)
 register(ZipUploadFactory)
 
 # core factories

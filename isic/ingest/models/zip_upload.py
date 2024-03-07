@@ -75,6 +75,7 @@ class ZipUpload(CreationSortedTimeStampedModel):
 
     def extract(self):
         from .accession import Accession, AccessionStatus
+        from .unstructured_metadata import UnstructuredMetadata
 
         if self.status != ZipUpload.Status.CREATED:
             raise Exception("Can not extract zip %d with status %s", self.pk, self.status)
@@ -102,6 +103,7 @@ class ZipUpload(CreationSortedTimeStampedModel):
                         accession.creator = self.creator
                         accession.cohort = self.cohort
                         accession.copyright_license = accession.cohort.default_copyright_license
+                        accession.unstructured_metadata = UnstructuredMetadata(accession=accession)
                         accession.full_clean(validate_constraints=False)
                         self.accessions.add(accession, bulk=False)
 

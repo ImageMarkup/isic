@@ -34,7 +34,7 @@ def full_image_metadata_csv_headers(*, qs: QuerySet[Image]) -> list[str]:
     )
 
     used_unstructured_metadata_keys = list(
-        accession_qs.annotate(unstructured_metadata_keys=JsonKeys("unstructured_metadata"))
+        accession_qs.annotate(unstructured_metadata_keys=JsonKeys("unstructured_metadata__value"))
         .order_by()
         .values_list("unstructured_metadata_keys", flat=True)
         .distinct()
@@ -66,7 +66,7 @@ def full_image_metadata_csv_rows(*, qs: QuerySet[Image]) -> Iterable[dict]:
             "accession__lesion_id",
             "accession__patient__private_patient_id",
             "accession__patient_id",
-            "accession__unstructured_metadata",
+            "accession__unstructured_metadata__value",
         )
         .iterator()
     ):
@@ -91,7 +91,7 @@ def full_image_metadata_csv_rows(*, qs: QuerySet[Image]) -> Iterable[dict]:
                 "patient_id": image["accession__patient_id"],
                 **{
                     f"unstructured.{k}": v
-                    for k, v in image["accession__unstructured_metadata"].items()
+                    for k, v in image["accession__unstructured_metadata__value"].items()
                 },
             }
         }

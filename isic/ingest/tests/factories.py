@@ -5,7 +5,15 @@ import factory.django
 
 from isic.core.models import CopyrightLicense
 from isic.factories import UserFactory
-from isic.ingest.models import Accession, Cohort, Contributor, Lesion, MetadataFile, ZipUpload
+from isic.ingest.models import (
+    Accession,
+    Cohort,
+    Contributor,
+    Lesion,
+    MetadataFile,
+    UnstructuredMetadata,
+    ZipUpload,
+)
 from isic.ingest.models.accession_review import AccessionReview
 
 from .csv_streams import csv_stream_without_filename_column
@@ -72,6 +80,14 @@ class ZipUploadFactory(factory.django.DjangoModelFactory):
     blob_size = factory.SelfAttribute("blob.size")
 
 
+class UnstructuredMetadataFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = UnstructuredMetadata
+
+    accession = factory.SubFactory("isic.ingest.tests.factories.AccessionFactory")
+    value = factory.LazyFunction(lambda: {})
+
+
 class AccessionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Accession
@@ -96,6 +112,8 @@ class AccessionFactory(factory.django.DjangoModelFactory):
     copyright_license = factory.Faker(
         "random_element", elements=[e[0] for e in CopyrightLicense.choices]
     )
+
+    unstructured_metadata = factory.RelatedFactory(UnstructuredMetadataFactory, "accession")
 
     # Using "metadata = factory.Dict" breaks pytest-factoryboy; see
     # https://github.com/pytest-dev/pytest-factoryboy/issues/67
