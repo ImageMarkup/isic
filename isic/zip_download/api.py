@@ -21,7 +21,7 @@ import rsa
 
 from isic.core.models import CopyrightLicense, Image
 from isic.core.serializers import SearchQueryIn
-from isic.core.services import image_metadata_csv_headers, image_metadata_csv_rows
+from isic.core.services import image_metadata_csv
 
 logger = logging.getLogger(__name__)
 zip_router = Router()
@@ -168,10 +168,12 @@ def zip_file_metadata_file(request: HttpRequest):
     user, search = SearchQueryIn.from_token_representation(request.auth)
     qs = search.to_queryset(user, Image.objects.select_related("accession__cohort").distinct())
     response = HttpResponse(content_type="text/csv")
-    writer = csv.DictWriter(response, image_metadata_csv_headers(qs=qs))
+
+    metadata_file = image_metadata_csv(qs=qs)
+    writer = csv.DictWriter(response, next(metadata_file))
     writer.writeheader()
 
-    for metadata_row in image_metadata_csv_rows(qs=qs):
+    for metadata_row in metadata_file:
         writer.writerow(metadata_row)
 
     return response

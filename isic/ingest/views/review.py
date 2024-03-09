@@ -113,7 +113,7 @@ def _cohort_review_grouped_by_lesion(request, cohort: Cohort):
         .ingested()
         .select_related("review")
         .filter(lesion_id__in=page)
-        .order_by("metadata__acquisition_day")
+        .order_by("acquisition_day")
     )
     for accession in relevant_accessions:
         grouped_accessions[accession.lesion_id].append(accession)
