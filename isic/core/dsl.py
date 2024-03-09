@@ -61,9 +61,9 @@ class StrValue(Value):
         # Special casing for image type renaming, see
         # https://linear.app/isic/issue/ISIC-138#comment-93029f64
         # TODO: Remove this once better error messages are put in place.
-        if key.field_lookup == "accession__metadata__image_type" and self.value == "clinical":
+        if key.field_lookup == "accession__image_type" and self.value == "clinical":
             self.value = "clinical: close-up"
-        elif key.field_lookup == "accession__metadata__image_type" and self.value == "overview":
+        elif key.field_lookup == "accession__image_type" and self.value == "overview":
             self.value = "clinical: overview"
 
         # so asterisk is any present value
@@ -268,11 +268,11 @@ def convert_term(s, loc, toks):
     elif toks[0] == "patient_id":
         return SearchTermKey("accession__patient__id", negate)
     elif toks[0] == "age_approx":
-        return SearchTermKey("accession__metadata__age__approx", negate)
+        return SearchTermKey("accession__age__approx", negate)
     elif toks[0] == "copyright_license":
         return SearchTermKey("accession__copyright_license", negate)
     else:
-        return SearchTermKey(f"accession__metadata__{toks[0]}", negate)
+        return SearchTermKey(f"accession__{toks[0]}", negate)
 
 
 def es_convert_term(s, loc, toks):

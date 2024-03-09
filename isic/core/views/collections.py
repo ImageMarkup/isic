@@ -18,7 +18,7 @@ from isic.core.forms.collection import CollectionForm
 from isic.core.models import Collection
 from isic.core.models.base import CopyrightLicense
 from isic.core.permissions import get_visible_objects, needs_object_permission
-from isic.core.services import image_metadata_csv_headers, image_metadata_csv_rows
+from isic.core.services import image_metadata_csv
 from isic.core.services.collection import collection_create, collection_update
 from isic.core.services.collection.doi import (
     collection_build_doi_preview,
@@ -129,10 +129,11 @@ def collection_download_metadata(request, pk):
         f'attachment; filename="{slugify(collection.name)}_metadata_{current_time}.csv"'
     )
 
-    writer = csv.DictWriter(response, image_metadata_csv_headers(qs=qs))
+    collection_metadata = image_metadata_csv(qs=qs)
+    writer = csv.DictWriter(response, next(collection_metadata))
     writer.writeheader()
 
-    for metadata_row in image_metadata_csv_rows(qs=qs):
+    for metadata_row in collection_metadata:
         writer.writerow(metadata_row)
 
     return response

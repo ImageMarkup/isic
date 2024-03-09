@@ -18,8 +18,8 @@ def private_searchable_image(image_factory, search_index):
 @pytest.fixture
 def searchable_images(image_factory, search_index):
     images = [
-        image_factory(public=True, accession__metadata={"diagnosis": "melanoma"}),
-        image_factory(public=False, accession__metadata={"diagnosis": "nevus"}),
+        image_factory(public=True, accession__diagnosis="melanoma"),
+        image_factory(public=False, accession__diagnosis="nevus"),
     ]
     for image in images:
         add_to_search_index(image)
@@ -32,7 +32,7 @@ def searchable_images(image_factory, search_index):
 
 @pytest.fixture
 def searchable_image_with_private_field(image_factory, search_index):
-    image = image_factory(public=True, accession__metadata={"age": 50})
+    image = image_factory(public=True, accession__age=50)
     add_to_search_index(image)
 
     # Ensure that the images are available in the index for search
@@ -44,9 +44,9 @@ def searchable_image_with_private_field(image_factory, search_index):
 @pytest.fixture
 def private_and_public_images_collections(search_index, image_factory, collection_factory):
     public_coll, private_coll = collection_factory(public=True), collection_factory(public=False)
-    public_image, private_image = image_factory(
-        public=True, accession__metadata={"age": 10}
-    ), image_factory(public=False)
+    public_image, private_image = image_factory(public=True, accession__age=10), image_factory(
+        public=False
+    )
 
     public_coll.images.add(public_image)
     private_coll.images.add(private_image)
@@ -62,7 +62,7 @@ def private_and_public_images_collections(search_index, image_factory, collectio
 @pytest.fixture
 def collection_with_image(search_index, image_factory, collection_factory):
     public_coll = collection_factory(public=True)
-    public_image = image_factory(public=True, accession__metadata={"age": 52})
+    public_image = image_factory(public=True, accession__age=52)
     public_coll.images.add(public_image)
     add_to_search_index(public_image)
     get_elasticsearch_client().indices.refresh(index="_all")
