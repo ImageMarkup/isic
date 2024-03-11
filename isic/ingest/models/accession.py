@@ -205,16 +205,15 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
 
     # the original blob is stored in case blobs need to be reprocessed
     original_blob = S3FileField(unique=True)
-    # the original blob name is stored and kept private in case of leaked data in filenames
+    # the original blob name is stored and kept private in case of leaked data in filenames.
+    # it's indexed because metadata selection does large WHERE original_blob_name IN (...) queries
     original_blob_name = models.CharField(max_length=255, db_index=True, editable=False)
     original_blob_size = models.PositiveBigIntegerField(editable=False)
 
     # When instantiated, blob is empty, as it holds the EXIF-stripped image
     # this isn't unique because of the blank case, see constraints above.
     blob = S3FileField(blank=True)
-    # blob_name has to be indexed because metadata selection does large
-    # WHERE blob_name IN (...) queries
-    blob_name = models.CharField(max_length=255, db_index=True, editable=False, blank=True)
+    blob_name = models.CharField(max_length=255, editable=False, blank=True)
     # blob_size/width/height are nullable unless status is succeeded
     blob_size = models.PositiveBigIntegerField(null=True, blank=True, default=None, editable=False)
     width = models.PositiveIntegerField(null=True, blank=True)
