@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models.constraints import CheckConstraint
+from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.expressions import F
 from django.db.models.query_utils import Q
 from django_extensions.db.fields import CreationDateTimeField
@@ -30,11 +30,12 @@ class ImageDownload(models.Model):
             CheckConstraint(
                 name="download_occurred_before_tracking", check=Q(download_time__lt=F("created"))
             ),
+            UniqueConstraint(name="unique_request_id", fields=["request_id"]),
         ]
 
     created = CreationDateTimeField()
     download_time = models.DateTimeField()
     ip_address = models.GenericIPAddressField()
     user_agent = models.CharField(null=True, max_length=400)
-    request_id = models.CharField(unique=True, max_length=200)
+    request_id = models.CharField(max_length=200)
     image = models.ForeignKey(Image, on_delete=models.PROTECT, related_name="downloads")
