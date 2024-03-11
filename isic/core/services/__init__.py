@@ -1,6 +1,7 @@
-from collections.abc import Iterable, Iterator
+from typing import Generator
 
 from django.db.models import Func
+from django.db.models.aggregates import Count
 from django.db.models.query import QuerySet
 
 from isic.core.models.image import Image
@@ -11,7 +12,17 @@ class JsonKeys(Func):
     function = "jsonb_object_keys"
 
 
-def full_image_metadata_csv_headers(*, qs: QuerySet[Image]) -> list[str]:
+def staff_image_metadata_csv(
+    *, qs: QuerySet[Image]
+) -> Generator[list[str] | dict[str, str | bool | float], None, None]:
+    """
+    Generate a CSV of image metadata for staff users.
+
+    This includes all metadata, including sensitive metadata, and private patient and lesion ids.
+    It also includes cohort and attribution info, and the original filename.
+
+    The first value yielded is the header row, and subsequent values are the rows of the CSV.
+    """
     headers = [
         "original_filename",
         "isic_id",
@@ -26,12 +37,8 @@ def full_image_metadata_csv_headers(*, qs: QuerySet[Image]) -> list[str]:
 
     # depending on which queryset is passed in, the set of headers is different.
     # get the superset of headers for this particular queryset.
-    used_metadata_keys = list(
-        accession_qs.annotate(metadata_keys=JsonKeys("metadata"))
-        .order_by()
-        .values_list("metadata_keys", flat=True)
-        .distinct()
-    )
+    counts = accession_qs.aggregate(**{k: Count(k) for k in Accession.metadata_keys()})
+    used_metadata_keys = [k for k, v in counts.items() if v > 0]
 
     used_unstructured_metadata_keys = list(
         accession_qs.annotate(unstructured_metadata_keys=JsonKeys("unstructured_metadata__value"))
@@ -40,15 +47,13 @@ def full_image_metadata_csv_headers(*, qs: QuerySet[Image]) -> list[str]:
         .distinct()
     )
 
-    return (
+    yield (
         headers
         + sorted(used_metadata_keys)
         + ["private_lesion_id", "lesion_id", "private_patient_id", "patient_id"]
         + sorted([f"unstructured.{key}" for key in used_unstructured_metadata_keys])
     )
 
-
-def full_image_metadata_csv_rows(*, qs: QuerySet[Image]) -> Iterable[dict]:
     # Note this uses .values because populating django ORM objects is very slow, and doing this on
     # large querysets can add ~5s per 100k images to the request time.
     for image in (
@@ -61,7 +66,7 @@ def full_image_metadata_csv_rows(*, qs: QuerySet[Image]) -> Iterable[dict]:
             "accession__cohort__attribution",
             "accession__copyright_license",
             "public",
-            "accession__metadata",
+            *[f"accession__{key}" for key in used_metadata_keys],
             "accession__lesion__private_lesion_id",
             "accession__lesion_id",
             "accession__patient__private_patient_id",
@@ -80,11 +85,15 @@ def full_image_metadata_csv_rows(*, qs: QuerySet[Image]) -> Iterable[dict]:
                 "copyright_license": image["accession__copyright_license"],
                 "public": image["public"],
                 "age_approx": (
-                    Accession._age_approx(image["accession__metadata"]["age"])
-                    if image["accession__metadata"].get("age")
+                    Accession._age_approx(image["accession__age"])
+                    if image.get("accession__age")
                     else None
                 ),
-                **image["accession__metadata"],
+                **{
+                    k.replace("accession__", ""): v
+                    for k, v in image.items()
+                    if k.replace("accession__", "") in Accession.metadata_keys()
+                },
                 "private_lesion_id": image["accession__lesion__private_lesion_id"],
                 "lesion_id": image["accession__lesion_id"],
                 "private_patient_id": image["accession__patient__private_patient_id"],
@@ -97,19 +106,22 @@ def full_image_metadata_csv_rows(*, qs: QuerySet[Image]) -> Iterable[dict]:
         }
 
 
-def image_metadata_csv_headers(*, qs: QuerySet[Image]) -> list[str]:
+def image_metadata_csv(
+    *, qs: QuerySet[Image]
+) -> Generator[list[str] | dict[str, str | bool | float], None, None]:
+    """
+    Generate a CSV of image metadata for non-staff users.
+
+    The first value yielded is the header row, and subsequent values are the rows of the CSV.
+    """
     headers = ["isic_id", "attribution", "copyright_license"]
 
     accession_qs = Accession.objects.filter(image__in=qs)
 
     # depending on which queryset is passed in, the set of headers is different.
     # get the superset of headers for this particular queryset.
-    used_metadata_keys = list(
-        accession_qs.annotate(metadata_keys=JsonKeys("metadata"))
-        .order_by()
-        .values_list("metadata_keys", flat=True)
-        .distinct()
-    )
+    counts = accession_qs.aggregate(**{k: Count(k) for k in Accession.metadata_keys()})
+    used_metadata_keys = [k for k, v in counts.items() if v > 0]
 
     if accession_qs.exclude(lesion=None).exists():
         used_metadata_keys.append("lesion_id")
@@ -123,10 +135,8 @@ def image_metadata_csv_headers(*, qs: QuerySet[Image]) -> list[str]:
         used_metadata_keys.append("age_approx")
         used_metadata_keys.remove("age")
 
-    return headers + sorted(used_metadata_keys)
+    yield headers + sorted(used_metadata_keys)
 
-
-def image_metadata_csv_rows(*, qs: QuerySet[Image]) -> Iterator[dict]:
     # Note this uses .values because populating django ORM objects is very slow, and doing this on
     # large querysets can add ~5s per 100k images to the request time.
     for image in (
@@ -135,29 +145,34 @@ def image_metadata_csv_rows(*, qs: QuerySet[Image]) -> Iterator[dict]:
             "isic_id",
             "accession__cohort__attribution",
             "accession__copyright_license",
-            "accession__metadata",
+            *[f"accession__{key}" for key in Accession.metadata_keys()],
             "accession__lesion_id",
             "accession__patient_id",
         )
         .iterator()
     ):
-        if "age" in image["accession__metadata"]:
-            image["accession__metadata"]["age_approx"] = Accession._age_approx(
-                image["accession__metadata"]["age"]
-            )
-            del image["accession__metadata"]["age"]
+        if image["accession__age"]:
+            image["age_approx"] = Accession._age_approx(image["accession__age"])
+            del image["accession__age"]
 
         if image["accession__lesion_id"]:
-            image["accession__metadata"]["lesion_id"] = image["accession__lesion_id"]
+            image["lesion_id"] = image["accession__lesion_id"]
+            del image["accession__lesion_id"]
 
         if image["accession__patient_id"]:
-            image["accession__metadata"]["patient_id"] = image["accession__patient_id"]
+            image["patient_id"] = image["accession__patient_id"]
+            del image["accession__patient_id"]
 
         yield {
             **{
                 "isic_id": image["isic_id"],
                 "attribution": image["accession__cohort__attribution"],
                 "copyright_license": image["accession__copyright_license"],
-                **image["accession__metadata"],
+                **{
+                    k: v
+                    for k, v in image.items()
+                    if k in Accession.metadata_keys()
+                    or k in ["age_approx", "lesion_id", "patient_id"]
+                },
             }
         }

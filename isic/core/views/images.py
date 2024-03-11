@@ -15,7 +15,7 @@ from django.shortcuts import get_object_or_404, render
 from isic.core.forms.search import ImageSearchForm
 from isic.core.models import Collection, Image
 from isic.core.permissions import get_visible_objects, needs_object_permission
-from isic.core.services import full_image_metadata_csv_headers, full_image_metadata_csv_rows
+from isic.core.services import staff_image_metadata_csv
 from isic.studies.models import Study
 
 
@@ -148,11 +148,11 @@ def image_list_metadata_download(request: HttpRequest):
             cursor.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
 
             qs = Image.objects.all()
-            headers = full_image_metadata_csv_headers(qs=qs)
-            writer = csv.DictWriter(buffer, headers)
+            image_csv = staff_image_metadata_csv(qs=qs)
+            writer = csv.DictWriter(buffer, next(image_csv))
             yield writer.writeheader()
 
-            for metadata_row in full_image_metadata_csv_rows(qs=qs):
+            for metadata_row in image_csv:
                 yield writer.writerow(metadata_row)
 
     current_time = datetime.utcnow().strftime("%Y-%m-%d")
