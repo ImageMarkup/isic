@@ -2,10 +2,10 @@ from django.db import models
 from django.db.models.constraints import CheckConstraint
 from django.db.models.expressions import F
 from django.db.models.query_utils import Q
+from django_extensions.db.fields import CreationDateTimeField
 from django_extensions.db.models import TimeStampedModel
 
 from isic.core.models import Image
-from isic.core.models.base import CreationSortedTimeStampedModel
 
 
 class GaMetrics(TimeStampedModel):
@@ -24,14 +24,15 @@ class GaMetrics(TimeStampedModel):
     sessions_per_country = models.JSONField()
 
 
-class ImageDownload(CreationSortedTimeStampedModel):
-    class Meta(TimeStampedModel.Meta):
+class ImageDownload(models.Model):
+    class Meta:
         constraints = [
             CheckConstraint(
                 name="download_occurred_before_tracking", check=Q(download_time__lt=F("created"))
             ),
         ]
 
+    created = CreationDateTimeField()
     download_time = models.DateTimeField()
     ip_address = models.GenericIPAddressField()
     user_agent = models.CharField(null=True, max_length=400)
