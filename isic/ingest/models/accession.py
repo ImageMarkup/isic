@@ -47,7 +47,7 @@ class AccessionMetadata(models.Model):
     class Meta:
         abstract = True
 
-    concomitant_biopsy = models.BooleanField(null=True, blank=True, db_index=True)
+    concomitant_biopsy = models.BooleanField(null=True, blank=True)
     fitzpatrick_skin_type = models.CharField(max_length=255, null=True, blank=True)
     age = models.PositiveSmallIntegerField(null=True, blank=True)
     sex = models.CharField(max_length=6, null=True, blank=True)
@@ -188,14 +188,15 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
             # useful for improving the performance of the cohort detail page which needs to provide
             # accession-wise status breakdowns.
             models.Index(fields=["cohort_id", "status", "created"]),
+            # metadata selection does WHERE original_blob_name IN (...) queries
+            models.Index(fields=["original_blob_name"]),
+            models.Index(fields=["girder_id"]),
         ]
 
     # the creator is either inherited from the zip creator, or directly attached in the
     # case of a single shot upload.
     creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="accessions")
-    girder_id = models.CharField(
-        blank=True, max_length=24, help_text="The image_id from Girder.", db_index=True
-    )
+    girder_id = models.CharField(blank=True, max_length=24, help_text="The image_id from Girder.")
     zip_upload = models.ForeignKey(
         ZipUpload, on_delete=models.CASCADE, null=True, blank=True, related_name="accessions"
     )
@@ -206,8 +207,7 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
     # the original blob is stored in case blobs need to be reprocessed
     original_blob = S3FileField(unique=True)
     # the original blob name is stored and kept private in case of leaked data in filenames.
-    # it's indexed because metadata selection does large WHERE original_blob_name IN (...) queries
-    original_blob_name = models.CharField(max_length=255, db_index=True, editable=False)
+    original_blob_name = models.CharField(max_length=255, editable=False)
     original_blob_size = models.PositiveBigIntegerField(editable=False)
 
     # When instantiated, blob is empty, as it holds the EXIF-stripped image
