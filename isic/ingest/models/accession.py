@@ -10,9 +10,10 @@ from django.contrib.postgres.constraints import ExclusionConstraint
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models, transaction
-from django.db.models import JSONField, Transform
+from django.db.models import Transform
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.expressions import F
+from django.db.models.fields import Field
 from django.db.models.query_utils import Q
 from isic_metadata.metadata import MetadataRow
 from s3_file_field import S3FileField
@@ -35,11 +36,44 @@ class Approx(Transform):
         return "ROUND(CAST(%s as float) / 5.0) * 5" % lhs, params
 
 
-JSONField.register_lookup(Approx)
+Field.register_lookup(Approx)
 
 
 class InvalidBlobError(Exception):
     pass
+
+
+class AccessionMetadata(models.Model):
+    class Meta:
+        abstract = True
+
+    concomitant_biopsy = models.BooleanField(null=True, blank=True, db_index=True)
+    fitzpatrick_skin_type = models.CharField(max_length=255, null=True, blank=True)
+    age = models.PositiveSmallIntegerField(null=True, blank=True)
+    sex = models.CharField(max_length=6, null=True, blank=True)
+    anatom_site_general = models.CharField(max_length=255, null=True, blank=True)
+    benign_malignant = models.CharField(max_length=255, null=True, blank=True)
+    diagnosis = models.CharField(max_length=255, null=True, blank=True)
+    diagnosis_confirm_type = models.CharField(max_length=255, null=True, blank=True)
+    personal_hx_mm = models.BooleanField(null=True, blank=True)
+    family_hx_mm = models.BooleanField(null=True, blank=True)
+    clin_size_long_diam_mm = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True
+    )
+    melanocytic = models.BooleanField(null=True, blank=True)
+
+    mel_class = models.CharField(max_length=255, null=True, blank=True)
+    mel_mitotic_index = models.CharField(max_length=255, null=True, blank=True)
+    mel_thick_mm = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    mel_type = models.CharField(max_length=255, null=True, blank=True)
+    mel_ulcer = models.BooleanField(null=True, blank=True)
+
+    acquisition_day = models.IntegerField(null=True, blank=True)
+
+    nevus_type = models.CharField(max_length=255, null=True, blank=True)
+    image_type = models.CharField(max_length=255, null=True, blank=True)
+    dermoscopic_type = models.CharField(max_length=255, null=True, blank=True)
+    tbp_tile_type = models.CharField(max_length=255, null=True, blank=True)
 
 
 class AccessionQuerySet(models.QuerySet):
@@ -92,7 +126,7 @@ class AccessionStatus(models.TextChoices):
     SUCCEEDED = "succeeded", "Succeeded"
 
 
-class Accession(CreationSortedTimeStampedModel):
+class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
     class Meta(CreationSortedTimeStampedModel.Meta):
         # original_blob_name is unique at the *cohort* level, which also makes it unique at the zip
         # level.
@@ -132,7 +166,7 @@ class Accession(CreationSortedTimeStampedModel):
                 name="accession_concomitant_biopsy_diagnosis_confirm_type",
                 check=Q(
                     concomitant_biopsy=True,
-                    metadata__diagnosis_confirm_type="histopathology",
+                    diagnosis_confirm_type="histopathology",
                 )
                 | ~Q(concomitant_biopsy=True),
             ),
@@ -195,16 +229,12 @@ class Accession(CreationSortedTimeStampedModel):
         null=True, blank=True, default=None, editable=False
     )
 
-    metadata = models.JSONField(default=dict, blank=True)
-
     lesion = models.ForeignKey(
         Lesion, on_delete=models.SET_NULL, null=True, blank=True, related_name="accessions"
     )
     patient = models.ForeignKey(
         Patient, on_delete=models.SET_NULL, null=True, blank=True, related_name="accessions"
     )
-
-    concomitant_biopsy = models.BooleanField(default=False, db_index=True)
 
     objects = AccessionQuerySet.as_manager()
 
@@ -222,6 +252,20 @@ class Accession(CreationSortedTimeStampedModel):
     @property
     def unreviewed(self):
         return not self.reviewed
+
+    @property
+    def metadata(self):
+        ret = {}
+        for field in self._meta.fields:
+            if hasattr(AccessionMetadata, field.name) and getattr(self, field.name) is not None:
+                ret[field.name] = getattr(self, field.name)
+        return ret
+
+    @staticmethod
+    def metadata_keys():
+        return [
+            field.name for field in Accession._meta.fields if hasattr(AccessionMetadata, field.name)
+        ]
 
     def generate_blob(self):
         """
@@ -431,7 +475,9 @@ class Accession(CreationSortedTimeStampedModel):
 
             if (new_metadata and original_metadata != new_metadata) or new_longitudinal_metadata:
                 modified = True
-                self.metadata.update(new_metadata)
+
+                for k, v in new_metadata.items():
+                    setattr(self, k, v)
 
                 if reset_review:
                     # if a new metadata item has been added or an existing has been modified,
@@ -474,7 +520,9 @@ class Accession(CreationSortedTimeStampedModel):
         modified = False
         with transaction.atomic():
             for field in metadata_fields:
-                if self.metadata.pop(field, None) is not None:
+                if getattr(self, field) is not None:
+                    setattr(self, field, None)
+
                     modified = True
 
                     if reset_review:

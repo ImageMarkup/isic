@@ -79,8 +79,8 @@ def test_core_api_collection_populate_from_search(
     django_capture_on_commit_callbacks,
 ):
     collection = collection_factory(locked=False, creator=user, public=True)
-    image_factory(accession__metadata={"sex": "male"}, public=True)
-    image_factory(accession__metadata={"sex": "female"}, public=True)
+    image_factory(accession__sex="male", public=True)
+    image_factory(accession__sex="female", public=True)
 
     with django_capture_on_commit_callbacks(execute=True):
         r = authenticated_client.post(
@@ -118,9 +118,9 @@ def test_core_api_collection_populate_from_list(
     authenticated_client, collection_factory, image_factory, user
 ):
     collection = collection_factory(locked=False, creator=user, public=True)
-    public_image = image_factory(accession__metadata={"sex": "male"}, public=True)
-    private_image_shared = image_factory(accession__metadata={"sex": "female"}, public=False)
-    private_image_unshared = image_factory(accession__metadata={"sex": "female"}, public=False)
+    public_image = image_factory(accession__sex="male", public=True)
+    private_image_shared = image_factory(accession__sex="female", public=False)
+    private_image_unshared = image_factory(accession__sex="female", public=False)
 
     private_image_shared.shares.add(
         user, through_defaults={"creator": private_image_shared.accession.creator}
@@ -153,9 +153,9 @@ def test_core_api_collection_remove_from_list(
     authenticated_client, collection_factory, image_factory, user
 ):
     collection = collection_factory(locked=False, creator=user, public=False)
-    public_image = image_factory(accession__metadata={"sex": "male"}, public=True)
-    private_image_shared = image_factory(accession__metadata={"sex": "female"}, public=False)
-    private_image_unshared = image_factory(accession__metadata={"sex": "female"}, public=False)
+    public_image = image_factory(accession__sex="male", public=True)
+    private_image_shared = image_factory(accession__sex="female", public=False)
+    private_image_unshared = image_factory(accession__sex="female", public=False)
 
     private_image_shared.shares.add(
         user, through_defaults={"creator": private_image_shared.accession.creator}

@@ -131,12 +131,32 @@ def validate_archive_consistency(
         yielding the metadata for each accession. It merges if necessary and then yields the
         merged result, remembering to omit it when yielding from the remaining rows in the csv.
         """
-        accessions = cohort.accessions.values_list(
+        accessions = cohort.accessions.values(
             "original_blob_name",
-            "metadata",
             "lesion__private_lesion_id",
             "patient__private_patient_id",
+            *Accession.metadata_keys(),
         )
+
+        def accession_values_to_metadata_dict(accession_values: dict[str, Any]) -> dict[str, Any]:
+            """
+            Return the relevant metadata values from the Accession.values dict.
+
+            This is sort of like Accession.metadata but for a single accession retrieved
+            as a dict.
+            """
+            if "original_blob_name" in accession_values:
+                del accession_values["original_blob_name"]
+
+            if accession_values["lesion__private_lesion_id"]:
+                accession_values["lesion_id"] = accession_values["lesion__private_lesion_id"]
+                del accession_values["lesion__private_lesion_id"]
+
+            if accession_values["patient__private_patient_id"]:
+                accession_values["patient_id"] = accession_values["patient__private_patient_id"]
+                del accession_values["patient__private_patient_id"]
+
+            return accession_values
 
         yielded_filenames: set[str] = set()
 
@@ -145,32 +165,20 @@ def validate_archive_consistency(
                 original_blob_name__in=[row["filename"] for row in batch]
             )
             accessions_by_filename = {
-                a[0]: {"metadata": a[1], "lesion_id": a[2], "patient_id": a[3]}
+                a["original_blob_name"]: accession_values_to_metadata_dict(a)
                 for a in accessions_batch
             }
 
             for row in batch:
                 existing = accessions_by_filename[row["filename"]]
-                if existing["lesion_id"]:
-                    existing["metadata"]["lesion_id"] = existing["lesion_id"]
-
-                if existing["patient_id"]:
-                    existing["metadata"]["patient_id"] = existing["patient_id"]
 
                 if existing:
-                    yield existing["metadata"] | row
+                    yield existing | row
                     yielded_filenames.add(row["filename"])
                 else:
                     yield row
 
         for row in accessions.exclude(original_blob_name__in=yielded_filenames).iterator():
-            _, metadata, lesion_id, patient_id = row
-            if lesion_id:
-                metadata["lesion_id"] = lesion_id
-
-            if patient_id:
-                metadata["patient_id"] = patient_id
-
-            yield metadata
+            yield accession_values_to_metadata_dict(row)
 
     return _validate_df_consistency(cohort_df_merged_metadata_rows())

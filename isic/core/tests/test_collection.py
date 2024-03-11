@@ -33,8 +33,8 @@ def test_collection_locked_add_doi():
 @pytest.fixture
 def collection_with_images(image_factory, collection_factory):
     private_coll = collection_factory(public=False)
-    private_image = image_factory(public=False, accession__metadata={"age": 51})
-    public_image = image_factory(public=True, accession__metadata={"age": 44})
+    private_image = image_factory(public=False, accession__age=51)
+    public_image = image_factory(public=True, accession__age=44)
     private_coll.images.add(private_image, public_image)
     yield private_coll
 
