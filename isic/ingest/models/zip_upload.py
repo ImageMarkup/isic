@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.core.validators import FileExtensionValidator
 from django.db import models, transaction
-from django.db.models.constraints import UniqueConstraint
+from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.query_utils import Q
 from django.template.loader import render_to_string
 from s3_file_field import S3FileField
@@ -37,6 +37,11 @@ class ZipUpload(CreationSortedTimeStampedModel):
     class Meta(CreationSortedTimeStampedModel.Meta):
         constraints = [
             UniqueConstraint(name="zipupload_unique_blob", fields=["blob"], condition=~Q(blob="")),
+            CheckConstraint(
+                name="zipupload_fail_reason_requires_failed_status",
+                check=(Q(status=ZipUploadStatus.FAILED) & ~Q(fail_reason=""))
+                | ~Q(status=ZipUploadStatus.FAILED),
+            ),
         ]
 
     cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name="zip_uploads")
