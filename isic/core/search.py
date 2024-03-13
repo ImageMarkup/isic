@@ -27,6 +27,11 @@ for key, definition in FIELD_REGISTRY.items():
         INDEX_MAPPINGS["properties"][key] = definition.search.es_property
         DEFAULT_SEARCH_AGGREGATES[key] = definition.search.es_facet
 
+# TODO: define "hierarchical" on definition because it's not a standard property.
+# hierarchical properties need to only display present/absent counts for the top level
+# and need to omit the aggregation for the top level.
+# del DEFAULT_SEARCH_AGGREGATES["image_type"]
+
 
 # Reserved mappings that can only be set by the archive
 # Additional fields here need to update the checks in isic_field on isic-metadata.
@@ -41,8 +46,13 @@ INDEX_MAPPINGS["properties"].update(
         "copyright_license": {"type": "keyword"},
         "public": {"type": "boolean"},
         "shared_to": {"type": "integer"},
+        "image_type_level_0": {"type": "keyword"},
+        "image_type_level_1": {"type": "keyword"},
     }
 )
+
+DEFAULT_SEARCH_AGGREGATES["image_type_level_0"] = {"terms": {"field": "image_type_level_0"}}
+DEFAULT_SEARCH_AGGREGATES["image_type_level_1"] = {"terms": {"field": "image_type_level_1"}}
 
 DEFAULT_SEARCH_AGGREGATES["copyright_license"] = {"terms": {"field": "copyright_license"}}
 
@@ -164,9 +174,36 @@ def facets(query: dict | None = None, collections: list[int] | None = None) -> d
     if query:
         facets_body["query"] = query
 
-    return get_elasticsearch_client().search(
+    result = get_elasticsearch_client().search(
         index=settings.ISIC_ELASTICSEARCH_INDEX, body=facets_body
     )["aggregations"]
+
+    # modify the result to create the illusion of "sub-buckets" for hierarchical facets to
+    # simplify the client side implementation.
+    level_buckets = [
+        v["buckets"]
+        for k, v in sorted(result.items(), key=lambda item: item[0])
+        if k.startswith("image_type_level_")
+    ]
+
+    result["image_type"]["buckets"] = level_buckets[0]
+
+    parent_buckets = result["image_type"]["buckets"]
+    for remaining_level_buckets in level_buckets[1:]:
+        for bucket in remaining_level_buckets:
+            for parent_bucket in parent_buckets:
+                if bucket["key"].startswith(parent_bucket["key"]):
+                    if "buckets" not in parent_bucket:
+                        parent_bucket["buckets"] = []
+                    parent_bucket["buckets"].append(bucket)
+
+        parent_buckets = remaining_level_buckets
+
+    for k in list(result.keys()):
+        if k.startswith("image_type_level_"):
+            del result[k]
+
+    return result
 
 
 def build_elasticsearch_query(

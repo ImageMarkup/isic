@@ -126,6 +126,18 @@ class Image(CreationSortedTimeStampedModel):
 
         document.update(self.metadata)
 
+        if self.accession.metadata.get("image_type"):
+            current = ""
+
+            for level, value in enumerate(self.accession.metadata["image_type"].split(":")):
+                value = value.strip()
+                if level == 0:
+                    current = value
+                else:
+                    current += f": {value}"
+
+                document[f"image_type_level_{level}"] = current
+
         if body_only:
             return document
         else:
