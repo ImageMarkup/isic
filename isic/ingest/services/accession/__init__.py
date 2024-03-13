@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files.base import File
+from django.db import transaction
 from s3_file_field.widgets import S3PlaceholderFile
 
 from isic.ingest.models.accession import Accession
@@ -28,18 +29,19 @@ def accession_create(
     if isinstance(original_blob, S3PlaceholderFile):
         original_blob = original_blob.name
 
-    accession = Accession(
-        creator=creator,
-        cohort=cohort,
-        copyright_license=cohort.default_copyright_license,
-        original_blob=original_blob,
-        original_blob_name=original_blob_name,
-        original_blob_size=original_blob_size,
-    )
-    UnstructuredMetadata(accession=accession)
-    accession.full_clean(validate_constraints=False)
-    accession.save()
-
-    accession_generate_blob_task.delay(accession.pk)
+    with transaction.atomic():
+        accession = Accession(
+            creator=creator,
+            cohort=cohort,
+            copyright_license=cohort.default_copyright_license,
+            original_blob=original_blob,
+            original_blob_name=original_blob_name,
+            original_blob_size=original_blob_size,
+        )
+        accession.unstructured_metadata = UnstructuredMetadata(accession=accession)
+        accession.full_clean(validate_constraints=False)
+        accession.save()
+        accession.unstructured_metadata.save()
+        accession_generate_blob_task.delay(accession.pk)
 
     return accession
