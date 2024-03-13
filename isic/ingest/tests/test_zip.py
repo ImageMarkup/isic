@@ -104,6 +104,14 @@ def test_zip_extract_success_accession_original_blob_size(zip_upload):
 
 
 @pytest.mark.django_db
+def test_zip_extract_creates_accessions_with_unstructured_metadata(zip_upload):
+    zip_upload.extract()
+
+    accession = Accession.objects.get(original_blob_name="ISIC_0000000.jpg")
+    assert accession.unstructured_metadata is not None
+
+
+@pytest.mark.django_db
 def test_zip_extract_invalid(caplog, invalid_zip):
     with pytest.raises(ZipUpload.InvalidExtractError):
         invalid_zip.extract()
