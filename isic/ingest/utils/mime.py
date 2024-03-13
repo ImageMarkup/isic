@@ -9,7 +9,7 @@ import magic
 logger = logging.getLogger(__name__)
 
 
-def guess_mime_type(content: IO[bytes], filename: str | None = None) -> str:
+def guess_mime_type(content: IO[bytes], source_filename: str | None = None) -> str:
     """
     Guess the MIME type of a file, based on its content.
 
@@ -29,15 +29,16 @@ def guess_mime_type(content: IO[bytes], filename: str | None = None) -> str:
         content_mime_type = m.from_descriptor(file_stream.fileno())
     content.seek(0)
 
-    if filename is not None:
-        filename_mime_type = mimetypes.guess_type(filename, strict=False)[0]
-        if filename_mime_type is not None:
+    if source_filename is not None:
+        source_filename_mime_type = mimetypes.guess_type(source_filename, strict=False)[0]
+        if source_filename_mime_type is not None and source_filename_mime_type != content_mime_type:
             # Right now, do not rely on `filename_mime_type` for the return value, but
             # warn if it's inconsistent with the content.
-            if filename_mime_type != content_mime_type:
-                logger.warning(
-                    f'Inconsistent MIME types: content "{content_mime_type}", '
-                    f'filename ({filename}) "{filename_mime_type}"'
-                )
+            logger.warning(
+                'Inconsistent MIME types: content "%s", filename %s "%s"',
+                content_mime_type,
+                source_filename,
+                source_filename_mime_type,
+            )
 
     return content_mime_type

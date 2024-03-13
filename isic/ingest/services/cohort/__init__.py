@@ -117,7 +117,8 @@ def cohort_relicense(*, cohort: Cohort, to_license: str) -> int:
     It also changes the default license for the cohort. This is a one way ratchet, licenses can
     only be made more permissive. It returns the number of accessions that were relicensed.
     """
-    assert to_license in CopyrightLicense
+    if to_license not in CopyrightLicense:
+        raise ValueError(f"Invalid license: {to_license}")
 
     with transaction.atomic():
         cohort = (

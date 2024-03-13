@@ -71,21 +71,21 @@ def collection_build_draft_doi(*, doi_id: str) -> dict:
 
 def collection_generate_random_doi_id():
     # pad DOI with leading zeros so all DOIs are prefix/6 digits
-    return f"{settings.ISIC_DATACITE_DOI_PREFIX}/{random.randint(10_000, 999_999):06}"
+    return f"{settings.ISIC_DATACITE_DOI_PREFIX}/{random.randint(10_000, 999_999):06}"  # noqa: S311
 
 
 def collection_check_create_doi_allowed(*, user: User, collection: Collection) -> None:
     if not user.has_perm("core.create_doi", collection):
         raise ValidationError("You don't have permissions to do that.")
-    elif collection.doi:
+    if collection.doi:
         raise ValidationError("This collection already has a DOI.")
-    elif not collection.public:
+    if not collection.public:
         raise ValidationError("A collection must be public to issue a DOI.")
-    elif collection.images.private().exists():
+    if collection.images.private().exists():
         raise ValidationError("This collection contains private images.")
-    elif not collection.images.exists():
+    if not collection.images.exists():
         raise ValidationError("An empty collection cannot be the basis of a DOI.")
-    elif collection.is_magic:
+    if collection.is_magic:
         raise ValidationError("Magic collections cannot be the basis of a DOI.")
 
 
@@ -99,9 +99,9 @@ def _datacite_create_doi(doi: dict) -> None:
 
     try:
         r.raise_for_status()
-    except HTTPError:
-        logger.exception(f"DOI draft creation failed: {r.json()}")
-        raise ValidationError("Something went wrong creating the DOI.")
+    except HTTPError as e:
+        logger.exception("DOI draft creation failed: %s", r.json())
+        raise ValidationError("Something went wrong creating the DOI.") from e
 
 
 def _datacite_update_doi(doi: dict, doi_id: str):
@@ -115,9 +115,9 @@ def _datacite_update_doi(doi: dict, doi_id: str):
 
     try:
         r.raise_for_status()
-    except HTTPError:
-        logger.exception(f"DOI update failed: {r.json()}")
-        raise ValidationError("Something went wrong publishing the DOI.")
+    except HTTPError as e:
+        logger.exception("DOI update failed: %s", r.json())
+        raise ValidationError("Something went wrong publishing the DOI.") from e
 
 
 def collection_create_doi(*, user: User, collection: Collection) -> Doi:

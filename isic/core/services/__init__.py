@@ -1,4 +1,4 @@
-from typing import Generator
+from collections.abc import Generator
 
 from django.db.models import Func
 from django.db.models.aggregates import Count
@@ -76,33 +76,31 @@ def staff_image_metadata_csv(
         .iterator()
     ):
         yield {
+            "original_filename": image["accession__original_blob_name"],
+            "isic_id": image["isic_id"],
+            "cohort_id": image["accession__cohort_id"],
+            "cohort": image["accession__cohort__name"],
+            "attribution": image["accession__cohort__attribution"],
+            "copyright_license": image["accession__copyright_license"],
+            "public": image["public"],
+            "age_approx": (
+                Accession._age_approx(image["accession__age"])  # noqa: SLF001
+                if image.get("accession__age")
+                else None
+            ),
             **{
-                "original_filename": image["accession__original_blob_name"],
-                "isic_id": image["isic_id"],
-                "cohort_id": image["accession__cohort_id"],
-                "cohort": image["accession__cohort__name"],
-                "attribution": image["accession__cohort__attribution"],
-                "copyright_license": image["accession__copyright_license"],
-                "public": image["public"],
-                "age_approx": (
-                    Accession._age_approx(image["accession__age"])
-                    if image.get("accession__age")
-                    else None
-                ),
-                **{
-                    k.replace("accession__", ""): v
-                    for k, v in image.items()
-                    if k.replace("accession__", "") in Accession.metadata_keys()
-                },
-                "private_lesion_id": image["accession__lesion__private_lesion_id"],
-                "lesion_id": image["accession__lesion_id"],
-                "private_patient_id": image["accession__patient__private_patient_id"],
-                "patient_id": image["accession__patient_id"],
-                **{
-                    f"unstructured.{k}": v
-                    for k, v in image["accession__unstructured_metadata__value"].items()
-                },
-            }
+                k.replace("accession__", ""): v
+                for k, v in image.items()
+                if k.replace("accession__", "") in Accession.metadata_keys()
+            },
+            "private_lesion_id": image["accession__lesion__private_lesion_id"],
+            "lesion_id": image["accession__lesion_id"],
+            "private_patient_id": image["accession__patient__private_patient_id"],
+            "patient_id": image["accession__patient_id"],
+            **{
+                f"unstructured.{k}": v
+                for k, v in image["accession__unstructured_metadata__value"].items()
+            },
         }
 
 
@@ -152,7 +150,9 @@ def image_metadata_csv(
         .iterator()
     ):
         if image["accession__age"]:
-            image["age_approx"] = Accession._age_approx(image["accession__age"])
+            image["age_approx"] = Accession._age_approx(  # noqa: SLF001
+                image["accession__age"]
+            )
             del image["accession__age"]
 
         if image["accession__lesion_id"]:
@@ -164,15 +164,12 @@ def image_metadata_csv(
             del image["accession__patient_id"]
 
         yield {
+            "isic_id": image["isic_id"],
+            "attribution": image["accession__cohort__attribution"],
+            "copyright_license": image["accession__copyright_license"],
             **{
-                "isic_id": image["isic_id"],
-                "attribution": image["accession__cohort__attribution"],
-                "copyright_license": image["accession__copyright_license"],
-                **{
-                    k: v
-                    for k, v in image.items()
-                    if k in Accession.metadata_keys()
-                    or k in ["age_approx", "lesion_id", "patient_id"]
-                },
-            }
+                k: v
+                for k, v in image.items()
+                if k in Accession.metadata_keys() or k in ["age_approx", "lesion_id", "patient_id"]
+            },
         }

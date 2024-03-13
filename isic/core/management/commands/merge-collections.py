@@ -10,10 +10,11 @@ from isic.core.services.collection import collection_merge_magic_collections
 @click.command()
 @click.argument("collection_id", nargs=-1, type=click.INT)
 def merge_collections(collection_id):
-    assert len(collection_id) > 1
-    collections = []
-    for id_ in collection_id:
-        collections.append(Collection.objects.get(pk=id_))
+    if len(collection_id) < 2:
+        click.secho("Must provide at least 2 collection IDs to merge.", color="red", err=True)
+        sys.exit(1)
+
+    collections = [Collection.objects.get(pk=id_) for id_ in collection_id]
 
     try:
         collection_merge_magic_collections(

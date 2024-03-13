@@ -14,4 +14,4 @@ class ExemptBearerAuthFromCSRFMiddleware:
     def process_view(self, request, view_func, view_args, view_kwargs):
         klass = getattr(view_func, "__self__", None)
         if klass and isinstance(klass, PathView):
-            request._dont_enforce_csrf_checks = True
+            request._dont_enforce_csrf_checks = True  # noqa: SLF001

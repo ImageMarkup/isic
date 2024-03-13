@@ -10,7 +10,7 @@ from isic.studies.models import Annotation, Study
 def get_archive_stats():
     latest_ga_metrics = GaMetrics.objects.last()
 
-    ctx = {
+    return {
         "image": {
             "images_count": Image.objects.count(),
             "public_images_count": Image.objects.public().count(),
@@ -37,8 +37,6 @@ def get_archive_stats():
             ),
         },
     }
-
-    return ctx
 
 
 def stats(request):

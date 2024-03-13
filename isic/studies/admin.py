@@ -30,7 +30,7 @@ class IsStudyTaskCompleteFilter(admin.SimpleListFilter):
         value = self.value()
         if value == "yes":
             return queryset.filter(has_annotation=True)
-        elif value == "no":
+        if value == "no":
             return queryset.exclude(has_annotation=True)
         return queryset
 
@@ -70,8 +70,7 @@ class QuestionChoiceAdmin(StaffReadonlyAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        qs = qs.annotate(responded=Count("response"))
-        return qs
+        return qs.annotate(responded=Count("response"))
 
     @admin.display(ordering="responded")
     def responded(self, obj):

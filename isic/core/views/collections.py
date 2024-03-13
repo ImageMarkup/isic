@@ -1,5 +1,5 @@
 import csv
-from datetime import datetime
+from datetime import UTC, datetime
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -50,8 +50,8 @@ def collection_list(request):
             all_=Count("pk"),
         )
 
-    filter = CollectionFilter(request.GET, queryset=collections, user=request.user)
-    paginator = Paginator(filter.qs, 25)
+    filter_ = CollectionFilter(request.GET, queryset=collections, user=request.user)
+    paginator = Paginator(filter_.qs, 25)
     page = paginator.get_page(request.GET.get("page"))
 
     collection_counts = (
@@ -70,7 +70,7 @@ def collection_list(request):
     return render(
         request,
         "core/collection_list.html",
-        {"collections": page, "filter": filter, "counts": counts},
+        {"collections": page, "filter": filter_, "counts": counts},
     )
 
 
@@ -111,7 +111,9 @@ def collection_edit(request, pk):
             return HttpResponseRedirect(reverse("core/collection-detail", args=[collection.pk]))
 
     return render(
-        request, "core/collection_create_or_edit.html", {"form": form, "collection": collection}
+        request,
+        "core/collection_create_or_edit.html",
+        {"form": form, "collection": collection},
     )
 
 
@@ -123,7 +125,7 @@ def collection_download_metadata(request, pk):
         "core.view_image",
         collection.images.all(),
     )
-    current_time = datetime.utcnow().strftime("%Y-%m-%d")
+    current_time = datetime.now(tz=UTC).strftime("%Y-%m-%d")
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = (
         f'attachment; filename="{slugify(collection.name)}_metadata_{current_time}.csv"'
@@ -170,7 +172,7 @@ def collection_create_doi_(request, pk):
 def collection_detail(request, pk):
     collection = get_object_or_404(Collection, pk=pk)
 
-    # TODO; if they can see the collection they can see the images?
+    # TODO: if they can see the collection they can see the images?
     images = get_visible_objects(
         request.user,
         "core.view_image",
@@ -181,8 +183,8 @@ def collection_detail(request, pk):
         .values("copyright_license")
         .aggregate(
             **{
-                license: Count("copyright_license", filter=Q(copyright_license=license))
-                for license in CopyrightLicense.values
+                license_: Count("copyright_license", filter=Q(copyright_license=license_))
+                for license_ in CopyrightLicense.values
             }
         )
     )

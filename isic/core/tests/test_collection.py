@@ -6,12 +6,12 @@ from isic.core.models.collection import Collection
 from isic.core.services.collection.image import collection_move_images
 
 
-@pytest.fixture
+@pytest.fixture()
 def locked_collection(collection_factory, user):
     return collection_factory(locked=True, creator=user)
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_collection_form(authenticated_client, user):
     r = authenticated_client.post(
         reverse("core/collection-create"), {"name": "foo", "description": "bar", "public": False}
@@ -30,16 +30,16 @@ def test_collection_locked_add_doi():
     pass
 
 
-@pytest.fixture
+@pytest.fixture()
 def collection_with_images(image_factory, collection_factory):
     private_coll = collection_factory(public=False)
     private_image = image_factory(public=False, accession__age=51)
     public_image = image_factory(public=True, accession__age=44)
     private_coll.images.add(private_image, public_image)
-    yield private_coll
+    return private_coll
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_collection_metadata_download(staff_client, collection_with_images, mocker):
     mock_writer = mocker.MagicMock()
     mocker.patch("isic.core.views.collections.csv.DictWriter", return_value=mock_writer)
@@ -68,7 +68,7 @@ def test_collection_metadata_download(staff_client, collection_with_images, mock
     }
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_collection_metadata_download_private_images(
     user, authenticated_client, collection_with_images, mocker
 ):
@@ -97,10 +97,11 @@ def test_collection_metadata_download_private_images(
     }
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_collection_move_images(collection_factory, image_factory):
-    collection_src, collection_dest = collection_factory(public=True), collection_factory(
-        public=True
+    collection_src, collection_dest = (
+        collection_factory(public=True),
+        collection_factory(public=True),
     )
     image = image_factory(public=True)
     collection_src.images.add(image)
@@ -111,10 +112,11 @@ def test_collection_move_images(collection_factory, image_factory):
     assert collection_dest.images.count() == 1
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_collection_move_images_locked_collection(collection_factory, image_factory):
-    collection_src, collection_dest = collection_factory(public=True), collection_factory(
-        public=True, locked=True
+    collection_src, collection_dest = (
+        collection_factory(public=True),
+        collection_factory(public=True, locked=True),
     )
     image = image_factory(public=True)
     collection_src.images.add(image)
@@ -123,10 +125,11 @@ def test_collection_move_images_locked_collection(collection_factory, image_fact
         collection_move_images(src_collection=collection_src, dest_collection=collection_dest)
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_collection_move_images_private_to_public(collection_factory, image_factory):
-    collection_src, collection_dest = collection_factory(public=False), collection_factory(
-        public=True
+    collection_src, collection_dest = (
+        collection_factory(public=False),
+        collection_factory(public=True),
     )
     image = image_factory(public=False)
     collection_src.images.add(image)
@@ -135,10 +138,11 @@ def test_collection_move_images_private_to_public(collection_factory, image_fact
         collection_move_images(src_collection=collection_src, dest_collection=collection_dest)
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_collection_move_images_already_exist_in_collection(collection_factory, image_factory):
-    collection_src, collection_dest = collection_factory(public=True), collection_factory(
-        public=True
+    collection_src, collection_dest = (
+        collection_factory(public=True),
+        collection_factory(public=True),
     )
     image = image_factory(public=True)
     collection_src.images.add(image)

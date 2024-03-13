@@ -1,7 +1,8 @@
 from datetime import timedelta
 
 from django.utils import timezone
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
 
 from isic.core.storages.s3 import CacheableCloudFrontStorage
 

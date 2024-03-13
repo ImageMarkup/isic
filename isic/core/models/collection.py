@@ -117,7 +117,7 @@ class Collection(TimeStampedModel):
             .count()
         )
 
-    def full_clean(self, exclude=None, validate_unique=True):
+    def full_clean(self, exclude=None, validate_unique=True):  # noqa: FBT002
         if self.pk and self.public and self.images.private().exists():
             raise ValidationError("Can't make collection public, it contains private images.")
 
@@ -144,8 +144,17 @@ class CollectionShare(TimeStampedModel):
 
 class CollectionPermissions:
     model = Collection
-    perms = ["view_collection", "edit_collection", "create_doi", "add_images", "remove_images"]
-    filters = {"view_collection": "view_collection_list", "create_doi": "create_doi_list"}
+    perms = [
+        "view_collection",
+        "edit_collection",
+        "create_doi",
+        "add_images",
+        "remove_images",
+    ]
+    filters = {
+        "view_collection": "view_collection_list",
+        "create_doi": "create_doi_list",
+    }
 
     @staticmethod
     def _is_creator_list(
@@ -155,10 +164,10 @@ class CollectionPermissions:
 
         if user_obj.is_staff:
             return qs
-        elif user_obj.is_authenticated:
+        if user_obj.is_authenticated:
             return qs.filter(creator=user_obj)
-        else:
-            return qs.none()
+
+        return qs.none()
 
     @staticmethod
     def view_collection_list(
@@ -168,10 +177,10 @@ class CollectionPermissions:
 
         if user_obj.is_staff:
             return qs
-        elif user_obj.is_authenticated:
+        if user_obj.is_authenticated:
             return qs.filter(Q(public=True) | Q(creator=user_obj) | Q(shares=user_obj))
-        else:
-            return qs.public()
+
+        return qs.public()
 
     @staticmethod
     def view_collection(user_obj, obj):
@@ -185,8 +194,8 @@ class CollectionPermissions:
 
         if user_obj.is_staff:
             return qs
-        else:
-            return qs.none()
+
+        return qs.none()
 
     @staticmethod
     def create_doi(user_obj: User, obj: Collection) -> bool:
