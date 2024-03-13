@@ -8,7 +8,7 @@ from .metadata_file import MetadataFile
 from .metadata_version import MetadataVersion
 from .patient import Patient
 from .unstructured_metadata import UnstructuredMetadata
-from .zip_upload import ZipUpload
+from .zip_upload import ZipUpload, ZipUploadFailReason, ZipUploadStatus
 
 __all__ = [
     "Accession",
@@ -23,4 +23,6 @@ __all__ = [
     "Patient",
     "UnstructuredMetadata",
     "ZipUpload",
+    "ZipUploadFailReason",
+    "ZipUploadStatus",
 ]

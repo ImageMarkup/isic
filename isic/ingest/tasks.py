@@ -21,6 +21,8 @@ from isic.ingest.models import (
     MetadataFile,
     Patient,
     ZipUpload,
+    ZipUploadFailReason,
+    ZipUploadStatus,
 )
 from isic.ingest.services.cohort import cohort_publish
 from isic.ingest.utils.metadata import (
@@ -52,8 +54,9 @@ def extract_zip_task(zip_pk: int):
         # Errors from bad input; these will be logged, but the task is not a failure
         pass
     except SoftTimeLimitExceeded:
-        zip_upload.status = ZipUpload.Status.FAILED
-        zip_upload.save(update_fields=["status"])
+        zip_upload.status = ZipUploadStatus.FAILED
+        zip_upload.fail_reason = ZipUploadFailReason.OTHER
+        zip_upload.save(update_fields=["status", "fail_reason"])
         raise
     else:
         # rmq can only handle ~500msg/s - throttle significantly in places

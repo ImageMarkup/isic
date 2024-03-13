@@ -20,17 +20,24 @@ from .cohort import Cohort
 logger = logging.getLogger(__name__)
 
 
+class ZipUploadFailReason(models.TextChoices):
+    DUPLICATES = "duplicates", "Duplicates"
+    INVALID = "invalid", "Invalid"
+    OTHER = "other", "Other"
+
+
+class ZipUploadStatus(models.TextChoices):
+    CREATED = "created", "Created"
+    EXTRACTING = "extracting", "Extracting"
+    EXTRACTED = "extracted", "Extracted"
+    FAILED = "failed", "Failed"
+
+
 class ZipUpload(CreationSortedTimeStampedModel):
     class Meta(CreationSortedTimeStampedModel.Meta):
         constraints = [
             UniqueConstraint(name="zipupload_unique_blob", fields=["blob"], condition=~Q(blob="")),
         ]
-
-    class Status(models.TextChoices):
-        CREATED = "created", "Created"
-        EXTRACTING = "extracting", "Extracting"
-        EXTRACTED = "extracted", "Extracted"
-        FAILED = "failed", "Failed"
 
     cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name="zip_uploads")
 
@@ -40,7 +47,10 @@ class ZipUpload(CreationSortedTimeStampedModel):
     blob_name = models.CharField(max_length=255, editable=False)
     blob_size = models.PositiveBigIntegerField(editable=False)
 
-    status = models.CharField(choices=Status.choices, max_length=20, default=Status.CREATED)
+    status = models.CharField(
+        choices=ZipUploadStatus.choices, max_length=20, default=ZipUploadStatus.CREATED
+    )
+    fail_reason = models.CharField(choices=ZipUploadFailReason.choices, max_length=10, blank=True)
 
     def __str__(self) -> str:
         return self.blob_name
@@ -77,12 +87,12 @@ class ZipUpload(CreationSortedTimeStampedModel):
         from .accession import Accession, AccessionStatus
         from .unstructured_metadata import UnstructuredMetadata
 
-        if self.status != ZipUpload.Status.CREATED:
+        if self.status != ZipUploadStatus.CREATED:
             raise Exception("Can not extract zip %d with status %s", self.pk, self.status)
 
         try:
             with transaction.atomic():
-                self.status = ZipUpload.Status.EXTRACTING
+                self.status = ZipUploadStatus.EXTRACTING
                 self.save(update_fields=["status"])
 
                 (
@@ -113,16 +123,18 @@ class ZipUpload(CreationSortedTimeStampedModel):
         except zipfile.BadZipFile as e:
             logger.warning("Failed zip extraction: %d <%s>: invalid zip: %s", self.pk, self, e)
             sentry_sdk.capture_exception(e)
-            self.status = ZipUpload.Status.FAILED
+            self.status = ZipUploadStatus.FAILED
+            self.fail_reason = ZipUploadFailReason.INVALID
             raise ZipUpload.InvalidExtractError
         except ZipUpload.DuplicateExtractError:
             logger.info("Failed zip extraction: %d <%s>: duplicates", self.pk, self)
-            self.status = ZipUpload.Status.FAILED
+            self.status = ZipUploadStatus.FAILED
+            self.fail_reason = ZipUploadFailReason.DUPLICATES
             raise
         else:
-            self.status = ZipUpload.Status.EXTRACTED
+            self.status = ZipUploadStatus.EXTRACTED
         finally:
-            self.save(update_fields=["status"])
+            self.save(update_fields=["status", "fail_reason"])
 
     def extract_and_notify(self):
         try:
@@ -172,5 +184,5 @@ class ZipUpload(CreationSortedTimeStampedModel):
     def reset(self):
         with transaction.atomic():
             self.accessions.all().delete()
-            self.status = ZipUpload.Status.CREATED
+            self.status = ZipUploadStatus.CREATED
             self.save(update_fields=["status"])
