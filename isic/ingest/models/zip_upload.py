@@ -106,6 +106,7 @@ class ZipUpload(CreationSortedTimeStampedModel):
                         accession.unstructured_metadata = UnstructuredMetadata(accession=accession)
                         accession.full_clean(validate_constraints=False)
                         self.accessions.add(accession, bulk=False)
+                        accession.unstructured_metadata.save()
 
                 self.accessions.update(status=AccessionStatus.CREATED)
 
