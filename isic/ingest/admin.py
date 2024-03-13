@@ -242,7 +242,15 @@ class AccessionReviewAdmin(StaffReadonlyAdmin):
 @admin.register(ZipUpload)
 class ZipAdmin(DjangoObjectActions, StaffReadonlyAdmin):
     list_select_related = ["creator", "cohort"]
-    list_display = ["blob_name", "human_blob_size", "created", "creator", "status", "cohort"]
+    list_display = [
+        "blob_name",
+        "human_blob_size",
+        "created",
+        "creator",
+        "status",
+        "fail_reason",
+        "cohort",
+    ]
     list_filter = ["status"]
     search_fields = ["blob_name", "creator__username"]
     actions = ["extract_zip"]
