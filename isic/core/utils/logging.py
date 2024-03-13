@@ -1,6 +1,8 @@
 # https://docs.python.org/3/howto/logging-cookbook.html#using-a-context-manager-for-selective-logging
+
+
 class LoggingContext:
-    def __init__(self, logger, level=None, handler=None, close=True):
+    def __init__(self, logger, level=None, handler=None, *, close=True):
         self.logger = logger
         self.level = level
         self.handler = handler

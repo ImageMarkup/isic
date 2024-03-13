@@ -49,8 +49,16 @@ class Profile(models.Model):
     )
     accepted_terms = models.DateTimeField(null=True)
 
+    def __str__(self) -> str:
+        return self.user.username
+
 
 @receiver(post_save, sender=User)
-def create_or_save_user_profile(sender: type[User], instance: User, created: bool, **kwargs):
+def create_or_save_user_profile(
+    sender: type[User],
+    instance: User,
+    created: bool,  # noqa: FBT001
+    **kwargs,
+):
     if created:
         Profile.objects.create(user=instance, hash_id=get_hashid(instance.pk))

@@ -3,7 +3,7 @@ from urllib.parse import urlparse
 import pytest
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_pagination(image_factory, staff_client):
     images = [image_factory() for _ in range(2)]
 

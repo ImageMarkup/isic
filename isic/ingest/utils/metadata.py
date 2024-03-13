@@ -1,6 +1,7 @@
 from collections import Counter, defaultdict
+from collections.abc import Iterable
 import csv
-from typing import Any, Iterable
+from typing import Any
 
 from django.forms.models import ModelForm
 from isic_metadata.metadata import MetadataBatch, MetadataRow
@@ -69,7 +70,7 @@ def validate_csv_format_and_filenames(
 
 
 def _validate_df_consistency(
-    batch: Iterable[dict[str, Any]]
+    batch: Iterable[dict[str, Any]],
 ) -> tuple[ColumnRowErrors, list[Problem]]:
     column_error_rows: ColumnRowErrors = defaultdict(list)
     batch_problems: list[Problem] = []
@@ -106,7 +107,7 @@ def _validate_df_consistency(
 
 
 def validate_internal_consistency(
-    rows: Iterable[dict[str, Any]]
+    rows: Iterable[dict[str, Any]],
 ) -> tuple[ColumnRowErrors, list[Problem]]:
     return _validate_df_consistency(rows)
 

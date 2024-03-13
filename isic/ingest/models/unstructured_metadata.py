@@ -8,3 +8,6 @@ class UnstructuredMetadata(models.Model):
         Accession, on_delete=models.CASCADE, related_name="unstructured_metadata"
     )
     value = models.JSONField(default=dict, blank=True)
+
+    def __str__(self) -> str:
+        return f"{self.pk}"

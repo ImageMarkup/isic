@@ -1,5 +1,5 @@
 import csv
-from datetime import datetime
+from datetime import UTC, datetime
 import logging
 
 from django.contrib import admin
@@ -71,11 +71,10 @@ class ContributorAdmin(StaffReadonlyAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        qs = qs.annotate(
+        return qs.annotate(
             cohorts_count=Count("cohorts", distinct=True),
             accessions_count=Count("cohorts__accessions", distinct=True),
         )
-        return qs
 
     @admin.display(ordering="cohorts_count")
     def cohorts(self, obj):
@@ -99,7 +98,11 @@ class CohortAdmin(StaffReadonlyAdmin):
         "contributor",
     ]
     search_fields = ["name", "creator__username"]
-    actions = ["export_file_mapping", "publish_cohort_publicly", "publish_cohort_privately"]
+    actions = [
+        "export_file_mapping",
+        "publish_cohort_publicly",
+        "publish_cohort_privately",
+    ]
 
     autocomplete_fields = ["creator", "contributor"]
     readonly_fields = ["created", "modified"]
@@ -107,11 +110,10 @@ class CohortAdmin(StaffReadonlyAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        qs = qs.annotate(
+        return qs.annotate(
             zip_uploads_count=Count("zip_uploads", distinct=True),
             metadata_files_count=Count("metadata_files", distinct=True),
         )
-        return qs
 
     @admin.display(ordering="zip_uploads_count")
     def zips(self, obj):
@@ -124,7 +126,7 @@ class CohortAdmin(StaffReadonlyAdmin):
     @admin.action(description="Export original file mapping")
     @takes_instance_or_queryset
     def export_file_mapping(self, request, queryset):
-        current_time = datetime.utcnow().strftime("%Y-%m-%d")
+        current_time = datetime.now(tz=UTC).strftime("%Y-%m-%d")
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = (
             f'attachment; filename="cohort_file_mapping_{current_time}.csv"'
@@ -175,7 +177,7 @@ class AccessionReviewedFilter(admin.SimpleListFilter):
         value = self.value()
         if value == "yes":
             return queryset.filter(review__isnull=False)
-        elif value == "no":
+        if value == "no":
             return queryset.exclude(review__isnull=False)
         return queryset
 
@@ -224,7 +226,7 @@ class AccessionAdmin(StaffReadonlyAdmin):
 
     @admin.display()
     def thumbnail_image(self, obj):
-        return mark_safe(f'<img src="{obj.thumbnail_256.url}" />')
+        return mark_safe(f'<img src="{obj.thumbnail_256.url}" />')  # noqa: S308
 
 
 @admin.register(AccessionReview)
@@ -266,6 +268,6 @@ class ZipAdmin(DjangoObjectActions, StaffReadonlyAdmin):
     @admin.action(description="Extract zip")
     @takes_instance_or_queryset
     def extract_zip(self, request, queryset):
-        for zip in queryset:
-            zip.reset()
-            extract_zip_task.delay(zip.pk)
+        for zip_file in queryset:
+            zip_file.reset()
+            extract_zip_task.delay(zip_file.pk)

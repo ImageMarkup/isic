@@ -29,22 +29,22 @@ class ImageIdentifierConverter:
     def to_python(self, value):
         if value.isnumeric():
             return int(value)
-        else:
-            image = Image.objects.filter(isic_id=value).first()
-            if image:
-                return image.pk
 
-            image = Image.objects.filter(
-                accession=Accession.objects.filter(girder_id=value).first()
-            ).first()
-            if image:
-                return image.pk
+        image = Image.objects.filter(isic_id=value).first()
+        if image:
+            return image.pk
 
-            alias = ImageAlias.objects.filter(isic_id=value).first()
-            if alias:
-                return alias.image.pk
+        image = Image.objects.filter(
+            accession=Accession.objects.filter(girder_id=value).first()
+        ).first()
+        if image:
+            return image.pk
 
-            raise Http404
+        alias = ImageAlias.objects.filter(isic_id=value).first()
+        if alias:
+            return alias.image.pk
+
+        raise Http404
 
     def to_url(self, value):
         return int(value)

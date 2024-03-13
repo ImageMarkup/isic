@@ -14,7 +14,6 @@ from isic.ingest.models.metadata_file import MetadataFile
 @click.argument("metadata_file_id", nargs=-1, type=click.INT)
 def apply_metadata_files(user_id, metadata_file_id):
     user = User.objects.get(pk=user_id)
-    assert metadata_file_id
     metadata_files = MetadataFile.objects.filter(pk__in=metadata_file_id)
     missing_files = set(metadata_file_id) - set(metadata_files.values_list("pk", flat=True))
 
@@ -39,7 +38,7 @@ def apply_metadata_files(user_id, metadata_file_id):
                         user, row, ignore_image_check=True, reset_review=False
                     )
                 click.secho(f"Applied metadata file {metadata_file.pk} as {user.email}", fg="green")
-        except Exception:
+        except Exception:  # noqa: BLE001
             click.echo(traceback.format_exc(), err=True)
             click.echo()
             click.secho(

@@ -44,10 +44,10 @@ class MetadataFilePermissions:
 
         if user_obj.is_staff:
             return qs
-        elif user_obj.is_authenticated:
+        if user_obj.is_authenticated:
             return qs.filter(cohort__contributor__owners__in=[user_obj])
-        else:
-            return qs.none()
+
+        return qs.none()
 
     @staticmethod
     def view_metadatafile(user_obj, obj):

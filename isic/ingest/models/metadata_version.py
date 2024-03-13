@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 
 from deepdiff import DeepDiff
@@ -16,7 +18,9 @@ class MetadataVersionQuerySet(models.QuerySet):
 
         # prepend versions with an empty version so an initial diff is generated
         for prev, cur in zip(
-            [MetadataVersion(metadata={}, unstructured_metadata={})] + versions, versions
+            [MetadataVersion(metadata={}, unstructured_metadata={}), *versions],
+            versions,
+            strict=False,
         ):
             diffs.append((cur, prev.diff(cur)))
 
@@ -35,7 +39,7 @@ class MetadataVersion(CreationSortedTimeStampedModel):
 
     objects = MetadataVersionQuerySet.as_manager()
 
-    def diff(self, other: "MetadataVersion"):
+    def diff(self, other: MetadataVersion):
         def _strip_root(key: str) -> str:
             return re.sub(r"^root\['(.*)'\]$", r"\1", key)
 

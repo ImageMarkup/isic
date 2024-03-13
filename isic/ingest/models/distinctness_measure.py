@@ -9,11 +9,6 @@ from .accession import Accession
 
 
 class DistinctnessMeasure(TimeStampedModel):
-    class Meta:
-        indexes = [
-            models.Index(fields=["checksum"]),
-        ]
-
     accession = models.OneToOneField(Accession, on_delete=models.CASCADE)
     checksum = models.CharField(
         max_length=64,
@@ -22,6 +17,11 @@ class DistinctnessMeasure(TimeStampedModel):
         blank=True,
         editable=False,
     )
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["checksum"]),
+        ]
 
     def __str__(self) -> str:
         return self.checksum

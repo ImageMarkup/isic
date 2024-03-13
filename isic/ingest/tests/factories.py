@@ -85,7 +85,7 @@ class UnstructuredMetadataFactory(factory.django.DjangoModelFactory):
         model = UnstructuredMetadata
 
     accession = factory.SubFactory("isic.ingest.tests.factories.AccessionFactory")
-    value = factory.LazyFunction(lambda: {})
+    value = factory.LazyFunction(dict)
 
 
 class AccessionFactory(factory.django.DjangoModelFactory):

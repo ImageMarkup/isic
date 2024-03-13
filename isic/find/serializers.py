@@ -24,11 +24,11 @@ class QuickfindResultOut(Schema, ABC):
 
     @staticmethod
     @abstractmethod
-    def resolve_icon(obj) -> str: ...  # noqa: E704
+    def resolve_icon(obj) -> str: ...
 
     @staticmethod
     @abstractmethod
-    def resolve_result_type(obj) -> str: ...  # noqa: E704
+    def resolve_result_type(obj) -> str: ...
 
     def set_yours(self, obj, user: User) -> None:
         self.yours = obj.creator == user
@@ -36,11 +36,11 @@ class QuickfindResultOut(Schema, ABC):
 
 class StudyQuickfindResultOut(QuickfindResultOut):
     @staticmethod
-    def resolve_icon(obj):
+    def resolve_icon(_):
         return "ri-microscope-line"
 
     @staticmethod
-    def resolve_result_type(obj):
+    def resolve_result_type(_):
         return capfirst(Study._meta.verbose_name)
 
 
@@ -48,11 +48,11 @@ class ImageQuickfindResultOut(QuickfindResultOut):
     title: str = Field(alias="isic_id")
 
     @staticmethod
-    def resolve_icon(obj) -> str:
+    def resolve_icon(_) -> str:
         return "ri-image-line"
 
     @staticmethod
-    def resolve_result_type(obj) -> str:
+    def resolve_result_type(_) -> str:
         return capfirst(Image._meta.verbose_name)
 
     @staticmethod
@@ -69,11 +69,11 @@ class CollectionQuickfindResultOut(QuickfindResultOut):
         return f"{obj.images.count()} images"
 
     @staticmethod
-    def resolve_icon(obj):
+    def resolve_icon(_):
         return "ri-stack-line"
 
     @staticmethod
-    def resolve_result_type(obj):
+    def resolve_result_type(_):
         return capfirst(Collection._meta.verbose_name)
 
 
@@ -83,11 +83,11 @@ class CohortQuickfindResultOut(QuickfindResultOut):
         return obj.attribution
 
     @staticmethod
-    def resolve_icon(obj):
+    def resolve_icon(_):
         return "ri-group-line"
 
     @staticmethod
-    def resolve_result_type(obj):
+    def resolve_result_type(_):
         return capfirst(Cohort._meta.verbose_name)
 
 
@@ -104,11 +104,11 @@ class ContributorQuickfindResultOut(QuickfindResultOut):
         return ", ".join([f"{user.first_name} {user.last_name}" for user in obj.owners.all()])
 
     @staticmethod
-    def resolve_icon(obj):
+    def resolve_icon(_):
         return "ri-government-line"
 
     @staticmethod
-    def resolve_result_type(obj):
+    def resolve_result_type(_):
         return capfirst(Contributor._meta.verbose_name)
 
 
@@ -129,11 +129,11 @@ class UserQuickfindResultOut(QuickfindResultOut):
         return obj.email
 
     @staticmethod
-    def resolve_icon(obj):
+    def resolve_icon(_):
         return "ri-user-line"
 
     @staticmethod
-    def resolve_result_type(obj):
+    def resolve_result_type(_):
         return capfirst(str(User._meta.verbose_name))
 
     def set_yours(self, obj, user):

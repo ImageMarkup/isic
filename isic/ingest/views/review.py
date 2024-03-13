@@ -85,7 +85,7 @@ def cohort_review(request, cohort_pk):
         {
             "progress": _cohort_review_progress(cohort),
             "cohort": cohort,
-            "breadcrumbs": make_breadcrumbs(cohort) + [["#", "Review"]],
+            "breadcrumbs": [*make_breadcrumbs(cohort), ["#", "Review"]],
             "page_obj": page,
         },
     )
@@ -123,7 +123,7 @@ def _cohort_review_grouped_by_lesion(request, cohort: Cohort):
         "ingest/review_lesion_gallery.html",
         {
             "progress": _cohort_review_progress(cohort),
-            "breadcrumbs": make_breadcrumbs(cohort) + [["#", "Review"]],
+            "breadcrumbs": [*make_breadcrumbs(cohort), ["#", "Review"]],
             "cohort": cohort,
             "page_obj": page,
             "grouped_accessions": dict(grouped_accessions),

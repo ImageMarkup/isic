@@ -2,6 +2,7 @@ import codecs
 from collections import defaultdict
 import csv
 import io
+from pathlib import Path
 
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -33,18 +34,18 @@ def metadata_files_from_csv(user_id, csv_path, isic_id_column):
     ISIC_ID_COLUMN is the name of the column that refers to the ISIC ID.
     """
     u = User.objects.get(pk=user_id)
-    with open(csv_path) as f:
-        df = pd.read_csv(f, header=0)
+    with Path(csv_path).open() as f:
+        metadata_csv = pd.read_csv(f, header=0)
 
     # pydantic expects None for the absence of a value, not NaN
-    df = df.replace({np.nan: None})
+    metadata_csv = metadata_csv.replace({np.nan: None})
 
     columns_to_drop = {"isic_id", "filename", isic_id_column}
 
     cohort_files = defaultdict(list)
     cohort_columns = defaultdict(set)
 
-    for _, (_, row) in enumerate(df.iterrows(), start=2):
+    for _, (_, row) in enumerate(metadata_csv.iterrows(), start=2):
         accession: Accession = Accession.objects.select_related("cohort").get(
             image__isic_id=row[isic_id_column]
         )
@@ -67,6 +68,10 @@ def metadata_files_from_csv(user_id, csv_path, isic_id_column):
         blob = SimpleUploadedFile(blob_name, blob.getvalue(), "text/csv")
 
         m = MetadataFile.objects.create(
-            creator=u, cohort_id=cohort_id, blob=blob, blob_size=size, blob_name=blob_name
+            creator=u,
+            cohort_id=cohort_id,
+            blob=blob,
+            blob_size=size,
+            blob_name=blob_name,
         )
         click.secho(f"Created metadata file: {m.pk}, authored by {u.email}", fg="green")

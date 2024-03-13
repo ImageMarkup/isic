@@ -43,14 +43,14 @@ class Cohort(CreationSortedTimeStampedModel):
 
     name = models.CharField(
         max_length=255,
-        help_text=mark_safe(
+        help_text=mark_safe(  # noqa: S308
             "The name of your Cohort. "
             "<strong>This is private</strong>, and will "
             "not be published along with your images."
         ),
     )
     description = models.TextField(
-        help_text=mark_safe(
+        help_text=mark_safe(  # noqa: S308
             "The description of your Cohort."
             "<strong>This is private</strong>, and will not be published along "
             "with your images."
@@ -96,10 +96,10 @@ class CohortPermissions:
 
         if user_obj.is_staff:
             return qs
-        elif user_obj.is_authenticated:
+        if user_obj.is_authenticated:
             return qs.filter(contributor__owners__in=[user_obj])
-        else:
-            return qs.none()
+
+        return qs.none()
 
     @staticmethod
     def edit_cohort_list(user_obj: User, qs: QuerySet[Cohort] | None = None) -> QuerySet[Cohort]:
@@ -107,10 +107,10 @@ class CohortPermissions:
 
         if user_obj.is_staff:
             return qs
-        elif user_obj.is_authenticated:
+        if user_obj.is_authenticated:
             return qs.filter(contributor__owners__in=[user_obj])
-        else:
-            return qs.none()
+
+        return qs.none()
 
     @staticmethod
     def view_cohort(user_obj, obj):

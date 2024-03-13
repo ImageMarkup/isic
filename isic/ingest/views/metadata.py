@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 from typing import TypedDict
 
 from django import forms
@@ -33,7 +33,9 @@ class ValidateMetadataForm(forms.Form):
             choices=[
                 (m.id, m.id)
                 for m in get_visible_objects(
-                    user, "ingest.view_metadatafile", MetadataFile.objects.filter(cohort=cohort)
+                    user,
+                    "ingest.view_metadatafile",
+                    MetadataFile.objects.filter(cohort=cohort),
                 )
             ],
             widget=forms.RadioSelect,
@@ -49,14 +51,14 @@ def metadata_file_create(request, cohort_pk):
         if form.is_valid():
             form.instance.creator = request.user
             form.instance.blob_size = form.instance.blob.size
-            form.instance.blob_name = os.path.basename(form.instance.blob.name)
+            form.instance.blob_name = Path(form.instance.blob.name).name
             form.instance.cohort = cohort
             form.save(commit=True)
 
             if request.GET.get("ingest_review_redirect"):
                 return HttpResponseRedirect(reverse("validate-metadata", args=[cohort.pk]))
-            else:
-                return HttpResponseRedirect(reverse("upload/cohort-files", args=[cohort.pk]))
+
+            return HttpResponseRedirect(reverse("upload/cohort-files", args=[cohort.pk]))
     else:
         form = MetadataFileForm()
 
@@ -106,8 +108,10 @@ def apply_metadata(request, cohort_pk):
     # solve, so we only use the TypedDict in the tests.
     ctx = {
         "cohort": cohort,
-        "breadcrumbs": make_breadcrumbs(cohort)
-        + [[reverse("validate-metadata", args=[cohort.pk]), "Validate Metadata"]],
+        "breadcrumbs": [
+            *make_breadcrumbs(cohort),
+            [reverse("validate-metadata", args=[cohort.pk]), "Validate Metadata"],
+        ],
         "form": ValidateMetadataForm(request.user, cohort),
     }
 

@@ -7,7 +7,7 @@ from isic.core.services.collection import collection_lock
 from isic.studies.models import Study, StudyTask
 
 
-def study_create(
+def study_create(  # noqa: PLR0913
     *,
     creator: User,
     owners,

@@ -25,6 +25,13 @@ class GaMetrics(TimeStampedModel):
 
 
 class ImageDownload(models.Model):
+    created = CreationDateTimeField()
+    download_time = models.DateTimeField()
+    ip_address = models.GenericIPAddressField()
+    user_agent = models.CharField(null=True, max_length=400)
+    request_id = models.CharField(max_length=200)
+    image = models.ForeignKey(Image, on_delete=models.PROTECT, related_name="downloads")
+
     class Meta:
         constraints = [
             CheckConstraint(
@@ -33,9 +40,5 @@ class ImageDownload(models.Model):
             UniqueConstraint(name="unique_request_id", fields=["request_id"]),
         ]
 
-    created = CreationDateTimeField()
-    download_time = models.DateTimeField()
-    ip_address = models.GenericIPAddressField()
-    user_agent = models.CharField(null=True, max_length=400)
-    request_id = models.CharField(max_length=200)
-    image = models.ForeignKey(Image, on_delete=models.PROTECT, related_name="downloads")
+    def __str__(self):
+        return f"{self.ip_address} - {self.download_time}"

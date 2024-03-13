@@ -2,7 +2,7 @@ import pytest
 from pytest_lazyfixture import lazy_fixture
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_api_lesion(authenticated_client, lesion_factory, image_factory):
     lesion = lesion_factory()
     image_factory(accession__lesion=lesion)
@@ -11,7 +11,7 @@ def test_api_lesion(authenticated_client, lesion_factory, image_factory):
     assert resp.status_code == 200, resp.json()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_api_lesion_ignores_imageless_lesions(authenticated_client, lesion_factory, user):
     # give access to the lesion to ensure this isn't passing due to lack of permissions
     lesion_factory(cohort__contributor__owners=[user])
@@ -21,19 +21,19 @@ def test_api_lesion_ignores_imageless_lesions(authenticated_client, lesion_facto
     assert len(resp.json()["results"]) == 0
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize(
-    ["client_", "image_public_states", "expected_lesion_count"],
+    ("client_", "image_public_states", "expected_lesion_count"),
     [
-        [lazy_fixture("client"), [True, True], 1],
-        [lazy_fixture("client"), [True, False], 0],
-        [lazy_fixture("client"), [False, False], 0],
-        [lazy_fixture("authenticated_client"), [True, True], 1],
-        [lazy_fixture("authenticated_client"), [True, False], 0],
-        [lazy_fixture("authenticated_client"), [False, False], 0],
-        [lazy_fixture("staff_client"), [True, True], 1],
-        [lazy_fixture("staff_client"), [True, False], 1],
-        [lazy_fixture("staff_client"), [False, False], 1],
+        (lazy_fixture("client"), [True, True], 1),
+        (lazy_fixture("client"), [True, False], 0),
+        (lazy_fixture("client"), [False, False], 0),
+        (lazy_fixture("authenticated_client"), [True, True], 1),
+        (lazy_fixture("authenticated_client"), [True, False], 0),
+        (lazy_fixture("authenticated_client"), [False, False], 0),
+        (lazy_fixture("staff_client"), [True, True], 1),
+        (lazy_fixture("staff_client"), [True, False], 1),
+        (lazy_fixture("staff_client"), [False, False], 1),
     ],
 )
 def test_api_lesion_permissions_public(
@@ -60,7 +60,7 @@ def test_api_lesion_permissions_public(
     assert len(resp.json()["results"]) == expected_lesion_count
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_api_lesion_permissions_contributor(
     authenticated_client, lesion_factory, image_factory, contributor
 ):

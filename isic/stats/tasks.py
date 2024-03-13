@@ -106,9 +106,7 @@ def collect_google_analytics_metrics_task():
 
     for iso_code, sessions in sessions_per_iso_code.items():
         if iso_code not in ["(not set)", ""]:
-            sessions_per_country.append(
-                {**{"sessions": sessions}, **_country_from_iso_code(iso_code)}
-            )
+            sessions_per_country.append({"sessions": sessions, **_country_from_iso_code(iso_code)})
 
     GaMetrics.objects.create(
         range_start=timezone.now() - timedelta(days=30),
@@ -129,10 +127,12 @@ def _cdn_access_log_records(s3, s3_log_object_key: str) -> Iterable[dict]:
 
     with gzip.GzipFile(fileobj=BytesIO(data["Body"].read())) as stream:
         version_line, headers_line = stream.readlines()[0:2]
-        assert version_line.decode("utf-8").strip() == "#Version: 1.0"
+        if not version_line.startswith(b"#Version: 1.0"):
+            raise Exception(f"Unknown version in log file {s3_log_object_key}")
+
         headers = headers_line.decode("utf-8").replace("#Fields:", "").strip().split()
         stream.seek(0)
-        df = pd.read_table(
+        logs = pd.read_table(
             stream,
             skiprows=2,
             names=headers,
@@ -148,9 +148,9 @@ def _cdn_access_log_records(s3, s3_log_object_key: str) -> Iterable[dict]:
             delimiter="\\s+",
         )
 
-    df["download_time"] = pd.to_datetime(df["date"] + " " + df["time"], utc=True)
+    logs["download_time"] = pd.to_datetime(logs["date"] + " " + logs["time"], utc=True)
 
-    for _, row in df.iterrows():
+    for _, row in logs.iterrows():
         yield {
             "download_time": row["download_time"],
             "path": row["cs-uri-stem"].lstrip("/"),
@@ -200,7 +200,7 @@ def process_s3_log_file_task(s3_log_object_key: str):
 
             for download_log in download_logs:
                 if download_log["path"] in downloaded_paths_to_image_id:
-                    image_downloads.append(
+                    image_downloads.append(  # noqa: PERF401
                         ImageDownload(
                             download_time=download_log["download_time"],
                             ip_address=download_log["ip_address"],
@@ -223,4 +223,5 @@ def process_s3_log_file_task(s3_log_object_key: str):
         Bucket=settings.CDN_LOG_BUCKET,
         Key=s3_log_object_key,
     )
-    assert delete["ResponseMetadata"]["HTTPStatusCode"] == 204
+    if delete["ResponseMetadata"]["HTTPStatusCode"] != 204:
+        raise Exception(f"Failed to delete s3 log file {s3_log_object_key}")

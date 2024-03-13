@@ -1,7 +1,7 @@
 import pytest
 
 
-@pytest.fixture
+@pytest.fixture()
 def private_study_with_responses(study_factory, user_factory, response_factory):
     # create a scenario for testing that a user can only see their responses and
     # not another annotators.

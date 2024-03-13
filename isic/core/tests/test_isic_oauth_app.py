@@ -4,23 +4,23 @@ import pytest
 from isic.core.models.base import IsicOAuthApplication
 
 
-@pytest.fixture
-def oauth_allow_regex_redirect_uris(settings):
+@pytest.fixture()
+def _oauth_allow_regex_redirect_uris(settings):
     settings.ISIC_OAUTH_ALLOW_REGEX_REDIRECT_URIS = True
-    yield
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
+@pytest.mark.usefixtures("_oauth_allow_regex_redirect_uris")
 @pytest.mark.parametrize(
-    "uri,allowed_uris,allowed",
+    ("uri", "allowed_uris", "allowed"),
     [
-        ["http://foo.com", "http://foo.com", True],
-        ["http://bar.com", "http://foo.com", False],
-        ["http://bar.com", "http://foo.com ^http://bar.com$", True],
-        ["http://bar5.com", "http://foo.com ^http://bar[0-9]\\.com$", True],
+        ("http://foo.com", "http://foo.com", True),
+        ("http://bar.com", "http://foo.com", False),
+        ("http://bar.com", "http://foo.com ^http://bar.com$", True),
+        ("http://bar5.com", "http://foo.com ^http://bar[0-9]\\.com$", True),
     ],
 )
-def test_redirect_uri_allowed(oauth_allow_regex_redirect_uris, user, uri, allowed_uris, allowed):
+def test_redirect_uri_allowed(user, uri, allowed_uris, allowed):
     app = IsicOAuthApplication.objects.create(
         name="Test Application",
         redirect_uris=allowed_uris,

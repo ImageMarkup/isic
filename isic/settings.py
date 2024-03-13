@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from datetime import timedelta
 from pathlib import Path
 
@@ -16,7 +14,7 @@ from configurations import values
 def _oauth2_pkce_required(client_id):
     from oauth2_provider.models import get_application_model
 
-    OAuth2Application = get_application_model()
+    OAuth2Application = get_application_model()  # noqa: N806
     oauth_application = OAuth2Application.objects.get(client_id=client_id)
     # PKCE is only required for public clients, but express the logic this way to make it required
     # by default for any future new client_types
@@ -38,15 +36,18 @@ class IsicMixin(ConfigMixin):
 
         # Install local apps first, to ensure any overridden resources are found first
         configuration.INSTALLED_APPS = [
-            "isic.core.apps.CoreConfig",
-            "isic.find.apps.FindConfig",
-            "isic.login.apps.LoginConfig",
-            "isic.ingest.apps.IngestConfig",
-            "isic.stats.apps.StatsConfig",
-            "isic.studies.apps.StudiesConfig",
-            "isic.zip_download.apps.ZipDownloadConfig",
-            "ninja",  # required because we overwrite ninja/swagger.html
-        ] + configuration.INSTALLED_APPS
+            *[
+                "isic.core.apps.CoreConfig",
+                "isic.find.apps.FindConfig",
+                "isic.login.apps.LoginConfig",
+                "isic.ingest.apps.IngestConfig",
+                "isic.stats.apps.StatsConfig",
+                "isic.studies.apps.StudiesConfig",
+                "isic.zip_download.apps.ZipDownloadConfig",
+                "ninja",  # required because we overwrite ninja/swagger.html
+            ],
+            *configuration.INSTALLED_APPS,
+        ]
 
         # Insert the ExemptBearerAuthFromCSRFMiddleware just before the CsrfViewMiddleware
         configuration.MIDDLEWARE.insert(
@@ -175,7 +176,7 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
     MINIO_STORAGE_MEDIA_OBJECT_METADATA = {"Content-Disposition": "attachment"}
 
     ZIP_DOWNLOAD_SERVICE_URL = "http://localhost:4008"
-    ZIP_DOWNLOAD_BASIC_AUTH_TOKEN = "insecurezipdownloadauthtoken"
+    ZIP_DOWNLOAD_BASIC_AUTH_TOKEN = "insecurezipdownloadauthtoken"  # noqa: S105
     # Requires CloudFront configuration
     ZIP_DOWNLOAD_WILDCARD_URLS = False
 
@@ -197,7 +198,7 @@ class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
     CELERY_TASK_EAGER_PROPAGATES = values.BooleanValue(False)
     ISIC_DATACITE_DOI_PREFIX = "10.80222"
     ZIP_DOWNLOAD_SERVICE_URL = "http://service-url.test"
-    ZIP_DOWNLOAD_BASIC_AUTH_TOKEN = "insecuretestzipdownloadauthtoken"
+    ZIP_DOWNLOAD_BASIC_AUTH_TOKEN = "insecuretestzipdownloadauthtoken"  # noqa: S105
     ZIP_DOWNLOAD_WILDCARD_URLS = False
 
     @staticmethod

@@ -3,7 +3,7 @@ import pytest
 from isic.ingest.models.accession import Accession
 
 
-@pytest.fixture
+@pytest.fixture()
 def accessions(accession_factory, accession_review_factory):
     return [
         accession_review_factory(value=False).accession,
@@ -13,7 +13,7 @@ def accessions(accession_factory, accession_review_factory):
     ]
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_api_accession_create(authenticated_client, user, cohort_factory, s3ff_field_value):
     cohort = cohort_factory(contributor__owners=[user])
 
@@ -27,7 +27,7 @@ def test_api_accession_create(authenticated_client, user, cohort_factory, s3ff_f
     assert cohort.accessions.count() == 1
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_api_accession_create_creates_accessions_with_unstructured_metadata(
     authenticated_client, user, cohort_factory, s3ff_field_value
 ):
@@ -44,7 +44,7 @@ def test_api_accession_create_creates_accessions_with_unstructured_metadata(
     assert cohort.accessions.first().unstructured_metadata is not None
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_api_accession_create_duplicate_blob_name(
     authenticated_client, user, cohort_factory, s3ff_field_value
 ):
@@ -67,7 +67,7 @@ def test_api_accession_create_duplicate_blob_name(
     assert cohort.accessions.count() == 1
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_api_accession_create_invalid_cohort(
     authenticated_client, user_factory, cohort_factory, s3ff_field_value
 ):
@@ -82,7 +82,7 @@ def test_api_accession_create_invalid_cohort(
     assert resp.status_code == 403, resp.json()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_api_accession_create_review_bulk(staff_client, accession_factory):
     accessions = [accession_factory() for _ in range(4)]
 

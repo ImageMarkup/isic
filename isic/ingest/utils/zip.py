@@ -1,6 +1,6 @@
 from collections.abc import Generator
 from dataclasses import dataclass
-import os
+from pathlib import Path
 from typing import IO
 
 import zipfile_deflate64 as zipfile
@@ -27,7 +27,7 @@ def _filtered_infolist(zip_file: zipfile.ZipFile) -> Generator[zipfile.ZipInfo, 
 
 def _base_file_name(path: str) -> str:
     """Return the base name of a path."""
-    return os.path.basename(path.replace("\\", "/"))
+    return Path(path.replace("\\", "/")).name
 
 
 def file_names_in_zip(stream: IO[bytes]) -> Generator[str, None, None]:

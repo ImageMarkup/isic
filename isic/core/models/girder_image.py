@@ -16,9 +16,6 @@ class GirderImageStatus(models.TextChoices):
 
 
 class GirderDataset(models.Model):
-    class Meta:
-        ordering = ["id"]
-
     id = models.CharField(
         primary_key=True,
         max_length=24,
@@ -27,29 +24,18 @@ class GirderDataset(models.Model):
     name = models.CharField(max_length=255)
     public = models.BooleanField()
 
+    class Meta:
+        ordering = ["id"]
+
     def __str__(self) -> str:
         return self.name
 
 
 class GirderImage(models.Model):
-    class Meta:
-        ordering = ["item_id"]
-        # If status is not unknown, must have accession
-        constraints = [
-            models.CheckConstraint(
-                name="non_unknown_have_accession",
-                check=Q(status=GirderImageStatus.UNKNOWN)
-                | Q(status=GirderImageStatus.NON_IMAGE)
-                | Q(accession__isnull=False),
-            ),
-            models.CheckConstraint(
-                name="non_non_image_have_stripped_blob_dm",
-                check=Q(status=GirderImageStatus.NON_IMAGE) | ~Q(stripped_blob_dm=""),
-            ),
-        ]
-
     status = models.CharField(
-        choices=GirderImageStatus.choices, default=GirderImageStatus.UNKNOWN, max_length=30
+        choices=GirderImageStatus.choices,
+        default=GirderImageStatus.UNKNOWN,
+        max_length=30,
     )
     pre_review = models.BooleanField(null=True)
 
@@ -84,7 +70,10 @@ class GirderImage(models.Model):
     )
     # stripped_blob_dm should match Django
     stripped_blob_dm = models.CharField(
-        max_length=64, validators=[RegexValidator(r"^[0-9a-f]{64}$")], blank=True, editable=False
+        max_length=64,
+        validators=[RegexValidator(r"^[0-9a-f]{64}$")],
+        blank=True,
+        editable=False,
     )
 
     accession = models.OneToOneField(
@@ -92,6 +81,22 @@ class GirderImage(models.Model):
     )
 
     raw = models.JSONField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["item_id"]
+        # If status is not unknown, must have accession
+        constraints = [
+            models.CheckConstraint(
+                name="non_unknown_have_accession",
+                check=Q(status=GirderImageStatus.UNKNOWN)
+                | Q(status=GirderImageStatus.NON_IMAGE)
+                | Q(accession__isnull=False),
+            ),
+            models.CheckConstraint(
+                name="non_non_image_have_stripped_blob_dm",
+                check=Q(status=GirderImageStatus.NON_IMAGE) | ~Q(stripped_blob_dm=""),
+            ),
+        ]
 
     def __str__(self) -> str:
         return self.isic_id

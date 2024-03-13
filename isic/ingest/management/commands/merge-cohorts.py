@@ -10,10 +10,11 @@ from isic.ingest.services.cohort import cohort_merge
 @click.command()
 @click.argument("cohort_id", nargs=-1, type=click.INT)
 def merge_cohorts(cohort_id):
-    assert len(cohort_id) > 1
-    cohorts = []
-    for id_ in cohort_id:
-        cohorts.append(Cohort.objects.get(pk=id_))
+    if len(cohort_id) < 2:
+        click.secho("Must provide at least 2 cohort IDs to merge.", color="red", err=True)
+        sys.exit(1)
+
+    cohorts = [Cohort.objects.get(pk=id_) for id_ in cohort_id]
 
     try:
         cohort_merge(dest_cohort=cohorts[0], other_cohorts=cohorts[1:])

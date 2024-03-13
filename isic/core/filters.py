@@ -23,8 +23,7 @@ class CollectionFilter(django_filters.FilterSet):
         super().__init__(*args, **kwargs)
 
     def filter_pinned(self, qs: QuerySet, name, value):
-        qs = qs.filter(pinned=value)
-        return qs
+        return qs.filter(pinned=value)
 
     def filter_shared_with_me(self, qs: QuerySet, name, value):
         if value is True and self.user.is_authenticated:

@@ -4,9 +4,9 @@ import pytest
 from isic.studies.models import Study
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
+@pytest.mark.usefixtures("_eager_celery")
 def test_create_study(
-    eager_celery,
     user,
     authenticated_client,
     collection_factory,
