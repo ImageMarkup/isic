@@ -3,7 +3,13 @@ import io
 import pytest
 import requests
 
-from isic.ingest.models import Accession, AccessionStatus, ZipUpload
+from isic.ingest.models import (
+    Accession,
+    AccessionStatus,
+    ZipUpload,
+    ZipUploadFailReason,
+    ZipUploadStatus,
+)
 
 
 @pytest.fixture(params=[b"", b"corrupt_zip"], ids=["empty", "corrupt"])
@@ -59,7 +65,7 @@ def test_zip_extract_success(zip_upload):
     zip_upload.extract()
 
     zip_upload.refresh_from_db()
-    assert zip_upload.status == ZipUpload.Status.EXTRACTED
+    assert zip_upload.status == ZipUploadStatus.EXTRACTED
     assert Accession.objects.count() == 5
 
 
@@ -121,7 +127,8 @@ def test_zip_extract_invalid(caplog, invalid_zip):
     assert "invalid zip" in message
     assert "File is not a zip file" in message
     invalid_zip.refresh_from_db()
-    assert invalid_zip.status == ZipUpload.Status.FAILED
+    assert invalid_zip.status == ZipUploadStatus.FAILED
+    assert invalid_zip.fail_reason == ZipUploadFailReason.INVALID
     assert Accession.objects.count() == 0
 
 
@@ -134,7 +141,8 @@ def test_zip_extract_duplicate(caplog, preexisting_and_duplicates_zip):
     assert message
     assert "duplicates" in message
     preexisting_and_duplicates_zip.refresh_from_db()
-    assert preexisting_and_duplicates_zip.status == ZipUpload.Status.FAILED
+    assert preexisting_and_duplicates_zip.status == ZipUploadStatus.FAILED
+    assert preexisting_and_duplicates_zip.fail_reason == ZipUploadFailReason.DUPLICATES
     # preexisting_and_duplicates_zip saves 1 accession
     assert Accession.objects.count() == 1
 
@@ -182,5 +190,5 @@ def test_zip_reset(zip_upload):
     zip_upload.reset()
 
     zip_upload.refresh_from_db()
-    assert zip_upload.status == ZipUpload.Status.CREATED
+    assert zip_upload.status == ZipUploadStatus.CREATED
     assert Accession.objects.count() == 0
