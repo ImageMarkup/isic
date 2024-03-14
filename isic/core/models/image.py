@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from copy import deepcopy
 
 from django.contrib.auth.models import User
@@ -23,8 +25,7 @@ class ImageQuerySet(models.QuerySet):
     def from_search_query(self, query: str):
         if query == "":
             return self
-        else:
-            return self.filter(parse_query(django_parser, query) or Q())
+        return self.filter(parse_query(django_parser, query) or Q())
 
     def with_elasticsearch_properties(self):
         return self.select_related("accession__cohort").annotate(
@@ -99,7 +100,9 @@ class Image(CreationSortedTimeStampedModel):
         image_metadata = deepcopy(self.accession.metadata)
 
         if "age" in image_metadata:
-            image_metadata["age_approx"] = Accession._age_approx(image_metadata["age"])
+            image_metadata["age_approx"] = Accession._age_approx(  # noqa: SLF001
+                image_metadata["age"]
+            )
             del image_metadata["age"]
 
         if self.has_lesion:
@@ -110,7 +113,7 @@ class Image(CreationSortedTimeStampedModel):
 
         return image_metadata
 
-    def to_elasticsearch_document(self, body_only=False) -> dict:
+    def to_elasticsearch_document(self, *, body_only=False) -> dict:
         # Can only be called on images that were fetched with with_elasticsearch_properties.
         document = {
             "id": self.pk,
@@ -128,27 +131,27 @@ class Image(CreationSortedTimeStampedModel):
 
         if body_only:
             return document
-        else:
-            # index the document by image.pk so it can be updated later.
-            return {"_id": self.pk, "_source": document}
 
-    def same_patient_images(self) -> QuerySet["Image"]:
+        # index the document by image.pk so it can be updated later.
+        return {"_id": self.pk, "_source": document}
+
+    def same_patient_images(self) -> QuerySet[Image]:
         if not self.has_patient:
             return Image.objects.none()
 
         return (
             Image.objects.filter(accession__cohort_id=self.accession.cohort_id)
-            .filter(**{"accession__patient_id": self.accession.patient_id})
+            .filter(accession__patient_id=self.accession.patient_id)
             .exclude(pk=self.pk)
         )
 
-    def same_lesion_images(self) -> QuerySet["Image"]:
+    def same_lesion_images(self) -> QuerySet[Image]:
         if not self.has_lesion:
             return Image.objects.none()
 
         return (
             Image.objects.filter(accession__cohort_id=self.accession.cohort_id)
-            .filter(**{"accession__lesion_id": self.accession.lesion_id})
+            .filter(accession__lesion_id=self.accession.lesion_id)
             .exclude(pk=self.pk)
         )
 
@@ -157,7 +160,8 @@ class ImageShare(TimeStampedModel):
     class Meta(TimeStampedModel.Meta):
         constraints = [
             CheckConstraint(
-                name="imageshare_creator_recipient_diff_check", check=~Q(creator=F("recipient"))
+                name="imageshare_creator_recipient_diff_check",
+                check=~Q(creator=F("recipient")),
             )
         ]
 
@@ -169,7 +173,10 @@ class ImageShare(TimeStampedModel):
 class ImagePermissions:
     model = Image
     perms = ["view_image", "view_full_metadata"]
-    filters = {"view_image": "view_image_list", "view_full_metadata": "view_full_metadata_list"}
+    filters = {
+        "view_image": "view_image_list",
+        "view_full_metadata": "view_full_metadata_list",
+    }
 
     @staticmethod
     def view_full_metadata_list(
@@ -182,10 +189,10 @@ class ImagePermissions:
 
         if user_obj.is_staff:
             return qs
-        elif not user_obj.is_anonymous:
+        if not user_obj.is_anonymous:
             return qs.filter(accession__cohort__contributor__owners=user_obj)
-        else:
-            return qs.none()
+
+        return qs.none()
 
     @staticmethod
     def view_full_metadata(user_obj: User, obj: Image) -> bool:
@@ -197,7 +204,7 @@ class ImagePermissions:
 
         if user_obj.is_staff:
             return qs
-        elif user_obj.is_authenticated:
+        if user_obj.is_authenticated:
             # Note: permissions here must be also modified in build_elasticsearch_query and
             # LesionPermissions.view_lesion_list.
             return qs.filter(
@@ -205,8 +212,8 @@ class ImagePermissions:
                 | Q(accession__cohort__contributor__owners=user_obj)
                 | Q(shares=user_obj)
             )
-        else:
-            return qs.public()
+
+        return qs.public()
 
     @staticmethod
     def view_image(user_obj: User, obj: Image) -> bool:

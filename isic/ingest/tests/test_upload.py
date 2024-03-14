@@ -13,7 +13,7 @@ from isic.ingest.models.accession import AccessionStatus
 data_dir = pathlib.Path(__file__).parent / "data"
 
 
-@pytest.fixture
+@pytest.fixture()
 def zip_stream_garbage() -> BinaryIO:
     file_stream = io.BytesIO()
 
@@ -37,6 +37,7 @@ def zip_stream_garbage() -> BinaryIO:
     return file_stream
 
 
+@pytest.mark.usefixtures("_eager_celery")
 @pytest.mark.parametrize(
     "zip_stream",
     [
@@ -44,13 +45,12 @@ def zip_stream_garbage() -> BinaryIO:
         lazy_fixture("zip_stream_garbage"),
     ],
 )
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_upload_zip(
     cohort_factory,
     user,
     authenticated_client,
     zip_stream,
-    eager_celery,
     django_capture_on_commit_callbacks,
 ):
     cohort = cohort_factory(creator=user, contributor__creator=user)

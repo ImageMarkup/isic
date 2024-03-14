@@ -1,4 +1,3 @@
-import os
 import pathlib
 
 from django.core.exceptions import ValidationError
@@ -12,23 +11,23 @@ from isic.ingest.utils.zip import Blob
 data_dir = pathlib.Path(__file__).parent / "data"
 
 
-@pytest.fixture
+@pytest.fixture()
 def user_with_cohort(user, cohort_factory):
     cohort = cohort_factory(contributor__creator=user)
     return user, cohort
 
 
-@pytest.fixture
+@pytest.fixture()
 def jpg_blob():
-    with open(data_dir / "ISIC_0000000.jpg", "rb") as stream:
+    with pathlib.Path(data_dir / "ISIC_0000000.jpg").open("rb") as stream:
         yield Blob(
             name="ISIC_0000000.jpg",
             stream=stream,
-            size=os.path.getsize(data_dir / "ISIC_0000000.jpg"),
+            size=pathlib.Path(data_dir / "ISIC_0000000.jpg").stat().st_size,
         )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_accession_generate_thumbnail(accession_factory):
     accession = accession_factory(thumbnail_256=None, thumbnail_256_size=None)
 
@@ -39,7 +38,7 @@ def test_accession_generate_thumbnail(accession_factory):
         assert thumbnail_content.startswith(b"\xff\xd8")
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_accession_without_zip_upload(user, jpg_blob, cohort):
     accession = Accession.from_blob(jpg_blob)
     accession.creator = user
@@ -50,7 +49,7 @@ def test_accession_without_zip_upload(user, jpg_blob, cohort):
     accession.save()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_accession_upload(authenticated_client, s3ff_field_value, user_with_cohort):
     _, cohort = user_with_cohort
     r = authenticated_client.post(
@@ -62,7 +61,7 @@ def test_accession_upload(authenticated_client, s3ff_field_value, user_with_coho
     assert cohort.accessions.first().metadata["age"] == 50
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_accession_upload_duplicate_name(authenticated_client, s3ff_field_value, user_with_cohort):
     _, cohort = user_with_cohort
     r = authenticated_client.post(
@@ -82,7 +81,7 @@ def test_accession_upload_duplicate_name(authenticated_client, s3ff_field_value,
     assert cohort.accessions.count() == 1
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_accession_upload_invalid_cohort(
     authenticated_client, s3ff_field_value, cohort_factory, user_factory
 ):
@@ -99,7 +98,7 @@ def test_accession_upload_invalid_cohort(
     assert r.status_code == 403, r.data
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_accession_mutable_before_publish(user, accession_factory):
     accession = accession_factory(image=None)
     accession.update_metadata(user, {"foo": "bar"})
@@ -107,10 +106,10 @@ def test_accession_mutable_before_publish(user, accession_factory):
     accession.save()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_accession_immutable_after_publish(user, image_factory):
     image = image_factory()
 
     with pytest.raises(ValidationError):
         image.accession.update_metadata(user, {"foo": "bar"})
-        image.accession.save()
+        # image.accession.save()

@@ -39,8 +39,7 @@ def collection_list(request, pinned: bool | None = None) -> list[CollectionOut]:
 @router.get("/{id}/", response=CollectionOut, summary="Retrieve a single collection by ID.")
 def collection_detail(request, id: int) -> CollectionOut:
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
-    collection = get_object_or_404(qs, id=id)
-    return collection
+    return get_object_or_404(qs, id=id)
 
 
 @router.post(

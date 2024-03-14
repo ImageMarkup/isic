@@ -12,7 +12,8 @@ from isic.ingest.models.accession_review import AccessionReview
 def accession_review_update_or_create(
     *, accession: Accession, reviewer: User, reviewed_at: datetime, value: bool
 ) -> AccessionReview:
-    assert not accession.published, "Cannot review an accession after publish."
+    if accession.published:
+        raise ValidationError("Cannot review an accession after publish.")
 
     accession_review, _ = AccessionReview.objects.update_or_create(
         accession=accession,

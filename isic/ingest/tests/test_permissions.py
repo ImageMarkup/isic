@@ -2,7 +2,7 @@ from django.urls.base import reverse
 import pytest
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_upload_select_contributor_permissions(
     client, authenticated_client, staff_client, contributor_factory
 ):
@@ -24,7 +24,7 @@ def test_upload_select_contributor_permissions(
     assert set(r.context["contributors"].values_list("pk", flat=True)) == {c1.pk, c2.pk, c3.pk}
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_upload_create_contributor_permissions(client, authenticated_client):
     r = client.get(reverse("upload/create-contributor"))
     assert r.status_code == 302  # redirect to login page
@@ -33,7 +33,7 @@ def test_upload_create_contributor_permissions(client, authenticated_client):
     assert r.status_code == 200
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_upload_select_create_cohort_permissions(
     client, authenticated_client, staff_client, cohort_factory, contributor_factory
 ):
@@ -49,14 +49,14 @@ def test_upload_select_create_cohort_permissions(
     client.force_login(contributor.creator)
     r = client.get(reverse("upload/select-or-create-cohort", args=[contributor.pk]))
     assert r.status_code == 200
-    assert set(r.context["cohorts"]) == set(list(contributor.cohorts.all()))
+    assert set(r.context["cohorts"]) == set(contributor.cohorts.all())
 
     r = staff_client.get(reverse("upload/select-or-create-cohort", args=[contributor.pk]))
     assert r.status_code == 200
-    assert set(r.context["cohorts"]) == set(list(contributor.cohorts.all()))
+    assert set(r.context["cohorts"]) == set(contributor.cohorts.all())
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_upload_create_cohort_permissions(client, authenticated_client, contributor_factory, user):
     contributor = contributor_factory(creator=user)
 
@@ -67,7 +67,7 @@ def test_upload_create_cohort_permissions(client, authenticated_client, contribu
     assert r.status_code == 200
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_upload_edit_cohort_permissions(
     client, authenticated_client, cohort_factory, user, user_factory
 ):
@@ -85,7 +85,7 @@ def test_upload_edit_cohort_permissions(
     assert r.status_code == 403
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize("url_name", ["ingest-review", "cohort-list"])
 def test_staff_page_permissions(url_name, client, authenticated_client, staff_client):
     r = client.get(reverse(url_name))
@@ -98,7 +98,7 @@ def test_staff_page_permissions(url_name, client, authenticated_client, staff_cl
     assert r.status_code == 200
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize("url_name", ["upload/cohort-files", "upload/zip", "upload-metadata"])
 def test_cohort_pages_permissions(
     url_name, client, authenticated_client, staff_client, cohort_factory, user_factory
@@ -125,7 +125,7 @@ def test_cohort_pages_permissions(
     assert r.status_code == 200
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize(
     "url_name",
     [
@@ -150,7 +150,7 @@ def test_cohort_review_permissions(url_name, client, authenticated_client, staff
     assert r.status_code == 200
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_validate_metadata_permissions(client, authenticated_client, staff_client, cohort):
     r = client.get(reverse("validate-metadata", args=[cohort.pk]))
     assert r.status_code == 302
@@ -169,7 +169,7 @@ def test_validate_metadata_permissions(client, authenticated_client, staff_clien
     assert r.status_code == 200
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_merge_cohort_permissions(client, authenticated_client, staff_client):
     r = client.get(reverse("merge-cohorts"))
     assert r.status_code == 302

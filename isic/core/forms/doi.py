@@ -1,10 +1,14 @@
+from typing import TYPE_CHECKING
+
 from django import forms
 
-from isic.core.models.collection import Collection
 from isic.core.services.collection.doi import (
     collection_check_create_doi_allowed,
     collection_create_doi,
 )
+
+if TYPE_CHECKING:
+    from isic.core.models.collection import Collection
 
 
 class CreateDoiForm(forms.Form):

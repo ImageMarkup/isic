@@ -4,7 +4,7 @@ from isic.core.models.image import Image
 from isic.core.services import image_metadata_csv
 
 
-@pytest.fixture
+@pytest.fixture()
 def image_with_maskable_metadata(image):
     image.accession.update_metadata(
         image.creator,
@@ -18,7 +18,7 @@ def image_with_maskable_metadata(image):
     return image
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_accession_exposes_unsafe_metadata(image_with_maskable_metadata):
     assert image_with_maskable_metadata.accession.metadata["age"] == 32
     assert "age_approx" not in image_with_maskable_metadata.accession.metadata
@@ -26,7 +26,7 @@ def test_accession_exposes_unsafe_metadata(image_with_maskable_metadata):
     assert "patient_id" not in image_with_maskable_metadata.accession.metadata
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_image_masks_unsafe_metadata(image_with_maskable_metadata):
     assert image_with_maskable_metadata.metadata["age_approx"] == 30
     assert "age" not in image_with_maskable_metadata.metadata
@@ -34,7 +34,7 @@ def test_image_masks_unsafe_metadata(image_with_maskable_metadata):
     assert image_with_maskable_metadata.metadata["patient_id"] != "supersecretpatientid"
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_image_csv_headers_exposes_safe_metadata(image_with_maskable_metadata):
     headers = next(image_metadata_csv(qs=Image.objects.all()))
     assert "age" not in headers
@@ -43,7 +43,7 @@ def test_image_csv_headers_exposes_safe_metadata(image_with_maskable_metadata):
     assert "patient_id" in headers
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_image_csv_rows_exposes_safe_metadata(image_with_maskable_metadata):
     rows = image_metadata_csv(qs=Image.objects.all())
     next(rows)

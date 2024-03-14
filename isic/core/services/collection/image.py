@@ -17,7 +17,8 @@ def collection_add_images(
     ignore_lock: bool = False,
 ):
     # is not None is necessary because qs could be an empty queryset
-    assert qs is not None or image is not None, "qs and image are mutually exclusive arguments."
+    if qs is not None and image is not None:
+        raise ValueError("qs and image are mutually exclusive arguments.")
 
     if image:
         qs = Image.objects.filter(pk=image.pk)
@@ -29,7 +30,7 @@ def collection_add_images(
         raise ValidationError("Can't add private images to a public collection.")
 
     with transaction.atomic():
-        CollectionImageM2M = Collection.images.through
+        CollectionImageM2M = Collection.images.through  # noqa: N806
         for image_batch in ichunked(qs.iterator(), 5_000):
             # ignore_conflicts is necessary to make this method idempotent (consistent with
             # collection.images.add) ignore_conflicts only ignores primary key, duplicate, and
@@ -53,15 +54,14 @@ def collection_move_images(
     This is effectively the same as removing images from one collection and adding them to
     another, but it's more efficient and does all of the correct safety checks.
     """
-    if not ignore_lock:
-        if src_collection.locked or dest_collection.locked:
-            raise ValidationError("Can't move images to/from a locked collection.")
+    if not ignore_lock and (src_collection.locked or dest_collection.locked):
+        raise ValidationError("Can't move images to/from a locked collection.")
 
     if dest_collection.public and src_collection.images.private().exists():
         raise ValidationError("Can't move private images to a public collection.")
 
     with transaction.atomic():
-        CollectionImageM2M = Collection.images.through
+        CollectionImageM2M = Collection.images.through  # noqa: N806
 
         # first remove the images from the source collection that are already in the
         # destination collection to avoid unique constraint violations.
@@ -83,7 +83,8 @@ def collection_remove_images(
     ignore_lock: bool = False,
 ):
     # is not None is necessary because qs could be an empty queryset
-    assert qs is not None or image is not None, "qs and image are mutually exclusive arguments."
+    if qs is not None and image is not None:
+        raise ValueError("qs and image are mutually exclusive arguments.")
 
     if image:
         qs = Image.objects.filter(pk=image.pk)

@@ -34,18 +34,18 @@ class ImageSearchForm(forms.Form):
 
         serializer_input = {
             **self.cleaned_data,
-            **{"collections": collections},
+            "collections": collections,
         }
         try:
             serializer = SearchQueryIn(**serializer_input)
         except pydantic_core.ValidationError as exc:
-            raise forms.ValidationError([e["msg"] for e in exc.errors()])
+            raise forms.ValidationError([e["msg"] for e in exc.errors()]) from exc
 
         try:
             self.results = serializer.to_queryset(
                 self.user, Image.objects.select_related("accession")
             )
-        except ParseException:
-            raise forms.ValidationError("Invalid search query.")
+        except ParseException as e:
+            raise forms.ValidationError("Invalid search query.") from e
 
         return super().clean()

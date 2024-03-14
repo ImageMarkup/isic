@@ -1,22 +1,22 @@
 import pytest
 
 
-@pytest.fixture
+@pytest.fixture()
 def collections(public_collection, private_collection):
     return [public_collection, private_collection]
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize(
-    "client_,colls,num_visible",
+    ("client_", "colls", "num_visible"),
     [
-        [pytest.lazy_fixture("client"), pytest.lazy_fixture("collections"), 1],
-        [
+        (pytest.lazy_fixture("client"), pytest.lazy_fixture("collections"), 1),
+        (
             pytest.lazy_fixture("authenticated_client"),
             pytest.lazy_fixture("collections"),
             1,
-        ],
-        [pytest.lazy_fixture("staff_client"), pytest.lazy_fixture("collections"), 2],
+        ),
+        (pytest.lazy_fixture("staff_client"), pytest.lazy_fixture("collections"), 2),
     ],
     ids=[
         "guest",
@@ -31,24 +31,36 @@ def test_core_api_collection_list_permissions(client_, colls, num_visible):
     assert r.json()["count"] == num_visible
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize(
-    "client_,collection,visible",
+    ("client_", "collection", "visible"),
     [
-        [pytest.lazy_fixture("client"), pytest.lazy_fixture("public_collection"), True],
-        [
+        (pytest.lazy_fixture("client"), pytest.lazy_fixture("public_collection"), True),
+        (
             pytest.lazy_fixture("authenticated_client"),
             pytest.lazy_fixture("public_collection"),
             True,
-        ],
-        [pytest.lazy_fixture("staff_client"), pytest.lazy_fixture("public_collection"), True],
-        [pytest.lazy_fixture("client"), pytest.lazy_fixture("private_collection"), False],
-        [
+        ),
+        (
+            pytest.lazy_fixture("staff_client"),
+            pytest.lazy_fixture("public_collection"),
+            True,
+        ),
+        (
+            pytest.lazy_fixture("client"),
+            pytest.lazy_fixture("private_collection"),
+            False,
+        ),
+        (
             pytest.lazy_fixture("authenticated_client"),
             pytest.lazy_fixture("private_collection"),
             False,
-        ],
-        [pytest.lazy_fixture("staff_client"), pytest.lazy_fixture("private_collection"), True],
+        ),
+        (
+            pytest.lazy_fixture("staff_client"),
+            pytest.lazy_fixture("private_collection"),
+            True,
+        ),
     ],
     ids=[
         "guest-public",
@@ -69,9 +81,9 @@ def test_core_api_collection_detail_permissions(client_, collection, visible):
         assert r.status_code == 404, r.json()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
+@pytest.mark.usefixtures("_eager_celery")
 def test_core_api_collection_populate_from_search(
-    eager_celery,
     authenticated_client,
     collection_factory,
     image_factory,
@@ -94,26 +106,28 @@ def test_core_api_collection_populate_from_search(
     assert collection.images.first().accession.metadata["sex"] == "male"
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize(
-    "endpoint,data",
+    ("endpoint", "data"),
     [
-        ["populate-from-search", {"query": "sex:male"}],
-        ["populate-from-list", {"isic_ids": ["ISIC_0000000"]}],
-        ["remove-from-list", {"isic_ids": ["ISIC_0000000"]}],
+        ("populate-from-search", {"query": "sex:male"}),
+        ("populate-from-list", {"isic_ids": ["ISIC_0000000"]}),
+        ("remove-from-list", {"isic_ids": ["ISIC_0000000"]}),
     ],
 )
 def test_core_api_collection_modify_locked(endpoint, data, staff_client, collection_factory, user):
     collection = collection_factory(locked=True, creator=user)
 
     r = staff_client.post(
-        f"/api/v2/collections/{collection.pk}/{endpoint}/", data, content_type="application/json"
+        f"/api/v2/collections/{collection.pk}/{endpoint}/",
+        data,
+        content_type="application/json",
     )
 
     assert r.status_code == 409, r.json()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_core_api_collection_populate_from_list(
     authenticated_client, collection_factory, image_factory, user
 ):
@@ -148,7 +162,7 @@ def test_core_api_collection_populate_from_list(
     assert r.json()["succeeded"] == [public_image.isic_id]
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_core_api_collection_remove_from_list(
     authenticated_client, collection_factory, image_factory, user
 ):
@@ -181,4 +195,7 @@ def test_core_api_collection_remove_from_list(
         private_image_unshared.isic_id,
         "ISIC_0000000",
     }
-    assert set(r.json()["succeeded"]) == {public_image.isic_id, private_image_shared.isic_id}
+    assert set(r.json()["succeeded"]) == {
+        public_image.isic_id,
+        private_image_shared.isic_id,
+    }

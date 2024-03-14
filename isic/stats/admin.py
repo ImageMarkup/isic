@@ -18,7 +18,7 @@ class DownloadedWithIsicCliFilter(admin.SimpleListFilter):
         value = self.value()
         if value == "isic_cli":
             return queryset.filter(user_agent__startswith="isic-cli")
-        elif value == "other":
+        if value == "other":
             return queryset.exclude(user_agent__startswith="isic-cli")
         return queryset
 
@@ -39,8 +39,7 @@ class ImageDownloadAdmin(StaffReadonlyAdmin):
         qs = super().get_queryset(request)
         # .annotate adds a join to the COUNT query which slows down the whole page.
         # .select_related only adds a join to the data selection query.
-        qs = qs.select_related("image")
-        return qs
+        return qs.select_related("image")
 
     @admin.display(ordering="isic_id")
     def isic_id(self, obj: ImageDownload):

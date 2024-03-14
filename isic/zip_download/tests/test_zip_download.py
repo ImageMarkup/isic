@@ -7,8 +7,8 @@ import pytest
 from isic.core.models import Image
 
 
-@pytest.fixture
-def random_images_with_licenses(image_factory):
+@pytest.fixture()
+def _random_images_with_licenses(image_factory):
     image = image_factory(
         accession__diagnosis="melanoma",
         public=True,
@@ -25,7 +25,7 @@ def random_images_with_licenses(image_factory):
     image.accession.save()
 
 
-@pytest.fixture
+@pytest.fixture()
 def zip_basic_auth():
     return {
         "HTTP_AUTHORIZATION": "Basic "
@@ -33,8 +33,9 @@ def zip_basic_auth():
     }
 
 
-@pytest.mark.django_db
-def test_zip_download_licenses(authenticated_client, random_images_with_licenses):
+@pytest.mark.django_db()
+@pytest.mark.usefixtures("_random_images_with_licenses")
+def test_zip_download_licenses(authenticated_client):
     r = authenticated_client.post(
         "/api/v2/zip-download/url/", {"query": ""}, content_type="application/json"
     )
@@ -55,8 +56,9 @@ def test_zip_download_licenses(authenticated_client, random_images_with_licenses
     assert not any("CC-BY-NC" in result["url"] for result in r.json()["files"])
 
 
-@pytest.mark.django_db
-def test_zip_download_listing(authenticated_client, zip_basic_auth, random_images_with_licenses):
+@pytest.mark.django_db()
+@pytest.mark.usefixtures("_random_images_with_licenses")
+def test_zip_download_listing(authenticated_client, zip_basic_auth):
     r = authenticated_client.post(
         "/api/v2/zip-download/url/",
         {"query": ""},
@@ -67,17 +69,18 @@ def test_zip_download_listing(authenticated_client, zip_basic_auth, random_image
     token = parse_qs(parsed_url.query)["zsid"]
 
     r = authenticated_client.get(
-        "/api/v2/zip-download/file-listing/", data={"token": token[0], "limit": 1}, **zip_basic_auth
+        "/api/v2/zip-download/file-listing/",
+        data={"token": token[0], "limit": 1},
+        **zip_basic_auth,
     )
     assert r.status_code == 200, r.json()
     # 6 = 2 images + 1 metadata + 1 attribution + 2 licenses
     assert len(r.json()["files"]) == 6, r.json()
 
 
-@pytest.mark.django_db
-def test_zip_download_listing_wildcard_urls(
-    authenticated_client, zip_basic_auth, random_images_with_licenses, settings, mocker
-):
+@pytest.mark.django_db()
+@pytest.mark.usefixtures("_random_images_with_licenses")
+def test_zip_download_listing_wildcard_urls(authenticated_client, zip_basic_auth, settings, mocker):
     r = authenticated_client.post(
         "/api/v2/zip-download/url/",
         {"query": ""},
@@ -93,11 +96,15 @@ def test_zip_download_listing_wildcard_urls(
     settings.AWS_S3_CUSTOM_DOMAIN = "test.test"
     mocker.patch("isic.zip_download.api._cloudfront_signer", return_value="testsigner")
     mocked_signer = mocker.MagicMock()
-    mocked_signer.generate_presigned_url = lambda url, policy: f"{url}?PretendPolicy=foo"
+    mocked_signer.generate_presigned_url = (
+        lambda url, policy: f"{url}?PretendPolicy=foo"  # noqa: ARG005
+    )
     mocker.patch("isic.zip_download.api.CloudFrontSigner", return_value=mocked_signer)
 
     r = authenticated_client.get(
-        "/api/v2/zip-download/file-listing/", data={"token": token[0], "limit": 1}, **zip_basic_auth
+        "/api/v2/zip-download/file-listing/",
+        data={"token": token[0], "limit": 1},
+        **zip_basic_auth,
     )
     assert r.status_code == 200, r.json()
 
@@ -108,9 +115,10 @@ def test_zip_download_listing_wildcard_urls(
         )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
+@pytest.mark.usefixtures("_random_images_with_licenses")
 @pytest.mark.parametrize(
-    ["endpoint", "use_zip_auth_token"],
+    ("endpoint", "use_zip_auth_token"),
     [
         ("/api/v2/zip-download/metadata-file/", True),
         ("/api/v2/zip-download/metadata-file/", False),
@@ -118,9 +126,7 @@ def test_zip_download_listing_wildcard_urls(
         ("/api/v2/zip-download/attribution-file/", False),
     ],
 )
-def test_zip_download_authentication(
-    endpoint, use_zip_auth_token, authenticated_client, random_images_with_licenses
-):
+def test_zip_download_authentication(endpoint, use_zip_auth_token, authenticated_client):
     r = authenticated_client.post(
         "/api/v2/zip-download/url/",
         {"query": ""},
@@ -130,10 +136,7 @@ def test_zip_download_authentication(
     parsed_url = urlparse(r.json())
     token = parse_qs(parsed_url.query)["zsid"]
 
-    if use_zip_auth_token:
-        data = {"token": token[0]}
-    else:
-        data = {}
+    data = {"token": token[0]} if use_zip_auth_token else {}
 
     r = authenticated_client.get(endpoint, data=data)
     if use_zip_auth_token:

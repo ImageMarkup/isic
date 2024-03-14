@@ -13,17 +13,17 @@ from isic.ingest.utils.metadata import validate_csv_format_and_filenames
 from isic.ingest.views.metadata import ApplyMetadataContext
 
 
-@pytest.fixture
+@pytest.fixture()
 def valid_metadatafile(cohort, metadata_file_factory, csv_stream_valid):
     return metadata_file_factory(blob__from_func=lambda: csv_stream_valid, cohort=cohort)
 
 
-@pytest.fixture
+@pytest.fixture()
 def imageless_accession(accession_factory):
     return accession_factory(image=None)
 
 
-@pytest.fixture
+@pytest.fixture()
 def csv_stream_diagnosis_sex() -> BinaryIO:
     file_stream = StreamWriter(io.BytesIO())
     writer = csv.DictWriter(file_stream, fieldnames=["filename", "diagnosis", "sex"])
@@ -32,11 +32,12 @@ def csv_stream_diagnosis_sex() -> BinaryIO:
     return file_stream
 
 
-@pytest.fixture
+@pytest.fixture()
 def csv_stream_diagnosis_sex_lesion_patient() -> BinaryIO:
     file_stream = StreamWriter(io.BytesIO())
     writer = csv.DictWriter(
-        file_stream, fieldnames=["filename", "diagnosis", "sex", "lesion_id", "patient_id"]
+        file_stream,
+        fieldnames=["filename", "diagnosis", "sex", "lesion_id", "patient_id"],
     )
     writer.writeheader()
     writer.writerow(
@@ -51,12 +52,13 @@ def csv_stream_diagnosis_sex_lesion_patient() -> BinaryIO:
     return file_stream
 
 
-@pytest.fixture
+@pytest.fixture()
 def csv_stream_diagnosis_sex_disagreeing_lesion_patient() -> BinaryIO:
     # a version that maps the same lesion to a different patient
     file_stream = StreamWriter(io.BytesIO())
     writer = csv.DictWriter(
-        file_stream, fieldnames=["filename", "diagnosis", "sex", "lesion_id", "patient_id"]
+        file_stream,
+        fieldnames=["filename", "diagnosis", "sex", "lesion_id", "patient_id"],
     )
     writer.writeheader()
     writer.writerow(
@@ -71,7 +73,7 @@ def csv_stream_diagnosis_sex_disagreeing_lesion_patient() -> BinaryIO:
     return file_stream
 
 
-@pytest.fixture
+@pytest.fixture()
 def csv_stream_benign() -> BinaryIO:
     file_stream = StreamWriter(io.BytesIO())
     writer = csv.DictWriter(file_stream, fieldnames=["filename", "benign_malignant"])
@@ -80,7 +82,7 @@ def csv_stream_benign() -> BinaryIO:
     return file_stream
 
 
-@pytest.fixture
+@pytest.fixture()
 def csv_stream_diagnosis_sex_invalid() -> BinaryIO:
     file_stream = StreamWriter(io.BytesIO())
     writer = csv.DictWriter(file_stream, fieldnames=["filename", "diagnosis", "sex"])
@@ -89,14 +91,14 @@ def csv_stream_diagnosis_sex_invalid() -> BinaryIO:
     return file_stream
 
 
-@pytest.fixture
+@pytest.fixture()
 def cohort_with_accession(cohort, accession_factory):
     cohort.accessions.add(accession_factory(cohort=cohort, original_blob_name="filename.jpg"))
     cohort.accessions.add(accession_factory(cohort=cohort, original_blob_name="filename2.jpg"))
     return cohort
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_apply_metadata(accession_factory, valid_metadatafile, cohort, user):
     accession = accession_factory(cohort=cohort, original_blob_name="filename.jpg")
     update_metadata_task(user.pk, valid_metadatafile.pk)
@@ -109,7 +111,7 @@ def test_apply_metadata(accession_factory, valid_metadatafile, cohort, user):
     assert version.unstructured_metadata == {"foo": "bar"}
 
 
-@pytest.fixture
+@pytest.fixture()
 def metadatafile_without_filename_column(
     cohort, metadata_file_factory, csv_stream_without_filename_column
 ):
@@ -118,15 +120,17 @@ def metadatafile_without_filename_column(
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def metadatafile_duplicate_filenames(cohort, metadata_file_factory, csv_stream_duplicate_filenames):
     return metadata_file_factory(
         blob__from_func=lambda: csv_stream_duplicate_filenames, cohort=cohort
     )
 
 
-@pytest.mark.django_db
-def test_validate_metadata_step1_requires_filename_column(metadatafile_without_filename_column):
+@pytest.mark.django_db()
+def test_validate_metadata_step1_requires_filename_column(
+    metadatafile_without_filename_column,
+):
     problems = validate_csv_format_and_filenames(
         metadatafile_without_filename_column.to_iterable()[1],
         metadatafile_without_filename_column.cohort,
@@ -135,8 +139,10 @@ def test_validate_metadata_step1_requires_filename_column(metadatafile_without_f
     assert "Unable to find a filename column" in problems[0].message
 
 
-@pytest.mark.django_db
-def test_validate_metadata_step1_has_duplicate_filenames(metadatafile_duplicate_filenames):
+@pytest.mark.django_db()
+def test_validate_metadata_step1_has_duplicate_filenames(
+    metadatafile_duplicate_filenames,
+):
     problems = validate_csv_format_and_filenames(
         metadatafile_duplicate_filenames.to_iterable()[1],
         metadatafile_duplicate_filenames.cohort,
@@ -145,7 +151,7 @@ def test_validate_metadata_step1_has_duplicate_filenames(metadatafile_duplicate_
     assert "Duplicate filenames" in problems[0].message
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_apply_metadata_step2(
     staff_client, cohort_with_accession, csv_stream_diagnosis_sex, metadata_file_factory
 ):
@@ -161,18 +167,19 @@ def test_apply_metadata_step2(
     assert r.status_code == 302, r.status_code
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
+@pytest.mark.usefixtures("_eager_celery")
 def test_apply_metadata_step2_invalid(
     staff_client,
     cohort_with_accession,
     csv_stream_diagnosis_sex_invalid,
     metadata_file_factory,
     mocker,
-    eager_celery,
     django_capture_on_commit_callbacks,
 ):
     metadatafile = metadata_file_factory(
-        blob__from_func=lambda: csv_stream_diagnosis_sex_invalid, cohort=cohort_with_accession
+        blob__from_func=lambda: csv_stream_diagnosis_sex_invalid,
+        cohort=cohort_with_accession,
     )
 
     render_to_string = mocker.patch("isic.ingest.tasks.render_to_string")
@@ -188,11 +195,14 @@ def test_apply_metadata_step2_invalid(
     assert render_to_string.call_args[0][1]["successful"] is False
     assert render_to_string.call_args[0][1]["csv_check"] == []
     assert render_to_string.call_args[0][1]["internal_check"]
-    assert list(render_to_string.call_args[0][1]["internal_check"][0].keys())[0][0] == "diagnosis"
+    assert (
+        next(iter(render_to_string.call_args[0][1]["internal_check"][0].keys()))[0] == "diagnosis"
+    )
     assert render_to_string.call_args[0][1]["archive_check"] is None
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
+@pytest.mark.usefixtures("_eager_celery")
 def test_apply_metadata_step3(
     user,
     staff_client,
@@ -202,7 +212,6 @@ def test_apply_metadata_step3(
     metadata_file_factory,
     mocker,
     django_capture_on_commit_callbacks,
-    eager_celery,
 ):
     # TODO: refactor this test to split out the first half
     metadatafile = metadata_file_factory(
@@ -243,14 +252,14 @@ def test_apply_metadata_step3(
     assert r.status_code == 200, r.status_code
     assert render_to_string.call_args[0][1]["successful"] is False
     assert render_to_string.call_args[0][1]["csv_check"] == []
-    assert render_to_string.call_args[0][1]["internal_check"] and not any(
-        render_to_string.call_args[0][1]["internal_check"]
-    )
+    assert render_to_string.call_args[0][1]["internal_check"]
+    assert not any(render_to_string.call_args[0][1]["internal_check"])
     assert render_to_string.call_args[0][1]["archive_check"]
-    assert list(render_to_string.call_args[0][1]["archive_check"][0].keys())[0][0] == ""
+    assert next(iter(render_to_string.call_args[0][1]["archive_check"][0].keys()))[0] == ""
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
+@pytest.mark.usefixtures("_eager_celery")
 def test_apply_metadata_step3_full_cohort(
     user,
     staff_client,
@@ -259,7 +268,6 @@ def test_apply_metadata_step3_full_cohort(
     csv_stream_diagnosis_sex_disagreeing_lesion_patient,
     metadata_file_factory,
     mocker,
-    eager_celery,
     django_capture_on_commit_callbacks,
 ):
     metadatafile = metadata_file_factory(
@@ -299,23 +307,26 @@ def test_apply_metadata_step3_full_cohort(
     r.context = cast(ApplyMetadataContext, r.context)
     assert render_to_string.call_args[0][1]["successful"] is False
     assert render_to_string.call_args[0][1]["csv_check"] == []
-    assert render_to_string.call_args[0][1]["internal_check"] and not any(
-        render_to_string.call_args[0][1]["internal_check"]
-    )
+    assert render_to_string.call_args[0][1]["internal_check"]
+    assert not any(render_to_string.call_args[0][1]["internal_check"])
     assert render_to_string.call_args[0][1]["archive_check"]
     assert "belong to multiple patients" in str(
         render_to_string.call_args[0][1]["archive_check"][1][0].message
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_accession_metadata_versions(user, accession):
     accession.update_metadata(user, {"foo": "bar"})
     assert accession.metadata_versions.count() == 1
     diffs = accession.metadata_versions.differences()
     assert len(diffs) == 1
     assert diffs[0][1] == {
-        "unstructured_metadata": {"added": {"foo": "bar"}, "removed": {}, "changed": {}},
+        "unstructured_metadata": {
+            "added": {"foo": "bar"},
+            "removed": {},
+            "changed": {},
+        },
         "metadata": {"added": {}, "removed": {}, "changed": {}},
         "lesion": {"added": {}, "removed": {}, "changed": {}},
         "patient": {"added": {}, "removed": {}, "changed": {}},
@@ -326,7 +337,11 @@ def test_accession_metadata_versions(user, accession):
     diffs = accession.metadata_versions.differences()
     assert len(diffs) == 2
     assert diffs[0][1] == {
-        "unstructured_metadata": {"added": {"foo": "bar"}, "removed": {}, "changed": {}},
+        "unstructured_metadata": {
+            "added": {"foo": "bar"},
+            "removed": {},
+            "changed": {},
+        },
         "metadata": {"added": {}, "removed": {}, "changed": {}},
         "lesion": {"added": {}, "removed": {}, "changed": {}},
         "patient": {"added": {}, "removed": {}, "changed": {}},
@@ -343,34 +358,43 @@ def test_accession_metadata_versions(user, accession):
     }
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_accession_metadata_versions_remove(user, imageless_accession):
     imageless_accession.update_metadata(user, {"foo": "bar", "baz": "qux"})
     imageless_accession.remove_unstructured_metadata(user, ["nonexistent"])
-    assert imageless_accession.unstructured_metadata.value == {"foo": "bar", "baz": "qux"}
+    assert imageless_accession.unstructured_metadata.value == {
+        "foo": "bar",
+        "baz": "qux",
+    }
     assert imageless_accession.metadata_versions.count() == 1
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_accession_update_metadata(user, imageless_accession):
     imageless_accession.update_metadata(user, {"sex": "male", "foo": "bar", "baz": "qux"})
-    assert imageless_accession.unstructured_metadata.value == {"foo": "bar", "baz": "qux"}
+    assert imageless_accession.unstructured_metadata.value == {
+        "foo": "bar",
+        "baz": "qux",
+    }
     assert imageless_accession.metadata == {"sex": "male"}
     assert imageless_accession.metadata_versions.count() == 1
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_accession_update_metadata_idempotent(user, imageless_accession):
     imageless_accession.update_metadata(user, {"sex": "male", "foo": "bar", "baz": "qux"})
     imageless_accession.update_metadata(user, {"sex": "male", "foo": "bar", "baz": "qux"})
     # test the case where meta/unstructured are different, but updating wouldn't change anything
     imageless_accession.update_metadata(user, {})
-    assert imageless_accession.unstructured_metadata.value == {"foo": "bar", "baz": "qux"}
+    assert imageless_accession.unstructured_metadata.value == {
+        "foo": "bar",
+        "baz": "qux",
+    }
     assert imageless_accession.metadata == {"sex": "male"}
     assert imageless_accession.metadata_versions.count() == 1
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_accession_remove_unstructured_metadata(user, imageless_accession):
     imageless_accession.update_metadata(user, {"foo": "bar", "baz": "qux"})
     imageless_accession.remove_unstructured_metadata(user, ["foo"])
@@ -378,7 +402,7 @@ def test_accession_remove_unstructured_metadata(user, imageless_accession):
     assert imageless_accession.metadata_versions.count() == 2
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_accession_remove_metadata(user, imageless_accession):
     imageless_accession.update_metadata(
         user, {"diagnosis": "melanoma", "benign_malignant": "malignant"}
@@ -388,7 +412,7 @@ def test_accession_remove_metadata(user, imageless_accession):
     assert imageless_accession.metadata_versions.count() == 2
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_accession_remove_metadata_idempotent(user, imageless_accession):
     imageless_accession.update_metadata(
         user, {"diagnosis": "melanoma", "benign_malignant": "malignant"}
@@ -399,7 +423,7 @@ def test_accession_remove_metadata_idempotent(user, imageless_accession):
     assert imageless_accession.metadata_versions.count() == 2
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_accession_remove_unstructured_metadata_idempotent(user, imageless_accession):
     imageless_accession.update_metadata(user, {"foo": "bar", "baz": "qux"})
     imageless_accession.remove_unstructured_metadata(user, ["foo"])
@@ -408,7 +432,7 @@ def test_accession_remove_unstructured_metadata_idempotent(user, imageless_acces
     assert imageless_accession.metadata_versions.count() == 2
 
 
-@pytest.fixture
+@pytest.fixture()
 def unpublished_accepted_accession(accession_factory, user):
     accession = accession_factory(image=None)
     accession.update_metadata(user, {"diagnosis": "melanoma"})
@@ -418,7 +442,7 @@ def unpublished_accepted_accession(accession_factory, user):
     return accession
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize("reset_review", [True, False])
 def test_update_metadata_resets_checks(user, unpublished_accepted_accession, reset_review):
     unpublished_accepted_accession.update_metadata(
@@ -432,7 +456,7 @@ def test_update_metadata_resets_checks(user, unpublished_accepted_accession, res
         assert unpublished_accepted_accession.reviewed
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_update_unstructured_metadata_does_not_reset_checks(user, unpublished_accepted_accession):
     unpublished_accepted_accession.update_metadata(user, {"foobar": "baz"})
     unpublished_accepted_accession.refresh_from_db()

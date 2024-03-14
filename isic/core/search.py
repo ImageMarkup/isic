@@ -54,7 +54,7 @@ DEFAULT_SEARCH_AGGREGATES["age_approx"] = {
         "extended_bounds": {"min": 0, "max": 85},
     }
 }
-for key, _ in DEFAULT_SEARCH_AGGREGATES.items():
+for key in DEFAULT_SEARCH_AGGREGATES:
     COUNTS_AGGREGATES[f"{key}_missing"] = {"missing": {"field": key}}
     COUNTS_AGGREGATES[f"{key}_present"] = {"value_count": {"field": key}}
 
@@ -66,7 +66,7 @@ for key, _ in DEFAULT_SEARCH_AGGREGATES.items():
 @lru_cache
 def get_elasticsearch_client() -> OpenSearch:
     # TODO: investigate using retryable requests with transport_class
-    RetryOnTimeoutTransport = partial(Transport, retry_on_timeout=True)
+    RetryOnTimeoutTransport = partial(Transport, retry_on_timeout=True)  # noqa: N806
     return OpenSearch(settings.ISIC_ELASTICSEARCH_URI, transport_class=RetryOnTimeoutTransport)
 
 
@@ -107,7 +107,7 @@ def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 2000) -> Non
 
     # The opensearch logger is very noisy when updating records,
     # set it to warning during this operation.
-    with LoggingContext(logging.getLogger("opensearch"), level=logging.WARN):
+    with LoggingContext(logging.getLogger("opensearch"), level=logging.WARNING):
         for success, info in parallel_bulk(
             client=get_elasticsearch_client(),
             index=settings.ISIC_ELASTICSEARCH_INDEX,
@@ -117,7 +117,7 @@ def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 2000) -> Non
             chunk_size=chunk_size,
         ):
             if not success:
-                logger.error("Failed to insert document into elasticsearch", info)
+                logger.error("Failed to insert document into elasticsearch: %s", info)
 
 
 def facets(query: dict | None = None, collections: list[int] | None = None) -> dict:
@@ -184,16 +184,15 @@ def build_elasticsearch_query(
     if collection_pks is not None:
         visible_collection_pks = list(
             get_visible_objects(
-                user, "core.view_collection", Collection.objects.filter(pk__in=collection_pks)
+                user,
+                "core.view_collection",
+                Collection.objects.filter(pk__in=collection_pks),
             ).values_list("pk", flat=True)
         )
     else:
         visible_collection_pks = None
 
-    if query:
-        query_dict = {"bool": {"filter": [query]}}
-    else:
-        query_dict = {"bool": {}}
+    query_dict = {"bool": {"filter": [query]}} if query else {"bool": {}}
 
     if visible_collection_pks is not None:
         query_dict["bool"].setdefault("filter", [])

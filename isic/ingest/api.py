@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 
 from django.db import transaction
 from django.db.models.aggregates import Count
@@ -84,7 +84,7 @@ def create_accession(request: HttpRequest, payload: AccessionIn):
         cohort=cohort,
         creator=request.user,
         original_blob=payload.original_blob,
-        original_blob_name=os.path.basename(payload.original_blob.name),
+        original_blob_name=Path(payload.original_blob.name).name,
         original_blob_size=payload.original_blob.size,
     )
 

@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 
 from django.conf import settings
 from django.contrib import messages
@@ -140,9 +140,7 @@ def upload_single_accession(request, cohort_pk):
                         creator=request.user,
                         cohort=cohort,
                         original_blob=form.cleaned_data["original_blob"],
-                        original_blob_name=os.path.basename(
-                            form.cleaned_data["original_blob"].name
-                        ),
+                        original_blob_name=Path(form.cleaned_data["original_blob"].name).name,
                         original_blob_size=form.cleaned_data["original_blob"].size,
                     )
 
@@ -161,7 +159,7 @@ def upload_single_accession(request, cohort_pk):
                 messages.add_message(
                     request,
                     messages.SUCCESS,
-                    mark_safe("Accession uploaded."),
+                    mark_safe("Accession uploaded."),  # noqa: S308
                 )
                 return HttpResponseRedirect(reverse("upload/cohort-files", args=[cohort.pk]))
     else:
@@ -188,7 +186,7 @@ def upload_zip(request, cohort_pk):
         if form.is_valid():
             form.instance.creator = request.user
             form.instance.blob_size = form.instance.blob.size
-            form.instance.blob_name = os.path.basename(form.instance.blob.name)
+            form.instance.blob_name = Path(form.instance.blob.name).name
             form.instance.cohort = cohort
             form.save(commit=True)
             domain = Site.objects.get_current().domain

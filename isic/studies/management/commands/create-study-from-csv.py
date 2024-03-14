@@ -18,7 +18,7 @@ from isic.studies.services import populate_study_tasks, study_create
 @click.argument("column_question_mapping_csv")
 @click.argument("responses_csv")
 @transaction.atomic()
-def create_study_from_csv(
+def create_study_from_csv(  # noqa: PLR0913, C901
     study_name,
     study_attribution,
     study_creator_id,
@@ -95,7 +95,7 @@ def create_study_from_csv(
 
             for key, value in row.items():
                 if key not in ["isic_id", "annotator_id"]:
-                    if key not in column_question.keys():
+                    if key not in column_question:
                         click.secho(
                             f"Skipping column {key} not found in mapping csv.",
                             err=True,

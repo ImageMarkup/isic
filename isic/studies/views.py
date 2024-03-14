@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
@@ -29,7 +29,14 @@ from isic.studies.forms import (
     StudyEditForm,
     StudyTaskForm,
 )
-from isic.studies.models import Annotation, Markup, Question, QuestionChoice, Study, StudyTask
+from isic.studies.models import (
+    Annotation,
+    Markup,
+    Question,
+    QuestionChoice,
+    Study,
+    StudyTask,
+)
 from isic.studies.services import study_create, study_update
 from isic.studies.tasks import populate_study_tasks_task
 
@@ -86,8 +93,10 @@ def study_list(request):
 @login_required
 @transaction.atomic()
 def study_create_view(request):
-    OfficialQuestionFormSet = formset_factory(OfficialQuestionForm, extra=0)
-    CustomQuestionFormSet = formset_factory(CustomQuestionForm, extra=0)
+    OfficialQuestionFormSet = formset_factory(  # noqa: N806
+        OfficialQuestionForm, extra=0
+    )
+    CustomQuestionFormSet = formset_factory(CustomQuestionForm, extra=0)  # noqa: N806
 
     visible_collections = get_visible_objects(request.user, "core.view_collection").order_by("name")
 
@@ -97,44 +106,39 @@ def study_create_view(request):
     custom_question_formset = CustomQuestionFormSet(request.POST or None, prefix="custom")
     official_question_formset = OfficialQuestionFormSet(request.POST or None, prefix="official")
 
-    if request.method == "POST":
-        if (
-            base_form.is_valid()
-            and custom_question_formset.is_valid()
-            and official_question_formset.is_valid()
-        ):
-            study = study_create(
-                creator=request.user,
-                owners=[request.user],
-                attribution=base_form.cleaned_data["attribution"],
-                name=base_form.cleaned_data["name"],
-                description=base_form.cleaned_data["description"],
-                collection=base_form.cleaned_data["collection"],
-                public=base_form.cleaned_data["public"],
+    if request.method == "POST" and (
+        base_form.is_valid()
+        and custom_question_formset.is_valid()
+        and official_question_formset.is_valid()
+    ):
+        study = study_create(
+            creator=request.user,
+            owners=[request.user],
+            attribution=base_form.cleaned_data["attribution"],
+            name=base_form.cleaned_data["name"],
+            description=base_form.cleaned_data["description"],
+            collection=base_form.cleaned_data["collection"],
+            public=base_form.cleaned_data["public"],
+        )
+
+        for question in official_question_formset.cleaned_data:
+            study.questions.add(
+                Question.objects.get(pk=question["question_id"]),
+                through_defaults={"required": question["required"]},
             )
 
-            for question in official_question_formset.cleaned_data:
-                study.questions.add(
-                    Question.objects.get(pk=question["question_id"]),
-                    through_defaults={"required": question["required"]},
-                )
+        for custom_question in custom_question_formset.cleaned_data:
+            q = Question.objects.create(prompt=custom_question["prompt"], official=False)
+            for choice in custom_question["choices"]:
+                QuestionChoice.objects.create(question=q, text=choice)
+            study.questions.add(q, through_defaults={"required": custom_question["required"]})
 
-            for custom_question in custom_question_formset.cleaned_data:
-                q = Question.objects.create(prompt=custom_question["prompt"], official=False)
-                for choice in custom_question["choices"]:
-                    QuestionChoice.objects.create(question=q, text=choice)
-                study.questions.add(q, through_defaults={"required": custom_question["required"]})
+        messages.add_message(request, messages.INFO, "Creating study, this may take a few minutes.")
+        transaction.on_commit(
+            lambda: populate_study_tasks_task.delay(study.pk, base_form.cleaned_data["annotators"])
+        )
 
-            messages.add_message(
-                request, messages.INFO, "Creating study, this may take a few minutes."
-            )
-            transaction.on_commit(
-                lambda: populate_study_tasks_task.delay(
-                    study.pk, base_form.cleaned_data["annotators"]
-                )
-            )
-
-            return HttpResponseRedirect(reverse("study-detail", args=[study.pk]))
+        return HttpResponseRedirect(reverse("study-detail", args=[study.pk]))
 
     questions = list(
         Question.objects.filter(official=True)
@@ -244,7 +248,7 @@ def study_detail(request, pk):
     )
     # TODO: Fix brittleness - both of the lists have to be ordered by the same thing for this to
     # work.
-    ctx["annotators"] = zip(annotators, annotator_counts)
+    ctx["annotators"] = zip(annotators, annotator_counts, strict=False)
 
     # TODO: create a formal permission for this?
     # Using view_study_results would make all public studies show real user names.
@@ -265,7 +269,7 @@ def study_detail(request, pk):
 @needs_object_permission("studies.view_study_results", (Study, "pk", "pk"))
 def study_responses_csv(request, pk):
     study: Study = get_object_or_404(Study, pk=pk)
-    current_time = datetime.utcnow().strftime("%Y-%m-%d")
+    current_time = datetime.now(tz=UTC).strftime("%Y-%m-%d")
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = (
         f'attachment; filename="{slugify(study.name)}_responses_{current_time}.csv"'
@@ -279,8 +283,8 @@ def maybe_redirect_to_next_study_task(user: User, study: Study):
 
     if not next_task:
         return HttpResponseRedirect(reverse("study-detail", args=[study.pk]))
-    else:
-        return HttpResponseRedirect(reverse("study-task-detail", args=[next_task.pk]))
+
+    return HttpResponseRedirect(reverse("study-task-detail", args=[next_task.pk]))
 
 
 @needs_object_permission("studies.view_study_task", (StudyTask, "pk", "pk"))

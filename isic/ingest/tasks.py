@@ -44,7 +44,7 @@ def throttled_iterator(iterable: Iterable, max_per_second: int = 100) -> Iterabl
 
 @shared_task(soft_time_limit=60 * 60 * 12, time_limit=60 * 60 * 12 + 30)
 def extract_zip_task(zip_pk: int):
-    logger.info(f"Extracting zip {zip_pk}.")
+    logger.info("Extracting zip %s.", zip_pk)
 
     zip_upload = ZipUpload.objects.get(pk=zip_pk)
 

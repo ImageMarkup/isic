@@ -25,7 +25,7 @@ class StudyTaskForm(forms.Form):
         super().__init__(*args, **kwargs)
         for question in questions:
             # field names for django forms must be strings
-            self.fields[str(question.pk)] = question.to_form_field(question.required)
+            self.fields[str(question.pk)] = question.to_form_field(required=question.required)
 
 
 class BaseStudyForm(forms.Form):
@@ -59,8 +59,8 @@ class BaseStudyForm(forms.Form):
                 raise ValidationError(
                     f"Can't find any user with the identifier {email_or_hash_id}."
                 )
-            else:
-                user_pks.add(user.pk)
+
+            user_pks.add(user.pk)
 
         return list(user_pks)
 

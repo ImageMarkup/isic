@@ -1,7 +1,7 @@
+from collections.abc import Iterable
 import csv
-from datetime import datetime
+from datetime import UTC, datetime
 import json
-from typing import Iterable
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
@@ -37,12 +37,16 @@ def image_detail(request, pk):
         studies.filter(tasks__image=image)
         .annotate(
             num_responses=Count(
-                "tasks__annotation__responses", filter=Q(tasks__image=image), distinct=True
+                "tasks__annotation__responses",
+                filter=Q(tasks__image=image),
+                distinct=True,
             )
         )
         .annotate(
             num_markups=Count(
-                "tasks__annotation__markups", filter=Q(tasks__image=image), distinct=True
+                "tasks__annotation__markups",
+                filter=Q(tasks__image=image),
+                distinct=True,
             )
         )
         .distinct()
@@ -56,10 +60,14 @@ def image_detail(request, pk):
             image.collections.filter(pinned=True).order_by("name"),
         ),
         "other_patient_images": get_visible_objects(
-            request.user, "core.view_image", image.same_patient_images().select_related("accession")
+            request.user,
+            "core.view_image",
+            image.same_patient_images().select_related("accession"),
         ),
         "other_lesion_images": get_visible_objects(
-            request.user, "core.view_image", image.same_lesion_images().select_related("accession")
+            request.user,
+            "core.view_image",
+            image.same_lesion_images().select_related("accession"),
         ),
         "studies": studies,
     }
@@ -79,12 +87,12 @@ def image_detail(request, pk):
     }
 
     if request.user.is_staff:
-        ctx["sections"][
-            "patient_images"
-        ] = f'Other Patient Images ({ctx["other_patient_images"].count()})'
-        ctx["sections"][
-            "lesion_images"
-        ] = f'Other Lesion Images ({ctx["other_lesion_images"].count()})'
+        ctx["sections"]["patient_images"] = (
+            f'Other Patient Images ({ctx["other_patient_images"].count()})'
+        )
+        ctx["sections"]["lesion_images"] = (
+            f'Other Lesion Images ({ctx["other_lesion_images"].count()})'
+        )
         ctx["sections"]["ingestion_details"] = "Ingestion Details"
 
     return render(request, "core/image_detail/base.html", ctx)
@@ -137,7 +145,7 @@ def image_list_export(request: HttpRequest) -> HttpResponse:
 @staff_member_required
 def image_list_metadata_download(request: HttpRequest):
     # StreamingHttpResponse requires a File-like class that has a 'write' method
-    class Buffer(object):
+    class Buffer:
         def write(self, value: str) -> bytes:
             return value.encode("utf-8")
 
@@ -155,7 +163,7 @@ def image_list_metadata_download(request: HttpRequest):
             for metadata_row in image_csv:
                 yield writer.writerow(metadata_row)
 
-    current_time = datetime.utcnow().strftime("%Y-%m-%d")
+    current_time = datetime.now(tz=UTC).strftime("%Y-%m-%d")
     response = StreamingHttpResponse(csv_rows(Buffer()), content_type="text/csv")
     response["Content-Disposition"] = (
         f'attachment; filename="isic_accession_metadata_{current_time}.csv"'

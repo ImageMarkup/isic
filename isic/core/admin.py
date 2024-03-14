@@ -52,7 +52,7 @@ class HasMaskFilter(admin.SimpleListFilter):
         value = self.value()
         if value == "yes":
             return queryset.exclude(mask="")
-        elif value == "no":
+        if value == "no":
             return queryset.filter(mask="")
         return queryset
 
@@ -84,10 +84,9 @@ class SegmentationAdmin(StaffReadonlyAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        qs = qs.annotate(
+        return qs.annotate(
             num_reviews=Count("reviews", distinct=True),
         )
-        return qs
 
     @admin.display(ordering="num_reviews")
     def num_reviews(self, obj):
@@ -96,7 +95,7 @@ class SegmentationAdmin(StaffReadonlyAdmin):
     @admin.display()
     def mask_thumbnail(self, obj):
         if obj.mask:
-            return mark_safe(f'<img src="{obj.mask.url}" width="256" height="256" />')
+            return mark_safe(f'<img src="{obj.mask.url}" width="256" height="256" />')  # noqa: S308
 
 
 @admin.register(GirderDataset)
@@ -106,10 +105,9 @@ class GirderDatasetAdmin(StaffReadonlyAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        qs = qs.annotate(
+        return qs.annotate(
             images_count=Count("images", distinct=True),
         )
-        return qs
 
     @admin.display(ordering="images_count")
     def images(self, obj):
@@ -151,7 +149,7 @@ class ImageAdmin(StaffReadonlyAdmin):
 
     @admin.display()
     def thumbnail_image(self, obj):
-        return mark_safe(f'<img src="{obj.accession.thumbnail_256.url}" />')
+        return mark_safe(f'<img src="{obj.accession.thumbnail_256.url}" />')  # noqa: S308
 
 
 @admin.register(ImageAlias)
@@ -176,10 +174,9 @@ class CollectionAdmin(StaffReadonlyAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        qs = qs.annotate(
+        return qs.annotate(
             num_images=Count("images", distinct=True),
         )
-        return qs
 
     @admin.display(ordering="num_images")
     def num_images(self, obj):

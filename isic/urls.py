@@ -11,7 +11,8 @@ from ninja.openapi.views import openapi_view
 
 from isic.auth import allow_any
 from isic.core.api.collection import router as collection_router
-from isic.core.api.image import ImageSearchParseError, router as image_router
+from isic.core.api.image import ImageSearchParseError
+from isic.core.api.image import router as image_router
 from isic.core.api.user import router as user_router
 from isic.find.api import router as quickfind_router
 from isic.ingest.api import (
@@ -90,4 +91,4 @@ urlpatterns = [
 if settings.DEBUG:
     import debug_toolbar
 
-    urlpatterns = [path("__debug__/", include(debug_toolbar.urls))] + urlpatterns
+    urlpatterns = [path("__debug__/", include(debug_toolbar.urls)), *urlpatterns]

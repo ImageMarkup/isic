@@ -1,7 +1,6 @@
-from __future__ import barry_as_FLUFL
-
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 
 from django.db.models.query_utils import Q
 from isic_metadata import FIELD_REGISTRY
@@ -26,12 +25,11 @@ class Value:
     def to_q(self, key: SearchTermKey) -> Q:
         if self.value == "*":
             return Q(**{f"{key.field_lookup}__isnull": False}, _negated=key.negated)
-        else:
-            if key.negated:
-                return ~Q(**{key.field_lookup: self.value}) | Q(
-                    **{f"{key.field_lookup}__isnull": True}
-                )
-            return Q(**{key.field_lookup: self.value}, _negated=key.negated)
+
+        if key.negated:
+            return ~Q(**{key.field_lookup: self.value}) | Q(**{f"{key.field_lookup}__isnull": True})
+
+        return Q(**{key.field_lookup: self.value}, _negated=key.negated)
 
     def to_es(self, key: SearchTermKey) -> dict:
         if self.value == "*":
@@ -41,8 +39,8 @@ class Value:
 
         if key.negated:
             return {"bool": {"must_not": term}}
-        else:
-            return term
+
+        return term
 
 
 class BoolValue(Value):
@@ -50,7 +48,7 @@ class BoolValue(Value):
         if toks[0] == "*":
             self.value = "*"
         else:
-            self.value = True if toks[0] == "true" else False
+            self.value = toks[0] == "true"
 
 
 class StrValue(Value):
@@ -69,24 +67,24 @@ class StrValue(Value):
         # so asterisk is any present value
         if self.value == "*":
             return Q(**{f"{key.field_lookup}__isnull": False}, _negated=key.negated)
+
         if self.value.startswith("*"):
             if key.negated:
                 return ~Q(**{f"{key.field_lookup}__startswith": self.value[1:]}) | Q(
                     **{f"{key.field_lookup}__isnull": True}
                 )
-            else:
-                return Q(**{f"{key.field_lookup}__endswith": self.value[1:]}, _negated=key.negated)
-        elif self.value.endswith("*"):
+
+            return Q(**{f"{key.field_lookup}__endswith": self.value[1:]}, _negated=key.negated)
+
+        if self.value.endswith("*"):
             if key.negated:
                 return ~Q(**{f"{key.field_lookup}__startswith": self.value[:-1]}) | Q(
                     **{f"{key.field_lookup}__isnull": True}
                 )
-            else:
-                return Q(
-                    **{f"{key.field_lookup}__startswith": self.value[:-1]}, _negated=key.negated
-                )
-        else:
-            return super().to_q(key)
+
+            return Q(**{f"{key.field_lookup}__startswith": self.value[:-1]}, _negated=key.negated)
+
+        return super().to_q(key)
 
     def to_es(self, key: SearchTermKey) -> dict:
         # Special casing for image type renaming, see
@@ -108,8 +106,8 @@ class StrValue(Value):
 
         if key.negated:
             return {"bool": {"must_not": term}}
-        else:
-            return term
+
+        return term
 
 
 class NumberValue(Value):
@@ -136,8 +134,8 @@ class NumberRangeValue(Value):
             return ~Q(**{start_key: start_value, end_key: end_value}) | Q(
                 **{f"{key.field_lookup}__isnull": True}
             )
-        else:
-            return Q(**{start_key: start_value}, **{end_key: end_value}, _negated=key.negated)
+
+        return Q(**{start_key: start_value}, **{end_key: end_value}, _negated=key.negated)
 
     def to_es(self, key: SearchTermKey) -> dict:
         start_value, end_value = self.value
@@ -152,8 +150,8 @@ class NumberRangeValue(Value):
 
         if key.negated:
             return {"bool": {"must_not": term}}
-        else:
-            return term
+
+        return term
 
 
 def es_query(s, loc, toks):
@@ -171,7 +169,7 @@ def es_query_and(s, loc, toks):
         # Single search queries come in as a single Q object
         q_objects = [toks[0]]
     else:
-        raise Exception("Something went wrong")
+        raise TypeError("Something went wrong")
 
     # Results can be nested one level
     if isinstance(q_objects, list) and isinstance(q_objects[0], list):
@@ -205,7 +203,7 @@ def q_and(s, loc, toks):
         # Single search queries come in as a single Q object
         q_objects = [toks[0]]
     else:
-        raise Exception("Something went wrong")
+        raise TypeError("Something went wrong")
 
     # Results can be nested one level
     if isinstance(q_objects, list) and isinstance(q_objects[0], list):
@@ -257,22 +255,21 @@ def convert_term(s, loc, toks):
     if len(toks) > 1:
         raise Exception("Something went wrong")
 
-    if toks[0] == "public":
-        return SearchTermKey(toks[0], negate)
-    elif toks[0] == "isic_id":
+    field_to_lookup_map: dict[str, str] = {
+        "public": toks[0],
         # isic_id can't be used with wildcards since it's a foreign key, so join the table and
         # refer to the __id.
-        return SearchTermKey("isic__id", negate)
-    elif toks[0] == "lesion_id":
-        return SearchTermKey("accession__lesion__id", negate)
-    elif toks[0] == "patient_id":
-        return SearchTermKey("accession__patient__id", negate)
-    elif toks[0] == "age_approx":
-        return SearchTermKey("accession__age__approx", negate)
-    elif toks[0] == "copyright_license":
-        return SearchTermKey("accession__copyright_license", negate)
-    else:
-        return SearchTermKey(f"accession__{toks[0]}", negate)
+        "isic_id": "isic__id",
+        "lesion_id": "accession__lesion__id",
+        "patient_id": "accession__patient__id",
+        "age_approx": "accession__age__approx",
+        "copyright_license": "accession__copyright_license",
+    }
+
+    if toks[0] in field_to_lookup_map:
+        return SearchTermKey(field_to_lookup_map[toks[0]], negate)
+
+    return SearchTermKey(f"accession__{toks[0]}", negate)
 
 
 def es_convert_term(s, loc, toks):
@@ -288,7 +285,7 @@ def es_convert_term(s, loc, toks):
     return SearchTermKey(toks[0], negate)
 
 
-def make_parser(
+def make_parser(  # noqa: C901
     element=q, conjunctive=q_and, disjunctive=q_or, term_converter: Callable = convert_term
 ) -> ParserElement:
     def make_term_keyword(name):
@@ -313,7 +310,7 @@ def make_parser(
         return make_term(keyword_name, bool_value)
 
     # First setup reserved (special) search terms
-    TERMS = {
+    terms = {
         "isic_id": make_str_term("isic_id"),
         "public": make_bool_term("public"),
         "age_approx": make_number_term("age_approx"),
@@ -335,9 +332,9 @@ def make_parser(
             else:
                 raise Exception("Found unknown es property type")
 
-            TERMS[key] = term
+            terms[key] = term
 
-    parser = OneOrMore(Or(TERMS.values())).add_parse_action(conjunctive)
+    parser = OneOrMore(Or(terms.values())).add_parse_action(conjunctive)
 
     # TODO: ZeroOrMore?
     return infixNotation(

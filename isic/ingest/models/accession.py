@@ -4,7 +4,6 @@ from mimetypes import guess_type
 import tempfile
 from uuid import uuid4
 
-import PIL.Image
 from django.contrib.auth.models import User
 from django.contrib.postgres.constraints import ExclusionConstraint
 from django.core.exceptions import ValidationError
@@ -16,6 +15,7 @@ from django.db.models.expressions import F
 from django.db.models.fields import Field
 from django.db.models.query_utils import Q
 from isic_metadata.metadata import MetadataRow
+import PIL.Image
 from s3_file_field import S3FileField
 
 from isic.core.models import CopyrightLicense, CreationSortedTimeStampedModel
@@ -44,9 +44,6 @@ class InvalidBlobError(Exception):
 
 
 class AccessionMetadata(models.Model):
-    class Meta:
-        abstract = True
-
     concomitant_biopsy = models.BooleanField(null=True, blank=True)
     fitzpatrick_skin_type = models.CharField(max_length=255, null=True, blank=True)
     age = models.PositiveSmallIntegerField(null=True, blank=True)
@@ -74,6 +71,9 @@ class AccessionMetadata(models.Model):
     image_type = models.CharField(max_length=255, null=True, blank=True)
     dermoscopic_type = models.CharField(max_length=255, null=True, blank=True)
     tbp_tile_type = models.CharField(max_length=255, null=True, blank=True)
+
+    class Meta:
+        abstract = True
 
 
 class AccessionQuerySet(models.QuerySet):
@@ -127,6 +127,62 @@ class AccessionStatus(models.TextChoices):
 
 
 class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
+    # the creator is either inherited from the zip creator, or directly attached in the
+    # case of a single shot upload.
+    creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="accessions")
+    girder_id = models.CharField(blank=True, max_length=24, help_text="The image_id from Girder.")
+    zip_upload = models.ForeignKey(
+        ZipUpload,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="accessions",
+    )
+    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name="accessions")
+
+    copyright_license = models.CharField(choices=CopyrightLicense.choices, max_length=255)
+
+    # the original blob is stored in case blobs need to be reprocessed
+    original_blob = S3FileField(unique=True)
+    # the original blob name is stored and kept private in case of leaked data in filenames.
+    original_blob_name = models.CharField(max_length=255, editable=False)
+    original_blob_size = models.PositiveBigIntegerField(editable=False)
+
+    # When instantiated, blob is empty, as it holds the EXIF-stripped image
+    # this isn't unique because of the blank case, see constraints above.
+    blob = S3FileField(blank=True)
+    blob_name = models.CharField(max_length=255, editable=False, blank=True)
+    # blob_size/width/height are nullable unless status is succeeded
+    blob_size = models.PositiveBigIntegerField(null=True, blank=True, default=None, editable=False)
+    width = models.PositiveIntegerField(null=True, blank=True)
+    height = models.PositiveIntegerField(null=True, blank=True)
+
+    status = models.CharField(
+        choices=AccessionStatus.choices, max_length=20, default=AccessionStatus.CREATING
+    )
+
+    thumbnail_256 = S3FileField(blank=True)
+    thumbnail_256_size = models.PositiveIntegerField(
+        null=True, blank=True, default=None, editable=False
+    )
+
+    lesion = models.ForeignKey(
+        Lesion,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accessions",
+    )
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accessions",
+    )
+
+    objects = AccessionQuerySet.as_manager()
+
     class Meta(CreationSortedTimeStampedModel.Meta):
         # original_blob_name is unique at the *cohort* level, which also makes it unique at the zip
         # level.
@@ -135,13 +191,17 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
         constraints = [
             # girder_id should be unique among nonempty girder_id values
             UniqueConstraint(
-                name="accession_unique_girder_id", fields=["girder_id"], condition=~Q(girder_id="")
+                name="accession_unique_girder_id",
+                fields=["girder_id"],
+                condition=~Q(girder_id=""),
             ),
             # blob should be unique when it's filled out
             UniqueConstraint(name="accession_unique_blob", fields=["blob"], condition=~Q(blob="")),
             # blob_name should be unique when it's filled out
             UniqueConstraint(
-                name="accession_unique_blob_name", fields=["blob_name"], condition=~Q(blob_name="")
+                name="accession_unique_blob_name",
+                fields=["blob_name"],
+                condition=~Q(blob_name=""),
             ),
             # the original blob name should always be hidden, so blob_name shouldn't be the same
             CheckConstraint(
@@ -193,50 +253,6 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
             models.Index(fields=["girder_id"]),
         ]
 
-    # the creator is either inherited from the zip creator, or directly attached in the
-    # case of a single shot upload.
-    creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="accessions")
-    girder_id = models.CharField(blank=True, max_length=24, help_text="The image_id from Girder.")
-    zip_upload = models.ForeignKey(
-        ZipUpload, on_delete=models.CASCADE, null=True, blank=True, related_name="accessions"
-    )
-    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name="accessions")
-
-    copyright_license = models.CharField(choices=CopyrightLicense.choices, max_length=255)
-
-    # the original blob is stored in case blobs need to be reprocessed
-    original_blob = S3FileField(unique=True)
-    # the original blob name is stored and kept private in case of leaked data in filenames.
-    original_blob_name = models.CharField(max_length=255, editable=False)
-    original_blob_size = models.PositiveBigIntegerField(editable=False)
-
-    # When instantiated, blob is empty, as it holds the EXIF-stripped image
-    # this isn't unique because of the blank case, see constraints above.
-    blob = S3FileField(blank=True)
-    blob_name = models.CharField(max_length=255, editable=False, blank=True)
-    # blob_size/width/height are nullable unless status is succeeded
-    blob_size = models.PositiveBigIntegerField(null=True, blank=True, default=None, editable=False)
-    width = models.PositiveIntegerField(null=True, blank=True)
-    height = models.PositiveIntegerField(null=True, blank=True)
-
-    status = models.CharField(
-        choices=AccessionStatus.choices, max_length=20, default=AccessionStatus.CREATING
-    )
-
-    thumbnail_256 = S3FileField(blank=True)
-    thumbnail_256_size = models.PositiveIntegerField(
-        null=True, blank=True, default=None, editable=False
-    )
-
-    lesion = models.ForeignKey(
-        Lesion, on_delete=models.SET_NULL, null=True, blank=True, related_name="accessions"
-    )
-    patient = models.ForeignKey(
-        Patient, on_delete=models.SET_NULL, null=True, blank=True, related_name="accessions"
-    )
-
-    objects = AccessionQuerySet.as_manager()
-
     def __str__(self) -> str:
         return self.blob_name
 
@@ -278,25 +294,27 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
                 blob_mime_type = guess_mime_type(original_blob_stream, self.original_blob_name)
             blob_major_mime_type = blob_mime_type.partition("/")[0]
             if blob_major_mime_type != "image":
-                raise InvalidBlobError(f'Blob has a non-image MIME type: "{blob_mime_type}"')
+                raise InvalidBlobError(  # noqa: TRY301
+                    f'Blob has a non-image MIME type: "{blob_mime_type}"'
+                )
 
             # Set a larger max size, to accommodate confocal images
             # This uses ~1.1GB of memory
             PIL.Image.MAX_IMAGE_PIXELS = 20_000 * 20_000 * 3
             try:
                 img = PIL.Image.open(original_blob_stream)
-            except PIL.Image.UnidentifiedImageError:
-                raise InvalidBlobError("Blob cannot be recognized by PIL.")
+            except PIL.Image.UnidentifiedImageError as e:
+                raise InvalidBlobError("Blob cannot be recognized by PIL.") from e
 
             # Explicitly load the image, so any decoding errors can be caught
             try:
                 img.load()
             except OSError as e:
                 if "image file is truncated" in str(e):
-                    raise InvalidBlobError("Blob appears truncated.")
-                else:
-                    # Any other errors are not expected, so re-raise them natively
-                    raise
+                    raise InvalidBlobError("Blob appears truncated.") from e
+
+                # Any other errors are not expected, so re-raise them natively
+                raise
 
             # Strip any alpha channel
             img = img.convert("RGB")
@@ -400,7 +418,7 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
         if self.published:
             raise ValidationError("Can't modify the accession as it's already been published.")
 
-    def update_metadata(
+    def update_metadata(  # noqa: C901
         self, user: User, csv_row: dict, *, ignore_image_check=False, reset_review=True
     ) -> bool:
         """
@@ -481,7 +499,9 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
                 if reset_review:
                     # if a new metadata item has been added or an existing has been modified,
                     # reset the review state.
-                    from isic.ingest.services.accession.review import accession_review_delete
+                    from isic.ingest.services.accession.review import (
+                        accession_review_delete,
+                    )
 
                     accession_review_delete(accession=self)
 
@@ -491,7 +511,10 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
                     metadata=self.metadata,
                     unstructured_metadata=self.unstructured_metadata.value,
                     lesion=(
-                        {"internal": self.lesion.private_lesion_id, "external": self.lesion_id}
+                        {
+                            "internal": self.lesion.private_lesion_id,
+                            "external": self.lesion_id,
+                        }
                         if hasattr(self, "lesion") and self.lesion
                         else {}
                     ),
@@ -510,7 +533,12 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
         return modified
 
     def remove_metadata(
-        self, user: User, metadata_fields: list[str], *, ignore_image_check=False, reset_review=True
+        self,
+        user: User,
+        metadata_fields: list[str],
+        *,
+        ignore_image_check=False,
+        reset_review=True,
     ):
         """Remove metadata from an accession."""
         if self.pk and not ignore_image_check:
@@ -525,7 +553,9 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
                     modified = True
 
                     if reset_review:
-                        from isic.ingest.services.accession.review import accession_review_delete
+                        from isic.ingest.services.accession.review import (
+                            accession_review_delete,
+                        )
 
                         accession_review_delete(accession=self)
 
@@ -558,10 +588,11 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
         return modified
 
     def full_clean(self, *args, **kwargs):
-        if "unstructured_metadata" not in kwargs.get("exclude", {}).get(
-            "unstructured_metadata", []
+        if (
+            "unstructured_metadata"
+            not in kwargs.get("exclude", {}).get("unstructured_metadata", [])
+            and not self.unstructured_metadata
         ):
-            if not self.unstructured_metadata:
-                raise Exception("unstructured_metadata is required")
+            raise Exception("unstructured_metadata is required")
 
         super().full_clean(*args, **kwargs)

@@ -13,7 +13,8 @@ from django.db.models.functions import Cast
 from django.db.models.lookups import Exact
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
-from django.forms.fields import CharField as FormCharField, ChoiceField
+from django.forms.fields import CharField as FormCharField
+from django.forms.fields import ChoiceField
 from django.forms.widgets import RadioSelect
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
@@ -25,6 +26,15 @@ from isic.core.storages.utils import generate_upload_to
 
 
 class Question(TimeStampedModel):
+    class QuestionType(models.TextChoices):
+        SELECT = "select", "Select"
+        NUMBER = "number", "Number"
+
+    prompt = models.CharField(max_length=400)
+    type = models.CharField(max_length=6, choices=QuestionType.choices, default=QuestionType.SELECT)
+    official = models.BooleanField()
+    # TODO: maybe add a default field
+
     class Meta(TimeStampedModel.Meta):
         ordering = ["prompt"]
         constraints = [
@@ -35,19 +45,10 @@ class Question(TimeStampedModel):
             )
         ]
 
-    class QuestionType(models.TextChoices):
-        SELECT = "select", "Select"
-        NUMBER = "number", "Number"
-
-    prompt = models.CharField(max_length=400)
-    type = models.CharField(max_length=6, choices=QuestionType.choices, default=QuestionType.SELECT)
-    official = models.BooleanField()
-    # TODO: maybe add a default field
-
     def __str__(self) -> str:
         return self.prompt
 
-    def to_form_field(self, required: bool):
+    def to_form_field(self, *, required: bool):
         if self.type == self.QuestionType.SELECT:
             return ChoiceField(
                 required=required,
@@ -55,7 +56,7 @@ class Question(TimeStampedModel):
                 label=self.prompt,
                 widget=RadioSelect,
             )
-        elif self.type == self.QuestionType.NUMBER:
+        if self.type == self.QuestionType.NUMBER:
             # TODO: Use floatfield/intfield
             return FormCharField(
                 required=required,
@@ -198,13 +199,16 @@ class Study(TimeStampedModel):
 
 
 class StudyQuestion(models.Model):
-    class Meta:
-        unique_together = [["study", "question"]]
-
     study = models.ForeignKey(Study, on_delete=models.CASCADE)
     question = models.ForeignKey(Question, on_delete=models.PROTECT)
     order = models.PositiveSmallIntegerField(default=0)
     required = models.BooleanField()
+
+    class Meta:
+        unique_together = [["study", "question"]]
+
+    def __str__(self) -> str:
+        return f"{self.pk}"
 
 
 class StudyPermissions:
@@ -225,10 +229,11 @@ class StudyPermissions:
         # There's duplication of this check in study_detail.html
         if user_obj.is_staff:
             return qs
-        elif user_obj.is_authenticated:
+
+        if user_obj.is_authenticated:
             return qs.filter(Q(owners=user_obj) | Q(public=True))
-        else:
-            return qs.public()
+
+        return qs.public()
 
     @staticmethod
     def view_study_results(user_obj, obj):
@@ -240,7 +245,7 @@ class StudyPermissions:
 
         if user_obj.is_staff:
             return qs
-        elif user_obj.is_authenticated:
+        if user_obj.is_authenticated:
             # Owner of the study, it's public, or the user has been assigned a task from
             # the study.
             return qs.filter(
@@ -249,8 +254,8 @@ class StudyPermissions:
                 | Q(public=True)
                 | Q(tasks__annotator=user_obj)
             )
-        else:
-            return qs.public()
+
+        return qs.public()
 
     @staticmethod
     def edit_study_list(user_obj: User, qs: QuerySet[Study] | None = None) -> QuerySet[Study]:
@@ -258,10 +263,10 @@ class StudyPermissions:
 
         if user_obj.is_staff:
             return qs
-        elif user_obj.is_authenticated:
+        if user_obj.is_authenticated:
             return qs.filter(Q(creator=user_obj) | Q(owners=user_obj))
-        else:
-            return qs.none()
+
+        return qs.none()
 
     @staticmethod
     def edit_study(user_obj, obj):
@@ -319,13 +324,13 @@ class StudyTaskPermissions:
 
         if user_obj.is_staff:
             return qs
-        elif user_obj.is_authenticated:
+        if user_obj.is_authenticated:
             # Note: this allows people who can't see the image to see it if it's part of a study
             # task ONLY within the studytask check. In other words, they can't see it in the
             # gallery.
             return qs.filter(Q(annotator=user_obj) | Q(study__owners=user_obj))
-        else:
-            return qs.none()
+
+        return qs.none()
 
     @staticmethod
     def view_study_task(user_obj, obj):
@@ -339,7 +344,8 @@ class Annotation(TimeStampedModel):
     class Meta:
         constraints = [
             CheckConstraint(
-                name="annotation_start_time_check", check=Q(start_time__lte=F("created"))
+                name="annotation_start_time_check",
+                check=Q(start_time__lte=F("created")),
             ),
         ]
         unique_together = [["study", "task", "image", "annotator"]]
@@ -377,7 +383,10 @@ class ResponseQuerySet(models.QuerySet):
                 annotation_duration=F("annotation__created") - F("annotation__start_time"),
                 question_prompt=F("question__prompt"),
                 answer=Case(
-                    When(question__type=Question.QuestionType.SELECT, then=F("choice_answer")),
+                    When(
+                        question__type=Question.QuestionType.SELECT,
+                        then=F("choice_answer"),
+                    ),
                     default=F("value_answer"),
                     output_field=CharField(),
                 ),
