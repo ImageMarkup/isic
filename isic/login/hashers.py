@@ -14,7 +14,7 @@ class GirderPasswordHasher(BasePasswordHasher):
         return bcrypt.verify(password, encoded.split("$", 1)[1])
 
     def salt(self):
-        return bcrypt._generate_salt()
+        return bcrypt._generate_salt()  # noqa: SLF001
 
     def encode(self, password, salt):
         hashed = bcrypt.using(salt=salt).hash(password)

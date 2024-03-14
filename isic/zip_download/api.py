@@ -1,7 +1,7 @@
 from collections import Counter
 from collections.abc import Iterable
 import csv
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 import json
 import logging
 
@@ -57,7 +57,7 @@ class ZipDownloadTokenAuth(APIKeyQuery):
         try:
             token_dict = TimestampSigner().unsign_object(key, max_age=timedelta(days=1))
         except BadSignature:
-            raise AuthenticationError
+            raise AuthenticationError from None
 
         token_dict["token"] = key
         return token_dict
@@ -93,7 +93,9 @@ create_zip_download_url.csrf_exempt = True
 def _cloudfront_signer(message: bytes) -> bytes:
     # See the documentation for CloudFrontSigner
     return rsa.sign(
-        message, rsa.PrivateKey.load_pkcs1(settings.AWS_CLOUDFRONT_KEY.encode("utf8")), "SHA-1"
+        message,
+        rsa.PrivateKey.load_pkcs1(settings.AWS_CLOUDFRONT_KEY.encode("utf8")),
+        "SHA-1",
     )
 
 
@@ -116,7 +118,10 @@ def zip_file_listing(
         # since zip_api_auth uses a shared secret that only it and the zipstreamer know, this
         # can't be intercepted by someone looking at the zipstreamer url.
         url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/*"
-        policy = signer.build_policy(url, date_less_than=datetime.utcnow() + timedelta(days=1))
+        policy = signer.build_policy(
+            url,
+            date_less_than=datetime.now(tz=UTC) + timedelta(days=1),
+        )
         signed_url = signer.generate_presigned_url(url, policy=policy)
         files = [
             {
@@ -133,7 +138,9 @@ def zip_file_listing(
 
     # initialize files with metadata and attribution files
     logger.info(
-        f"Creating zip file descriptor for {file_count} images: " f"{json.dumps(request.auth)}"
+        "Creating zip file descriptor for %d images: %s",
+        file_count,
+        json.dumps(request.auth),
     )
     domain = Site.objects.get_current().domain
     for endpoint, zip_path in [
@@ -149,10 +156,10 @@ def zip_file_listing(
 
     files += [
         {
-            "url": f"http://{domain}{reverse('api:zip_file_license_file', args=[license])}",
-            "zipPath": f"licenses/{license}.txt",
+            "url": f"http://{domain}{reverse('api:zip_file_license_file', args=[license_])}",
+            "zipPath": f"licenses/{license_}.txt",
         }
-        for license in (
+        for license_ in (
             qs.values_list("accession__copyright_license", flat=True).order_by().distinct()
         )
     ]

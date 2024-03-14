@@ -21,7 +21,11 @@ def _require_unlocked_collection(collection: Collection) -> None:
 
 def collection_create(*, creator: User, name: str, description: str, public: bool, locked: bool):
     collection = Collection(
-        creator=creator, name=name, description=description, public=public, locked=locked
+        creator=creator,
+        name=name,
+        description=description,
+        public=public,
+        locked=locked,
     )
     collection.full_clean()
     collection.save()
@@ -29,7 +33,7 @@ def collection_create(*, creator: User, name: str, description: str, public: boo
     return collection
 
 
-def collection_update(collection: Collection, ignore_lock: bool = False, **fields):
+def collection_update(collection: Collection, *, ignore_lock: bool = False, **fields):
     if not ignore_lock:
         _require_unlocked_collection(collection)
 
@@ -52,7 +56,8 @@ def collection_delete(*, collection: Collection, ignore_lock: bool = False) -> N
 
     if collection.studies.exists():
         raise ValidationError("Collections with derived studies cannot be deleted.")
-    elif collection.has_doi:
+
+    if collection.has_doi:
         raise ValidationError("Collections with DOIs cannot be deleted.")
 
     collection.delete()
@@ -73,9 +78,7 @@ def collection_get_creators_in_attribution_order(*, collection: Collection) -> l
     )
 
     # Push an Anonymous attribution to the end
-    creators = sorted(creators, key=lambda x: 1 if x == "Anonymous" else 0)
-
-    return creators
+    return sorted(creators, key=lambda x: 1 if x == "Anonymous" else 0)
 
 
 def collection_merge_magic_collections(
@@ -92,32 +95,35 @@ def collection_merge_magic_collections(
 
     if Study.objects.filter(from_collection_filter).exists():
         raise ValidationError("Collections with derived studies cannot be merged.")
-    elif Doi.objects.filter(from_collection_filter).exists():
+    if Doi.objects.filter(from_collection_filter).exists():
         raise ValidationError("Collections with DOIs cannot be merged.")
-    elif CollectionShare.objects.filter(from_collection_filter).exists():
+    if CollectionShare.objects.filter(from_collection_filter).exists():
         # TODO: This should be allowed, but might require some additional logic. I'm not sure it's
         # clear that merging collection B into A should grant the same shares to A.
         raise ValidationError("Collections with shares cannot be merged.")
-    elif (
-        Collection.objects.filter(id__in=[dest_collection.id, src_collection.id]).regular().exists()
-    ):
+    if Collection.objects.filter(id__in=[dest_collection.id, src_collection.id]).regular().exists():
         # Regular means non-magic collections
         raise ValidationError("Regular collections cannot be merged.")
 
     with transaction.atomic():
         # TODO: support dest_collection missing a cohort
         if hasattr(src_collection, "cohort") and src_collection.cohort != dest_collection.cohort:
-            logger.info(f"Abandoning cohort {src_collection.cohort.pk}")
+            logger.info("Abandoning cohort %s", src_collection.cohort.pk)
 
         for field in ["public", "pinned", "doi", "locked"]:
             dest_collection_value = getattr(dest_collection, field)
             collection_value = getattr(src_collection, field)
             if dest_collection_value != collection_value:
                 logger.warning(
-                    f"Different value for {field}: {dest_collection_value}(dest) vs {collection_value}"  # noqa: E501
+                    "Different value for %s: %s(dest) vs %s",
+                    field,
+                    dest_collection_value,
+                    collection_value,
                 )
 
         collection_move_images(
-            src_collection=src_collection, dest_collection=dest_collection, ignore_lock=True
+            src_collection=src_collection,
+            dest_collection=dest_collection,
+            ignore_lock=True,
         )
         collection_delete(collection=src_collection, ignore_lock=True)

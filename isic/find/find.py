@@ -78,10 +78,9 @@ def quickfind_execute(query: str, user: User) -> list[dict]:
         return jaro_winkler_metric(query.upper(), getattr(v, search["sort"]).upper())
 
     for k, search in searches.items():
-        if not user.is_staff:
+        if not user.is_staff and k in ["cohorts", "users", "contributors"]:
             # Regular users can only search images/studies/collections.
-            if k in ["cohorts", "users", "contributors"]:
-                continue
+            continue
 
         if search["permission"]:
             qs = get_visible_objects(user, search["permission"], search["filter"])
@@ -91,7 +90,7 @@ def quickfind_execute(query: str, user: User) -> list[dict]:
 
         items = sorted(
             items,
-            key=search["sort"] if callable(search["sort"]) else partial(default_sort, search),
+            key=(search["sort"] if callable(search["sort"]) else partial(default_sort, search)),
             reverse=True,
         )[:5]
 

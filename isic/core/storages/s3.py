@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from urllib.parse import urlencode
 
 from botocore.config import Config
@@ -18,13 +18,14 @@ class CacheableCloudFrontStorage(S3Storage):
     @staticmethod
     def next_expiration_time(now=None):
         # returns a time > 6 days but <= 7.
-        now = now if now else datetime.utcnow()
+        now = now if now else datetime.now(tz=UTC)
         return now.replace(second=0, microsecond=0, minute=0, hour=0) + timedelta(days=7)
 
     # This is copied from upstream with minor modifications, subclassing in a cleaner way wasn't
     # possible.
     def url(self, name, parameters=None, expire=None, http_method=None):
-        assert expire is None and http_method is None, "Arguments not supported by custom storage."
+        if expire is not None or http_method is not None:
+            raise ValueError("expire and http_method are not supported by this storage backend.")
 
         # Preserve the trailing slash after normalizing the path.
         name = self._normalize_name(clean_name(name))

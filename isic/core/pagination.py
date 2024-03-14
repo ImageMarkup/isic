@@ -67,8 +67,8 @@ class CursorPagination(PaginationBase):
                 reverse = bool(int(reverse))
 
                 position = tokens.get("p", [None])[0]
-            except (TypeError, ValueError):
-                raise ValueError("Invalid cursor.")
+            except (TypeError, ValueError) as e:
+                raise ValueError("Invalid cursor.") from e
 
             return Cursor(offset=offset, reverse=reverse, position=position)
 
@@ -97,10 +97,7 @@ class CursorPagination(PaginationBase):
 
         # only count the total number of results if a position is absent, usually indicating that
         # we're on the first page. this improves performance for larger queries.
-        if pagination.cursor.position is None:
-            total_count = queryset.count()
-        else:
-            total_count = None
+        total_count = queryset.count() if pagination.cursor.position is None else None
 
         base_url = request.build_absolute_uri()
         cursor = pagination.cursor
@@ -165,7 +162,14 @@ class CursorPagination(PaginationBase):
             ),
             "previous": (
                 self.previous_link(
-                    base_url, page, cursor, order, has_next, limit, next_position, previous_position
+                    base_url,
+                    page,
+                    cursor,
+                    order,
+                    has_next,
+                    limit,
+                    next_position,
+                    previous_position,
                 )
                 if has_previous
                 else None
@@ -185,13 +189,13 @@ class CursorPagination(PaginationBase):
         encoded = b64encode(querystring.encode()).decode()
         return _replace_query_param(base_url, "cursor", encoded)
 
-    def next_link(
+    def next_link(  # noqa: PLR0913
         self,
         base_url: str,
         page: list,
         cursor: Cursor,
         order: tuple,
-        has_previous: bool,
+        has_previous: bool,  # noqa: FBT001
         limit: int,
         next_position: str,
         previous_position: str,
@@ -218,7 +222,7 @@ class CursorPagination(PaginationBase):
             # following it, we can't use it as a marker position, so increment
             # the offset and keep seeking to the previous item.
             compare = position
-            offset += 1
+            offset += 1  # noqa: SIM113
 
         if page and not has_item_with_unique_position:
             # There were no unique positions in the page.
@@ -245,13 +249,13 @@ class CursorPagination(PaginationBase):
         next_cursor = Cursor(offset=offset, reverse=False, position=position)
         return self._encode_cursor(next_cursor, base_url)
 
-    def previous_link(
+    def previous_link(  # noqa: PLR0913
         self,
         base_url: str,
         page: list,
         cursor: Cursor,
         order: tuple,
-        has_next: bool,
+        has_next: bool,  # noqa: FBT001
         limit: int,
         next_position: str,
         previous_position: str,
@@ -278,7 +282,7 @@ class CursorPagination(PaginationBase):
             # following it, we can't use it as a marker position, so increment
             # the offset and keep seeking to the previous item.
             compare = position
-            offset += 1
+            offset += 1  # noqa: SIM113
 
         if page and not has_item_with_unique_position:
             # There were no unique positions in the page.
@@ -307,8 +311,5 @@ class CursorPagination(PaginationBase):
 
     def _get_position_from_instance(self, instance, ordering):
         field_name = ordering[0].lstrip("-")
-        if isinstance(instance, dict):
-            attr = instance[field_name]
-        else:
-            attr = getattr(instance, field_name)
+        attr = instance[field_name] if isinstance(instance, dict) else getattr(instance, field_name)
         return str(attr)

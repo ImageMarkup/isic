@@ -4,7 +4,7 @@ from pytest_django.asserts import assertQuerysetEqual
 from pytest_lazyfixture import lazy_fixture
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_core_staff_list(client, authenticated_client, staff_client):
     r = client.get(reverse("core/staff-list"))
     assert r.status_code == 302
@@ -16,13 +16,13 @@ def test_core_staff_list(client, authenticated_client, staff_client):
     assert r.status_code == 200
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize(
-    "client_,visible",
+    ("client_", "visible"),
     [
-        [lazy_fixture("client"), False],
-        [lazy_fixture("authenticated_client"), False],
-        [lazy_fixture("staff_client"), True],
+        (lazy_fixture("client"), False),
+        (lazy_fixture("authenticated_client"), False),
+        (lazy_fixture("staff_client"), True),
     ],
 )
 def test_core_user_detail(user, client_, visible):
@@ -30,12 +30,12 @@ def test_core_user_detail(user, client_, visible):
     assert r.status_code == 200 if visible else 403
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize(
-    "client_,visible",
+    ("client_", "visible"),
     [
-        [lazy_fixture("client"), False],
-        [lazy_fixture("authenticated_client"), True],
+        (lazy_fixture("client"), False),
+        (lazy_fixture("authenticated_client"), True),
     ],
 )
 def test_core_collection_create(client_, visible):
@@ -43,7 +43,7 @@ def test_core_collection_create(client_, visible):
     assert r.status_code == 200 if visible else 403
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_core_collection_list(client, authenticated_client, staff_client, private_collection):
     r = client.get(reverse("core/collection-list"))
     assertQuerysetEqual(r.context["collections"].object_list, [])
@@ -55,7 +55,7 @@ def test_core_collection_list(client, authenticated_client, staff_client, privat
     assertQuerysetEqual(r.context["collections"].object_list, [private_collection])
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_core_collection_detail(client, authenticated_client, staff_client, private_collection):
     r = client.get(reverse("core/collection-detail", args=[private_collection.pk]))
     assert r.status_code == 302
@@ -67,7 +67,7 @@ def test_core_collection_detail(client, authenticated_client, staff_client, priv
     assert r.status_code == 200
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_core_collection_list_shares(
     user, client, authenticated_client, staff_client, private_collection
 ):
@@ -82,7 +82,7 @@ def test_core_collection_list_shares(
     assertQuerysetEqual(r.context["collections"].object_list, [private_collection])
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_core_collection_detail_shares(
     user, client, authenticated_client, staff_client, private_collection
 ):
@@ -97,7 +97,7 @@ def test_core_collection_detail_shares(
     assert r.status_code == 200
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_core_collection_detail_filters_contributors(
     client, authenticated_client, staff_client, public_collection, image_factory
 ):
@@ -116,7 +116,7 @@ def test_core_collection_detail_filters_contributors(
     assert list(r.context["contributors"]) == [image.accession.cohort.contributor]
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_image_list_export_permissions(client, authenticated_client, staff_client):
     r = client.get(reverse("core/image-list-export"))
     assert r.status_code == 302
@@ -128,7 +128,7 @@ def test_image_list_export_permissions(client, authenticated_client, staff_clien
     assert r.status_code == 200
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_image_list_metadata_download_permissions(client, authenticated_client, staff_client):
     r = client.get(reverse("core/image-list-metadata-download"))
     assert r.status_code == 302

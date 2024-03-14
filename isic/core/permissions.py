@@ -30,7 +30,7 @@ class UserPermissions:
     filters = {}
 
     @staticmethod
-    def view_staff(user_obj, obj=None):
+    def view_staff(user_obj, _=None):
         return user_obj.is_staff
 
 
@@ -58,12 +58,12 @@ class IsicObjectPermissionsBackend(BaseBackend):
 
 
 def get_visible_objects(user, perm, qs=None):
-    filter = ISIC_FILTERS_MAP.get(perm)
+    filter_func = ISIC_FILTERS_MAP.get(perm)
 
-    if filter:
-        return filter(user, qs)
-    else:
-        raise Exception(f"No permission registered: {perm}")
+    if filter_func:
+        return filter_func(user, qs)
+
+    raise Exception(f"No permission registered: {perm}")
 
 
 # this code is adapted from the login_required decorator, it's
@@ -83,8 +83,8 @@ def _redirect_to_login(request):
 
 
 # This is a decorator adapted from django-guardian
-def needs_object_permission(perm: str, lookup_variables=None):
-    def decorator(view_func):
+def needs_object_permission(perm: str, lookup_variables=None):  # noqa: C901
+    def decorator(view_func):  # noqa: C901
         def _wrapped_view(request, *args, **kwargs):
             # if more than one parameter is passed to the decorator we try to
             # fetch object for which check would be made
@@ -100,14 +100,15 @@ def needs_object_permission(perm: str, lookup_variables=None):
                             "string it needs format: 'app_label.ModelClass'"
                         )
                     model = apps.get_model(*splitted)
-                elif issubclass(model.__class__, (Model, ModelBase, QuerySet)):
+                elif issubclass(model.__class__, Model | ModelBase | QuerySet):
                     pass
                 else:
-                    raise Exception(
+                    msg = (
                         "First lookup argument must always be "
                         "a model, string pointing at app/model or queryset. "
-                        "Given: %s (type: %s)" % (model, type(model))
+                        f"Given: {model} (type: {type(model)})"
                     )
+                    raise Exception(msg)
                 # Parse lookups
                 if len(lookups) % 2 != 0:
                     raise Exception(
@@ -115,7 +116,7 @@ def needs_object_permission(perm: str, lookup_variables=None):
                         "as pairs of lookup_string and view_arg"
                     )
                 lookup_dict = {}
-                for lookup, view_arg in zip(lookups[::2], lookups[1::2]):
+                for lookup, view_arg in zip(lookups[::2], lookups[1::2], strict=False):
                     if view_arg not in kwargs:
                         raise Exception("Argument %s was not passed into view function" % view_arg)
                     lookup_dict[lookup] = kwargs[view_arg]
@@ -124,8 +125,8 @@ def needs_object_permission(perm: str, lookup_variables=None):
             if not request.user.has_perm(perm, obj):
                 if not request.user.is_authenticated:
                     return _redirect_to_login(request)
-                else:
-                    raise PermissionDenied
+
+                raise PermissionDenied
 
             return view_func(request, *args, **kwargs)
 

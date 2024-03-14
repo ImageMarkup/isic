@@ -1,18 +1,18 @@
 import pytest
-from pytest import lazy_fixture
+from pytest_lazyfixture import lazy_fixture
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize(
-    "client_,contributors_,num_visible",
+    ("client_", "contributors_", "num_visible"),
     [
-        [lazy_fixture("client"), lazy_fixture("contributors"), 0],
-        [
+        (lazy_fixture("client"), lazy_fixture("contributors"), 0),
+        (
             lazy_fixture("authenticated_client"),
             lazy_fixture("contributors"),
             1,
-        ],
-        [lazy_fixture("staff_client"), lazy_fixture("contributors"), 2],
+        ),
+        (lazy_fixture("staff_client"), lazy_fixture("contributors"), 2),
     ],
     ids=[
         "guest",
@@ -27,16 +27,20 @@ def test_core_api_contributor_list_permissions(client_, contributors_, num_visib
     assert r.json()["count"] == num_visible
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize(
-    "client_,contributor_,visible",
+    ("client_", "contributor_", "visible"),
     [
-        [lazy_fixture("client"), lazy_fixture("contributor"), False],
-        [lazy_fixture("client"), lazy_fixture("other_contributor"), False],
-        [lazy_fixture("authenticated_client"), lazy_fixture("contributor"), True],
-        [lazy_fixture("authenticated_client"), lazy_fixture("other_contributor"), False],
-        [lazy_fixture("staff_client"), lazy_fixture("contributor"), True],
-        [lazy_fixture("staff_client"), lazy_fixture("other_contributor"), True],
+        (lazy_fixture("client"), lazy_fixture("contributor"), False),
+        (lazy_fixture("client"), lazy_fixture("other_contributor"), False),
+        (lazy_fixture("authenticated_client"), lazy_fixture("contributor"), True),
+        (
+            lazy_fixture("authenticated_client"),
+            lazy_fixture("other_contributor"),
+            False,
+        ),
+        (lazy_fixture("staff_client"), lazy_fixture("contributor"), True),
+        (lazy_fixture("staff_client"), lazy_fixture("other_contributor"), True),
     ],
     ids=[
         "guest-contributor-1-invisible",
@@ -57,7 +61,7 @@ def test_core_api_contributor_detail_permissions(client_, contributor_, visible)
         assert r.status_code == 404, r.json()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_core_api_contributor_create(authenticated_client, user):
     r = authenticated_client.post(
         "/api/v2/contributors/",

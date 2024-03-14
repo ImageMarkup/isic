@@ -17,7 +17,7 @@ fake = Faker()
 data_dir = pathlib.Path(__file__).parent / "data"
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_collect_google_analytics_task(mocker, settings):
     # only have one VIEW_ID, otherwise the counts will be multiplied
     settings.ISIC_GOOGLE_ANALYTICS_PROPERTY_IDS = ["just_one"]
@@ -57,7 +57,7 @@ def test_collect_google_analytics_task(mocker, settings):
 
 def test_cdn_access_log_parsing(mocker):
     def get_object(*args, **kwargs):
-        with open(data_dir / "cloudfront_log.gz", "rb") as f:
+        with pathlib.Path(data_dir / "cloudfront_log.gz").open("rb") as f:
             return {"Body": io.BytesIO(f.read())}
 
     records = list(
@@ -75,13 +75,16 @@ def test_cdn_access_log_parsing(mocker):
     }
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
+@pytest.mark.usefixtures("_eager_celery")
 def test_collect_image_download_records_task(
-    mocker, eager_celery, image_factory, django_capture_on_commit_callbacks
+    mocker, image_factory, django_capture_on_commit_callbacks
 ):
     # TODO: overriding the blob name requires passing the size manually.
     image = image_factory(
-        accession__blob="some/exists.jpg", accession__blob_name="exists.jpg", accession__blob_size=1
+        accession__blob="some/exists.jpg",
+        accession__blob_name="exists.jpg",
+        accession__blob_size=1,
     )
 
     def mock_client(*args, **kwargs):

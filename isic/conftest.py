@@ -29,7 +29,7 @@ from .factories import ProfileFactory, UserFactory
 
 
 @pytest.fixture(autouse=True)
-def setup_groups(request):
+def _setup_groups(request):
     # TODO: figure out how to avoid this and how to get serialized_rollback working.
     if "django_db_setup" in request.fixturenames:
         for group_name in ["Public", "ISIC Staff"]:
@@ -39,12 +39,12 @@ def setup_groups(request):
         public.user_set.set(User.objects.all())
 
 
-@pytest.fixture
+@pytest.fixture()
 def client() -> Client:
     return Client()
 
 
-@pytest.fixture
+@pytest.fixture()
 def authenticated_client(user):
     # Do not use the client fixture, to prevent mutating its state
     client = Client()
@@ -53,22 +53,21 @@ def authenticated_client(user):
     return client
 
 
-@pytest.fixture
+@pytest.fixture()
 def staff_user(user_factory):
     return user_factory(is_staff=True)
 
 
-@pytest.fixture
+@pytest.fixture()
 def staff_client(staff_user):
     client = Client()
     client.force_login(staff_user)
     return client
 
 
-@pytest.fixture
-def eager_celery(settings):
+@pytest.fixture()
+def _eager_celery(settings):
     settings.CELERY_TASK_ALWAYS_EAGER = True
-    yield
 
 
 # To make pytest-factoryboy fixture creation work properly, all factories must be registered at

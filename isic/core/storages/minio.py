@@ -12,16 +12,16 @@ class StringableReadOnlySpooledTemporaryFile(ReadOnlySpooledTemporaryFile):
             raise AttributeError("File was not opened in read mode.")
         if "b" in self._mode:
             return super().read(*args, **kwargs)
-        else:
-            return super().read(*args, **kwargs).decode()
+
+        return super().read(*args, **kwargs).decode()
 
     def readline(self, *args, **kwargs):
         if "r" not in self._mode:
             raise AttributeError("File was not opened in read mode.")
         if "b" in self._mode:
             return super().readline(*args, **kwargs)
-        else:
-            return super().readline(*args, **kwargs).decode()
+
+        return super().readline(*args, **kwargs).decode()
 
 
 class StringableMinioMediaStorage(MinioMediaStorage):
@@ -55,7 +55,7 @@ class MinioS3ProxyStorage(StringableMinioMediaStorage):
                 upstream_obj.download_fileobj(upstream_file)
             except ClientError as e:
                 if e.response["Error"]["Code"] != "404":
-                    raise e
+                    raise
             else:
                 size = upstream_file.tell()
                 upstream_file.seek(0)

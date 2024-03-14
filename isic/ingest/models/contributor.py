@@ -10,7 +10,7 @@ class Contributor(CreationSortedTimeStampedModel):
     institution_name = models.CharField(
         max_length=255,
         verbose_name="Institution Name",
-        help_text=mark_safe(
+        help_text=mark_safe(  # noqa: S308
             "The full name of your affiliated institution. <strong>This is private</strong>, "
             "and will not be published along with your images."
         ),
@@ -18,14 +18,14 @@ class Contributor(CreationSortedTimeStampedModel):
     institution_url = models.URLField(
         blank=True,
         verbose_name="Institution URL",
-        help_text=mark_safe(
+        help_text=mark_safe(  # noqa: S308
             "The URL of your affiliated institution. <strong>This is private</strong>, and "
             "will not be published along with your images."
         ),
     )
     legal_contact_info = models.TextField(
         verbose_name="Legal Contact Information",
-        help_text=mark_safe(
+        help_text=mark_safe(  # noqa: S308
             "The person or institution responsible for legal inquiries about your data. "
             "<strong> This is private</strong>, and will not be published along with your images."
         ),
@@ -42,7 +42,7 @@ class Contributor(CreationSortedTimeStampedModel):
         max_length=255,
         blank=True,
         verbose_name="Default Attribution",
-        help_text=mark_safe(
+        help_text=mark_safe(  # noqa: S308
             "Text which must be reproduced by users of your images, to comply with Creative "
             "Commons Attribution requirements."
         ),
@@ -65,17 +65,17 @@ class ContributorPermissions:
 
         if user_obj.is_staff:
             return qs
-        elif user_obj.is_authenticated:
+        if user_obj.is_authenticated:
             return qs.filter(owners__in=[user_obj])
-        else:
-            return qs.none()
+
+        return qs.none()
 
     @staticmethod
     def view_contributor(user_obj, obj):
         return ContributorPermissions.view_contributor_list(user_obj).contains(obj)
 
     @staticmethod
-    def add_contributor(user_obj, obj=None):
+    def add_contributor(user_obj, _=None):
         return user_obj.is_authenticated
 
     @staticmethod

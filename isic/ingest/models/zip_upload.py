@@ -105,7 +105,7 @@ class ZipUpload(CreationSortedTimeStampedModel):
                     original_blob_name_duplicates,
                 ) = self._get_preexisting_and_duplicates()
                 if original_blob_name_preexisting or original_blob_name_duplicates:
-                    raise ZipUpload.DuplicateExtractError(
+                    raise ZipUpload.DuplicateExtractError(  # noqa: TRY301
                         original_blob_name_preexisting, original_blob_name_duplicates
                     )
 
@@ -130,7 +130,7 @@ class ZipUpload(CreationSortedTimeStampedModel):
             sentry_sdk.capture_exception(e)
             self.status = ZipUploadStatus.FAILED
             self.fail_reason = ZipUploadFailReason.INVALID
-            raise ZipUpload.InvalidExtractError
+            raise ZipUpload.InvalidExtractError from e
         except ZipUpload.DuplicateExtractError:
             logger.info("Failed zip extraction: %d <%s>: duplicates", self.pk, self)
             self.status = ZipUploadStatus.FAILED

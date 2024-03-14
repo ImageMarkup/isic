@@ -14,7 +14,7 @@ class CoreConfig(AppConfig):
     verbose_name = "ISIC: Core"
 
     @staticmethod
-    def _get_sentry_performance_sample_rate(*args, **kwargs) -> float:
+    def _get_sentry_performance_sample_rate(*args, **kwargs) -> float:  # noqa: ARG004
         """
         Determine sample rate of sentry performance.
 
@@ -44,7 +44,7 @@ class CoreConfig(AppConfig):
 
         if args and "wsgi_environ" in args[0]:
             path: str = args[0]["wsgi_environ"]["PATH_INFO"]
-            if path.startswith("/staff") or path.startswith("/admin"):
+            if path.startswith(("/staff", "/admin")):
                 return 1.0
         elif args and "celery_job" in args[0]:
             if args[0]["celery_job"]["task"] in infrequent_tasks:

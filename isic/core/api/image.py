@@ -97,12 +97,12 @@ def list_images(request: HttpRequest):
 def search_images(request: HttpRequest, search: SearchQueryIn = Query(...)):
     try:
         return search.to_queryset(user=request.user, qs=default_qs)
-    except ParseException:
+    except ParseException as e:
         # Normally we'd like this to be handled by the input serializer validation, but
         # for backwards compatibility we must return 400 rather than 422.
         # The pagination wrapper means we can't just return the response we'd like from here.
         # The handler for this exception type is defined in urls.py.
-        raise ImageSearchParseError()
+        raise ImageSearchParseError from e
 
 
 @router.get("/facets/", response=dict, include_in_schema=False)
@@ -112,8 +112,8 @@ def get_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):
         try:
             # we know it can't be a Q object because we're using es_parser
             es_query = cast(dict | None, parse_query(es_parser, search.query))
-        except ParseException:
-            raise ImageSearchParseError()
+        except ParseException as e:
+            raise ImageSearchParseError from e
 
     query = build_elasticsearch_query(
         es_query or {},

@@ -12,7 +12,7 @@ from isic.ingest.models.cohort import Cohort
 from isic.ingest.services.cohort import cohort_merge
 
 
-@pytest.fixture
+@pytest.fixture()
 def full_cohort(cohort_factory, accession_factory, image_factory, collection_factory):
     def _full_cohort():
         collection = collection_factory()
@@ -25,7 +25,7 @@ def full_cohort(cohort_factory, accession_factory, image_factory, collection_fac
     return _full_cohort
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_merge_cohorts(full_cohort):
     cohort_a, cohort_b = full_cohort(), full_cohort()
 
@@ -49,7 +49,7 @@ def test_merge_cohorts(full_cohort):
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_merge_cohorts_missing_magic_collections(full_cohort):
     """Test that merging a cohort into a cohort with no magic collections works."""
     dest_cohort, src_cohort = full_cohort(), full_cohort()
@@ -64,7 +64,7 @@ def test_merge_cohorts_missing_magic_collections(full_cohort):
     assert set(dest_cohort.collection.images.values_list("pk", flat=True)) == total_cohort_images
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_merge_cohorts_conflicting_original_blob_names(full_cohort):
     cohort_a, cohort_b = full_cohort(), full_cohort()
 
@@ -79,7 +79,7 @@ def test_merge_cohorts_conflicting_original_blob_names(full_cohort):
         cohort_merge(dest_cohort=cohort_a, src_cohort=cohort_b)
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_merge_cohorts_with_longitudinal_metadata(full_cohort):
     cohort_a, cohort_b = full_cohort(), full_cohort()
 
@@ -92,7 +92,7 @@ def test_merge_cohorts_with_longitudinal_metadata(full_cohort):
         cohort_merge(dest_cohort=cohort_a, src_cohort=cohort_b)
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_merge_cohorts_heterogeneous_licenses(full_cohort):
     cohort_a, cohort_b = full_cohort(), full_cohort()
 
@@ -111,24 +111,25 @@ def test_merge_cohorts_heterogeneous_licenses(full_cohort):
     }
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_merge_cohorts_view(full_cohort, staff_client):
     cohort_a, cohort_b = full_cohort(), full_cohort()
 
     r = staff_client.post(
-        reverse("merge-cohorts"), data={"cohort": cohort_a.pk, "cohort_to_merge": cohort_b.pk}
+        reverse("merge-cohorts"),
+        data={"cohort": cohort_a.pk, "cohort_to_merge": cohort_b.pk},
     )
     assert r.status_code == 302
     assert r.url == reverse("cohort-detail", args=[cohort_a.pk])
 
 
-@pytest.fixture
+@pytest.fixture()
 def collection_with_studies(collection, study_factory):
     study_factory(collection=collection)
     return collection
 
 
-@pytest.fixture
+@pytest.fixture()
 def collection_with_doi(collection, user):
     collection.doi = Doi.objects.create(
         id="10.1000/xyz123", creator=user, url="https://doi.org/10.1000/xyz123"
@@ -137,16 +138,16 @@ def collection_with_doi(collection, user):
     return collection
 
 
-@pytest.fixture
+@pytest.fixture()
 def collection_with_shares(collection, user_factory):
     user = user_factory()
     collection.shares.add(user, through_defaults={"creator": collection.creator})
     return collection
 
 
-@pytest.fixture
+@pytest.fixture()
 def full_collection(collection_factory, image_factory, cohort_factory):
-    def _full_collection(public: bool):
+    def _full_collection(*, public: bool):
         collection = collection_factory(public=public)
         # TODO: difficult to add collection to CohortFactory due to circular dependency
         cohort = cohort_factory()
@@ -159,7 +160,7 @@ def full_collection(collection_factory, image_factory, cohort_factory):
     return _full_collection
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_merge_collections(full_collection):
     collection_a, collection_b = full_collection(public=True), full_collection(public=True)
 
@@ -173,13 +174,13 @@ def test_merge_collections(full_collection):
     assert set(collection_b_images) <= set(collection_a.images.values_list("pk", flat=True))
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize(
-    "unmergeable_collection,error",
+    ("unmergeable_collection", "error"),
     [
-        [lazy_fixture("collection_with_studies"), "studies"],
-        [lazy_fixture("collection_with_doi"), "DOI"],
-        [lazy_fixture("collection_with_shares"), "shares"],
+        (lazy_fixture("collection_with_studies"), "studies"),
+        (lazy_fixture("collection_with_doi"), "DOI"),
+        (lazy_fixture("collection_with_shares"), "shares"),
     ],
 )
 def test_merge_collections_unmergeable(collection, unmergeable_collection, error):
@@ -189,7 +190,7 @@ def test_merge_collections_unmergeable(collection, unmergeable_collection, error
         )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_merge_collections_private_images(collection_factory, image_factory, cohort_factory):
     public_collection = collection_factory(public=True)
     public_collection.cohort = cohort_factory()

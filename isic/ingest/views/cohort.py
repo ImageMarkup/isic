@@ -124,7 +124,7 @@ def publish_cohort(request, pk):
         # accessions are published synchronously.
         publishable_accession_count = cohort.accessions.publishable().count()
 
-        public = True if "public" in request.POST else False
+        public = "public" in request.POST
         cohort_publish_initialize(cohort=cohort, publisher=request.user, public=public)
 
         messages.add_message(
@@ -133,13 +133,13 @@ def publish_cohort(request, pk):
             f"Publishing {intcomma(publishable_accession_count)} images. This may take several minutes.",  # noqa: E501
         )
         return HttpResponseRedirect(reverse("cohort-detail", args=[cohort.pk]))
-    else:
-        ctx = {
-            "cohort": cohort,
-            "breadcrumbs": make_breadcrumbs(cohort) + [["#", "Publish Cohort"]],
-            "num_accessions": cohort.accessions.count(),
-            "num_publishable": cohort.accessions.publishable().count(),
-        }
+
+    ctx = {
+        "cohort": cohort,
+        "breadcrumbs": [*make_breadcrumbs(cohort), ["#", "Publish Cohort"]],
+        "num_accessions": cohort.accessions.count(),
+        "num_publishable": cohort.accessions.publishable().count(),
+    }
     ctx["num_unpublishable"] = ctx["num_accessions"] - ctx["num_publishable"]
 
     return render(request, "ingest/cohort_publish.html", ctx)

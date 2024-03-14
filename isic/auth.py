@@ -8,7 +8,8 @@ ACCESS_PERMS = ["any", "is_authenticated", "is_staff"]
 
 class OAuth2AuthBearer(HttpBearer):
     def __init__(self, perm: str):
-        assert perm in ACCESS_PERMS
+        if perm not in ACCESS_PERMS:
+            raise ValueError(f"Invalid permission: {perm}")
         self.perm = perm
         super().__init__()
 
@@ -25,12 +26,10 @@ class OAuth2AuthBearer(HttpBearer):
 
             if self.perm == "any":
                 return r.user, token
-            elif self.perm == "is_authenticated":
-                if r.user.is_authenticated:
-                    return r.user, token
-            elif self.perm == "is_staff":
-                if r.user.is_authenticated and r.user.is_staff:
-                    return r.user, token
+            if self.perm == "is_authenticated" and r.user.is_authenticated:
+                return r.user, token
+            if self.perm == "is_staff" and r.user.is_authenticated and r.user.is_staff:
+                return r.user, token
         elif self.perm == "any":
             return True
         else:

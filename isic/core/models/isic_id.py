@@ -1,4 +1,4 @@
-import random
+import secrets
 
 from django.core.validators import RegexValidator
 from django.db import IntegrityError, models
@@ -9,7 +9,7 @@ from isic.core.constants import ISIC_ID_REGEX
 
 def _default_id():
     while True:
-        isic_id = f"ISIC_{random.randint(0, 9999999):07}"
+        isic_id = f"ISIC_{secrets.randbelow(9999999):07}"
         # This has a race condition, so the actual creation should be retried
         if not IsicId.objects.filter(id=isic_id).exists():
             return isic_id
@@ -28,7 +28,11 @@ class IsicId(models.Model):
         return self.id
 
     @classmethod
-    @retry(reraise=True, retry=retry_if_exception_type(IntegrityError), stop=stop_after_attempt(10))
+    @retry(
+        reraise=True,
+        retry=retry_if_exception_type(IntegrityError),
+        stop=stop_after_attempt(10),
+    )
     def safe_create(cls):
         """Safely create an IsicId, without race conditions."""
         return cls.objects.create()
