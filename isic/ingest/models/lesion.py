@@ -5,7 +5,7 @@ from django.contrib.postgres.aggregates import BoolAnd
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
-from django.db.models.expressions import F
+from django.db.models.expressions import Case, Exists, F, OuterRef, When
 from django.db.models.functions.comparison import Coalesce
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
@@ -22,6 +22,45 @@ def _default_id():
             return lesion_id
 
 
+class LesionQuerySet(models.QuerySet):
+    def has_images(self):
+        from isic.ingest.models import Accession
+
+        return self.filter(
+            Exists(Accession.objects.filter(lesion_id=OuterRef("id"), image__isnull=False))
+        )
+
+    def with_diagnosis(self):
+        """
+        Return a queryset with the diagnosis of the lesion annotated.
+
+        This excludes accessions that are missing an image or have been reviewed and rejected.
+        """
+        return (
+            self.annotate(diagnosis=F("accessions__diagnosis"))
+            .exclude(accessions__image=None)
+            .exclude(accessions__review__value=False)
+            .alias(
+                important_image_type=Case(
+                    When(accessions__image_type="dermoscopic", then=0),
+                    When(accessions__image_type="clinical: close-up", then=1),
+                    When(accessions__image_type="TBP tile: close-up", then=2),
+                    When(accessions__image_type="clinical: overview", then=3),
+                    When(accessions__image_type="TBP tile: overview", then=4),
+                    default=5,
+                )
+            )
+            .order_by(
+                "id",
+                "-accessions__concomitant_biopsy",
+                F("accessions__acquisition_day").asc(nulls_last=True),
+                "important_image_type",
+                "accessions__id",
+            )
+            .distinct("id")
+        )
+
+
 class Lesion(models.Model):
     id = models.CharField(
         primary_key=True,
@@ -31,6 +70,8 @@ class Lesion(models.Model):
     )
     cohort = models.ForeignKey("Cohort", on_delete=models.CASCADE, related_name="lesions")
     private_lesion_id = models.CharField(max_length=255)
+
+    objects = LesionQuerySet.as_manager()
 
     class Meta:
         constraints = [

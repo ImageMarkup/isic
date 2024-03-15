@@ -95,9 +95,17 @@ class CursorPagination(PaginationBase):
 
         order = queryset.query.order_by
 
-        # only count the total number of results if a position is absent, usually indicating that
-        # we're on the first page. this improves performance for larger queries.
-        total_count = queryset.count() if pagination.cursor.position is None else None
+        total_count = (
+            # let the queryset define a custom_count attribute in the event that computing
+            # the count can be done cheaper than the default queryset.count() method.
+            queryset.custom_count
+            if hasattr(queryset, "custom_count")
+            else queryset.count()
+            # only count the total number of results if a position is absent, usually indicating
+            # that we're on the first page. this improves performance for larger queries.
+            if pagination.cursor.position is None
+            else None
+        )
 
         base_url = request.build_absolute_uri()
         cursor = pagination.cursor
