@@ -5,7 +5,7 @@ from django.contrib.postgres.aggregates import BoolAnd
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
-from django.db.models.expressions import Case, F, When
+from django.db.models.expressions import Case, Exists, F, OuterRef, When
 from django.db.models.functions.comparison import Coalesce
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
@@ -23,6 +23,13 @@ def _default_id():
 
 
 class LesionQuerySet(models.QuerySet):
+    def has_images(self):
+        from isic.ingest.models import Accession
+
+        return self.filter(
+            Exists(Accession.objects.filter(lesion_id=OuterRef("id"), image__isnull=False))
+        )
+
     def with_diagnosis(self):
         """
         Return a queryset with the diagnosis of the lesion annotated.
