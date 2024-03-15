@@ -35,21 +35,22 @@ class LesionOut(ModelSchema):
 
 
 @lesion_router.get(
-    "/",
-    response=list[LesionOut],
-    summary="Return a list of lesions with diagnoses.",
-    include_in_schema=False,
+    "/", response=list[LesionOut], summary="Return a list of lesions with diagnoses."
 )
 @paginate(CursorPagination)
 def lesion_list(request: HttpRequest):
     # ordering is necessary for the paginator
-    return get_visible_objects(
+    qs = get_visible_objects(
         request.user,
         "ingest.view_lesion",
         Lesion.objects.with_diagnosis()
         .prefetch_related("accessions__image", "accessions__cohort")
         .order_by("id"),
     )
+    qs.custom_count = get_visible_objects(
+        request.user, "ingest.view_lesion", Lesion.objects.has_images()
+    ).count()
+    return qs
 
 
 accession_router = Router()
