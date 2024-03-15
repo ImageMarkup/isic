@@ -1,5 +1,9 @@
+from dataclasses import dataclass
+
 import pytest
 from pytest_lazyfixture import lazy_fixture
+
+from isic.ingest.models.lesion import Lesion
 
 
 @pytest.mark.django_db()
@@ -71,3 +75,182 @@ def test_api_lesion_permissions_contributor(
 
     resp = authenticated_client.get("/api/v2/lesions/")
     assert resp.status_code == 200, resp.json()
+
+
+@dataclass(frozen=True)
+class AccessionMeta:
+    id: int
+    concomitant_biopsy: bool | None
+    acquisition_day: int | None
+    diagnosis: str | None
+    image_type: str | None
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize(
+    ("accession_a", "accession_b", "expected_lesion_diagnosis"),
+    [
+        (
+            AccessionMeta(
+                id=1,
+                concomitant_biopsy=True,
+                acquisition_day=None,
+                diagnosis="nevus",
+                image_type=None,
+            ),
+            AccessionMeta(
+                id=2,
+                concomitant_biopsy=True,
+                acquisition_day=None,
+                diagnosis="melanoma",
+                image_type=None,
+            ),
+            "nevus",
+        ),
+        (
+            AccessionMeta(
+                id=1,
+                concomitant_biopsy=False,
+                acquisition_day=None,
+                diagnosis="nevus",
+                image_type=None,
+            ),
+            AccessionMeta(
+                id=2,
+                concomitant_biopsy=False,
+                acquisition_day=None,
+                diagnosis="melanoma",
+                image_type=None,
+            ),
+            "nevus",
+        ),
+        (
+            AccessionMeta(
+                id=1,
+                concomitant_biopsy=False,
+                acquisition_day=None,
+                diagnosis="melanoma",
+                image_type="tbp",
+            ),
+            AccessionMeta(
+                id=2,
+                concomitant_biopsy=False,
+                acquisition_day=None,
+                diagnosis="nevus",
+                image_type="dermoscopic",
+            ),
+            "nevus",
+        ),
+        (
+            AccessionMeta(
+                id=1,
+                concomitant_biopsy=False,
+                acquisition_day=None,
+                diagnosis=None,
+                image_type=None,
+            ),
+            AccessionMeta(
+                id=2,
+                concomitant_biopsy=False,
+                acquisition_day=None,
+                diagnosis="melanoma",
+                image_type=None,
+            ),
+            None,
+        ),
+        (
+            AccessionMeta(
+                id=1,
+                concomitant_biopsy=True,
+                acquisition_day=1,
+                diagnosis=None,
+                image_type=None,
+            ),
+            AccessionMeta(
+                id=2,
+                concomitant_biopsy=True,
+                acquisition_day=None,
+                diagnosis="melanoma",
+                image_type=None,
+            ),
+            None,
+        ),
+        (
+            AccessionMeta(
+                id=1,
+                concomitant_biopsy=False,
+                acquisition_day=1,
+                diagnosis="nevus",
+                image_type=None,
+            ),
+            AccessionMeta(
+                id=2,
+                concomitant_biopsy=False,
+                acquisition_day=7,
+                diagnosis="melanoma",
+                image_type=None,
+            ),
+            "nevus",
+        ),
+        (
+            AccessionMeta(
+                id=1,
+                concomitant_biopsy=False,
+                acquisition_day=1,
+                diagnosis=None,
+                image_type=None,
+            ),
+            AccessionMeta(
+                id=2,
+                concomitant_biopsy=False,
+                acquisition_day=7,
+                diagnosis="melanoma",
+                image_type=None,
+            ),
+            None,
+        ),
+        (
+            AccessionMeta(
+                id=1,
+                concomitant_biopsy=False,
+                acquisition_day=1,
+                diagnosis="melanoma",
+                image_type="dermoscopic",
+            ),
+            AccessionMeta(
+                id=2,
+                concomitant_biopsy=True,
+                acquisition_day=None,
+                diagnosis=None,
+                image_type=None,
+            ),
+            None,
+        ),
+    ],
+)
+def test_lesion_diagnosis(
+    accession_a: AccessionMeta,
+    accession_b: AccessionMeta,
+    expected_lesion_diagnosis: str,
+    lesion_factory,
+    image_factory,
+):
+    lesion = lesion_factory()
+    image_factory(
+        accession__lesion=lesion,
+        accession__concomitant_biopsy=accession_a.concomitant_biopsy,
+        accession__acquisition_day=accession_a.acquisition_day,
+        accession__diagnosis=accession_a.diagnosis,
+        accession__image_type=accession_a.image_type,
+    )
+    image_factory(
+        accession__lesion=lesion,
+        accession__concomitant_biopsy=accession_b.concomitant_biopsy,
+        accession__acquisition_day=accession_b.acquisition_day,
+        accession__diagnosis=accession_b.diagnosis,
+        accession__image_type=accession_b.image_type,
+    )
+
+    lesion_with_diagnosis = Lesion.objects.with_diagnosis().get(id=lesion.id)
+
+    assert lesion_with_diagnosis.diagnosis == expected_lesion_diagnosis
