@@ -38,6 +38,18 @@ class LesionOut(ModelSchema):
         return [accession.image for accession in obj.accessions.all() if accession.published]
 
 
+@lesion_router.get("/{id}/", response=LesionOut, summary="Retrieve a single lesion by ID.")
+def lesion_detail(request: HttpRequest, id: str):
+    qs = get_visible_objects(
+        request.user,
+        "ingest.view_lesion",
+        Lesion.objects.with_total_info().prefetch_related(
+            "accessions__image", "accessions__cohort"
+        ),
+    )
+    return get_object_or_404(qs, id=id)
+
+
 @lesion_router.get(
     "/", response=list[LesionOut], summary="Return a list of lesions with diagnoses."
 )
