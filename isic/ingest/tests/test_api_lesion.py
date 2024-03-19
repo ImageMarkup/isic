@@ -7,6 +7,15 @@ from isic.ingest.models.lesion import Lesion
 
 
 @pytest.mark.django_db()
+def test_api_lesion_detail(authenticated_client, lesion_factory, image_factory):
+    lesion = lesion_factory()
+    image_factory(accession__lesion=lesion)
+
+    resp = authenticated_client.get(f"/api/v2/lesions/{lesion.id}/")
+    assert resp.status_code == 200, resp.json()
+
+
+@pytest.mark.django_db()
 def test_api_lesion(authenticated_client, lesion_factory, image_factory):
     lesion = lesion_factory()
     image_factory(accession__lesion=lesion)
