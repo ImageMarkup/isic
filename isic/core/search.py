@@ -1,11 +1,13 @@
 from copy import deepcopy
 from functools import lru_cache, partial
 import logging
+from typing import Any
 
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db.models.query import QuerySet
 from isic_metadata import FIELD_REGISTRY
+from isic_metadata.fields import FitzpatrickSkinType
 from opensearchpy import NotFoundError, OpenSearch
 from opensearchpy.helpers import parallel_bulk
 from opensearchpy.transport import Transport
@@ -120,6 +122,22 @@ def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 2000) -> Non
                 logger.error("Failed to insert document into elasticsearch: %s", info)
 
 
+def _prettify_facets(facets: dict[str, Any]) -> dict[str, Any]:
+    """Perform some post-processing on the facets to make UI rendering easier."""
+    fitzpatrick_values = {bucket["key"] for bucket in facets["fitzpatrick_skin_type"]["buckets"]}
+    missing_fitzpatrick = {x.value for x in FitzpatrickSkinType} - fitzpatrick_values
+
+    for value in missing_fitzpatrick:
+        facets["fitzpatrick_skin_type"]["buckets"].append({"key": value, "doc_count": 0})
+
+    # sort the values of fitzpatrick_skin_type buckets by the element in the key field
+    facets["fitzpatrick_skin_type"]["buckets"] = sorted(
+        facets["fitzpatrick_skin_type"]["buckets"], key=lambda x: x["key"]
+    )
+
+    return facets
+
+
 def facets(query: dict | None = None, collections: list[int] | None = None) -> dict:
     """
     Generate the facet counts for a given query.
@@ -164,9 +182,11 @@ def facets(query: dict | None = None, collections: list[int] | None = None) -> d
     if query:
         facets_body["query"] = query
 
-    return get_elasticsearch_client().search(
-        index=settings.ISIC_ELASTICSEARCH_INDEX, body=facets_body
-    )["aggregations"]
+    return _prettify_facets(
+        get_elasticsearch_client().search(
+            index=settings.ISIC_ELASTICSEARCH_INDEX, body=facets_body
+        )["aggregations"]
+    )
 
 
 def build_elasticsearch_query(
