@@ -4,8 +4,10 @@ from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates import BoolAnd
 from django.core.validators import RegexValidator
 from django.db import models
+from django.db.models import OuterRef
+from django.db.models.aggregates import Count
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
-from django.db.models.expressions import Case, Exists, F, OuterRef, When
+from django.db.models.expressions import Case, Exists, F, When, Window
 from django.db.models.functions.comparison import Coalesce
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
@@ -30,14 +32,34 @@ class LesionQuerySet(models.QuerySet):
             Exists(Accession.objects.filter(lesion_id=OuterRef("id"), image__isnull=False))
         )
 
-    def with_diagnosis(self):
+    def with_total_info(self):
+        return (
+            self.with_index_image()
+            .annotate(
+                images_count=Window(
+                    expression=Count("accessions__image"),
+                    partition_by=[F("id")],
+                ),
+                outcome_diagnosis=F("accessions__diagnosis"),
+                outcome_benign_malignant=F("accessions__benign_malignant"),
+            )
+            # this is hard to do without defining a new type of expression because django
+            # wants to perform group by on subqueries.
+            .extra(
+                select={
+                    "longitudinally_monitored": "select count(distinct acquisition_day) > 1 from ingest_accession where ingest_accession.lesion_id = ingest_lesion.id"  # noqa: E501
+                }
+            )
+        )
+
+    def with_index_image(self):
         """
         Return a queryset with the diagnosis of the lesion annotated.
 
         This excludes accessions that are missing an image or have been reviewed and rejected.
         """
         return (
-            self.annotate(diagnosis=F("accessions__diagnosis"))
+            self.annotate(index_image_id=F("accessions__image__isic_id"))
             .exclude(accessions__image=None)
             .exclude(accessions__review__value=False)
             .alias(

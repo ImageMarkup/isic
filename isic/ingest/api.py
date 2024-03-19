@@ -26,8 +26,12 @@ class LesionOut(ModelSchema):
         model = Lesion
         fields = ["id"]
 
-    diagnosis: str | None
     images: list[ImageOut]
+    images_count: int
+    longitudinally_monitored: bool
+    index_image_id: str | None
+    outcome_diagnosis: str | None
+    outcome_benign_malignant: str | None
 
     @staticmethod
     def resolve_images(obj: Lesion) -> list[ImageOut]:
@@ -43,10 +47,11 @@ def lesion_list(request: HttpRequest):
     qs = get_visible_objects(
         request.user,
         "ingest.view_lesion",
-        Lesion.objects.with_diagnosis()
+        Lesion.objects.with_total_info()
         .prefetch_related("accessions__image", "accessions__cohort")
         .order_by("id"),
     )
+    # the count can be done much more efficiently than the full query
     qs.custom_count = get_visible_objects(
         request.user, "ingest.view_lesion", Lesion.objects.has_images()
     ).count()
@@ -76,7 +81,9 @@ class AccessionOut(ModelSchema):
 
 
 @accession_router.post(
-    "/", response={201: AccessionOut, 403: dict, 400: dict}, summary="Create an Accession."
+    "/",
+    response={201: AccessionOut, 403: dict, 400: dict},
+    summary="Create an Accession.",
 )
 def create_accession(request: HttpRequest, payload: AccessionIn):
     cohort = get_object_or_404(Cohort, pk=payload.cohort)
@@ -181,7 +188,9 @@ class ContributorOut(ModelSchema):
 @paginate(CursorPagination)
 def contributor_list(request: HttpRequest):
     return get_visible_objects(
-        request.user, "ingest.view_contributor", Contributor.objects.prefetch_related("owners")
+        request.user,
+        "ingest.view_contributor",
+        Contributor.objects.prefetch_related("owners"),
     )
 
 

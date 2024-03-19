@@ -77,6 +77,40 @@ def test_api_lesion_permissions_contributor(
     assert resp.status_code == 200, resp.json()
 
 
+@pytest.mark.django_db()
+def test_api_lesion_completeness(client, lesion_factory, image_factory):
+    lesion = lesion_factory()
+    image = image_factory(
+        accession__lesion=lesion,
+        accession__diagnosis="melanoma",
+        accession__benign_malignant="malignant",
+        accession__acquisition_day=1,
+        public=True,
+    )
+
+    resp = client.get("/api/v2/lesions/")
+    assert resp.status_code == 200, resp.json()
+    assert resp.json()["results"][0]["images_count"] == 1
+    assert not resp.json()["results"][0]["longitudinally_monitored"]
+    assert resp.json()["results"][0]["index_image_id"] == image.isic_id
+    assert resp.json()["results"][0]["outcome_diagnosis"] == "melanoma"
+    assert resp.json()["results"][0]["outcome_benign_malignant"] == "malignant"
+
+    # verify longitudinally_monitored
+    image_factory(
+        accession__lesion=lesion,
+        accession__diagnosis="nevus",
+        accession__benign_malignant="benign",
+        accession__acquisition_day=2,
+        public=True,
+    )
+
+    resp = client.get("/api/v2/lesions/")
+    assert resp.status_code == 200, resp.json()
+    assert resp.json()["results"][0]["images_count"] == 2
+    assert resp.json()["results"][0]["longitudinally_monitored"]
+
+
 @dataclass(frozen=True)
 class AccessionMeta:
     id: int
@@ -251,6 +285,6 @@ def test_lesion_diagnosis(
         accession__image_type=accession_b.image_type,
     )
 
-    lesion_with_diagnosis = Lesion.objects.with_diagnosis().get(id=lesion.id)
+    lesion_with_diagnosis = Lesion.objects.with_total_info().get(id=lesion.id)
 
-    assert lesion_with_diagnosis.diagnosis == expected_lesion_diagnosis
+    assert lesion_with_diagnosis.outcome_diagnosis == expected_lesion_diagnosis
