@@ -6,6 +6,7 @@ import pytest
 
 from isic.ingest.models.accession import Accession
 from isic.ingest.models.unstructured_metadata import UnstructuredMetadata
+from isic.ingest.services.accession import bulk_accession_relicense
 from isic.ingest.utils.zip import Blob
 
 data_dir = pathlib.Path(__file__).parent / "data"
@@ -25,6 +26,12 @@ def jpg_blob():
             stream=stream,
             size=pathlib.Path(data_dir / "ISIC_0000000.jpg").stat().st_size,
         )
+
+
+@pytest.fixture()
+def cc_by_accession_qs(accession_factory):
+    accession = accession_factory(copyright_license="CC-BY")
+    return Accession.objects.filter(id=accession.id)
 
 
 @pytest.mark.django_db()
@@ -113,3 +120,40 @@ def test_accession_immutable_after_publish(user, image_factory):
     with pytest.raises(ValidationError):
         image.accession.update_metadata(user, {"foo": "bar"})
         # image.accession.save()
+
+
+@pytest.mark.django_db()
+def test_accession_relicense(cc_by_accession_qs):
+    bulk_accession_relicense(accessions=cc_by_accession_qs, to_license="CC-0")
+    assert cc_by_accession_qs.first().copyright_license == "CC-0"
+
+
+@pytest.mark.django_db()
+def test_accession_relicense_more_restrictive(cc_by_accession_qs):
+    with pytest.raises(ValidationError, match="more restrictive"):
+        bulk_accession_relicense(accessions=cc_by_accession_qs, to_license="CC-BY-NC")
+
+
+@pytest.mark.django_db()
+def test_accession_relicense_more_restrictive_ignore(cc_by_accession_qs):
+    bulk_accession_relicense(
+        accessions=cc_by_accession_qs, to_license="CC-BY-NC", allow_more_restrictive=True
+    )
+
+
+@pytest.mark.django_db()
+def test_accession_relicense_some_accessions_more_restrictive(
+    cc_by_accession_qs, accession_factory
+):
+    # trying to relicense as CC-BY but an accession is CC-0
+    accession = accession_factory(
+        cohort=cc_by_accession_qs.first().cohort, copyright_license="CC-0"
+    )
+    accession.save()
+    with pytest.raises(ValidationError, match="more restrictive"):
+        bulk_accession_relicense(
+            accessions=Accession.objects.filter(
+                id__in=[cc_by_accession_qs.first().id, accession.id]
+            ),
+            to_license="CC-BY",
+        )

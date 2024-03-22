@@ -2,8 +2,10 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files.base import File
 from django.db import transaction
+from django.db.models.query import QuerySet
 from s3_file_field.widgets import S3PlaceholderFile
 
+from isic.core.models.base import CopyrightLicense
 from isic.ingest.models.accession import Accession
 from isic.ingest.models.cohort import Cohort
 from isic.ingest.models.unstructured_metadata import UnstructuredMetadata
@@ -45,3 +47,20 @@ def accession_create(
         accession_generate_blob_task.delay(accession.pk)
 
     return accession
+
+
+def bulk_accession_relicense(
+    *, accessions: QuerySet[Accession], to_license: str, allow_more_restrictive: bool = False
+) -> int:
+    if to_license not in CopyrightLicense:
+        raise ValueError(f"Invalid license: {to_license}")
+
+    more_permissive_licenses = CopyrightLicense.values[: CopyrightLicense.values.index(to_license)]
+
+    if (
+        not allow_more_restrictive
+        and accessions.filter(copyright_license__in=more_permissive_licenses).exists()
+    ):
+        raise ValidationError("Cannot change to a more restrictive license.")
+
+    return accessions.update(copyright_license=to_license)
