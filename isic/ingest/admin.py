@@ -6,7 +6,6 @@ from django.contrib import admin
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.db import models
 from django.db.models import Count
-from django.db.models.query import Prefetch
 from django.http import HttpResponse
 from django.template.defaultfilters import filesizeformat
 from django.utils.safestring import mark_safe
@@ -135,15 +134,16 @@ class CohortAdmin(StaffReadonlyAdmin):
         writer = csv.DictWriter(response, ["contributor", "cohort", "filename", "isic_id"])
 
         writer.writeheader()
-        for cohort in queryset.select_related("contributor").prefetch_related(
-            Prefetch("accessions", queryset=Accession.objects.select_related("image"))
-        ):
-            for accession in cohort.accessions.iterator():
+        for cohort in queryset.select_related("contributor"):
+            for accession in cohort.accessions.values(
+                "original_blob_name",
+                "image__isic_id",
+            ).iterator():
                 d = {
                     "contributor": cohort.contributor.institution_name,
                     "cohort": cohort.name,
-                    "filename": accession.original_blob_name,
-                    "isic_id": accession.image.isic_id if accession.published else "",
+                    "filename": accession["original_blob_name"],
+                    "isic_id": accession["image__isic_id"],
                 }
                 writer.writerow(d)
         return response
