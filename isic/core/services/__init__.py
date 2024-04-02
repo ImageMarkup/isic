@@ -133,7 +133,8 @@ def image_metadata_csv(
         used_metadata_keys.append("age_approx")
         used_metadata_keys.remove("age")
 
-    yield headers + sorted(used_metadata_keys)
+    fieldnames = headers + sorted(used_metadata_keys)
+    yield fieldnames
 
     # Note this uses .values because populating django ORM objects is very slow, and doing this on
     # large querysets can add ~5s per 100k images to the request time.
@@ -149,27 +150,14 @@ def image_metadata_csv(
         )
         .iterator()
     ):
-        if image["accession__age"]:
+        image = {k.replace("accession__", ""): v for k, v in image.items()}  # noqa: PLW2901
+
+        image["attribution"] = image.pop("cohort__attribution")
+
+        if image["age"]:
             image["age_approx"] = Accession._age_approx(  # noqa: SLF001
-                image["accession__age"]
+                image["age"]
             )
-            del image["accession__age"]
+            del image["age"]
 
-        if image["accession__lesion_id"]:
-            image["lesion_id"] = image["accession__lesion_id"]
-            del image["accession__lesion_id"]
-
-        if image["accession__patient_id"]:
-            image["patient_id"] = image["accession__patient_id"]
-            del image["accession__patient_id"]
-
-        yield {
-            "isic_id": image["isic_id"],
-            "attribution": image["accession__cohort__attribution"],
-            "copyright_license": image["accession__copyright_license"],
-            **{
-                k: v
-                for k, v in image.items()
-                if k in Accession.metadata_keys() or k in ["age_approx", "lesion_id", "patient_id"]
-            },
-        }
+        yield {k: v for k, v in image.items() if k in fieldnames}
