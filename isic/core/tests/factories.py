@@ -11,7 +11,7 @@ class ImageFactory(factory.django.DjangoModelFactory):
         model = Image
 
     created = factory.Faker("date_time")
-    creator = factory.SubFactory(UserFactory)
+    creator = factory.SelfAttribute("accession.creator")
     accession = factory.SubFactory(AccessionFactory)
     public = factory.Faker("boolean")
 
