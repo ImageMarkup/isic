@@ -43,7 +43,7 @@ setup(
     install_requires=[
         "celery",
         "deepdiff",
-        "django<4.2",
+        "django>4.2,<5",
         "django-allauth>=0.56.0",
         "django-click",
         "django-configurations[database,email]",
@@ -79,7 +79,7 @@ setup(
         "tenacity",
         "zipfile-deflate64",
         # Production-only
-        "django-composed-configuration[prod]>=0.23.0",
+        "django_composed_configuration@git+https://github.com/girder/django-composed-configuration.git@django42",
         "django-s3-file-field[s3]>=1",
         "gunicorn",
     ],

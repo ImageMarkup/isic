@@ -150,8 +150,6 @@ class IsicMixin(ConfigMixin):
         },
     }
 
-    DEFAULT_FILE_STORAGE = "isic.core.storages.minio.StringableMinioMediaStorage"
-
 
 class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
     # Development-only settings
@@ -180,14 +178,22 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
     # Requires CloudFront configuration
     ZIP_DOWNLOAD_WILDCARD_URLS = False
 
-    ISIC_PLACEHOLDER_IMAGES = True
-    # Use the MinioS3ProxyStorage for local development with ISIC_PLACEHOLDER_IMAGES
-    # set to False to view real images in development.
-    # DEFAULT_FILE_STORAGE = "isic.core.storages.minio.MinioS3ProxyStorage"
-
     @staticmethod
     def mutate_configuration(configuration: ComposedConfiguration):
         configuration.INSTALLED_APPS.append("django_fastdev")
+
+        configuration.STORAGES["default"]["BACKEND"] = (
+            "isic.core.storages.minio.StringableMinioMediaStorage"
+        )
+
+        # This doesn't need to be in mutate_configuration, but the locality of the storage
+        # configuration makes it a good place to put it.
+        configuration.ISIC_PLACEHOLDER_IMAGES = True
+        # Use the MinioS3ProxyStorage for local development with ISIC_PLACEHOLDER_IMAGES
+        # set to False to view real images in development.
+        # configuration.STORAGES["default"]["BACKEND"] = (
+        #    "isic.core.storages.minio.MinioS3ProxyStorage"
+        # )
 
 
 class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
@@ -205,6 +211,10 @@ class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
     def mutate_configuration(configuration: ComposedConfiguration):
         configuration.INSTALLED_APPS.append("django_fastdev")
 
+        configuration.STORAGES["default"]["BACKEND"] = (
+            "isic.core.storages.minio.StringableMinioMediaStorage"
+        )
+
 
 class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration):
     ISIC_DATACITE_DOI_PREFIX = "10.34970"
@@ -213,7 +223,6 @@ class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration
     AWS_CLOUDFRONT_KEY = values.SecretValue()
     AWS_CLOUDFRONT_KEY_ID = values.Value()
     AWS_S3_CUSTOM_DOMAIN = values.Value()
-    DEFAULT_FILE_STORAGE = "isic.core.storages.s3.CacheableCloudFrontStorage"
 
     AWS_S3_OBJECT_PARAMETERS = {"ContentDisposition": "attachment"}
 
@@ -229,3 +238,7 @@ class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration
     def mutate_configuration(configuration: ComposedConfiguration):
         # We're configuring sentry by hand since we need to pass custom options
         configuration.INSTALLED_APPS.remove("composed_configuration.sentry.apps.SentryConfig")
+
+        configuration.STORAGES["default"]["BACKEND"] = (
+            "isic.core.storages.s3.CacheableCloudFrontStorage"
+        )
