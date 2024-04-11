@@ -55,6 +55,14 @@ class IsicMixin(ConfigMixin):
             "isic.middleware.ExemptBearerAuthFromCSRFMiddleware",
         )
 
+        # Add the gzip middleware after the security middleware
+        # See https://docs.djangoproject.com/en/5.0/ref/middleware/#middleware-ordering
+        # See also https://github.com/girder/django-composed-configuration/issues/190
+        configuration.MIDDLEWARE.insert(
+            configuration.MIDDLEWARE.index("django.middleware.security.SecurityMiddleware") + 1,
+            "django.middleware.gzip.GZipMiddleware",
+        )
+
         # Install additional apps
         configuration.INSTALLED_APPS += [
             "s3_file_field",
@@ -194,6 +202,15 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
         # configuration.STORAGES["default"]["BACKEND"] = (
         #    "isic.core.storages.minio.MinioS3ProxyStorage"
         # )
+
+        # Move the debug toolbar middleware after gzip middleware
+        # See https://django-debug-toolbar.readthedocs.io/en/latest/installation.html#add-the-middleware
+        # Remove the middleware from the default location
+        configuration.MIDDLEWARE.remove("debug_toolbar.middleware.DebugToolbarMiddleware")
+        configuration.MIDDLEWARE.insert(
+            configuration.MIDDLEWARE.index("django.middleware.gzip.GZipMiddleware") + 1,
+            "debug_toolbar.middleware.DebugToolbarMiddleware",
+        )
 
 
 class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
