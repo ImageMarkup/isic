@@ -1,5 +1,6 @@
 from copy import deepcopy
 import io
+import logging
 from mimetypes import guess_type
 import tempfile
 from uuid import uuid4
@@ -26,6 +27,8 @@ from isic.ingest.utils.mime import guess_mime_type
 from isic.ingest.utils.zip import Blob
 
 from .zip_upload import ZipUpload
+
+logger = logging.getLogger(__name__)
 
 
 class Approx(Transform):
@@ -344,10 +347,12 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
             self.generate_thumbnail()
 
         except InvalidBlobError:
+            logger.exception("Marking accession %d as skipped due to invalid blob", self.pk)
             self.status = AccessionStatus.SKIPPED
             self.save(update_fields=["status"])
             # Expected failure, so return cleanly
         except Exception:
+            logger.exception("Marking accession %d as failed due to unexpected error", self.pk)
             self.status = AccessionStatus.FAILED
             self.save(update_fields=["status"])
             # Unexpected failure, so re-raise
