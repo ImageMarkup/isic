@@ -15,6 +15,8 @@ class SearchQueryIn(Schema):
     query: str | None = None
     collections: list[int] | None = None
 
+    model_config = {"extra": "forbid"}
+
     @field_validator("query")
     @classmethod
     def valid_search_query(cls, value: str | None):

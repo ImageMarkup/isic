@@ -75,6 +75,8 @@ def collection_populate_from_search(request, id: int, payload: SearchQueryIn):
 class IsicIdList(Schema):
     isic_ids: conlist(constr(pattern=ISIC_ID_REGEX), max_length=500)
 
+    model_config = {"extra": "forbid"}
+
 
 # TODO: refactor *-from-list methods
 @router.post(

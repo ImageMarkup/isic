@@ -77,6 +77,8 @@ class AccessionIn(Schema):
     cohort: int
     original_blob: str = Field(..., description="S3 file field value.")
 
+    model_config = {"extra": "forbid"}
+
     @field_validator("original_blob")
     @classmethod
     def validate_s3_file(cls, value: str) -> S3PlaceholderFile:
@@ -114,6 +116,8 @@ def create_accession(request: HttpRequest, payload: AccessionIn):
 class AccessionReview(Schema):
     id: int
     value: bool
+
+    model_config = {"extra": "forbid"}
 
 
 @accession_router.post(

@@ -164,7 +164,7 @@ class ImageAliasAdmin(StaffReadonlyAdmin):
 class CollectionAdmin(StaffReadonlyAdmin):
     list_select_related = ["creator", "doi"]
     list_filter = ["public", "pinned", "locked", ("doi", admin.EmptyFieldListFilter)]
-    list_display = ["name", "created", "creator", "num_images", "public", "pinned", "locked", "doi"]
+    list_display = ["name", "created", "creator", "public", "pinned", "locked", "doi"]
     search_fields = ["creator__email", "name", "doi__id"]
     search_help_text = "Search collections by name, or creator email."
 
@@ -177,10 +177,6 @@ class CollectionAdmin(StaffReadonlyAdmin):
         return qs.annotate(
             num_images=Count("images", distinct=True),
         )
-
-    @admin.display(ordering="num_images")
-    def num_images(self, obj):
-        return intcomma(obj.num_images)
 
 
 @admin.register(Doi)
