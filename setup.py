@@ -79,7 +79,7 @@ setup(
         "tenacity",
         "zipfile-deflate64",
         # Production-only
-        "django_composed_configuration@git+https://github.com/girder/django-composed-configuration.git@django42",
+        "django_composed_configuration",
         "django-s3-file-field[s3]>=1",
         "gunicorn",
     ],
