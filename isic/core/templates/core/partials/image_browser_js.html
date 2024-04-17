@@ -10,7 +10,7 @@
       addSearchResultsToCollection() {
         let _this = this; // eek
         if (confirm('Are you sure you want to add {{ total_images|intcomma }} images to this collection?')) {
-          axios.post(`/api/v2/collections/${this.selectedCollection}/populate-from-search/`, '{{ search_body|safe }}', {
+          axios.post(`/api/v2/collections/${this.selectedCollection}/populate-from-search/`, '{{ search_body|escapejs }}', {
             headers: {
               'Content-Type': 'application/json',
               'X-CSRFToken': '{{ csrf_token }}'
