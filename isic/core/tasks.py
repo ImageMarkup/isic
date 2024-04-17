@@ -24,8 +24,8 @@ def populate_collection_from_search_task(
 
 
 @shared_task(
-    soft_time_limit=300,
-    time_limit=310,
+    soft_time_limit=900,
+    time_limit=910,
     autoretry_for=(ConnectionError, TimeoutError),
     retry_backoff=True,
     retry_backoff_max=600,
