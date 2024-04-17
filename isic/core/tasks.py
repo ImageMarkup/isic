@@ -9,7 +9,7 @@ from isic.core.serializers import SearchQueryIn
 from isic.core.services.collection.image import collection_add_images
 
 
-@shared_task(soft_time_limit=120, time_limit=180)
+@shared_task(soft_time_limit=600, time_limit=610)
 def populate_collection_from_search_task(
     collection_pk: int, user_pk: int, search_params: dict
 ) -> None:
