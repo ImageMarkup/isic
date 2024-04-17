@@ -10,6 +10,8 @@ router = Router()
 class QueryIn(Schema):
     query: str
 
+    model_config = {"extra": "forbid"}
+
     @field_validator("query")
     @classmethod
     def query_min_length(cls, v: str):
