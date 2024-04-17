@@ -12,8 +12,8 @@ from isic.core.permissions import get_visible_objects
 def collection_add_images(
     *,
     collection: Collection,
-    qs: QuerySet[Image] = None,
-    image: Image = None,
+    qs: QuerySet[Image] | None = None,
+    image: Image | None = None,
     ignore_lock: bool = False,
 ):
     # is not None is necessary because qs could be an empty queryset
