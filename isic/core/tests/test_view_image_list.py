@@ -1,20 +1,29 @@
+import re
+
 from django.urls.base import reverse
 import pytest
+import requests
 
 from isic.core.models.image import Image
 
 
 # needs a real transaction due to setting the isolation level
 @pytest.mark.django_db(transaction=True)
-def test_image_list_metadata_download_view(staff_client, user, image: Image):
+@pytest.mark.usefixtures("_eager_celery")
+def test_image_list_metadata_download_view(staff_client, mailoutbox, user, image: Image):
     image.accession.update_metadata(
         user,
         {"age": 57, "lesion_id": "foo", "patient_id": "bar", "diagnosis": "melanoma"},
         ignore_image_check=True,
     )
-    r = staff_client.get(reverse("core/image-list-metadata-download"))
+    r = staff_client.get(reverse("core/image-list-metadata-download"), follow=True)
     assert r.status_code == 200
-    actual = r.getvalue().decode("utf-8")
+
+    assert len(mailoutbox) == 1
+    csv_url = re.search(r"https?://[^\s]+", mailoutbox[0].body).group(0)
+    r = requests.get(csv_url)
+    assert r.status_code == 200
+    actual = r.text
 
     expected_headers = [
         "original_filename",

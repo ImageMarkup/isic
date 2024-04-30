@@ -132,9 +132,12 @@ def test_image_list_export_permissions(client, authenticated_client, staff_clien
 def test_image_list_metadata_download_permissions(client, authenticated_client, staff_client):
     r = client.get(reverse("core/image-list-metadata-download"))
     assert r.status_code == 302
+    assert r.url.startswith(reverse("admin:login"))
 
     r = authenticated_client.get(reverse("core/image-list-metadata-download"))
     assert r.status_code == 302
+    assert r.url.startswith(reverse("admin:login"))
 
     r = staff_client.get(reverse("core/image-list-metadata-download"))
-    assert r.status_code == 200
+    assert r.status_code == 302
+    assert r.url == reverse("core/image-list-export")
