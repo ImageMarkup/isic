@@ -118,7 +118,8 @@ def needs_object_permission(perm: str, lookup_variables=None):  # noqa: C901
                 lookup_dict = {}
                 for lookup, view_arg in zip(lookups[::2], lookups[1::2], strict=False):
                     if view_arg not in kwargs:
-                        raise Exception("Argument %s was not passed into view function" % view_arg)
+                        msg = f"Argument {view_arg} was not passed into view function"
+                        raise Exception(msg)
                     lookup_dict[lookup] = kwargs[view_arg]
                 obj = get_object_or_404(model, **lookup_dict)
 

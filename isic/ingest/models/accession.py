@@ -36,7 +36,7 @@ class Approx(Transform):
 
     def as_sql(self, compiler, connection):
         lhs, params = compiler.compile(self.lhs)
-        return "ROUND(CAST(%s as float) / 5.0) * 5" % lhs, params
+        return f"ROUND(CAST({lhs} as float) / 5.0) * 5", params
 
 
 Field.register_lookup(Approx)
