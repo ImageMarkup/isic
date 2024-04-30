@@ -1,0 +1,2 @@
+Your CSV is ready for download, the following link will be valid for 24 hours:
+{{ csv_url|safe }}
