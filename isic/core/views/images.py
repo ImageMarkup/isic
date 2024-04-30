@@ -1,21 +1,19 @@
-from collections.abc import Iterable
-import csv
-from datetime import UTC, datetime
 import json
 
+from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
-from django.db import connection, transaction
 from django.db.models import Count
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
-from django.http import HttpRequest, HttpResponse, StreamingHttpResponse
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
+from django.urls import reverse
 
 from isic.core.forms.search import ImageSearchForm
 from isic.core.models import Collection, Image
 from isic.core.permissions import get_visible_objects, needs_object_permission
-from isic.core.services import staff_image_metadata_csv
+from isic.core.tasks import generate_staff_image_list_metadata_csv
 from isic.studies.models import Study
 
 
@@ -138,35 +136,18 @@ def image_browser(request):
 
 
 @staff_member_required
-def image_list_export(request: HttpRequest) -> HttpResponse:
+def staff_image_list_export(request: HttpRequest) -> HttpResponse:
     return render(request, "core/image_list_export.html")
 
 
 @staff_member_required
-def image_list_metadata_download(request: HttpRequest):
-    # StreamingHttpResponse requires a File-like class that has a 'write' method
-    class Buffer:
-        def write(self, value: str) -> bytes:
-            return value.encode("utf-8")
+def staff_image_list_metadata_download(request: HttpRequest):
+    generate_staff_image_list_metadata_csv.delay(request.user.id)
 
-    def csv_rows(buffer: Buffer) -> Iterable[bytes]:
-        # use repeatable read for the headers and rows to make sure they match
-        with transaction.atomic():
-            cursor = connection.cursor()
-            cursor.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
-
-            qs = Image.objects.all()
-            image_csv = staff_image_metadata_csv(qs=qs)
-            writer = csv.DictWriter(buffer, next(image_csv))
-            yield writer.writeheader()
-
-            for metadata_row in image_csv:
-                yield writer.writerow(metadata_row)
-
-    current_time = datetime.now(tz=UTC).strftime("%Y-%m-%d")
-    response = StreamingHttpResponse(csv_rows(Buffer()), content_type="text/csv")
-    response["Content-Disposition"] = (
-        f'attachment; filename="isic_accession_metadata_{current_time}.csv"'
+    messages.add_message(
+        request,
+        messages.INFO,
+        f"Preparing the CSV, a download link will be sent to {request.user.email} when complete.",
     )
 
-    return response
+    return HttpResponseRedirect(reverse("core/image-list-export"))
