@@ -1,7 +1,8 @@
+from isic_metadata.fields import ImageTypeEnum
 import pytest
 from pytest_lazyfixture import lazy_fixture
 
-from isic.core.search import add_to_search_index, get_elasticsearch_client
+from isic.core.search import add_to_search_index, facets, get_elasticsearch_client
 
 
 @pytest.fixture()
@@ -276,3 +277,29 @@ def test_core_api_image_faceting_query(private_and_public_images_collections, cl
     buckets = r.json()["collections"]["buckets"]
     assert len(buckets) == 1, buckets
     assert buckets[0] == {"key": public_coll.pk, "doc_count": 1}, buckets
+
+
+@pytest.mark.django_db()
+@pytest.mark.usefixtures("_search_index")
+def test_facet_search_orders_field_values(image_factory):
+    # it's important to create the an image with a later ordered image type first
+    # to make sure it's not ordering it correctly on accident.
+    image = image_factory(public=True, accession__image_type="TBP tile: close-up")
+    add_to_search_index(image)
+
+    # Ensure that the images are available in the index for search
+    get_elasticsearch_client().indices.refresh(index="_all")
+
+    actual = facets()
+
+    for i, image_type in enumerate(ImageTypeEnum):
+        assert actual["image_type"]["buckets"][i]["key"] == image_type.value
+
+
+@pytest.mark.django_db()
+@pytest.mark.usefixtures("_search_index")
+def test_facet_search_includes_missing_field_values(image_factory):
+    actual = facets()
+
+    for image_type in ImageTypeEnum:
+        assert any(bucket["key"] == image_type.value for bucket in actual["image_type"]["buckets"])
