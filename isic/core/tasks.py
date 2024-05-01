@@ -49,7 +49,7 @@ def sync_elasticsearch_index_task():
     bulk_add_to_search_index(Image.objects.with_elasticsearch_properties().iterator())
 
 
-@shared_task(soft_time_limit=600, time_limit=610)
+@shared_task(soft_time_limit=1800, time_limit=1810)
 def generate_staff_image_list_metadata_csv(user_id: int) -> None:
     user = User.objects.get(pk=user_id, is_staff=True)
 
