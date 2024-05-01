@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.db.models.query import QuerySet
 from isic_metadata import FIELD_REGISTRY
-from isic_metadata.fields import FitzpatrickSkinType
+from isic_metadata.fields import FitzpatrickSkinType, ImageTypeEnum
 from opensearchpy import NotFoundError, OpenSearch
 from opensearchpy.helpers import parallel_bulk
 from opensearchpy.transport import Transport
@@ -133,6 +133,18 @@ def _prettify_facets(facets: dict[str, Any]) -> dict[str, Any]:
     # sort the values of fitzpatrick_skin_type buckets by the element in the key field
     facets["fitzpatrick_skin_type"]["buckets"] = sorted(
         facets["fitzpatrick_skin_type"]["buckets"], key=lambda x: x["key"]
+    )
+
+    image_type_values = {bucket["key"] for bucket in facets["image_type"]["buckets"]}
+    missing_image_type = {x.value for x in ImageTypeEnum} - image_type_values
+
+    for value in missing_image_type:
+        facets["image_type"]["buckets"].append({"key": value, "doc_count": 0})
+
+    # sort the values of image_type buckets by the element in the key field
+    facets["image_type"]["buckets"] = sorted(
+        facets["image_type"]["buckets"],
+        key=lambda x: ImageTypeEnum(x["key"])._sort_order_,  # noqa: SLF001
     )
 
     return facets
