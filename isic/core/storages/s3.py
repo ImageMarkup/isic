@@ -24,8 +24,10 @@ class CacheableCloudFrontStorage(S3Storage):
     # This is copied from upstream with minor modifications, subclassing in a cleaner way wasn't
     # possible.
     def url(self, name, parameters=None, expire=None, http_method=None):
+        # If expire or http_method is set, defer to the parent implementation. At the moment this is
+        # only done with generate_staff_image_list_metadata_csv.
         if expire is not None or http_method is not None:
-            raise ValueError("expire and http_method are not supported by this storage backend.")
+            return super().url(name, parameters=parameters, expire=expire, http_method=http_method)
 
         # Preserve the trailing slash after normalizing the path.
         name = self._normalize_name(clean_name(name))
