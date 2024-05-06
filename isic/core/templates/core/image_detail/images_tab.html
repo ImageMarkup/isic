@@ -6,10 +6,14 @@
         <a class="px-1" href="#" @click="increase();">more columns</a>
       </div>
       <div class="grid gap-4" :class="`grid-cols-${numCols}`">
-        {% for image in images %}
+        {% for image in images|slice:MAX_RELATED_SHOW_FIRST_N %}
           {% include 'core/partials/image.html' %}
         {% endfor %}
       </div>
+
+      {% if images_count > MAX_RELATED_SHOW_FIRST_N %}
+        <div>Showing first {{ MAX_RELATED_SHOW_FIRST_N }} images.</div>
+      {% endif %}
     </div>
 
     {% include 'ingest/partials/thumbnail_grid_js.html' %}
