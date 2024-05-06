@@ -41,31 +41,22 @@ def collection_with_images(image_factory, collection_factory):
 
 @pytest.mark.django_db()
 def test_collection_metadata_download(staff_client, collection_with_images, mocker):
-    mock_writer = mocker.MagicMock()
-    mocker.patch("isic.core.views.collections.csv.DictWriter", return_value=mock_writer)
-
     r = staff_client.get(
         reverse("core/collection-download-metadata", args=[collection_with_images.id])
     )
     assert r.status_code == 200
 
-    assert len(mock_writer.method_calls) == 3  # writeheader and 2 writerow calls
+    output_csv = r.getvalue().decode("utf-8").splitlines()
 
-    first_image = collection_with_images.images.order_by("isic_id").first()
-    assert mock_writer.method_calls[1].args[0] == {
-        "isic_id": first_image.isic_id,
-        "attribution": first_image.accession.cohort.attribution,
-        "copyright_license": first_image.accession.copyright_license,
-        "age_approx": first_image.accession.age_approx,
-    }
+    # writeheader and 2 writerow calls
+    assert len(output_csv) == 3
+    assert output_csv[0] == "isic_id,attribution,copyright_license,age_approx"
 
-    second_image = collection_with_images.images.order_by("isic_id").last()
-    assert mock_writer.method_calls[2].args[0] == {
-        "isic_id": second_image.isic_id,
-        "attribution": second_image.accession.cohort.attribution,
-        "copyright_license": second_image.accession.copyright_license,
-        "age_approx": second_image.accession.age_approx,
-    }
+    for i, image in enumerate(collection_with_images.images.order_by("isic_id").all(), start=1):
+        assert (
+            output_csv[i]
+            == f"{image.isic_id},{image.accession.cohort.attribution},{image.accession.copyright_license},{image.accession.age_approx}"  # noqa: E501
+        )
 
 
 @pytest.mark.django_db()
@@ -77,24 +68,23 @@ def test_collection_metadata_download_private_images(
         user, through_defaults={"creator": collection_with_images.creator}
     )
 
-    mock_writer = mocker.MagicMock()
-    mocker.patch("isic.core.views.collections.csv.DictWriter", return_value=mock_writer)
-
     r = authenticated_client.get(
         reverse("core/collection-download-metadata", args=[collection_with_images.id])
     )
     assert r.status_code == 200
 
+    output_csv = r.getvalue().decode("utf-8").splitlines()
+
     # writeheader and 1 writerow calls, ignoring the private image because of permissions
-    assert len(mock_writer.method_calls) == 2
+    assert len(output_csv) == 2  # writeheader and 1 writerow call
+    assert output_csv[0] == "isic_id,attribution,copyright_license,age_approx"
 
     image = collection_with_images.images.first()
-    assert mock_writer.method_calls[1].args[0] == {
-        "isic_id": image.isic_id,
-        "attribution": image.accession.cohort.attribution,
-        "copyright_license": image.accession.copyright_license,
-        "age_approx": image.accession.age_approx,
-    }
+
+    assert (
+        output_csv[1]
+        == f"{image.isic_id},{image.accession.cohort.attribution},{image.accession.copyright_license},{image.accession.age_approx}"  # noqa: E501
+    )
 
 
 @pytest.mark.django_db()

@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 import csv
 from datetime import UTC, datetime
 
@@ -7,7 +8,7 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Count
 from django.db.models.query_utils import Q
-from django.http import HttpResponse
+from django.http import StreamingHttpResponse
 from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
@@ -119,24 +120,31 @@ def collection_edit(request, pk):
 
 @needs_object_permission("core.view_collection", (Collection, "pk", "pk"))
 def collection_download_metadata(request, pk):
+    # StreamingHttpResponse requires a File-like class that has a 'write' method
+    class Buffer:
+        def write(self, value: str) -> bytes:
+            return value.encode("utf-8")
+
     collection = get_object_or_404(Collection, pk=pk)
     qs = get_visible_objects(
         request.user,
         "core.view_image",
         collection.images.all(),
     )
+
+    def csv_rows(buffer: Buffer) -> Iterable[bytes]:
+        collection_metadata = image_metadata_csv(qs=qs)
+        writer = csv.DictWriter(buffer, next(collection_metadata))
+        yield writer.writeheader()
+
+        for metadata_row in collection_metadata:
+            yield writer.writerow(metadata_row)
+
     current_time = datetime.now(tz=UTC).strftime("%Y-%m-%d")
-    response = HttpResponse(content_type="text/csv")
+    response = StreamingHttpResponse(csv_rows(Buffer()), content_type="text/csv")
     response["Content-Disposition"] = (
         f'attachment; filename="{slugify(collection.name)}_metadata_{current_time}.csv"'
     )
-
-    collection_metadata = image_metadata_csv(qs=qs)
-    writer = csv.DictWriter(response, next(collection_metadata))
-    writer.writeheader()
-
-    for metadata_row in collection_metadata:
-        writer.writerow(metadata_row)
 
     return response
 
