@@ -68,11 +68,11 @@
           {% include 'core/image_detail/studies_tab.html' %}
 
           {% if sections.patient_images %}
-            {% include 'core/image_detail/images_tab.html' with images=other_patient_images section_name='patient_images' %}
+            {% include 'core/image_detail/images_tab.html' with images=other_patient_images images_count=other_patient_images_count section_name='patient_images' %}
           {% endif %}
 
           {% if sections.lesion_images %}
-            {% include 'core/image_detail/images_tab.html' with images=other_lesion_images section_name='lesion_images' %}
+            {% include 'core/image_detail/images_tab.html' with images=other_lesion_images images_count=other_lesion_images_count section_name='lesion_images' %}
           {% endif %}
 
           {% if sections.ingestion_details %}

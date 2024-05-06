@@ -16,6 +16,10 @@ from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.core.tasks import generate_staff_image_list_metadata_csv
 from isic.studies.models import Study
 
+# Show this many related images e.g. other patient images, other lesion images.
+# Lesions are typically <= 20 images, but patients can be hundreds.
+MAX_RELATED_SHOW_FIRST_N = 50
+
 
 @needs_object_permission("core.view_image", (Image, "pk", "pk"))
 def image_detail(request, pk):
@@ -50,6 +54,18 @@ def image_detail(request, pk):
         .distinct()
     )
 
+    other_patient_images = get_visible_objects(
+        request.user,
+        "core.view_image",
+        image.same_patient_images().select_related("accession"),
+    )
+
+    other_lesion_images = get_visible_objects(
+        request.user,
+        "core.view_image",
+        image.same_lesion_images().select_related("accession"),
+    )
+
     ctx = {
         "image": image,
         "pinned_collections": get_visible_objects(
@@ -57,16 +73,11 @@ def image_detail(request, pk):
             "core.view_collection",
             image.collections.filter(pinned=True).order_by("name"),
         ),
-        "other_patient_images": get_visible_objects(
-            request.user,
-            "core.view_image",
-            image.same_patient_images().select_related("accession"),
-        ),
-        "other_lesion_images": get_visible_objects(
-            request.user,
-            "core.view_image",
-            image.same_lesion_images().select_related("accession"),
-        ),
+        "other_patient_images": other_patient_images,
+        "other_patient_images_count": other_patient_images.count(),
+        "other_lesion_images": other_lesion_images,
+        "other_lesion_images_count": other_lesion_images.count(),
+        "MAX_RELATED_SHOW_FIRST_N": MAX_RELATED_SHOW_FIRST_N,
         "studies": studies,
     }
 
@@ -86,10 +97,10 @@ def image_detail(request, pk):
 
     if request.user.is_staff:
         ctx["sections"]["patient_images"] = (
-            f'Other Patient Images ({ctx["other_patient_images"].count()})'
+            f'Other Patient Images ({ctx["other_patient_images_count"]})'
         )
         ctx["sections"]["lesion_images"] = (
-            f'Other Lesion Images ({ctx["other_lesion_images"].count()})'
+            f'Other Lesion Images ({ctx["other_lesion_images_count"]})'
         )
         ctx["sections"]["ingestion_details"] = "Ingestion Details"
 
