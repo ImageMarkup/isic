@@ -18,7 +18,7 @@ from isic.studies.services import populate_study_tasks, study_create
 @click.argument("column_question_mapping_csv")
 @click.argument("responses_csv")
 @transaction.atomic()
-def create_study_from_csv(  # noqa: PLR0913, C901
+def create_study_from_csv(  # noqa: PLR0912, PLR0913, C901
     study_name,
     study_attribution,
     study_creator_id,
