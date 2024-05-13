@@ -131,6 +131,7 @@ class IsicMixin(ConfigMixin):
     ISIC_GOOGLE_ANALYTICS_PROPERTY_IDS = [
         "360152967",  # ISIC Gallery
         "368050084",  # ISIC Challenge 2020
+        "440566058",  # ISIC Challenge 2024
         "360125792",  # ISIC Challenge
         "265191179",  # ISIC API
         "265233311",  # ISDIS
