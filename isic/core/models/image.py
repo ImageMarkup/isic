@@ -94,8 +94,7 @@ class Image(CreationSortedTimeStampedModel):
         Return the metadata for an image.
 
         Note that the metadata for the image is sanitized unlike the metadata for the accession
-        which is behind the "firewall" of ingest. This includes rounded ages and obfuscated
-        longitudinal IDs.
+        which is behind the "firewall" of ingest. This includes rounded ages and remapped IDs.
         """
         image_metadata = deepcopy(self.accession.metadata)
 
@@ -105,11 +104,9 @@ class Image(CreationSortedTimeStampedModel):
             )
             del image_metadata["age"]
 
-        if self.has_lesion:
-            image_metadata["lesion_id"] = self.accession.lesion_id
-
-        if self.has_patient:
-            image_metadata["patient_id"] = self.accession.patient_id
+        for field in Accession.remapped_internal_fields:
+            if getattr(self.accession, field.csv_field_name) is not None:
+                image_metadata[field.csv_field_name] = getattr(self.accession, field.csv_field_name)
 
         return image_metadata
 

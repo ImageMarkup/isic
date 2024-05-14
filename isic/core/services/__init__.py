@@ -1,4 +1,6 @@
 from collections.abc import Generator
+from functools import reduce
+import operator
 
 from django.db.models import Func
 from django.db.models.aggregates import Count
@@ -18,7 +20,7 @@ def staff_image_metadata_csv(
     """
     Generate a CSV of image metadata for staff users.
 
-    This includes all metadata, including sensitive metadata, and private patient and lesion ids.
+    This includes all metadata, including sensitive metadata, and private remapped ids.
     It also includes cohort and attribution info, and the original filename.
 
     The first value yielded is the header row, and subsequent values are the rows of the CSV.
@@ -47,10 +49,19 @@ def staff_image_metadata_csv(
         .distinct()
     )
 
+    remapped_keys = reduce(
+        operator.iadd,
+        [
+            [field.internal_id_name, field.csv_field_name]
+            for field in Accession.remapped_internal_fields
+        ],
+        [],
+    )
+
     yield (
         headers
         + sorted(used_metadata_keys)
-        + ["private_lesion_id", "lesion_id", "private_patient_id", "patient_id"]
+        + remapped_keys
         + sorted([f"unstructured.{key}" for key in used_unstructured_metadata_keys])
     )
 
@@ -67,10 +78,11 @@ def staff_image_metadata_csv(
             "accession__copyright_license",
             "public",
             *[f"accession__{key}" for key in used_metadata_keys],
-            "accession__lesion__private_lesion_id",
-            "accession__lesion_id",
-            "accession__patient__private_patient_id",
-            "accession__patient_id",
+            *[f"accession__{field.csv_field_name}" for field in Accession.remapped_internal_fields],
+            *[
+                f"accession__{field.relation_name}__{field.internal_id_name}"
+                for field in Accession.remapped_internal_fields
+            ],
             "accession__unstructured_metadata__value",
         )
         .iterator()
@@ -93,10 +105,16 @@ def staff_image_metadata_csv(
                 for k, v in image.items()
                 if k.replace("accession__", "") in Accession.metadata_keys()
             },
-            "private_lesion_id": image["accession__lesion__private_lesion_id"],
-            "lesion_id": image["accession__lesion_id"],
-            "private_patient_id": image["accession__patient__private_patient_id"],
-            "patient_id": image["accession__patient_id"],
+            **{
+                field.internal_id_name: image[
+                    f"accession__{field.relation_name}__{field.internal_id_name}"
+                ]
+                for field in Accession.remapped_internal_fields
+            },
+            **{
+                field.csv_field_name: image[f"accession__{field.csv_field_name}"]
+                for field in Accession.remapped_internal_fields
+            },
             **{
                 f"unstructured.{k}": v
                 for k, v in image["accession__unstructured_metadata__value"].items()
@@ -121,11 +139,9 @@ def image_metadata_csv(
     counts = accession_qs.aggregate(**{k: Count(k) for k in Accession.metadata_keys()})
     used_metadata_keys = [k for k, v in counts.items() if v > 0]
 
-    if accession_qs.exclude(lesion=None).exists():
-        used_metadata_keys.append("lesion_id")
-
-    if accession_qs.exclude(patient=None).exists():
-        used_metadata_keys.append("patient_id")
+    for field in Accession.remapped_internal_fields:
+        if accession_qs.exclude(**{field.relation_name: None}).exists():
+            used_metadata_keys.append(field.csv_field_name)  # noqa: PERF401
 
     # TODO: this is a very leaky part of sensitive metadata handling that
     # should be refactored.
@@ -145,8 +161,7 @@ def image_metadata_csv(
             "accession__cohort__attribution",
             "accession__copyright_license",
             *[f"accession__{key}" for key in Accession.metadata_keys()],
-            "accession__lesion_id",
-            "accession__patient_id",
+            *[f"accession__{field.csv_field_name}" for field in Accession.remapped_internal_fields],
         )
         .iterator()
     ):

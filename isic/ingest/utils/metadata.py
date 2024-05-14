@@ -134,8 +134,10 @@ def validate_archive_consistency(
         """
         accessions = cohort.accessions.values(
             "original_blob_name",
-            "lesion__private_lesion_id",
-            "patient__private_patient_id",
+            *[
+                f"{field.relation_name}__{field.internal_id_name}"
+                for field in Accession.remapped_internal_fields
+            ],
             *Accession.metadata_keys(),
         )
 
@@ -149,13 +151,12 @@ def validate_archive_consistency(
             if "original_blob_name" in accession_values:
                 del accession_values["original_blob_name"]
 
-            if accession_values["lesion__private_lesion_id"]:
-                accession_values["lesion_id"] = accession_values["lesion__private_lesion_id"]
-                del accession_values["lesion__private_lesion_id"]
-
-            if accession_values["patient__private_patient_id"]:
-                accession_values["patient_id"] = accession_values["patient__private_patient_id"]
-                del accession_values["patient__private_patient_id"]
+            for field in Accession.remapped_internal_fields:
+                if accession_values[f"{field.relation_name}__{field.internal_id_name}"]:
+                    accession_values[field.csv_field_name] = accession_values[
+                        f"{field.relation_name}__{field.internal_id_name}"
+                    ]
+                    del accession_values[f"{field.relation_name}__{field.internal_id_name}"]
 
             return accession_values
 
