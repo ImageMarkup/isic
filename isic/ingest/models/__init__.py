@@ -7,6 +7,7 @@ from .lesion import Lesion
 from .metadata_file import MetadataFile
 from .metadata_version import MetadataVersion
 from .patient import Patient
+from .rcm_case import RcmCase
 from .unstructured_metadata import UnstructuredMetadata
 from .zip_upload import ZipUpload, ZipUploadFailReason, ZipUploadStatus
 
@@ -21,6 +22,7 @@ __all__ = [
     "MetadataFile",
     "MetadataVersion",
     "Patient",
+    "RcmCase",
     "UnstructuredMetadata",
     "ZipUpload",
     "ZipUploadFailReason",

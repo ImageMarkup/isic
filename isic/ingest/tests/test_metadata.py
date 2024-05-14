@@ -330,6 +330,7 @@ def test_accession_metadata_versions(user, accession):
         "metadata": {"added": {}, "removed": {}, "changed": {}},
         "lesion": {"added": {}, "removed": {}, "changed": {}},
         "patient": {"added": {}, "removed": {}, "changed": {}},
+        "rcm_case": {"added": {}, "removed": {}, "changed": {}},
     }
 
     accession.update_metadata(user, {"foo": "baz", "age": "45"})
@@ -345,6 +346,7 @@ def test_accession_metadata_versions(user, accession):
         "metadata": {"added": {}, "removed": {}, "changed": {}},
         "lesion": {"added": {}, "removed": {}, "changed": {}},
         "patient": {"added": {}, "removed": {}, "changed": {}},
+        "rcm_case": {"added": {}, "removed": {}, "changed": {}},
     }
     assert diffs[1][1] == {
         "unstructured_metadata": {
@@ -355,6 +357,7 @@ def test_accession_metadata_versions(user, accession):
         "metadata": {"added": {"age": 45}, "removed": {}, "changed": {}},
         "lesion": {"added": {}, "removed": {}, "changed": {}},
         "patient": {"added": {}, "removed": {}, "changed": {}},
+        "rcm_case": {"added": {}, "removed": {}, "changed": {}},
     }
 
 

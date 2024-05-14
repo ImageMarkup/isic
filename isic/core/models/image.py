@@ -89,6 +89,10 @@ class Image(CreationSortedTimeStampedModel):
         return self.accession.lesion_id is not None
 
     @property
+    def has_rcm_case(self) -> bool:
+        return self.accession.rcm_case_id is not None
+
+    @property
     def metadata(self) -> dict:
         """
         Return the metadata for an image.
@@ -149,6 +153,16 @@ class Image(CreationSortedTimeStampedModel):
         return (
             Image.objects.filter(accession__cohort_id=self.accession.cohort_id)
             .filter(accession__lesion_id=self.accession.lesion_id)
+            .exclude(pk=self.pk)
+        )
+
+    def same_rcm_case_images(self) -> QuerySet[Image]:
+        if not self.has_rcm_case:
+            return Image.objects.none()
+
+        return (
+            Image.objects.filter(accession__cohort_id=self.accession.cohort_id)
+            .filter(accession__rcm_case_id=self.accession.rcm_case_id)
             .exclude(pk=self.pk)
         )
 

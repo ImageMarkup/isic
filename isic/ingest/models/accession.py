@@ -16,6 +16,7 @@ from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.expressions import F
 from django.db.models.fields import Field
 from django.db.models.query_utils import Q
+from isic_metadata.fields import ImageTypeEnum
 from isic_metadata.metadata import MetadataRow
 import PIL.Image
 from s3_file_field import S3FileField
@@ -24,6 +25,7 @@ from isic.core.models import CopyrightLicense, CreationSortedTimeStampedModel
 from isic.ingest.models.cohort import Cohort
 from isic.ingest.models.lesion import Lesion
 from isic.ingest.models.patient import Patient
+from isic.ingest.models.rcm_case import RcmCase
 from isic.ingest.utils.mime import guess_mime_type
 from isic.ingest.utils.zip import Blob
 
@@ -132,6 +134,12 @@ class RemappedField:
     internal_id_name: str
     model: models.Model
 
+    def internal_value(self, obj: models.Model) -> str:
+        return getattr(getattr(obj, self.relation_name), self.internal_id_name)
+
+    def external_value(self, obj: models.Model) -> str:
+        return getattr(obj, self.csv_field_name)
+
 
 class AccessionStatus(models.TextChoices):
     CREATING = "creating", "Creating"
@@ -190,6 +198,13 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
     )
     patient = models.ForeignKey(
         Patient,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accessions",
+    )
+    rcm_case = models.ForeignKey(
+        RcmCase,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -254,6 +269,21 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
                 ],
                 condition=Q(lesion_id__isnull=False) & Q(patient_id__isnull=False),
             ),
+            # identical rcm_case_id implies identical lesion_id
+            ExclusionConstraint(
+                name="accession_rcm_case_id_lesion_id_exclusion",
+                expressions=[
+                    ("rcm_case_id", "="),
+                    ("lesion_id", "<>"),
+                ],
+                condition=Q(rcm_case_id__isnull=False) & Q(lesion_id__isnull=False),
+            ),
+            # each RCM case can only have at most one macroscopic image
+            UniqueConstraint(
+                name="accession_unique_rcm_case_id_macroscopic_image",
+                fields=["cohort_id", "rcm_case_id"],
+                condition=Q(image_type=ImageTypeEnum.rcm_macroscopic),
+            ),
         ]
 
         indexes = [
@@ -274,6 +304,7 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
     remapped_internal_fields = [
         RemappedField("lesion_id", "lesion", "private_lesion_id", Lesion),
         RemappedField("patient_id", "patient", "private_patient_id", Patient),
+        RemappedField("rcm_case_id", "rcm_case", "private_rcm_case_id", RcmCase),
     ]
 
     @property
@@ -450,12 +481,12 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
         1) Checks to see if the accession can be modified
         2) Manages audit trails (MetadataVersion records)
         3) Resets the review
-        4) Manages remapping special fields
+        4) Manages remapping internal fields
         """
         if self.pk and not ignore_image_check:
             self._require_unpublished()
 
-        def maybe_remap_metadata(metadata: dict) -> bool:
+        def maybe_remap_internal_metadata(metadata: dict) -> bool:
             mapped = False
 
             for field in self.remapped_internal_fields:
@@ -463,8 +494,7 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
 
                 if parsed_field and (
                     not getattr(self, field.relation_name)
-                    or getattr(getattr(self, field.relation_name), field.internal_id_name)
-                    != parsed_field
+                    or field.internal_value(self) != parsed_field
                 ):
                     mapped = True
                     value, _ = field.model.objects.get_or_create(
@@ -498,7 +528,7 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
             new_metadata = parsed_metadata.model_dump(
                 exclude_unset=True, exclude_none=True, exclude={"unstructured"}
             )
-            new_remapped_metadata = maybe_remap_metadata(new_metadata)
+            new_remapped_internal_metadata = maybe_remap_internal_metadata(new_metadata)
 
             # remapped metadata has already been captured, so strip it to prevent it from
             # being added to the metadata and exposing the internal values.
@@ -506,7 +536,9 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
                 if field.csv_field_name in new_metadata:
                     del new_metadata[field.csv_field_name]
 
-            if (new_metadata and original_metadata != new_metadata) or new_remapped_metadata:
+            if (
+                new_metadata and original_metadata != new_metadata
+            ) or new_remapped_internal_metadata:
                 modified = True
 
                 for k, v in new_metadata.items():
@@ -522,23 +554,21 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
                     accession_review_delete(accession=self)
 
             if modified:
-                remapped_values = {}
+                remapped_internal_values = {}
                 for field in self.remapped_internal_fields:
-                    remapped_values.setdefault(field.relation_name, {})
+                    remapped_internal_values.setdefault(field.relation_name, {})
 
                     if getattr(self, field.relation_name):
-                        remapped_values[field.relation_name] = {
-                            "internal": getattr(
-                                getattr(self, field.relation_name), field.internal_id_name
-                            ),
-                            "external": getattr(self, field.relation_name).id,
+                        remapped_internal_values[field.relation_name] = {
+                            "internal": field.internal_value(self),
+                            "external": field.external_value(self),
                         }
 
                 self.metadata_versions.create(
                     creator=user,
                     metadata=self.metadata,
                     unstructured_metadata=self.unstructured_metadata.value,
-                    **remapped_values,
+                    **remapped_internal_values,
                 )
                 self.unstructured_metadata.save()
                 self.save()

@@ -26,6 +26,7 @@ from isic.ingest.models import (
     ZipUpload,
 )
 from isic.ingest.models.metadata_version import MetadataVersion
+from isic.ingest.models.rcm_case import RcmCase
 from isic.ingest.tasks import extract_zip_task
 
 logger = logging.getLogger(__name__)
@@ -192,6 +193,12 @@ class LesionAdmin(StaffReadonlyAdmin):
 class PatientAdmin(StaffReadonlyAdmin):
     list_display = ["cohort", "private_patient_id", "id"]
     search_fields = ["id", "private_patient_id"]
+
+
+@admin.register(RcmCase)
+class RcmCaseAdmin(StaffReadonlyAdmin):
+    list_display = ["cohort", "private_rcm_case_id", "id"]
+    search_fields = ["id", "private_rcm_case_id"]
 
 
 @admin.register(Accession)
