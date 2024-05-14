@@ -10,6 +10,8 @@ from pyparsing.core import Literal, OneOrMore, Or, QuotedString, Suppress
 from pyparsing.helpers import one_of
 from pyparsing.results import ParseResults
 
+from isic.ingest.models.accession import Accession
+
 ParserElement.enablePackrat()
 
 
@@ -260,11 +262,12 @@ def convert_term(s, loc, toks):
         # isic_id can't be used with wildcards since it's a foreign key, so join the table and
         # refer to the __id.
         "isic_id": "isic__id",
-        "lesion_id": "accession__lesion__id",
-        "patient_id": "accession__patient__id",
         "age_approx": "accession__age__approx",
         "copyright_license": "accession__copyright_license",
     }
+
+    for field in Accession.remapped_internal_fields:
+        field_to_lookup_map[field.csv_field_name] = f"accession__{field.relation_name}__id"
 
     if toks[0] in field_to_lookup_map:
         return SearchTermKey(field_to_lookup_map[toks[0]], negate)
