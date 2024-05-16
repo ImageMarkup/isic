@@ -13,7 +13,14 @@ from isic.core.models.image import Image
 def test_image_list_metadata_download_view(staff_client, mailoutbox, user, image: Image):
     image.accession.update_metadata(
         user,
-        {"age": 57, "lesion_id": "foo", "patient_id": "bar", "diagnosis": "melanoma"},
+        {
+            "age": 57,
+            "lesion_id": "foo",
+            "patient_id": "bar",
+            "rcm_case_id": "baz",
+            "diagnosis": "melanoma",
+            "image_type": "RCM: macroscopic",
+        },
         ignore_image_check=True,
     )
     r = staff_client.get(reverse("core/image-list-metadata-download"), follow=True)
@@ -36,10 +43,13 @@ def test_image_list_metadata_download_view(staff_client, mailoutbox, user, image
         "age_approx",
         "age",
         "diagnosis",
+        "image_type",
         "private_lesion_id",
         "lesion_id",
         "private_patient_id",
         "patient_id",
+        "private_rcm_case_id",
+        "rcm_case_id",
     ]
 
     # we know these can't be None due to the update_metadata call above
@@ -57,10 +67,13 @@ def test_image_list_metadata_download_view(staff_client, mailoutbox, user, image
         "55",
         "57",
         "melanoma",
+        "RCM: macroscopic",
         "foo",
         image.accession.lesion_id,
         "bar",
         image.accession.patient_id,
+        "baz",
+        image.accession.rcm_case_id,
     ]
 
     expected = (

@@ -24,6 +24,7 @@ from isic.ingest.models import (
     ZipUploadFailReason,
     ZipUploadStatus,
 )
+from isic.ingest.models.rcm_case import RcmCase
 from isic.ingest.services.cohort import cohort_publish
 from isic.ingest.utils.metadata import (
     ColumnRowErrors,
@@ -156,12 +157,13 @@ def update_metadata_task(user_pk: int, metadata_file_pk: int):
         # Lock the longitudinal tables during metadata assignment
         (_ for _ in Lesion.objects.select_for_update().all())
         (_ for _ in Patient.objects.select_for_update().all())
+        (_ for _ in RcmCase.objects.select_for_update().all())
 
         _, rows = metadata_file.to_iterable()
 
         for chunk in chunked(rows, 1_000):
             accessions: QuerySet[Accession] = metadata_file.cohort.accessions.select_related(
-                "image", "review", "lesion", "patient", "cohort"
+                "image", "review", "lesion", "patient", "rcm_case", "cohort"
             ).filter(original_blob_name__in=[row["filename"] for row in chunk])
             accessions_by_filename: dict[str, Accession] = {
                 accession.original_blob_name: accession for accession in accessions
