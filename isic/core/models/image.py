@@ -89,13 +89,16 @@ class Image(CreationSortedTimeStampedModel):
         return self.accession.lesion_id is not None
 
     @property
+    def has_rcm_case(self) -> bool:
+        return self.accession.rcm_case_id is not None
+
+    @property
     def metadata(self) -> dict:
         """
         Return the metadata for an image.
 
         Note that the metadata for the image is sanitized unlike the metadata for the accession
-        which is behind the "firewall" of ingest. This includes rounded ages and obfuscated
-        longitudinal IDs.
+        which is behind the "firewall" of ingest. This includes rounded ages and remapped IDs.
         """
         image_metadata = deepcopy(self.accession.metadata)
 
@@ -105,11 +108,9 @@ class Image(CreationSortedTimeStampedModel):
             )
             del image_metadata["age"]
 
-        if self.has_lesion:
-            image_metadata["lesion_id"] = self.accession.lesion_id
-
-        if self.has_patient:
-            image_metadata["patient_id"] = self.accession.patient_id
+        for field in Accession.remapped_internal_fields:
+            if getattr(self.accession, field.csv_field_name) is not None:
+                image_metadata[field.csv_field_name] = getattr(self.accession, field.csv_field_name)
 
         return image_metadata
 
@@ -152,6 +153,16 @@ class Image(CreationSortedTimeStampedModel):
         return (
             Image.objects.filter(accession__cohort_id=self.accession.cohort_id)
             .filter(accession__lesion_id=self.accession.lesion_id)
+            .exclude(pk=self.pk)
+        )
+
+    def same_rcm_case_images(self) -> QuerySet[Image]:
+        if not self.has_rcm_case:
+            return Image.objects.none()
+
+        return (
+            Image.objects.filter(accession__cohort_id=self.accession.cohort_id)
+            .filter(accession__rcm_case_id=self.accession.rcm_case_id)
             .exclude(pk=self.pk)
         )
 

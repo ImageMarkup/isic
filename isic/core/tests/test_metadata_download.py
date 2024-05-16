@@ -17,6 +17,8 @@ def image_with_metadata(image):
             "diagnosis": "nevus",
             "patient_id": "supersecretpatientid",
             "lesion_id": "supersecretlesionid",
+            "rcm_case_id": "supersecretrcmcaseid",
+            "image_type": "RCM: macroscopic",
             "unstructuredfield": "foo",
         },
         ignore_image_check=True,
@@ -35,9 +37,11 @@ def test_image_metadata_csv_rows_correct(image_with_metadata):
         "benign_malignant": image_with_metadata.accession.benign_malignant,
         "copyright_license": image_with_metadata.accession.copyright_license,
         "diagnosis": image_with_metadata.accession.diagnosis,
+        "image_type": image_with_metadata.accession.image_type,
         "isic_id": image_with_metadata.isic_id,
         "lesion_id": image_with_metadata.accession.lesion_id,
         "patient_id": image_with_metadata.accession.patient_id,
+        "rcm_case_id": image_with_metadata.accession.rcm_case_id,
     }
 
 
@@ -55,12 +59,15 @@ def test_staff_image_metadata_csv_rows_correct(image_with_metadata):
         "cohort": image_with_metadata.accession.cohort.name,
         "copyright_license": image_with_metadata.accession.copyright_license,
         "diagnosis": image_with_metadata.accession.diagnosis,
+        "image_type": image_with_metadata.accession.image_type,
         "isic_id": image_with_metadata.isic_id,
-        "lesion_id": image_with_metadata.accession.lesion_id,
         "original_filename": image_with_metadata.accession.original_blob_name,
+        "lesion_id": image_with_metadata.accession.lesion_id,
         "patient_id": image_with_metadata.accession.patient_id,
+        "rcm_case_id": image_with_metadata.accession.rcm_case_id,
         "private_lesion_id": image_with_metadata.accession.lesion.private_lesion_id,
         "private_patient_id": image_with_metadata.accession.patient.private_patient_id,
+        "private_rcm_case_id": image_with_metadata.accession.rcm_case.private_rcm_case_id,
         "public": image_with_metadata.public,
         "unstructured.unstructuredfield": "foo",
     }

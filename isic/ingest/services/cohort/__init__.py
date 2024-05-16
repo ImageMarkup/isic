@@ -83,8 +83,10 @@ def cohort_merge(*, dest_cohort: Cohort, src_cohort: Cohort) -> None:
         or dest_cohort.lesions.exists()
         or src_cohort.patients.exists()
         or dest_cohort.patients.exists()
+        or src_cohort.rcm_cases.exists()
+        or dest_cohort.rcm_cases.exists()
     ):
-        raise ValidationError("Unable to merge cohorts with lesions or patients.")
+        raise ValidationError("Unable to merge cohorts with lesions, patients, or RCM cases.")
 
     with transaction.atomic():
         # lock cohorts during merge

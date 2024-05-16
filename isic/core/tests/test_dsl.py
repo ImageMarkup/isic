@@ -55,6 +55,8 @@ from isic.core.dsl import django_parser, es_parser, parse_query
         ("lesion_id:*123", Q(accession__lesion__id__endswith="123")),
         ("patient_id:IP_123*", Q(accession__patient__id__startswith="IP_123")),
         ("patient_id:*123", Q(accession__patient__id__endswith="123")),
+        ("rcm_case_id:123*", Q(accession__rcm_case__id__startswith="123")),
+        ("rcm_case_id:*123", Q(accession__rcm_case__id__endswith="123")),
         ('copyright_license:"CC-0"', Q(accession__copyright_license="CC-0")),
         ("diagnosis:foobar", Q(accession__diagnosis="foobar")),
         ('diagnosis:"foo bar"', Q(accession__diagnosis="foo bar")),

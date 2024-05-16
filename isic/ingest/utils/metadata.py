@@ -4,7 +4,7 @@ import csv
 from typing import Any
 
 from django.forms.models import ModelForm
-from isic_metadata.metadata import MetadataBatch, MetadataRow
+from isic_metadata.metadata import IGNORE_RCM_MODEL_CHECKS, MetadataBatch, MetadataRow
 from more_itertools import chunked
 from pydantic import ValidationError as PydanticValidationError
 from pydantic.main import BaseModel
@@ -80,9 +80,17 @@ def _validate_df_consistency(
     metadata_rows: list[MetadataRow] = []
 
     for i, row in enumerate(batch, start=2):
-        if row.get("patient_id") or row.get("lesion_id"):
+        if row.get("patient_id") or row.get("lesion_id") or row.get("rcm_case_id"):
             metadata_rows.append(
-                MetadataRow(patient_id=row.get("patient_id"), lesion_id=row.get("lesion_id"))
+                MetadataRow(
+                    patient_id=row.get("patient_id"),
+                    lesion_id=row.get("lesion_id"),
+                    rcm_case_id=row.get("rcm_case_id"),
+                    # image_type is necessary for the batch check
+                    image_type=row.get("image_type"),
+                    # see the documentation for the IGNORE_RCM_MODEL_CHECKS setting
+                    **{IGNORE_RCM_MODEL_CHECKS: True},
+                )
             )
 
         try:
@@ -93,7 +101,7 @@ def _validate_df_consistency(
                 column_error_rows[(str(column), error["msg"])].append(i)
 
     # validate the metadata as a "batch". this is for all checks that span rows. since this
-    # currently only applies to patient/lesion checks, we can sparsely populate the MetadataRow
+    # currently only applies to patient/lesion/rcm checks, we can sparsely populate the MetadataRow
     # objects to save on memory.
     try:
         MetadataBatch(items=metadata_rows)
@@ -134,8 +142,10 @@ def validate_archive_consistency(
         """
         accessions = cohort.accessions.values(
             "original_blob_name",
-            "lesion__private_lesion_id",
-            "patient__private_patient_id",
+            *[
+                f"{field.relation_name}__{field.internal_id_name}"
+                for field in Accession.remapped_internal_fields
+            ],
             *Accession.metadata_keys(),
         )
 
@@ -149,13 +159,12 @@ def validate_archive_consistency(
             if "original_blob_name" in accession_values:
                 del accession_values["original_blob_name"]
 
-            if accession_values["lesion__private_lesion_id"]:
-                accession_values["lesion_id"] = accession_values["lesion__private_lesion_id"]
-                del accession_values["lesion__private_lesion_id"]
-
-            if accession_values["patient__private_patient_id"]:
-                accession_values["patient_id"] = accession_values["patient__private_patient_id"]
-                del accession_values["patient__private_patient_id"]
+            for field in Accession.remapped_internal_fields:
+                if accession_values[f"{field.relation_name}__{field.internal_id_name}"]:
+                    accession_values[field.csv_field_name] = accession_values[
+                        f"{field.relation_name}__{field.internal_id_name}"
+                    ]
+                    del accession_values[f"{field.relation_name}__{field.internal_id_name}"]
 
             return accession_values
 

@@ -36,6 +36,7 @@ class MetadataVersion(CreationSortedTimeStampedModel):
     unstructured_metadata = models.JSONField()
     lesion = models.JSONField(default=dict)
     patient = models.JSONField(default=dict)
+    rcm_case = models.JSONField(default=dict)
 
     objects = MetadataVersionQuerySet.as_manager()
 
@@ -69,4 +70,5 @@ class MetadataVersion(CreationSortedTimeStampedModel):
             "unstructured_metadata": _diff(self.unstructured_metadata, other.unstructured_metadata),
             "lesion": _diff(self.lesion, other.lesion),
             "patient": _diff(self.patient, other.patient),
+            "rcm_case": _diff(self.rcm_case, other.rcm_case),
         }

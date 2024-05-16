@@ -1,4 +1,5 @@
 from copy import deepcopy
+from dataclasses import dataclass
 import io
 import logging
 from mimetypes import guess_type
@@ -15,6 +16,7 @@ from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.expressions import F
 from django.db.models.fields import Field
 from django.db.models.query_utils import Q
+from isic_metadata.fields import ImageTypeEnum
 from isic_metadata.metadata import MetadataRow
 import PIL.Image
 from s3_file_field import S3FileField
@@ -23,6 +25,7 @@ from isic.core.models import CopyrightLicense, CreationSortedTimeStampedModel
 from isic.ingest.models.cohort import Cohort
 from isic.ingest.models.lesion import Lesion
 from isic.ingest.models.patient import Patient
+from isic.ingest.models.rcm_case import RcmCase
 from isic.ingest.utils.mime import guess_mime_type
 from isic.ingest.utils.zip import Blob
 
@@ -121,6 +124,23 @@ class AccessionQuerySet(models.QuerySet):
         return self.reviewable().filter(review__value=False)
 
 
+@dataclass(frozen=True)
+class RemappedField:
+    # csv_field_name is overloaded and refers to the field name in the incoming CSV,
+    # the outgoing CSVs, and the name of the remapped value on the model (e.g.
+    # accession.lesion_id).
+    csv_field_name: str
+    relation_name: str
+    internal_id_name: str
+    model: models.Model
+
+    def internal_value(self, obj: models.Model) -> str:
+        return getattr(getattr(obj, self.relation_name), self.internal_id_name)
+
+    def external_value(self, obj: models.Model) -> str:
+        return getattr(obj, self.csv_field_name)
+
+
 class AccessionStatus(models.TextChoices):
     CREATING = "creating", "Creating"
     CREATED = "created", "Created"
@@ -178,6 +198,13 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
     )
     patient = models.ForeignKey(
         Patient,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accessions",
+    )
+    rcm_case = models.ForeignKey(
+        RcmCase,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -242,6 +269,21 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
                 ],
                 condition=Q(lesion_id__isnull=False) & Q(patient_id__isnull=False),
             ),
+            # identical rcm_case_id implies identical lesion_id
+            ExclusionConstraint(
+                name="accession_rcm_case_id_lesion_id_exclusion",
+                expressions=[
+                    ("rcm_case_id", "="),
+                    ("lesion_id", "<>"),
+                ],
+                condition=Q(rcm_case_id__isnull=False) & Q(lesion_id__isnull=False),
+            ),
+            # each RCM case can only have at most one macroscopic image
+            UniqueConstraint(
+                name="accession_unique_rcm_case_id_macroscopic_image",
+                fields=["cohort_id", "rcm_case_id"],
+                condition=Q(image_type=ImageTypeEnum.rcm_macroscopic),
+            ),
         ]
 
         indexes = [
@@ -258,6 +300,12 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
 
     def __str__(self) -> str:
         return self.blob_name
+
+    remapped_internal_fields = [
+        RemappedField("lesion_id", "lesion", "private_lesion_id", Lesion),
+        RemappedField("patient_id", "patient", "private_patient_id", Patient),
+        RemappedField("rcm_case_id", "rcm_case", "private_rcm_case_id", RcmCase),
+    ]
 
     @property
     def published(self):
@@ -433,31 +481,26 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
         1) Checks to see if the accession can be modified
         2) Manages audit trails (MetadataVersion records)
         3) Resets the review
-        4) Manages remapping longitudinal fields
+        4) Manages remapping internal fields
         """
         if self.pk and not ignore_image_check:
             self._require_unpublished()
 
-        def maybe_map_longitudinal_metadata(metadata: dict) -> bool:
+        def maybe_remap_internal_metadata(metadata: dict) -> bool:
             mapped = False
-            parsed_lesion_id = metadata.get("lesion_id")
-            parsed_patient_id = metadata.get("patient_id")
 
-            if parsed_lesion_id and (
-                not self.lesion or self.lesion.private_lesion_id != parsed_lesion_id
-            ):
-                mapped = True
-                self.lesion, _ = self.cohort.lesions.get_or_create(
-                    private_lesion_id=parsed_lesion_id
-                )
+            for field in self.remapped_internal_fields:
+                parsed_field = metadata.get(field.csv_field_name)
 
-            if parsed_patient_id and (
-                not self.patient or self.patient.private_patient_id != parsed_patient_id
-            ):
-                mapped = True
-                self.patient, _ = self.cohort.patients.get_or_create(
-                    private_patient_id=parsed_patient_id
-                )
+                if parsed_field and (
+                    not getattr(self, field.relation_name)
+                    or field.internal_value(self) != parsed_field
+                ):
+                    mapped = True
+                    value, _ = field.model.objects.get_or_create(
+                        cohort=self.cohort, **{field.internal_id_name: parsed_field}
+                    )
+                    setattr(self, field.relation_name, value)
 
             return mapped
 
@@ -485,17 +528,17 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
             new_metadata = parsed_metadata.model_dump(
                 exclude_unset=True, exclude_none=True, exclude={"unstructured"}
             )
-            new_longitudinal_metadata = maybe_map_longitudinal_metadata(new_metadata)
+            new_remapped_internal_metadata = maybe_remap_internal_metadata(new_metadata)
 
-            # longitudinal metadata has already been captured, so strip it to prevent it from
-            # being added to the metadata and exposing the internal IDs.
-            if "lesion_id" in new_metadata:
-                del new_metadata["lesion_id"]
+            # remapped metadata has already been captured, so strip it to prevent it from
+            # being added to the metadata and exposing the internal values.
+            for field in self.remapped_internal_fields:
+                if field.csv_field_name in new_metadata:
+                    del new_metadata[field.csv_field_name]
 
-            if "patient_id" in new_metadata:
-                del new_metadata["patient_id"]
-
-            if (new_metadata and original_metadata != new_metadata) or new_longitudinal_metadata:
+            if (
+                new_metadata and original_metadata != new_metadata
+            ) or new_remapped_internal_metadata:
                 modified = True
 
                 for k, v in new_metadata.items():
@@ -511,26 +554,21 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
                     accession_review_delete(accession=self)
 
             if modified:
+                remapped_internal_values = {}
+                for field in self.remapped_internal_fields:
+                    remapped_internal_values.setdefault(field.relation_name, {})
+
+                    if getattr(self, field.relation_name):
+                        remapped_internal_values[field.relation_name] = {
+                            "internal": field.internal_value(self),
+                            "external": field.external_value(self),
+                        }
+
                 self.metadata_versions.create(
                     creator=user,
                     metadata=self.metadata,
                     unstructured_metadata=self.unstructured_metadata.value,
-                    lesion=(
-                        {
-                            "internal": self.lesion.private_lesion_id,
-                            "external": self.lesion_id,
-                        }
-                        if hasattr(self, "lesion") and self.lesion
-                        else {}
-                    ),
-                    patient=(
-                        {
-                            "internal": self.patient.private_patient_id,
-                            "external": self.patient_id,
-                        }
-                        if hasattr(self, "patient") and self.patient
-                        else {}
-                    ),
+                    **remapped_internal_values,
                 )
                 self.unstructured_metadata.save()
                 self.save()
