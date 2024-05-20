@@ -1,4 +1,5 @@
 import csv
+from decimal import Decimal
 import io
 from typing import BinaryIO, cast
 
@@ -6,6 +7,7 @@ from django.urls.base import reverse
 from django.utils import timezone
 import pytest
 
+from isic.ingest.models.accession import Accession
 from isic.ingest.services.accession.review import accession_review_update_or_create
 from isic.ingest.tasks import update_metadata_task
 from isic.ingest.tests.csv_streams import StreamWriter
@@ -464,3 +466,11 @@ def test_update_unstructured_metadata_does_not_reset_checks(user, unpublished_ac
     unpublished_accepted_accession.update_metadata(user, {"foobar": "baz"})
     unpublished_accepted_accession.refresh_from_db()
     assert unpublished_accepted_accession.reviewed
+
+
+@pytest.mark.django_db()
+def test_metadata_version_serializes_decimal(user, accession: Accession):
+    accession.update_metadata(user, {"clin_size_long_diam_mm": 5})
+    assert accession.clin_size_long_diam_mm == Decimal("5.0")
+    assert accession.metadata_versions.count() == 1
+    assert accession.metadata_versions.first().metadata == {"clin_size_long_diam_mm": "5"}

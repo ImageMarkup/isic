@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from django.db import models
 
 from isic.core.models import CreationSortedTimeStampedModel
+from isic.ingest.utils.json import DecimalAwareJSONEncoder
 
 from .accession import Accession
 
@@ -32,7 +33,8 @@ class MetadataVersion(CreationSortedTimeStampedModel):
     accession = models.ForeignKey(
         Accession, on_delete=models.PROTECT, related_name="metadata_versions"
     )
-    metadata = models.JSONField()
+    # since metadata fields can be Decimal values, this field needs to use a custom encoder.
+    metadata = models.JSONField(encoder=DecimalAwareJSONEncoder)
     unstructured_metadata = models.JSONField()
     lesion = models.JSONField(default=dict)
     patient = models.JSONField(default=dict)
