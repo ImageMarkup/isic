@@ -6,7 +6,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
-from django.db.models import Count, Q
+from django.db.models import Count, Prefetch, Q
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
@@ -35,7 +35,11 @@ def cohort_counts(cohort: Cohort) -> dict[str, int]:
 
 @staff_member_required
 def cohort_list(request):
-    contributors = Contributor.objects.prefetch_related("cohorts").order_by("institution_name")
+    contributors = Contributor.objects.prefetch_related(
+        # the cohorts call needs to be ordered by attribution/name for the below itertools.groupby
+        # call to work correctly.
+        Prefetch("cohorts", queryset=Cohort.objects.order_by("attribution", "name"))
+    ).order_by("institution_name")
 
     counts_by_cohort = Accession.objects.values("cohort_id").annotate(
         lesion_count=Count("lesion", distinct=True),
@@ -48,7 +52,8 @@ def cohort_list(request):
     for contributor in contributors.all():
         display_contributor = True
         for attribution, cohorts in itertools.groupby(
-            contributor.cohorts.all(), key=lambda cohort: cohort.attribution
+            contributor.cohorts.all(),
+            key=lambda cohort: cohort.attribution,
         ):
             display_attribution = True
             for cohort in cohorts:
