@@ -126,14 +126,14 @@ def zip_file_listing(
         files = [
             {
                 "url": signed_url.replace("*", image["accession__blob"]),
-                "zipPath": f"{image['isic_id']}.JPG",
+                "zipPath": f"{image['isic_id']}.jpg",
             }
             for image in qs.values("accession__blob", "isic_id").iterator()
         ]
     else:
         # development doesn't have any cloudfront frontend so we need to sign each url individually
         files = [
-            {"url": image.accession.blob.url, "zipPath": f"{image.isic_id}.JPG"} for image in qs
+            {"url": image.accession.blob.url, "zipPath": f"{image.isic_id}.jpg"} for image in qs
         ]
 
     # initialize files with metadata and attribution files
