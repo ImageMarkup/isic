@@ -3,12 +3,14 @@ from dataclasses import dataclass
 import io
 import logging
 from mimetypes import guess_type
+from pathlib import Path
 import tempfile
 from uuid import uuid4
 
 from django.contrib.auth.models import User
 from django.contrib.postgres.constraints import ExclusionConstraint
 from django.core.exceptions import ValidationError
+from django.core.files import File
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models, transaction
 from django.db.models import Transform
@@ -16,8 +18,10 @@ from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.expressions import F
 from django.db.models.fields import Field
 from django.db.models.query_utils import Q
+from girder_utils.files import field_file_to_local_path
 from isic_metadata.fields import ImageTypeEnum
 from isic_metadata.metadata import MetadataRow
+from osgeo import gdal
 import PIL.Image
 from s3_file_field import S3FileField
 
@@ -32,6 +36,10 @@ from isic.ingest.utils.zip import Blob
 from .zip_upload import ZipUpload
 
 logger = logging.getLogger(__name__)
+
+# The number of square pixels at which an image is stored as a
+# cloud optimized geotiff.
+IMAGE_COG_THRESHOLD: int = 100_000_000
 
 
 class Approx(Transform):
@@ -149,6 +157,16 @@ class AccessionStatus(models.TextChoices):
     SUCCEEDED = "succeeded", "Succeeded"
 
 
+@dataclass
+class AccessionBlob:
+    blob: File
+    blob_name: str
+    blob_size: int
+    height: int
+    width: int
+    is_cog: bool
+
+
 class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
     # the creator is either inherited from the zip creator, or directly attached in the
     # case of a single shot upload.
@@ -179,6 +197,8 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
     blob_size = models.PositiveBigIntegerField(null=True, blank=True, default=None, editable=False)
     width = models.PositiveIntegerField(null=True, blank=True)
     height = models.PositiveIntegerField(null=True, blank=True)
+
+    is_cog = models.BooleanField(null=True, blank=True)
 
     status = models.CharField(
         choices=AccessionStatus.choices, max_length=20, default=AccessionStatus.CREATING
@@ -284,6 +304,12 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
                 fields=["cohort_id", "rcm_case_id"],
                 condition=Q(image_type=ImageTypeEnum.rcm_macroscopic),
             ),
+            # image_type == mosaic implies is_cog is True where image_type is set
+            CheckConstraint(
+                name="accession_is_cog_mosaic",
+                check=Q(image_type__isnull=True)
+                | (~Q(image_type=ImageTypeEnum.rcm_mosaic) | Q(is_cog=True)),
+            ),
         ]
 
         indexes = [
@@ -333,9 +359,119 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
             field.name for field in Accession._meta.fields if hasattr(AccessionMetadata, field.name)
         ]
 
+    @staticmethod
+    def is_color(img: PIL.Image.Image) -> bool:
+        return img.mode in {"RGB", "RGBA"}
+
+    @staticmethod
+    def meets_cog_threshold(img: PIL.Image.Image) -> bool:
+        return img.height * img.width > IMAGE_COG_THRESHOLD
+
+    def _generate_blob(self, img: PIL.Image.Image) -> AccessionBlob:
+        # Explicitly load the image, so any decoding errors can be caught
+        try:
+            img.load()
+        except OSError as e:
+            if "image file is truncated" in str(e):
+                raise InvalidBlobError("Blob appears truncated.") from e
+
+            # Any other errors are not expected, so re-raise them natively
+            raise
+
+        # Strip any alpha channel
+        if self.is_color(img):
+            img = img.convert("RGB")
+
+        with tempfile.SpooledTemporaryFile() as stripped_blob_stream:
+            output_format = "PNG" if img.format == "PNG" and not self.is_color(img) else "JPEG"
+            img.save(stripped_blob_stream, format=output_format)
+
+            stripped_blob_stream.seek(0, io.SEEK_END)
+            stripped_blob_size = stripped_blob_stream.tell()
+            stripped_blob_stream.seek(0)
+
+            blob_name = f"{uuid4()}.{'png' if output_format == 'PNG' else 'jpg'}"
+            accession_blob = AccessionBlob(
+                blob_name=blob_name,
+                blob=InMemoryUploadedFile(
+                    file=stripped_blob_stream,
+                    field_name=None,
+                    name=blob_name,
+                    content_type=f"image/{output_format.lower()}",
+                    size=stripped_blob_size,
+                    charset=None,
+                ),
+                blob_size=stripped_blob_size,
+                height=img.height,
+                width=img.width,
+                is_cog=False,
+            )
+            self.blob = accession_blob.blob
+            Accession._meta.get_field("blob").pre_save(self, add=False)
+
+        return accession_blob
+
+    def _generate_blob_as_cog(self, img: PIL.Image.Image) -> AccessionBlob:
+        with (
+            field_file_to_local_path(self.original_blob) as original_blob_path,
+            tempfile.NamedTemporaryFile(delete=False) as cog_temp_file,
+        ):
+            gdal.UseExceptions()
+
+            src_ds = gdal.Open(original_blob_path)
+
+            gdal.Translate(
+                cog_temp_file.name,
+                src_ds,
+                options=gdal.TranslateOptions(
+                    format="COG",
+                    # rescale unsigned 16-bit png band to 8-bit
+                    outputType=gdal.GDT_Byte,
+                    scaleParams=[[0, 2**16 - 1, 0, 2**8 - 1]],
+                    creationOptions={
+                        "BLOCKSIZE": 256,
+                        "COMPRESS": "DEFLATE",
+                        "PREDICTOR": "YES",
+                        "LEVEL": "9",
+                        "BIGTIFF": "IF_SAFER",
+                        # Strip EXIF metadata
+                        "COPY_SRC_MDD": "NO",
+                    },
+                    resampleAlg=gdal.GRA_Lanczos,
+                ),
+            )
+
+            # necessary to close the src_ds (https://gis.stackexchange.com/a/80370)
+            del src_ds
+
+        blob_size = Path(cog_temp_file.name).stat().st_size
+        with Path(cog_temp_file.name).open("rb") as cog_stream:
+            blob_name = f"{uuid4()}.tif"
+            accession_blob = AccessionBlob(
+                blob_name=blob_name,
+                blob=InMemoryUploadedFile(
+                    file=cog_stream,
+                    field_name=None,
+                    name=blob_name,
+                    content_type="image/tiff",
+                    size=blob_size,
+                    charset=None,
+                ),
+                blob_size=blob_size,
+                height=img.height,
+                width=img.width,
+                is_cog=True,
+            )
+            self.blob = accession_blob.blob
+            Accession._meta.get_field("blob").pre_save(self, add=False)
+
+        Path(cog_temp_file.name).unlink()
+
+        return accession_blob
+
     def generate_blob(self):
         """
-        Generate `blob` and set `blob_size`, `height`, `width`.
+        Generate `blob` and set related attributes.
 
         This is idempotent.
         The Accession will be saved and `status` will be updated appropriately.
@@ -357,43 +493,23 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
             except PIL.Image.UnidentifiedImageError as e:
                 raise InvalidBlobError("Blob cannot be recognized by PIL.") from e
 
-            # Explicitly load the image, so any decoding errors can be caught
-            try:
-                img.load()
-            except OSError as e:
-                if "image file is truncated" in str(e):
-                    raise InvalidBlobError("Blob appears truncated.") from e
+            if self.meets_cog_threshold(img):
+                if self.is_color(img):
+                    raise InvalidBlobError("Blob is too large to be stored.")  # noqa: TRY301
 
-                # Any other errors are not expected, so re-raise them natively
-                raise
+                accession_blob = self._generate_blob_as_cog(img)
+            else:
+                accession_blob = self._generate_blob(img)
 
-            # Strip any alpha channel
-            img = img.convert("RGB")
+            self.blob_name = accession_blob.blob_name
+            self.blob_size = accession_blob.blob_size
+            self.height = accession_blob.height
+            self.width = accession_blob.width
+            self.is_cog = accession_blob.is_cog
 
-            with tempfile.SpooledTemporaryFile() as stripped_blob_stream:
-                img.save(stripped_blob_stream, format="JPEG")
-
-                stripped_blob_stream.seek(0, io.SEEK_END)
-                stripped_blob_size = stripped_blob_stream.tell()
-                stripped_blob_stream.seek(0)
-
-                self.blob_name = f"{uuid4()}.jpg"
-                self.blob = InMemoryUploadedFile(
-                    file=stripped_blob_stream,
-                    field_name=None,
-                    name=self.blob_name,
-                    content_type="image/jpeg",
-                    size=stripped_blob_size,
-                    charset=None,
-                )
-                self.blob_size = stripped_blob_size
-                self.height = img.height
-                self.width = img.width
-
-                self.save(update_fields=["blob_name", "blob", "blob_size", "height", "width"])
+            self.save(update_fields=["blob_name", "blob", "blob_size", "height", "width", "is_cog"])
 
             self.generate_thumbnail()
-
         except InvalidBlobError:
             logger.exception("Marking accession %d as skipped due to invalid blob", self.pk)
             self.status = AccessionStatus.SKIPPED
@@ -409,11 +525,30 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
             self.status = AccessionStatus.SUCCEEDED
             self.save(update_fields=["status"])
 
+    def _cog_thumbnail(self) -> PIL.Image.Image:
+        """Extract an overview image from a COG to use as a thumbnail."""
+        if not self.is_cog:
+            raise ValueError("Cannot generate thumbnail for non-COG image")
+
+        with field_file_to_local_path(self.blob) as blob_path:
+            dataset = gdal.Open(blob_path)
+            band = dataset.GetRasterBand(1)
+            # exploit the fact that the second to last overview will always have one dimension
+            # that is exactly 256 pixels, making it suitable to pass to the PIL.Image.thumbnail
+            # function to process it identically to other images.
+            overview = band.GetOverview(band.GetOverviewCount() - 2)
+            img = PIL.Image.fromarray(overview.ReadAsArray())
+            del dataset
+            return img
+
     def generate_thumbnail(self) -> None:
-        with self.blob.open() as blob_stream:
-            img: PIL.Image.Image = PIL.Image.open(blob_stream)
-            # Load the image so the stream can be closed
-            img.load()
+        if self.is_cog:
+            img = self._cog_thumbnail()
+        else:
+            with self.blob.open("rb") as blob_stream:
+                img: PIL.Image.Image = PIL.Image.open(blob_stream)
+                # Load the image so the stream can be closed
+                img.load()
 
         # LANCZOS provides the best anti-aliasing
         img.thumbnail((256, 256), resample=PIL.Image.LANCZOS)

@@ -1,12 +1,13 @@
 import pathlib
 
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.urls.base import reverse
 import pytest
 
 from isic.ingest.models.accession import Accession
 from isic.ingest.models.unstructured_metadata import UnstructuredMetadata
-from isic.ingest.services.accession import bulk_accession_relicense
+from isic.ingest.services.accession import accession_create, bulk_accession_relicense
 from isic.ingest.utils.zip import Blob
 
 data_dir = pathlib.Path(__file__).parent / "data"
@@ -32,6 +33,47 @@ def jpg_blob():
 def cc_by_accession_qs(accession_factory):
     accession = accession_factory(copyright_license="CC-BY")
     return Accession.objects.filter(id=accession.id)
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.usefixtures("_eager_celery")
+@pytest.mark.parametrize(
+    ("blob_path", "blob_name", "mock_as_cog"),
+    [
+        # small color
+        (pathlib.Path(data_dir / "ISIC_0000000.jpg"), "ISIC_0000000.jpg", False),
+        # small grayscale
+        (pathlib.Path(data_dir / "RCM_tile_with_exif.png"), "RCM_tile_with_exif.png", False),
+        # big grayscale
+        (pathlib.Path(data_dir / "RCM_tile_with_exif.png"), "RCM_tile_with_exif.png", True),
+    ],
+    ids=["small color", "small grayscale", "big grayscale"],
+)
+def test_accession_create_image_types(blob_path, blob_name, mock_as_cog, user, cohort, mocker):
+    with blob_path.open("rb") as stream:
+        original_blob = InMemoryUploadedFile(
+            stream, None, blob_name, None, blob_path.stat().st_size, None
+        )
+
+        mocker.patch(
+            "isic.ingest.services.accession.Accession.meets_cog_threshold",
+            return_value=mock_as_cog,
+        )
+
+        accession = accession_create(
+            creator=user,
+            cohort=cohort,
+            original_blob=original_blob,
+            original_blob_name=blob_name,
+            original_blob_size=blob_path.stat().st_size,
+        )
+        accession.refresh_from_db()
+
+    assert accession.is_cog is mock_as_cog
+
+    with accession.blob.open("rb") as blob:
+        # This is exif metadata embedded in RCM_tile_with_exif.png that should be stripped
+        assert b"foobar" not in blob.read()
 
 
 @pytest.mark.django_db()
