@@ -74,6 +74,7 @@ setup(
         "pyparsing",
         "python-magic",
         "requests",
+        "rio-cogeo",
         "sentry-sdk[pure_eval]",
         "tenacity",
         "zipfile-deflate64",
