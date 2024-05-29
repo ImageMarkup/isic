@@ -31,9 +31,7 @@
     },
     "cog": {
       "source": "./node-src/cog.mjs",
-      "distDir": "./isic/core/static/core/dist",
-      "context": "browser",
-      "outputFormat": "global"
+      "distDir": "./isic/core/static/core/dist"
     }
   },
   "browserslist": "> 0.5%",
@@ -45,8 +43,5 @@
   },
   "dependencies": {
     "ol": "^9.2.4"
-  },
-  "resolutions": {
-    "ol/**/@petamoriken/float16": "3.4.7"
   }
 }
