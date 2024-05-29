@@ -1,5 +1,6 @@
 from django.urls import path
 
+from isic.ingest.views.accession import accession_cog_viewer
 import isic.ingest.views.cohort as cohort_views
 import isic.ingest.views.metadata as metadata_views
 import isic.ingest.views.review as review_views
@@ -45,6 +46,7 @@ urlpatterns = [
     ),
     path("upload/<int:pk>/publish/", cohort_views.publish_cohort, name="upload/cohort-publish"),
     # Staff pages
+    path("staff/accession-cog-viewer/<int:pk>/", accession_cog_viewer, name="accession-cog-viewer"),
     path("staff/cohorts/", cohort_views.cohort_list, name="cohort-list"),
     path("staff/merge-cohorts/", cohort_views.merge_cohorts, name="merge-cohorts"),
     path("staff/ingest-review/", review_views.ingest_review, name="ingest-review"),
