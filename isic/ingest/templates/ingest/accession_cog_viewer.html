@@ -1,0 +1,15 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+
+{% block content %}
+
+<div id="image" style="width:100%; height:400px;"></div>
+
+<script type="module" src="{% static 'core/dist/cog.js' %}"></script>
+
+<script type="text/javascript">
+    initializeCogViewer('{{ accession.blob.url|safe }}');
+</script>
+
+{% endblock %}
