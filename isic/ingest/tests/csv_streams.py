@@ -27,13 +27,6 @@ def csv_stream_without_filename_column() -> BinaryIO:
     return file_stream
 
 
-def csv_stream_bom_filename_column() -> BinaryIO:
-    file_stream = StreamWriter(io.BytesIO())
-    writer = csv.DictWriter(file_stream, fieldnames=["\ufefffilename"])
-    writer.writeheader()
-    return file_stream
-
-
 def csv_stream_duplicate_filenames() -> BinaryIO:
     file_stream = StreamWriter(io.BytesIO())
     writer = csv.DictWriter(file_stream, fieldnames=["filename"])
