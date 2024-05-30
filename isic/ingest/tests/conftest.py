@@ -1,7 +1,6 @@
 import pytest
 
 from .csv_streams import (
-    csv_stream_bom_filename_column,
     csv_stream_duplicate_filenames,
     csv_stream_valid,
     csv_stream_without_filename_column,
@@ -14,5 +13,4 @@ zip_stream_duplicates = pytest.fixture(zip_stream_duplicates)
 
 csv_stream_valid = pytest.fixture(csv_stream_valid)
 csv_stream_without_filename_column = pytest.fixture(csv_stream_without_filename_column)
-csv_stream_bom_filename_column = pytest.fixture(csv_stream_bom_filename_column)
 csv_stream_duplicate_filenames = pytest.fixture(csv_stream_duplicate_filenames)
