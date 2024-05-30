@@ -123,10 +123,25 @@ def metadatafile_without_filename_column(
 
 
 @pytest.fixture()
+def metadatafile_bom_filename_column(cohort, metadata_file_factory, csv_stream_bom_filename_column):
+    return metadata_file_factory(
+        blob__from_func=lambda: csv_stream_bom_filename_column, cohort=cohort
+    )
+
+
+@pytest.fixture()
 def metadatafile_duplicate_filenames(cohort, metadata_file_factory, csv_stream_duplicate_filenames):
     return metadata_file_factory(
         blob__from_func=lambda: csv_stream_duplicate_filenames, cohort=cohort
     )
+
+
+@pytest.mark.django_db()
+def test_validate_metadata_step1_ignores_bom(metadatafile_bom_filename_column):
+    problems = validate_csv_format_and_filenames(
+        metadatafile_bom_filename_column.to_iterable()[1], metadatafile_bom_filename_column.cohort
+    )
+    assert not problems
 
 
 @pytest.mark.django_db()
