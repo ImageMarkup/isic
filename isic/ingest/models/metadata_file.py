@@ -1,5 +1,4 @@
 import csv
-import io
 
 from django.contrib.auth.models import User
 from django.core.files.base import File
@@ -28,9 +27,8 @@ class MetadataFile(CreationSortedTimeStampedModel):
         return self.blob_name
 
     def to_iterable(self) -> tuple[File, csv.DictReader]:
-        with self.blob.open("rb") as blob:
-            encoded_blob = io.TextIOWrapper(blob, encoding="utf-8-sig")
-            return encoded_blob, csv.DictReader(encoded_blob)
+        with self.blob.open("r") as blob:
+            return blob, csv.DictReader(blob)
 
 
 class MetadataFilePermissions:
