@@ -111,21 +111,18 @@ def validate_metadata_task(metadata_file_pk: int):
         internal_check: tuple[ColumnRowErrors, list[Problem]] | None = None
         archive_check: tuple[ColumnRowErrors, list[Problem]] | None = None
 
-        with metadata_file.blob.open("r") as fh:
-            csv_check = validate_csv_format_and_filenames(DictReader(fh), metadata_file.cohort)
+        csv_check = validate_csv_format_and_filenames(reader, metadata_file.cohort)
 
-            if not any(csv_check):
+        if not any(csv_check):
+            fh.seek(0)
+            internal_check = validate_internal_consistency(DictReader(fh))
+
+            if not any(internal_check):
                 fh.seek(0)
-                internal_check = validate_internal_consistency(DictReader(fh))
+                archive_check = validate_archive_consistency(DictReader(fh), metadata_file.cohort)
 
-                if not any(internal_check):
-                    fh.seek(0)
-                    archive_check = validate_archive_consistency(
-                        DictReader(fh), metadata_file.cohort
-                    )
-
-                    if not any(archive_check):
-                        successful = True
+                if not any(archive_check):
+                    successful = True
 
         metadata_file.validation_errors = render_to_string(
             "ingest/partials/metadata_validation.html",
