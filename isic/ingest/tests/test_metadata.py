@@ -8,6 +8,7 @@ from django.utils import timezone
 import pytest
 
 from isic.ingest.models.accession import Accession
+from isic.ingest.models.metadata_file import MetadataFile
 from isic.ingest.services.accession.review import accession_review_update_or_create
 from isic.ingest.tasks import update_metadata_task
 from isic.ingest.tests.csv_streams import StreamWriter
@@ -123,6 +124,13 @@ def metadatafile_without_filename_column(
 
 
 @pytest.fixture()
+def metadatafile_bom_filename_column(cohort, metadata_file_factory, csv_stream_bom_filename_column):
+    return metadata_file_factory(
+        blob__from_func=lambda: csv_stream_bom_filename_column, cohort=cohort
+    )
+
+
+@pytest.fixture()
 def metadatafile_duplicate_filenames(cohort, metadata_file_factory, csv_stream_duplicate_filenames):
     return metadata_file_factory(
         blob__from_func=lambda: csv_stream_duplicate_filenames, cohort=cohort
@@ -130,11 +138,20 @@ def metadatafile_duplicate_filenames(cohort, metadata_file_factory, csv_stream_d
 
 
 @pytest.mark.django_db()
+def test_validate_metadata_step1_ignores_bom(metadatafile_bom_filename_column):
+    problems = validate_csv_format_and_filenames(
+        MetadataFile.to_dict_reader(metadatafile_bom_filename_column.blob.open("rb")),
+        metadatafile_bom_filename_column.cohort,
+    )
+    assert not problems
+
+
+@pytest.mark.django_db()
 def test_validate_metadata_step1_requires_filename_column(
     metadatafile_without_filename_column,
 ):
     problems = validate_csv_format_and_filenames(
-        metadatafile_without_filename_column.to_iterable()[1],
+        MetadataFile.to_dict_reader(metadatafile_without_filename_column.blob.open("rb")),
         metadatafile_without_filename_column.cohort,
     )
     assert len(problems) == 1
@@ -146,7 +163,7 @@ def test_validate_metadata_step1_has_duplicate_filenames(
     metadatafile_duplicate_filenames,
 ):
     problems = validate_csv_format_and_filenames(
-        metadatafile_duplicate_filenames.to_iterable()[1],
+        MetadataFile.to_dict_reader(metadatafile_duplicate_filenames.blob.open("rb")),
         metadatafile_duplicate_filenames.cohort,
     )
     assert len(problems) == 2

@@ -1,5 +1,4 @@
 from collections.abc import Iterable
-from csv import DictReader
 import itertools
 import time
 
@@ -104,24 +103,24 @@ def validate_metadata_task(metadata_file_pk: int):
     metadata_file = MetadataFile.objects.select_related("cohort").get(pk=metadata_file_pk)
 
     try:
-        fh, reader = metadata_file.to_iterable()
-        successful: bool = False
-        unstructured_columns: list[str] = get_unstructured_columns(reader.fieldnames)
-        csv_check: list[Problem] | None = None
-        internal_check: tuple[ColumnRowErrors, list[Problem]] | None = None
-        archive_check: tuple[ColumnRowErrors, list[Problem]] | None = None
+        with metadata_file.blob.open("rb") as fh:
+            reader = MetadataFile.to_dict_reader(fh)
+            successful: bool = False
+            unstructured_columns: list[str] = get_unstructured_columns(reader.fieldnames)
+            csv_check: list[Problem] | None = None
+            internal_check: tuple[ColumnRowErrors, list[Problem]] | None = None
+            archive_check: tuple[ColumnRowErrors, list[Problem]] | None = None
 
-        with metadata_file.blob.open("r") as fh:
-            csv_check = validate_csv_format_and_filenames(DictReader(fh), metadata_file.cohort)
+            csv_check = validate_csv_format_and_filenames(reader, metadata_file.cohort)
 
             if not any(csv_check):
                 fh.seek(0)
-                internal_check = validate_internal_consistency(DictReader(fh))
+                internal_check = validate_internal_consistency(MetadataFile.to_dict_reader(fh))
 
                 if not any(internal_check):
                     fh.seek(0)
                     archive_check = validate_archive_consistency(
-                        DictReader(fh), metadata_file.cohort
+                        MetadataFile.to_dict_reader(fh), metadata_file.cohort
                     )
 
                     if not any(archive_check):
@@ -159,22 +158,23 @@ def update_metadata_task(user_pk: int, metadata_file_pk: int):
         (_ for _ in Patient.objects.select_for_update().all())
         (_ for _ in RcmCase.objects.select_for_update().all())
 
-        _, rows = metadata_file.to_iterable()
+        with metadata_file.blob.open("rb") as blob:
+            rows = MetadataFile.to_dict_reader(blob)
 
-        for chunk in itertools.batched(rows, 1_000):
-            accessions: QuerySet[Accession] = metadata_file.cohort.accessions.select_related(
-                "image", "review", "lesion", "patient", "rcm_case", "cohort"
-            ).filter(original_blob_name__in=[row["filename"] for row in chunk])
-            accessions_by_filename: dict[str, Accession] = {
-                accession.original_blob_name: accession for accession in accessions
-            }
+            for chunk in itertools.batched(rows, 1_000):
+                accessions: QuerySet[Accession] = metadata_file.cohort.accessions.select_related(
+                    "image", "review", "lesion", "patient", "rcm_case", "cohort"
+                ).filter(original_blob_name__in=[row["filename"] for row in chunk])
+                accessions_by_filename: dict[str, Accession] = {
+                    accession.original_blob_name: accession for accession in accessions
+                }
 
-            for row in chunk:
-                # filename doesn't need to be stored in the metadata since it's equal to
-                # original_blob_name
-                accession = accessions_by_filename[row["filename"]]
-                del row["filename"]
-                accession.update_metadata(user, row)
+                for row in chunk:
+                    # filename doesn't need to be stored in the metadata since it's equal to
+                    # original_blob_name
+                    accession = accessions_by_filename[row["filename"]]
+                    del row["filename"]
+                    accession.update_metadata(user, row)
 
 
 @shared_task(soft_time_limit=3600, time_limit=3660)
