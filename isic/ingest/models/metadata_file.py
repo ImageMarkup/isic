@@ -1,7 +1,7 @@
 import csv
+import io
 
 from django.contrib.auth.models import User
-from django.core.files.base import File
 from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.db.models.query import QuerySet
@@ -26,9 +26,9 @@ class MetadataFile(CreationSortedTimeStampedModel):
     def __str__(self) -> str:
         return self.blob_name
 
-    def to_iterable(self) -> tuple[File, csv.DictReader]:
-        with self.blob.open("r") as blob:
-            return blob, csv.DictReader(blob)
+    @staticmethod
+    def to_dict_reader(fh):
+        return csv.DictReader(io.TextIOWrapper(fh, encoding="utf-8-sig"))
 
 
 class MetadataFilePermissions:
