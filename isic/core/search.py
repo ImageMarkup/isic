@@ -144,7 +144,7 @@ def _prettify_facets(facets: dict[str, Any]) -> dict[str, Any]:
     # sort the values of image_type buckets by the element in the key field
     facets["image_type"]["buckets"] = sorted(
         facets["image_type"]["buckets"],
-        key=lambda x: ImageTypeEnum(x["key"])._sort_order_,  # noqa: SLF001
+        key=lambda x: ImageTypeEnum(x["key"])._sort_order_,
     )
 
     return facets
