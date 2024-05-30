@@ -42,7 +42,7 @@ def validate_csv_format_and_filenames(
 
     filenames.update(row["filename"] for row in rows)
 
-    if filenames and filenames.most_common(1)[0][1] > 1:
+    if filenames.most_common(1)[0][1] > 1:
         problems.append(
             Problem(
                 message="Duplicate filenames found.",
