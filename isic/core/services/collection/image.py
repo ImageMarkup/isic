@@ -4,9 +4,10 @@ from django.db import transaction
 from django.db.models.query import QuerySet
 from more_itertools.more import ichunked
 
-from isic.core.models.collection import Collection
+from isic.core.models.collection import Collection, CollectionShare
 from isic.core.models.image import Image
 from isic.core.permissions import get_visible_objects
+from isic.core.services.image import image_share
 
 
 def collection_add_images(
@@ -39,6 +40,13 @@ def collection_add_images(
             CollectionImageM2M.objects.bulk_create(
                 [CollectionImageM2M(collection=collection, image=image) for image in image_batch],
                 ignore_conflicts=True,
+            )
+
+        # adding images to a collection that's shared with a user should implicitly share the
+        # images with that user.
+        for collection_share in CollectionShare.objects.filter(collection=collection).all():
+            image_share(
+                qs=qs, grantor=collection_share.creator, recipient=collection_share.recipient
             )
 
 
@@ -78,8 +86,8 @@ def collection_move_images(
 def collection_remove_images(
     *,
     collection: Collection,
-    qs: QuerySet[Image] = None,
-    image: Image = None,
+    qs: QuerySet[Image] | None = None,
+    image: Image | None = None,
     ignore_lock: bool = False,
 ):
     # is not None is necessary because qs could be an empty queryset
