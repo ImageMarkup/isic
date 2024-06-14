@@ -14,7 +14,10 @@ from isic.core.services.collection.image import (
     collection_add_images_from_isic_ids,
     collection_remove_images_from_isic_ids,
 )
-from isic.core.tasks import populate_collection_from_search_task
+from isic.core.tasks import (
+    populate_collection_from_search_task,
+    share_collection_with_users_task,
+)
 
 router = Router()
 
@@ -40,6 +43,23 @@ def collection_list(request, pinned: bool | None = None) -> list[CollectionOut]:
 def collection_detail(request, id: int) -> CollectionOut:
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
     return get_object_or_404(qs, id=id)
+
+
+class CollectionShareIn(Schema):
+    user_ids: list[int]
+
+
+@router.post("/{id}/share/", response={202: None, 404: dict, 403: dict}, include_in_schema=False)
+def collection_share_to_users(request, id: int, payload: CollectionShareIn):
+    qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
+    collection = get_object_or_404(qs, id=id)
+
+    if not request.user.is_staff:
+        return 403, {"error": "You do not have permission to share this collection."}
+
+    share_collection_with_users_task.delay(collection.id, request.user.id, payload.user_ids)
+
+    return 202, {}
 
 
 @router.post(
