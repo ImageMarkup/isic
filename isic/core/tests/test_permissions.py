@@ -71,7 +71,7 @@ def test_core_collection_detail(client, authenticated_client, staff_client, priv
 def test_core_collection_list_shares(
     user, client, authenticated_client, staff_client, private_collection
 ):
-    private_collection.shares.add(user, through_defaults={"creator": private_collection.creator})
+    private_collection.shares.add(user, through_defaults={"grantor": private_collection.creator})
     r = client.get(reverse("core/collection-list"))
     assertQuerysetEqual(r.context["collections"].object_list, [])
 
@@ -86,7 +86,7 @@ def test_core_collection_list_shares(
 def test_core_collection_detail_shares(
     user, client, authenticated_client, staff_client, private_collection
 ):
-    private_collection.shares.add(user, through_defaults={"creator": private_collection.creator})
+    private_collection.shares.add(user, through_defaults={"grantor": private_collection.creator})
     r = client.get(reverse("core/collection-detail", args=[private_collection.pk]))
     assert r.status_code == 302
 

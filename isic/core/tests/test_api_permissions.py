@@ -40,7 +40,7 @@ def test_core_api_image_list_contributed(private_image, authenticated_client, us
 
 @pytest.mark.django_db()
 def test_core_api_image_list_shares(private_image, authenticated_client, user, staff_user):
-    private_image.shares.add(user, through_defaults={"creator": staff_user})
+    private_image.shares.add(user, through_defaults={"grantor": staff_user})
     private_image.save()
 
     r = authenticated_client.get("/api/v2/images/")
@@ -52,7 +52,7 @@ def test_core_api_image_list_shares(private_image, authenticated_client, user, s
 @pytest.mark.django_db()
 def test_core_api_image_list_no_duplicates(private_image, authenticated_client, user, staff_user):
     private_image.accession.cohort.contributor.owners.add(user)
-    private_image.shares.add(user, through_defaults={"creator": staff_user})
+    private_image.shares.add(user, through_defaults={"grantor": staff_user})
     private_image.save()
 
     r = authenticated_client.get("/api/v2/images/")

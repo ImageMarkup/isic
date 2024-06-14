@@ -21,7 +21,7 @@ def test_collection_shares(staff_user, user, private_collection):
     assert get_visible_objects(user, "core.view_image").count() == 0
     assert not user.has_perm("core.view_collection", private_collection)
     assert get_visible_objects(user, "core.view_collection").count() == 0
-    collection_share(collection=private_collection, grantor=staff_user, recipient=user)
+    collection_share(collection=private_collection, grantor=staff_user, grantee=user)
     assert user.has_perm("core.view_image", private_image)
     assert get_visible_objects(user, "core.view_image").count() == 1
     assert user.has_perm("core.view_collection", private_collection)
@@ -34,8 +34,8 @@ def test_collection_shares_idempotent(staff_user, user, private_collection):
 
     assert not user.has_perm("core.view_image", private_image)
     assert not user.has_perm("core.view_collection", private_collection)
-    collection_share(collection=private_collection, grantor=staff_user, recipient=user)
-    collection_share(collection=private_collection, grantor=staff_user, recipient=user)
+    collection_share(collection=private_collection, grantor=staff_user, grantee=user)
+    collection_share(collection=private_collection, grantor=staff_user, grantee=user)
     assert user.has_perm("core.view_image", private_image)
     assert user.has_perm("core.view_collection", private_collection)
 
@@ -43,7 +43,7 @@ def test_collection_shares_idempotent(staff_user, user, private_collection):
 @pytest.mark.django_db()
 def test_collection_shares_beget_image_shares(staff_user, user, private_collection, image_factory):
     private_image = private_collection.images.first()
-    collection_share(collection=private_collection, grantor=staff_user, recipient=user)
+    collection_share(collection=private_collection, grantor=staff_user, grantee=user)
     assert user.has_perm("core.view_image", private_image)
     assert get_visible_objects(user, "core.view_image").count() == 1
 

@@ -82,13 +82,13 @@ def collection_get_creators_in_attribution_order(*, collection: Collection) -> l
     return sorted(creators, key=lambda x: 1 if x == "Anonymous" else 0)
 
 
-def collection_share(*, collection: Collection, grantor: User, recipient: User) -> None:
+def collection_share(*, collection: Collection, grantor: User, grantee: User) -> None:
     if collection.is_magic:
         raise ValidationError("Magic collections cannot be shared.")
 
     with transaction.atomic():
-        collection.shares.add(recipient, through_defaults={"creator": grantor})
-        image_share(qs=collection.images.all(), grantor=grantor, recipient=recipient)
+        collection.shares.add(grantee, through_defaults={"grantor": grantor})
+        image_share(qs=collection.images.all(), grantor=grantor, grantee=grantee)
 
 
 def collection_merge_magic_collections(
