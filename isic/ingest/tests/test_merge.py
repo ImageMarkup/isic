@@ -141,7 +141,7 @@ def collection_with_doi(collection, user):
 @pytest.fixture()
 def collection_with_shares(collection, user_factory):
     user = user_factory()
-    collection.shares.add(user, through_defaults={"creator": collection.creator})
+    collection.shares.add(user, through_defaults={"grantor": collection.creator})
     return collection
 
 
