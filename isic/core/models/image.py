@@ -68,9 +68,7 @@ class Image(CreationSortedTimeStampedModel):
     # index is used because public is filtered in every permissions check
     public = models.BooleanField(default=False, db_index=True)
 
-    shares = models.ManyToManyField(
-        User, through="ImageShare", through_fields=["image", "recipient"]
-    )
+    shares = models.ManyToManyField(User, through="ImageShare", through_fields=["image", "grantee"])
 
     objects = ImageQuerySet.as_manager()
 
@@ -171,18 +169,18 @@ class ImageShare(TimeStampedModel):
     class Meta(TimeStampedModel.Meta):
         constraints = [
             CheckConstraint(
-                name="imageshare_creator_recipient_diff_check",
-                check=~Q(creator=F("recipient")),
+                name="imageshare_grantor_grantee_diff_check",
+                check=~Q(grantor=F("grantee")),
             ),
             models.UniqueConstraint(
-                name="imageshare_creator_image_recipient_unique",
-                fields=["creator", "image", "recipient"],
+                name="imageshare_grantor_image_grantee_unique",
+                fields=["grantor", "image", "grantee"],
             ),
         ]
 
-    creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="shares")
+    grantor = models.ForeignKey(User, on_delete=models.PROTECT, related_name="shares")
     image = models.ForeignKey(Image, on_delete=models.CASCADE)
-    recipient = models.ForeignKey(User, on_delete=models.CASCADE)
+    grantee = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
 class ImagePermissions:

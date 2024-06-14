@@ -15,7 +15,7 @@ def image_create(*, creator: User, accession: Accession, public: bool) -> Image:
 
 
 def image_share(
-    *, qs: QuerySet[Image] | None = None, image: Image | None = None, grantor: User, recipient: User
+    *, qs: QuerySet[Image] | None = None, image: Image | None = None, grantor: User, grantee: User
 ) -> None:
     # is not None is necessary because qs could be an empty queryset
     if qs is not None and image is not None:
@@ -35,7 +35,7 @@ def image_share(
             # key or exclusion here, so this should only ignore duplicate entries.
             ImageShareM2M.objects.bulk_create(
                 [
-                    ImageShareM2M(image=image, creator=grantor, recipient=recipient)
+                    ImageShareM2M(image=image, grantor=grantor, grantee=grantee)
                     for image in image_batch
                 ],
                 ignore_conflicts=True,
