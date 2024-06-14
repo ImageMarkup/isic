@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+select#user-selection {
+  width: 100%;
+  height: 4em;
+}
+
 @layer base {
   /* https://alpinejs.dev/directives/cloak */
   [x-cloak] {
@@ -14,6 +19,12 @@
    &:hover {
      @apply text-primary-focus;
     }
+  }
+
+  a.disabled {
+    pointer-events: none;
+    cursor: default;
+    opacity: .5;
   }
 
   .heading-1 {

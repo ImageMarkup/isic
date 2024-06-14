@@ -117,6 +117,16 @@ class Collection(TimeStampedModel):
             .count()
         )
 
+    @property
+    def shared_with(self):
+        return [
+            share.grantee
+            for share in CollectionShare.objects.filter(collection=self)
+            .select_related("grantee")
+            .order_by("created")
+            .all()
+        ]
+
     def full_clean(self, exclude=None, validate_unique=True):  # noqa: FBT002
         if self.pk and self.public and self.images.private().exists():
             raise ValidationError("Can't make collection public, it contains private images.")

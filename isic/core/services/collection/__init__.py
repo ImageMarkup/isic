@@ -87,8 +87,14 @@ def collection_share(*, collection: Collection, grantor: User, grantee: User) ->
         raise ValidationError("Magic collections cannot be shared.")
 
     with transaction.atomic():
-        collection.shares.add(grantee, through_defaults={"grantor": grantor})
-        image_share(qs=collection.images.all(), grantor=grantor, grantee=grantee)
+        _, share_created = CollectionShare.objects.get_or_create(
+            collection=collection, grantor=grantor, grantee=grantee
+        )
+
+        # images only need to be shared if the collection wasn't already shared, since
+        # adding images to a shared collection propagates the share to the images.
+        if share_created:
+            image_share(qs=collection.images.all(), grantor=grantor, grantee=grantee)
 
 
 def collection_merge_magic_collections(
