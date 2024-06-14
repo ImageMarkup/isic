@@ -1,0 +1,62 @@
+{% load humanize %}
+
+<div class="fixed z-10 inset-0 overflow-y-auto">
+  <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+    <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+  </div>
+
+  <div @click.away="modalOpen = false" class="h-2/5 w-1/2 overflow-hidden  mx-auto p-8 transform transition-all" role="dialog" aria-modal="true" aria-labelledby="modal-headline">
+    <div class="bg-white h-full relative p-8 rounded-lg text-left shadow-xl">
+      <div class="heading-3" class="mb-2">Share "{{ collection.name }}" with others:</div>
+      <select id="user-selection" name="user_ids[]" multiple="multiple"></select>
+
+      <div x-text="errorMessage"></div>
+
+      <button @click="shareCollectionWithUsers()" type="submit" class="mt-2 relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+        <span>Share collection and images with users</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  $("#user-selection").select2({
+    ajax: {
+      url: '{% url "api:user_autocomplete" %}',
+      data: function (params) {
+        // remap the "term" parameter from select2 to "query" so it's
+        // consistent with other autocomplete endpoints.
+        return {
+          query: params.term
+        }
+      },
+      processResults: function (data) {
+        return {
+          results: data
+        };
+      },
+      delay: 50,
+    },
+    placeholder: 'Search for a user by email',
+    minimumInputLength: 3,
+    templateResult: formatUser,
+    templateSelection: function (user) {
+      return user.email || user.text;
+    }
+  });
+
+  function formatUser(user) {
+    if(user.loading) {
+      return user.text;
+    }
+
+    const $container = $(
+      "<div class='select2-result-user clearfix'>" +
+      "<div class='select2-result-user__email'>" + user.email + "</div>" +
+      "<div class='select2-result-user__name'>" + user.first_name + " " + user.last_name + "</div>" +
+      "</div>"
+    );
+
+    return $container;
+  }
+</script>

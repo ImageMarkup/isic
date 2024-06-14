@@ -1,3 +1,4 @@
+from django.urls import reverse
 import pytest
 
 
@@ -83,3 +84,13 @@ def test_api_auth_staff_user(authenticated_client, staff_client, metadata_file):
 
     r = staff_client.delete(f"/api/v2/metadata-files/{metadata_file.pk}/")
     assert r.status_code == 204, r.json()
+
+
+@pytest.mark.django_db()
+def test_api_collection_share_to_users(authenticated_client, collection):
+    r = authenticated_client.post(
+        reverse("api:collection_share_to_users", kwargs={"id": collection.pk}),
+        {"user_ids": []},
+        content_type="application/json",
+    )
+    assert r.status_code == 403, r.json()
