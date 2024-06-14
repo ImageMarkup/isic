@@ -65,7 +65,7 @@ def test_collection_metadata_download_private_images(
 ):
     # Add a share to the current user so that it can retrieve the CSV
     collection_with_images.shares.add(
-        user, through_defaults={"creator": collection_with_images.creator}
+        user, through_defaults={"grantor": collection_with_images.creator}
     )
 
     r = authenticated_client.get(

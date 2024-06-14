@@ -137,7 +137,7 @@ def test_core_api_collection_populate_from_list(
     private_image_unshared = image_factory(accession__sex="female", public=False)
 
     private_image_shared.shares.add(
-        user, through_defaults={"creator": private_image_shared.accession.creator}
+        user, through_defaults={"grantor": private_image_shared.accession.creator}
     )
 
     r = authenticated_client.post(
@@ -172,7 +172,7 @@ def test_core_api_collection_remove_from_list(
     private_image_unshared = image_factory(accession__sex="female", public=False)
 
     private_image_shared.shares.add(
-        user, through_defaults={"creator": private_image_shared.accession.creator}
+        user, through_defaults={"grantor": private_image_shared.accession.creator}
     )
 
     collection.images.add(public_image, private_image_shared, private_image_unshared)

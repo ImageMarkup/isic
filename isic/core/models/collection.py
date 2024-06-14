@@ -67,7 +67,7 @@ class Collection(TimeStampedModel):
     shares = models.ManyToManyField(
         User,
         through="CollectionShare",
-        through_fields=["collection", "recipient"],
+        through_fields=["collection", "grantee"],
         related_name="collection_shares",
     )
 
@@ -128,20 +128,20 @@ class CollectionShare(TimeStampedModel):
     class Meta(TimeStampedModel.Meta):
         constraints = [
             CheckConstraint(
-                name="collectionshare_creator_recipient_diff_check",
-                check=~Q(creator=F("recipient")),
+                name="collectionshare_grantor_grantee_diff_check",
+                check=~Q(grantor=F("grantee")),
             ),
             UniqueConstraint(
-                name="collectionshare_creator_collection_recipient_unique",
-                fields=["creator", "collection", "recipient"],
+                name="collectionshare_grantor_collection_grantee_unique",
+                fields=["grantor", "collection", "grantee"],
             ),
         ]
 
-    creator = models.ForeignKey(
+    grantor = models.ForeignKey(
         User, on_delete=models.PROTECT, related_name="collection_shares_given"
     )
     collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
-    recipient = models.ForeignKey(
+    grantee = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="collection_shares_received"
     )
 

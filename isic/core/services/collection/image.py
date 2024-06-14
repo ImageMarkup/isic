@@ -45,9 +45,7 @@ def collection_add_images(
         # adding images to a collection that's shared with a user should implicitly share the
         # images with that user.
         for collection_share in CollectionShare.objects.filter(collection=collection).all():
-            image_share(
-                qs=qs, grantor=collection_share.creator, recipient=collection_share.recipient
-            )
+            image_share(qs=qs, grantor=collection_share.grantor, grantee=collection_share.grantee)
 
 
 def collection_move_images(
