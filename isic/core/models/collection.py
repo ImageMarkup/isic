@@ -130,7 +130,11 @@ class CollectionShare(TimeStampedModel):
             CheckConstraint(
                 name="collectionshare_creator_recipient_diff_check",
                 check=~Q(creator=F("recipient")),
-            )
+            ),
+            UniqueConstraint(
+                name="collectionshare_creator_collection_recipient_unique",
+                fields=["creator", "collection", "recipient"],
+            ),
         ]
 
     creator = models.ForeignKey(
