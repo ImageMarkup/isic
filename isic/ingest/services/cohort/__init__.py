@@ -55,7 +55,6 @@ def cohort_delete(*, cohort: Cohort) -> None:
 
 
 # TODO: no doi for special collections
-# speicla collections exist why? keeping track of evolving changing cohorts
 
 
 def cohort_merge(*, dest_cohort: Cohort, src_cohort: Cohort) -> None:

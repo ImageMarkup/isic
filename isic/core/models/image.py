@@ -173,7 +173,11 @@ class ImageShare(TimeStampedModel):
             CheckConstraint(
                 name="imageshare_creator_recipient_diff_check",
                 check=~Q(creator=F("recipient")),
-            )
+            ),
+            models.UniqueConstraint(
+                name="imageshare_creator_image_recipient_unique",
+                fields=["creator", "image", "recipient"],
+            ),
         ]
 
     creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="shares")
