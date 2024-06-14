@@ -20,6 +20,7 @@ from isic.core.models.image import Image
 from isic.core.search import bulk_add_to_search_index
 from isic.core.serializers import SearchQueryIn
 from isic.core.services import staff_image_metadata_csv
+from isic.core.services.collection import collection_share
 from isic.core.services.collection.image import collection_add_images
 
 
@@ -35,6 +36,18 @@ def populate_collection_from_search_task(
 
     serializer = SearchQueryIn(**search_params)
     collection_add_images(collection=collection, qs=serializer.to_queryset(user))
+
+
+@shared_task(soft_time_limit=1800, time_limit=1810)
+def share_collection_with_users_task(collection_pk: int, grantor_pk: int, user_pks: list[int]):
+    collection = Collection.objects.get(pk=collection_pk)
+    grantor = User.objects.get(pk=grantor_pk)
+    users = User.objects.filter(pk__in=user_pks)
+
+    # since each instance of collection_share is atomic and idempotent, there's
+    # no need to wrap this in a transaction.
+    for user in users:
+        collection_share(collection=collection, grantor=grantor, grantee=user)
 
 
 @shared_task(

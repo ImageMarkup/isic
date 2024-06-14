@@ -1,3 +1,4 @@
+from django.urls import reverse
 import pytest
 
 
@@ -199,3 +200,22 @@ def test_core_api_collection_remove_from_list(
         public_image.isic_id,
         private_image_shared.isic_id,
     }
+
+
+@pytest.mark.django_db()
+@pytest.mark.usefixtures("_eager_celery")
+def test_core_api_collection_share(
+    staff_client, collection, user, django_capture_on_commit_callbacks
+):
+    with django_capture_on_commit_callbacks(execute=True):
+        r = staff_client.post(
+            reverse("api:collection_share_to_users", args=[collection.pk]),
+            {
+                "user_ids": [user.pk],
+            },
+            content_type="application/json",
+        )
+
+    assert r.status_code == 202, r.json()
+
+    assert user in collection.shares.all()
