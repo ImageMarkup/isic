@@ -205,11 +205,11 @@ def test_core_api_collection_remove_from_list(
 @pytest.mark.django_db()
 @pytest.mark.usefixtures("_eager_celery")
 def test_core_api_collection_share(
-    staff_client, collection, user, django_capture_on_commit_callbacks
+    staff_client, private_collection, user, django_capture_on_commit_callbacks
 ):
     with django_capture_on_commit_callbacks(execute=True):
         r = staff_client.post(
-            reverse("api:collection_share_to_users", args=[collection.pk]),
+            reverse("api:collection_share_to_users", args=[private_collection.pk]),
             {
                 "user_ids": [user.pk],
             },
@@ -218,4 +218,4 @@ def test_core_api_collection_share(
 
     assert r.status_code == 202, r.json()
 
-    assert user in collection.shares.all()
+    assert user in private_collection.shares.all()

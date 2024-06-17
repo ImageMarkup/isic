@@ -178,7 +178,9 @@ def update_metadata_task(user_pk: int, metadata_file_pk: int):
 
 
 @shared_task(soft_time_limit=3600, time_limit=3660)
-def publish_cohort_task(cohort_pk: int, user_pk: int, *, public: bool):
+def publish_cohort_task(
+    cohort_pk: int, user_pk: int, *, public: bool, collection_ids: list[int] | None = None
+):
     cohort = Cohort.objects.select_related("collection").get(pk=cohort_pk)
     user = User.objects.get(pk=user_pk)
-    cohort_publish(cohort=cohort, publisher=user, public=public)
+    cohort_publish(cohort=cohort, publisher=user, public=public, collection_ids=collection_ids)

@@ -1,4 +1,5 @@
 from django import forms
+from django.core.exceptions import ValidationError
 from django.forms.models import ModelForm
 from isic_metadata import FIELD_REGISTRY
 from isic_metadata.fields import (
@@ -10,6 +11,7 @@ from isic_metadata.fields import (
 )
 from s3_file_field.forms import S3FormFileField
 
+from isic.core.models.collection import Collection
 from isic.ingest.models import Cohort, Contributor
 
 
@@ -80,5 +82,34 @@ class MergeCohortForm(forms.Form):
 
         if cohort and cohort_to_merge and cohort == cohort_to_merge:
             raise forms.ValidationError("The two cohorts must be different.")
+
+        return cleaned_data
+
+
+class PublishCohortForm(forms.Form):
+    public = forms.BooleanField(
+        label="Public",
+        required=False,
+        help_text="Make this cohort publicly accessible.",
+    )
+
+    additional_collections = forms.ModelMultipleChoiceField(
+        label="Additional collections",
+        queryset=Collection.objects.all(),
+        required=False,
+        help_text="Additional collections to add these images to.",
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        # note that this logic is duplicated in cohort_publish_initialize, this is just
+        # added for easier form validation.
+        has_public_additional_collections = Collection.objects.filter(
+            pk__in=cleaned_data.get("additional_collections", []), public=True
+        ).exists()
+
+        if not cleaned_data["public"] and has_public_additional_collections:
+            raise ValidationError("Can't add private images into a public collection.")
 
         return cleaned_data
