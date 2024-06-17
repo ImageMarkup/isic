@@ -57,6 +57,25 @@ class HasMaskFilter(admin.SimpleListFilter):
         return queryset
 
 
+class MagicCollectionFilter(admin.SimpleListFilter):
+    title = "magic"
+    parameter_name = "magic"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("yes", "Yes"),
+            ("no", "No"),
+        )
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value == "yes":
+            return queryset.exclude(cohort=None)
+        if value == "no":
+            return queryset.filter(cohort=None)
+        return queryset
+
+
 class SegmentationReviewInline(ReadonlyTabularInline):
     model = SegmentationReview
     fields = ["created", "creator", "skill", "approved"]
@@ -163,7 +182,13 @@ class ImageAliasAdmin(StaffReadonlyAdmin):
 @admin.register(Collection)
 class CollectionAdmin(StaffReadonlyAdmin):
     list_select_related = ["creator", "doi"]
-    list_filter = ["public", "pinned", "locked", ("doi", admin.EmptyFieldListFilter)]
+    list_filter = [
+        "public",
+        "pinned",
+        MagicCollectionFilter,
+        ("doi", admin.EmptyFieldListFilter),
+        "locked",
+    ]
     list_display = ["name", "created", "creator", "public", "pinned", "locked", "doi"]
     search_fields = ["creator__email", "name", "doi__id"]
     search_help_text = "Search collections by name, or creator email."
@@ -171,12 +196,6 @@ class CollectionAdmin(StaffReadonlyAdmin):
     autocomplete_fields = ["creator"]
 
     exclude = ["images"]
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        return qs.annotate(
-            num_images=Count("images", distinct=True),
-        )
 
 
 @admin.register(Doi)

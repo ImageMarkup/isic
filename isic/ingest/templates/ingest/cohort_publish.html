@@ -2,6 +2,12 @@
 {% load humanize %}
 {% load accession %}
 
+{% block head_extra %}
+  {{ block.super }}
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" integrity="sha256-9yRP/2EFlblE92vzCA10469Ctd0jT48HnmmMw5rJZrA=" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" integrity="sha256-zaSoHBhwFdle0scfGEFUCwggPN7F+ip9XRglo8IWb4w=" crossorigin="anonymous">
+{% endblock %}
+
 {% block content %}
   <div class="flex justify-between">
     {% include 'ingest/partials/breadcrumbs.html' %}
@@ -33,12 +39,24 @@
 
     <div class="mt-4 max-w-3xl mx-auto text-center">
       <form method="POST" action="">
+        {{ form.non_field_errors }}
+
+        {{ form.public.errors }}
+        {{ form.additional_collections.errors }}
+
         {% csrf_token %}
 
         <div class="form-control">
           <label class="label cursor-pointer">
             <span class="label-text">Make images public</span>
-            <input name="public" type="checkbox" class="toggle toggle-primary" />
+            <input name="{{ form.public.name }}" type="checkbox" class="toggle toggle-primary" />
+          </label>
+        </div>
+
+        <div class="form-control">
+          <label class="label cursor-pointer">
+            <span class="label-text">Additional collections</span>
+            <select id="additional-collections-selection" name="{{ form.additional_collections.name }}" multiple="multiple"></select>
           </label>
         </div>
 
@@ -48,4 +66,48 @@
       </form>
     </div>
   {% endif %}
+
+  <script type="text/javascript">
+    $("#additional-collections-selection").select2({
+      ajax: {
+        url: '{% url "api:collection_autocomplete" %}',
+        data: function (params) {
+        // remap the "term" parameter from select2 to "query" so it's
+        // consistent with other autocomplete endpoints.
+          return {
+            query: params.term
+          }
+        },
+        processResults: function (data) {
+          return {
+            results: data
+          };
+        },
+        delay: 50,
+      },
+      placeholder: 'Additional collections..',
+      minimumInputLength: 3,
+      templateResult: formatCollection,
+      templateSelection: function (collection) {
+        return collection.name || collection.text;
+      }
+    });
+
+    function formatCollection(collection) {
+      if(collection.loading) {
+        return collection.text;
+      }
+
+      const $container = $(
+        "<div class='select2-result-collection clearfix'>" +
+        "<div class='select2-result-collection__name'>" + collection.name + "</div>" +
+        "<div class='select2-result-collection__description'>" + collection.description + "</div>" +
+        "</div>"
+      );
+
+      return $container;
+    }
+  </script>
+
+
 {% endblock %}
