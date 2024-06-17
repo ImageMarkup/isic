@@ -66,7 +66,7 @@ setup(
         "more_itertools",
         "oauth2client",
         "opensearch-py",
-        "pandas<2.1.0",
+        "pandas",
         "passlib[bcrypt]",
         "Pillow",
         "pycountry",
