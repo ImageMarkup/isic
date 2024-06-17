@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count
 
+from isic.core.models.collection import Collection
 from isic.core.services.collection import collection_create, collection_merge_magic_collections
 from isic.core.services.collection.image import collection_add_images
 from isic.core.services.image import image_create
@@ -18,8 +19,17 @@ from isic.ingest.models.zip_upload import ZipUpload
 logger = logging.getLogger(__name__)
 
 
-def cohort_publish_initialize(*, cohort: Cohort, publisher: User, public: bool) -> None:
+def cohort_publish_initialize(
+    *, cohort: Cohort, publisher: User, public: bool, collection_ids: list[int] | None = None
+) -> None:
     from isic.ingest.tasks import publish_cohort_task
+
+    if (
+        not public
+        and collection_ids
+        and Collection.objects.filter(pk__in=collection_ids, public=True).exists()
+    ):
+        raise ValidationError("Can't add private images into a public collection.")
 
     if not cohort.collection:
         cohort.collection = collection_create(
@@ -31,14 +41,23 @@ def cohort_publish_initialize(*, cohort: Cohort, publisher: User, public: bool) 
         )
         cohort.save(update_fields=["collection"])
 
-    publish_cohort_task.delay(cohort.pk, publisher.pk, public=public)
+    publish_cohort_task.delay(cohort.pk, publisher.pk, public=public, collection_ids=collection_ids)
 
 
 @transaction.atomic()
-def cohort_publish(*, cohort: Cohort, publisher: User, public: bool) -> None:
+def cohort_publish(
+    *, cohort: Cohort, publisher: User, public: bool, collection_ids: list[int] | None = None
+) -> None:
+    additional_collections = (
+        Collection.objects.filter(pk__in=collection_ids) if collection_ids else []
+    )
+
     for accession in cohort.accessions.publishable().iterator():
         image = image_create(creator=publisher, accession=accession, public=public)
         collection_add_images(collection=cohort.collection, image=image, ignore_lock=True)
+
+        for additional_collection in additional_collections:
+            collection_add_images(collection=additional_collection, image=image, ignore_lock=True)
 
     sync_elasticsearch_index_task.delay()
 
