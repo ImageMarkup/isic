@@ -86,6 +86,11 @@ def collection_share(*, collection: Collection, grantor: User, grantee: User) ->
     if collection.is_magic:
         raise ValidationError("Magic collections cannot be shared.")
 
+    # if the collection is public then the images are required to be public, so this method
+    # would be a no-op.
+    if collection.public:
+        return
+
     with transaction.atomic():
         _, share_created = CollectionShare.objects.get_or_create(
             collection=collection, grantor=grantor, grantee=grantee
