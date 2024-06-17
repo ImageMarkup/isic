@@ -27,18 +27,27 @@ def publishable_cohort(cohort_factory, accession_factory, accession_review_facto
 
 @pytest.mark.django_db()
 @pytest.mark.usefixtures("_eager_celery")
-def test_publish_cohort(staff_client, publishable_cohort, django_capture_on_commit_callbacks):
+def test_publish_cohort(
+    staff_client, publishable_cohort, django_capture_on_commit_callbacks, collection_factory
+):
+    collection_a = collection_factory(public=False)
+    collection_b = collection_factory(public=False)
+
     with django_capture_on_commit_callbacks(execute=True):
         staff_client.post(
             reverse("upload/cohort-publish", args=[publishable_cohort.pk]),
-            {"private": True},
+            {"private": True, "additional_collections": [collection_a.pk, collection_b.pk]},
         )
 
     published_images = Image.objects.filter(accession__cohort=publishable_cohort)
 
     assert published_images.count() == 1
     assert not published_images.first().public
-    assert Collection.objects.count() == 1
-    magic_collection = Collection.objects.first()
+    assert Collection.objects.count() == 3
+    publishable_cohort.refresh_from_db()
+    magic_collection = publishable_cohort.collection
     assert not magic_collection.public
     assert magic_collection.locked
+
+    for collection in [collection_a, collection_b]:
+        assert collection.images.count() == 1
