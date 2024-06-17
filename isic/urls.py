@@ -14,10 +14,10 @@ from isic.core.api.collection import router as collection_router
 from isic.core.api.image import ImageSearchParseError
 from isic.core.api.image import router as image_router
 from isic.core.api.user import router as user_router
+from isic.find.api import autocomplete_router
 from isic.find.api import router as quickfind_router
 from isic.ingest.api import (
     accession_router,
-    autocomplete_router,
     cohort_router,
     contributor_router,
     lesion_router,

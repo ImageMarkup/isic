@@ -1,21 +1,16 @@
-from functools import partial
 from pathlib import Path
 
-from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models.aggregates import Count
 from django.http.request import HttpRequest
 from django.shortcuts import get_object_or_404
-from jaro import jaro_winkler_metric
-from ninja import Field, ModelSchema, Query, Router, Schema
+from ninja import Field, ModelSchema, Router, Schema
 from ninja.pagination import paginate
 from pydantic import field_validator
 from s3_file_field.widgets import S3PlaceholderFile
 
 from isic.auth import is_authenticated, is_staff
-from isic.core.api.collection import CollectionOut
 from isic.core.api.image import ImageOut
-from isic.core.models import Collection
 from isic.core.pagination import CursorPagination
 from isic.core.permissions import get_visible_objects
 from isic.ingest.models import Accession, Cohort, Contributor, Lesion, MetadataFile
@@ -261,43 +256,3 @@ def update_metadata(request: HttpRequest, id: int):
     metadata_file = get_object_or_404(MetadataFile, id=id)
     update_metadata_task.delay(request.user.pk, metadata_file.pk)
     return 202, None
-
-
-autocomplete_router = Router()
-
-
-@autocomplete_router.get("/cohort/", response=list[CohortOut], include_in_schema=False)
-def cohort_autocomplete(request: HttpRequest, query=Query(..., min_length=3)):
-    return get_visible_objects(
-        request.user,
-        "ingest.view_cohort",
-        Cohort.objects.filter(name__icontains=query).annotate(accession_count=Count("accessions")),
-    )
-
-
-@autocomplete_router.get("/collection/", response=list[CollectionOut], include_in_schema=False)
-def collection_autocomplete(request: HttpRequest, query=Query(..., min_length=3)):
-    # exclude magic collections
-    qs = get_visible_objects(
-        request.user,
-        "core.view_collection",
-        Collection.objects.filter(name__icontains=query, cohort=None).order_by("name", "-created"),
-    )
-    distance = partial(jaro_winkler_metric, query.upper())
-    return sorted(qs, key=lambda collection: distance(collection.name.upper()), reverse=True)[:10]
-
-
-class UserOut(ModelSchema):
-    class Meta:
-        model = User
-        fields = ["id", "email", "first_name", "last_name"]
-
-
-@autocomplete_router.get("/user/", response=list[UserOut], include_in_schema=False)
-def user_autocomplete(request: HttpRequest, query=Query(..., min_length=3)):
-    if not request.user.is_staff:
-        return 403, {"error": "Only staff users may search for users."}
-
-    qs = User.objects.filter(is_active=True, email__icontains=query).order_by("email")
-    distance = partial(jaro_winkler_metric, query.upper())
-    return sorted(qs, key=lambda user: distance(user.email.upper()), reverse=True)[:10]
