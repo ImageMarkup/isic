@@ -26,7 +26,7 @@ but allows developers to run Python code on their native system.
 
 ### Initial Setup
 1. Run `docker-compose -f ./docker-compose.yml up -d`
-1. Install Python 3.12
+1. Install Python 3.11
 1. Install
    [`psycopg2` build prerequisites](https://www.psycopg.org/docs/install.html#build-prerequisites)
 1. Create and activate a new Python virtualenv
