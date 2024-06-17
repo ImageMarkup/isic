@@ -51,3 +51,20 @@ def test_publish_cohort(
 
     for collection in [collection_a, collection_b]:
         assert collection.images.count() == 1
+
+
+@pytest.mark.django_db()
+@pytest.mark.usefixtures("_eager_celery")
+def test_publish_cohort_into_public_collection(
+    staff_client, publishable_cohort, django_capture_on_commit_callbacks, collection_factory
+):
+    public_collection = collection_factory(public=True)
+
+    with django_capture_on_commit_callbacks(execute=True):
+        r = staff_client.post(
+            reverse("upload/cohort-publish", args=[publishable_cohort.pk]),
+            {"private": True, "additional_collections": [public_collection.pk]},
+        )
+        assert (
+            "add private images into a public collection" in r.context["form"].errors["__all__"][0]
+        )

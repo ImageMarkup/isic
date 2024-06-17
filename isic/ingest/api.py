@@ -13,7 +13,9 @@ from pydantic import field_validator
 from s3_file_field.widgets import S3PlaceholderFile
 
 from isic.auth import is_authenticated, is_staff
+from isic.core.api.collection import CollectionOut
 from isic.core.api.image import ImageOut
+from isic.core.models import Collection
 from isic.core.pagination import CursorPagination
 from isic.core.permissions import get_visible_objects
 from isic.ingest.models import Accession, Cohort, Contributor, Lesion, MetadataFile
@@ -271,6 +273,18 @@ def cohort_autocomplete(request: HttpRequest, query=Query(..., min_length=3)):
         "ingest.view_cohort",
         Cohort.objects.filter(name__icontains=query).annotate(accession_count=Count("accessions")),
     )
+
+
+@autocomplete_router.get("/collection/", response=list[CollectionOut], include_in_schema=False)
+def collection_autocomplete(request: HttpRequest, query=Query(..., min_length=3)):
+    # exclude magic collections
+    qs = get_visible_objects(
+        request.user,
+        "core.view_collection",
+        Collection.objects.filter(name__icontains=query, cohort=None).order_by("name", "-created"),
+    )
+    distance = partial(jaro_winkler_metric, query.upper())
+    return sorted(qs, key=lambda collection: distance(collection.name.upper()), reverse=True)[:10]
 
 
 class UserOut(ModelSchema):
