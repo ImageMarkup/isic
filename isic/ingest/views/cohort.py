@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
 from isic.core.permissions import needs_object_permission
-from isic.ingest.forms import MergeCohortForm
+from isic.ingest.forms import MergeCohortForm, PublishCohortForm
 from isic.ingest.models import Cohort
 from isic.ingest.models.accession import Accession, AccessionStatus
 from isic.ingest.models.contributor import Contributor
@@ -124,13 +124,21 @@ def merge_cohorts(request):
 def publish_cohort(request, pk):
     cohort = get_object_or_404(Cohort, pk=pk)
 
-    if request.method == "POST":
+    form = PublishCohortForm(request.POST)
+
+    if request.method == "POST" and form.is_valid():
+        cohort_publish_initialize(
+            cohort=cohort,
+            publisher=request.user,
+            public=form.cleaned_data["public"],
+            collection_ids=list(
+                form.cleaned_data["additional_collections"].values_list("id", flat=True)
+            ),
+        )
+
         # define the count before publishing so it's accurate in development when
         # accessions are published synchronously.
         publishable_accession_count = cohort.accessions.publishable().count()
-
-        public = "public" in request.POST
-        cohort_publish_initialize(cohort=cohort, publisher=request.user, public=public)
 
         messages.add_message(
             request,
@@ -140,6 +148,7 @@ def publish_cohort(request, pk):
         return HttpResponseRedirect(reverse("cohort-detail", args=[cohort.pk]))
 
     ctx = {
+        "form": form,
         "cohort": cohort,
         "breadcrumbs": [*make_breadcrumbs(cohort), ["#", "Publish Cohort"]],
         "num_accessions": cohort.accessions.count(),
