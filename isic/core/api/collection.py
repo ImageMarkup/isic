@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.db.models import Count, Q
 from django.http.response import JsonResponse
 from django.shortcuts import get_object_or_404
 from ninja import Field, ModelSchema, Router, Schema
@@ -6,6 +7,7 @@ from ninja.pagination import paginate
 from pydantic.types import conlist, constr
 
 from isic.core.constants import ISIC_ID_REGEX
+from isic.core.models.base import CopyrightLicense
 from isic.core.models.collection import Collection
 from isic.core.pagination import CursorPagination
 from isic.core.permissions import get_visible_objects
@@ -18,6 +20,7 @@ from isic.core.tasks import (
     populate_collection_from_search_task,
     share_collection_with_users_task,
 )
+from isic.ingest.models.accession import Accession
 
 router = Router()
 
@@ -60,6 +63,34 @@ def collection_share_to_users(request, id: int, payload: CollectionShareIn):
     share_collection_with_users_task.delay(collection.id, request.user.id, payload.user_ids)
 
     return 202, {}
+
+
+class CollectionLicenseBreakdown(Schema):
+    license_counts: dict[str, int]
+
+
+@router.get(
+    "/{id}/licenses/",
+    response=CollectionLicenseBreakdown,
+    summary="Retrieve a breakdown of the licenses of the specified collection.",
+    include_in_schema=False,
+)
+def collection_license_breakdown(request, id: int) -> CollectionLicenseBreakdown:
+    qs = get_visible_objects(request.user, "core.view_collection")
+    collection = get_object_or_404(qs, id=id)
+    images = get_visible_objects(request.user, "core.view_image", collection.images.distinct())
+    license_counts = (
+        Accession.objects.filter(image__in=images)
+        .values("copyright_license")
+        .aggregate(
+            **{
+                license_: Count("copyright_license", filter=Q(copyright_license=license_))
+                for license_ in CopyrightLicense.values
+            }
+        )
+    )
+
+    return {"license_counts": license_counts}
 
 
 @router.post(
