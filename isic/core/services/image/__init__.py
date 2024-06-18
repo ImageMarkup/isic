@@ -1,7 +1,8 @@
+import itertools
+
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import QuerySet
-from more_itertools import ichunked
 
 from isic.core.models.image import Image
 from isic.ingest.models.accession import Accession
@@ -29,7 +30,7 @@ def image_share(
 
     with transaction.atomic():
         ImageShareM2M = Image.shares.through  # noqa: N806
-        for image_batch in ichunked(qs.iterator(), 5_000):
+        for image_batch in itertools.batched(qs.iterator(), 5_000):
             # ignore_conflicts is necessary to make this method idempotent. ignore_conflicts only
             # ignores primary key, duplicate, and exclusion constraints. we don't use primary
             # key or exclusion here, so this should only ignore duplicate entries.
