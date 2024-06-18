@@ -3,6 +3,7 @@ from collections.abc import Iterable
 from datetime import timedelta
 import gzip
 from io import BytesIO
+import itertools
 import json
 from types import SimpleNamespace
 import urllib.parse
@@ -18,7 +19,6 @@ from django.utils import timezone
 from google.analytics.data_v1beta import BetaAnalyticsDataClient
 from google.analytics.data_v1beta.types import DateRange, Dimension, Metric, RunReportRequest
 from google.oauth2 import service_account
-from more_itertools.more import chunked
 import pandas as pd
 import pycountry
 
@@ -179,7 +179,7 @@ def process_s3_log_file_task(s3_log_object_key: str):
         # go through only the images that mapped onto request paths (this ignores thumbnails and
         # other files). this can create a query with tens of thousands of elements in the "where in"
         # clause, so it needs to be batched.
-        for download_logs in chunked(
+        for download_logs in itertools.batched(
             filter(lambda r: r["status"] == 200, _cdn_access_log_records(s3, s3_log_object_key)),
             1_000,
         ):
