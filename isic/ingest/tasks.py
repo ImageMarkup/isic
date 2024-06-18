@@ -1,5 +1,6 @@
 from collections.abc import Iterable
 from csv import DictReader
+import itertools
 import time
 
 from celery import shared_task
@@ -10,7 +11,6 @@ from django.db import transaction
 from django.db.models import QuerySet
 from django.template.loader import render_to_string
 from isic_metadata.utils import get_unstructured_columns
-from more_itertools.more import chunked
 
 from isic.ingest.models import (
     Accession,
@@ -161,7 +161,7 @@ def update_metadata_task(user_pk: int, metadata_file_pk: int):
 
         _, rows = metadata_file.to_iterable()
 
-        for chunk in chunked(rows, 1_000):
+        for chunk in itertools.batched(rows, 1_000):
             accessions: QuerySet[Accession] = metadata_file.cohort.accessions.select_related(
                 "image", "review", "lesion", "patient", "rcm_case", "cohort"
             ).filter(original_blob_name__in=[row["filename"] for row in chunk])

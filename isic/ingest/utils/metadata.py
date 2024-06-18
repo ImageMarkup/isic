@@ -1,11 +1,11 @@
 from collections import Counter, defaultdict
 from collections.abc import Iterable
 import csv
+import itertools
 from typing import Any
 
 from django.forms.models import ModelForm
 from isic_metadata.metadata import IGNORE_RCM_MODEL_CHECKS, MetadataBatch, MetadataRow
-from more_itertools import chunked
 from pydantic import ValidationError as PydanticValidationError
 from pydantic.main import BaseModel
 from s3_file_field.widgets import S3FileInput
@@ -170,7 +170,7 @@ def validate_archive_consistency(
 
         yielded_filenames: set[str] = set()
 
-        for batch in chunked(rows, 5_000):
+        for batch in itertools.batched(rows, 5_000):
             accessions_batch = accessions.filter(
                 original_blob_name__in=[row["filename"] for row in batch]
             )

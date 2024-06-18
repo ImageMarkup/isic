@@ -63,7 +63,6 @@ setup(
         "hashids",
         "isic-metadata>=2.0.0",
         "jaro-winkler",
-        "more_itertools",
         "oauth2client",
         "opensearch-py",
         "pandas",
