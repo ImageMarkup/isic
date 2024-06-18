@@ -17,7 +17,6 @@ from django.urls.base import reverse
 from isic.core.filters import CollectionFilter
 from isic.core.forms.collection import CollectionForm
 from isic.core.models import Collection
-from isic.core.models.base import CopyrightLicense
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.core.services import image_metadata_csv
 from isic.core.services.collection import collection_create, collection_update
@@ -27,7 +26,6 @@ from isic.core.services.collection.doi import (
     collection_create_doi,
 )
 from isic.ingest.models import Contributor
-from isic.ingest.models.accession import Accession
 
 
 def collection_list(request):
@@ -186,16 +184,6 @@ def collection_detail(request, pk):
         "core.view_image",
         collection.images.select_related("accession").order_by("created").distinct(),
     )
-    license_counts = (
-        Accession.objects.filter(image__in=images)
-        .values("copyright_license")
-        .aggregate(
-            **{
-                license_: Count("copyright_license", filter=Q(copyright_license=license_))
-                for license_ in CopyrightLicense.values
-            }
-        )
-    )
 
     paginator = Paginator(images, 30)
     page = paginator.get_page(request.GET.get("page"))
@@ -220,7 +208,6 @@ def collection_detail(request, pk):
             "collection": collection,
             "contributors": contributors,
             "images": page,
-            "license_counts": license_counts,
             "num_images": paginator.count,
             "image_removal_mode": image_removal_mode,
             "show_shares": (request.user.is_staff or request.user == collection.creator)

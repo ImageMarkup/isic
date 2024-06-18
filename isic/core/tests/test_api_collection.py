@@ -1,6 +1,8 @@
 from django.urls import reverse
 import pytest
 
+from isic.core.services.collection.image import collection_add_images
+
 
 @pytest.fixture()
 def collections(public_collection, private_collection):
@@ -219,3 +221,28 @@ def test_core_api_collection_share(
     assert r.status_code == 202, r.json()
 
     assert user in private_collection.shares.all()
+
+
+@pytest.mark.django_db()
+@pytest.mark.usefixtures("_eager_celery")
+def test_core_api_collection_license_breakdown(
+    staff_client, collection_factory, image_factory, user
+):
+    collection = collection_factory(locked=False, creator=user, public=True)
+    for copyright_license in ["CC-0", "CC-BY"]:
+        image = image_factory(accession__copyright_license=copyright_license, public=True)
+        collection_add_images(collection=collection, image=image)
+
+    r = staff_client.get(
+        reverse("api:collection_license_breakdown", args=[collection.pk]),
+        content_type="application/json",
+    )
+
+    assert r.status_code == 200, r.json()
+    assert r.json() == {
+        "license_counts": {
+            "CC-0": 1,
+            "CC-BY": 1,
+            "CC-BY-NC": 0,
+        }
+    }
