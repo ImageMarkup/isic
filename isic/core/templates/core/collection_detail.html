@@ -74,16 +74,18 @@
           <span class="font-bold">Number of lesions:</span>
           {{ collection.num_lesions|intcomma }}
         </li>
-        <li>
+        <li x-data="licenseBreakdown()">
           <span class="font-bold">Licenses:</span>
+          <a x-show="!fetched" href="#" @click.prevent="fetchLicenseBreakdown()">
+            View
+            <div x-show="loading" class="lds-ring"><div></div><div></div><div></div><div></div></div>
+          </a>
           <ul class="list-disc">
-            {% for license, count in license_counts.items %}
-              {% if count > 0 %}
-                <li class="ml-6">
-                  {{ license }} ({{ count|intcomma }})
-                </li>
-              {% endif %}
-            {% endfor %}
+            <template x-for="(count, license) in license_counts">
+              <li x-show="fetched" class="ml-6">
+                <span x-text="license"></span> (<span x-text="count.toLocaleString()"></span>)
+              </li>
+            </template>
           </ul>
         </li>
         <li>
@@ -180,6 +182,23 @@
           }
         },
       };
+    }
+
+    function licenseBreakdown() {
+      return {
+        license_counts: {},
+        fetched: false,
+        loading: false,
+        fetchLicenseBreakdown() {
+          const _this = this;
+          this.loading = true;
+          axios.get('{% url "api:collection_license_breakdown" collection.pk %}').then((resp) => {
+            _this.license_counts = resp.data.license_counts;
+            _this.loading = false;
+            _this.fetched = true;
+          });
+        }
+      }
     }
   </script>
 {% endblock %}
