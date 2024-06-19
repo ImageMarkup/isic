@@ -1,7 +1,7 @@
 from django.urls.base import reverse
 import pytest
 from pytest_django.asserts import assertQuerysetEqual
-from pytest_lazyfixture import lazy_fixture
+from pytest_lazy_fixtures import lf
 
 
 @pytest.mark.django_db()
@@ -20,9 +20,9 @@ def test_core_staff_list(client, authenticated_client, staff_client):
 @pytest.mark.parametrize(
     ("client_", "visible"),
     [
-        (lazy_fixture("client"), False),
-        (lazy_fixture("authenticated_client"), False),
-        (lazy_fixture("staff_client"), True),
+        (lf("client"), False),
+        (lf("authenticated_client"), False),
+        (lf("staff_client"), True),
     ],
 )
 def test_core_user_detail(user, client_, visible):
@@ -34,8 +34,8 @@ def test_core_user_detail(user, client_, visible):
 @pytest.mark.parametrize(
     ("client_", "visible"),
     [
-        (lazy_fixture("client"), False),
-        (lazy_fixture("authenticated_client"), True),
+        (lf("client"), False),
+        (lf("authenticated_client"), True),
     ],
 )
 def test_core_collection_create(client_, visible):

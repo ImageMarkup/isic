@@ -1,18 +1,18 @@
 import pytest
-from pytest_lazyfixture import lazy_fixture
+from pytest_lazy_fixtures import lf
 
 
 @pytest.mark.django_db()
 @pytest.mark.parametrize(
     ("client_", "contributors_", "num_visible"),
     [
-        (lazy_fixture("client"), lazy_fixture("contributors"), 0),
+        (lf("client"), lf("contributors"), 0),
         (
-            lazy_fixture("authenticated_client"),
-            lazy_fixture("contributors"),
+            lf("authenticated_client"),
+            lf("contributors"),
             1,
         ),
-        (lazy_fixture("staff_client"), lazy_fixture("contributors"), 2),
+        (lf("staff_client"), lf("contributors"), 2),
     ],
     ids=[
         "guest",
@@ -31,16 +31,16 @@ def test_core_api_contributor_list_permissions(client_, contributors_, num_visib
 @pytest.mark.parametrize(
     ("client_", "contributor_", "visible"),
     [
-        (lazy_fixture("client"), lazy_fixture("contributor"), False),
-        (lazy_fixture("client"), lazy_fixture("other_contributor"), False),
-        (lazy_fixture("authenticated_client"), lazy_fixture("contributor"), True),
+        (lf("client"), lf("contributor"), False),
+        (lf("client"), lf("other_contributor"), False),
+        (lf("authenticated_client"), lf("contributor"), True),
         (
-            lazy_fixture("authenticated_client"),
-            lazy_fixture("other_contributor"),
+            lf("authenticated_client"),
+            lf("other_contributor"),
             False,
         ),
-        (lazy_fixture("staff_client"), lazy_fixture("contributor"), True),
-        (lazy_fixture("staff_client"), lazy_fixture("other_contributor"), True),
+        (lf("staff_client"), lf("contributor"), True),
+        (lf("staff_client"), lf("other_contributor"), True),
     ],
     ids=[
         "guest-contributor-1-invisible",

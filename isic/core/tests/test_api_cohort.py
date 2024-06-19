@@ -1,5 +1,5 @@
 import pytest
-from pytest_lazyfixture import lazy_fixture
+from pytest_lazy_fixtures import lf
 
 
 @pytest.fixture()
@@ -17,9 +17,9 @@ def cohorts(cohort, other_cohort):
 @pytest.mark.parametrize(
     ("client_", "cohorts_", "num_visible"),
     [
-        (lazy_fixture("client"), lazy_fixture("cohorts"), 0),
-        (lazy_fixture("authenticated_client"), lazy_fixture("cohorts"), 1),
-        (lazy_fixture("staff_client"), lazy_fixture("cohorts"), 2),
+        (lf("client"), lf("cohorts"), 0),
+        (lf("authenticated_client"), lf("cohorts"), 1),
+        (lf("staff_client"), lf("cohorts"), 2),
     ],
     ids=[
         "guest",
@@ -38,12 +38,12 @@ def test_core_api_cohort_list_permissions(client_, cohorts_, num_visible):
 @pytest.mark.parametrize(
     ("client_", "cohort_", "visible"),
     [
-        (lazy_fixture("client"), lazy_fixture("cohort"), False),
-        (lazy_fixture("client"), lazy_fixture("other_cohort"), False),
-        (lazy_fixture("authenticated_client"), lazy_fixture("cohort"), True),
-        (lazy_fixture("authenticated_client"), lazy_fixture("other_cohort"), False),
-        (lazy_fixture("staff_client"), lazy_fixture("cohort"), True),
-        (lazy_fixture("staff_client"), lazy_fixture("other_cohort"), True),
+        (lf("client"), lf("cohort"), False),
+        (lf("client"), lf("other_cohort"), False),
+        (lf("authenticated_client"), lf("cohort"), True),
+        (lf("authenticated_client"), lf("other_cohort"), False),
+        (lf("staff_client"), lf("cohort"), True),
+        (lf("staff_client"), lf("other_cohort"), True),
     ],
     ids=[
         "guest-cohort-1-invisible",

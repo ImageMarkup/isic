@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 import pytest
-from pytest_lazyfixture import lazy_fixture
+from pytest_lazy_fixtures import lf
 
 from isic.ingest.models.lesion import Lesion
 
@@ -38,15 +38,15 @@ def test_api_lesion_ignores_imageless_lesions(authenticated_client, lesion_facto
 @pytest.mark.parametrize(
     ("client_", "image_public_states", "expected_lesion_count"),
     [
-        (lazy_fixture("client"), [True, True], 1),
-        (lazy_fixture("client"), [True, False], 0),
-        (lazy_fixture("client"), [False, False], 0),
-        (lazy_fixture("authenticated_client"), [True, True], 1),
-        (lazy_fixture("authenticated_client"), [True, False], 0),
-        (lazy_fixture("authenticated_client"), [False, False], 0),
-        (lazy_fixture("staff_client"), [True, True], 1),
-        (lazy_fixture("staff_client"), [True, False], 1),
-        (lazy_fixture("staff_client"), [False, False], 1),
+        (lf("client"), [True, True], 1),
+        (lf("client"), [True, False], 0),
+        (lf("client"), [False, False], 0),
+        (lf("authenticated_client"), [True, True], 1),
+        (lf("authenticated_client"), [True, False], 0),
+        (lf("authenticated_client"), [False, False], 0),
+        (lf("staff_client"), [True, True], 1),
+        (lf("staff_client"), [True, False], 1),
+        (lf("staff_client"), [False, False], 1),
     ],
 )
 def test_api_lesion_permissions_public(

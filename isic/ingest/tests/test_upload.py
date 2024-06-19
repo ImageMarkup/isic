@@ -6,7 +6,7 @@ import zipfile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls.base import reverse
 import pytest
-from pytest_lazyfixture import lazy_fixture
+from pytest_lazy_fixtures import lf
 
 from isic.ingest.models.accession import AccessionStatus
 
@@ -41,8 +41,8 @@ def zip_stream_garbage() -> BinaryIO:
 @pytest.mark.parametrize(
     "zip_stream",
     [
-        lazy_fixture("zip_stream_only_images"),
-        lazy_fixture("zip_stream_garbage"),
+        lf("zip_stream_only_images"),
+        lf("zip_stream_garbage"),
     ],
 )
 @pytest.mark.django_db()
