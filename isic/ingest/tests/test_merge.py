@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.urls import reverse
 import pytest
-from pytest_lazyfixture import lazy_fixture
+from pytest_lazy_fixtures import lf
 
 from isic.core.models.base import CopyrightLicense
 from isic.core.models.collection import Collection
@@ -178,9 +178,9 @@ def test_merge_collections(full_collection):
 @pytest.mark.parametrize(
     ("unmergeable_collection", "error"),
     [
-        (lazy_fixture("collection_with_studies"), "studies"),
-        (lazy_fixture("collection_with_doi"), "DOI"),
-        (lazy_fixture("collection_with_shares"), "shares"),
+        (lf("collection_with_studies"), "studies"),
+        (lf("collection_with_doi"), "DOI"),
+        (lf("collection_with_shares"), "shares"),
     ],
 )
 def test_merge_collections_unmergeable(collection, unmergeable_collection, error):

@@ -1,14 +1,14 @@
 import pytest
-from pytest_lazyfixture import lazy_fixture
+from pytest_lazy_fixtures import lf
 
 
 @pytest.mark.django_db()
 @pytest.mark.parametrize(
     ("client_user", "client_", "status"),
     [
-        (None, lazy_fixture("client"), 401),
-        (lazy_fixture("user"), lazy_fixture("authenticated_client"), 200),
-        (lazy_fixture("staff_user"), lazy_fixture("staff_client"), 200),
+        (None, lf("client"), 401),
+        (lf("user"), lf("authenticated_client"), 200),
+        (lf("staff_user"), lf("staff_client"), 200),
     ],
 )
 def test_core_api_user_me(client_user, client_, status):
@@ -22,9 +22,9 @@ def test_core_api_user_me(client_user, client_, status):
 @pytest.mark.parametrize(
     ("client_user", "client_", "status"),
     [
-        (None, lazy_fixture("client"), 401),
-        (lazy_fixture("user"), lazy_fixture("authenticated_client"), 200),
-        (lazy_fixture("staff_user"), lazy_fixture("staff_client"), 200),
+        (None, lf("client"), 401),
+        (lf("user"), lf("authenticated_client"), 200),
+        (lf("staff_user"), lf("staff_client"), 200),
     ],
 )
 def test_core_api_user_accept_terms(client_user, client_, status):

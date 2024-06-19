@@ -1,6 +1,6 @@
 from isic_metadata.fields import ImageTypeEnum
 import pytest
-from pytest_lazyfixture import lazy_fixture
+from pytest_lazy_fixtures import lf
 
 from isic.core.search import add_to_search_index, facets, get_elasticsearch_client
 
@@ -211,8 +211,8 @@ def test_core_api_image_search_collection_parsing(
 @pytest.mark.parametrize(
     "client_",
     [
-        lazy_fixture("client"),
-        lazy_fixture("authenticated_client"),
+        lf("client"),
+        lf("authenticated_client"),
     ],
 )
 @pytest.mark.django_db()
@@ -231,8 +231,8 @@ def test_core_api_image_faceting_collections(private_and_public_images_collectio
 @pytest.mark.parametrize(
     "client_",
     [
-        lazy_fixture("client"),
-        lazy_fixture("authenticated_client"),
+        lf("client"),
+        lf("authenticated_client"),
     ],
 )
 @pytest.mark.django_db()
@@ -264,8 +264,8 @@ def test_core_api_image_faceting_structure(searchable_images, client):
 @pytest.mark.parametrize(
     "client_",
     [
-        lazy_fixture("client"),
-        lazy_fixture("authenticated_client"),
+        lf("client"),
+        lf("authenticated_client"),
     ],
 )
 @pytest.mark.django_db()
