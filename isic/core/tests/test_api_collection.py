@@ -1,5 +1,6 @@
 from django.urls import reverse
 import pytest
+from pytest_lazy_fixtures import lf
 
 from isic.core.services.collection.image import collection_add_images
 
@@ -13,13 +14,13 @@ def collections(public_collection, private_collection):
 @pytest.mark.parametrize(
     ("client_", "colls", "num_visible"),
     [
-        (pytest.lazy_fixture("client"), pytest.lazy_fixture("collections"), 1),
+        (lf("client"), lf("collections"), 1),
         (
-            pytest.lazy_fixture("authenticated_client"),
-            pytest.lazy_fixture("collections"),
+            lf("authenticated_client"),
+            lf("collections"),
             1,
         ),
-        (pytest.lazy_fixture("staff_client"), pytest.lazy_fixture("collections"), 2),
+        (lf("staff_client"), lf("collections"), 2),
     ],
     ids=[
         "guest",
@@ -38,30 +39,30 @@ def test_core_api_collection_list_permissions(client_, colls, num_visible):
 @pytest.mark.parametrize(
     ("client_", "collection", "visible"),
     [
-        (pytest.lazy_fixture("client"), pytest.lazy_fixture("public_collection"), True),
+        (lf("client"), lf("public_collection"), True),
         (
-            pytest.lazy_fixture("authenticated_client"),
-            pytest.lazy_fixture("public_collection"),
+            lf("authenticated_client"),
+            lf("public_collection"),
             True,
         ),
         (
-            pytest.lazy_fixture("staff_client"),
-            pytest.lazy_fixture("public_collection"),
+            lf("staff_client"),
+            lf("public_collection"),
             True,
         ),
         (
-            pytest.lazy_fixture("client"),
-            pytest.lazy_fixture("private_collection"),
+            lf("client"),
+            lf("private_collection"),
             False,
         ),
         (
-            pytest.lazy_fixture("authenticated_client"),
-            pytest.lazy_fixture("private_collection"),
+            lf("authenticated_client"),
+            lf("private_collection"),
             False,
         ),
         (
-            pytest.lazy_fixture("staff_client"),
-            pytest.lazy_fixture("private_collection"),
+            lf("staff_client"),
+            lf("private_collection"),
             True,
         ),
     ],

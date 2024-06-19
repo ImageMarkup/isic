@@ -1,7 +1,7 @@
 from django.urls.base import reverse
 from django.utils import timezone
 import pytest
-from pytest_lazyfixture import lazy_fixture
+from pytest_lazy_fixtures import lf
 
 from isic.studies.models import StudyTask
 
@@ -50,9 +50,9 @@ def study_task_with_user(study_task_factory, user_factory):
 @pytest.mark.parametrize(
     "client_",
     [
-        lazy_fixture("client"),
-        lazy_fixture("authenticated_client"),
-        lazy_fixture("staff_client"),
+        lf("client"),
+        lf("authenticated_client"),
+        lf("staff_client"),
     ],
 )
 def test_study_list_permissions(client_):
@@ -64,9 +64,9 @@ def test_study_list_permissions(client_):
 @pytest.mark.parametrize(
     ("client_", "can_see_private"),
     [
-        (lazy_fixture("client"), False),
-        (lazy_fixture("authenticated_client"), False),
-        (lazy_fixture("staff_client"), True),
+        (lf("client"), False),
+        (lf("authenticated_client"), False),
+        (lf("staff_client"), True),
     ],
 )
 def test_study_list_objects_public_permissions(
@@ -114,9 +114,9 @@ def test_study_list_objects_annotator_permissions(
 @pytest.mark.parametrize(
     ("client_", "status"),
     [
-        (lazy_fixture("client"), 302),
-        (lazy_fixture("authenticated_client"), 403),
-        (lazy_fixture("staff_client"), 200),
+        (lf("client"), 302),
+        (lf("authenticated_client"), 403),
+        (lf("staff_client"), 200),
     ],
 )
 def test_study_edit_public_permissions(client_, status, private_study):
@@ -136,9 +136,9 @@ def test_study_edit_creator_permissions(authenticated_client, private_study):
 @pytest.mark.parametrize(
     ("client_", "status"),
     [
-        (lazy_fixture("client"), 302),
-        (lazy_fixture("authenticated_client"), 403),
-        (lazy_fixture("staff_client"), 200),
+        (lf("client"), 302),
+        (lf("authenticated_client"), 403),
+        (lf("staff_client"), 200),
     ],
 )
 def test_study_detail_objects_public_permissions(client_, status, private_study):
@@ -172,9 +172,9 @@ def test_study_detail_objects_annotator_permissions(
 @pytest.mark.parametrize(
     ("client_", "status"),
     [
-        (lazy_fixture("client"), 302),
-        (lazy_fixture("authenticated_client"), 403),
-        (lazy_fixture("staff_client"), 200),
+        (lf("client"), 302),
+        (lf("authenticated_client"), 403),
+        (lf("staff_client"), 200),
     ],
 )
 def test_study_view_responses_csv_private_study_permissions(client_, status, private_study):
@@ -195,9 +195,9 @@ def test_study_view_responses_csv_private_study_owner_permissions(client, privat
 @pytest.mark.parametrize(
     "client_",
     [
-        lazy_fixture("client"),
-        lazy_fixture("authenticated_client"),
-        lazy_fixture("staff_client"),
+        lf("client"),
+        lf("authenticated_client"),
+        lf("staff_client"),
     ],
 )
 def test_study_view_responses_csv_public_permissions(client_, public_study):
@@ -206,7 +206,7 @@ def test_study_view_responses_csv_public_permissions(client_, public_study):
 
 
 @pytest.mark.django_db()
-@pytest.mark.parametrize("client_", [lazy_fixture("client"), lazy_fixture("authenticated_client")])
+@pytest.mark.parametrize("client_", [lf("client"), lf("authenticated_client")])
 def test_study_task_detail_preview_public(client_, study_task_with_user):
     study_task_with_user.study.public = True
     study_task_with_user.study.save()
@@ -219,9 +219,9 @@ def test_study_task_detail_preview_public(client_, study_task_with_user):
 @pytest.mark.parametrize(
     ("study_and_user", "status"),
     [
-        (lazy_fixture("private_study_and_guest"), 403),
-        (lazy_fixture("private_study_and_owner"), 200),
-        (lazy_fixture("private_study_and_annotator"), 200),
+        (lf("private_study_and_guest"), 403),
+        (lf("private_study_and_owner"), 200),
+        (lf("private_study_and_annotator"), 200),
     ],
 )
 def test_study_task_detail_preview_private(client, study_and_user, status):
@@ -234,9 +234,9 @@ def test_study_task_detail_preview_private(client, study_and_user, status):
 @pytest.mark.parametrize(
     ("client_", "status"),
     [
-        (lazy_fixture("client"), 302),
-        (lazy_fixture("authenticated_client"), 403),
-        (lazy_fixture("staff_client"), 200),
+        (lf("client"), 302),
+        (lf("authenticated_client"), 403),
+        (lf("staff_client"), 200),
     ],
 )
 def test_study_task_detail_invisible_to_non_annotators(client_, status, study_task_with_user):

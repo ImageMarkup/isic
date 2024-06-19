@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from django.urls.base import reverse
 import pytest
-from pytest_lazyfixture import lazy_fixture
+from pytest_lazy_fixtures import lf
 
 if TYPE_CHECKING:
     from isic.core.models.image import Image
@@ -12,12 +12,12 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize(
     ("client_", "image_", "can_see"),
     [
-        (lazy_fixture("client"), lazy_fixture("public_image"), True),
-        (lazy_fixture("client"), lazy_fixture("private_image"), False),
-        (lazy_fixture("authenticated_client"), lazy_fixture("public_image"), True),
-        (lazy_fixture("authenticated_client"), lazy_fixture("private_image"), False),
-        (lazy_fixture("staff_client"), lazy_fixture("public_image"), True),
-        (lazy_fixture("staff_client"), lazy_fixture("private_image"), True),
+        (lf("client"), lf("public_image"), True),
+        (lf("client"), lf("private_image"), False),
+        (lf("authenticated_client"), lf("public_image"), True),
+        (lf("authenticated_client"), lf("private_image"), False),
+        (lf("staff_client"), lf("public_image"), True),
+        (lf("staff_client"), lf("private_image"), True),
     ],
 )
 def test_core_image_detail(client_, image_, can_see):
