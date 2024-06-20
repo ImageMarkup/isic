@@ -1,6 +1,7 @@
 from datetime import timedelta
 from pathlib import Path
 
+from botocore.config import Config
 from composed_configuration import (
     ComposedConfiguration,
     ConfigMixin,
@@ -243,6 +244,8 @@ class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration
     AWS_S3_CUSTOM_DOMAIN = values.Value()
 
     AWS_S3_OBJECT_PARAMETERS = {"ContentDisposition": "attachment"}
+
+    AWS_S3_CLIENT_CONFIG = Config(connect_timeout=5, read_timeout=10, retries={"max_attempts": 5})
 
     AWS_S3_FILE_BUFFER_SIZE = 50 * 1024 * 1024  # 50MB
 
