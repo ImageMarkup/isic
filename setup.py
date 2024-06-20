@@ -57,7 +57,7 @@ setup(
         "django-oauth-toolkit<2.0.0",
         "django-object-actions",
         "django-spurl",
-        "django-storages==1.14.2",
+        "django-storages>1.14.2",
         "django-widget-tweaks",
         "google-analytics-data",
         "hashids",
