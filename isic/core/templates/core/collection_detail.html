@@ -94,12 +94,16 @@
         </li>
         {% if show_shares %}
           <li>
-            <span class="font-bold">Shared with:</span>
-            <ul class="list-disc">
-              {% for user in collection.shared_with %}
-                <li class="ml-6">{{ user }}</li>
-              {% endfor %}
-            </ul>
+            <span class="font-bold">Directly shared with:</span>
+            {% if collection.shares.exists %}
+              <ul class="list-disc">
+                {% for user in collection.shared_with %}
+                  <li class="ml-6">{{ user }}</li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <span>nobody</span>
+            {% endif %}
           </li>
         {% endif %}
         <li>
