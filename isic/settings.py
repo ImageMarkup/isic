@@ -30,6 +30,8 @@ class IsicMixin(ConfigMixin):
 
     @staticmethod
     def mutate_configuration(configuration: ComposedConfiguration) -> None:
+        configuration.MIDDLEWARE.insert(0, "isic.middleware.LogRequestUserMiddleware")
+
         # These are injected by composed configuration, but aren't needed for ISIC
         for app in ["rest_framework.authtoken", "drf_yasg"]:
             if app in configuration.INSTALLED_APPS:
