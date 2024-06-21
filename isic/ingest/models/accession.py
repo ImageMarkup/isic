@@ -190,6 +190,8 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
         choices=AccessionStatus.choices, max_length=20, default=AccessionStatus.CREATING
     )
 
+    # is_grayscale = models.BooleanField(null=True, blank=True)
+
     thumbnail_256 = S3FileField(blank=True)
     thumbnail_256_size = models.PositiveIntegerField(
         null=True, blank=True, default=None, editable=False
@@ -488,9 +490,9 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
             self.status = AccessionStatus.SUCCEEDED
             self.save(update_fields=["status"])
 
-    # TODO
+    # TODO: how to do thumbnails for mosaics
     def generate_thumbnail(self) -> None:
-        with Accession.objects.order_by("created").first().blob.open() as blob_stream:
+        with Path("/home/dan/p/isic/ISIC_0000001.jpg").open("rb") as blob_stream:
             img: PIL.Image.Image = PIL.Image.open(blob_stream)
             # Load the image so the stream can be closed
             img.load()

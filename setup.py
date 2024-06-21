@@ -60,6 +60,7 @@ setup(
         "django-storages>1.14.2",
         "django-widget-tweaks",
         "google-analytics-data",
+        "exifread",
         "hashids",
         "isic-metadata>=2.0.0",
         "jaro-winkler",

@@ -200,7 +200,7 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
 
         # This doesn't need to be in mutate_configuration, but the locality of the storage
         # configuration makes it a good place to put it.
-        configuration.ISIC_PLACEHOLDER_IMAGES = True
+        configuration.ISIC_PLACEHOLDER_IMAGES = False
         # Use the MinioS3ProxyStorage for local development with ISIC_PLACEHOLDER_IMAGES
         # set to False to view real images in development.
         # configuration.STORAGES["default"]["BACKEND"] = (

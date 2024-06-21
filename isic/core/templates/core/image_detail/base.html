@@ -31,7 +31,7 @@
             {% if PLACEHOLDER_IMAGES %}
               <img src="https://picsum.photos/seed/{{image.accession.id}}/256" style="object-fit: cover;" />
             {% else %}
-              <img src="{{ image.accession.thumbnail_256.url }}" style="object-fit: cover;" />
+              <img src="{{ image.accession.blob.url }}" style="object-fit: cover;" />
             {% endif %}
           </a>
         </div>

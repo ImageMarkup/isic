@@ -1,12 +1,13 @@
 import pathlib
 
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.urls.base import reverse
 import pytest
 
 from isic.ingest.models.accession import Accession
 from isic.ingest.models.unstructured_metadata import UnstructuredMetadata
-from isic.ingest.services.accession import bulk_accession_relicense
+from isic.ingest.services.accession import accession_create, bulk_accession_relicense
 from isic.ingest.utils.zip import Blob
 
 data_dir = pathlib.Path(__file__).parent / "data"
@@ -32,6 +33,48 @@ def jpg_blob():
 def cc_by_accession_qs(accession_factory):
     accession = accession_factory(copyright_license="CC-BY")
     return Accession.objects.filter(id=accession.id)
+
+
+@pytest.mark.django_db()
+@pytest.mark.usefixtures("_eager_celery")
+@pytest.mark.parametrize(
+    ("blob_path", "blob_name"),
+    [
+        # small color
+        (pathlib.Path(data_dir / "ISIC_0000000.jpg"), "ISIC_0000000.jpg"),
+        # small grayscale
+        (pathlib.Path("/home/dan/p/isic/rcmtile.png"), "rcmtile.png"),
+        # big color
+        # big grayscale
+        (pathlib.Path("/home/dan/p/isic/vivablock.png"), "vivablock.png"),
+    ],
+    ids=["small color", "small grayscale", "big grayscale"],
+)
+def test_accession_create_image_types(blob_path, blob_name, user, cohort, settings):
+    settings.CELERY_TASK_ALWAYS_EAGER = True
+    settings.CELERY_TASK_EAGER_PROPAGATES = True
+    import exifread
+
+    # with blob_path.open("rb") as f:
+    # tags = exifread.process_file(f)
+    # assert tags
+
+    f = InMemoryUploadedFile(
+        blob_path.open("rb"), None, blob_name, None, blob_path.stat().st_size, None
+    )
+
+    accession = accession_create(
+        creator=user,
+        cohort=cohort,
+        original_blob=f,
+        original_blob_name=blob_name,
+        original_blob_size=blob_path.stat().st_size,
+    )
+    accession.refresh_from_db()
+
+    with accession.blob.open("rb") as f:
+        tags = exifread.process_file(f)
+        assert not tags
 
 
 @pytest.mark.django_db()
