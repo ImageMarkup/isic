@@ -1,16 +1,17 @@
 from copy import deepcopy
 from functools import lru_cache, partial
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db.models.query import QuerySet
 from isic_metadata import FIELD_REGISTRY
 from isic_metadata.fields import FitzpatrickSkinType, ImageTypeEnum
-from opensearchpy import NotFoundError, OpenSearch
-from opensearchpy.helpers import parallel_bulk
-from opensearchpy.transport import Transport
+
+if TYPE_CHECKING:
+    from opensearchpy import OpenSearch
+
 
 from isic.core.models import Image
 from isic.core.models.collection import Collection
@@ -66,13 +67,18 @@ for key in DEFAULT_SEARCH_AGGREGATES:
 
 
 @lru_cache
-def get_elasticsearch_client() -> OpenSearch:
+def get_elasticsearch_client() -> "OpenSearch":
+    from opensearchpy import OpenSearch
+    from opensearchpy.transport import Transport
+
     # TODO: investigate using retryable requests with transport_class
     RetryOnTimeoutTransport = partial(Transport, retry_on_timeout=True)  # noqa: N806
     return OpenSearch(settings.ISIC_ELASTICSEARCH_URI, transport_class=RetryOnTimeoutTransport)
 
 
 def maybe_create_index() -> None:
+    from opensearchpy import NotFoundError
+
     try:
         indices = get_elasticsearch_client().indices.get(settings.ISIC_ELASTICSEARCH_INDEX)
     except NotFoundError:
@@ -103,6 +109,8 @@ def add_to_search_index(image: Image) -> None:
 
 
 def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 2000) -> None:
+    from opensearchpy.helpers import parallel_bulk
+
     # qs must be generated with with_elasticsearch_properties
     # Use a generator for lazy evaluation
     image_documents = (image.to_elasticsearch_document() for image in qs)
