@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 
-from deepdiff import DeepDiff
 from django.contrib.auth.models import User
 from django.db import models
 
@@ -47,6 +46,8 @@ class MetadataVersion(CreationSortedTimeStampedModel):
             return re.sub(r"^root\['(.*)'\]$", r"\1", key)
 
         def _diff(a, b):
+            from deepdiff import DeepDiff
+
             result = DeepDiff(
                 a,
                 b,
