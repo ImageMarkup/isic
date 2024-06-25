@@ -2,6 +2,7 @@
 
 from django.conf import settings
 import django.contrib.postgres.constraints
+from django.contrib.postgres.operations import BtreeGistExtension
 import django.core.validators
 from django.db import migrations, models
 import django.db.models.deletion
@@ -25,6 +26,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        BtreeGistExtension(),
         migrations.CreateModel(
             name="Accession",
             fields=[
