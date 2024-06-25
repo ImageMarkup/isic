@@ -26,7 +26,14 @@ class LogRequestUserMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        return self.get_response(request)
+        response = self.get_response(request)
+        # always run the logger after the view has been called. django-ninja does auth inside of
+        # the view and sometimes authentications uses OAuth, so request.user won't be set until the
+        # view has been called.
 
-    def process_view(self, request, view_func, view_args, view_kwargs):
-        logger.info(f"{request.method} {request.path} user:{getattr(request.user, "pk", "none")}")  # noqa: G004
+        # certain requests, like static files, don't have a user attribute on the request
+        if hasattr(request, "user"):
+            logger.info(
+                f"{request.method} {request.path} user:{getattr(request.user, "pk", "none")}"  # noqa: G004
+            )
+        return response
