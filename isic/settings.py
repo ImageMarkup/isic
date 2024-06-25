@@ -236,6 +236,9 @@ class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
             "isic.core.storages.minio.StringableMinioMediaStorage"
         )
 
+        # use md5 in testing for quicker user creation
+        configuration.PASSWORD_HASHERS.insert(0, "django.contrib.auth.hashers.MD5PasswordHasher")
+
 
 class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration):
     ISIC_DATACITE_DOI_PREFIX = "10.34970"
