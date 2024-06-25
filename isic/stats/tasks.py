@@ -16,10 +16,6 @@ from django.conf import settings
 from django.db import transaction
 from django.db.utils import IntegrityError
 from django.utils import timezone
-from google.analytics.data_v1beta import BetaAnalyticsDataClient
-from google.analytics.data_v1beta.types import DateRange, Dimension, Metric, RunReportRequest
-from google.oauth2 import service_account
-import pandas as pd
 import pycountry
 
 from isic.core.models.image import Image
@@ -35,6 +31,9 @@ def _s3_client():
 
 
 def _get_analytics_client():
+    from google.analytics.data_v1beta import BetaAnalyticsDataClient
+    from google.oauth2 import service_account
+
     json_acct_info = json.loads(settings.ISIC_GOOGLE_API_JSON_KEY)
     credentials = service_account.Credentials.from_service_account_info(json_acct_info)
     scoped_credentials = credentials.with_scopes(
@@ -44,6 +43,8 @@ def _get_analytics_client():
 
 
 def _get_google_analytics_report(client, property_id: str) -> dict:
+    from google.analytics.data_v1beta.types import DateRange, Dimension, Metric, RunReportRequest
+
     results = {
         "num_sessions": 0,
         "sessions_per_country": defaultdict(int),
@@ -123,6 +124,8 @@ def _cdn_log_objects(s3) -> Iterable[dict]:
 
 
 def _cdn_access_log_records(s3, s3_log_object_key: str) -> Iterable[dict]:
+    import pandas as pd
+
     data = s3.get_object(Bucket=settings.CDN_LOG_BUCKET, Key=s3_log_object_key)
 
     with gzip.GzipFile(fileobj=BytesIO(data["Body"].read())) as stream:
