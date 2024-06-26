@@ -3,7 +3,7 @@ from django.test.client import Client
 import pytest
 from pytest_factoryboy import register
 
-from isic.core.tests.factories import CollectionFactory, ImageFactory
+from isic.core.tests.factories import CollectionFactory, ImageFactory, IsicIdFactory
 from isic.ingest.tests.factories import (
     AccessionFactory,
     AccessionReviewFactory,
@@ -88,6 +88,7 @@ register(UnstructuredMetadataFactory)
 register(ZipUploadFactory)
 
 # core factories
+register(IsicIdFactory)
 register(ImageFactory)
 register(CollectionFactory)
 

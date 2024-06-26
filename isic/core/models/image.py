@@ -58,7 +58,6 @@ class Image(CreationSortedTimeStampedModel):
     isic = models.OneToOneField(
         IsicId,
         on_delete=models.PROTECT,
-        default=IsicId.safe_create,
         editable=False,
         verbose_name="isic id",
     )
