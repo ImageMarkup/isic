@@ -9,8 +9,6 @@ import django_extensions.db.fields
 import oauth2_provider.generators
 import s3_file_field.fields
 
-import isic.core.models.isic_id
-
 
 class Migration(migrations.Migration):
     initial = True
@@ -256,7 +254,6 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.CharField(
-                        default=isic.core.models.isic_id._default_id,  # noqa: SLF001
                         max_length=12,
                         primary_key=True,
                         serialize=False,

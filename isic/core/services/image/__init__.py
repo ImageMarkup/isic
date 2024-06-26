@@ -4,15 +4,17 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import QuerySet
 
-from isic.core.models.image import Image
+from isic.core.models import Image, IsicId
 from isic.ingest.models.accession import Accession
 
 
 def image_create(*, creator: User, accession: Accession, public: bool) -> Image:
-    image = Image(creator=creator, accession=accession, public=public)
-    image.full_clean()
-    image.save()
-    return image
+    with transaction.atomic():
+        isic_id = IsicId.objects.create_random()
+        image = Image(isic=isic_id, creator=creator, accession=accession, public=public)
+        image.full_clean()
+        image.save()
+        return image
 
 
 def image_share(

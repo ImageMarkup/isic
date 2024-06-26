@@ -6,8 +6,6 @@ from django.db import migrations, models
 import django.db.models.deletion
 import django.db.models.functions.text
 
-import isic.core.models.isic_id
-
 
 class Migration(migrations.Migration):
     initial = True
@@ -39,7 +37,6 @@ class Migration(migrations.Migration):
             model_name="image",
             name="isic",
             field=models.OneToOneField(
-                default=isic.core.models.isic_id.IsicId.safe_create,
                 editable=False,
                 on_delete=django.db.models.deletion.PROTECT,
                 to="core.isicid",
