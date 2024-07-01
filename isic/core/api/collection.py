@@ -71,6 +71,10 @@ def collection_share_to_users(request, id: int, payload: CollectionShareIn):
 
     share_collection_with_users_task.delay(collection.id, request.user.id, payload.user_ids)
 
+    messages.add_message(
+        request, messages.INFO, "Sharing collection with user(s), this may take a few minutes."
+    )
+
     return 202, {}
 
 
