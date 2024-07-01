@@ -1,3 +1,5 @@
+from typing import Literal
+
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.http.response import JsonResponse
@@ -35,10 +37,17 @@ class CollectionOut(ModelSchema):
 
 @router.get("/", response=list[CollectionOut], summary="Return a list of collections.")
 @paginate(CursorPagination)
-def collection_list(request, pinned: bool | None = None) -> list[CollectionOut]:
+def collection_list(
+    request, pinned: bool | None = None, sort: Literal["name", "created"] | None = None
+) -> list[CollectionOut]:
     queryset = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
+
     if pinned is not None:
         queryset = queryset.filter(pinned=pinned)
+
+    if sort is not None:
+        queryset = queryset.order_by(sort)
+
     return queryset
 
 
