@@ -1,4 +1,4 @@
-release: ./manage.py migrate --fake
+release: ./manage.py migrate
 # certain streaming endpoints (like cohort-all-metadata) require more time.
 # set the request line limit to match heroku:
 # https://devcenter.heroku.com/articles/http-routing#http-validation-and-restrictions
