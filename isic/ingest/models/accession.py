@@ -3,6 +3,8 @@ from dataclasses import dataclass
 import io
 import logging
 from mimetypes import guess_type
+from pathlib import Path
+import subprocess
 import tempfile
 from uuid import uuid4
 
@@ -32,6 +34,10 @@ from isic.ingest.utils.zip import Blob
 from .zip_upload import ZipUpload
 
 logger = logging.getLogger(__name__)
+
+# The number of square pixels at which an image is stored as a
+# cloud optimized geotiff.
+IMAGE_COG_THRESHOLD: int = 100_000_000
 
 
 class Approx(Transform):
@@ -184,6 +190,8 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
         choices=AccessionStatus.choices, max_length=20, default=AccessionStatus.CREATING
     )
 
+    # is_grayscale = models.BooleanField(null=True, blank=True)
+
     thumbnail_256 = S3FileField(blank=True)
     thumbnail_256_size = models.PositiveIntegerField(
         null=True, blank=True, default=None, editable=False
@@ -308,6 +316,11 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
     ]
 
     @property
+    def requires_cog(self):
+        if self.width and self.height:
+            return self.width * self.height > IMAGE_COG_THRESHOLD
+
+    @property
     def published(self):
         return hasattr(self, "image")
 
@@ -333,6 +346,62 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
             field.name for field in Accession._meta.fields if hasattr(AccessionMetadata, field.name)
         ]
 
+    def _generate_cog(self, img: PIL.Image.Image):
+        from rio_cogeo import cog_translate
+
+        with (
+            self.original_blob.open("rb") as original_blob_stream,
+            tempfile.NamedTemporaryFile() as stripped_blob_stream,
+            tempfile.NamedTemporaryFile(delete=False) as cog_stream,
+        ):
+            # copy the original blob to the stripped blob
+            # TODO memory
+            stripped_blob_stream.write(original_blob_stream.read())
+
+            cog_translate(
+                source=stripped_blob_stream.name,
+                dst_path=cog_stream.name,
+                dst_kwargs={
+                    "driver": "GTiff",
+                    "interleave": "pixel",
+                    "tiled": True,
+                    "blockxsize": 512,
+                    "blockysize": 512,
+                    "compress": "DEFLATE",
+                    "BIGTIFF": "IF_SAFER",
+                    # Don't copy metadata (important for stripping exif)
+                    # See https://gdal.org/api/gdaldriver_cpp.html#_CPPv4N10GDALDriver10CreateCopyEPKcP11GDALDataseti12CSLConstList16GDALProgressFuncPv
+                    "COPY_SRC_MDD": "NO",
+                },
+                quiet=False,
+            )
+
+        # run exiftool -ModelTransform= on the file via subprocess
+        subprocess.run(
+            [  # noqa: S607, S603
+                "exiftool",
+                "-ModelTransform=",
+                cog_stream.name,
+            ],
+            check=True,
+        )
+
+        self.blob_size = Path(cog_stream.name).stat().st_size
+        with Path(cog_stream.name).open("rb") as cog_stream:
+            self.blob_name = f"{uuid4()}.tif"
+            self.blob = InMemoryUploadedFile(
+                file=cog_stream,
+                field_name=None,
+                name=self.blob_name,
+                content_type="image/tiff",
+                size=self.blob_size,
+                charset=None,
+            )
+            self.height = img.height
+            self.width = img.width
+
+            self.save(update_fields=["blob_name", "blob", "blob_size", "height", "width"])
+
     def generate_blob(self):
         """
         Generate `blob` and set `blob_size`, `height`, `width`.
@@ -340,6 +409,10 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
         This is idempotent.
         The Accession will be saved and `status` will be updated appropriately.
         """
+
+        def is_color(img: PIL.Image.Image) -> bool:
+            return img.mode in {"RGB", "RGBA"}
+
         try:
             with self.original_blob.open("rb") as original_blob_stream:
                 blob_mime_type = guess_mime_type(original_blob_stream, self.original_blob_name)
@@ -357,40 +430,48 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
             except PIL.Image.UnidentifiedImageError as e:
                 raise InvalidBlobError("Blob cannot be recognized by PIL.") from e
 
-            # Explicitly load the image, so any decoding errors can be caught
-            try:
-                img.load()
-            except OSError as e:
-                if "image file is truncated" in str(e):
-                    raise InvalidBlobError("Blob appears truncated.") from e
+            if img.height * img.width > IMAGE_COG_THRESHOLD:
+                if is_color(img):
+                    raise InvalidBlobError("Blob is too large to be stored.")
 
-                # Any other errors are not expected, so re-raise them natively
-                raise
+                self._generate_cog(img)
+            else:
+                # Explicitly load the image, so any decoding errors can be caught
+                try:
+                    img.load()
+                except OSError as e:
+                    if "image file is truncated" in str(e):
+                        raise InvalidBlobError("Blob appears truncated.") from e
 
-            # Strip any alpha channel
-            img = img.convert("RGB")
+                    # Any other errors are not expected, so re-raise them natively
+                    raise
 
-            with tempfile.SpooledTemporaryFile() as stripped_blob_stream:
-                img.save(stripped_blob_stream, format="JPEG")
+                # Strip any alpha channel
+                if is_color(img):
+                    img = img.convert("RGB")
 
-                stripped_blob_stream.seek(0, io.SEEK_END)
-                stripped_blob_size = stripped_blob_stream.tell()
-                stripped_blob_stream.seek(0)
+                with tempfile.SpooledTemporaryFile() as stripped_blob_stream:
+                    output_format = "PNG" if img.format == "PNG" and not is_color(img) else "JPEG"
+                    img.save(stripped_blob_stream, format=output_format)
 
-                self.blob_name = f"{uuid4()}.jpg"
-                self.blob = InMemoryUploadedFile(
-                    file=stripped_blob_stream,
-                    field_name=None,
-                    name=self.blob_name,
-                    content_type="image/jpeg",
-                    size=stripped_blob_size,
-                    charset=None,
-                )
-                self.blob_size = stripped_blob_size
-                self.height = img.height
-                self.width = img.width
+                    stripped_blob_stream.seek(0, io.SEEK_END)
+                    stripped_blob_size = stripped_blob_stream.tell()
+                    stripped_blob_stream.seek(0)
 
-                self.save(update_fields=["blob_name", "blob", "blob_size", "height", "width"])
+                    self.blob_name = f"{uuid4()}.{'png' if output_format == 'PNG' else 'jpg'}"
+                    self.blob = InMemoryUploadedFile(
+                        file=stripped_blob_stream,
+                        field_name=None,
+                        name=self.blob_name,
+                        content_type=f"image/{output_format.lower()}",
+                        size=stripped_blob_size,
+                        charset=None,
+                    )
+                    self.blob_size = stripped_blob_size
+                    self.height = img.height
+                    self.width = img.width
+
+                    self.save(update_fields=["blob_name", "blob", "blob_size", "height", "width"])
 
             self.generate_thumbnail()
 
@@ -409,8 +490,9 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
             self.status = AccessionStatus.SUCCEEDED
             self.save(update_fields=["status"])
 
+    # TODO: how to do thumbnails for mosaics
     def generate_thumbnail(self) -> None:
-        with self.blob.open() as blob_stream:
+        with Path("/home/dan/p/isic/ISIC_0000001.jpg").open("rb") as blob_stream:
             img: PIL.Image.Image = PIL.Image.open(blob_stream)
             # Load the image so the stream can be closed
             img.load()
