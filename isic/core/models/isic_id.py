@@ -7,32 +7,25 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt
 from isic.core.constants import ISIC_ID_REGEX
 
 
-def _default_id():
-    while True:
-        isic_id = f"ISIC_{secrets.randbelow(9999999):07}"
-        # This has a race condition, so the actual creation should be retried
-        if not IsicId.objects.filter(id=isic_id).exists():
-            return isic_id
-
-
-class IsicId(models.Model):
-    id = models.CharField(
-        primary_key=True,
-        default=_default_id,
-        verbose_name="ISIC ID",
-        max_length=12,
-        validators=[RegexValidator(f"^{ISIC_ID_REGEX}$")],
-    )
-
-    def __str__(self) -> str:
-        return self.id
-
-    @classmethod
+class IsicIdManager(models.Manager):
     @retry(
         reraise=True,
         retry=retry_if_exception_type(IntegrityError),
         stop=stop_after_attempt(10),
     )
-    def safe_create(cls):
-        """Safely create an IsicId, without race conditions."""
-        return cls.objects.create()
+    def create_random(self):
+        return self.create(id=f"ISIC_{secrets.randbelow(9999999):07}")
+
+
+class IsicId(models.Model):
+    id = models.CharField(
+        primary_key=True,
+        verbose_name="ISIC ID",
+        max_length=12,
+        validators=[RegexValidator(f"^{ISIC_ID_REGEX}$")],
+    )
+
+    objects = IsicIdManager()
+
+    def __str__(self) -> str:
+        return self.id

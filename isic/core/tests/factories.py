@@ -2,8 +2,16 @@ import factory
 import factory.django
 
 from isic.core.models import Collection, Image
+from isic.core.models.isic_id import IsicId
 from isic.factories import UserFactory
 from isic.ingest.tests.factories import AccessionFactory
+
+
+class IsicIdFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = IsicId
+
+    id = factory.Faker("pystr_format", string_format="ISIC_#######")
 
 
 class ImageFactory(factory.django.DjangoModelFactory):
@@ -14,6 +22,7 @@ class ImageFactory(factory.django.DjangoModelFactory):
     creator = factory.SelfAttribute("accession.creator")
     accession = factory.SubFactory(AccessionFactory)
     public = factory.Faker("boolean")
+    isic = factory.SubFactory(IsicIdFactory)
 
 
 class CollectionFactory(factory.django.DjangoModelFactory):
