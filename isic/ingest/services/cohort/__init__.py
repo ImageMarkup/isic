@@ -6,10 +6,12 @@ from django.db import transaction
 from django.db.models import Count
 
 from isic.core.models.collection import Collection
+from isic.core.models.isic_id import IsicId
 from isic.core.services.collection import collection_create, collection_merge_magic_collections
 from isic.core.services.collection.image import collection_add_images
 from isic.core.services.image import image_create
 from isic.core.tasks import sync_elasticsearch_index_task
+from isic.core.utils.db import lock_table
 from isic.ingest.models.accession import Accession
 from isic.ingest.models.cohort import Cohort
 from isic.ingest.models.metadata_file import MetadataFile
@@ -44,7 +46,6 @@ def cohort_publish_initialize(
     publish_cohort_task.delay(cohort.pk, publisher.pk, public=public, collection_ids=collection_ids)
 
 
-@transaction.atomic()
 def cohort_publish(
     *, cohort: Cohort, publisher: User, public: bool, collection_ids: list[int] | None = None
 ) -> None:
@@ -52,12 +53,16 @@ def cohort_publish(
         Collection.objects.filter(pk__in=collection_ids) if collection_ids else []
     )
 
-    for accession in cohort.accessions.publishable().iterator():
-        image = image_create(creator=publisher, accession=accession, public=public)
-        collection_add_images(collection=cohort.collection, image=image, ignore_lock=True)
+    # this creates a transaction
+    with lock_table(IsicId):
+        for accession in cohort.accessions.publishable().iterator():
+            image = image_create(creator=publisher, accession=accession, public=public)
+            collection_add_images(collection=cohort.collection, image=image, ignore_lock=True)
 
-        for additional_collection in additional_collections:
-            collection_add_images(collection=additional_collection, image=image, ignore_lock=True)
+            for additional_collection in additional_collections:
+                collection_add_images(
+                    collection=additional_collection, image=image, ignore_lock=True
+                )
 
     sync_elasticsearch_index_task.delay()
 
