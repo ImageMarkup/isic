@@ -108,7 +108,7 @@ def add_to_search_index(image: Image) -> None:
     )
 
 
-def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 2000) -> None:
+def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 2_000) -> None:
     from opensearchpy.helpers import parallel_bulk
 
     # qs must be generated with with_elasticsearch_properties
@@ -125,6 +125,8 @@ def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 2000) -> Non
             # The default chunk_size is 2000, but that may be too many models to fit into memory.
             # Note the default chunk_size matches QuerySet.iterator
             chunk_size=chunk_size,
+            # the thread count should be limited to avoid exhausting the connection pool
+            thread_count=2,
         ):
             if not success:
                 logger.error("Failed to insert document into elasticsearch: %s", info)
