@@ -11,6 +11,7 @@ from django.db.models import QuerySet
 from django.template.loader import render_to_string
 from isic_metadata.utils import get_unstructured_columns
 
+from isic.core.utils.db import lock_table_for_writes
 from isic.ingest.models import (
     Accession,
     AccessionStatus,
@@ -152,29 +153,30 @@ def update_metadata_task(user_pk: int, metadata_file_pk: int):
     metadata_file = MetadataFile.objects.get(pk=metadata_file_pk)
     user = User.objects.get(pk=user_pk)
 
-    with transaction.atomic():
+    with (
+        transaction.atomic(),
         # Lock the longitudinal tables during metadata assignment
-        (_ for _ in Lesion.objects.select_for_update().all())
-        (_ for _ in Patient.objects.select_for_update().all())
-        (_ for _ in RcmCase.objects.select_for_update().all())
+        lock_table_for_writes(Lesion),
+        lock_table_for_writes(Patient),
+        lock_table_for_writes(RcmCase),
+        metadata_file.blob.open("rb") as blob,
+    ):
+        rows = MetadataFile.to_dict_reader(blob)
 
-        with metadata_file.blob.open("rb") as blob:
-            rows = MetadataFile.to_dict_reader(blob)
+        for chunk in itertools.batched(rows, 1_000):
+            accessions: QuerySet[Accession] = metadata_file.cohort.accessions.select_related(
+                "image", "review", "lesion", "patient", "rcm_case", "cohort"
+            ).filter(original_blob_name__in=[row["filename"] for row in chunk])
+            accessions_by_filename: dict[str, Accession] = {
+                accession.original_blob_name: accession for accession in accessions
+            }
 
-            for chunk in itertools.batched(rows, 1_000):
-                accessions: QuerySet[Accession] = metadata_file.cohort.accessions.select_related(
-                    "image", "review", "lesion", "patient", "rcm_case", "cohort"
-                ).filter(original_blob_name__in=[row["filename"] for row in chunk])
-                accessions_by_filename: dict[str, Accession] = {
-                    accession.original_blob_name: accession for accession in accessions
-                }
-
-                for row in chunk:
-                    # filename doesn't need to be stored in the metadata since it's equal to
-                    # original_blob_name
-                    accession = accessions_by_filename[row["filename"]]
-                    del row["filename"]
-                    accession.update_metadata(user, row)
+            for row in chunk:
+                # filename doesn't need to be stored in the metadata since it's equal to
+                # original_blob_name
+                accession = accessions_by_filename[row["filename"]]
+                del row["filename"]
+                accession.update_metadata(user, row)
 
 
 @shared_task(soft_time_limit=3600, time_limit=3660)
