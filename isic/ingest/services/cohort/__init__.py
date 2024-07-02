@@ -11,7 +11,7 @@ from isic.core.services.collection import collection_create, collection_merge_ma
 from isic.core.services.collection.image import collection_add_images
 from isic.core.services.image import image_create
 from isic.core.tasks import sync_elasticsearch_index_task
-from isic.core.utils.db import lock_table
+from isic.core.utils.db import lock_table_for_writes
 from isic.ingest.models.accession import Accession
 from isic.ingest.models.cohort import Cohort
 from isic.ingest.models.metadata_file import MetadataFile
@@ -54,7 +54,7 @@ def cohort_publish(
     )
 
     # this creates a transaction
-    with lock_table(IsicId):
+    with lock_table_for_writes(IsicId):
         for accession in cohort.accessions.publishable().iterator():
             image = image_create(creator=publisher, accession=accession, public=public)
             collection_add_images(collection=cohort.collection, image=image, ignore_lock=True)
