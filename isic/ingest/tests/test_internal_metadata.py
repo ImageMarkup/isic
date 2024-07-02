@@ -5,14 +5,14 @@ from isic.ingest.models.accession import Accession, RemappedField
 
 @pytest.fixture()
 def imageless_accession(accession_factory):
-    return accession_factory(image=None)
+    return accession_factory()
 
 
 @pytest.mark.django_db()
 @pytest.mark.parametrize("field", Accession.remapped_internal_fields)
 def test_accession_update_remapped_metadata(user, accession_factory, cohort, field: RemappedField):
-    accession1 = accession_factory(image=None, cohort=cohort)
-    accession2 = accession_factory(image=None, cohort=cohort)
+    accession1 = accession_factory(cohort=cohort)
+    accession2 = accession_factory(cohort=cohort)
 
     metadata = {
         field.csv_field_name: "someinternalidentifier",
