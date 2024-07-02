@@ -107,7 +107,7 @@ def test_accession_upload_invalid_cohort(
 
 @pytest.mark.django_db()
 def test_accession_mutable_before_publish(user, accession_factory):
-    accession = accession_factory(image=None)
+    accession = accession_factory()
     accession.update_metadata(user, {"foo": "bar"})
     accession.full_clean(validate_constraints=False)
     accession.save()

@@ -23,7 +23,7 @@ def valid_metadatafile(cohort, metadata_file_factory, csv_stream_valid):
 
 @pytest.fixture()
 def imageless_accession(accession_factory):
-    return accession_factory(image=None)
+    return accession_factory()
 
 
 @pytest.fixture()
@@ -456,7 +456,7 @@ def test_accession_remove_unstructured_metadata_idempotent(user, imageless_acces
 
 @pytest.fixture()
 def unpublished_accepted_accession(accession_factory, user):
-    accession = accession_factory(image=None)
+    accession = accession_factory()
     accession.update_metadata(user, {"diagnosis": "melanoma"})
     accession_review_update_or_create(
         accession=accession, reviewer=user, reviewed_at=timezone.now(), value=True
