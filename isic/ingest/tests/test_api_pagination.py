@@ -32,9 +32,9 @@ def test_pagination(image_factory, staff_client):
     assert "cursor" in parsed.query
 
     # make sure previous links also work
-    resp = staff_client.get(resp.json()["previous"], data={"limit": 1})
+    resp = staff_client.get(resp.json()["previous"])
     assert resp.status_code == 200, resp.json()
-    assert resp.json()["count"] == 2
+    assert resp.json()["count"] is None
     assert len(resp.json()["results"]) == 1
     assert resp.json()["results"][0]["isic_id"] == images[1].isic_id
     assert resp.json()["previous"] is None
