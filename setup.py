@@ -41,6 +41,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
+        "bcrypt",
         "celery",
         "deepdiff",
         "django>5,<6",
@@ -66,7 +67,6 @@ setup(
         "oauth2client",
         "opensearch-py",
         "pandas",
-        "passlib[bcrypt]",
         "Pillow",
         "pycountry",
         "pydantic",
