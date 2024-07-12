@@ -250,8 +250,6 @@ class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration
 
     AWS_S3_OBJECT_PARAMETERS = {"ContentDisposition": "attachment"}
 
-    AWS_S3_CLIENT_CONFIG = Config(connect_timeout=5, read_timeout=10, retries={"max_attempts": 5})
-
     AWS_S3_FILE_BUFFER_SIZE = 50 * 1024 * 1024  # 50MB
 
     SENTRY_TRACES_SAMPLE_RATE = 0.01  # sample 1% of requests for performance monitoring
@@ -267,4 +265,11 @@ class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration
 
         configuration.STORAGES["default"]["BACKEND"] = (
             "isic.core.storages.s3.CacheableCloudFrontStorage"
+        )
+
+        configuration.AWS_S3_CLIENT_CONFIG = Config(
+            connect_timeout=5,
+            read_timeout=10,
+            retries={"max_attempts": 5},
+            signature_version=configuration.AWS_S3_SIGNATURE_VERSION,
         )
