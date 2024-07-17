@@ -105,7 +105,8 @@ def zip_file_listing(
 ):
     token = request.auth["token"]
     user, search = SearchQueryIn.from_token_representation(request.auth)
-    qs = search.to_queryset(user, Image.objects.select_related("accession"))
+    # ordering isn't necessary for the zipstreamer and can slow down the query considerably
+    qs = search.to_queryset(user, Image.objects.select_related("accession")).order_by()
     file_count = qs.count()
     suggested_filename = f"{qs.first().isic_id}.zip" if file_count == 1 else "ISIC-images.zip"
 
@@ -131,9 +132,12 @@ def zip_file_listing(
             for image in qs.values("accession__blob", "isic_id").iterator()
         ]
     else:
-        # development doesn't have any cloudfront frontend so we need to sign each url individually
+        # development doesn't have any cloudfront frontend so we need to sign each individual url.
+        # this is considerably slower because of the signing and the hydrating of the related
+        # objects instead of being able to utilize .values.
         files = [
-            {"url": image.accession.blob.url, "zipPath": f"{image.isic_id}.jpg"} for image in qs
+            {"url": image.accession.blob.url, "zipPath": f"{image.isic_id}.jpg"}
+            for image in qs.iterator()
         ]
 
     # initialize files with metadata and attribution files
