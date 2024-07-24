@@ -192,6 +192,9 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
 
     @staticmethod
     def mutate_configuration(configuration: ComposedConfiguration):
+        # configuration.MIDDLEWARE.insert(0, "pyinstrument.middleware.ProfilerMiddleware")
+        # configuration.PYINSTRUMENT_PROFILE_DIR = "profiles"
+
         configuration.INSTALLED_APPS.append("django_fastdev")
 
         configuration.STORAGES["default"]["BACKEND"] = (
