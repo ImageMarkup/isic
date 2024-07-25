@@ -6,7 +6,14 @@
       {% if PLACEHOLDER_IMAGES %}
         <img @mouseenter="hovered = true" @click="open = true" src="https://picsum.photos/seed/{{accession.id}}/256">
       {% else %}
-        <img @mouseenter="hovered = true" @click="open = true" src="{{ accession.thumbnail_256.url }}" />
+        {% if accession.is_cog %}
+          <a href="{% url 'accession-cog-viewer' accession.id %}">
+            <img src="{{ accession.thumbnail_256.url }}" />
+          </a>
+        {% else %}
+          <img @mouseenter="hovered = true" @click="open = true" src="{{ accession.thumbnail_256.url }}" />
+        {% endif %}
+
       {% endif %}
     </a>
 
