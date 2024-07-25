@@ -73,7 +73,7 @@ def extract_zip_task(zip_pk: int):
         transaction.on_commit(generate_blobs)
 
 
-@shared_task(soft_time_limit=60, time_limit=90)
+@shared_task(soft_time_limit=300, time_limit=360)
 def accession_generate_blob_task(accession_pk: int):
     accession = Accession.objects.get(pk=accession_pk)
 
