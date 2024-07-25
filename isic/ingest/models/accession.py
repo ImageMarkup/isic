@@ -37,6 +37,10 @@ from .zip_upload import ZipUpload
 
 logger = logging.getLogger(__name__)
 
+# Set the GDAL raster block cache to a maximum of 128MB. This is a value that
+# reduces memory usage without noticeably impacting performance for the typical mosaic.
+gdal.SetCacheMax(128 * 1024**2)
+
 # The number of square pixels at which an image is stored as a
 # cloud optimized geotiff.
 IMAGE_COG_THRESHOLD: int = 100_000_000
