@@ -19,6 +19,7 @@ from isic.core.views.images import (
     staff_image_list_export,
     staff_image_list_metadata_download,
 )
+from isic.core.views.lesion import lesion_detail
 from isic.core.views.users import staff_list, user_detail
 from isic.ingest.models.accession import Accession
 
@@ -97,6 +98,11 @@ urlpatterns = [
         "images/<image-identifier:pk>/",
         image_detail,
         name="core/image-detail",
+    ),
+    path(
+        "lesions/<str:identifier>/",
+        lesion_detail,
+        name="core/lesion-detail",
     ),
     path(
         "users/<int:pk>/",
