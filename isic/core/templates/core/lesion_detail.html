@@ -1,0 +1,139 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ lesion.id }} | {% endblock %}
+
+{% block content %}
+  <div x-data="{selectedTab: 'metadata'}">
+    <div class="pb-5 border-b border-gray-200 sm:pb-0">
+      <div class="text-lg leading-6 font-medium text-gray-900 flex-col">
+        <div class="flex">
+          <div class="heading-1">{{lesion.id}}</div>
+        </div>
+      </div>
+
+      {{ images_by_modality|json_script:"images_by_modality" }}
+      <script type="text/javascript">
+        function imageRibbon() {
+          const imagesByModality = JSON.parse(document.getElementById('images_by_modality').textContent);
+          const offsetsByModality = {};
+          for (const modality in imagesByModality) {
+            offsetsByModality[modality] = 0;
+          }
+
+          return {
+            selectedTab: 'dermoscopic',
+            selectTab: function(tab) {
+              this.selectedTab = tab;
+            },
+            previousImage: function() {
+              if (this.getOffset() > 0) {
+                this.setOffset(this.getOffset() - 1)
+              }
+            },
+            nextImage: function() {
+              if (this.getOffset() < this.imagesByModality[this.selectedTab].length - 1){
+                this.setOffset(this.getOffset() + 1);
+              }
+            },
+            images: function() {
+              return this.imagesByModality[this.selectedTab];
+            },
+            getOffset: function() {
+              return offsetsByModality[this.selectedTab];
+            },
+            setOffset: function(offset) {
+              this.offsetsByModality[this.selectedTab] = offset;
+            },
+            offsetsByModality: offsetsByModality,
+            imagesByModality: imagesByModality,
+          }
+        }
+      </script>
+
+      <div x-data="imageRibbon()" @keyup.left="console.log('left')" class="flex justify-between">
+        <div>
+          <div class="mt-2">
+            <div class="sm:hidden">
+              <label for="tabs" class="sr-only">Select a tab</label>
+              <select id="tabs" name="tabs" class="block w-full focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md">
+
+                {% for k,v in MODALITIES.items %}
+                  <option :selected="selectedTab == '{{ k }}'">{{ v }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="hidden sm:block">
+              <nav class="flex space-x-4" aria-label="Tabs">
+                {% for k,v in MODALITIES.items %}
+                  <a href="" @click.prevent="selectTab('{{ k }}')" class="px-3 py-2 font-medium text-sm rounded-md"
+                     :class="{'bg-indigo-100 text-indigo-700': selectedTab == '{{ k }}',
+                             'text-gray-500 hover:text-gray-700': selectedTab != '{{ k }}'}">
+                    {{ v }} (<span x-text="imagesByModality['{{k}}'].length"></span>)
+                  </a>
+                {% endfor %}
+              </nav>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <div class="flex">
+              <div x-show="imagesByModality[selectedTab].length" class="mx-2" style="height:256px;width:256px;">
+                <img :src="images()[offsetsByModality[selectedTab]].full_url" width="256" height="256" />
+                <div>
+                  <a :href="images()[offsetsByModality[selectedTab]].image_detail_url" target="_blank">
+                    <span x-text="images()[offsetsByModality[selectedTab]].isic_id"></span>
+                  </a>
+                  <span x-show="images()[offsetsByModality[selectedTab]].acquisition_day">
+                    (Day <span x-text="images()[offsetsByModality[selectedTab]].acquisition_day"></span>)
+                  </span>
+                  <span>(<span x-text="offsetsByModality[selectedTab] + 1"></span>/<span x-text="images().length"></span>)
+                  </div>
+                </div>
+                <div x-show="imagesByModality[selectedTab].length > offsetsByModality[selectedTab] + 1">
+                  <img :src="images()[offsetsByModality[selectedTab]+1].full_url" width="256" height="256" />
+                  <div>
+                    <a :href="images()[offsetsByModality[selectedTab]+1].image_detail_url" target="_blank">
+                      <span x-text="images()[offsetsByModality[selectedTab]+1].isic_id"></span>
+                    </a>
+                    <span x-show="images()[offsetsByModality[selectedTab]+1].acquisition_day">
+                      (Day <span x-text="images()[offsetsByModality[selectedTab]+1].acquisition_day"></span>)
+                    </span>
+                    <span>(<span x-text="offsetsByModality[selectedTab] + 2"></span>/<span x-text="images().length"></span>)
+                    </div>
+                  </div>
+
+                </div>
+
+                <a @click.prevent="previousImage()" href="#" class="text-blue-500">Previous</a>
+                <a @click.prevent="nextImage()" href="#" class="text-blue-500">Next</a>
+              </div>
+            </div>
+
+            <div class="mt-4" style="min-width: 300px">
+              <div class="heading-3 font-medium text-gray-900">Information</div>
+              <dl class="mt-2 border-t border-b border-gray-200 divide-y divide-gray-200">
+                <div class="py-3 flex justify-between text-sm font-medium">
+                  <dt class="text-gray-500">Images</dt>
+                  <dd class="text-gray-900">{{ lesion.images_count }}</dd>
+                </div>
+
+                <div class="py-3 flex justify-between text-sm font-medium">
+                  <dt class="text-gray-500">Longitudinally Monitored</dt>
+                  <dd class="text-gray-900">{{ lesion.longitudinally_monitored|yesno }}</dd>
+                </div>
+
+                <div class="py-3 flex justify-between text-sm font-medium">
+                  <dt class="text-gray-500">Outcome Diagnosis</dt>
+                  <dd class="text-gray-900">{{ lesion.outcome_diagnosis|default:"-" }}</dd>
+                </div>
+
+                <div class="py-3 flex justify-between text-sm font-medium">
+                  <dt class="text-gray-500">Outcome Benign/Malignant</dt>
+                  <dd class="text-gray-900">{{ lesion.outcome_benign_malignant }}</dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+{% endblock %}
