@@ -34,6 +34,7 @@ class UserOut(ModelSchema):
     "/me/",
     summary="Retrieve the currently logged in user.",
     response=UserOut,
+    include_in_schema=True,
     auth=is_authenticated,
 )
 def user_me(request: HttpRequest):

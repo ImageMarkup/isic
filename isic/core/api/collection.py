@@ -35,7 +35,12 @@ class CollectionOut(ModelSchema):
     doi_url: str | None = Field(alias="doi_url")
 
 
-@router.get("/", response=list[CollectionOut], summary="Return a list of collections.")
+@router.get(
+    "/",
+    response=list[CollectionOut],
+    summary="Return a list of collections.",
+    include_in_schema=True,
+)
 @paginate(CursorPagination)
 def collection_list(
     request, pinned: bool | None = None, sort: Literal["name", "created"] | None = None
@@ -51,7 +56,12 @@ def collection_list(
     return queryset
 
 
-@router.get("/{id}/", response=CollectionOut, summary="Retrieve a single collection by ID.")
+@router.get(
+    "/{id}/",
+    response=CollectionOut,
+    summary="Retrieve a single collection by ID.",
+    include_in_schema=True,
+)
 def collection_detail(request, id: int) -> CollectionOut:
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
     return get_object_or_404(qs, id=id)
