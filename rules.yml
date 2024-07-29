@@ -1,0 +1,16 @@
+rules:
+  - id: require_include_in_schema
+    languages:
+      - python
+    severity: ERROR
+    message: Found a route that doesn't explicitly set include_in_schema.
+    patterns:
+      - pattern-inside: |
+          $ROUTER = ninja.Router(...)
+          ...
+
+      - pattern: $ROUTER.$OPERATION(..., ...)
+      - pattern-not: $ROUTER.$OPERATION(..., include_in_schema=..., ...)
+      - metavariable-regex:
+          metavariable: $OPERATION
+          regex: ^(get|post|delete|put|patch)$
