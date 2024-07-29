@@ -6,7 +6,9 @@ from isic.stats.views import get_archive_stats
 stats_router = Router()
 
 
-@stats_router.get("/", response=dict, summary="Return ISIC Archive statistics.")
+@stats_router.get(
+    "/", response=dict, summary="Return ISIC Archive statistics.", include_in_schema=True
+)
 def stats(request: HttpRequest):
     archive_stats = get_archive_stats()
 
