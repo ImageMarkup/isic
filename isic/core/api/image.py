@@ -81,7 +81,9 @@ class ImageOut(ModelSchema):
         return metadata
 
 
-@router.get("/", response=list[ImageOut], summary="Return a list of images.")
+@router.get(
+    "/", response=list[ImageOut], summary="Return a list of images.", include_in_schema=True
+)
 @paginate(CursorPagination)
 def list_images(request: HttpRequest):
     return get_visible_objects(request.user, "core.view_image", default_qs)
@@ -92,6 +94,7 @@ def list_images(request: HttpRequest):
     response={200: list[ImageOut], 400: dict},
     summary="Search images with a key:value query string.",
     description=render_to_string("core/swagger_image_search_description.html"),
+    include_in_schema=True,
 )
 @paginate(CursorPagination)
 def search_images(request: HttpRequest, search: SearchQueryIn = Query(...)):
@@ -132,7 +135,12 @@ def get_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):
     return facets(query, collection_pks)
 
 
-@router.get("/{isic_id}/", response=ImageOut, summary="Retrieve a single image by ISIC ID.")
+@router.get(
+    "/{isic_id}/",
+    response=ImageOut,
+    summary="Retrieve a single image by ISIC ID.",
+    include_in_schema=True,
+)
 def retrieve_image(request: HttpRequest, isic_id: str):
     qs = get_visible_objects(request.user, "core.view_image", default_qs)
     return get_object_or_404(qs, isic_id=isic_id)
