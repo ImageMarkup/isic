@@ -124,3 +124,6 @@ dmypy.json
 .pyre/
 
 # End of https://www.gitignore.io/api/django
+
+# pyinstrument profiles
+profiles/
