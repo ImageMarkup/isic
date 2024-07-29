@@ -38,7 +38,9 @@ class LesionOut(ModelSchema):
         return [accession.image for accession in obj.accessions.all() if accession.published]
 
 
-@lesion_router.get("/{id}/", response=LesionOut, summary="Retrieve a single lesion by ID.")
+@lesion_router.get(
+    "/{id}/", response=LesionOut, summary="Retrieve a single lesion by ID.", include_in_schema=True
+)
 def lesion_detail(request: HttpRequest, id: str):
     qs = get_visible_objects(
         request.user,
@@ -51,7 +53,10 @@ def lesion_detail(request: HttpRequest, id: str):
 
 
 @lesion_router.get(
-    "/", response=list[LesionOut], summary="Return a list of lesions with diagnoses."
+    "/",
+    response=list[LesionOut],
+    summary="Return a list of lesions with diagnoses.",
+    include_in_schema=True,
 )
 @paginate(CursorPagination)
 def lesion_list(request: HttpRequest):
@@ -98,6 +103,7 @@ class AccessionOut(ModelSchema):
     "/",
     response={201: AccessionOut, 403: dict, 400: dict},
     summary="Create an Accession.",
+    include_in_schema=False,
 )
 def create_accession(request: HttpRequest, payload: AccessionIn):
     cohort = get_object_or_404(Cohort, pk=payload.cohort)
@@ -155,13 +161,17 @@ class CohortOut(ModelSchema):
     accession_count: int = Field(alias="accession_count")
 
 
-@cohort_router.get("/", response=list[CohortOut], summary="Return a list of cohorts.")
+@cohort_router.get(
+    "/", response=list[CohortOut], summary="Return a list of cohorts.", include_in_schema=False
+)
 @paginate(CursorPagination)
 def cohort_list(request: HttpRequest):
     return get_visible_objects(request.user, "ingest.view_cohort", default_cohort_qs)
 
 
-@cohort_router.get("/{id}/", response=CohortOut, summary="Retrieve a single cohort by ID.")
+@cohort_router.get(
+    "/{id}/", response=CohortOut, summary="Retrieve a single cohort by ID.", include_in_schema=False
+)
 def cohort_detail(request: HttpRequest, id: int):
     qs = get_visible_objects(request.user, "ingest.view_cohort", default_cohort_qs)
     return get_object_or_404(qs, id=id)
@@ -199,7 +209,10 @@ class ContributorOut(ModelSchema):
 
 
 @contributor_router.get(
-    "/", response=list[ContributorOut], summary="Return a list of contributors."
+    "/",
+    response=list[ContributorOut],
+    summary="Return a list of contributors.",
+    include_in_schema=False,
 )
 @paginate(CursorPagination)
 def contributor_list(request: HttpRequest):
@@ -211,7 +224,10 @@ def contributor_list(request: HttpRequest):
 
 
 @contributor_router.get(
-    "/{id}/", response=ContributorOut, summary="Retrieve a single contributor by ID."
+    "/{id}/",
+    response=ContributorOut,
+    summary="Retrieve a single contributor by ID.",
+    include_in_schema=False,
 )
 def contributor_detail(request: HttpRequest, id: int):
     qs = get_visible_objects(request.user, "ingest.view_contributor", Contributor.objects.all())
