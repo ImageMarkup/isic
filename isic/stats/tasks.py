@@ -182,6 +182,8 @@ def process_s3_log_file_task(s3_log_object_key: str):
         # go through only the images that mapped onto request paths (this ignores thumbnails and
         # other files). this can create a query with tens of thousands of elements in the "where in"
         # clause, so it needs to be batched.
+        # note that the COG images return a 206 partial content status, so this doesn't count
+        # the individual tiles that are downloaded.
         for download_logs in itertools.batched(
             filter(lambda r: r["status"] == 200, _cdn_access_log_records(s3, s3_log_object_key)),
             1_000,
