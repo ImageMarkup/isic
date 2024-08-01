@@ -113,6 +113,14 @@ def test_collect_image_download_records_task(
             },
             {
                 "download_time": fake.date_time(tzinfo=fake.pytimezone()),
+                "path": "some/a-cog.tif?Expires=12345&Signature=...",
+                "ip_address": "1.1.1.1",
+                "user_agent": fake.user_agent(),
+                "request_id": fake.uuid4(),
+                "status": 206,
+            },
+            {
+                "download_time": fake.date_time(tzinfo=fake.pytimezone()),
                 "path": "some/exists-2.jpg",
                 "ip_address": "1.1.1.1",
                 "user_agent": fake.user_agent(),
