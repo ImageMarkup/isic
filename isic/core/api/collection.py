@@ -79,7 +79,9 @@ def collection_share_to_users(request, id: int, payload: CollectionShareIn):
     if not request.user.is_staff:
         return 403, {"error": "You do not have permission to share this collection."}
 
-    share_collection_with_users_task.delay(collection.id, request.user.id, payload.user_ids)
+    share_collection_with_users_task.delay(  # nosem: require-delay-on-commit
+        collection.id, request.user.id, payload.user_ids
+    )
 
     messages.add_message(
         request, messages.INFO, "Sharing collection with user(s), this may take a few minutes."
@@ -136,7 +138,9 @@ def collection_populate_from_search(request, id: int, payload: SearchQueryIn):
 
     # Pass data instead of validated_data because the celery task is going to revalidate.
     # This avoids re encoding collections as a comma delimited string.
-    populate_collection_from_search_task.delay(id, request.user.pk, payload.dict())
+    populate_collection_from_search_task.delay(  # nosem: require-delay-on-commit
+        id, request.user.pk, payload.dict()
+    )
 
     # TODO: this is a weird mixture of concerns between SSR and an API, figure out a better
     # way to handle this.

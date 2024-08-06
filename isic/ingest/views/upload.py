@@ -199,7 +199,7 @@ def upload_zip(request, cohort_pk):
                     User.objects.filter(is_superuser=True).values_list("email", flat=True)
                 ),
             )
-            extract_zip_task.delay(form.instance.pk)
+            extract_zip_task.delay(form.instance.pk)  # nosem: require-delay-on-commit
             return HttpResponseRedirect(reverse("upload/cohort-files", args=[cohort.pk]))
     else:
         form = ZipForm()

@@ -153,7 +153,7 @@ def staff_image_list_export(request: HttpRequest) -> HttpResponse:
 
 @staff_member_required
 def staff_image_list_metadata_download(request: HttpRequest):
-    generate_staff_image_list_metadata_csv.delay(request.user.id)
+    generate_staff_image_list_metadata_csv.delay(request.user.id)  # nosem: require-delay-on-commit
 
     messages.add_message(
         request,

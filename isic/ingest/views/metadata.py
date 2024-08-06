@@ -121,7 +121,9 @@ def apply_metadata(request, cohort_pk):
             MetadataFile.objects.filter(pk=form.cleaned_data["metadata_file"]).update(
                 validation_completed=False, validation_errors=""
             )
-            validate_metadata_task.delay(form.cleaned_data["metadata_file"])
+            validate_metadata_task.delay(  # nosem: require-delay-on-commit
+                form.cleaned_data["metadata_file"]
+            )
             return HttpResponseRedirect(
                 reverse("metadata-file-detail", args=[form.cleaned_data["metadata_file"]])
             )

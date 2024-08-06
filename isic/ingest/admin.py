@@ -277,4 +277,4 @@ class ZipAdmin(DjangoObjectActions, StaffReadonlyAdmin):
     def extract_zip(self, request, queryset):
         for zip_file in queryset:
             zip_file.reset()
-            extract_zip_task.delay(zip_file.pk)
+            extract_zip_task.delay(zip_file.pk)  # nosem: require-delay-on-commit

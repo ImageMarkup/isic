@@ -171,7 +171,7 @@ def collect_image_download_records_task():
     # gather all request log entries and group them by path
     for s3_log_object in _cdn_log_objects(s3):
         # break this out into subtasks as a single log file can consume a large amount of ram.
-        process_s3_log_file_task.delay(s3_log_object["Key"])
+        process_s3_log_file_task.delay(s3_log_object["Key"])  # nosem: require-delay-on-commit
 
 
 @shared_task(soft_time_limit=600, time_limit=630, max_retries=5, retry_backoff=True)

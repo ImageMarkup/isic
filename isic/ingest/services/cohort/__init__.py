@@ -43,7 +43,9 @@ def cohort_publish_initialize(
         )
         cohort.save(update_fields=["collection"])
 
-    publish_cohort_task.delay(cohort.pk, publisher.pk, public=public, collection_ids=collection_ids)
+    publish_cohort_task.delay_on_commit(
+        cohort.pk, publisher.pk, public=public, collection_ids=collection_ids
+    )
 
 
 def cohort_publish(
@@ -64,7 +66,7 @@ def cohort_publish(
                     collection=additional_collection, image=image, ignore_lock=True
                 )
 
-    sync_elasticsearch_index_task.delay()
+    sync_elasticsearch_index_task.delay_on_commit()
 
 
 def cohort_delete(*, cohort: Cohort) -> None:

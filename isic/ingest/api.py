@@ -270,5 +270,5 @@ def delete_metadata_file(request: HttpRequest, id: int):
 )
 def update_metadata(request: HttpRequest, id: int):
     metadata_file = get_object_or_404(MetadataFile, id=id)
-    update_metadata_task.delay(request.user.pk, metadata_file.pk)
+    update_metadata_task.delay(request.user.pk, metadata_file.pk)  # nosem: require-delay-on-commit
     return 202, None

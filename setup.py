@@ -42,7 +42,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "bcrypt",
-        "celery",
+        "celery>=5.4",
         "deepdiff",
         "django>5,<6",
         "django-allauth>=0.56.0",

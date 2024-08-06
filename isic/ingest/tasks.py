@@ -86,7 +86,7 @@ def accession_generate_blob_task(accession_pk: int):
 
     # Prevent skipped accessions from being passed to this task
     if accession.status == AccessionStatus.SUCCEEDED:
-        process_distinctness_measure_task.delay(accession.pk)
+        process_distinctness_measure_task.delay(accession.pk)  # nosem: require-delay-on-commit
 
 
 @shared_task(soft_time_limit=60, time_limit=90)
