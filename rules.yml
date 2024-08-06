@@ -1,5 +1,5 @@
 rules:
-  - id: require_include_in_schema
+  - id: require-include-in-schema
     languages:
       - python
     severity: ERROR
@@ -13,3 +13,11 @@ rules:
       - metavariable-regex:
           metavariable: $OPERATION
           regex: ^(get|post|delete|put|patch)$
+
+  - id: require-delay-on-commit
+    languages:
+      - python
+    severity: ERROR
+    message: Found a call to a celery task that runs before transaction commit.
+    patterns:
+      - pattern: $TASK.delay(...)
