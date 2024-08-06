@@ -44,7 +44,7 @@ def accession_create(
         accession.full_clean(validate_constraints=False)
         accession.save()
         accession.unstructured_metadata.save()
-        accession_generate_blob_task.delay(accession.pk)
+        accession_generate_blob_task.delay_on_commit(accession.pk)
 
     return accession
 
