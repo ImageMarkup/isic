@@ -3,7 +3,6 @@ from urllib.parse import urlparse
 import django.apps
 from django.apps import apps
 from django.conf import settings
-from django.contrib.auth.backends import BaseBackend
 from django.contrib.auth.models import User
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
@@ -49,12 +48,6 @@ for model in django.apps.apps.get_models():
             ISIC_FILTERS_MAP[f"{model._meta.app_label}.{perm}"] = getattr(
                 model.perms_class, filter_name
             )
-
-
-class IsicObjectPermissionsBackend(BaseBackend):
-    def has_perm(self, user_obj, perm, obj=None):
-        if ISIC_PERMS_MAP.get(perm):
-            return ISIC_PERMS_MAP[perm](user_obj, obj)
 
 
 def get_visible_objects(user, perm, qs=None):
