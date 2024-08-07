@@ -1,6 +1,5 @@
 from django.urls.base import reverse
 import pytest
-from pytest_django.asserts import assertQuerysetEqual
 from pytest_lazy_fixtures import lf
 
 
@@ -46,13 +45,13 @@ def test_core_collection_create(client_, visible):
 @pytest.mark.django_db()
 def test_core_collection_list(client, authenticated_client, staff_client, private_collection):
     r = client.get(reverse("core/collection-list"))
-    assertQuerysetEqual(r.context["collections"].object_list, [])
+    assert r.context["collections"].object_list == []
 
     r = authenticated_client.get(reverse("core/collection-list"))
-    assertQuerysetEqual(r.context["collections"].object_list, [])
+    assert r.context["collections"].object_list == []
 
     r = staff_client.get(reverse("core/collection-list"))
-    assertQuerysetEqual(r.context["collections"].object_list, [private_collection])
+    assert r.context["collections"].object_list == [private_collection]
 
 
 @pytest.mark.django_db()
@@ -73,13 +72,13 @@ def test_core_collection_list_shares(
 ):
     private_collection.shares.add(user, through_defaults={"grantor": private_collection.creator})
     r = client.get(reverse("core/collection-list"))
-    assertQuerysetEqual(r.context["collections"].object_list, [])
+    assert r.context["collections"].object_list == []
 
     r = authenticated_client.get(reverse("core/collection-list"))
-    assertQuerysetEqual(r.context["collections"].object_list, [private_collection])
+    assert r.context["collections"].object_list == [private_collection]
 
     r = staff_client.get(reverse("core/collection-list"))
-    assertQuerysetEqual(r.context["collections"].object_list, [private_collection])
+    assert r.context["collections"].object_list == [private_collection]
 
 
 @pytest.mark.django_db()
