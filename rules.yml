@@ -19,5 +19,5 @@ rules:
       - python
     severity: ERROR
     message: Found a call to a celery task that runs before transaction commit.
-    pattern: $TASK.delay($ARGS)
-    fix: $TASK.delay_on_commit($ARGS)
+    pattern: $TASK.delay($...ARGS)
+    fix: $TASK.delay_on_commit($...ARGS)
