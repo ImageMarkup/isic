@@ -21,3 +21,12 @@ rules:
     message: Found a call to a celery task that runs before transaction commit.
     pattern: $TASK.delay($...ARGS)
     fix: $TASK.delay_on_commit($...ARGS)
+
+  - id: require-celery-timeouts
+    languages:
+      - python
+    severity: ERROR
+    message: Found a celery task definition that doesn't set timeouts.
+    patterns:
+      - pattern: shared_task(...)
+      - pattern-not: shared_task(..., soft_time_limit=..., time_limit=..., ...)
