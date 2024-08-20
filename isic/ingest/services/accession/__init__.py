@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files.base import File
 from django.db import transaction
+from django.db.models import FileField
 from django.db.models.query import QuerySet
 from s3_file_field.widgets import S3PlaceholderFile
 
@@ -47,6 +48,20 @@ def accession_create(
         accession_generate_blob_task.delay_on_commit(accession.pk)
 
     return accession
+
+
+def accession_purge(*, accession: Accession) -> None:
+    """Purge an unpublished accession and all associated data."""
+    if accession.published:
+        raise ValidationError("Cannot remove an accession with an image.")
+
+    for field in Accession._meta.fields:
+        if isinstance(field, FileField):
+            # save=False because setting the field to None may violate constraints e.g.
+            # succeeded accessions must have a thumbnail.
+            getattr(accession, field.name).delete(save=False)
+
+    accession.delete()
 
 
 def bulk_accession_relicense(
