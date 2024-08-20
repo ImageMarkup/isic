@@ -167,6 +167,8 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
     # Development-only settings
     SHELL_PLUS_IMPORTS = [
         "from django.core.files.uploadedfile import UploadedFile",
+        "from isic.ingest.services.accession import *",
+        "from isic.ingest.services.zip_upload import *",
         "from isic.core.dsl import *",
         "from isic.core.search import *",
         "from isic.core.tasks import *",
