@@ -1,6 +1,7 @@
 from collections.abc import Generator
 from functools import reduce
 import operator
+from typing import Any
 
 from django.db.models import Func
 from django.db.models.aggregates import Count
@@ -16,7 +17,7 @@ class JsonKeys(Func):
 
 def staff_image_metadata_csv(
     *, qs: QuerySet[Image]
-) -> Generator[list[str] | dict[str, str | bool | float], None, None]:
+) -> Generator[list[str] | dict[str, Any], None, None]:
     """
     Generate a CSV of image metadata for staff users.
 
@@ -33,14 +34,21 @@ def staff_image_metadata_csv(
         "attribution",
         "copyright_license",
         "public",
-        "age_approx",
     ]
+    for field in Accession.computed_fields:
+        headers.append(field.input_field_name)
+        headers += field.output_field_names
+
     accession_qs = Accession.objects.filter(image__in=qs)
 
     # depending on which queryset is passed in, the set of headers is different.
     # get the superset of headers for this particular queryset.
     counts = accession_qs.aggregate(**{k: Count(k) for k in Accession.metadata_keys()})
     used_metadata_keys = [k for k, v in counts.items() if v > 0]
+
+    # strip out any keys that are already in the headers. this is to strip out the
+    # input_field_names from Accession.computed_fields.
+    used_metadata_keys = [v for v in used_metadata_keys if v not in headers]
 
     used_unstructured_metadata_keys = list(
         accession_qs.annotate(unstructured_metadata_keys=JsonKeys("unstructured_metadata__value"))
@@ -79,6 +87,7 @@ def staff_image_metadata_csv(
             "public",
             *[f"accession__{key}" for key in used_metadata_keys],
             *[f"accession__{field.csv_field_name}" for field in Accession.remapped_internal_fields],
+            *[f"accession__{field.input_field_name}" for field in Accession.computed_fields],
             *[
                 f"accession__{field.relation_name}__{field.internal_id_name}"
                 for field in Accession.remapped_internal_fields
@@ -87,7 +96,7 @@ def staff_image_metadata_csv(
         )
         .iterator()
     ):
-        yield {
+        value = {
             "original_filename": image["accession__original_blob_name"],
             "isic_id": image["isic_id"],
             "cohort_id": image["accession__cohort_id"],
@@ -95,11 +104,6 @@ def staff_image_metadata_csv(
             "attribution": image["accession__cohort__attribution"],
             "copyright_license": image["accession__copyright_license"],
             "public": image["public"],
-            "age_approx": (
-                Accession._age_approx(image["accession__age"])  # noqa: SLF001
-                if image.get("accession__age")
-                else None
-            ),
             **{
                 k.replace("accession__", ""): v
                 for k, v in image.items()
@@ -120,6 +124,18 @@ def staff_image_metadata_csv(
                 for k, v in image["accession__unstructured_metadata__value"].items()
             },
         }
+
+        for field in Accession.computed_fields:
+            computed_output_fields = field.transformer(
+                image[f"accession__{field.input_field_name}"]
+                if image.get(f"accession__{field.input_field_name}")
+                else None
+            )
+
+            if computed_output_fields:
+                value.update(computed_output_fields)
+
+        yield value
 
 
 def image_metadata_csv(
@@ -143,11 +159,10 @@ def image_metadata_csv(
         if accession_qs.exclude(**{field.relation_name: None}).exists():
             used_metadata_keys.append(field.csv_field_name)  # noqa: PERF401
 
-    # TODO: this is a very leaky part of sensitive metadata handling that
-    # should be refactored.
-    if "age" in used_metadata_keys:
-        used_metadata_keys.append("age_approx")
-        used_metadata_keys.remove("age")
+    for computed_field in Accession.computed_fields:
+        if computed_field.input_field_name in used_metadata_keys:
+            used_metadata_keys.remove(computed_field.input_field_name)
+            used_metadata_keys += computed_field.output_field_names
 
     fieldnames = headers + sorted(used_metadata_keys)
     yield fieldnames
@@ -169,10 +184,11 @@ def image_metadata_csv(
 
         image["attribution"] = image.pop("cohort__attribution")
 
-        if image["age"]:
-            image["age_approx"] = Accession._age_approx(  # noqa: SLF001
-                image["age"]
-            )
-            del image["age"]
+        for computed_field in Accession.computed_fields:
+            if image[computed_field.input_field_name]:
+                computed_fields = computed_field.transformer(image[computed_field.input_field_name])
+                if computed_fields:
+                    image.update(computed_fields)
+                del image[computed_field.input_field_name]
 
         yield {k: v for k, v in image.items() if k in fieldnames}
