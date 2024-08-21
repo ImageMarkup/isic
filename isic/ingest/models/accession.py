@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass
 import io
@@ -5,6 +6,7 @@ import logging
 from mimetypes import guess_type
 from pathlib import Path
 import tempfile
+from typing import Literal, TypeVar
 from uuid import uuid4
 
 from django.contrib.auth.models import User
@@ -138,6 +140,15 @@ class AccessionQuerySet(models.QuerySet):
 
 @dataclass(frozen=True)
 class RemappedField:
+    """
+    A remapped metadata field is a field that stores separate internal and external representations.
+
+    This is most commonly used for patient, lesion, and rcm_case ids, which are generated
+    by the system and whose original value should be kept private (or internal). These values
+    are backed by a separate model and are stored separately in the case of metadata versioning.
+    Remapped fields map one to one in terms of input and output.
+    """
+
     # csv_field_name is overloaded and refers to the field name in the incoming CSV,
     # the outgoing CSVs, and the name of the remapped value on the model (e.g.
     # accession.lesion_id).
@@ -151,6 +162,30 @@ class RemappedField:
 
     def external_value(self, obj: models.Model) -> str:
         return getattr(obj, self.csv_field_name)
+
+
+V = TypeVar("V")
+Transformer = Callable[[V | None], dict[str, V] | None]
+
+
+@dataclass(frozen=True)
+class ComputedMetadataField:
+    """
+    A computed metadata field is a field that computes one or more fields in place of itself.
+
+    The prototypical example of this is age_approx, which is derived from the age field. This class
+    has a weird relationship with isic_metadata.Field in that it stores most of the same
+    information, but inheriting from it would be odd since it can output more than just one field.
+    """
+
+    input_field_name: str
+    output_field_names: list[str]
+    transformer: Transformer
+
+    type: Literal["acquisition", "clinical"]
+
+    es_mappings: dict[str, dict]
+    es_aggregates: dict
 
 
 class AccessionStatus(models.TextChoices):
@@ -335,6 +370,25 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
         RemappedField("lesion_id", "lesion", "private_lesion_id", Lesion),
         RemappedField("patient_id", "patient", "private_patient_id", Patient),
         RemappedField("rcm_case_id", "rcm_case", "private_rcm_case_id", RcmCase),
+    ]
+
+    computed_fields = [
+        ComputedMetadataField(
+            "age",
+            ["age_approx"],
+            lambda age: None if age is None else {"age_approx": int(round(age / 5.0) * 5)},
+            "clinical",
+            es_mappings={"age_approx": {"type": "integer"}},
+            es_aggregates={
+                "age_approx": {
+                    "histogram": {
+                        "field": "age_approx",
+                        "interval": 5,
+                        "extended_bounds": {"min": 0, "max": 85},
+                    }
+                }
+            },
+        ),
     ]
 
     @property

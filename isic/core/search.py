@@ -9,6 +9,8 @@ from django.db.models.query import QuerySet
 from isic_metadata import FIELD_REGISTRY
 from isic_metadata.fields import FitzpatrickSkinType, ImageTypeEnum
 
+from isic.ingest.models.accession import Accession
+
 if TYPE_CHECKING:
     from opensearchpy import OpenSearch
 
@@ -24,7 +26,6 @@ INDEX_MAPPINGS = {"properties": {}}
 DEFAULT_SEARCH_AGGREGATES = {}
 COUNTS_AGGREGATES = {}
 
-# TODO: include private meta fields (e.g. patient/lesion id)
 for key, definition in FIELD_REGISTRY.items():
     if definition.search:
         INDEX_MAPPINGS["properties"][key] = definition.search.es_property
@@ -35,7 +36,6 @@ for key, definition in FIELD_REGISTRY.items():
 # Additional fields here need to update the checks in isic_field on isic-metadata.
 INDEX_MAPPINGS["properties"].update(
     {
-        "age_approx": {"type": "integer"},
         "collections": {"type": "integer"},
         "contributor_owner_ids": {"type": "integer"},
         "created": {"type": "date"},
@@ -47,16 +47,13 @@ INDEX_MAPPINGS["properties"].update(
     }
 )
 
+for computed_field in Accession.computed_fields:
+    INDEX_MAPPINGS["properties"].update(computed_field.es_mappings)
+    DEFAULT_SEARCH_AGGREGATES.update(computed_field.es_aggregates)
+
 DEFAULT_SEARCH_AGGREGATES["copyright_license"] = {"terms": {"field": "copyright_license"}}
 
 
-DEFAULT_SEARCH_AGGREGATES["age_approx"] = {
-    "histogram": {
-        "field": "age_approx",
-        "interval": 5,
-        "extended_bounds": {"min": 0, "max": 85},
-    }
-}
 for key in DEFAULT_SEARCH_AGGREGATES:
     COUNTS_AGGREGATES[f"{key}_missing"] = {"missing": {"field": key}}
     COUNTS_AGGREGATES[f"{key}_present"] = {"value_count": {"field": key}}

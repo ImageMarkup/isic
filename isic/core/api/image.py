@@ -71,12 +71,16 @@ class ImageOut(ModelSchema):
         }
 
         for key, value in image.metadata.items():
-            # this is the only field that we expose that isn't in the FIELD_REGISTRY
-            # since it's a derived field.
-            if key == "age_approx":
-                metadata["clinical"][key] = value
-            else:
+            try:
                 metadata[FIELD_REGISTRY[key].type][key] = value
+            except KeyError:
+                # it's probably a computed field
+                for computed_field in image.accession.computed_fields:
+                    if key in computed_field.output_field_names:
+                        metadata[computed_field.type][key] = value
+                        break
+                else:
+                    raise
 
         return metadata
 
