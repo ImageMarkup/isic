@@ -99,11 +99,14 @@ class Image(CreationSortedTimeStampedModel):
         """
         image_metadata = deepcopy(self.accession.metadata)
 
-        if "age" in image_metadata:
-            image_metadata["age_approx"] = Accession._age_approx(  # noqa: SLF001
-                image_metadata["age"]
-            )
-            del image_metadata["age"]
+        for field in Accession.computed_fields:
+            if field.input_field_name in image_metadata:
+                computed_output_fields = field.transformer(image_metadata[field.input_field_name])
+
+                if computed_output_fields:
+                    image_metadata.update(computed_output_fields)
+
+                del image_metadata[field.input_field_name]
 
         for field in Accession.remapped_internal_fields:
             if getattr(self.accession, field.csv_field_name) is not None:
