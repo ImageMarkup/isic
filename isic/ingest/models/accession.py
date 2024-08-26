@@ -343,11 +343,14 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
                 fields=["cohort_id", "rcm_case_id"],
                 condition=Q(image_type=ImageTypeEnum.rcm_macroscopic),
             ),
-            # image_type == mosaic implies is_cog is True where image_type is set
+            # is_cog => mosaic/null image type. it's important that is_cog implies mosaic instead
+            # of the other way around because an image can have metadata before it's processed
+            # (and is_cog) is set.
             CheckConstraint(
                 name="accession_is_cog_mosaic",
-                check=Q(image_type__isnull=True)
-                | (~Q(image_type=ImageTypeEnum.rcm_mosaic) | Q(is_cog=True)),
+                check=Q(is_cog=False)
+                | Q(image_type__isnull=True)
+                | Q(image_type=ImageTypeEnum.rcm_mosaic),
             ),
         ]
 
