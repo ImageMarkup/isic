@@ -25,7 +25,7 @@ class DownloadedWithIsicCliFilter(admin.SimpleListFilter):
 
 @admin.register(ImageDownload)
 class ImageDownloadAdmin(StaffReadonlyAdmin):
-    list_display = ["isic_id", "download_time", "ip_address"]
+    list_display = ["image__isic__id", "download_time", "ip_address"]
     list_select_related = ["image"]
     search_fields = ["image__isic__id", "ip_address", "user_agent"]
     search_help_text = "Search by ISIC ID, IP Address, or User Agent."
@@ -40,7 +40,3 @@ class ImageDownloadAdmin(StaffReadonlyAdmin):
         # .annotate adds a join to the COUNT query which slows down the whole page.
         # .select_related only adds a join to the data selection query.
         return qs.select_related("image")
-
-    @admin.display(ordering="isic_id")
-    def isic_id(self, obj: ImageDownload):
-        return obj.image.isic_id
