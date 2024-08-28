@@ -71,7 +71,6 @@ class IsicMixin(ConfigMixin):
             "s3_file_field",
             "django_object_actions",
             "django_json_widget",
-            "spurl",
             "widget_tweaks",
         ]
 

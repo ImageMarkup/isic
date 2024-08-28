@@ -1,6 +1,10 @@
+from typing import Any
+
 from django.contrib import admin
 from django.db.models import Count, Exists, OuterRef
 from django.db.models.expressions import F
+from django.db.models.query import QuerySet
+from django.http import HttpRequest
 from girder_utils.admin import ReadonlyTabularInline
 
 from isic.core.admin import StaffReadonlyAdmin
@@ -79,13 +83,15 @@ class QuestionChoiceAdmin(StaffReadonlyAdmin):
 
 @admin.register(Response)
 class ResponseAdmin(StaffReadonlyAdmin):
-    list_display = ["study", "annotator", "question", "choice"]
+    list_display = ["annotation__study", "annotation__annotator", "question", "choice"]
 
-    def study(self, obj):
-        return obj.annotation.study
-
-    def annotator(self, obj):
-        return obj.annotation.annotator
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Any]:
+        return (
+            super()
+            .get_queryset(request)
+            .select_related("annotation__study", "annotation__annotator")
+            .select_related("question", "choice")
+        )
 
 
 @admin.register(Annotation)

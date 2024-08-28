@@ -12,8 +12,8 @@ class UserAdmin(BaseUserAdmin, StaffReadonlyAdmin):
         "email",
         "first_name",
         "last_name",
-        "girder_id",
-        "hash_id",
+        "profile__girder_id",
+        "profile__hash_id",
         "is_staff",
     ]
     search_fields = [
@@ -26,14 +26,6 @@ class UserAdmin(BaseUserAdmin, StaffReadonlyAdmin):
     ]
     search_help_text = "Search by names, email addresses, girder_id, or hash_id."
     ordering = ["-date_joined"]
-
-    @admin.display(ordering="profile__hash_id")
-    def hash_id(self, obj):
-        return obj.profile.hash_id
-
-    @admin.display(ordering="profile__girder_id")
-    def girder_id(self, obj):
-        return obj.profile.girder_id
 
 
 admin.site.unregister(User)
