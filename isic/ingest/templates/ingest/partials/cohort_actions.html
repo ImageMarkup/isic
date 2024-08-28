@@ -1,5 +1,3 @@
-{% load spurl %}
-
 <div class="relative inline-block text-left" x-data="{open: false}">
   <div>
     <button @click.away="open = false" @click="open = !open" type="button" class="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-indigo-500" id="menu-button" aria-expanded="true" aria-haspopup="true">
@@ -17,7 +15,7 @@
     <div class="py-1" role="none">
       {% url 'cohort-review' cohort.pk as review_url %}
       <a href="{{ review_url }}" class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-0">Review Cohort</a>
-      <a href="{% spurl base=review_url add_query="grouped_by_lesion=1" %}" class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-0">Review Cohort by Lesion</a>
+      <a href="{{ review_url }}{% querystring grouped_by_lesion="1" %}" class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-0">Review Cohort by Lesion</a>
     </div>
     <div class="py-1" role="none">
       <a href="{% url 'upload/cohort-files' cohort.pk %}" class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-0">Add additional files</a>

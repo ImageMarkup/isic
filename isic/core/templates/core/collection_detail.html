@@ -1,6 +1,5 @@
 {% extends 'core/base.html' %}
 {% load localtime %}
-{% load spurl %}
 {% load get_key %}
 {% load humanize %}
 
@@ -129,7 +128,7 @@
             </span>
           </div>
           <div class="flex-none">
-            <button class="btn btn-sm btn-ghost" @click="resetImages('{% spurl base=request.get_full_path remove_query_param="image_removal_mode" %}')">Abort</button>
+            <button class="btn btn-sm btn-ghost" @click="resetImages('{% url 'core/collection-detail' collection.id %}')">Abort</button>
             <button class="btn btn-sm btn-error" @click="deleteImages()">Remove</button>
           </div>
         </div>
