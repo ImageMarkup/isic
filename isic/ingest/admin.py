@@ -227,10 +227,6 @@ class AccessionAdmin(StaffReadonlyAdmin):
     def human_original_blob_size(self, obj):
         return filesizeformat(obj.original_blob_size)
 
-    @admin.display(ordering="cohort")
-    def cohort(self, obj):
-        return obj.cohort
-
     @admin.display()
     def thumbnail_image(self, obj):
         return mark_safe(f'<img src="{obj.thumbnail_256.url}" />')  # noqa: S308
@@ -239,13 +235,9 @@ class AccessionAdmin(StaffReadonlyAdmin):
 @admin.register(AccessionReview)
 class AccessionReviewAdmin(StaffReadonlyAdmin):
     list_select_related = ["accession", "creator", "accession__cohort"]
-    list_display = ["id", "cohort", "accession", "creator", "reviewed_at", "value"]
+    list_display = ["id", "accession__cohort", "accession", "creator", "reviewed_at", "value"]
 
     autocomplete_fields = ["accession", "creator"]
-
-    @admin.display(description="Cohort")
-    def cohort(self, obj):
-        return obj.accession.cohort
 
 
 @admin.register(ZipUpload)
