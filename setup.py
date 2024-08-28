@@ -44,7 +44,7 @@ setup(
         "bcrypt",
         "celery>=5.4.0",
         "deepdiff",
-        "django>5,<6",
+        "django>=5.1,<6",
         "django-allauth>=0.56.0",
         "django-click",
         "django-configurations[database,email]",
@@ -57,7 +57,6 @@ setup(
         # https://github.com/jazzband/django-oauth-toolkit/pull/1124
         "django-oauth-toolkit<2.0.0",
         "django-object-actions",
-        "django-spurl",
         "django-storages>1.14.2",
         "django-widget-tweaks",
         "gdal",
