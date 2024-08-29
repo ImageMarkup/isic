@@ -4,6 +4,7 @@ import csv
 import itertools
 from typing import Any
 
+from cachalot.api import cachalot_disabled
 from django.forms.models import ModelForm
 from isic_metadata.metadata import IGNORE_RCM_MODEL_CHECKS, MetadataBatch, MetadataRow
 from pydantic import ValidationError as PydanticValidationError
@@ -50,11 +51,12 @@ def validate_csv_format_and_filenames(
             )
         )
 
-    matching_accessions = set(
-        Accession.objects.filter(cohort=cohort, original_blob_name__in=filenames.keys())
-        .values_list("original_blob_name", flat=True)
-        .iterator()
-    )
+    with cachalot_disabled():
+        matching_accessions = set(
+            Accession.objects.filter(cohort=cohort, original_blob_name__in=filenames.keys())
+            .values_list("original_blob_name", flat=True)
+            .iterator()
+        )
 
     unknown_images = set(filenames.keys()) - matching_accessions
     if unknown_images:
@@ -188,7 +190,8 @@ def validate_archive_consistency(
                 else:
                     yield row
 
-        for row in accessions.exclude(original_blob_name__in=yielded_filenames).iterator():
-            yield accession_values_to_metadata_dict(row)
+        with cachalot_disabled():
+            for row in accessions.exclude(original_blob_name__in=yielded_filenames).iterator():
+                yield accession_values_to_metadata_dict(row)
 
     return _validate_df_consistency(cohort_df_merged_metadata_rows())
