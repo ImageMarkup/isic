@@ -1,6 +1,7 @@
 import csv
 from datetime import timedelta
 
+from cachalot.api import cachalot_disabled
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
@@ -372,53 +373,54 @@ class Annotation(TimeStampedModel):
 
 class ResponseQuerySet(models.QuerySet):
     def for_display(self) -> list:
-        for response in (
-            self.annotate(
-                value_answer=Cast(F("value"), CharField()),
-                choice_answer=F("choice__text"),
-                study_id=F("annotation__study__id"),
-                study=F("annotation__study__name"),
-                image=F("annotation__image__isic_id"),
-                annotator=F("annotation__annotator__profile__hash_id"),
-                annotation_duration=F("annotation__created") - F("annotation__start_time"),
-                question_prompt=F("question__prompt"),
-                answer=Case(
-                    When(
-                        question__type=Question.QuestionType.SELECT,
-                        then=F("choice_answer"),
+        with cachalot_disabled():
+            for response in (
+                self.annotate(
+                    value_answer=Cast(F("value"), CharField()),
+                    choice_answer=F("choice__text"),
+                    study_id=F("annotation__study__id"),
+                    study=F("annotation__study__name"),
+                    image=F("annotation__image__isic_id"),
+                    annotator=F("annotation__annotator__profile__hash_id"),
+                    annotation_duration=F("annotation__created") - F("annotation__start_time"),
+                    question_prompt=F("question__prompt"),
+                    answer=Case(
+                        When(
+                            question__type=Question.QuestionType.SELECT,
+                            then=F("choice_answer"),
+                        ),
+                        default=F("value_answer"),
+                        output_field=CharField(),
                     ),
-                    default=F("value_answer"),
-                    output_field=CharField(),
-                ),
-            )
-            .order_by("annotation__image__isic_id")
-            .values(
-                "study_id",
-                "study",
-                "image",
-                "annotator",
-                "annotation_duration",
-                "question_prompt",
-                "answer",
-            )
-            .iterator()
-        ):
-            if response["annotation_duration"] is None:
-                annotation_duration = ""
-            else:
-                # formatting as total seconds is easier, otherwise long durations get printed as
-                # 2 days, H:M:S.ms
-                annotation_duration = response["annotation_duration"].total_seconds()
+                )
+                .order_by("annotation__image__isic_id")
+                .values(
+                    "study_id",
+                    "study",
+                    "image",
+                    "annotator",
+                    "annotation_duration",
+                    "question_prompt",
+                    "answer",
+                )
+                .iterator()
+            ):
+                if response["annotation_duration"] is None:
+                    annotation_duration = ""
+                else:
+                    # formatting as total seconds is easier, otherwise long durations get printed as
+                    # 2 days, H:M:S.ms
+                    annotation_duration = response["annotation_duration"].total_seconds()
 
-            yield {
-                "study_id": response["study_id"],
-                "study": response["study"],
-                "image": response["image"],
-                "annotator": response["annotator"],
-                "annotation_duration": annotation_duration,
-                "question": response["question_prompt"],
-                "answer": response["answer"],
-            }
+                yield {
+                    "study_id": response["study_id"],
+                    "study": response["study"],
+                    "image": response["image"],
+                    "annotator": response["annotator"],
+                    "annotation_duration": annotation_duration,
+                    "question": response["question_prompt"],
+                    "answer": response["answer"],
+                }
 
 
 class Response(TimeStampedModel):

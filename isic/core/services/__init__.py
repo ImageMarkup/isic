@@ -3,6 +3,7 @@ from functools import reduce
 import operator
 from typing import Any
 
+from cachalot.api import cachalot_disabled
 from django.db.models import Func
 from django.db.models.aggregates import Count
 from django.db.models.query import QuerySet
@@ -73,69 +74,73 @@ def staff_image_metadata_csv(
         + sorted([f"unstructured.{key}" for key in used_unstructured_metadata_keys])
     )
 
-    # Note this uses .values because populating django ORM objects is very slow, and doing this on
-    # large querysets can add ~5s per 100k images to the request time.
-    for image in (
-        qs.order_by("isic_id")
-        .values(
-            "accession__original_blob_name",
-            "isic_id",
-            "accession__cohort_id",
-            "accession__cohort__name",
-            "accession__cohort__attribution",
-            "accession__copyright_license",
-            "public",
-            *[f"accession__{key}" for key in used_metadata_keys],
-            *[f"accession__{field.csv_field_name}" for field in Accession.remapped_internal_fields],
-            *[f"accession__{field.input_field_name}" for field in Accession.computed_fields],
-            *[
-                f"accession__{field.relation_name}__{field.internal_id_name}"
-                for field in Accession.remapped_internal_fields
-            ],
-            "accession__unstructured_metadata__value",
-        )
-        .iterator()
-    ):
-        value = {
-            "original_filename": image["accession__original_blob_name"],
-            "isic_id": image["isic_id"],
-            "cohort_id": image["accession__cohort_id"],
-            "cohort": image["accession__cohort__name"],
-            "attribution": image["accession__cohort__attribution"],
-            "copyright_license": image["accession__copyright_license"],
-            "public": image["public"],
-            **{
-                k.replace("accession__", ""): v
-                for k, v in image.items()
-                if k.replace("accession__", "") in Accession.metadata_keys()
-            },
-            **{
-                field.internal_id_name: image[
+    with cachalot_disabled():
+        # Note this uses .values because populating django ORM objects is very slow, and doing this
+        # on large querysets can add ~5s per 100k images to the request time.
+        for image in (
+            qs.order_by("isic_id")
+            .values(
+                "accession__original_blob_name",
+                "isic_id",
+                "accession__cohort_id",
+                "accession__cohort__name",
+                "accession__cohort__attribution",
+                "accession__copyright_license",
+                "public",
+                *[f"accession__{key}" for key in used_metadata_keys],
+                *[
+                    f"accession__{field.csv_field_name}"
+                    for field in Accession.remapped_internal_fields
+                ],
+                *[f"accession__{field.input_field_name}" for field in Accession.computed_fields],
+                *[
                     f"accession__{field.relation_name}__{field.internal_id_name}"
-                ]
-                for field in Accession.remapped_internal_fields
-            },
-            **{
-                field.csv_field_name: image[f"accession__{field.csv_field_name}"]
-                for field in Accession.remapped_internal_fields
-            },
-            **{
-                f"unstructured.{k}": v
-                for k, v in image["accession__unstructured_metadata__value"].items()
-            },
-        }
-
-        for field in Accession.computed_fields:
-            computed_output_fields = field.transformer(
-                image[f"accession__{field.input_field_name}"]
-                if image.get(f"accession__{field.input_field_name}")
-                else None
+                    for field in Accession.remapped_internal_fields
+                ],
+                "accession__unstructured_metadata__value",
             )
+            .iterator()
+        ):
+            value = {
+                "original_filename": image["accession__original_blob_name"],
+                "isic_id": image["isic_id"],
+                "cohort_id": image["accession__cohort_id"],
+                "cohort": image["accession__cohort__name"],
+                "attribution": image["accession__cohort__attribution"],
+                "copyright_license": image["accession__copyright_license"],
+                "public": image["public"],
+                **{
+                    k.replace("accession__", ""): v
+                    for k, v in image.items()
+                    if k.replace("accession__", "") in Accession.metadata_keys()
+                },
+                **{
+                    field.internal_id_name: image[
+                        f"accession__{field.relation_name}__{field.internal_id_name}"
+                    ]
+                    for field in Accession.remapped_internal_fields
+                },
+                **{
+                    field.csv_field_name: image[f"accession__{field.csv_field_name}"]
+                    for field in Accession.remapped_internal_fields
+                },
+                **{
+                    f"unstructured.{k}": v
+                    for k, v in image["accession__unstructured_metadata__value"].items()
+                },
+            }
 
-            if computed_output_fields:
-                value.update(computed_output_fields)
+            for field in Accession.computed_fields:
+                computed_output_fields = field.transformer(
+                    image[f"accession__{field.input_field_name}"]
+                    if image.get(f"accession__{field.input_field_name}")
+                    else None
+                )
 
-        yield value
+                if computed_output_fields:
+                    value.update(computed_output_fields)
+
+            yield value
 
 
 def image_metadata_csv(
@@ -167,28 +172,34 @@ def image_metadata_csv(
     fieldnames = headers + sorted(used_metadata_keys)
     yield fieldnames
 
-    # Note this uses .values because populating django ORM objects is very slow, and doing this on
-    # large querysets can add ~5s per 100k images to the request time.
-    for image in (
-        qs.order_by("isic_id")
-        .values(
-            "isic_id",
-            "accession__cohort__attribution",
-            "accession__copyright_license",
-            *[f"accession__{key}" for key in Accession.metadata_keys()],
-            *[f"accession__{field.csv_field_name}" for field in Accession.remapped_internal_fields],
-        )
-        .iterator()
-    ):
-        image = {k.replace("accession__", ""): v for k, v in image.items()}  # noqa: PLW2901
+    with cachalot_disabled():
+        # Note this uses .values because populating django ORM objects is very slow, and doing this
+        # on large querysets can add ~5s per 100k images to the request time.
+        for image in (
+            qs.order_by("isic_id")
+            .values(
+                "isic_id",
+                "accession__cohort__attribution",
+                "accession__copyright_license",
+                *[f"accession__{key}" for key in Accession.metadata_keys()],
+                *[
+                    f"accession__{field.csv_field_name}"
+                    for field in Accession.remapped_internal_fields
+                ],
+            )
+            .iterator()
+        ):
+            image = {k.replace("accession__", ""): v for k, v in image.items()}  # noqa: PLW2901
 
-        image["attribution"] = image.pop("cohort__attribution")
+            image["attribution"] = image.pop("cohort__attribution")
 
-        for computed_field in Accession.computed_fields:
-            if image[computed_field.input_field_name]:
-                computed_fields = computed_field.transformer(image[computed_field.input_field_name])
-                if computed_fields:
-                    image.update(computed_fields)
-                del image[computed_field.input_field_name]
+            for computed_field in Accession.computed_fields:
+                if image[computed_field.input_field_name]:
+                    computed_fields = computed_field.transformer(
+                        image[computed_field.input_field_name]
+                    )
+                    if computed_fields:
+                        image.update(computed_fields)
+                    del image[computed_field.input_field_name]
 
-        yield {k: v for k, v in image.items() if k in fieldnames}
+            yield {k: v for k, v in image.items() if k in fieldnames}

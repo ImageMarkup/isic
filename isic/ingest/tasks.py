@@ -2,6 +2,7 @@ from collections.abc import Iterable
 import itertools
 import time
 
+from cachalot.api import cachalot_disabled
 from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
@@ -63,12 +64,13 @@ def extract_zip_task(zip_pk: int):
         # rmq can only handle ~500msg/s - throttle significantly in places
         # where we could be putting many messages onto the queue at once.
         def generate_blobs():
-            for accession_id in throttled_iterator(
-                zip_upload.accessions.values_list("id", flat=True).iterator()
-            ):
-                # avoid .delay since we want to avoid putting tens of thousands of elements
-                # into the transaction.on_commit list.
-                accession_generate_blob_task.apply_async(args=[accession_id])
+            with cachalot_disabled():
+                for accession_id in throttled_iterator(
+                    zip_upload.accessions.values_list("id", flat=True).iterator()
+                ):
+                    # avoid .delay since we want to avoid putting tens of thousands of elements
+                    # into the transaction.on_commit list.
+                    accession_generate_blob_task.apply_async(args=[accession_id])
 
         transaction.on_commit(generate_blobs)
 

@@ -99,16 +99,18 @@ class AccessionMetadata(models.Model):
 class AccessionQuerySet(models.QuerySet):
     def ingesting(self):
         return self.exclude(
-            Q(status=AccessionStatus.SUCCEEDED)
-            | Q(status=AccessionStatus.FAILED)
-            | Q(status=AccessionStatus.SKIPPED)
+            Q(status=str(AccessionStatus.SUCCEEDED))
+            | Q(status=str(AccessionStatus.FAILED))
+            | Q(status=str(AccessionStatus.SKIPPED))
         )
 
     def uningested(self):
-        return self.filter(Q(status=AccessionStatus.FAILED) | Q(status=AccessionStatus.SKIPPED))
+        return self.filter(
+            Q(status=str(AccessionStatus.FAILED)) | Q(status=str(AccessionStatus.SKIPPED))
+        )
 
     def ingested(self):
-        return self.filter(status=AccessionStatus.SUCCEEDED)
+        return self.filter(status=str(AccessionStatus.SUCCEEDED))
 
     def unpublished(self):
         return self.filter(image__isnull=True)
@@ -123,7 +125,7 @@ class AccessionQuerySet(models.QuerySet):
         return self.ingested().unpublished()
 
     def unreviewable(self):
-        return self.unpublished().exclude(status=AccessionStatus.SUCCEEDED)
+        return self.unpublished().exclude(status=str(AccessionStatus.SUCCEEDED))
 
     def unreviewed(self):
         return self.reviewable().filter(review=None)
