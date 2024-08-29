@@ -6,6 +6,7 @@ import json
 import logging
 
 from botocore.signers import CloudFrontSigner
+from cachalot.api import cachalot_disabled
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.signing import BadSignature, TimestampSigner
@@ -124,21 +125,23 @@ def zip_file_listing(
             date_less_than=datetime.now(tz=UTC) + timedelta(days=1),
         )
         signed_url = signer.generate_presigned_url(url, policy=policy)
-        files = [
-            {
-                "url": signed_url.replace("*", image["accession__blob"]),
-                "zipPath": f"{image['isic_id']}.jpg",
-            }
-            for image in qs.values("accession__blob", "isic_id").iterator()
-        ]
+        with cachalot_disabled():
+            files = [
+                {
+                    "url": signed_url.replace("*", image["accession__blob"]),
+                    "zipPath": f"{image['isic_id']}.jpg",
+                }
+                for image in qs.values("accession__blob", "isic_id").iterator()
+            ]
     else:
         # development doesn't have any cloudfront frontend so we need to sign each individual url.
         # this is considerably slower because of the signing and the hydrating of the related
         # objects instead of being able to utilize .values.
-        files = [
-            {"url": image.accession.blob.url, "zipPath": f"{image.isic_id}.jpg"}
-            for image in qs.iterator()
-        ]
+        with cachalot_disabled():
+            files = [
+                {"url": image.accession.blob.url, "zipPath": f"{image.isic_id}.jpg"}
+                for image in qs.iterator()
+            ]
 
     # initialize files with metadata and attribution files
     logger.info(

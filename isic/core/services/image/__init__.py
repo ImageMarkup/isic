@@ -1,5 +1,6 @@
 import itertools
 
+from cachalot.api import cachalot_disabled
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import QuerySet
@@ -30,7 +31,7 @@ def image_share(
     if image:
         qs = Image.objects.filter(pk=image.pk)
 
-    with transaction.atomic():
+    with transaction.atomic(), cachalot_disabled():
         ImageShareM2M = Image.shares.through  # noqa: N806
         for image_batch in itertools.batched(qs.iterator(), 5_000):
             # ignore_conflicts is necessary to make this method idempotent. ignore_conflicts only

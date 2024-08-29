@@ -1,5 +1,6 @@
 import itertools
 
+from cachalot.api import cachalot_disabled
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -31,7 +32,7 @@ def collection_add_images(
     if collection.public and qs.private().exists():
         raise ValidationError("Can't add private images to a public collection.")
 
-    with transaction.atomic():
+    with transaction.atomic(), cachalot_disabled():
         CollectionImageM2M = Collection.images.through  # noqa: N806
         for image_batch in itertools.batched(qs.iterator(), 5_000):
             # ignore_conflicts is necessary to make this method idempotent (consistent with
