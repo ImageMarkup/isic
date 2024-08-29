@@ -46,6 +46,8 @@ setup(
         "deepdiff",
         "django>=5.1,<6",
         "django-allauth>=0.56.0",
+        "django-cachalot",
+        "django-cache-url",
         "django-click",
         "django-configurations[database,email]",
         "django-extensions",
