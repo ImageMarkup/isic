@@ -62,6 +62,7 @@ class IsicMixin(ConfigMixin):
                 "isic.studies.apps.StudiesConfig",
                 "isic.zip_download.apps.ZipDownloadConfig",
                 "ninja",  # required because we overwrite ninja/swagger.html
+                "cachalot",
             ],
             *configuration.INSTALLED_APPS,
         ]
