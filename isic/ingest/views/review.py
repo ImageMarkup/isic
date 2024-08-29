@@ -17,7 +17,7 @@ REVIEW_PER_PAGE = 500
 
 
 def _cohort_review_progress(cohort: Cohort) -> dict:
-    ingested_and_publishable = Q(image__isnull=True, status=AccessionStatus.SUCCEEDED)
+    ingested_and_publishable = Q(image__isnull=True, status=str(AccessionStatus.SUCCEEDED))
     counts = cohort.accessions.aggregate(
         reviewed=Count("id", filter=ingested_and_publishable & ~Q(review=None)),
         reviewable=Count("id", filter=ingested_and_publishable),
@@ -40,11 +40,11 @@ def ingest_review(request):
     paginator = Paginator(cohorts, 10)
     cohorts_page = paginator.get_page(request.GET.get("page"))
     unreviewed_counts = (
-        Accession.objects.filter(cohort__in=cohorts_page)
-        .values("cohort_id")
-        .annotate(
-            unreviewed_count=Count("id", filter=Q(review=None, status=AccessionStatus.SUCCEEDED))
+        Accession.objects.filter(
+            cohort__in=cohorts_page, status=str(AccessionStatus.SUCCEEDED), review=None
         )
+        .values("cohort_id")
+        .annotate(unreviewed_count=Count("id"))
     )
     unreviewed_counts = {row["cohort_id"]: row["unreviewed_count"] for row in unreviewed_counts}
 
@@ -58,7 +58,6 @@ def ingest_review(request):
             "cohorts": cohorts_page,
             "num_cohorts": paginator.count,
             "paginator": paginator,
-            "unreviewed_counts": unreviewed_counts,
         },
     )
 
