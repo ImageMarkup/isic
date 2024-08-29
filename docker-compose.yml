@@ -44,3 +44,14 @@ services:
       ZS_LISTFILE_BASIC_AUTH: "insecurezipdownloadauthtoken"
     ports:
       - 4008:4008
+
+  redis:
+    image: redis:latest
+    ports:
+      - ${DOCKER_REDIS_PORT-6379}:6379
+
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    ports:
+      - ${DOCKER_REDIS_INSIGHT_PORT-5540}:5540

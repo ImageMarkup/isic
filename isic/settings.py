@@ -10,6 +10,7 @@ from composed_configuration import (
     TestingBaseConfiguration,
 )
 from configurations import values
+from django_cache_url import BACKENDS
 
 
 def _oauth2_pkce_required(client_id):
@@ -20,6 +21,19 @@ def _oauth2_pkce_required(client_id):
     # PKCE is only required for public clients, but express the logic this way to make it required
     # by default for any future new client_types
     return oauth_application.client_type != OAuth2Application.CLIENT_CONFIDENTIAL
+
+
+# This is an unfortunate monkeypatching of django_cache_url to support an old version
+# of django-redis on a newer version of django.
+# See https://github.com/noripyt/django-cachalot/issues/222 for fixing this.
+BACKENDS["redis"] = BACKENDS["rediss"] = "django_redis.cache.RedisCache"
+
+
+class CacheURLValue(values.DictBackendMixin, values.CastingMixin, values.Value):
+    caster = "django_cache_url.parse"
+    message = "Cannot interpret cache URL value {0!r}"
+    environ_name = "CACHE_URL"
+    late_binding = True
 
 
 class IsicMixin(ConfigMixin):
@@ -121,6 +135,8 @@ class IsicMixin(ConfigMixin):
     ISIC_NOINDEX = values.BooleanValue(False)
     ISIC_SANDBOX_BANNER = values.BooleanValue(False)
     ISIC_PLACEHOLDER_IMAGES = values.BooleanValue(False)
+
+    CACHES = CacheURLValue(environ_name="ISIC_REDIS_URL", environ_prefix="DJANGO_")
 
     ISIC_ELASTICSEARCH_URI = values.SecretValue()
     ISIC_ELASTICSEARCH_INDEX = "isic"
@@ -243,10 +259,16 @@ class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
         # use md5 in testing for quicker user creation
         configuration.PASSWORD_HASHERS.insert(0, "django.contrib.auth.hashers.MD5PasswordHasher")
 
+        configuration.CACHES = {
+            "default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"},
+        }
+
 
 class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration):
     ISIC_DATACITE_DOI_PREFIX = "10.34970"
     ISIC_ELASTICSEARCH_URI = values.SecretValue(environ_name="SEARCHBOX_URL", environ_prefix=None)
+
+    CACHES = CacheURLValue(environ_name="STACKHERO_REDIS_URL_TLS", environ_prefix=None)
 
     AWS_CLOUDFRONT_KEY = values.SecretValue()
     AWS_CLOUDFRONT_KEY_ID = values.Value()
