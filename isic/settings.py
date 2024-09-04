@@ -138,6 +138,9 @@ class IsicMixin(ConfigMixin):
     ISIC_PLACEHOLDER_IMAGES = values.BooleanValue(False)
 
     CACHES = CacheURLValue(environ_name="ISIC_REDIS_URL", environ_prefix="DJANGO_")
+    # This seems like an essential setting for correctness, see
+    # https://github.com/noripyt/django-cachalot/issues/266.
+    CACHALOT_FINAL_SQL_CHECK = True
 
     ISIC_ELASTICSEARCH_URI = values.SecretValue()
     ISIC_ELASTICSEARCH_INDEX = "isic"
