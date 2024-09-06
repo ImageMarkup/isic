@@ -3,6 +3,7 @@ from functools import lru_cache, partial
 import logging
 from typing import TYPE_CHECKING, Any
 
+from cachalot.api import cachalot_disabled
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db.models.query import QuerySet
@@ -108,13 +109,16 @@ def add_to_search_index(image: Image) -> None:
 def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 2_000) -> None:
     from opensearchpy.helpers import parallel_bulk
 
-    # qs must be generated with with_elasticsearch_properties
-    # Use a generator for lazy evaluation
-    image_documents = (image.to_elasticsearch_document() for image in qs)
-
     # The opensearch logger is very noisy when updating records,
     # set it to warning during this operation.
-    with LoggingContext(logging.getLogger("opensearch"), level=logging.WARNING):
+    with (
+        LoggingContext(logging.getLogger("opensearch"), level=logging.WARNING),
+        cachalot_disabled(),
+    ):
+        # qs must be generated with with_elasticsearch_properties
+        # Use a generator for lazy evaluation
+        image_documents = (image.to_elasticsearch_document() for image in qs.iterator())
+
         for success, info in parallel_bulk(
             client=get_elasticsearch_client(),
             index=settings.ISIC_ELASTICSEARCH_INDEX,
