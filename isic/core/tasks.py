@@ -5,7 +5,6 @@ import tempfile
 from typing import cast
 import uuid
 
-from cachalot.api import cachalot_disabled
 from celery import shared_task
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -60,8 +59,7 @@ def share_collection_with_users_task(collection_pk: int, grantor_pk: int, user_p
     retry_kwargs={"max_retries": 15},
 )
 def sync_elasticsearch_index_task():
-    with cachalot_disabled():
-        bulk_add_to_search_index(Image.objects.with_elasticsearch_properties().iterator())
+    bulk_add_to_search_index(Image.objects.with_elasticsearch_properties())
 
 
 @shared_task(soft_time_limit=1800, time_limit=1810)
