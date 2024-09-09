@@ -164,6 +164,8 @@ class IsicMixin(ConfigMixin):
 
     CDN_LOG_BUCKET = values.Value()
 
+    # Retry connections in case rabbit isn't immediately running
+    CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
     CELERY_WORKER_MAX_MEMORY_PER_CHILD = 256 * 1024
 
     CELERY_BEAT_SCHEDULE = {
