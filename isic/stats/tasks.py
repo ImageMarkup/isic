@@ -126,7 +126,11 @@ def _cdn_log_objects(s3) -> Iterable[dict]:
 def _cdn_access_log_records(s3, s3_log_object_key: str) -> Iterable[dict]:
     import pandas as pd
 
-    data = s3.get_object(Bucket=settings.CDN_LOG_BUCKET, Key=s3_log_object_key)
+    try:
+        data = s3.get_object(Bucket=settings.CDN_LOG_BUCKET, Key=s3_log_object_key)
+    except s3.exceptions.NoSuchKey:
+        # ignore the case where it was already processed and deleted by another task
+        return
 
     with gzip.GzipFile(fileobj=BytesIO(data["Body"].read())) as stream:
         version_line, headers_line = stream.readlines()[0:2]
