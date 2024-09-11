@@ -98,6 +98,18 @@ setup(
             "pyinstrument",
             "tox",
             "werkzeug",
-        ]
+        ],
+        "test": [
+            "coverage[toml]",
+            "django-fastdev",
+            "factory-boy",
+            "hypothesis",
+            "pytest",
+            "pytest-cov",
+            "pytest-django",
+            "pytest-factoryboy",
+            "pytest-lazy-fixtures",
+            "pytest-mock",
+        ],
     },
 )
