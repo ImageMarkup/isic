@@ -125,7 +125,8 @@ class CursorPagination(PaginationBase):
         # If we have an offset cursor then offset the entire page by that amount.
         # We also always fetch an extra item in order to determine if there is a
         # page following on from this one.
-        results = list(queryset[cursor.offset : cursor.offset + limit + 1])
+        # Always fetch the maximum page size to increase cache utilization.
+        results = list(queryset[cursor.offset : cursor.offset + self.max_page_size + 1])
         page = list(results[:limit])
 
         # Determine the position of the final item following the page.
