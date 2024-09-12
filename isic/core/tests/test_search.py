@@ -1,3 +1,4 @@
+from django.urls import reverse
 from isic_metadata.fields import ImageTypeEnum
 import pytest
 from pytest_lazy_fixtures import lf
@@ -29,6 +30,25 @@ def searchable_images(image_factory, _search_index):
     get_elasticsearch_client().indices.refresh(index="_all")
 
     return images
+
+
+@pytest.mark.django_db()
+@pytest.mark.parametrize(
+    "route",
+    ["api:search_images", "api:list_images"],
+)
+def test_elasticsearch_counts(searchable_images, settings, client, route):
+    settings.ISIC_USE_ELASTICSEARCH_COUNTS = False
+
+    r = client.get(reverse(route))
+    assert r.status_code == 200, r.json()
+    assert r.json()["count"] == 1, r.json()
+
+    settings.ISIC_USE_ELASTICSEARCH_COUNTS = True
+
+    r = client.get(reverse(route))
+    assert r.status_code == 200, r.json()
+    assert r.json()["count"] == 1, r.json()
 
 
 @pytest.fixture()

@@ -1,4 +1,4 @@
-from typing import Any, cast
+from typing import Any
 
 from django.conf import settings
 from django.http.request import HttpRequest
@@ -9,11 +9,10 @@ from ninja import Field, ModelSchema, Query, Router, Schema
 from ninja.pagination import paginate
 from pyparsing.exceptions import ParseException
 
-from isic.core.dsl import es_parser, parse_query
 from isic.core.models import Collection, Image
-from isic.core.pagination import CursorPagination
+from isic.core.pagination import CursorPagination, qs_with_hardcoded_count
 from isic.core.permissions import get_visible_objects
-from isic.core.search import build_elasticsearch_query, facets
+from isic.core.search import facets, get_elasticsearch_client
 from isic.core.serializers import SearchQueryIn
 
 router = Router()
@@ -90,7 +89,17 @@ class ImageOut(ModelSchema):
 )
 @paginate(CursorPagination)
 def list_images(request: HttpRequest):
-    return get_visible_objects(request.user, "core.view_image", default_qs)
+    qs = get_visible_objects(request.user, "core.view_image", default_qs)
+
+    if settings.ISIC_USE_ELASTICSEARCH_COUNTS:
+        es_query = SearchQueryIn().to_es_query(request.user)
+        es_count = get_elasticsearch_client().count(
+            index=settings.ISIC_ELASTICSEARCH_INDEX,
+            body={"query": es_query},
+        )["count"]
+        return qs_with_hardcoded_count(qs, es_count)
+
+    return qs
 
 
 @router.get(
@@ -103,30 +112,33 @@ def list_images(request: HttpRequest):
 @paginate(CursorPagination)
 def search_images(request: HttpRequest, search: SearchQueryIn = Query(...)):
     try:
-        return search.to_queryset(user=request.user, qs=default_qs)
+        qs = search.to_queryset(user=request.user, qs=default_qs)
+        if settings.ISIC_USE_ELASTICSEARCH_COUNTS:
+            es_query = search.to_es_query(request.user)
     except ParseException as e:
         # Normally we'd like this to be handled by the input serializer validation, but
         # for backwards compatibility we must return 400 rather than 422.
         # The pagination wrapper means we can't just return the response we'd like from here.
         # The handler for this exception type is defined in urls.py.
         raise ImageSearchParseError from e
+    else:
+        if settings.ISIC_USE_ELASTICSEARCH_COUNTS:
+            es_count = get_elasticsearch_client().count(
+                index=settings.ISIC_ELASTICSEARCH_INDEX,
+                body={"query": es_query},
+            )["count"]
+            return qs_with_hardcoded_count(qs, es_count)
+
+        return qs
 
 
 @router.get("/facets/", response=dict, include_in_schema=False)
 def get_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):
-    es_query: dict | None = None
-    if search.query:
-        try:
-            # we know it can't be a Q object because we're using es_parser
-            es_query = cast(dict | None, parse_query(es_parser, search.query))
-        except ParseException as e:
-            raise ImageSearchParseError from e
+    try:
+        query = search.to_es_query(request.user)
+    except ParseException as e:
+        raise ImageSearchParseError from e
 
-    query = build_elasticsearch_query(
-        es_query or {},
-        request.user,
-        search.collections,
-    )
     # Manually pass the list of visible collection PKs through so buckets with
     # counts of 0 aren't included in the facets output for non-visible collections.
     collection_pks = list(
