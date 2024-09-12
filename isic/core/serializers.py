@@ -1,14 +1,18 @@
 from __future__ import annotations
 
+from typing import cast
+
 from django.contrib.auth.models import AnonymousUser, User
 from django.db.models.query import QuerySet
 from django.shortcuts import get_object_or_404
 from ninja import Schema
 from pydantic import field_validator
 
+from isic.core.dsl import es_parser, parse_query
 from isic.core.models import Image
 from isic.core.models.collection import Collection
 from isic.core.permissions import get_visible_objects
+from isic.core.search import build_elasticsearch_query
 
 
 class SearchQueryIn(Schema):
@@ -70,3 +74,15 @@ class SearchQueryIn(Schema):
             )
 
         return get_visible_objects(user, "core.view_image", qs).distinct()
+
+    def to_es_query(self, user: User) -> dict:
+        es_query: dict | None = None
+        if self.query:
+            # we know it can't be a Q object because we're using es_parser and not django_parser
+            es_query = cast(dict | None, parse_query(es_parser, self.query))
+
+        return build_elasticsearch_query(
+            es_query or {},
+            user,
+            self.collections,
+        )

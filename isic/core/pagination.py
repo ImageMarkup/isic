@@ -10,6 +10,25 @@ from ninja.pagination import PaginationBase
 from pydantic import field_validator
 
 
+def qs_with_hardcoded_count(qs: QuerySet, count: int) -> QuerySet:
+    """
+    Modify a queryset to return a hardcoded count rather than querying the database.
+
+    This is useful when the count can be obtained with a cheaper method instead of
+    the default queryset.count() method, e.g. elasticsearch, a separate query with
+    fewer joins, etc.
+    """
+    # This is an unfortunate bit of hackery to get around the fact that the CursorPagination class
+    # adds an order by which clones the queryset, overriding our hardcoded count. We have to repeat
+    # the logic here to make sure the paginator doesn't modify our queryset.
+    if not qs.query.order_by:
+        qs = qs.order_by(*CursorPagination.default_ordering)
+
+    qs.count = lambda: count
+
+    return qs
+
+
 @dataclass
 class Cursor:
     offset: int = 0
