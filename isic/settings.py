@@ -2,6 +2,7 @@ from datetime import timedelta
 from pathlib import Path
 
 from botocore.config import Config
+from celery.schedules import crontab
 from composed_configuration import (
     ComposedConfiguration,
     ConfigMixin,
@@ -142,6 +143,12 @@ class IsicMixin(ConfigMixin):
     # https://github.com/noripyt/django-cachalot/issues/266.
     CACHALOT_FINAL_SQL_CHECK = True
 
+    # This is an unfortunate feature flag that lets us disable this feature in testing,
+    # where having a permanently available ES index which is updated consistently in real
+    # time is too difficult. We hedge by having tests that verify our counts are correct
+    # with both methods.
+    ISIC_USE_ELASTICSEARCH_COUNTS = values.BooleanValue(False)
+
     ISIC_ELASTICSEARCH_URI = values.SecretValue()
     ISIC_ELASTICSEARCH_INDEX = "isic"
     ISIC_GUI_URL = "https://www.isic-archive.com/"
@@ -179,7 +186,7 @@ class IsicMixin(ConfigMixin):
         },
         "sync-elasticsearch-index": {
             "task": "isic.core.tasks.sync_elasticsearch_index_task",
-            "schedule": timedelta(hours=12),
+            "schedule": crontab(minute="0", hour="0"),
         },
     }
 
@@ -273,6 +280,7 @@ class TestingConfiguration(IsicMixin, TestingBaseConfiguration):
 class HerokuProductionConfiguration(IsicMixin, HerokuProductionBaseConfiguration):
     ISIC_DATACITE_DOI_PREFIX = "10.34970"
     ISIC_ELASTICSEARCH_URI = values.SecretValue(environ_name="SEARCHBOX_URL", environ_prefix=None)
+    ISIC_USE_ELASTICSEARCH_COUNTS = True
 
     CACHES = CacheURLValue(environ_name="STACKHERO_REDIS_URL_TLS", environ_prefix=None)
 
