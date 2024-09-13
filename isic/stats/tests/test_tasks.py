@@ -56,13 +56,8 @@ def test_collect_google_analytics_task(mocker, settings):
 
 
 def test_cdn_access_log_parsing(mocker):
-    def get_object(*args, **kwargs):
-        with pathlib.Path(data_dir / "cloudfront_log.gz").open("rb") as f:
-            return {"Body": io.BytesIO(f.read())}
-
-    records = list(
-        _cdn_access_log_records(mocker.MagicMock(get_object=get_object), mocker.MagicMock())
-    )
+    with pathlib.Path(data_dir / "cloudfront_log.gz").open("rb") as f:
+        records = list(_cdn_access_log_records(io.BytesIO(f.read())))
 
     assert len(records) == 24
     assert records[0] == {
@@ -92,6 +87,7 @@ def test_collect_image_download_records_task(
 
     mocker.patch("isic.stats.tasks.boto3", mocker.MagicMock(client=mock_client))
     mocker.patch("isic.stats.tasks._cdn_log_objects", return_value=[{"Key": "foo"}])
+    mocker.patch("isic.stats.tasks.BytesIO", mocker.MagicMock())
     mocker.patch(
         "isic.stats.tasks._cdn_access_log_records",
         return_value=[
