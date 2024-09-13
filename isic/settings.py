@@ -205,7 +205,6 @@ class DevelopmentConfiguration(IsicMixin, DevelopmentBaseConfiguration):
         "from isic.stats.tasks import *",
         "from isic.studies.tasks import *",
         "from opensearchpy import OpenSearch",
-        "import pandas as pd",
     ]
     SHELL_PLUS_PRINT_SQL_TRUNCATE = None
     RUNSERVER_PLUS_PRINT_SQL_TRUNCATE = None
