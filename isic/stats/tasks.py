@@ -220,7 +220,9 @@ def _process_s3_log_file_task(log_file_bytes: BytesIO):
             downloaded_paths_to_image_id: dict[str, int] = dict(
                 Image.objects.filter(
                     accession__blob__in=[download_log["path"] for download_log in download_logs]
-                ).values_list("accession__blob", "id")
+                )
+                .order_by()
+                .values_list("accession__blob", "id")
             )
 
             image_downloads: list[ImageDownload] = []
