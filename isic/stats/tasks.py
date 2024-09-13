@@ -1,5 +1,7 @@
 from collections import defaultdict
 from collections.abc import Iterable
+import csv
+import datetime
 from datetime import timedelta
 import gzip
 from io import BytesIO
@@ -124,8 +126,8 @@ def _cdn_log_objects(s3) -> Iterable[dict]:
 
 
 def _cdn_access_log_records(log_file_bytes: BytesIO) -> Iterable[dict]:
-    import pandas as pd
-
+    # See https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html#access-logs-timing
+    # for the format of the log file.
     with gzip.GzipFile(fileobj=log_file_bytes) as stream:
         version_line, headers_line = stream.readlines()[0:2]
         if not version_line.startswith(b"#Version: 1.0"):
@@ -133,33 +135,24 @@ def _cdn_access_log_records(log_file_bytes: BytesIO) -> Iterable[dict]:
 
         headers = headers_line.decode("utf-8").replace("#Fields:", "").strip().split()
         stream.seek(0)
-        logs = pd.read_table(
-            stream,
-            skiprows=2,
-            names=headers,
-            usecols=[
-                "date",
-                "time",
-                "cs-uri-stem",
-                "c-ip",
-                "cs(User-Agent)",
-                "x-edge-request-id",
-                "sc-status",
-            ],
-            delimiter="\\s+",
+
+        reader = csv.DictReader(
+            (line.decode() for line in stream.readlines()[2:]),
+            fieldnames=headers,
+            delimiter="\t",
+            strict=True,
         )
-
-    logs["download_time"] = pd.to_datetime(logs["date"] + " " + logs["time"], utc=True)
-
-    for _, row in logs.iterrows():
-        yield {
-            "download_time": row["download_time"],
-            "path": row["cs-uri-stem"].lstrip("/"),
-            "ip_address": row["c-ip"],
-            "user_agent": urllib.parse.unquote(row["cs(User-Agent)"]),
-            "request_id": row["x-edge-request-id"],
-            "status": row["sc-status"],
-        }
+        for row in reader:
+            yield {
+                "download_time": timezone.datetime.strptime(
+                    f"{row['date']} {row['time']}", "%Y-%m-%d %H:%M:%S"
+                ).replace(tzinfo=datetime.UTC),
+                "path": row["cs-uri-stem"].lstrip("/"),
+                "ip_address": row["c-ip"],
+                "user_agent": urllib.parse.unquote(row["cs(User-Agent)"]),
+                "request_id": row["x-edge-request-id"],
+                "status": int(row["sc-status"]),
+            }
 
 
 @shared_task(soft_time_limit=60, time_limit=120)
