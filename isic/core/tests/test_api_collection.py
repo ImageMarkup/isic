@@ -12,6 +12,34 @@ def collections(public_collection, private_collection):
 
 @pytest.mark.django_db()
 @pytest.mark.parametrize(
+    ("search_term", "collection_names", "expected_collection_names"),
+    [
+        # sanity check
+        ("foo", ["foo", "bar"], ["foo"]),
+        # test jaro weights prefixes
+        ("foo", ["something foo", "foo", "bar"], ["foo", "something foo"]),
+        # test it secondarily sorts by name asc
+        (
+            "chall",
+            ["challenge", "challenge 2", "challenge 1"],
+            ["challenge", "challenge 1", "challenge 2"],
+        ),
+    ],
+)
+def test_core_api_collection_autocomplete(
+    client, collection_factory, search_term, collection_names, expected_collection_names
+):
+    for name in collection_names:
+        collection_factory(name=name, public=True)
+
+    r = client.get(f"/api/v2/collections/autocomplete/?query={search_term}")
+    assert r.status_code == 200, r.json()
+
+    assert [c["name"] for c in r.json()] == expected_collection_names
+
+
+@pytest.mark.django_db()
+@pytest.mark.parametrize(
     ("client_", "colls", "num_visible"),
     [
         (lf("client"), lf("collections"), 1),
