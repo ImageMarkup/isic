@@ -8,6 +8,8 @@ from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.pure_eval import PureEvalIntegration
 
+from .signals import post_invalidation  # noqa: F401
+
 
 class CoreConfig(AppConfig):
     name = "isic.core"
