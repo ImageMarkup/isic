@@ -4,8 +4,10 @@ from django.contrib import messages
 from django.db.models import Count, Q
 from django.http.response import JsonResponse
 from django.shortcuts import get_object_or_404
-from ninja import Field, ModelSchema, Router, Schema
+from jaro import jaro_winkler_metric
+from ninja import Field, ModelSchema, Query, Router, Schema
 from ninja.pagination import paginate
+from pydantic import field_validator
 from pydantic.types import conlist, constr
 
 from isic.core.constants import ISIC_ID_REGEX
@@ -25,6 +27,20 @@ from isic.core.tasks import (
 from isic.ingest.models.accession import Accession
 
 router = Router()
+
+
+# See also isic.find.api.QueryIn
+class AutocompleteQueryIn(Schema):
+    query: str
+
+    model_config = {"extra": "forbid"}
+
+    @field_validator("query")
+    @classmethod
+    def query_min_length(cls, v: str):
+        if len(v) < 3:
+            raise ValueError("Query too short.")
+        return v
 
 
 class CollectionOut(ModelSchema):
@@ -54,6 +70,36 @@ def collection_list(
         queryset = queryset.order_by(sort)
 
     return queryset
+
+
+# Note that this route needs to be defined before collection_detail to resolve the ambiguity
+# between the two. See https://github.com/vitalik/django-ninja/issues/507#issuecomment-1186450789.
+@router.get(
+    "/autocomplete/",
+    response=list[CollectionOut],
+    summary="Find relevant collections by auto completing by name.",
+    include_in_schema=False,
+)
+def collection_autocomplete(
+    request, payload: AutocompleteQueryIn = Query(...)
+) -> list[CollectionOut]:
+    qs = get_visible_objects(
+        request.user,
+        "core.view_collection",
+        Collection.objects.select_related("doi").filter(name__icontains=payload.query),
+    )
+
+    # sort by jaro winkler, then name to make something like "challenge" return the
+    # challenge collections in order.
+    collections = sorted(
+        qs,
+        key=lambda collection: (
+            -jaro_winkler_metric(collection.name.upper(), payload.query.upper()),
+            collection.name,
+        ),
+    )
+
+    return collections[:20]
 
 
 @router.get(
