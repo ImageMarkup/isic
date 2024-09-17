@@ -52,7 +52,7 @@ class CoreConfig(AppConfig):
             if args[0]["celery_job"]["task"] in infrequent_tasks:
                 return 1.0
 
-        return 0.01
+        return 0.05
 
     def ready(self):
         if hasattr(settings, "SENTRY_DSN"):
