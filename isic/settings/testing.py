@@ -1,0 +1,43 @@
+import os
+
+from .base import *  # noqa: F403
+
+SECRET_KEY = "testingsecret"  # noqa: S105
+
+# Testing will add 'testserver' to ALLOWED_HOSTS
+ALLOWED_HOSTS: list[str] = []
+
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+CELERY_TASK_ACKS_LATE = True
+CELERY_WORKER_CONCURRENCY = None
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_EAGER_PROPAGATES = True
+
+CACHALOT_ENABLED = False
+
+ISIC_ELASTICSEARCH_INDEX = "isic-testing"
+
+ISIC_DATACITE_DOI_PREFIX = "10.80222"
+ZIP_DOWNLOAD_SERVICE_URL = "http://service-url.test"
+ZIP_DOWNLOAD_BASIC_AUTH_TOKEN = "insecuretestzipdownloadauthtoken"  # noqa: S105
+ZIP_DOWNLOAD_WILDCARD_URLS = False
+
+
+INSTALLED_APPS.append("django_fastdev")  # noqa: F405
+
+STORAGES["default"] = {"BACKEND": "isic.core.storages.minio.StringableMinioMediaStorage"}  # noqa: F405
+
+
+MINIO_STORAGE_ENDPOINT = os.environ["DJANGO_MINIO_STORAGE_ENDPOINT"]
+MINIO_STORAGE_USE_HTTPS = False
+MINIO_STORAGE_ACCESS_KEY = os.environ["DJANGO_MINIO_STORAGE_ACCESS_KEY"]
+MINIO_STORAGE_SECRET_KEY = os.environ["DJANGO_MINIO_STORAGE_SECRET_KEY"]
+MINIO_STORAGE_MEDIA_BUCKET_NAME = "test-django-storage"
+MINIO_STORAGE_AUTO_CREATE_MEDIA_BUCKET = True
+MINIO_STORAGE_AUTO_CREATE_MEDIA_POLICY = "READ_WRITE"
+MINIO_STORAGE_MEDIA_USE_PRESIGNED = True
+
+
+# use md5 in testing for quicker user creation
+PASSWORD_HASHERS.insert(0, "django.contrib.auth.hashers.MD5PasswordHasher")  # noqa: F405
