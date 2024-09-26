@@ -65,11 +65,6 @@ def staff_client(staff_user):
     return client
 
 
-@pytest.fixture()
-def _eager_celery(settings):
-    settings.CELERY_TASK_ALWAYS_EAGER = True
-
-
 # To make pytest-factoryboy fixture creation work properly, all factories must be registered at
 # this top-level conftest, since the factories have inter-app references.
 

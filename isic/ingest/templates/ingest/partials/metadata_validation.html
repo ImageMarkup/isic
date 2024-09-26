@@ -78,7 +78,7 @@
   {% if archive_check is not None %}
     {% if archive_check.0 or archive_check.1 %}
       <ul>
-        {% for key, values in archive_check.0 %}
+        {% for key, values in archive_check.0.items %}
           <li>
             <strong>{{ key.0 }}</strong> - {{ key.1 }} - lines: {{ values|slice:"5"|join:", " }}
             {% if values|length > 5 %}(and {{ values|length|add:"-5" }} more){% endif %}

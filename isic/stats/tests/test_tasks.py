@@ -71,7 +71,6 @@ def test_cdn_access_log_parsing(mocker):
 
 
 @pytest.mark.django_db()
-@pytest.mark.usefixtures("_eager_celery")
 def test_collect_image_download_records_task(
     mocker, image_factory, django_capture_on_commit_callbacks
 ):
@@ -83,7 +82,11 @@ def test_collect_image_download_records_task(
     )
 
     def mock_client(*args, **kwargs):
-        return mocker.MagicMock(delete_objects=lambda **_: {})
+        def _delete_object(*args, **kwargs):
+            # TODO: assert that this was called?
+            return {"ResponseMetadata": {"HTTPStatusCode": 204}}
+
+        return mocker.MagicMock(delete_object=_delete_object)
 
     mocker.patch("isic.stats.tasks.boto3", mocker.MagicMock(client=mock_client))
     mocker.patch("isic.stats.tasks._cdn_log_objects", return_value=[{"Key": "foo"}])
@@ -139,5 +142,3 @@ def test_collect_image_download_records_task(
 
     assert ImageDownload.objects.count() == 1
     assert image.downloads.count() == 1
-
-    # TODO: assert file is deleted with boto, this is tricky to do with mocking
