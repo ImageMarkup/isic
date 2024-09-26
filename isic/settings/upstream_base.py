@@ -112,7 +112,9 @@ CORS_ORIGIN_REGEX_WHITELIST = string_to_list(
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 DATABASES = {
     "default": dj_database_url.config(
-        default=os.environ["DJANGO_DATABASE_URL"], conn_max_age=600, conn_health_checks=False
+        default=os.environ.get("DATABASE_URL", os.environ.get("DJANGO_DATABASE_URL")),
+        conn_max_age=600,
+        conn_health_checks=False,
     )
 }
 
