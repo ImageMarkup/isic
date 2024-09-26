@@ -1,5 +1,7 @@
 import os
 
+import dj_database_url
+
 from ._docker import _AlwaysContains, _is_docker
 from .base import *  # noqa: F403
 
@@ -11,6 +13,12 @@ CORS_ORIGIN_REGEX_WHITELIST = [
     r"^https?://localhost:\d+$",
     r"^https?://127\.0\.0\.1:\d+$",
 ]
+
+DATABASES = {
+    "default": dj_database_url.config(
+        default=os.environ["DJANGO_DATABASE_URL"], conn_max_age=600, conn_health_checks=False
+    )
+}
 
 # When in Docker, the bridge network sends requests from the host machine exclusively via a
 # dedicated IP address. Since there's no way to determine the real origin address,

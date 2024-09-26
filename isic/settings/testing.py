@@ -1,8 +1,16 @@
 import os
 
+import dj_database_url
+
 from .base import *  # noqa: F403
 
 SECRET_KEY = "testingsecret"  # noqa: S105
+
+DATABASES = {
+    "default": dj_database_url.config(
+        default=os.environ["DJANGO_DATABASE_URL"], conn_max_age=600, conn_health_checks=False
+    )
+}
 
 # Testing will add 'testserver' to ALLOWED_HOSTS
 ALLOWED_HOSTS: list[str] = []
