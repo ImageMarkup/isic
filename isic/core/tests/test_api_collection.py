@@ -114,7 +114,6 @@ def test_core_api_collection_detail_permissions(client_, collection, visible):
 
 
 @pytest.mark.django_db()
-@pytest.mark.usefixtures("_eager_celery")
 def test_core_api_collection_populate_from_search(
     authenticated_client,
     collection_factory,
@@ -234,7 +233,6 @@ def test_core_api_collection_remove_from_list(
 
 
 @pytest.mark.django_db()
-@pytest.mark.usefixtures("_eager_celery")
 def test_core_api_collection_share(
     staff_client, private_collection, user, django_capture_on_commit_callbacks
 ):
@@ -253,7 +251,6 @@ def test_core_api_collection_share(
 
 
 @pytest.mark.django_db()
-@pytest.mark.usefixtures("_eager_celery")
 def test_core_api_collection_license_breakdown(
     staff_client, collection_factory, image_factory, user
 ):
