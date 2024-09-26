@@ -9,7 +9,6 @@ from isic.core.models.image import Image
 
 # needs a real transaction due to setting the isolation level
 @pytest.mark.django_db(transaction=True)
-@pytest.mark.usefixtures("_eager_celery")
 def test_image_list_metadata_download_view(staff_client, mailoutbox, user, image: Image):
     image.accession.update_metadata(
         user,

@@ -187,7 +187,6 @@ def test_apply_metadata_step2(
 
 
 @pytest.mark.django_db()
-@pytest.mark.usefixtures("_eager_celery")
 def test_apply_metadata_step2_invalid(
     staff_client,
     cohort_with_accession,
@@ -201,7 +200,9 @@ def test_apply_metadata_step2_invalid(
         cohort=cohort_with_accession,
     )
 
-    render_to_string = mocker.patch("isic.ingest.tasks.render_to_string")
+    import isic.ingest.tasks
+
+    render_to_string = mocker.spy(isic.ingest.tasks, "render_to_string")
 
     with django_capture_on_commit_callbacks(execute=True):
         r = staff_client.post(
@@ -221,7 +222,6 @@ def test_apply_metadata_step2_invalid(
 
 
 @pytest.mark.django_db()
-@pytest.mark.usefixtures("_eager_celery")
 def test_apply_metadata_step3(
     user,
     staff_client,
@@ -278,7 +278,6 @@ def test_apply_metadata_step3(
 
 
 @pytest.mark.django_db()
-@pytest.mark.usefixtures("_eager_celery")
 def test_apply_metadata_step3_full_cohort(
     user,
     staff_client,

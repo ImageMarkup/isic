@@ -37,7 +37,6 @@ def zip_stream_garbage() -> BinaryIO:
     return file_stream
 
 
-@pytest.mark.usefixtures("_eager_celery")
 @pytest.mark.parametrize(
     "zip_stream",
     [

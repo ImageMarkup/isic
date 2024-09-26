@@ -1,11 +1,8 @@
 import os
 
-import configurations.importer
 from django.core.wsgi import get_wsgi_application
 
-os.environ["DJANGO_SETTINGS_MODULE"] = "isic.settings"
-if not os.environ.get("DJANGO_CONFIGURATION"):
-    raise ValueError('The environment variable "DJANGO_CONFIGURATION" must be set.')
-configurations.importer.install()
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "isic.settings.production")
+
 
 application = get_wsgi_application()
