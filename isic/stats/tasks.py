@@ -88,6 +88,7 @@ def _country_from_iso_code(iso_code: str) -> dict:
 @shared_task(
     soft_time_limit=60,
     time_limit=120,
+    queue="low-priority",
 )
 def collect_google_analytics_metrics_task():
     if not settings.ISIC_GOOGLE_API_JSON_KEY:
@@ -155,18 +156,20 @@ def _cdn_access_log_records(log_file_bytes: BytesIO) -> Iterable[dict]:
             }
 
 
-@shared_task(soft_time_limit=60, time_limit=120)
+@shared_task(queue="low-priority")
 def collect_image_download_records_task():
     s3 = _s3_client()
 
     # gather all request log entries and group them by path
     for s3_log_object in _cdn_log_objects(s3):
-        # break this out into subtasks as a single log file can consume a large amount of ram.
         process_s3_log_file_task.delay_on_commit(s3_log_object["Key"])
 
 
-@shared_task(soft_time_limit=600, time_limit=630, max_retries=5, retry_backoff=True)
+@shared_task(
+    soft_time_limit=600, time_limit=630, max_retries=5, retry_backoff=True, queue="low-priority"
+)
 def process_s3_log_file_task(s3_log_object_key: str):
+    logger.info("Processing s3 log file %s", s3_log_object_key)
     s3 = _s3_client()
 
     try:
