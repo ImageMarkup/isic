@@ -142,3 +142,17 @@ def test_collect_image_download_records_task(
 
     assert ImageDownload.objects.count() == 1
     assert image.downloads.count() == 1
+
+    # assert that re-running the task only looks for new logs after "foo"
+    import isic.stats.tasks
+
+    cdn_log_objects = mocker.spy(isic.stats.tasks, "_cdn_log_objects")
+
+    with django_capture_on_commit_callbacks(execute=True):
+        collect_image_download_records_task()
+
+    assert ImageDownload.objects.count() == 1
+    assert image.downloads.count() == 1
+
+    assert cdn_log_objects.call_count == 1
+    assert cdn_log_objects.call_args[0][1] == "foo"
