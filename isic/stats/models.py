@@ -1,4 +1,3 @@
-from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.expressions import F
@@ -52,14 +51,9 @@ class LastEnqueuedS3Log(models.Model):
     This table is intended to only have one row.
     """
 
-    name = models.CharField(
-        max_length=36,
-        validators=[
-            # https://docs.aws.amazon.com/AmazonS3/latest/userguide/ServerLogs.html#server-log-keyname-format
-            RegexValidator(r"^\d{4}-(\d{2}-){5}[A-F0-9]{16}$")
-        ],
-        unique=True,
-    )
+    # Stores keys in the format referenced here:
+    # https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/AccessLogs.html#AccessLogsFileNaming
+    name = models.CharField(unique=True)
 
     def __str__(self) -> str:
         return self.name
