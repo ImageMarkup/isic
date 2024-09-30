@@ -74,6 +74,8 @@ def test_cdn_access_log_parsing(mocker):
 def test_collect_image_download_records_task(
     mocker, image_factory, django_capture_on_commit_callbacks
 ):
+    KEY_NAME = "E1GEV1F1LW8QVF.2024-09-16-11.c93bad02.gz"  # noqa: N806
+
     # TODO: overriding the blob name requires passing the size manually.
     image = image_factory(
         accession__blob="some/exists.jpg",
@@ -89,7 +91,7 @@ def test_collect_image_download_records_task(
         return mocker.MagicMock(delete_object=_delete_object)
 
     mocker.patch("isic.stats.tasks.boto3", mocker.MagicMock(client=mock_client))
-    mocker.patch("isic.stats.tasks._cdn_log_objects", return_value=[{"Key": "foo"}])
+    mocker.patch("isic.stats.tasks._cdn_log_objects", return_value=[{"Key": KEY_NAME}])
     mocker.patch("isic.stats.tasks.BytesIO", mocker.MagicMock())
     mocker.patch(
         "isic.stats.tasks._cdn_access_log_records",
@@ -143,7 +145,7 @@ def test_collect_image_download_records_task(
     assert ImageDownload.objects.count() == 1
     assert image.downloads.count() == 1
 
-    # assert that re-running the task only looks for new logs after "foo"
+    # assert that re-running the task only looks for new logs after the first key
     import isic.stats.tasks
 
     cdn_log_objects = mocker.spy(isic.stats.tasks, "_cdn_log_objects")
@@ -155,4 +157,4 @@ def test_collect_image_download_records_task(
     assert image.downloads.count() == 1
 
     assert cdn_log_objects.call_count == 1
-    assert cdn_log_objects.call_args[0][1] == "foo"
+    assert cdn_log_objects.call_args[0][1] == KEY_NAME
