@@ -2,6 +2,7 @@ import logging
 import os
 
 from botocore.config import Config
+import dj_email_url
 from django_cache_url import BACKENDS
 import sentry_sdk
 from sentry_sdk.integrations.celery import CeleryIntegration
@@ -9,7 +10,7 @@ from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.pure_eval import PureEvalIntegration
 
-from ._utils import _get_sentry_performance_sample_rate, string_to_list
+from ._utils import _get_sentry_performance_sample_rate, string_to_bool, string_to_list
 from .base import *  # noqa: F403
 
 # This is an unfortunate monkeypatching of django_cache_url to support an old version
@@ -18,12 +19,13 @@ from .base import *  # noqa: F403
 BACKENDS["redis"] = BACKENDS["rediss"] = "django_redis.cache.RedisCache"
 
 
-SECRET_KEY = os.environ["SECRET_KEY"]
+SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
+CELERY_BROKER_URL = os.environ["CLOUDAMQP_URL"]
 CELERY_TASK_ACKS_LATE = True
 CELERY_WORKER_CONCURRENCY = None
 
-ALLOWED_HOSTS = string_to_list(os.environ["ALLOWED_HOSTS"])
+ALLOWED_HOSTS = string_to_list(os.environ["DJANGO_ALLOWED_HOSTS"])
 
 # Enable HSTS
 SECURE_HSTS_SECONDS = 60 * 60 * 24 * 365  # 1 year
@@ -46,7 +48,7 @@ SECURE_PROXY_SSL_HEADER: tuple[str, str] | None = ("HTTP_X_FORWARDED_PROTO", "ht
 
 DATABASES = {
     "default": dj_database_url.config(  # noqa: F405
-        default=os.environ["DJANGO_DATABASE_URL"],
+        default=os.environ["DATABASE_URL"],
         conn_max_age=600,
         conn_health_checks=True,
         ssl_require=True,
@@ -54,7 +56,7 @@ DATABASES = {
 }
 
 # Email
-email_config = dj_email_url.config()  # noqa: F405
+email_config = dj_email_url.config(env="DJANGO_EMAIL_URL")
 EMAIL_FILE_PATH = email_config["EMAIL_FILE_PATH"]
 EMAIL_HOST_USER = email_config["EMAIL_HOST_USER"]
 EMAIL_HOST_PASSWORD = email_config["EMAIL_HOST_PASSWORD"]
@@ -74,8 +76,8 @@ sentry_sdk.init(
     # If a "dsn" is not explicitly passed, sentry_sdk will attempt to find the DSN in
     # the SENTRY_DSN environment variable; however, by pulling it from an explicit
     # setting, it can be overridden by downstream project settings.
-    # dsn=settings.SENTRY_DSN,
-    # environment=settings.SENTRY_ENVIRONMENT,
+    dsn=os.environ["DJANGO_SENTRY_DSN"],
+    environment=os.environ["DJANGO_SENTRY_ENVIRONMENT"],
     # release=settings.SENTRY_RELEASE,
     integrations=[
         LoggingIntegration(level=logging.INFO, event_level=logging.WARNING),
@@ -126,19 +128,19 @@ AWS_S3_FILE_BUFFER_SIZE = 50 * 1024 * 1024  # 50MB
 
 SENTRY_TRACES_SAMPLE_RATE = 0.01  # sample 1% of requests for performance monitoring
 
-ZIP_DOWNLOAD_SERVICE_URL = os.environ["ZIP_DOWNLOAD_SERVICE_URL"]
-ZIP_DOWNLOAD_BASIC_AUTH_TOKEN = os.environ["ZIP_DOWNLOAD_BASIC_AUTH_TOKEN"]
+ZIP_DOWNLOAD_SERVICE_URL = os.environ["DJANGO_ZIP_DOWNLOAD_SERVICE_URL"]
+ZIP_DOWNLOAD_BASIC_AUTH_TOKEN = os.environ["DJANGO_ZIP_DOWNLOAD_BASIC_AUTH_TOKEN"]
 ZIP_DOWNLOAD_WILDCARD_URLS = True
 
 
-STORAGES["default"]["BACKEND"] = "isic.core.storages.s3.CacheableCloudFrontStorage"  # noqa: F405
+STORAGES["default"] = {"BACKEND": "isic.core.storages.s3.CacheableCloudFrontStorage"}  # noqa: F405
 
 
 # This exact environ_name is important, as direct use of Boto will also use it
 AWS_S3_REGION_NAME = os.environ["AWS_DEFAULT_REGION"]
 AWS_S3_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
 AWS_S3_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
-AWS_STORAGE_BUCKET_NAME = os.environ["STORAGE_BUCKET_NAME"]
+AWS_STORAGE_BUCKET_NAME = os.environ["DJANGO_STORAGE_BUCKET_NAME"]
 
 # It's critical to use the v4 signature;
 # it isn't the upstream default only for backwards compatability reasons.
@@ -155,4 +157,12 @@ AWS_S3_CLIENT_CONFIG = Config(
     signature_version=AWS_S3_SIGNATURE_VERSION,
 )
 
-ISIC_GOOGLE_API_JSON_KEY = os.environ["ISIC_GOOGLE_API_JSON_KEY"]
+ISIC_GOOGLE_API_JSON_KEY = os.environ.get("ISIC_GOOGLE_API_JSON_KEY")
+
+ISIC_NOINDEX = string_to_bool(os.environ["DJANGO_ISIC_NOINDEX"])
+ISIC_OAUTH_ALLOW_REGEX_REDIRECT_URIS = string_to_bool(
+    os.environ["DJANGO_ISIC_OAUTH_ALLOW_REGEX_REDIRECT_URIS"]
+)
+ISIC_SANDBOX_BANNER = string_to_bool(os.environ["DJANGO_ISIC_SANDBOX_BANNER"])
+
+CDN_LOG_BUCKET = os.environ["DJANGO_CDN_LOG_BUCKET"]
