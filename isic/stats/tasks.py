@@ -16,12 +16,13 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Max
 from django.db.utils import IntegrityError
 from django.utils import timezone
 import pycountry
 
 from isic.core.models.image import Image
-from isic.stats.models import GaMetrics, ImageDownload
+from isic.stats.models import GaMetrics, ImageDownload, LastEnqueuedS3Log
 
 logger = get_task_logger(__name__)
 
@@ -88,6 +89,7 @@ def _country_from_iso_code(iso_code: str) -> dict:
 @shared_task(
     soft_time_limit=60,
     time_limit=120,
+    queue="low-priority",
 )
 def collect_google_analytics_metrics_task():
     if not settings.ISIC_GOOGLE_API_JSON_KEY:
@@ -119,8 +121,12 @@ def collect_google_analytics_metrics_task():
     )
 
 
-def _cdn_log_objects(s3) -> Iterable[dict]:
-    pages = s3.get_paginator("list_objects_v2").paginate(Bucket=settings.CDN_LOG_BUCKET)
+def _cdn_log_objects(s3, after: str | None) -> Iterable[dict]:
+    kwargs = {}
+    if after:
+        kwargs["StartAfter"] = after
+
+    pages = s3.get_paginator("list_objects_v2").paginate(Bucket=settings.CDN_LOG_BUCKET, **kwargs)
     for page in pages:
         yield from page.get("Contents", [])
 
@@ -155,18 +161,30 @@ def _cdn_access_log_records(log_file_bytes: BytesIO) -> Iterable[dict]:
             }
 
 
-@shared_task(soft_time_limit=60, time_limit=120)
+@shared_task(queue="low-priority")
 def collect_image_download_records_task():
+    """
+    Collect CDN logs to record image downloads.
+
+    This task is idempotent and can be run multiple times without issue. It tracks the
+    last log file that was enqueued. Theoretically it can fail to process a log file and
+    would have to be remedied by truncating the LastEnqueuedS3Log table and re-running the task.
+    """
     s3 = _s3_client()
+    # returns None in the case of an empty table
+    after = LastEnqueuedS3Log.objects.aggregate(last_log=Max("name"))["last_log"]
 
-    # gather all request log entries and group them by path
-    for s3_log_object in _cdn_log_objects(s3):
-        # break this out into subtasks as a single log file can consume a large amount of ram.
+    # gather all request log entries and enqueue them to be processed
+    for s3_log_object in _cdn_log_objects(s3, after):
         process_s3_log_file_task.delay_on_commit(s3_log_object["Key"])
+        LastEnqueuedS3Log.objects.update_or_create(defaults={"name": s3_log_object["Key"]})
 
 
-@shared_task(soft_time_limit=600, time_limit=630, max_retries=5, retry_backoff=True)
+@shared_task(
+    soft_time_limit=600, time_limit=630, max_retries=5, retry_backoff=True, queue="low-priority"
+)
 def process_s3_log_file_task(s3_log_object_key: str):
+    logger.info("Processing s3 log file %s", s3_log_object_key)
     s3 = _s3_client()
 
     try:
