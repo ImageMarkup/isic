@@ -113,6 +113,9 @@ setup(
             "pytest-factoryboy",
             "pytest-lazy-fixtures",
             "pytest-mock",
+            # Used in an adhoc manner during development
+            "pytest-random-order",
+            "pytest-repeat",
         ],
     },
 )
