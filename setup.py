@@ -67,7 +67,7 @@ setup(
         "gdal",
         "google-analytics-data",
         "hashids",
-        "isic-metadata>=2.1.0",
+        "isic-metadata>=3.0.0",
         "jaro-winkler",
         "oauth2client",
         "opensearch-py",

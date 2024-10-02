@@ -112,6 +112,10 @@ class Image(CreationSortedTimeStampedModel):
             if getattr(self.accession, field.csv_field_name) is not None:
                 image_metadata[field.csv_field_name] = getattr(self.accession, field.csv_field_name)
 
+        if "legacy_dx" in image_metadata:
+            image_metadata["diagnosis"] = image_metadata["legacy_dx"]
+            del image_metadata["legacy_dx"]
+
         return image_metadata
 
     def to_elasticsearch_document(self, *, body_only=False) -> dict:

@@ -18,7 +18,7 @@ from isic.core.dsl import django_parser, es_parser, parse_query
         ("-mel_thick_mm:*", ~Q(accession__mel_thick_mm__isnull=False)),
         (
             "-diagnosis:* OR diagnosis:foobar",
-            ~Q(accession__diagnosis__isnull=False) | Q(accession__diagnosis="foobar"),
+            ~Q(accession__legacy_dx__isnull=False) | Q(accession__legacy_dx="foobar"),
         ),
         ("age_approx:[50 TO *]", ParseException),
         ("-melanocytic:*", ~Q(accession__melanocytic__isnull=False)),
@@ -29,7 +29,7 @@ from isic.core.dsl import django_parser, es_parser, parse_query
         ),
         (
             "-diagnosis:foo*",
-            ~Q(accession__diagnosis__startswith="foo") | Q(accession__diagnosis__isnull=True),
+            ~Q(accession__legacy_dx__startswith="foo") | Q(accession__legacy_dx__isnull=True),
         ),
         (
             "-age_approx:[50 TO 70]",
@@ -38,13 +38,13 @@ from isic.core.dsl import django_parser, es_parser, parse_query
         ),
         (
             "-diagnosis:foobar OR (diagnosis:foobaz AND (-diagnosis:foo* OR age_approx:50))",
-            (~Q(accession__diagnosis="foobar") | Q(accession__diagnosis__isnull=True))
+            (~Q(accession__legacy_dx="foobar") | Q(accession__legacy_dx__isnull=True))
             | (
-                Q(accession__diagnosis="foobaz")
+                Q(accession__legacy_dx="foobaz")
                 & (
                     (
-                        ~Q(accession__diagnosis__startswith="foo")
-                        | Q(accession__diagnosis__isnull=True)
+                        ~Q(accession__legacy_dx__startswith="foo")
+                        | Q(accession__legacy_dx__isnull=True)
                     )
                     | Q(accession__age__approx=50)
                 )
@@ -58,27 +58,27 @@ from isic.core.dsl import django_parser, es_parser, parse_query
         ("rcm_case_id:123*", Q(accession__rcm_case__id__startswith="123")),
         ("rcm_case_id:*123", Q(accession__rcm_case__id__endswith="123")),
         ('copyright_license:"CC-0"', Q(accession__copyright_license="CC-0")),
-        ("diagnosis:foobar", Q(accession__diagnosis="foobar")),
-        ('diagnosis:"foo bar"', Q(accession__diagnosis="foo bar")),
-        ("diagnosis:foo*", Q(accession__diagnosis__startswith="foo")),
-        ("diagnosis:*foo", Q(accession__diagnosis__endswith="foo")),
-        ('diagnosis:"foobar"', Q(accession__diagnosis="foobar")),
-        ('diagnosis:"foo*"', Q(accession__diagnosis__startswith="foo")),
-        ('diagnosis:"*foo"', Q(accession__diagnosis__endswith="foo")),
+        ("diagnosis:foobar", Q(accession__legacy_dx="foobar")),
+        ('diagnosis:"foo bar"', Q(accession__legacy_dx="foo bar")),
+        ("diagnosis:foo*", Q(accession__legacy_dx__startswith="foo")),
+        ("diagnosis:*foo", Q(accession__legacy_dx__endswith="foo")),
+        ('diagnosis:"foobar"', Q(accession__legacy_dx="foobar")),
+        ('diagnosis:"foo*"', Q(accession__legacy_dx__startswith="foo")),
+        ('diagnosis:"*foo"', Q(accession__legacy_dx__endswith="foo")),
         (
             "diagnosis:foobar AND diagnosis:foobaz",
-            Q(accession__diagnosis="foobar") & Q(accession__diagnosis="foobaz"),
+            Q(accession__legacy_dx="foobar") & Q(accession__legacy_dx="foobaz"),
         ),
         (
             "diagnosis:foobar OR diagnosis:foobaz",
-            Q(accession__diagnosis="foobar") | Q(accession__diagnosis="foobaz"),
+            Q(accession__legacy_dx="foobar") | Q(accession__legacy_dx="foobaz"),
         ),
         (
             "diagnosis:foobar OR (diagnosis:foobaz AND (diagnosis:foo* OR age_approx:50))",
-            Q(accession__diagnosis="foobar")
+            Q(accession__legacy_dx="foobar")
             | (
-                Q(accession__diagnosis="foobaz")
-                & (Q(accession__diagnosis__startswith="foo") | Q(accession__age__approx=50))
+                Q(accession__legacy_dx="foobaz")
+                & (Q(accession__legacy_dx__startswith="foo") | Q(accession__age__approx=50))
             ),
         ),
         ("age_approx:50", Q(accession__age__approx=50)),
@@ -96,11 +96,11 @@ from isic.core.dsl import django_parser, es_parser, parse_query
         ),
         (
             "diagnosis:foo AND age_approx:[10 TO 12.5] AND diagnosis:bar AND diagnosis:baz",
-            Q(accession__diagnosis="foo")
+            Q(accession__legacy_dx="foo")
             & Q(accession__age__approx__gte=10)
             & Q(accession__age__approx__lte=12.5)
-            & Q(accession__diagnosis="bar")
-            & Q(accession__diagnosis="baz"),
+            & Q(accession__legacy_dx="bar")
+            & Q(accession__legacy_dx="baz"),
         ),
         (
             "mel_thick_mm:[0 TO 0.5]",
