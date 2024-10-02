@@ -2,6 +2,7 @@ import pytest
 
 from isic.core.models.image import Image
 from isic.core.services import image_metadata_csv, staff_image_metadata_csv
+from isic.ingest.models.accession import Accession
 
 
 @pytest.fixture()
@@ -14,7 +15,7 @@ def image_with_metadata(image):
         {
             "age": 32,
             "benign_malignant": "benign",
-            "diagnosis": "nevus",
+            "diagnosis": "Nevus",
             "patient_id": "supersecretpatientid",
             "lesion_id": "supersecretlesionid",
             "rcm_case_id": "supersecretrcmcaseid",
@@ -23,6 +24,10 @@ def image_with_metadata(image):
         },
         ignore_image_check=True,
     )
+
+    # TODO: transition code that should be removed when iddx/legacy_dx stuff is removed
+    Accession.objects.filter(id=image.accession.id).update(legacy_dx="nevus")
+
     return image
 
 
@@ -36,7 +41,12 @@ def test_image_metadata_csv_rows_correct(image_with_metadata):
         "attribution": image_with_metadata.accession.cohort.attribution,
         "benign_malignant": image_with_metadata.accession.benign_malignant,
         "copyright_license": image_with_metadata.accession.copyright_license,
-        "diagnosis": image_with_metadata.accession.diagnosis,
+        "diagnosis": "nevus",
+        "diagnosis_1": "Benign",
+        "diagnosis_2": "Benign melanocytic proliferations",
+        "diagnosis_3": "Nevus",
+        "diagnosis_4": None,
+        "diagnosis_5": None,
         "image_type": image_with_metadata.accession.image_type,
         "isic_id": image_with_metadata.isic_id,
         "lesion_id": image_with_metadata.accession.lesion_id,
@@ -58,7 +68,12 @@ def test_staff_image_metadata_csv_rows_correct(image_with_metadata):
         "cohort_id": image_with_metadata.accession.cohort_id,
         "cohort": image_with_metadata.accession.cohort.name,
         "copyright_license": image_with_metadata.accession.copyright_license,
-        "diagnosis": image_with_metadata.accession.diagnosis,
+        "diagnosis": "nevus",
+        "diagnosis_1": "Benign",
+        "diagnosis_2": "Benign melanocytic proliferations",
+        "diagnosis_3": "Nevus",
+        "diagnosis_4": None,
+        "diagnosis_5": None,
         "image_type": image_with_metadata.accession.image_type,
         "isic_id": image_with_metadata.isic_id,
         "original_filename": image_with_metadata.accession.original_blob_name,

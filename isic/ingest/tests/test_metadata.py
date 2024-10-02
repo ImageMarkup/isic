@@ -31,7 +31,7 @@ def csv_stream_diagnosis_sex() -> BinaryIO:
     file_stream = StreamWriter(io.BytesIO())
     writer = csv.DictWriter(file_stream, fieldnames=["filename", "diagnosis", "sex"])
     writer.writeheader()
-    writer.writerow({"filename": "filename.jpg", "diagnosis": "melanoma", "sex": "female"})
+    writer.writerow({"filename": "filename.jpg", "diagnosis": "Melanoma Invasive", "sex": "female"})
     return file_stream
 
 
@@ -46,7 +46,7 @@ def csv_stream_diagnosis_sex_lesion_patient() -> BinaryIO:
     writer.writerow(
         {
             "filename": "filename.jpg",
-            "diagnosis": "melanoma",
+            "diagnosis": "Melanoma Invasive",
             "sex": "female",
             "lesion_id": "lesion1",
             "patient_id": "patient1",
@@ -67,7 +67,7 @@ def csv_stream_diagnosis_sex_disagreeing_lesion_patient() -> BinaryIO:
     writer.writerow(
         {
             "filename": "filename2.jpg",
-            "diagnosis": "nevus",
+            "diagnosis": "Melanoma Invasive",
             "sex": "male",
             "lesion_id": "lesion1",
             "patient_id": "patient2",
@@ -222,6 +222,39 @@ def test_apply_metadata_step2_invalid(
 
 
 @pytest.mark.django_db()
+def test_diagnosis_transition(staff_user, accession, image_factory):
+    # this tests that the original diagnosis is preserved even though we're attempting
+    # to change the hierarchical version.
+    from isic_metadata.diagnosis_hierarchical import DiagnosisEnum
+
+    accession.legacy_dx = "melanoma"
+    accession.save()
+
+    accession.update_metadata(staff_user, {"diagnosis": "Nevus"})
+    assert accession.metadata == {
+        "diagnosis": DiagnosisEnum.benign_benign_melanocytic_proliferations_nevus,
+        "legacy_dx": "melanoma",
+    }
+
+    accession.update_metadata(staff_user, {"diagnosis": "Melanoma Invasive"})
+    assert accession.metadata == {
+        "diagnosis": DiagnosisEnum.malignant_malignant_melanocytic_proliferations_melanoma_melanoma_invasive,  # noqa: E501
+        "legacy_dx": "melanoma",
+    }
+
+    # create image and assert image.metadata doesn't have legacy_dx
+    image = image_factory(accession=accession)
+    assert image.metadata == {
+        "diagnosis": "melanoma",
+        "diagnosis_1": "Malignant",
+        "diagnosis_2": "Malignant melanocytic proliferations (Melanoma)",
+        "diagnosis_3": "Melanoma Invasive",
+        "diagnosis_4": None,
+        "diagnosis_5": None,
+    }
+
+
+@pytest.mark.django_db()
 def test_apply_metadata_step3(
     user,
     staff_client,
@@ -256,7 +289,7 @@ def test_apply_metadata_step3(
 
     render_to_string.reset_mock()
 
-    # test step 3 by trying to make a melanoma benign
+    # test step 3 by trying to make a Melanoma Invasive benign
     benign_metadatafile = metadata_file_factory(
         blob__from_func=lambda: csv_stream_benign, cohort=cohort_with_accession
     )
@@ -402,6 +435,15 @@ def test_accession_update_metadata(user, imageless_accession):
 
 
 @pytest.mark.django_db()
+def test_accession_update_metadata_iddx(user, imageless_accession):
+    imageless_accession.update_metadata(user, {"diagnosis": "Nevus"})
+    assert imageless_accession.metadata == {
+        "diagnosis": "Benign:Benign melanocytic proliferations:Nevus"
+    }
+    assert imageless_accession.metadata_versions.count() == 1
+
+
+@pytest.mark.django_db()
 def test_accession_update_metadata_idempotent(user, imageless_accession):
     imageless_accession.update_metadata(user, {"sex": "male", "foo": "bar", "baz": "qux"})
     imageless_accession.update_metadata(user, {"sex": "male", "foo": "bar", "baz": "qux"})
@@ -426,7 +468,7 @@ def test_accession_remove_unstructured_metadata(user, imageless_accession):
 @pytest.mark.django_db()
 def test_accession_remove_metadata(user, imageless_accession):
     imageless_accession.update_metadata(
-        user, {"diagnosis": "melanoma", "benign_malignant": "malignant"}
+        user, {"diagnosis": "Melanoma Invasive", "benign_malignant": "malignant"}
     )
     imageless_accession.remove_metadata(user, ["diagnosis"])
     assert imageless_accession.metadata == {"benign_malignant": "malignant"}
@@ -436,7 +478,7 @@ def test_accession_remove_metadata(user, imageless_accession):
 @pytest.mark.django_db()
 def test_accession_remove_metadata_idempotent(user, imageless_accession):
     imageless_accession.update_metadata(
-        user, {"diagnosis": "melanoma", "benign_malignant": "malignant"}
+        user, {"diagnosis": "Melanoma Invasive", "benign_malignant": "malignant"}
     )
     imageless_accession.remove_metadata(user, ["diagnosis"])
     imageless_accession.remove_metadata(user, ["diagnosis"])
@@ -456,7 +498,7 @@ def test_accession_remove_unstructured_metadata_idempotent(user, imageless_acces
 @pytest.fixture()
 def unpublished_accepted_accession(accession_factory, user):
     accession = accession_factory()
-    accession.update_metadata(user, {"diagnosis": "melanoma"})
+    accession.update_metadata(user, {"sex": "female"})
     accession_review_update_or_create(
         accession=accession, reviewer=user, reviewed_at=timezone.now(), value=True
     )
@@ -466,9 +508,7 @@ def unpublished_accepted_accession(accession_factory, user):
 @pytest.mark.django_db()
 @pytest.mark.parametrize("reset_review", [True, False])
 def test_update_metadata_resets_checks(user, unpublished_accepted_accession, reset_review):
-    unpublished_accepted_accession.update_metadata(
-        user, {"diagnosis": "basal cell carcinoma"}, reset_review=reset_review
-    )
+    unpublished_accepted_accession.update_metadata(user, {"sex": "male"}, reset_review=reset_review)
     unpublished_accepted_accession.refresh_from_db()
 
     if reset_review:

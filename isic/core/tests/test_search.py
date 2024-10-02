@@ -1,5 +1,5 @@
 from django.urls import reverse
-from isic_metadata.fields import ImageTypeEnum
+from isic_metadata.fields import DiagnosisEnum, ImageTypeEnum
 import pytest
 from pytest_lazy_fixtures import lf
 
@@ -20,8 +20,16 @@ def private_searchable_image(image_factory, _search_index):
 @pytest.fixture()
 def searchable_images(image_factory, _search_index):
     images = [
-        image_factory(public=True, accession__diagnosis="melanoma"),
-        image_factory(public=False, accession__diagnosis="nevus"),
+        image_factory(
+            public=True,
+            accession__diagnosis=DiagnosisEnum.malignant_malignant_melanocytic_proliferations_melanoma_melanoma_invasive,
+            accession__legacy_dx="melanoma",
+        ),
+        image_factory(
+            public=False,
+            accession__diagnosis=DiagnosisEnum.benign_benign_melanocytic_proliferations_nevus_nevus_spitz,
+            accession__legacy_dx="nevus",
+        ),
     ]
     for image in images:
         add_to_search_index(image)

@@ -71,6 +71,7 @@ class AccessionMetadata(models.Model):
     anatom_site_general = models.CharField(max_length=255, null=True, blank=True)
     benign_malignant = models.CharField(max_length=255, null=True, blank=True)
     diagnosis = models.CharField(max_length=255, null=True, blank=True)
+    legacy_dx = models.CharField(max_length=255, null=True, blank=True)
     diagnosis_confirm_type = models.CharField(max_length=255, null=True, blank=True)
     personal_hx_mm = models.BooleanField(null=True, blank=True)
     family_hx_mm = models.BooleanField(null=True, blank=True)
@@ -188,6 +189,22 @@ class ComputedMetadataField:
 
     es_mappings: dict[str, dict]
     es_aggregates: dict
+
+
+def diagnosis_split(diagnosis: str | None) -> dict[str, str | None]:
+    if not diagnosis:
+        return {
+            "diagnosis_1": None,
+            "diagnosis_2": None,
+            "diagnosis_3": None,
+            "diagnosis_4": None,
+            "diagnosis_5": None,
+        }
+
+    parts = diagnosis.split(":")
+    # pad parts out to 5 elements
+    parts += [None] * (5 - len(parts))
+    return {f"diagnosis_{i + 1}": parts[i] for i in range(5)}
 
 
 class AccessionStatus(models.TextChoices):
@@ -381,7 +398,7 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
         ComputedMetadataField(
             "age",
             ["age_approx"],
-            lambda age: None if age is None else {"age_approx": int(round(age / 5.0) * 5)},
+            lambda age: (None if age is None else {"age_approx": int(round(age / 5.0) * 5)}),
             "clinical",
             es_mappings={"age_approx": {"type": "integer"}},
             es_aggregates={
@@ -392,6 +409,32 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
                         "extended_bounds": {"min": 0, "max": 85},
                     }
                 }
+            },
+        ),
+        ComputedMetadataField(
+            "diagnosis",
+            [
+                "diagnosis_1",
+                "diagnosis_2",
+                "diagnosis_3",
+                "diagnosis_4",
+                "diagnosis_5",
+            ],
+            diagnosis_split,
+            "clinical",
+            es_mappings={
+                "diagnosis_1": {"type": "keyword"},
+                "diagnosis_2": {"type": "keyword"},
+                "diagnosis_3": {"type": "keyword"},
+                "diagnosis_4": {"type": "keyword"},
+                "diagnosis_5": {"type": "keyword"},
+            },
+            es_aggregates={
+                "diagnosis_1": {"terms": {"field": "diagnosis_1"}},
+                "diagnosis_2": {"terms": {"field": "diagnosis_2"}},
+                "diagnosis_3": {"terms": {"field": "diagnosis_3"}},
+                "diagnosis_4": {"terms": {"field": "diagnosis_4"}},
+                "diagnosis_5": {"terms": {"field": "diagnosis_5"}},
             },
         ),
     ]
