@@ -4,20 +4,21 @@ from urllib.parse import parse_qs, urlparse
 from django.conf import settings
 import pytest
 
+from isic.conftest import MELANOMA, NEVUS
 from isic.core.models import Image
 
 
 @pytest.fixture()
 def _random_images_with_licenses(image_factory):
     image = image_factory(
-        accession__diagnosis="melanoma",
+        accession__diagnosis=MELANOMA,
         public=True,
     )
     image.accession.copyright_license = "CC-0"
     image.accession.save()
 
     image = image_factory(
-        accession__diagnosis="nevus",
+        accession__diagnosis=NEVUS,
         public=True,
     )
     # TODO: factory boy overriding doesn't work for subfields of accession__cohort
