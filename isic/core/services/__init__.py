@@ -140,10 +140,16 @@ def staff_image_metadata_csv(
                 if computed_output_fields:
                     value.update(computed_output_fields)
 
+            if "legacy_dx" in value:
+                value["diagnosis"] = value["legacy_dx"]
+                del value["legacy_dx"]
+            else:
+                value["diagnosis"] = None
+
             yield value
 
 
-def image_metadata_csv(
+def image_metadata_csv(  # noqa: C901
     *, qs: QuerySet[Image]
 ) -> Generator[list[str] | dict[str, str | bool | float], None, None]:
     """
@@ -160,13 +166,18 @@ def image_metadata_csv(
     counts = accession_qs.aggregate(**{k: Count(k) for k in Accession.metadata_keys()})
     used_metadata_keys = [k for k, v in counts.items() if v > 0]
 
+    if "legacy_dx" in used_metadata_keys:
+        used_metadata_keys.remove("legacy_dx")
+
     for field in Accession.remapped_internal_fields:
         if accession_qs.exclude(**{field.relation_name: None}).exists():
             used_metadata_keys.append(field.csv_field_name)  # noqa: PERF401
 
     for computed_field in Accession.computed_fields:
         if computed_field.input_field_name in used_metadata_keys:
-            used_metadata_keys.remove(computed_field.input_field_name)
+            if computed_field.input_field_name != "diagnosis":
+                used_metadata_keys.remove(computed_field.input_field_name)
+
             used_metadata_keys += computed_field.output_field_names
 
     fieldnames = headers + sorted(used_metadata_keys)
@@ -200,6 +211,10 @@ def image_metadata_csv(
                     )
                     if computed_fields:
                         image.update(computed_fields)
-                    del image[computed_field.input_field_name]
+
+                    if computed_field.input_field_name != "diagnosis":
+                        del image[computed_field.input_field_name]
+                    else:
+                        image["diagnosis"] = image.pop("legacy_dx")
 
             yield {k: v for k, v in image.items() if k in fieldnames}
