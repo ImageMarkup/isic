@@ -21,7 +21,7 @@ from django.db.models.expressions import F
 from django.db.models.fields import Field
 from django.db.models.query_utils import Q
 from girder_utils.files import field_file_to_local_path
-from isic_metadata.fields import ImageTypeEnum
+from isic_metadata.fields import DiagnosisEnum, ImageTypeEnum, LegacyDxEnum
 from isic_metadata.metadata import MetadataRow
 from osgeo import gdal
 import PIL.Image
@@ -371,6 +371,8 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
                 | Q(image_type__isnull=True)
                 | Q(image_type=ImageTypeEnum.rcm_mosaic),
             ),
+            CheckConstraint(name="valid_diagnosis", check=Q(diagnosis__in=DiagnosisEnum)),
+            CheckConstraint(name="valid_legacy_dx", check=Q(legacy_dx__in=LegacyDxEnum)),
         ]
 
         indexes = [
