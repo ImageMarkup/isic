@@ -107,7 +107,7 @@ def add_to_search_index(image: Image) -> None:
 
 
 def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 2_000) -> None:
-    from opensearchpy.helpers import parallel_bulk
+    from opensearchpy.helpers import bulk
 
     # The opensearch logger is very noisy when updating records,
     # set it to warning during this operation.
@@ -119,18 +119,20 @@ def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 2_000) -> No
         # Use a generator for lazy evaluation
         image_documents = (image.to_elasticsearch_document() for image in qs.iterator())
 
-        for success, info in parallel_bulk(
+        # note we can't use parallel_bulk because the cachalot_disabled context manager
+        # is thread local.
+        success, info = bulk(
             client=get_elasticsearch_client(),
             index=settings.ISIC_ELASTICSEARCH_INDEX,
             actions=image_documents,
             # The default chunk_size is 2000, but that may be too many models to fit into memory.
             # Note the default chunk_size matches QuerySet.iterator
             chunk_size=chunk_size,
-            # the thread count should be limited to avoid exhausting the connection pool
-            thread_count=2,
-        ):
-            if not success:
-                logger.error("Failed to insert document into elasticsearch: %s", info)
+            max_retries=3,
+        )
+
+        if not success:
+            logger.error("Failed to insert document into elasticsearch: %s", info)
 
 
 def _prettify_facets(facets: dict[str, Any]) -> dict[str, Any]:
