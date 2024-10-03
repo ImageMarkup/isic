@@ -64,7 +64,7 @@ setup(
         "django-redis",
         "django-storages>1.14.2",
         "django-widget-tweaks",
-        "django>=5.1,<6",
+        "django[argon2]>=5.1,<6",
         "gdal",
         "google-analytics-data",
         "hashids",
