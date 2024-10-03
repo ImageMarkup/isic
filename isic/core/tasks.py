@@ -56,7 +56,7 @@ def share_collection_with_users_task(collection_pk: int, grantor_pk: int, user_p
     autoretry_for=(ConnectionError, TimeoutError),
     retry_backoff=True,
     retry_backoff_max=600,
-    retry_kwargs={"max_retries": 15},
+    retry_kwargs={"max_retries": 3},
 )
 def sync_elasticsearch_index_task():
     bulk_add_to_search_index(Image.objects.with_elasticsearch_properties())
