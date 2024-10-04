@@ -51,12 +51,13 @@ def share_collection_with_users_task(collection_pk: int, grantor_pk: int, user_p
 
 
 @shared_task(
-    soft_time_limit=900,
-    time_limit=910,
+    soft_time_limit=1200,
+    time_limit=1210,
     autoretry_for=(ConnectionError, TimeoutError),
     retry_backoff=True,
     retry_backoff_max=600,
     retry_kwargs={"max_retries": 3},
+    queue="es-indexing",
 )
 def sync_elasticsearch_index_task():
     bulk_add_to_search_index(Image.objects.with_elasticsearch_properties())
