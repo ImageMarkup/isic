@@ -7,6 +7,6 @@ release: ./manage.py migrate --check || ./manage.py migrate
 # https://devcenter.heroku.com/articles/http-routing#http-validation-and-restrictions
 # long request lines are useful for long DSL search queries
 web: gunicorn --timeout 120 --limit-request-line 8192 --bind 0.0.0.0:$PORT isic.wsgi
-worker: REMAP_SIGTERM=SIGQUIT celery --app isic.celery worker --loglevel INFO --without-heartbeat --concurrency 2 -X low-priority
-low_priority_worker: REMAP_SIGTERM=SIGQUIT celery --app isic.celery worker --loglevel INFO --without-heartbeat --concurrency 2 -Q low-priority
+worker: REMAP_SIGTERM=SIGQUIT ./deploy/worker.sh
+low_priority_worker: REMAP_SIGTERM=SIGQUIT ./deploy/low-priority-worker.sh
 beat: REMAP_SIGTERM=SIGQUIT celery --app isic.celery beat --loglevel INFO

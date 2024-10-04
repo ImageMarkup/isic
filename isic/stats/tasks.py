@@ -161,7 +161,7 @@ def _cdn_access_log_records(log_file_bytes: BytesIO) -> Iterable[dict]:
             }
 
 
-@shared_task(queue="low-priority")
+@shared_task(queue="stats-aggregation")
 def collect_image_download_records_task():
     """
     Collect CDN logs to record image downloads.
@@ -181,7 +181,11 @@ def collect_image_download_records_task():
 
 
 @shared_task(
-    soft_time_limit=600, time_limit=630, max_retries=5, retry_backoff=True, queue="low-priority"
+    soft_time_limit=600,
+    time_limit=630,
+    max_retries=5,
+    retry_backoff=True,
+    queue="s3-log-processing",
 )
 def process_s3_log_file_task(s3_log_object_key: str):
     logger.info("Processing s3 log file %s", s3_log_object_key)
