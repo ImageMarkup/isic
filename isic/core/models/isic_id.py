@@ -2,19 +2,29 @@ import secrets
 
 from django.core.validators import RegexValidator
 from django.db import IntegrityError, models
-from tenacity import retry, retry_if_exception_type, stop_after_attempt
 
 from isic.core.constants import ISIC_ID_REGEX
 
 
 class IsicIdManager(models.Manager):
-    @retry(
-        reraise=True,
-        retry=retry_if_exception_type(IntegrityError),
-        stop=stop_after_attempt(10),
-    )
     def create_random(self):
-        return self.create(id=f"ISIC_{secrets.randbelow(9999999):07}")
+        """
+        Create a random unused ISIC ID.
+
+        Note that this is prone to race conditions. The actual creation should be wrapped
+        in a call to lock_table_for_writes(IsicId).
+        """
+        obj = None
+        for _ in range(10):
+            isic_id = f"ISIC_{secrets.randbelow(9999999):07}"
+            if not self.filter(pk=isic_id).exists():
+                obj = self.create(pk=isic_id)
+                break
+
+        if obj is None:
+            raise IntegrityError("Failed to create a unique ISIC ID")
+
+        return obj
 
 
 class IsicId(models.Model):
