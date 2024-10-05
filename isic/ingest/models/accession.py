@@ -385,6 +385,36 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
             # metadata selection does WHERE original_blob_name IN (...) queries
             models.Index(fields=["original_blob_name"]),
             models.Index(fields=["girder_id"]),
+            # metadata fields
+            models.Index(fields=["fitzpatrick_skin_type"]),
+            models.Index(
+                name="accession_anatom_site_general",
+                fields=["anatom_site_general"],
+                condition=Q(
+                    anatom_site_general__in=["palms/soles", "lateral torso", "oral/genital"]
+                ),
+            ),
+            models.Index(
+                name="accession_benign_malignant",
+                fields=["benign_malignant"],
+                condition=~Q(benign_malignant="benign"),
+            ),
+            models.Index(
+                name="accession_diagnosis",
+                fields=["diagnosis"],
+                condition=~Q(diagnosis__in=[None, "", "Benign"]),
+            ),
+            models.Index(fields=["legacy_dx"]),
+            models.Index(fields=["mel_class"]),
+            models.Index(fields=["mel_mitotic_index"]),
+            models.Index(fields=["mel_type"]),
+            models.Index(fields=["mel_ulcer"]),
+            models.Index(fields=["nevus_type"]),
+            models.Index(
+                name="accession_image_type",
+                fields=["image_type"],
+                condition=~Q(image_type__in=["TBP tile: close-up", "dermoscopic"]),
+            ),
         ]
 
     def __str__(self) -> str:
