@@ -15,10 +15,11 @@ from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models, transaction
-from django.db.models import Transform
+from django.db.models import FloatField, IntegerField, Transform
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.expressions import F
 from django.db.models.fields import Field
+from django.db.models.functions import Cast, Round
 from django.db.models.query_utils import Q
 from girder_utils.files import field_file_to_local_path
 from isic_metadata.fields import DiagnosisEnum, ImageTypeEnum, LegacyDxEnum
@@ -53,7 +54,10 @@ class Approx(Transform):
 
     def as_sql(self, compiler, connection):
         lhs, params = compiler.compile(self.lhs)
-        return f"ROUND(CAST({lhs} as float) / 5.0) * 5", params
+        return (
+            f"((ROUND(((({lhs})::double precision / 5.0))::numeric(1000, 15), 0) * 5))::integer",
+            params,
+        )
 
 
 Field.register_lookup(Approx)
@@ -386,6 +390,15 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
             models.Index(fields=["original_blob_name"]),
             models.Index(fields=["girder_id"]),
             # metadata fields
+            # use a functional index for the rounded age so age__approx can take
+            # advantage of it.
+            models.Index(
+                Cast(
+                    Round(Cast("age", output_field=FloatField()) / 5.0) * 5,
+                    output_field=IntegerField(),
+                ),
+                name="accession_rounded_age",
+            ),
             models.Index(fields=["fitzpatrick_skin_type"]),
             models.Index(
                 name="accession_anatom_site_general",
