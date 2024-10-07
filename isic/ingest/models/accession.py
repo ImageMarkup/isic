@@ -11,6 +11,7 @@ from uuid import uuid4
 
 from django.contrib.auth.models import User
 from django.contrib.postgres.constraints import ExclusionConstraint
+from django.contrib.postgres.indexes import GinIndex, OpClass
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -416,6 +417,10 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
                 name="accession_diagnosis",
                 fields=["diagnosis"],
                 condition=~Q(diagnosis__in=[None, "", "Benign"]),
+            ),
+            GinIndex(
+                OpClass("diagnosis", name="gin_trgm_ops"),
+                name="accession_diagnosis_gin",
             ),
             models.Index(fields=["legacy_dx"]),
             models.Index(fields=["mel_class"]),
