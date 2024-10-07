@@ -12,7 +12,10 @@ from isic.ingest.models.metadata_file import MetadataFile
 from isic.ingest.services.accession.review import accession_review_update_or_create
 from isic.ingest.tasks import update_metadata_task
 from isic.ingest.tests.csv_streams import StreamWriter
-from isic.ingest.utils.metadata import validate_csv_format_and_filenames
+from isic.ingest.utils.metadata import (
+    validate_csv_format_and_filenames,
+    validate_internal_consistency,
+)
 from isic.ingest.views.metadata import ApplyMetadataContext
 
 
@@ -135,6 +138,21 @@ def metadatafile_duplicate_filenames(cohort, metadata_file_factory, csv_stream_d
     return metadata_file_factory(
         blob__from_func=lambda: csv_stream_duplicate_filenames, cohort=cohort
     )
+
+
+@pytest.mark.django_db()
+def test_valid_batch_invalid_row():
+    bad_batch = [
+        {
+            "image_type": "dermoscopy",  # error, should be 'dermoscopic'
+            "dermoscopic_type": "contact polarized",
+            # a field like patient_id is necessary to trigger batch checks
+            "patient_id": "12345",
+        }
+    ]
+    errors, batch_errors = validate_internal_consistency(bad_batch)
+    assert errors, errors
+    assert not batch_errors, batch_errors
 
 
 @pytest.mark.django_db()
