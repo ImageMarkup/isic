@@ -71,10 +71,11 @@ CELERY_BEAT_SCHEDULE = {
 
 # Install local apps first, to ensure any overridden resources are found first
 INSTALLED_APPS = [
+    # auth_style needs to come first to ensure it can override templates
+    "auth_style",
     "allauth.account",
     "allauth.socialaccount",
     "allauth",
-    "auth_style",
     "cachalot",
     "corsheaders",
     "django_extensions",
