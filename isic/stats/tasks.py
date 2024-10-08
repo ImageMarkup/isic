@@ -161,7 +161,11 @@ def _cdn_access_log_records(log_file_bytes: BytesIO) -> Iterable[dict]:
             }
 
 
-@shared_task(queue="stats-aggregation")
+@shared_task(
+    queue="stats-aggregation",
+    soft_time_limit=900,
+    time_limit=930,
+)
 def collect_image_download_records_task():
     """
     Collect CDN logs to record image downloads.
