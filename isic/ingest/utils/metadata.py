@@ -22,7 +22,7 @@ class MetadataForm(ModelForm):
 
 
 class Problem(BaseModel):
-    message: str | None = None
+    message: str
     context: list | None = None
     type: str | None = "error"
 
@@ -31,13 +31,11 @@ class Problem(BaseModel):
 ColumnRowErrors = dict[tuple[str, str], list[int]]
 
 
-def validate_csv_format_and_filenames(
-    rows: Iterable[dict[str, Any]], cohort: Cohort
-) -> list[Problem]:
+def validate_csv_format_and_filenames(rows: csv.DictReader, cohort: Cohort) -> list[Problem]:
     problems = []
     filenames = Counter()
 
-    if "filename" not in rows.fieldnames:
+    if not rows.fieldnames or "filename" not in rows.fieldnames:
         problems.append(Problem(message="Unable to find a filename column in CSV."))
         return problems
 

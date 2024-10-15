@@ -1,5 +1,7 @@
+from collections.abc import Generator
 import csv
 from datetime import timedelta
+from typing import Any
 
 from cachalot.api import cachalot_disabled
 from django.contrib.auth.models import User
@@ -225,7 +227,7 @@ class StudyPermissions:
     def view_study_results_list(
         user_obj: User, qs: QuerySet[Study] | None = None
     ) -> QuerySet[Study]:
-        qs: QuerySet[Study] = qs if qs is not None else Study._default_manager.all()
+        qs = qs if qs is not None else Study.objects.all()
 
         # There's duplication of this check in study_detail.html
         if user_obj.is_staff:
@@ -242,7 +244,7 @@ class StudyPermissions:
 
     @staticmethod
     def view_study_list(user_obj: User, qs: QuerySet[Study] | None = None) -> QuerySet[Study]:
-        qs: QuerySet[Study] = qs if qs is not None else Study._default_manager.all()
+        qs = qs if qs is not None else Study.objects.all()
 
         if user_obj.is_staff:
             return qs
@@ -260,7 +262,7 @@ class StudyPermissions:
 
     @staticmethod
     def edit_study_list(user_obj: User, qs: QuerySet[Study] | None = None) -> QuerySet[Study]:
-        qs: QuerySet[Study] = qs if qs is not None else Study._default_manager.all()
+        qs = qs if qs is not None else Study.objects.all()
 
         if user_obj.is_staff:
             return qs
@@ -372,7 +374,7 @@ class Annotation(TimeStampedModel):
 
 
 class ResponseQuerySet(models.QuerySet):
-    def for_display(self) -> list:
+    def for_display(self) -> Generator[dict[str, Any], None, None]:
         with cachalot_disabled():
             for response in (
                 self.annotate(

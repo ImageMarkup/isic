@@ -53,7 +53,7 @@ IMAGE_COG_THRESHOLD: int = 100_000_000
 class Approx(Transform):
     lookup_name = "approx"
 
-    def as_sql(self, compiler, connection):
+    def as_sql(self, compiler, connection):  # type: ignore[override]
         lhs, params = compiler.compile(self.lhs)
         return (
             f"((ROUND(((({lhs})::double precision / 5.0))::numeric(1000, 15), 0) * 5))::integer",
@@ -163,7 +163,7 @@ class RemappedField:
     csv_field_name: str
     relation_name: str
     internal_id_name: str
-    model: models.Model
+    model: type[models.Model]
 
     def internal_value(self, obj: models.Model) -> str:
         return getattr(getattr(obj, self.relation_name), self.internal_id_name)
@@ -208,7 +208,7 @@ def diagnosis_split(diagnosis: str | None) -> dict[str, str | None]:
 
     parts = diagnosis.split(":")
     # pad parts out to 5 elements
-    parts += [None] * (5 - len(parts))
+    parts += [None] * (5 - len(parts))  # type: ignore[list-item]
     return {f"diagnosis_{i + 1}": parts[i] for i in range(5)}
 
 
@@ -230,7 +230,7 @@ class AccessionBlob:
     is_cog: bool
 
 
-class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
+class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ignore[django-manager-missing]
     # the creator is either inherited from the zip creator, or directly attached in the
     # case of a single shot upload.
     creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="accessions")
@@ -702,12 +702,12 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
             img = self._cog_thumbnail()
         else:
             with self.blob.open("rb") as blob_stream:
-                img: PIL.Image.Image = PIL.Image.open(blob_stream)
+                img = PIL.Image.open(blob_stream)
                 # Load the image so the stream can be closed
                 img.load()
 
         # LANCZOS provides the best anti-aliasing
-        img.thumbnail((256, 256), resample=PIL.Image.LANCZOS)
+        img.thumbnail((256, 256), resample=PIL.Image.LANCZOS)  # type: ignore[attr-defined]
 
         with io.BytesIO() as thumbnail_stream:
             # 75 quality uses ~55% as much space as 90 quality, with only a very slight drop in
@@ -788,7 +788,7 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
                     or field.internal_value(self) != parsed_field
                 ):
                     mapped = True
-                    value, _ = field.model.objects.get_or_create(
+                    value, _ = field.model.objects.get_or_create(  # type: ignore[attr-defined]
                         cohort=self.cohort, **{field.internal_id_name: parsed_field}
                     )
                     setattr(self, field.relation_name, value)

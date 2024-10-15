@@ -1,3 +1,4 @@
+from datetime import timedelta
 import logging
 
 from django.urls import reverse
@@ -23,7 +24,7 @@ def oauth_token_factory(oauth_app):
     def f(user):
         return get_access_token_model().objects.create(
             user=user,
-            expires=timezone.now() + timezone.timedelta(seconds=300),
+            expires=timezone.now() + timedelta(seconds=300),
             token="some-token",
             application=oauth_app,
         )

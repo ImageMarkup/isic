@@ -21,11 +21,22 @@ from isic.ingest.models import Accession
 from .isic_id import IsicId
 
 
-class ImageQuerySet(models.QuerySet):
+class ImageQuerySet(models.QuerySet["Image"]):
+    def public(self):
+        return self.filter(public=True)
+
+    def private(self):
+        return self.filter(public=False)
+
     def from_search_query(self, query: str):
         if query == "":
             return self
         return self.filter(parse_query(django_parser, query) or Q())
+
+
+class ImageManager(models.Manager["Image"]):
+    def get_queryset(self) -> ImageQuerySet:
+        return ImageQuerySet(self.model, using=self._db)
 
     def with_elasticsearch_properties(self):
         return self.select_related("accession__cohort").annotate(
@@ -67,9 +78,9 @@ class Image(CreationSortedTimeStampedModel):
     # index is used because public is filtered in every permissions check
     public = models.BooleanField(default=False, db_index=True)
 
-    shares = models.ManyToManyField(User, through="ImageShare", through_fields=["image", "grantee"])
+    shares = models.ManyToManyField(User, through="ImageShare", through_fields=("image", "grantee"))
 
-    objects = ImageQuerySet.as_manager()
+    objects = ImageManager()
 
     def __str__(self):
         return self.isic_id
@@ -99,18 +110,22 @@ class Image(CreationSortedTimeStampedModel):
         """
         image_metadata = deepcopy(self.accession.metadata)
 
-        for field in Accession.computed_fields:
-            if field.input_field_name in image_metadata:
-                computed_output_fields = field.transformer(image_metadata[field.input_field_name])
+        for computed_field in Accession.computed_fields:
+            if computed_field.input_field_name in image_metadata:
+                computed_output_fields = computed_field.transformer(
+                    image_metadata[computed_field.input_field_name]
+                )
 
                 if computed_output_fields:
                     image_metadata.update(computed_output_fields)
 
-                del image_metadata[field.input_field_name]
+                del image_metadata[computed_field.input_field_name]
 
-        for field in Accession.remapped_internal_fields:
-            if getattr(self.accession, field.csv_field_name) is not None:
-                image_metadata[field.csv_field_name] = getattr(self.accession, field.csv_field_name)
+        for remapped_field in Accession.remapped_internal_fields:
+            if getattr(self.accession, remapped_field.csv_field_name) is not None:
+                image_metadata[remapped_field.csv_field_name] = getattr(
+                    self.accession, remapped_field.csv_field_name
+                )
 
         if "legacy_dx" in image_metadata:
             image_metadata["diagnosis"] = image_metadata["legacy_dx"]

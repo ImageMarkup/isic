@@ -77,6 +77,7 @@ class MergeCohortForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
+        cleaned_data = cleaned_data if cleaned_data is not None else {}
         cohort = cleaned_data.get("cohort")
         cohort_to_merge = cleaned_data.get("cohort_to_merge")
 
@@ -102,6 +103,7 @@ class PublishCohortForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
+        assert cleaned_data  # noqa: S101
 
         # note that this logic is duplicated in cohort_publish_initialize, this is just
         # added for easier form validation.

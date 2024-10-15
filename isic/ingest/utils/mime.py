@@ -22,7 +22,7 @@ def guess_mime_type(content: IO[bytes], source_filename: str | None = None) -> s
     with tempfile.SpooledTemporaryFile() as file_stream:
         # Copy blob_stream into a SpooledTemporaryFile so it can be used by magic,
         # which does not accept a file-like object
-        shutil.copyfileobj(content, file_stream)
+        shutil.copyfileobj(content, file_stream)  # type: ignore[misc]
         file_stream.seek(0)
 
         # Calling .fileno() forces the file to be flushed to disk

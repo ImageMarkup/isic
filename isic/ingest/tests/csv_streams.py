@@ -2,7 +2,6 @@ import codecs
 import csv
 import io
 import pathlib
-from typing import BinaryIO
 
 data_dir = pathlib.Path(__file__).parent / "data"
 
@@ -11,7 +10,7 @@ data_dir = pathlib.Path(__file__).parent / "data"
 StreamWriter = codecs.getwriter("utf-8")
 
 
-def csv_stream_valid() -> BinaryIO:
+def csv_stream_valid() -> codecs.StreamWriter:
     file_stream = StreamWriter(io.BytesIO())
     writer = csv.DictWriter(file_stream, fieldnames=["filename", "benign_malignant", "foo"])
     writer.writeheader()
@@ -19,7 +18,7 @@ def csv_stream_valid() -> BinaryIO:
     return file_stream
 
 
-def csv_stream_without_filename_column() -> BinaryIO:
+def csv_stream_without_filename_column() -> codecs.StreamWriter:
     file_stream = StreamWriter(io.BytesIO())
     writer = csv.DictWriter(file_stream, fieldnames=["foo"])
     writer.writeheader()
@@ -27,14 +26,14 @@ def csv_stream_without_filename_column() -> BinaryIO:
     return file_stream
 
 
-def csv_stream_bom_filename_column() -> BinaryIO:
+def csv_stream_bom_filename_column() -> codecs.StreamWriter:
     file_stream = StreamWriter(io.BytesIO())
     writer = csv.DictWriter(file_stream, fieldnames=["\ufefffilename"])
     writer.writeheader()
     return file_stream
 
 
-def csv_stream_duplicate_filenames() -> BinaryIO:
+def csv_stream_duplicate_filenames() -> codecs.StreamWriter:
     file_stream = StreamWriter(io.BytesIO())
     writer = csv.DictWriter(file_stream, fieldnames=["filename"])
     writer.writeheader()

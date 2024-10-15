@@ -41,6 +41,7 @@ def test_create_study(
         )
     assert Study.objects.count() == 1
     study = Study.objects.first()
+    assert study
     assert study.name == "foobar"
     assert study.description == "-"
     assert study.collection == collection
