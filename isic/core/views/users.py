@@ -23,7 +23,7 @@ def user_detail(request, pk):
     user = get_object_or_404(User.objects.select_related("profile"), pk=pk)
     ctx = {
         "user": user,
-        "email_addresses": user.emailaddress_set.order_by("-primary", "-verified", "email"),
+        "email_addresses": user.emailaddress_set.order_by("-primary", "-verified", "email"),  # type: ignore[attr-defined]
     }
 
     ctx["sections"] = {

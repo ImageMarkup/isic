@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="accession",
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     ("image_type__isnull", True),
                     models.Q(
                         (

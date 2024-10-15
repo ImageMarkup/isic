@@ -1,4 +1,5 @@
 import secrets
+from typing import TypedDict
 
 from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates import BoolAnd
@@ -24,7 +25,16 @@ def _default_id():
             return lesion_id
 
 
-class LesionQuerySet(models.QuerySet):
+class LesionInfo(TypedDict):
+    index_image_id: str
+
+    images_count: int
+    outcome_diagnosis: str
+    outcome_benign_malignant: str
+    longitudinally_monitored: bool
+
+
+class LesionQuerySet(models.Manager["Lesion"]):
     def has_images(self):
         from isic.ingest.models import Accession
 
@@ -93,14 +103,14 @@ class Lesion(models.Model):
     cohort = models.ForeignKey("Cohort", on_delete=models.CASCADE, related_name="lesions")
     private_lesion_id = models.CharField(max_length=255)
 
-    objects = LesionQuerySet.as_manager()
+    objects = LesionQuerySet()
 
     class Meta:
         constraints = [
             UniqueConstraint(fields=["private_lesion_id", "cohort"], name="unique_lesion"),
             CheckConstraint(
                 name="lesion_id_valid_format",
-                check=Q(id__regex=f"^{LESION_ID_REGEX}$"),
+                condition=Q(id__regex=f"^{LESION_ID_REGEX}$"),
             ),
         ]
 
@@ -151,4 +161,4 @@ class LesionPermissions:
         return LesionPermissions.view_lesion_list(user_obj).contains(obj)
 
 
-Lesion.perms_class = LesionPermissions
+Lesion.perms_class = LesionPermissions  # type: ignore[attr-defined]

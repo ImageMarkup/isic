@@ -10,6 +10,7 @@ from cachalot.api import cachalot_disabled
 from django.conf import settings
 from django.contrib.sites.models import Site
 from django.core.signing import BadSignature, TimestampSigner
+from django.db import connection, transaction
 from django.http.request import HttpRequest
 from django.http.response import Http404, HttpResponse
 from django.shortcuts import render
@@ -23,6 +24,7 @@ import rsa
 from isic.core.models import CopyrightLicense, Image
 from isic.core.serializers import SearchQueryIn
 from isic.core.services import image_metadata_csv
+from isic.types import NinjaAuthHttpRequest
 
 logger = logging.getLogger(__name__)
 zip_router = Router()
@@ -32,7 +34,7 @@ zip_router = Router()
 def get_attributions(attributions: Iterable[str]) -> list[str]:
     counter = Counter(attributions)
     # sort by the number of images descending, then the name of the institution ascending
-    attributions = sorted(counter.most_common(), key=lambda v: (-v[1], v[0]))
+    attributions = sorted(counter.most_common(), key=lambda v: (-v[1], v[0]))  # type: ignore  # noqa: PGH003
     # push anonymous attributions to the end
     attributions = sorted(attributions, key=lambda v: 1 if v[0] == "Anonymous" else 0)
     return [x[0] for x in attributions]
@@ -64,7 +66,7 @@ class ZipDownloadTokenAuth(APIKeyQuery):
         return token_dict
 
 
-def zip_api_auth(request: HttpRequest) -> bool:
+def zip_api_auth(request: HttpRequest):
     """
     Protects the zip listing endpoint with basic auth.
 
@@ -88,7 +90,7 @@ def create_zip_download_url(request: HttpRequest, payload: SearchQueryIn):
     return f"{settings.ZIP_DOWNLOAD_SERVICE_URL}/download?zsid={token}"
 
 
-create_zip_download_url.csrf_exempt = True
+create_zip_download_url.csrf_exempt = True  # type: ignore[attr-defined]
 
 
 def _cloudfront_signer(message: bytes) -> bytes:
@@ -101,15 +103,26 @@ def _cloudfront_signer(message: bytes) -> bytes:
 
 
 @zip_router.get("/file-listing/", include_in_schema=False, auth=zip_api_auth)
+@transaction.atomic
 def zip_file_listing(
-    request: HttpRequest,
+    request: NinjaAuthHttpRequest,
 ):
+    # use repeatable read to ensure consistent results
+    cursor = connection.cursor()
+    cursor.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+
     token = request.auth["token"]
     user, search = SearchQueryIn.from_token_representation(request.auth)
+
     # ordering isn't necessary for the zipstreamer and can slow down the query considerably
     qs = search.to_queryset(user, Image.objects.select_related("accession")).order_by()
     file_count = qs.count()
-    suggested_filename = f"{qs.first().isic_id}.zip" if file_count == 1 else "ISIC-images.zip"
+    if file_count == 1:
+        only_image = qs.first()
+        assert isinstance(only_image, Image)  # noqa: S101
+        suggested_filename = f"{only_image.isic_id}.zip"
+    else:
+        suggested_filename = "ISIC-images.zip"
 
     if settings.ZIP_DOWNLOAD_WILDCARD_URLS:
         # this is a performance optimization. repeated signing of individual urls
@@ -178,7 +191,7 @@ def zip_file_listing(
 
 
 @zip_router.get("/metadata-file/", include_in_schema=False, auth=ZipDownloadTokenAuth())
-def zip_file_metadata_file(request: HttpRequest):
+def zip_file_metadata_file(request: NinjaAuthHttpRequest):
     user, search = SearchQueryIn.from_token_representation(request.auth)
     qs = search.to_queryset(user, Image.objects.select_related("accession__cohort").distinct())
     response = HttpResponse(content_type="text/csv")
@@ -188,13 +201,14 @@ def zip_file_metadata_file(request: HttpRequest):
     writer.writeheader()
 
     for metadata_row in metadata_file:
+        assert isinstance(metadata_row, dict)  # noqa: S101
         writer.writerow(metadata_row)
 
     return response
 
 
 @zip_router.get("/attribution-file/", include_in_schema=False, auth=ZipDownloadTokenAuth())
-def zip_file_attribution_file(request: HttpRequest):
+def zip_file_attribution_file(request: NinjaAuthHttpRequest):
     user, search = SearchQueryIn.from_token_representation(request.auth)
     qs = search.to_queryset(user, Image.objects.select_related("accession__cohort").distinct())
     attributions = get_attributions(qs.values_list("accession__cohort__attribution", flat=True))

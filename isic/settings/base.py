@@ -1,10 +1,14 @@
 from datetime import timedelta
 import os
 from pathlib import Path
+from typing import Any
 
 from celery.schedules import crontab
+import django_stubs_ext
 
 from .upstream_base import *  # noqa: F403
+
+django_stubs_ext.monkeypatch()
 
 
 def _oauth2_pkce_required(client_id):
@@ -135,7 +139,7 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 WSGI_APPLICATION = "isic.wsgi.application"
 ROOT_URLCONF = "isic.urls"
 
-TEMPLATES[0]["OPTIONS"]["context_processors"] += [  # noqa: F405
+TEMPLATES[0]["OPTIONS"]["context_processors"] += [  # type: ignore[index]  # noqa: F405
     "isic.core.context_processors.noindex",
     "isic.core.context_processors.sandbox_banner",
     "isic.core.context_processors.placeholder_images",
@@ -163,8 +167,8 @@ ISIC_PLACEHOLDER_IMAGES = False
 ISIC_DATACITE_API_URL = os.environ.get(
     "DJANGO_ISIC_DATACITE_API_URL", "https://api.test.datacite.org"
 )
-ISIC_DATACITE_USERNAME = None
-ISIC_DATACITE_PASSWORD = None
+ISIC_DATACITE_USERNAME: Any = None
+ISIC_DATACITE_PASSWORD: Any = None
 ISIC_GOOGLE_ANALYTICS_PROPERTY_IDS = [
     "377090260",  # ISIC Home
     "360152967",  # ISIC Gallery
@@ -175,6 +179,11 @@ ISIC_GOOGLE_ANALYTICS_PROPERTY_IDS = [
     "265233311",  # ISDIS
 ]
 
-ISIC_GOOGLE_API_JSON_KEY = None
+ISIC_GOOGLE_API_JSON_KEY: str | None = None
 
-CDN_LOG_BUCKET = None
+CDN_LOG_BUCKET: Any = None
+
+
+AWS_CLOUDFRONT_KEY: Any
+AWS_CLOUDFRONT_KEY_ID: Any
+AWS_S3_CUSTOM_DOMAIN: Any

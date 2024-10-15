@@ -41,7 +41,7 @@ def test_publish_cohort(
     published_images = Image.objects.filter(accession__cohort=publishable_cohort)
 
     assert published_images.count() == 1
-    assert not published_images.first().public
+    assert not published_images.first().public  # type: ignore[union-attr]
     assert Collection.objects.count() == 3
     publishable_cohort.refresh_from_db()
     magic_collection = publishable_cohort.collection

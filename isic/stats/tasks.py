@@ -1,6 +1,7 @@
 from collections import defaultdict
 from collections.abc import Iterable
 import csv
+from dataclasses import dataclass
 import datetime
 from datetime import timedelta
 import gzip
@@ -37,6 +38,7 @@ def _get_analytics_client():
     from google.analytics.data_v1beta import BetaAnalyticsDataClient
     from google.oauth2 import service_account
 
+    assert settings.ISIC_GOOGLE_API_JSON_KEY  # noqa: S101
     json_acct_info = json.loads(settings.ISIC_GOOGLE_API_JSON_KEY)
     credentials = service_account.Credentials.from_service_account_info(json_acct_info)
     scoped_credentials = credentials.with_scopes(
@@ -45,13 +47,19 @@ def _get_analytics_client():
     return BetaAnalyticsDataClient(credentials=scoped_credentials)
 
 
-def _get_google_analytics_report(client, property_id: str) -> dict:
+@dataclass
+class GoogleAnalyticsReportResult:
+    num_sessions: int
+    sessions_per_country: dict[str, int]
+
+
+def _get_google_analytics_report(client, property_id: str) -> GoogleAnalyticsReportResult:
     from google.analytics.data_v1beta.types import DateRange, Dimension, Metric, RunReportRequest
 
-    results = {
-        "num_sessions": 0,
-        "sessions_per_country": defaultdict(int),
-    }
+    results = GoogleAnalyticsReportResult(
+        num_sessions=0,
+        sessions_per_country=defaultdict(int),
+    )
 
     request = RunReportRequest(
         property=f"properties/{property_id}",
@@ -63,8 +71,8 @@ def _get_google_analytics_report(client, property_id: str) -> dict:
 
     for row in response.rows:
         country_id, sessions = row.dimension_values[0].value, row.metric_values[0].value
-        results["sessions_per_country"][country_id] += int(sessions)
-        results["num_sessions"] += int(sessions)
+        results.sessions_per_country[country_id] += int(sessions)
+        results.num_sessions += int(sessions)
 
     return results
 
@@ -105,8 +113,8 @@ def collect_google_analytics_metrics_task():
 
     for property_id in settings.ISIC_GOOGLE_ANALYTICS_PROPERTY_IDS:
         results = _get_google_analytics_report(client, property_id)
-        num_sessions += results["num_sessions"]
-        for key, value in results["sessions_per_country"].items():
+        num_sessions += results.num_sessions
+        for key, value in results.sessions_per_country.items():
             sessions_per_iso_code[key] += value
 
     for iso_code, sessions in sessions_per_iso_code.items():
@@ -150,7 +158,7 @@ def _cdn_access_log_records(log_file_bytes: BytesIO) -> Iterable[dict]:
         )
         for row in reader:
             yield {
-                "download_time": timezone.datetime.strptime(
+                "download_time": datetime.datetime.strptime(
                     f"{row['date']} {row['time']}", "%Y-%m-%d %H:%M:%S"
                 ).replace(tzinfo=datetime.UTC),
                 "path": row["cs-uri-stem"].lstrip("/"),
@@ -264,5 +272,5 @@ def _process_s3_log_file_task(log_file_bytes: BytesIO):
                 # Ignore duplicate entries, this is necessary because another transaction can be
                 # committed between the time of the earlier check and now.
                 # See https://www.postgresql.org/docs/current/errcodes-appendix.html
-                if e.__cause__.pgcode != "23505":
+                if e.__cause__.pgcode != "23505":  # type: ignore[union-attr]
                     raise

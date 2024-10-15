@@ -7,17 +7,17 @@ from isic.ingest.models import Accession
 
 @click.command(help="Revalidate all accession metadata")
 def revalidate_metadata():
-    accessions = Accession.objects.values_list("pk", "metadata")
+    accessions = Accession.objects.all()
     num_accessions = accessions.count()
     num_errors = 0
 
-    with click.progressbar(accessions) as bar:
-        for pk, metadata in bar:
+    with click.progressbar(accessions.iterator()) as bar:
+        for accession in bar:
             try:
-                MetadataRow.model_validate(metadata)
+                MetadataRow.model_validate(accession.metadata)
             except PydanticValidationError as e:
                 num_errors += 1
-                click.echo(pk)
+                click.echo(accession.pk)
                 click.echo(e.errors())
 
     click.echo(f"{num_errors}/{num_accessions} accessions had problems.")

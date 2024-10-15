@@ -18,6 +18,7 @@ def test_collection_form(authenticated_client, user):
     )
     assert r.status_code == 302
     collection = Collection.objects.first()
+    assert collection
     assert collection.creator == user
     assert collection.name == "foo"
     assert collection.description == "bar"
