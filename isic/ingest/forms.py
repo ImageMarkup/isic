@@ -38,11 +38,12 @@ class ContributorForm(ModelForm):
         model = Contributor
         fields = [
             "institution_name",
-            "institution_url",
             "legal_contact_info",
             "default_copyright_license",
             "default_attribution",
         ]
+
+    institution_url = forms.URLField(assume_scheme="http")
 
 
 class SingleAccessionUploadForm(forms.Form):
