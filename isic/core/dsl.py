@@ -97,6 +97,8 @@ class StrValue(Value):
         elif key.field_lookup == "image_type" and self.value == "overview":
             self.value = "clinical: overview"
 
+        term: dict
+
         if self.value == "*":
             term = {"exists": {"field": key.field_lookup}}
         elif self.value.startswith("*"):
@@ -296,7 +298,7 @@ def make_parser(  # noqa: C901
 ) -> ParserElement:
     def make_term_keyword(name):
         term = Optional("-") + Keyword(name)
-        if term_converter:
+        if term_converter is not None:
             term.add_parse_action(term_converter)
         return term
 

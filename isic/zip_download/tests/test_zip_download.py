@@ -34,7 +34,7 @@ def zip_basic_auth():
     }
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.usefixtures("_random_images_with_licenses")
 def test_zip_download_licenses(authenticated_client):
     r = authenticated_client.post(
@@ -57,7 +57,7 @@ def test_zip_download_licenses(authenticated_client):
     assert not any("CC-BY-NC" in result["url"] for result in r.json()["files"])
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.usefixtures("_random_images_with_licenses")
 def test_zip_download_listing(authenticated_client, zip_basic_auth):
     r = authenticated_client.post(
@@ -79,7 +79,7 @@ def test_zip_download_listing(authenticated_client, zip_basic_auth):
     assert len(r.json()["files"]) == 6, r.json()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db(transaction=True)
 @pytest.mark.usefixtures("_random_images_with_licenses")
 def test_zip_download_listing_wildcard_urls(authenticated_client, zip_basic_auth, settings, mocker):
     r = authenticated_client.post(

@@ -18,7 +18,7 @@ def accession_create(
     *,
     creator: User,
     cohort: Cohort,
-    original_blob: File,
+    original_blob: File | str,
     original_blob_name: str,
     original_blob_size: int,
 ) -> Accession:

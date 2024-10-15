@@ -7,6 +7,7 @@ import pytest
 
 from isic.stats.models import GaMetrics, ImageDownload
 from isic.stats.tasks import (
+    GoogleAnalyticsReportResult,
     _cdn_access_log_records,
     collect_google_analytics_metrics_task,
     collect_image_download_records_task,
@@ -26,13 +27,13 @@ def test_collect_google_analytics_task(mocker, settings):
     mocker.patch("isic.stats.tasks._get_analytics_client", mocker.MagicMock)
     mocker.patch(
         "isic.stats.tasks._get_google_analytics_report",
-        return_value={
-            "num_sessions": 10,
-            "sessions_per_country": {
+        return_value=GoogleAnalyticsReportResult(
+            num_sessions=10,
+            sessions_per_country={
                 "US": 3,
                 "CA": 5,
             },
-        },
+        ),
     )
 
     collect_google_analytics_metrics_task()

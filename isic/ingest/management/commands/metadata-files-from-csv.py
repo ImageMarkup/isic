@@ -7,8 +7,6 @@ from pathlib import Path
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 import djclick as click
-import numpy as np
-import pandas as pd
 
 from isic.ingest.models import Accession
 from isic.ingest.models.metadata_file import MetadataFile
@@ -35,17 +33,14 @@ def metadata_files_from_csv(user_id, csv_path, isic_id_column):
     """
     u = User.objects.get(pk=user_id)
     with Path(csv_path).open() as f:
-        metadata_csv = pd.read_csv(f, header=0)
-
-    # pydantic expects None for the absence of a value, not NaN
-    metadata_csv = metadata_csv.replace({np.nan: None})
+        reader = csv.DictReader(f)
 
     columns_to_drop = {"isic_id", "filename", isic_id_column}
 
     cohort_files = defaultdict(list)
     cohort_columns = defaultdict(set)
 
-    for _, (_, row) in enumerate(metadata_csv.iterrows(), start=2):
+    for row in reader:
         accession: Accession = Accession.objects.select_related("cohort").get(
             image__isic_id=row[isic_id_column]
         )
@@ -65,12 +60,12 @@ def metadata_files_from_csv(user_id, csv_path, isic_id_column):
         size = blob.tell()
         blob.seek(0)
         blob_name = f"cohort_{cohort_id}_metadata.csv"
-        blob = SimpleUploadedFile(blob_name, blob.getvalue(), "text/csv")
+        blob_file = SimpleUploadedFile(blob_name, blob.getvalue(), "text/csv")
 
         m = MetadataFile.objects.create(
             creator=u,
             cohort_id=cohort_id,
-            blob=blob,
+            blob=blob_file,
             blob_size=size,
             blob_name=blob_name,
         )

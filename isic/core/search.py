@@ -1,11 +1,11 @@
 from copy import deepcopy
 from functools import lru_cache, partial
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, NotRequired, TypedDict
 
 from cachalot.api import cachalot_disabled
 from django.conf import settings
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AnonymousUser, User
 from django.db.models.query import QuerySet
 from isic_metadata import FIELD_REGISTRY
 from isic_metadata.fields import FitzpatrickSkinType, ImageTypeEnum
@@ -71,7 +71,7 @@ def get_elasticsearch_client() -> "OpenSearch":
 
     # TODO: investigate using retryable requests with transport_class
     RetryOnTimeoutTransport = partial(Transport, retry_on_timeout=True)  # noqa: N806
-    return OpenSearch(settings.ISIC_ELASTICSEARCH_URI, transport_class=RetryOnTimeoutTransport)
+    return OpenSearch(settings.ISIC_ELASTICSEARCH_URI, transport_class=RetryOnTimeoutTransport)  # type: ignore[arg-type]
 
 
 def maybe_create_index() -> None:
@@ -157,7 +157,7 @@ def _prettify_facets(facets: dict[str, Any]) -> dict[str, Any]:
     # sort the values of image_type buckets by the element in the key field
     facets["image_type"]["buckets"] = sorted(
         facets["image_type"]["buckets"],
-        key=lambda x: ImageTypeEnum(x["key"])._sort_order_,
+        key=lambda x: ImageTypeEnum(x["key"])._sort_order_,  # type: ignore[attr-defined]
     )
 
     return facets
@@ -183,7 +183,10 @@ def facets(query: dict | None = None, collections: list[int] | None = None) -> d
         body=counts_body,
     )["aggregations"]
 
-    facets_body = {
+    FacetsBody = TypedDict(  # noqa: UP013
+        "FacetsBody", {"size": int, "aggs": dict, "query": NotRequired[dict | None]}
+    )
+    facets_body: FacetsBody = {
         "size": 0,
         "aggs": deepcopy(DEFAULT_SEARCH_AGGREGATES),
     }
@@ -215,7 +218,7 @@ def facets(query: dict | None = None, collections: list[int] | None = None) -> d
 
 
 def build_elasticsearch_query(
-    query: dict, user: User, collection_pks: list[int] | None = None
+    query: dict, user: User | AnonymousUser, collection_pks: list[int] | None = None
 ) -> dict:
     """
     Build an elasticsearch query from an elasticsearch query body, a user, and collection ids.
@@ -237,7 +240,7 @@ def build_elasticsearch_query(
     else:
         visible_collection_pks = None
 
-    query_dict = {"bool": {"filter": [query]}} if query else {"bool": {}}
+    query_dict: dict = {"bool": {"filter": [query]}} if query else {"bool": {}}
 
     if visible_collection_pks is not None:
         query_dict["bool"].setdefault("filter", [])

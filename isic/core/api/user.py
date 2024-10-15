@@ -1,11 +1,11 @@
 from datetime import datetime
 
 from django.contrib.auth.models import User
-from django.http.request import HttpRequest
 from django.utils import timezone
 from ninja import Field, ModelSchema, Router
 
 from isic.auth import is_authenticated
+from isic.types import AuthenticatedHttpRequest
 
 router = Router()
 
@@ -37,12 +37,12 @@ class UserOut(ModelSchema):
     include_in_schema=True,
     auth=is_authenticated,
 )
-def user_me(request: HttpRequest):
+def user_me(request: AuthenticatedHttpRequest):
     return request.user
 
 
 @router.put("/accept-terms/", include_in_schema=False, auth=is_authenticated)
-def accept_terms_of_use(request: HttpRequest):
+def accept_terms_of_use(request: AuthenticatedHttpRequest):
     if not request.user.profile.accepted_terms:
         request.user.profile.accepted_terms = timezone.now()
         request.user.profile.save(update_fields=["accepted_terms"])

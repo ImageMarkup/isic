@@ -58,14 +58,16 @@ class SearchQueryIn(Schema):
         user = get_object_or_404(User, pk=user) if user else AnonymousUser()
         return user, cls(query=token["query"], collections=token["collections"])
 
-    def to_queryset(self, user: User, qs: QuerySet[Image] | None = None) -> QuerySet[Image]:
-        qs = qs if qs is not None else Image._default_manager.all()
+    def to_queryset(
+        self, user: User | AnonymousUser, qs: QuerySet[Image] | None = None
+    ) -> QuerySet[Image]:
+        qs = qs if qs is not None else cast(QuerySet[Image], Image.objects.all())
 
         if self.query:
-            qs = qs.from_search_query(self.query)
+            qs = qs.from_search_query(self.query)  # type: ignore[attr-defined]
 
         if self.collections:
-            qs = qs.filter(
+            qs = qs.filter(  # type: ignore[union-attr]
                 collections__in=get_visible_objects(
                     user,
                     "core.view_collection",
@@ -75,7 +77,7 @@ class SearchQueryIn(Schema):
 
         return get_visible_objects(user, "core.view_image", qs).distinct()
 
-    def to_es_query(self, user: User) -> dict:
+    def to_es_query(self, user: User | AnonymousUser) -> dict:
         es_query: dict | None = None
         if self.query:
             # we know it can't be a Q object because we're using es_parser and not django_parser

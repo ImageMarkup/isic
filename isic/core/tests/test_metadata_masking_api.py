@@ -48,6 +48,7 @@ def test_image_csv_rows_exposes_safe_metadata(image_with_maskable_metadata):
     rows = image_metadata_csv(qs=Image.objects.all())
     next(rows)
     for row in rows:
+        assert isinstance(row, dict)
         assert "age" not in row
         assert "age_approx" in row
         assert "lesion_id" in row

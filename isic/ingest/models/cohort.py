@@ -122,8 +122,7 @@ class CohortPermissions:
 
     @staticmethod
     def add_accession(user_obj: User, obj: Cohort) -> bool:
-        if obj:
-            return user_obj.is_authenticated and obj.contributor.owners.contains(user_obj)
+        return obj and user_obj.is_authenticated and obj.contributor.owners.contains(user_obj)
 
 
 Cohort.perms_class = CohortPermissions

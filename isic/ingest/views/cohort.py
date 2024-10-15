@@ -41,12 +41,12 @@ def cohort_list(request):
         Prefetch("cohorts", queryset=Cohort.objects.order_by("attribution", "name"))
     ).order_by("institution_name")
 
-    counts_by_cohort = Accession.objects.values("cohort_id").annotate(
+    counts_by_cohort_qs = Accession.objects.values("cohort_id").annotate(
         lesion_count=Count("lesion", distinct=True),
         patient_count=Count("patient", distinct=True),
         accession_count=Count("pk"),
     )
-    counts_by_cohort = {row["cohort_id"]: row for row in counts_by_cohort}
+    counts_by_cohort = {row["cohort_id"]: row for row in counts_by_cohort_qs}
 
     rows = []
     for contributor in contributors.all():

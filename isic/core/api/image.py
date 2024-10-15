@@ -46,7 +46,7 @@ class ImageOut(ModelSchema):
     metadata: dict
 
     @staticmethod
-    def resolve_files(image: Image) -> dict:
+    def resolve_files(image: Image) -> ImageFilesOut:
         if settings.ISIC_PLACEHOLDER_IMAGES:
             full_url = f"https://picsum.photos/seed/{image.id}/1000"
             thumbnail_url = f"https://picsum.photos/seed/{image.id}/256"
@@ -71,7 +71,7 @@ class ImageOut(ModelSchema):
 
         for key, value in image.metadata.items():
             try:
-                metadata[FIELD_REGISTRY[key].type][key] = value
+                metadata[FIELD_REGISTRY[key].type][key] = value  # type: ignore[index]
             except KeyError:
                 # it's probably a computed field
                 for computed_field in image.accession.computed_fields:

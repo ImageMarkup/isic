@@ -29,12 +29,12 @@ def collection_add_images(
     if collection.locked and not ignore_lock:
         raise ValidationError("Can't add images to locked collection.")
 
-    if collection.public and qs.private().exists():
+    if collection.public and qs.private().exists():  # type: ignore[union-attr]
         raise ValidationError("Can't add private images to a public collection.")
 
     with transaction.atomic(), cachalot_disabled():
         CollectionImageM2M = Collection.images.through  # noqa: N806
-        for image_batch in itertools.batched(qs.iterator(), 5_000):
+        for image_batch in itertools.batched(qs.iterator(), 5_000):  # type: ignore[union-attr]
             # ignore_conflicts is necessary to make this method idempotent (consistent with
             # collection.images.add) ignore_conflicts only ignores primary key, duplicate, and
             # exclusion constraints. we don't use primary key or exclusion here, so this should
@@ -65,7 +65,7 @@ def collection_move_images(
     if not ignore_lock and (src_collection.locked or dest_collection.locked):
         raise ValidationError("Can't move images to/from a locked collection.")
 
-    if dest_collection.public and src_collection.images.private().exists():
+    if dest_collection.public and src_collection.images.private().exists():  # type: ignore[attr-defined]
         raise ValidationError("Can't move private images to a public collection.")
 
     with transaction.atomic():
