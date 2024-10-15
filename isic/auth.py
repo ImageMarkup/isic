@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 from ninja.security import HttpBearer, django_auth
 from oauth2_provider.oauth2_backends import get_oauthlib_core
 
@@ -37,6 +39,6 @@ class OAuth2AuthBearer(HttpBearer):
 
 
 # The lambda _: True is to handle the case where a user doesn't pass any authentication.
-allow_any = [django_auth, OAuth2AuthBearer("any"), lambda _: True]
+allow_any: list[Callable] = [django_auth, OAuth2AuthBearer("any"), lambda _: True]
 is_authenticated = [django_auth, OAuth2AuthBearer("is_authenticated")]
 is_staff = [SessionAuthStaffUser(), OAuth2AuthBearer("is_staff")]

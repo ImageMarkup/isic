@@ -110,6 +110,10 @@ def create_accession(request: HttpRequest, payload: AccessionIn):
     if not request.user.is_staff and not request.user.has_perm("ingest.add_accession", cohort):
         return 403, {"error": "You do not have permission to add accessions to this cohort."}
 
+    assert request.user.is_authenticated  # noqa: S101
+    # TODO: how to make django-ninja schema aware of S3PlaceholderFile while using str for input?
+    assert isinstance(payload.original_blob, S3PlaceholderFile)  # noqa: S101
+
     return 201, accession_create(
         cohort=cohort,
         creator=request.user,

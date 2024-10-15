@@ -1,8 +1,10 @@
+import codecs
 import csv
 from decimal import Decimal
 import io
-from typing import BinaryIO, cast
+from typing import cast
 
+from django.contrib.auth.models import User
 from django.urls.base import reverse
 from django.utils import timezone
 import pytest
@@ -30,7 +32,7 @@ def imageless_accession(accession_factory):
 
 
 @pytest.fixture()
-def csv_stream_diagnosis_sex() -> BinaryIO:
+def csv_stream_diagnosis_sex() -> codecs.StreamWriter:
     file_stream = StreamWriter(io.BytesIO())
     writer = csv.DictWriter(file_stream, fieldnames=["filename", "diagnosis", "sex"])
     writer.writeheader()
@@ -39,7 +41,7 @@ def csv_stream_diagnosis_sex() -> BinaryIO:
 
 
 @pytest.fixture()
-def csv_stream_diagnosis_sex_lesion_patient() -> BinaryIO:
+def csv_stream_diagnosis_sex_lesion_patient() -> codecs.StreamWriter:
     file_stream = StreamWriter(io.BytesIO())
     writer = csv.DictWriter(
         file_stream,
@@ -59,7 +61,7 @@ def csv_stream_diagnosis_sex_lesion_patient() -> BinaryIO:
 
 
 @pytest.fixture()
-def csv_stream_diagnosis_sex_disagreeing_lesion_patient() -> BinaryIO:
+def csv_stream_diagnosis_sex_disagreeing_lesion_patient() -> codecs.StreamWriter:
     # a version that maps the same lesion to a different patient
     file_stream = StreamWriter(io.BytesIO())
     writer = csv.DictWriter(
@@ -80,7 +82,7 @@ def csv_stream_diagnosis_sex_disagreeing_lesion_patient() -> BinaryIO:
 
 
 @pytest.fixture()
-def csv_stream_benign() -> BinaryIO:
+def csv_stream_benign() -> codecs.StreamWriter:
     file_stream = StreamWriter(io.BytesIO())
     writer = csv.DictWriter(file_stream, fieldnames=["filename", "benign_malignant"])
     writer.writeheader()
@@ -89,7 +91,7 @@ def csv_stream_benign() -> BinaryIO:
 
 
 @pytest.fixture()
-def csv_stream_diagnosis_sex_invalid() -> BinaryIO:
+def csv_stream_diagnosis_sex_invalid() -> codecs.StreamWriter:
     file_stream = StreamWriter(io.BytesIO())
     writer = csv.DictWriter(file_stream, fieldnames=["filename", "diagnosis", "sex"])
     writer.writeheader()
@@ -105,7 +107,7 @@ def cohort_with_accession(cohort, accession_factory):
 
 
 @pytest.mark.django_db()
-def test_apply_metadata(accession_factory, valid_metadatafile, cohort, user):
+def test_apply_metadata(accession_factory, valid_metadatafile, cohort, user) -> None:
     accession = accession_factory(cohort=cohort, original_blob_name="filename.jpg")
     update_metadata_task(user.pk, valid_metadatafile.pk)
     accession.refresh_from_db()
@@ -141,7 +143,7 @@ def metadatafile_duplicate_filenames(cohort, metadata_file_factory, csv_stream_d
 
 
 @pytest.mark.django_db()
-def test_valid_batch_invalid_row():
+def test_valid_batch_invalid_row() -> None:
     bad_batch = [
         {
             "image_type": "dermoscopy",  # error, should be 'dermoscopic'
@@ -156,7 +158,7 @@ def test_valid_batch_invalid_row():
 
 
 @pytest.mark.django_db()
-def test_validate_metadata_step1_ignores_bom(metadatafile_bom_filename_column):
+def test_validate_metadata_step1_ignores_bom(metadatafile_bom_filename_column) -> None:
     problems = validate_csv_format_and_filenames(
         MetadataFile.to_dict_reader(metadatafile_bom_filename_column.blob.open("rb")),
         metadatafile_bom_filename_column.cohort,
@@ -167,7 +169,7 @@ def test_validate_metadata_step1_ignores_bom(metadatafile_bom_filename_column):
 @pytest.mark.django_db()
 def test_validate_metadata_step1_requires_filename_column(
     metadatafile_without_filename_column,
-):
+) -> None:
     problems = validate_csv_format_and_filenames(
         MetadataFile.to_dict_reader(metadatafile_without_filename_column.blob.open("rb")),
         metadatafile_without_filename_column.cohort,
@@ -179,7 +181,7 @@ def test_validate_metadata_step1_requires_filename_column(
 @pytest.mark.django_db()
 def test_validate_metadata_step1_has_duplicate_filenames(
     metadatafile_duplicate_filenames,
-):
+) -> None:
     problems = validate_csv_format_and_filenames(
         MetadataFile.to_dict_reader(metadatafile_duplicate_filenames.blob.open("rb")),
         metadatafile_duplicate_filenames.cohort,
@@ -191,7 +193,7 @@ def test_validate_metadata_step1_has_duplicate_filenames(
 @pytest.mark.django_db()
 def test_apply_metadata_step2(
     staff_client, cohort_with_accession, csv_stream_diagnosis_sex, metadata_file_factory
-):
+) -> None:
     metadatafile = metadata_file_factory(
         blob__from_func=lambda: csv_stream_diagnosis_sex, cohort=cohort_with_accession
     )
@@ -212,7 +214,7 @@ def test_apply_metadata_step2_invalid(
     metadata_file_factory,
     mocker,
     django_capture_on_commit_callbacks,
-):
+) -> None:
     metadatafile = metadata_file_factory(
         blob__from_func=lambda: csv_stream_diagnosis_sex_invalid,
         cohort=cohort_with_accession,
@@ -240,7 +242,7 @@ def test_apply_metadata_step2_invalid(
 
 
 @pytest.mark.django_db()
-def test_diagnosis_transition(staff_user, accession, image_factory):
+def test_diagnosis_transition(staff_user, accession, image_factory) -> None:
     # this tests that the original diagnosis is preserved even though we're attempting
     # to change the hierarchical version.
     from isic_metadata.diagnosis_hierarchical import DiagnosisEnum
@@ -282,7 +284,7 @@ def test_apply_metadata_step3(
     metadata_file_factory,
     mocker,
     django_capture_on_commit_callbacks,
-):
+) -> None:
     # TODO: refactor this test to split out the first half
     metadatafile = metadata_file_factory(
         blob__from_func=lambda: csv_stream_diagnosis_sex, cohort=cohort_with_accession
@@ -338,7 +340,7 @@ def test_apply_metadata_step3_full_cohort(
     metadata_file_factory,
     mocker,
     django_capture_on_commit_callbacks,
-):
+) -> None:
     metadatafile = metadata_file_factory(
         blob__from_func=lambda: csv_stream_diagnosis_sex_lesion_patient,
         cohort=cohort_with_accession,
@@ -385,7 +387,7 @@ def test_apply_metadata_step3_full_cohort(
 
 
 @pytest.mark.django_db()
-def test_accession_metadata_versions(user, accession):
+def test_accession_metadata_versions(user, accession) -> None:
     accession.update_metadata(user, {"foo": "bar"})
     assert accession.metadata_versions.count() == 1
     diffs = accession.metadata_versions.differences()
@@ -431,7 +433,7 @@ def test_accession_metadata_versions(user, accession):
 
 
 @pytest.mark.django_db()
-def test_accession_metadata_versions_remove(user, imageless_accession):
+def test_accession_metadata_versions_remove(user, imageless_accession) -> None:
     imageless_accession.update_metadata(user, {"foo": "bar", "baz": "qux"})
     imageless_accession.remove_unstructured_metadata(user, ["nonexistent"])
     assert imageless_accession.unstructured_metadata.value == {
@@ -442,7 +444,7 @@ def test_accession_metadata_versions_remove(user, imageless_accession):
 
 
 @pytest.mark.django_db()
-def test_accession_update_metadata(user, imageless_accession):
+def test_accession_update_metadata(user, imageless_accession) -> None:
     imageless_accession.update_metadata(user, {"sex": "male", "foo": "bar", "baz": "qux"})
     assert imageless_accession.unstructured_metadata.value == {
         "foo": "bar",
@@ -453,7 +455,7 @@ def test_accession_update_metadata(user, imageless_accession):
 
 
 @pytest.mark.django_db()
-def test_accession_update_metadata_iddx(user, imageless_accession):
+def test_accession_update_metadata_iddx(user, imageless_accession) -> None:
     imageless_accession.update_metadata(user, {"diagnosis": "Nevus"})
     assert imageless_accession.metadata == {
         "diagnosis": "Benign:Benign melanocytic proliferations:Nevus"
@@ -462,7 +464,7 @@ def test_accession_update_metadata_iddx(user, imageless_accession):
 
 
 @pytest.mark.django_db()
-def test_accession_update_metadata_idempotent(user, imageless_accession):
+def test_accession_update_metadata_idempotent(user, imageless_accession) -> None:
     imageless_accession.update_metadata(user, {"sex": "male", "foo": "bar", "baz": "qux"})
     imageless_accession.update_metadata(user, {"sex": "male", "foo": "bar", "baz": "qux"})
     # test the case where meta/unstructured are different, but updating wouldn't change anything
@@ -476,7 +478,7 @@ def test_accession_update_metadata_idempotent(user, imageless_accession):
 
 
 @pytest.mark.django_db()
-def test_accession_remove_unstructured_metadata(user, imageless_accession):
+def test_accession_remove_unstructured_metadata(user, imageless_accession) -> None:
     imageless_accession.update_metadata(user, {"foo": "bar", "baz": "qux"})
     imageless_accession.remove_unstructured_metadata(user, ["foo"])
     assert imageless_accession.unstructured_metadata.value == {"baz": "qux"}
@@ -484,7 +486,7 @@ def test_accession_remove_unstructured_metadata(user, imageless_accession):
 
 
 @pytest.mark.django_db()
-def test_accession_remove_metadata(user, imageless_accession):
+def test_accession_remove_metadata(user, imageless_accession) -> None:
     imageless_accession.update_metadata(
         user, {"diagnosis": "Melanoma Invasive", "benign_malignant": "malignant"}
     )
@@ -494,7 +496,7 @@ def test_accession_remove_metadata(user, imageless_accession):
 
 
 @pytest.mark.django_db()
-def test_accession_remove_metadata_idempotent(user, imageless_accession):
+def test_accession_remove_metadata_idempotent(user, imageless_accession) -> None:
     imageless_accession.update_metadata(
         user, {"diagnosis": "Melanoma Invasive", "benign_malignant": "malignant"}
     )
@@ -505,7 +507,7 @@ def test_accession_remove_metadata_idempotent(user, imageless_accession):
 
 
 @pytest.mark.django_db()
-def test_accession_remove_unstructured_metadata_idempotent(user, imageless_accession):
+def test_accession_remove_unstructured_metadata_idempotent(user, imageless_accession) -> None:
     imageless_accession.update_metadata(user, {"foo": "bar", "baz": "qux"})
     imageless_accession.remove_unstructured_metadata(user, ["foo"])
     imageless_accession.remove_unstructured_metadata(user, ["foo"])
@@ -514,7 +516,7 @@ def test_accession_remove_unstructured_metadata_idempotent(user, imageless_acces
 
 
 @pytest.fixture()
-def unpublished_accepted_accession(accession_factory, user):
+def unpublished_accepted_accession(accession_factory, user: User):
     accession = accession_factory()
     accession.update_metadata(user, {"sex": "female"})
     accession_review_update_or_create(
@@ -525,7 +527,7 @@ def unpublished_accepted_accession(accession_factory, user):
 
 @pytest.mark.django_db()
 @pytest.mark.parametrize("reset_review", [True, False])
-def test_update_metadata_resets_checks(user, unpublished_accepted_accession, reset_review):
+def test_update_metadata_resets_checks(user, unpublished_accepted_accession, reset_review) -> None:
     unpublished_accepted_accession.update_metadata(user, {"sex": "male"}, reset_review=reset_review)
     unpublished_accepted_accession.refresh_from_db()
 
@@ -536,15 +538,17 @@ def test_update_metadata_resets_checks(user, unpublished_accepted_accession, res
 
 
 @pytest.mark.django_db()
-def test_update_unstructured_metadata_does_not_reset_checks(user, unpublished_accepted_accession):
+def test_update_unstructured_metadata_does_not_reset_checks(
+    user, unpublished_accepted_accession
+) -> None:
     unpublished_accepted_accession.update_metadata(user, {"foobar": "baz"})
     unpublished_accepted_accession.refresh_from_db()
     assert unpublished_accepted_accession.reviewed
 
 
 @pytest.mark.django_db()
-def test_metadata_version_serializes_decimal(user, accession: Accession):
+def test_metadata_version_serializes_decimal(user: User, accession: Accession) -> None:
     accession.update_metadata(user, {"clin_size_long_diam_mm": 5})
     assert accession.clin_size_long_diam_mm == Decimal("5.0")
     assert accession.metadata_versions.count() == 1
-    assert accession.metadata_versions.first().metadata == {"clin_size_long_diam_mm": "5"}
+    assert accession.metadata_versions.first().metadata == {"clin_size_long_diam_mm": "5"}  # type: ignore[union-attr]

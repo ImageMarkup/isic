@@ -31,6 +31,8 @@ def image_share(
     if image:
         qs = Image.objects.filter(pk=image.pk)
 
+    assert qs is not None  # noqa: S101
+
     with transaction.atomic(), cachalot_disabled():
         ImageShareM2M = Image.shares.through  # noqa: N806
         for image_batch in itertools.batched(qs.iterator(), 5_000):

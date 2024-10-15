@@ -67,7 +67,7 @@ class Collection(TimeStampedModel):
     shares = models.ManyToManyField(
         User,
         through="CollectionShare",
-        through_fields=["collection", "grantee"],
+        through_fields=("collection", "grantee"),
         related_name="collection_shares",
     )
 
@@ -128,7 +128,7 @@ class Collection(TimeStampedModel):
         ]
 
     def full_clean(self, exclude=None, validate_unique=True):  # noqa: FBT002
-        if self.pk and self.public and self.images.private().exists():
+        if self.pk and self.public and self.images.private().exists():  # type: ignore[attr-defined]
             raise ValidationError("Can't make collection public, it contains private images.")
 
         return super().full_clean(exclude=exclude, validate_unique=validate_unique)
@@ -139,7 +139,7 @@ class CollectionShare(TimeStampedModel):
         constraints = [
             CheckConstraint(
                 name="collectionshare_grantor_grantee_diff_check",
-                check=~Q(grantor=F("grantee")),
+                condition=~Q(grantor=F("grantee")),
             ),
             UniqueConstraint(
                 name="collectionshare_grantor_collection_grantee_unique",

@@ -53,7 +53,7 @@ def add_staff_group():
         User,
         ZipUpload,
     ]:
-        content_type = ContentType.objects.get_for_model(model)
+        content_type = ContentType.objects.get_for_model(model)  # type: ignore[arg-type]
         for permission in ["view", "change"]:
             group.permissions.add(
                 Permission.objects.get(

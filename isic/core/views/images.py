@@ -6,7 +6,7 @@ from django.core.paginator import Paginator
 from django.db.models import Count
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
@@ -15,6 +15,7 @@ from isic.core.models import Collection, Image
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.core.tasks import generate_staff_image_list_metadata_csv
 from isic.studies.models import Study
+from isic.types import AuthenticatedHttpRequest
 
 # Show this many related images e.g. other patient images, other lesion images.
 # Lesions are typically <= 20 images, but patients can be hundreds.
@@ -147,12 +148,12 @@ def image_browser(request):
 
 
 @staff_member_required
-def staff_image_list_export(request: HttpRequest) -> HttpResponse:
+def staff_image_list_export(request: AuthenticatedHttpRequest) -> HttpResponse:
     return render(request, "core/image_list_export.html")
 
 
 @staff_member_required
-def staff_image_list_metadata_download(request: HttpRequest):
+def staff_image_list_metadata_download(request: AuthenticatedHttpRequest):
     generate_staff_image_list_metadata_csv.delay_on_commit(request.user.id)
 
     messages.add_message(

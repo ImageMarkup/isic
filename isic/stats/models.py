@@ -12,7 +12,7 @@ class GaMetrics(TimeStampedModel):
     class Meta(TimeStampedModel.Meta):
         constraints = [
             CheckConstraint(
-                name="range_end_gt_range_start", check=Q(range_start__lt=F("range_end"))
+                name="range_end_gt_range_start", condition=Q(range_start__lt=F("range_end"))
             )
         ]
 
@@ -35,7 +35,8 @@ class ImageDownload(models.Model):
     class Meta:
         constraints = [
             CheckConstraint(
-                name="download_occurred_before_tracking", check=Q(download_time__lt=F("created"))
+                name="download_occurred_before_tracking",
+                condition=Q(download_time__lt=F("created")),
             ),
             UniqueConstraint(name="unique_request_id", fields=["request_id"]),
         ]

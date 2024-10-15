@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 import csv
 from datetime import UTC, datetime
+from typing import TypedDict
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -13,6 +14,7 @@ from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
 from django.urls.base import reverse
+from django_stubs_ext import StrOrPromise
 
 from isic.core.filters import CollectionFilter
 from isic.core.forms.collection import CollectionForm
@@ -55,7 +57,7 @@ def collection_list(request):
 
     collection_counts = (
         Collection.images.through.objects.filter(
-            collection_id__in=page.object_list.values_list("pk", flat=True)
+            collection_id__in=page.object_list.values_list("pk", flat=True)  # type: ignore[attr-defined]
         )
         .values("collection_id")
         .annotate(num_images=Count("image_id"))
@@ -136,6 +138,7 @@ def collection_download_metadata(request, pk):
         yield writer.writeheader()
 
         for metadata_row in collection_metadata:
+            assert isinstance(metadata_row, dict)  # noqa: S101
             yield writer.writerow(metadata_row)
 
     current_time = datetime.now(tz=UTC).strftime("%Y-%m-%d")
@@ -151,7 +154,10 @@ def collection_download_metadata(request, pk):
 @needs_object_permission("core.create_doi", (Collection, "pk", "pk"))
 def collection_create_doi_(request, pk):
     collection = get_object_or_404(Collection, pk=pk)
-    context = {"collection": collection, "error": None}
+    Context = TypedDict(  # noqa: UP013
+        "Context", {"collection": Collection, "error": StrOrPromise | None, "preview": dict | None}
+    )
+    context: Context = {"collection": collection, "error": None, "preview": None}
 
     if request.method == "POST":
         try:

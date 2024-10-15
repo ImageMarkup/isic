@@ -32,7 +32,7 @@ class Patient(models.Model):
             UniqueConstraint(fields=["private_patient_id", "cohort"], name="unique_patient"),
             CheckConstraint(
                 name="patient_id_valid_format",
-                check=Q(id__regex=f"^{PATIENT_ID_REGEX}$"),
+                condition=Q(id__regex=f"^{PATIENT_ID_REGEX}$"),
             ),
         ]
 

@@ -80,14 +80,14 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="gametrics",
             constraint=models.CheckConstraint(
-                check=models.Q(("range_start__lt", models.F("range_end"))),
+                condition=models.Q(("range_start__lt", models.F("range_end"))),
                 name="range_end_gt_range_start",
             ),
         ),
         migrations.AddConstraint(
             model_name="imagedownload",
             constraint=models.CheckConstraint(
-                check=models.Q(("download_time__lt", models.F("created"))),
+                condition=models.Q(("download_time__lt", models.F("created"))),
                 name="download_occurred_before_tracking",
             ),
         ),

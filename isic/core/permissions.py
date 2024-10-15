@@ -1,3 +1,4 @@
+from functools import wraps
 from urllib.parse import urlparse
 
 import django.apps
@@ -12,7 +13,6 @@ from django.db.models.base import ModelBase
 from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
 from django.shortcuts import get_object_or_404, resolve_url
-from django.utils.functional import wraps
 from ninja.security.session import SessionAuth
 
 
@@ -34,7 +34,7 @@ class UserPermissions:
         return user_obj.is_staff
 
 
-User.perms_class = UserPermissions
+User.perms_class = UserPermissions  # type: ignore[attr-defined]
 
 
 ISIC_PERMS_MAP = {}
@@ -99,7 +99,7 @@ def needs_object_permission(perm: str, lookup_variables=None):  # noqa: C901
                             "If model should be looked up from "
                             "string it needs format: 'app_label.ModelClass'"
                         )
-                    model = apps.get_model(*splitted)
+                    model = apps.get_model(*splitted)  # type: ignore[arg-type]
                 elif issubclass(model.__class__, Model | ModelBase | QuerySet):
                     pass
                 else:

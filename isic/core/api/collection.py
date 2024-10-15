@@ -146,7 +146,7 @@ class CollectionLicenseBreakdown(Schema):
     summary="Retrieve a breakdown of the licenses of the specified collection.",
     include_in_schema=False,
 )
-def collection_license_breakdown(request, id: int) -> CollectionLicenseBreakdown:
+def collection_license_breakdown(request, id: int) -> dict[str, int]:
     qs = get_visible_objects(request.user, "core.view_collection")
     collection = get_object_or_404(qs, id=id)
     images = get_visible_objects(request.user, "core.view_image", collection.images.distinct())
@@ -179,7 +179,7 @@ def collection_populate_from_search(request, id: int, payload: SearchQueryIn):
     if collection.locked:
         return 409, {"error": "Collection is locked"}
 
-    if collection.public and payload.to_queryset(request.user).private().exists():
+    if collection.public and payload.to_queryset(request.user).private().exists():  # type: ignore[attr-defined]
         return 409, {"error": "Collection is public and cannot contain private images."}
 
     # Pass data instead of validated_data because the celery task is going to revalidate.
@@ -195,7 +195,7 @@ def collection_populate_from_search(request, id: int, payload: SearchQueryIn):
 
 
 class IsicIdList(Schema):
-    isic_ids: conlist(constr(pattern=ISIC_ID_REGEX), max_length=500)
+    isic_ids: conlist(constr(pattern=ISIC_ID_REGEX), max_length=500)  # type: ignore[valid-type]
 
     model_config = {"extra": "forbid"}
 

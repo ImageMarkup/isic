@@ -1,5 +1,6 @@
 import logging
 import random
+from typing import Any
 from urllib import parse
 
 from django.conf import settings
@@ -20,7 +21,7 @@ from isic.core.services.collection import (
 logger = logging.getLogger(__name__)
 
 
-def collection_build_doi_preview(*, collection: Collection) -> dict:
+def collection_build_doi_preview(*, collection: Collection) -> dict[str, Any]:
     preview = collection_build_doi(
         collection=collection, doi_id=f"{settings.ISIC_DATACITE_DOI_PREFIX}/123456"
     )["data"]["attributes"]
@@ -81,7 +82,7 @@ def collection_check_create_doi_allowed(*, user: User, collection: Collection) -
         raise ValidationError("This collection already has a DOI.")
     if not collection.public:
         raise ValidationError("A collection must be public to issue a DOI.")
-    if collection.images.private().exists():
+    if collection.images.private().exists():  # type: ignore[attr-defined]
         raise ValidationError("This collection contains private images.")
     if not collection.images.exists():
         raise ValidationError("An empty collection cannot be the basis of a DOI.")

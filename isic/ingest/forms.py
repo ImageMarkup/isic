@@ -38,11 +38,12 @@ class ContributorForm(ModelForm):
         model = Contributor
         fields = [
             "institution_name",
-            "institution_url",
             "legal_contact_info",
             "default_copyright_license",
             "default_attribution",
         ]
+
+    institution_url = forms.URLField(assume_scheme="http")
 
 
 class SingleAccessionUploadForm(forms.Form):
@@ -77,6 +78,7 @@ class MergeCohortForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
+        cleaned_data = cleaned_data if cleaned_data is not None else {}
         cohort = cleaned_data.get("cohort")
         cohort_to_merge = cleaned_data.get("cohort_to_merge")
 
@@ -102,6 +104,7 @@ class PublishCohortForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
+        assert cleaned_data  # noqa: S101
 
         # note that this logic is duplicated in cohort_publish_initialize, this is just
         # added for easier form validation.
