@@ -39,7 +39,7 @@ class ZipUpload(CreationSortedTimeStampedModel):
             UniqueConstraint(name="zipupload_unique_blob", fields=["blob"], condition=~Q(blob="")),
             CheckConstraint(
                 name="zipupload_fail_reason_requires_failed_status",
-                check=(Q(status=ZipUploadStatus.FAILED) & ~Q(fail_reason=""))
+                condition=(Q(status=ZipUploadStatus.FAILED) & ~Q(fail_reason=""))
                 | ~Q(status=ZipUploadStatus.FAILED),
             ),
         ]

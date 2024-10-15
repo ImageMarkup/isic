@@ -110,7 +110,7 @@ class Lesion(models.Model):
             UniqueConstraint(fields=["private_lesion_id", "cohort"], name="unique_lesion"),
             CheckConstraint(
                 name="lesion_id_valid_format",
-                check=Q(id__regex=f"^{LESION_ID_REGEX}$"),
+                condition=Q(id__regex=f"^{LESION_ID_REGEX}$"),
             ),
         ]
 

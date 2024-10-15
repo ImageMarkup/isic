@@ -796,7 +796,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="zipupload",
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     models.Q(
                         ("status", "failed"),
                         models.Q(("fail_reason", ""), _negated=True),
@@ -822,7 +822,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="patient",
             constraint=models.CheckConstraint(
-                check=models.Q(("id__regex", "^IP_[0-9]{7}$")),
+                condition=models.Q(("id__regex", "^IP_[0-9]{7}$")),
                 name="patient_id_valid_format",
             ),
         ),
@@ -835,7 +835,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="lesion",
             constraint=models.CheckConstraint(
-                check=models.Q(("id__regex", "^IL_[0-9]{7}$")),
+                condition=models.Q(("id__regex", "^IL_[0-9]{7}$")),
                 name="lesion_id_valid_format",
             ),
         ),
@@ -902,14 +902,14 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="accession",
             constraint=models.CheckConstraint(
-                check=models.Q(("original_blob_name", models.F("blob_name")), _negated=True),
+                condition=models.Q(("original_blob_name", models.F("blob_name")), _negated=True),
                 name="accession_blob_name_not_original_blob_name",
             ),
         ),
         migrations.AddConstraint(
             model_name="accession",
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     models.Q(
                         ("blob_size__isnull", False),
                         ("height__isnull", False),
@@ -928,7 +928,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="accession",
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     models.Q(
                         ("concomitant_biopsy", True),
                         ("diagnosis_confirm_type", "histopathology"),

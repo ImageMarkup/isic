@@ -139,7 +139,7 @@ class CollectionShare(TimeStampedModel):
         constraints = [
             CheckConstraint(
                 name="collectionshare_grantor_grantee_diff_check",
-                check=~Q(grantor=F("grantee")),
+                condition=~Q(grantor=F("grantee")),
             ),
             UniqueConstraint(
                 name="collectionshare_grantor_collection_grantee_unique",

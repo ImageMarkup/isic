@@ -319,12 +319,12 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
             # the original blob name should always be hidden, so blob_name shouldn't be the same
             CheckConstraint(
                 name="accession_blob_name_not_original_blob_name",
-                check=~Q(original_blob_name=F("blob_name")),
+                condition=~Q(original_blob_name=F("blob_name")),
             ),
             # require blob_size / width / height for succeeded accessions
             CheckConstraint(
                 name="accession_succeeded_blob_fields",
-                check=Q(
+                condition=Q(
                     status=AccessionStatus.SUCCEEDED,
                     thumbnail_256_size__isnull=False,
                     blob_size__isnull=False,
@@ -337,7 +337,7 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
             ),
             CheckConstraint(
                 name="accession_concomitant_biopsy_diagnosis_confirm_type",
-                check=Q(
+                condition=Q(
                     concomitant_biopsy=True,
                     diagnosis_confirm_type="histopathology",
                 )
@@ -372,12 +372,12 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
             # (and is_cog) is set.
             CheckConstraint(
                 name="accession_is_cog_mosaic",
-                check=Q(is_cog=False)
+                condition=Q(is_cog=False)
                 | Q(image_type__isnull=True)
                 | Q(image_type=ImageTypeEnum.rcm_mosaic),
             ),
-            CheckConstraint(name="valid_diagnosis", check=Q(diagnosis__in=DiagnosisEnum)),
-            CheckConstraint(name="valid_legacy_dx", check=Q(legacy_dx__in=LegacyDxEnum)),
+            CheckConstraint(name="valid_diagnosis", condition=Q(diagnosis__in=DiagnosisEnum)),
+            CheckConstraint(name="valid_legacy_dx", condition=Q(legacy_dx__in=LegacyDxEnum)),
         ]
 
         indexes = [
