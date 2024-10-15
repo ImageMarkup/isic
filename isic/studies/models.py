@@ -348,7 +348,7 @@ class Annotation(TimeStampedModel):
         constraints = [
             CheckConstraint(
                 name="annotation_start_time_check",
-                check=Q(start_time__lte=F("created")),
+                condition=Q(start_time__lte=F("created")),
             ),
         ]
         unique_together = [["study", "task", "image", "annotator"]]
@@ -431,7 +431,7 @@ class Response(TimeStampedModel):
         constraints = [
             CheckConstraint(
                 name="response_choice_or_value_check",
-                check=Exact(
+                condition=Exact(
                     lhs=Func(
                         "choice",
                         "value",

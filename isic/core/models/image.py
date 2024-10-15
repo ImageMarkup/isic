@@ -191,7 +191,7 @@ class ImageShare(TimeStampedModel):
         constraints = [
             CheckConstraint(
                 name="imageshare_grantor_grantee_diff_check",
-                check=~Q(grantor=F("grantee")),
+                condition=~Q(grantor=F("grantee")),
             ),
             models.UniqueConstraint(
                 name="imageshare_grantor_image_grantee_unique",

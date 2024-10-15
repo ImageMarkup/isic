@@ -153,7 +153,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="imageshare",
             constraint=models.CheckConstraint(
-                check=models.Q(("grantor", models.F("grantee")), _negated=True),
+                condition=models.Q(("grantor", models.F("grantee")), _negated=True),
                 name="imageshare_grantor_grantee_diff_check",
             ),
         ),
@@ -176,7 +176,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="girderimage",
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     ("status", "unknown"),
                     ("status", "non_image"),
                     ("accession__isnull", False),
@@ -188,7 +188,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="girderimage",
             constraint=models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     ("status", "non_image"),
                     models.Q(("stripped_blob_dm", ""), _negated=True),
                     _connector="OR",
@@ -199,7 +199,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="collectionshare",
             constraint=models.CheckConstraint(
-                check=models.Q(("grantor", models.F("grantee")), _negated=True),
+                condition=models.Q(("grantor", models.F("grantee")), _negated=True),
                 name="collectionshare_grantor_grantee_diff_check",
             ),
         ),

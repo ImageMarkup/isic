@@ -477,7 +477,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="response",
             constraint=models.CheckConstraint(
-                check=django.db.models.lookups.Exact(
+                condition=django.db.models.lookups.Exact(
                     lhs=models.Func(
                         "choice",
                         "value",
@@ -504,7 +504,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="annotation",
             constraint=models.CheckConstraint(
-                check=models.Q(("start_time__lte", models.F("created"))),
+                condition=models.Q(("start_time__lte", models.F("created"))),
                 name="annotation_start_time_check",
             ),
         ),
