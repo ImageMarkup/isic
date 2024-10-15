@@ -85,3 +85,18 @@ force-sort-within-sections = true
 
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"
+
+[tool.mypy]
+disable_error_code = "var-annotated,return"
+ignore_missing_imports = true
+warn_unused_configs = true
+check_untyped_defs = true
+plugins = ["mypy_django_plugin.main"]
+
+[[tool.mypy.overrides]]
+module = ["isic.core.pagination"]
+ignore_errors = true
+
+[tool.django-stubs]
+django_settings_module = "isic.settings.testing"
+strict_settings = false

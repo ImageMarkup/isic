@@ -63,6 +63,7 @@ setup(
         "django-object-actions",
         "django-redis",
         "django-storages>1.14.2",
+        "django-stubs-ext",
         "django-widget-tweaks",
         "django[argon2]>=5.1,<6",
         "gdal",
@@ -117,6 +118,12 @@ setup(
             # Used in an adhoc manner during development
             "pytest-random-order",
             "pytest-repeat",
+        ],
+        "type": [
+            "django-stubs[compatible-mypy]",
+            # see https://github.com/typeddjango/django-stubs/issues/2405
+            "mypy<1.12.0",
+            "types-requests",
         ],
     },
 )

@@ -3,8 +3,11 @@ import os
 from pathlib import Path
 
 from celery.schedules import crontab
+import django_stubs_ext
 
 from .upstream_base import *  # noqa: F403
+
+django_stubs_ext.monkeypatch()
 
 
 def _oauth2_pkce_required(client_id):
