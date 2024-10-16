@@ -97,7 +97,7 @@ def _country_from_iso_code(iso_code: str) -> dict:
 @shared_task(
     soft_time_limit=60,
     time_limit=120,
-    queue="low-priority",
+    queue="stats-aggregation",
 )
 def collect_google_analytics_metrics_task():
     if not settings.ISIC_GOOGLE_API_JSON_KEY:
@@ -170,7 +170,7 @@ def _cdn_access_log_records(log_file_bytes: BytesIO) -> Iterable[dict]:
 
 
 @shared_task(
-    queue="stats-aggregation",
+    queue="s3-log-processing",
     soft_time_limit=900,
     time_limit=930,
 )
