@@ -129,7 +129,7 @@ def validate_internal_consistency(
     return _validate_df_consistency(rows)
 
 
-def validate_archive_consistency(
+def validate_archive_consistency(  # noqa: C901
     rows: csv.DictReader, cohort: Cohort
 ) -> tuple[ColumnRowErrors, list[Problem]]:
     """
@@ -174,6 +174,14 @@ def validate_archive_consistency(
                         f"{field.relation_name}__{field.internal_id_name}"
                     ]
                     del accession_values[f"{field.relation_name}__{field.internal_id_name}"]
+
+            diagnosis_fields = [
+                f"diagnosis_{i}" for i in range(1, 6) if f"diagnosis_{i}" in accession_values
+            ]
+            if any(accession_values[field] for field in diagnosis_fields):
+                accession_values["diagnosis"] = ":".join(
+                    accession_values[field] for field in diagnosis_fields if accession_values[field]
+                )
 
             return accession_values
 
