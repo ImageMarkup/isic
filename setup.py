@@ -70,7 +70,7 @@ setup(
         "google-analytics-data",
         "hashids",
         "hiredis",
-        "isic-metadata>=3.0.0",
+        "isic-metadata>=4.0.0",
         "jaro-winkler",
         "oauth2client",
         "opensearch-py",

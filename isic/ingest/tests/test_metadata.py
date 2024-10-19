@@ -245,20 +245,23 @@ def test_apply_metadata_step2_invalid(
 def test_diagnosis_transition(staff_user, accession, image_factory) -> None:
     # this tests that the original diagnosis is preserved even though we're attempting
     # to change the hierarchical version.
-    from isic_metadata.diagnosis_hierarchical import DiagnosisEnum
 
     accession.legacy_dx = "melanoma"
     accession.save()
 
     accession.update_metadata(staff_user, {"diagnosis": "Nevus"})
     assert accession.metadata == {
-        "diagnosis": DiagnosisEnum.benign_benign_melanocytic_proliferations_nevus,
+        "diagnosis_1": "Benign",
+        "diagnosis_2": "Benign melanocytic proliferations",
+        "diagnosis_3": "Nevus",
         "legacy_dx": "melanoma",
     }
 
     accession.update_metadata(staff_user, {"diagnosis": "Melanoma Invasive"})
     assert accession.metadata == {
-        "diagnosis": DiagnosisEnum.malignant_malignant_melanocytic_proliferations_melanoma_melanoma_invasive,  # noqa: E501
+        "diagnosis_1": "Malignant",
+        "diagnosis_2": "Malignant melanocytic proliferations (Melanoma)",
+        "diagnosis_3": "Melanoma Invasive",
         "legacy_dx": "melanoma",
     }
 
@@ -269,8 +272,6 @@ def test_diagnosis_transition(staff_user, accession, image_factory) -> None:
         "diagnosis_1": "Malignant",
         "diagnosis_2": "Malignant melanocytic proliferations (Melanoma)",
         "diagnosis_3": "Melanoma Invasive",
-        "diagnosis_4": None,
-        "diagnosis_5": None,
     }
 
 
@@ -458,7 +459,9 @@ def test_accession_update_metadata(user, imageless_accession) -> None:
 def test_accession_update_metadata_iddx(user, imageless_accession) -> None:
     imageless_accession.update_metadata(user, {"diagnosis": "Nevus"})
     assert imageless_accession.metadata == {
-        "diagnosis": "Benign:Benign melanocytic proliferations:Nevus"
+        "diagnosis_1": "Benign",
+        "diagnosis_2": "Benign melanocytic proliferations",
+        "diagnosis_3": "Nevus",
     }
     assert imageless_accession.metadata_versions.count() == 1
 

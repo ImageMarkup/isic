@@ -2,6 +2,7 @@ import pathlib
 
 import factory
 import factory.django
+from isic_metadata.fields import DiagnosisEnum
 
 from isic.core.models import CopyrightLicense
 from isic.factories import UserFactory
@@ -117,6 +118,24 @@ class AccessionFactory(factory.django.DjangoModelFactory):
 
     # Using "metadata = factory.Dict" breaks pytest-factoryboy; see
     # https://github.com/pytest-dev/pytest-factoryboy/issues/67
+
+    @factory.post_generation
+    def fq(self, create, extracted, **kwargs):
+        # fq__diagnosis
+        if not create:
+            return
+
+        if "diagnosis" in kwargs:
+            extracted = kwargs.pop("diagnosis", None)
+
+            if extracted == "melanoma":
+                extracted = DiagnosisEnum.malignant_malignant_melanocytic_proliferations_melanoma_melanoma_invasive  # noqa: E501
+            elif extracted == "nevus":
+                extracted = DiagnosisEnum.benign_benign_melanocytic_proliferations_nevus_nevus_spitz
+
+            if extracted:
+                for key, value in DiagnosisEnum.as_dict(extracted).items():
+                    setattr(self, key, value)
 
 
 class AccessionReviewFactory(factory.django.DjangoModelFactory):
