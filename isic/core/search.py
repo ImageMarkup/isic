@@ -152,6 +152,16 @@ def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 2_000) -> No
 
 def _prettify_facets(facets: dict[str, Any]) -> dict[str, Any]:
     """Perform some post-processing on the facets to make UI rendering easier."""
+
+    def _strip_superfluous_fields(facets: dict[str, dict]) -> dict[str, dict]:
+        for value in facets.values():
+            value.pop("doc_count_error_upper_bound", None)
+            value.pop("sum_other_doc_count", None)
+
+        return facets
+
+    facets = _strip_superfluous_fields(facets)
+
     fitzpatrick_values = {bucket["key"] for bucket in facets["fitzpatrick_skin_type"]["buckets"]}
     missing_fitzpatrick = {x.value for x in FitzpatrickSkinType} - fitzpatrick_values
 
