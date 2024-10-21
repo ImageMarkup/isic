@@ -9,6 +9,7 @@ from django.contrib.auth.models import AnonymousUser, User
 from django.db.models.query import QuerySet
 from isic_metadata import FIELD_REGISTRY
 from isic_metadata.fields import FitzpatrickSkinType, ImageTypeEnum
+from opensearchpy import NotFoundError
 
 from isic.ingest.models.accession import Accession
 
@@ -75,8 +76,6 @@ def get_elasticsearch_client() -> "OpenSearch":
 
 
 def maybe_create_index() -> None:
-    from opensearchpy import NotFoundError
-
     try:
         indices = get_elasticsearch_client().indices.get(settings.ISIC_ELASTICSEARCH_INDEX)
     except NotFoundError:
@@ -97,7 +96,22 @@ def maybe_create_index() -> None:
         # Otherwise, the index is up to date; nothing to be done.
 
 
+def assert_index_exists(name: str = settings.ISIC_ELASTICSEARCH_INDEX) -> None:
+    """
+    Assert that an index exists in the elasticsearch cluster.
+
+    This is a rather annoying necessity because elasticsearch supports implicitly creating
+    indices on the first write operation. This is bad because it can lead to weird failures
+    where the index gets created with the wrong mappings and then subsequent operations fail.
+    To curb this we assert the index exists before doing any writes. This is useful for catching
+    tests that don't use the _search_index fixture but write to elasticsearch.
+    """
+    get_elasticsearch_client().indices.get(name)
+
+
 def add_to_search_index(image: Image) -> None:
+    assert_index_exists()
+
     image = Image.objects.with_elasticsearch_properties().get(pk=image.pk)
     get_elasticsearch_client().index(
         index=settings.ISIC_ELASTICSEARCH_INDEX,
@@ -107,6 +121,7 @@ def add_to_search_index(image: Image) -> None:
 
 
 def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 2_000) -> None:
+    assert_index_exists()
     from opensearchpy.helpers import bulk
 
     # The opensearch logger is very noisy when updating records,

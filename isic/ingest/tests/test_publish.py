@@ -26,6 +26,7 @@ def publishable_cohort(cohort_factory, accession_factory, accession_review_facto
 
 
 @pytest.mark.django_db()
+@pytest.mark.usefixtures("_search_index")
 def test_publish_cohort(
     staff_client, publishable_cohort, django_capture_on_commit_callbacks, collection_factory
 ):
