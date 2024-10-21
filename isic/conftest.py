@@ -1,8 +1,10 @@
+from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.test.client import Client
 import pytest
 from pytest_factoryboy import register
 
+from isic.core.search import get_elasticsearch_client, maybe_create_index
 from isic.core.tests.factories import CollectionFactory, ImageFactory, IsicIdFactory
 from isic.ingest.tests.factories import (
     AccessionFactory,
@@ -37,6 +39,14 @@ def _setup_groups(request):
 
         public = Group.objects.get(name="Public")
         public.user_set.set(User.objects.all())
+
+
+@pytest.fixture()
+def _search_index():
+    es = get_elasticsearch_client()
+    maybe_create_index()
+    yield
+    es.indices.delete(settings.ISIC_ELASTICSEARCH_INDEX)
 
 
 @pytest.fixture()
