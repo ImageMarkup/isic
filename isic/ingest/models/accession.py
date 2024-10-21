@@ -11,7 +11,6 @@ from uuid import uuid4
 
 from django.contrib.auth.models import User
 from django.contrib.postgres.constraints import ExclusionConstraint
-from django.contrib.postgres.indexes import GinIndex, OpClass
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -23,7 +22,7 @@ from django.db.models.fields import Field
 from django.db.models.functions import Cast, Round
 from django.db.models.query_utils import Q
 from girder_utils.files import field_file_to_local_path
-from isic_metadata.fields import DiagnosisEnum, ImageTypeEnum, LegacyDxEnum
+from isic_metadata.fields import ImageTypeEnum, LegacyDxEnum
 from isic_metadata.metadata import MetadataRow
 from osgeo import gdal
 import PIL.Image
@@ -75,7 +74,11 @@ class AccessionMetadata(models.Model):
     sex = models.CharField(max_length=6, null=True, blank=True)
     anatom_site_general = models.CharField(max_length=255, null=True, blank=True)
     benign_malignant = models.CharField(max_length=255, null=True, blank=True)
-    diagnosis = models.CharField(max_length=255, null=True, blank=True)
+    diagnosis_1 = models.CharField(max_length=255, null=True, blank=True)
+    diagnosis_2 = models.CharField(max_length=255, null=True, blank=True)
+    diagnosis_3 = models.CharField(max_length=255, null=True, blank=True)
+    diagnosis_4 = models.CharField(max_length=255, null=True, blank=True)
+    diagnosis_5 = models.CharField(max_length=255, null=True, blank=True)
     legacy_dx = models.CharField(max_length=255, null=True, blank=True)
     diagnosis_confirm_type = models.CharField(max_length=255, null=True, blank=True)
     personal_hx_mm = models.BooleanField(null=True, blank=True)
@@ -194,22 +197,6 @@ class ComputedMetadataField:
 
     es_mappings: dict[str, dict]
     es_aggregates: dict
-
-
-def diagnosis_split(diagnosis: str | None) -> dict[str, str | None]:
-    if not diagnosis:
-        return {
-            "diagnosis_1": None,
-            "diagnosis_2": None,
-            "diagnosis_3": None,
-            "diagnosis_4": None,
-            "diagnosis_5": None,
-        }
-
-    parts = diagnosis.split(":")
-    # pad parts out to 5 elements
-    parts += [None] * (5 - len(parts))  # type: ignore[list-item]
-    return {f"diagnosis_{i + 1}": parts[i] for i in range(5)}
 
 
 class AccessionStatus(models.TextChoices):
@@ -376,7 +363,6 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
                 | Q(image_type__isnull=True)
                 | Q(image_type=ImageTypeEnum.rcm_mosaic),
             ),
-            CheckConstraint(name="valid_diagnosis", condition=Q(diagnosis__in=DiagnosisEnum)),
             CheckConstraint(name="valid_legacy_dx", condition=Q(legacy_dx__in=LegacyDxEnum)),
         ]
 
@@ -412,15 +398,6 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
                 name="accession_benign_malignant",
                 fields=["benign_malignant"],
                 condition=~Q(benign_malignant="benign"),
-            ),
-            models.Index(
-                name="accession_diagnosis",
-                fields=["diagnosis"],
-                condition=~Q(diagnosis__in=[None, "", "Benign"]),
-            ),
-            GinIndex(
-                OpClass("diagnosis", name="gin_trgm_ops"),
-                name="accession_diagnosis_gin",
             ),
             models.Index(fields=["legacy_dx"]),
             models.Index(fields=["mel_class"]),
@@ -461,32 +438,6 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
                 }
             },
         ),
-        ComputedMetadataField(
-            "diagnosis",
-            [
-                "diagnosis_1",
-                "diagnosis_2",
-                "diagnosis_3",
-                "diagnosis_4",
-                "diagnosis_5",
-            ],
-            diagnosis_split,
-            "clinical",
-            es_mappings={
-                "diagnosis_1": {"type": "keyword"},
-                "diagnosis_2": {"type": "keyword"},
-                "diagnosis_3": {"type": "keyword"},
-                "diagnosis_4": {"type": "keyword"},
-                "diagnosis_5": {"type": "keyword"},
-            },
-            es_aggregates={
-                "diagnosis_1": {"terms": {"field": "diagnosis_1"}},
-                "diagnosis_2": {"terms": {"field": "diagnosis_2"}},
-                "diagnosis_3": {"terms": {"field": "diagnosis_3"}},
-                "diagnosis_4": {"terms": {"field": "diagnosis_4"}},
-                "diagnosis_5": {"terms": {"field": "diagnosis_5"}},
-            },
-        ),
     ]
 
     @property
@@ -522,6 +473,11 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
     @staticmethod
     def meets_cog_threshold(img: PIL.Image.Image) -> bool:
         return img.height * img.width > IMAGE_COG_THRESHOLD
+
+    @property
+    def fq_diagnosis(self) -> str:
+        diagnoses = [getattr(self.metadata, f"diagnosis_{i}") for i in range(1, 6)]
+        return ":".join(level for level in diagnoses if level is not None)
 
     def _generate_blob(self, img: PIL.Image.Image) -> AccessionBlob:
         # Explicitly load the image, so any decoding errors can be caught
@@ -877,6 +833,10 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
         """Remove metadata from an accession."""
         if self.pk and not ignore_image_check:
             self._require_unpublished()
+
+        if "diagnosis" in metadata_fields:
+            metadata_fields.remove("diagnosis")
+            metadata_fields.extend([f"diagnosis_{i}" for i in range(1, 6)])
 
         modified = False
         with transaction.atomic():
