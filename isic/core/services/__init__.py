@@ -69,7 +69,7 @@ def staff_image_metadata_csv(
 
     yield (
         headers
-        + sorted(used_metadata_keys)
+        + sorted([k if k != "legacy_dx" else "diagnosis" for k in used_metadata_keys])
         + remapped_keys
         + sorted([f"unstructured.{key}" for key in used_unstructured_metadata_keys])
     )
@@ -143,13 +143,11 @@ def staff_image_metadata_csv(
             if "legacy_dx" in value:
                 value["diagnosis"] = value["legacy_dx"]
                 del value["legacy_dx"]
-            else:
-                value["diagnosis"] = None
 
             yield value
 
 
-def image_metadata_csv(  # noqa: C901
+def image_metadata_csv(
     *, qs: QuerySet[Image]
 ) -> Generator[list[str] | dict[str, str | bool | float], None, None]:
     """
@@ -168,6 +166,7 @@ def image_metadata_csv(  # noqa: C901
 
     if "legacy_dx" in used_metadata_keys:
         used_metadata_keys.remove("legacy_dx")
+        used_metadata_keys.append("diagnosis")
 
     for field in Accession.remapped_internal_fields:
         if accession_qs.exclude(**{field.relation_name: None}).exists():
@@ -175,9 +174,7 @@ def image_metadata_csv(  # noqa: C901
 
     for computed_field in Accession.computed_fields:
         if computed_field.input_field_name in used_metadata_keys:
-            if computed_field.input_field_name != "diagnosis":
-                used_metadata_keys.remove(computed_field.input_field_name)
-
+            used_metadata_keys.remove(computed_field.input_field_name)
             used_metadata_keys += computed_field.output_field_names
 
     fieldnames = headers + sorted(used_metadata_keys)
@@ -212,9 +209,8 @@ def image_metadata_csv(  # noqa: C901
                     if computed_fields:
                         image.update(computed_fields)
 
-                    if computed_field.input_field_name != "diagnosis":
-                        del image[computed_field.input_field_name]
-                    else:
-                        image["diagnosis"] = image.pop("legacy_dx")
+                    del image[computed_field.input_field_name]
+
+            image["diagnosis"] = image.pop("legacy_dx")
 
             yield {k: v for k, v in image.items() if k in fieldnames}

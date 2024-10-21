@@ -1,9 +1,10 @@
 from dataclasses import dataclass
+from typing import Literal
 
+from isic_metadata.fields import DiagnosisEnum
 import pytest
 from pytest_lazy_fixtures import lf
 
-from isic.conftest import MELANOMA, NEVUS
 from isic.ingest.models.lesion import Lesion
 
 
@@ -92,8 +93,8 @@ def test_api_lesion_completeness(client, lesion_factory, image_factory):
     lesion = lesion_factory()
     image = image_factory(
         accession__lesion=lesion,
-        accession__diagnosis=MELANOMA,
         accession__benign_malignant="malignant",
+        accession__fq__diagnosis="melanoma",
         accession__acquisition_day=1,
         public=True,
     )
@@ -103,14 +104,17 @@ def test_api_lesion_completeness(client, lesion_factory, image_factory):
     assert resp.json()["results"][0]["images_count"] == 1
     assert not resp.json()["results"][0]["longitudinally_monitored"]
     assert resp.json()["results"][0]["index_image_id"] == image.isic_id
-    assert resp.json()["results"][0]["outcome_diagnosis"] == MELANOMA
+    assert (
+        resp.json()["results"][0]["outcome_diagnosis"]
+        == DiagnosisEnum.malignant_malignant_melanocytic_proliferations_melanoma_melanoma_invasive
+    )
     assert resp.json()["results"][0]["outcome_benign_malignant"] == "malignant"
 
     # verify longitudinally_monitored
     image_factory(
         accession__lesion=lesion,
-        accession__diagnosis=NEVUS,
         accession__benign_malignant="benign",
+        accession__fq__diagnosis="nevus",
         accession__acquisition_day=2,
         public=True,
     )
@@ -126,7 +130,7 @@ class AccessionMeta:
     id: int
     concomitant_biopsy: bool | None
     acquisition_day: int | None
-    diagnosis: str | None
+    diagnosis: Literal["melanoma", "nevus", None]
     image_type: str | None
 
 
@@ -139,51 +143,51 @@ class AccessionMeta:
                 id=1,
                 concomitant_biopsy=True,
                 acquisition_day=None,
-                diagnosis=NEVUS,
+                diagnosis="nevus",
                 image_type=None,
             ),
             AccessionMeta(
                 id=2,
                 concomitant_biopsy=True,
                 acquisition_day=None,
-                diagnosis=MELANOMA,
+                diagnosis="melanoma",
                 image_type=None,
             ),
-            NEVUS,
+            DiagnosisEnum.benign_benign_melanocytic_proliferations_nevus_nevus_spitz,
         ),
         (
             AccessionMeta(
                 id=1,
                 concomitant_biopsy=False,
                 acquisition_day=None,
-                diagnosis=NEVUS,
+                diagnosis="nevus",
                 image_type=None,
             ),
             AccessionMeta(
                 id=2,
                 concomitant_biopsy=False,
                 acquisition_day=None,
-                diagnosis=MELANOMA,
+                diagnosis="melanoma",
                 image_type=None,
             ),
-            NEVUS,
+            DiagnosisEnum.benign_benign_melanocytic_proliferations_nevus_nevus_spitz,
         ),
         (
             AccessionMeta(
                 id=1,
                 concomitant_biopsy=False,
                 acquisition_day=None,
-                diagnosis=MELANOMA,
+                diagnosis="melanoma",
                 image_type="tbp",
             ),
             AccessionMeta(
                 id=2,
                 concomitant_biopsy=False,
                 acquisition_day=None,
-                diagnosis=NEVUS,
+                diagnosis="nevus",
                 image_type="dermoscopic",
             ),
-            NEVUS,
+            DiagnosisEnum.benign_benign_melanocytic_proliferations_nevus_nevus_spitz,
         ),
         (
             AccessionMeta(
@@ -197,7 +201,7 @@ class AccessionMeta:
                 id=2,
                 concomitant_biopsy=False,
                 acquisition_day=None,
-                diagnosis=MELANOMA,
+                diagnosis="melanoma",
                 image_type=None,
             ),
             None,
@@ -214,7 +218,7 @@ class AccessionMeta:
                 id=2,
                 concomitant_biopsy=True,
                 acquisition_day=None,
-                diagnosis=MELANOMA,
+                diagnosis="melanoma",
                 image_type=None,
             ),
             None,
@@ -224,17 +228,17 @@ class AccessionMeta:
                 id=1,
                 concomitant_biopsy=False,
                 acquisition_day=1,
-                diagnosis=NEVUS,
+                diagnosis="nevus",
                 image_type=None,
             ),
             AccessionMeta(
                 id=2,
                 concomitant_biopsy=False,
                 acquisition_day=7,
-                diagnosis=MELANOMA,
+                diagnosis="melanoma",
                 image_type=None,
             ),
-            NEVUS,
+            DiagnosisEnum.benign_benign_melanocytic_proliferations_nevus_nevus_spitz,
         ),
         (
             AccessionMeta(
@@ -248,7 +252,7 @@ class AccessionMeta:
                 id=2,
                 concomitant_biopsy=False,
                 acquisition_day=7,
-                diagnosis=MELANOMA,
+                diagnosis="melanoma",
                 image_type=None,
             ),
             None,
@@ -258,7 +262,7 @@ class AccessionMeta:
                 id=1,
                 concomitant_biopsy=False,
                 acquisition_day=1,
-                diagnosis=MELANOMA,
+                diagnosis="melanoma",
                 image_type="dermoscopic",
             ),
             AccessionMeta(
@@ -284,14 +288,14 @@ def test_lesion_diagnosis(
         accession__lesion=lesion,
         accession__concomitant_biopsy=accession_a.concomitant_biopsy,
         accession__acquisition_day=accession_a.acquisition_day,
-        accession__diagnosis=accession_a.diagnosis,
+        accession__fq__diagnosis=accession_a.diagnosis,
         accession__image_type=accession_a.image_type,
     )
     image_factory(
         accession__lesion=lesion,
         accession__concomitant_biopsy=accession_b.concomitant_biopsy,
         accession__acquisition_day=accession_b.acquisition_day,
-        accession__diagnosis=accession_b.diagnosis,
+        accession__fq__diagnosis=accession_b.diagnosis,
         accession__image_type=accession_b.image_type,
     )
 

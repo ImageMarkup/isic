@@ -1,8 +1,5 @@
-from typing import Final
-
 from django.contrib.auth.models import Group, User
 from django.test.client import Client
-from isic_metadata.fields import DiagnosisEnum
 import pytest
 from pytest_factoryboy import register
 
@@ -29,11 +26,6 @@ from isic.studies.tests.factories import (
 )
 
 from .factories import ProfileFactory, UserFactory
-
-MELANOMA: Final = (
-    DiagnosisEnum.malignant_malignant_melanocytic_proliferations_melanoma_melanoma_invasive
-)
-NEVUS: Final = DiagnosisEnum.benign_benign_melanocytic_proliferations_nevus_nevus_spitz
 
 
 @pytest.fixture(autouse=True)
