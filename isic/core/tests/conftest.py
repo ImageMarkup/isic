@@ -1,18 +1,8 @@
 import functools
 
-from django.conf import settings
 import pytest
 
-from isic.core.search import get_elasticsearch_client, maybe_create_index
 from isic.ingest.services.accession.review import accession_review_update_or_create
-
-
-@pytest.fixture()
-def _search_index():
-    es = get_elasticsearch_client()
-    maybe_create_index()
-    yield
-    es.indices.delete(settings.ISIC_ELASTICSEARCH_INDEX)
 
 
 @pytest.fixture()
