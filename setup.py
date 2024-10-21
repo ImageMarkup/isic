@@ -121,8 +121,7 @@ setup(
         ],
         "type": [
             "django-stubs[compatible-mypy]",
-            # see https://github.com/typeddjango/django-stubs/issues/2405
-            "mypy<1.12.0",
+            "mypy",
             "types-requests",
         ],
     },
