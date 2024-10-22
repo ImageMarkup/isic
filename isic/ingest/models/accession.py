@@ -400,6 +400,27 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
                 condition=~Q(benign_malignant="benign"),
             ),
             models.Index(fields=["legacy_dx"]),
+            models.Index(
+                name="accession_diagnosis_1",
+                fields=["diagnosis_1"],
+                condition=~Q(diagnosis_1="Benign"),
+            ),
+            models.Index(
+                name="accession_diagnosis_2",
+                fields=["diagnosis_2"],
+            ),
+            models.Index(
+                name="accession_diagnosis_3",
+                fields=["diagnosis_3"],
+            ),
+            models.Index(
+                name="accession_diagnosis_4",
+                fields=["diagnosis_4"],
+            ),
+            models.Index(
+                name="accession_diagnosis_5",
+                fields=["diagnosis_5"],
+            ),
             models.Index(fields=["mel_class"]),
             models.Index(fields=["mel_mitotic_index"]),
             models.Index(fields=["mel_type"]),
