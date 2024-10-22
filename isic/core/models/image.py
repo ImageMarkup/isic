@@ -44,7 +44,15 @@ class ImageManager(models.Manager["Image"]):
             contributor_owner_ids=ArrayAgg(
                 "accession__cohort__contributor__owners", distinct=True, default=[]
             ),
-            shared_to=ArrayAgg("shares", distinct=True, default=[]),
+            shared_to=ArrayAgg(
+                "shares",
+                # confusingly, this filters out where shares__grantee_id is None so
+                # we don't end up with [null] in elasticsearch.
+                # see also https://stackoverflow.com/questions/55098215/exclude-null-values-from-djangos-arrayagg
+                filter=~Q(shares=None),
+                distinct=True,
+                default=[],
+            ),
         )
 
     def public(self):
