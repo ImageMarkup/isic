@@ -1,6 +1,7 @@
 import logging
 
 from ninja.operation import PathView
+from sentry_sdk import set_tag
 
 logger = logging.getLogger(__name__)
 
@@ -36,4 +37,12 @@ class LogRequestUserMiddleware:
             logger.info(
                 f"{request.method} {request.path} user:{getattr(request.user, "pk", "none")}"  # noqa: G004
             )
+
+            if request.user.is_anonymous:
+                set_tag("user_type", "anonymous")
+            elif request.user.is_staff:
+                set_tag("user_type", "logged-in-staff")
+            else:
+                set_tag("user_type", "logged-in-user")
+
         return response
