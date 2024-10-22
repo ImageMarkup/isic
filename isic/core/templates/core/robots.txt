@@ -1,2 +1,4 @@
 User-agent: Amazonbot
+User-agent: AhrefsBot
+User-agent: MJ12bot
 Disallow: /
