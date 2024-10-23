@@ -75,20 +75,24 @@ def get_elasticsearch_client() -> "OpenSearch":
     return OpenSearch(settings.ISIC_ELASTICSEARCH_URI, transport_class=RetryOnTimeoutTransport)  # type: ignore[arg-type]
 
 
-def maybe_create_index(name: str = settings.ISIC_ELASTICSEARCH_INDEX) -> None:
+def maybe_create_index() -> None:
     try:
-        indices = get_elasticsearch_client().indices.get(name)
+        indices = get_elasticsearch_client().indices.get(settings.ISIC_ELASTICSEARCH_INDEX)
     except NotFoundError:
         # Need to create
-        get_elasticsearch_client().indices.create(index=name, body={"mappings": INDEX_MAPPINGS})
+        get_elasticsearch_client().indices.create(
+            index=settings.ISIC_ELASTICSEARCH_INDEX, body={"mappings": INDEX_MAPPINGS}
+        )
     else:
         # "indices" also contains "settings", which are unspecified by us, so only compare
         # "mappings"
-        if indices[name]["mappings"] != INDEX_MAPPINGS:
+        if indices[settings.ISIC_ELASTICSEARCH_INDEX]["mappings"] != INDEX_MAPPINGS:
             # Existing fields cannot be mutated.
             # TODO: It's possible to add new fields if none of the existing fields are modified.
             # https://www.elastic.co/guide/en/elasticsearch/reference/7.14/indices-put-mapping.html
-            raise Exception(f'Cannot safely update existing index "{name}".')
+            raise Exception(
+                f'Cannot safely update existing index "{settings.ISIC_ELASTICSEARCH_INDEX}".'
+            )
         # Otherwise, the index is up to date; nothing to be done.
 
 
@@ -105,8 +109,8 @@ def assert_index_exists(name: str = settings.ISIC_ELASTICSEARCH_INDEX) -> None:
     get_elasticsearch_client().indices.get(name)
 
 
-def add_to_search_index(image: Image, index: str = settings.ISIC_ELASTICSEARCH_INDEX) -> None:
-    assert_index_exists(index)
+def add_to_search_index(image: Image) -> None:
+    assert_index_exists()
 
     image = Image.objects.with_elasticsearch_properties().get(pk=image.pk)
     get_elasticsearch_client().index(
@@ -116,10 +120,8 @@ def add_to_search_index(image: Image, index: str = settings.ISIC_ELASTICSEARCH_I
     )
 
 
-def bulk_add_to_search_index(
-    qs: QuerySet[Image], index: str = settings.ISIC_ELASTICSEARCH_INDEX, chunk_size: int = 2_000
-) -> None:
-    assert_index_exists(index)
+def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 2_000) -> None:
+    assert_index_exists()
     from opensearchpy.helpers import bulk
 
     # The opensearch logger is very noisy when updating records,
@@ -136,7 +138,7 @@ def bulk_add_to_search_index(
         # is thread local.
         success, info = bulk(
             client=get_elasticsearch_client(),
-            index=index,
+            index=settings.ISIC_ELASTICSEARCH_INDEX,
             actions=image_documents,
             # The default chunk_size is 2000, but that may be too many models to fit into memory.
             # Note the default chunk_size matches QuerySet.iterator
