@@ -1,7 +1,6 @@
 import csv
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-import secrets
 import tempfile
 from typing import cast
 import uuid
@@ -18,7 +17,7 @@ from urllib3.exceptions import ConnectionError, TimeoutError
 
 from isic.core.models.collection import Collection
 from isic.core.models.image import Image
-from isic.core.search import bulk_add_to_search_index, get_elasticsearch_client, maybe_create_index
+from isic.core.search import bulk_add_to_search_index
 from isic.core.serializers import SearchQueryIn
 from isic.core.services import staff_image_metadata_csv
 from isic.core.services.collection import collection_share
@@ -60,22 +59,8 @@ def share_collection_with_users_task(collection_pk: int, grantor_pk: int, user_p
     retry_kwargs={"max_retries": 3},
     queue="es-indexing",
 )
-def sync_elasticsearch_index_task(chunk_size: int = 500):
-    es = get_elasticsearch_client()
-
-    tmp_name = secrets.token_hex()
-    maybe_create_index(tmp_name)
-
-    bulk_add_to_search_index(
-        Image.objects.with_elasticsearch_properties().all(), index=tmp_name, chunk_size=chunk_size
-    )
-
-    es.indices.add_block(index=tmp_name, block="write")
-    es.indices.delete(index=settings.ISIC_ELASTICSEARCH_INDEX, ignore=[404])
-    es.indices.clone(index=tmp_name, target=settings.ISIC_ELASTICSEARCH_INDEX)
-    es.indices.delete(index=tmp_name)
-
-    es.indices.refresh(index="_all")
+def sync_elasticsearch_index_task():
+    bulk_add_to_search_index(Image.objects.with_elasticsearch_properties())
 
 
 @shared_task(soft_time_limit=1800, time_limit=1810)
