@@ -683,6 +683,10 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
                 # Load the image so the stream can be closed
                 img.load()
 
+        # handle 16-bit grayscale images (RCM tiles) by rescaling to 8-bit
+        if img.mode == "I;16":
+            img = img.point(lambda p: p / 256).convert("L")
+
         # LANCZOS provides the best anti-aliasing
         img.thumbnail((256, 256), resample=PIL.Image.LANCZOS)  # type: ignore[attr-defined]
 
