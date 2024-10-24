@@ -183,7 +183,7 @@ def validate_archive_consistency(  # noqa: C901
                     accession_values[field] for field in diagnosis_fields if accession_values[field]
                 )
 
-            return accession_values
+            return {k: v for (k, v) in accession_values.items() if v is not None}
 
         yielded_filenames: set[str] = set()
 
