@@ -22,7 +22,7 @@ class ExemptBearerAuthFromCSRFMiddleware:
             request._dont_enforce_csrf_checks = True  # noqa: SLF001
 
 
-class LogRequestUserMiddleware:
+class UserTypeTagMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
@@ -34,10 +34,6 @@ class LogRequestUserMiddleware:
 
         # certain requests, like static files, don't have a user attribute on the request
         if hasattr(request, "user"):
-            logger.info(
-                f"{request.method} {request.path} user:{getattr(request.user, "pk", "none")}"  # noqa: G004
-            )
-
             if request.user.is_anonymous:
                 set_tag("user_type", "anonymous")
             elif request.user.is_staff:
