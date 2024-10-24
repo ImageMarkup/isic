@@ -272,5 +272,5 @@ def _process_s3_log_file_task(log_file_bytes: BytesIO):
                 # Ignore duplicate entries, this is necessary because another transaction can be
                 # committed between the time of the earlier check and now.
                 # See https://www.postgresql.org/docs/current/errcodes-appendix.html
-                if e.__cause__.pgcode != "23505":  # type: ignore[union-attr]
+                if e.__cause__.sqlstate != "23505":  # type: ignore[union-attr]
                     raise
