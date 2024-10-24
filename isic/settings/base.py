@@ -111,7 +111,7 @@ INSTALLED_APPS = [
 
 # Middleware
 MIDDLEWARE = [
-    "isic.middleware.LogRequestUserMiddleware",
+    "isic.middleware.UserTypeTagMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.middleware.gzip.GZipMiddleware",
     "corsheaders.middleware.CorsMiddleware",
