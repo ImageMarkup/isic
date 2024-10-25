@@ -1,5 +1,5 @@
 import secrets
-from typing import TypedDict
+from typing import Any, TypedDict
 
 from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates import BoolAnd
@@ -157,6 +157,11 @@ class LesionManager(models.Manager["Lesion"]):
         return self.get_queryset().has_images()
 
 
+class EsLesionDocument(TypedDict):
+    lesion_id: str
+    images: list[dict[str, Any]]
+
+
 class Lesion(models.Model):
     id = models.CharField(
         primary_key=True,
@@ -180,6 +185,24 @@ class Lesion(models.Model):
 
     def __str__(self):
         return f"{self.private_lesion_id}->{self.id}"
+
+    def to_elasticsearch_document(self, *, body_only: bool = False) -> dict | EsLesionDocument:
+        document: EsLesionDocument = {"lesion_id": self.pk, "images": []}
+
+        for accession in self.accessions.all():
+            document["images"].append(
+                {
+                    "isic_id": accession.image.isic_id,
+                    "public": accession.image.public,
+                    "contributor_owner_ids": accession.image.contributor_owner_ids,
+                    "shared_to": accession.image.shared_to,
+                }
+            )
+
+        if body_only:
+            return document
+
+        return {"_source": document}
 
 
 class LesionPermissions:

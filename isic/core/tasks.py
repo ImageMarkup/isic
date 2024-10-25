@@ -60,7 +60,9 @@ def share_collection_with_users_task(collection_pk: int, grantor_pk: int, user_p
     queue="es-indexing",
 )
 def sync_elasticsearch_index_task():
-    bulk_add_to_search_index(Image.objects.with_elasticsearch_properties())
+    bulk_add_to_search_index(
+        settings.ISIC_ELASTICSEARCH_IMAGES_INDEX, Image.objects.with_elasticsearch_properties()
+    )
 
 
 @shared_task(soft_time_limit=1800, time_limit=1810)
