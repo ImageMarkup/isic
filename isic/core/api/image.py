@@ -94,7 +94,7 @@ def list_images(request: HttpRequest):
     if settings.ISIC_USE_ELASTICSEARCH_COUNTS:
         es_query = SearchQueryIn().to_es_query(request.user)
         es_count = get_elasticsearch_client().count(
-            index=settings.ISIC_ELASTICSEARCH_INDEX,
+            index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX,
             body={"query": es_query},
         )["count"]
         return qs_with_hardcoded_count(qs, es_count)
@@ -124,7 +124,7 @@ def search_images(request: HttpRequest, search: SearchQueryIn = Query(...)):
     else:
         if settings.ISIC_USE_ELASTICSEARCH_COUNTS:
             es_count = get_elasticsearch_client().count(
-                index=settings.ISIC_ELASTICSEARCH_INDEX,
+                index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX,
                 body={"query": es_query},
             )["count"]
             return qs_with_hardcoded_count(qs, es_count)

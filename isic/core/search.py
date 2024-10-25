@@ -24,19 +24,19 @@ from isic.core.utils.logging import LoggingContext
 
 logger = logging.getLogger(__name__)
 
-INDEX_MAPPINGS = {"properties": {}}
+IMAGE_INDEX_MAPPINGS = {"properties": {}}
 DEFAULT_SEARCH_AGGREGATES = {}
 COUNTS_AGGREGATES = {}
 
 for key, definition in FIELD_REGISTRY.items():
     if definition.search:
-        INDEX_MAPPINGS["properties"][key] = definition.search.es_property
+        IMAGE_INDEX_MAPPINGS["properties"][key] = definition.search.es_property
         DEFAULT_SEARCH_AGGREGATES[key] = definition.search.es_facet
 
 
 # Reserved mappings that can only be set by the archive
 # Additional fields here need to update the checks in isic_field on isic-metadata.
-INDEX_MAPPINGS["properties"].update(
+IMAGE_INDEX_MAPPINGS["properties"].update(
     {
         "collections": {"type": "integer"},
         "contributor_owner_ids": {"type": "integer"},
@@ -50,7 +50,7 @@ INDEX_MAPPINGS["properties"].update(
 )
 
 for computed_field in Accession.computed_fields:
-    INDEX_MAPPINGS["properties"].update(computed_field.es_mappings)
+    IMAGE_INDEX_MAPPINGS["properties"].update(computed_field.es_mappings)
     DEFAULT_SEARCH_AGGREGATES.update(computed_field.es_aggregates)
 
 DEFAULT_SEARCH_AGGREGATES["copyright_license"] = {"terms": {"field": "copyright_license"}}
@@ -77,21 +77,21 @@ def get_elasticsearch_client() -> "OpenSearch":
 
 def maybe_create_index() -> None:
     try:
-        indices = get_elasticsearch_client().indices.get(settings.ISIC_ELASTICSEARCH_INDEX)
+        indices = get_elasticsearch_client().indices.get(settings.ISIC_ELASTICSEARCH_IMAGES_INDEX)
     except NotFoundError:
         # Need to create
         get_elasticsearch_client().indices.create(
-            index=settings.ISIC_ELASTICSEARCH_INDEX, body={"mappings": INDEX_MAPPINGS}
+            index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX, body={"mappings": IMAGE_INDEX_MAPPINGS}
         )
     else:
         # "indices" also contains "settings", which are unspecified by us, so only compare
         # "mappings"
-        if indices[settings.ISIC_ELASTICSEARCH_INDEX]["mappings"] != INDEX_MAPPINGS:
+        if indices[settings.ISIC_ELASTICSEARCH_IMAGES_INDEX]["mappings"] != IMAGE_INDEX_MAPPINGS:
             # Existing fields cannot be mutated.
             # TODO: It's possible to add new fields if none of the existing fields are modified.
             # https://www.elastic.co/guide/en/elasticsearch/reference/7.14/indices-put-mapping.html
             raise Exception(
-                f'Cannot safely update existing index "{settings.ISIC_ELASTICSEARCH_INDEX}".'
+                f'Cannot safely update existing index "{settings.ISIC_ELASTICSEARCH_IMAGES_INDEX}".'
             )
         # Otherwise, the index is up to date; nothing to be done.
 
@@ -114,7 +114,7 @@ def add_to_search_index(image: Image) -> None:
 
     image = Image.objects.with_elasticsearch_properties().get(pk=image.pk)
     get_elasticsearch_client().index(
-        index=settings.ISIC_ELASTICSEARCH_INDEX,
+        index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX,
         id=image.pk,
         body=image.to_elasticsearch_document(body_only=True),
     )
@@ -138,7 +138,7 @@ def bulk_add_to_search_index(qs: QuerySet[Image], chunk_size: int = 2_000) -> No
         # is thread local.
         success, info = bulk(
             client=get_elasticsearch_client(),
-            index=settings.ISIC_ELASTICSEARCH_INDEX,
+            index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX,
             actions=image_documents,
             # The default chunk_size is 2000, but that may be too many models to fit into memory.
             # Note the default chunk_size matches QuerySet.iterator
@@ -204,7 +204,7 @@ def facets(query: dict | None = None, collections: list[int] | None = None) -> d
         counts_body["query"] = query
 
     counts = get_elasticsearch_client().search(
-        index=settings.ISIC_ELASTICSEARCH_INDEX,
+        index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX,
         body=counts_body,
     )["aggregations"]
 
@@ -237,7 +237,7 @@ def facets(query: dict | None = None, collections: list[int] | None = None) -> d
 
     return _prettify_facets(
         get_elasticsearch_client().search(
-            index=settings.ISIC_ELASTICSEARCH_INDEX, body=facets_body
+            index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX, body=facets_body
         )["aggregations"]
     )
 
