@@ -46,7 +46,7 @@ def _search_index():
     es = get_elasticsearch_client()
     maybe_create_index()
     yield
-    es.indices.delete(settings.ISIC_ELASTICSEARCH_INDEX)
+    es.indices.delete(settings.ISIC_ELASTICSEARCH_IMAGES_INDEX)
 
 
 @pytest.fixture()
