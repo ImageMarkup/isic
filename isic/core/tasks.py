@@ -11,6 +11,7 @@ from django.contrib.auth.models import User
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.db import connection, transaction
+from django.db.models import Prefetch
 from django.template.loader import render_to_string
 from girder_utils.storages import expiring_url
 from urllib3.exceptions import ConnectionError, TimeoutError
@@ -22,6 +23,8 @@ from isic.core.serializers import SearchQueryIn
 from isic.core.services import staff_image_metadata_csv
 from isic.core.services.collection import collection_share
 from isic.core.services.collection.image import collection_add_images
+from isic.ingest.models.accession import Accession
+from isic.ingest.models.lesion import Lesion
 
 
 @shared_task(soft_time_limit=600, time_limit=610)
@@ -59,9 +62,27 @@ def share_collection_with_users_task(collection_pk: int, grantor_pk: int, user_p
     retry_kwargs={"max_retries": 3},
     queue="es-indexing",
 )
-def sync_elasticsearch_index_task():
+def sync_elasticsearch_indices_task():
     bulk_add_to_search_index(
         settings.ISIC_ELASTICSEARCH_IMAGES_INDEX, Image.objects.with_elasticsearch_properties()
+    )
+
+    bulk_add_to_search_index(
+        settings.ISIC_ELASTICSEARCH_LESIONS_INDEX,
+        Lesion.objects
+        # only include lesions with images
+        .has_images()
+        # only look at published accessions
+        .prefetch_related(Prefetch("accessions", queryset=Accession.objects.published().order_by()))
+        # include elasticsearch properties for the images
+        .prefetch_related(
+            Prefetch(
+                "accessions__image",
+                queryset=Image.objects.with_elasticsearch_properties().order_by(),
+            )
+        )
+        .all()
+        .order_by(),
     )
 
 

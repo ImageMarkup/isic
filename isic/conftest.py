@@ -4,7 +4,12 @@ from django.test.client import Client
 import pytest
 from pytest_factoryboy import register
 
-from isic.core.search import IMAGE_INDEX_MAPPINGS, get_elasticsearch_client, maybe_create_index
+from isic.core.search import (
+    IMAGE_INDEX_MAPPINGS,
+    LESION_INDEX_MAPPINGS,
+    get_elasticsearch_client,
+    maybe_create_index,
+)
 from isic.core.tests.factories import CollectionFactory, ImageFactory, IsicIdFactory
 from isic.ingest.tests.factories import (
     AccessionFactory,
@@ -45,8 +50,10 @@ def _setup_groups(request):
 def _search_index():
     es = get_elasticsearch_client()
     maybe_create_index(settings.ISIC_ELASTICSEARCH_IMAGES_INDEX, IMAGE_INDEX_MAPPINGS)
+    maybe_create_index(settings.ISIC_ELASTICSEARCH_LESIONS_INDEX, LESION_INDEX_MAPPINGS)
     yield
     es.indices.delete(settings.ISIC_ELASTICSEARCH_IMAGES_INDEX)
+    es.indices.delete(settings.ISIC_ELASTICSEARCH_LESIONS_INDEX)
 
 
 @pytest.fixture()

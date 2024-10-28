@@ -68,7 +68,7 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": timedelta(hours=2),
     },
     "sync-elasticsearch-index": {
-        "task": "isic.core.tasks.sync_elasticsearch_index_task",
+        "task": "isic.core.tasks.sync_elasticsearch_indices_task",
         "schedule": crontab(minute="0", hour="0"),
     },
 }

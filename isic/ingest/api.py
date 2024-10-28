@@ -14,6 +14,7 @@ from isic.core.api.image import ImageOut
 from isic.core.pagination import CursorPagination
 from isic.core.permissions import get_visible_objects
 from isic.ingest.models import Accession, Cohort, Contributor, Lesion, MetadataFile
+from isic.ingest.models.lesion import get_lesion_count_for_user
 from isic.ingest.services.accession import accession_create
 from isic.ingest.services.accession.review import accession_review_bulk_create
 from isic.ingest.tasks import update_metadata_task
@@ -69,9 +70,7 @@ def lesion_list(request: HttpRequest):
         .order_by("id"),
     )
     # the count can be done much more efficiently than the full query
-    qs.custom_count = get_visible_objects(
-        request.user, "ingest.view_lesion", Lesion.objects.has_images()
-    ).count()
+    qs.custom_count = get_lesion_count_for_user(request.user)
     return qs
 
 
