@@ -8,7 +8,7 @@ from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 from django.db.migrations.state import StateApps
 import requests
 
-from isic.core.search import maybe_create_index
+from isic.core.search import IMAGE_INDEX_MAPPINGS, LESION_INDEX_MAPPINGS, maybe_create_index
 
 
 def _block_until_elasticsearch_is_available():
@@ -29,7 +29,8 @@ def _block_until_elasticsearch_is_available():
 
 def create_elasticsearch_index(apps, schema_editor):
     _block_until_elasticsearch_is_available()
-    maybe_create_index()
+    maybe_create_index(settings.ISIC_ELASTICSEARCH_IMAGES_INDEX, IMAGE_INDEX_MAPPINGS)
+    maybe_create_index(settings.ISIC_ELASTICSEARCH_LESIONS_INDEX, LESION_INDEX_MAPPINGS)
 
 
 def update_default_site(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor):

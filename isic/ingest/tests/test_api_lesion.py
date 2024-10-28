@@ -18,6 +18,7 @@ def test_api_lesion_detail(authenticated_client, lesion_factory, image_factory):
 
 
 @pytest.mark.django_db()
+@pytest.mark.usefixtures("_search_index")
 def test_api_lesion(authenticated_client, lesion_factory, image_factory):
     lesion = lesion_factory()
     image_factory(accession__lesion=lesion)
@@ -27,6 +28,7 @@ def test_api_lesion(authenticated_client, lesion_factory, image_factory):
 
 
 @pytest.mark.django_db()
+@pytest.mark.usefixtures("_search_index")
 def test_api_lesion_ignores_imageless_lesions(authenticated_client, lesion_factory, user):
     # give access to the lesion to ensure this isn't passing due to lack of permissions
     lesion_factory(cohort__contributor__owners=[user])
@@ -51,6 +53,7 @@ def test_api_lesion_ignores_imageless_lesions(authenticated_client, lesion_facto
         (lf("staff_client"), [False, False], 1),
     ],
 )
+@pytest.mark.usefixtures("_search_index")
 def test_api_lesion_permissions_public(
     client_,
     image_public_states,
@@ -76,6 +79,7 @@ def test_api_lesion_permissions_public(
 
 
 @pytest.mark.django_db()
+@pytest.mark.usefixtures("_search_index")
 def test_api_lesion_permissions_contributor(
     authenticated_client, lesion_factory, image_factory, contributor
 ):
@@ -89,6 +93,7 @@ def test_api_lesion_permissions_contributor(
 
 
 @pytest.mark.django_db()
+@pytest.mark.usefixtures("_search_index")
 def test_api_lesion_completeness(client, lesion_factory, image_factory):
     lesion = lesion_factory()
     image = image_factory(
