@@ -68,7 +68,7 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": timedelta(hours=2),
     },
     "sync-elasticsearch-index": {
-        "task": "isic.core.tasks.sync_elasticsearch_index_task",
+        "task": "isic.core.tasks.sync_elasticsearch_indices_task",
         "schedule": crontab(minute="0", hour="0"),
     },
 }
@@ -153,7 +153,8 @@ TEMPLATES[0]["OPTIONS"]["context_processors"] += [  # type: ignore[index]  # noq
 ISIC_USE_ELASTICSEARCH_COUNTS = False
 
 ISIC_ELASTICSEARCH_URI = os.environ.get("DJANGO_ISIC_ELASTICSEARCH_URI")
-ISIC_ELASTICSEARCH_INDEX = "isic"
+ISIC_ELASTICSEARCH_IMAGES_INDEX = "isic"
+ISIC_ELASTICSEARCH_LESIONS_INDEX = "isic-lesions"
 ISIC_GUI_URL = "https://www.isic-archive.com/"
 ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = ISIC_GUI_URL
 ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = ISIC_GUI_URL

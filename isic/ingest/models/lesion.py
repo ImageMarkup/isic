@@ -1,7 +1,8 @@
 import secrets
-from typing import TypedDict
+from typing import Any, TypedDict
 
-from django.contrib.auth.models import User
+from django.conf import settings
+from django.contrib.auth.models import AnonymousUser, User
 from django.contrib.postgres.aggregates import BoolAnd
 from django.core.validators import RegexValidator
 from django.db import models
@@ -15,6 +16,49 @@ from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 
 from isic.core.constants import LESION_ID_REGEX
+
+
+def get_lesion_count_for_user(user: User | AnonymousUser) -> int:
+    from isic.core.search import get_elasticsearch_client
+
+    es = get_elasticsearch_client()
+
+    if user.is_staff:
+        return es.count(index=settings.ISIC_ELASTICSEARCH_LESIONS_INDEX)["count"]
+
+    query = {
+        "size": 0,
+        "query": {
+            "bool": {
+                "must_not": {
+                    "nested": {
+                        "path": "images",
+                        "query": {
+                            "bool": {
+                                "must_not": [
+                                    {"bool": {"should": [{"term": {"images.public": True}}]}}
+                                ]
+                            }
+                        },
+                    }
+                }
+            }
+        },
+        "track_total_hits": True,
+    }
+
+    if user.is_authenticated:
+        query["query"]["bool"]["must_not"]["nested"]["query"]["bool"]["must_not"][0]["bool"][  # type: ignore[index]
+            "should"
+        ] += [
+            {"term": {"images.contributor_owner_ids": user.pk}},
+            {"term": {"images.shared_to": user.pk}},
+        ]
+
+    return es.search(
+        index=settings.ISIC_ELASTICSEARCH_LESIONS_INDEX,
+        body=query,
+    )["hits"]["total"]["value"]
 
 
 def _default_id():
@@ -157,6 +201,11 @@ class LesionManager(models.Manager["Lesion"]):
         return self.get_queryset().has_images()
 
 
+class EsLesionDocument(TypedDict):
+    lesion_id: str
+    images: list[dict[str, Any]]
+
+
 class Lesion(models.Model):
     id = models.CharField(
         primary_key=True,
@@ -180,6 +229,24 @@ class Lesion(models.Model):
 
     def __str__(self):
         return f"{self.private_lesion_id}->{self.id}"
+
+    def to_elasticsearch_document(self, *, body_only: bool = False) -> dict | EsLesionDocument:
+        document: EsLesionDocument = {"lesion_id": self.pk, "images": []}
+
+        for accession in self.accessions.all():
+            document["images"].append(
+                {
+                    "isic_id": accession.image.isic_id,
+                    "public": accession.image.public,
+                    "contributor_owner_ids": accession.image.contributor_owner_ids,
+                    "shared_to": accession.image.shared_to,
+                }
+            )
+
+        if body_only:
+            return document
+
+        return {"_source": document}
 
 
 class LesionPermissions:

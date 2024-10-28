@@ -11,7 +11,7 @@ from isic.core.models.isic_id import IsicId
 from isic.core.services.collection import collection_create, collection_merge_magic_collections
 from isic.core.services.collection.image import collection_add_images
 from isic.core.services.image import image_create
-from isic.core.tasks import sync_elasticsearch_index_task
+from isic.core.tasks import sync_elasticsearch_indices_task
 from isic.core.utils.db import lock_table_for_writes
 from isic.ingest.models.accession import Accession
 from isic.ingest.models.cohort import Cohort
@@ -67,7 +67,7 @@ def cohort_publish(
                     collection=additional_collection, image=image, ignore_lock=True
                 )
 
-    sync_elasticsearch_index_task.delay_on_commit()
+    sync_elasticsearch_indices_task.delay_on_commit()
 
 
 def cohort_delete(*, cohort: Cohort) -> None:
