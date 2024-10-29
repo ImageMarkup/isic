@@ -2,7 +2,10 @@ from django.conf import settings
 import djclick as click
 
 from isic.core.search import (
+    IMAGE_INDEX_MAPPINGS,
+    LESION_INDEX_MAPPINGS,
     get_elasticsearch_client,
+    maybe_create_index,
 )
 from isic.core.tasks import sync_elasticsearch_indices_task
 
@@ -14,6 +17,9 @@ def populate_elasticsearch(chunk_size):
 
     es.indices.delete(index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX, ignore=[404])
     es.indices.delete(index=settings.ISIC_ELASTICSEARCH_LESIONS_INDEX, ignore=[404])
+
+    maybe_create_index(settings.ISIC_ELASTICSEARCH_IMAGES_INDEX, IMAGE_INDEX_MAPPINGS)
+    maybe_create_index(settings.ISIC_ELASTICSEARCH_LESIONS_INDEX, LESION_INDEX_MAPPINGS)
 
     sync_elasticsearch_indices_task()
 

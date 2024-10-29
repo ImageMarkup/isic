@@ -246,7 +246,7 @@ class Lesion(models.Model):
         if body_only:
             return document
 
-        return {"_source": document}
+        return {"_id": self.pk, "_source": document}
 
 
 class LesionPermissions:
