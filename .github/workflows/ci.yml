@@ -40,6 +40,10 @@ jobs:
           MINIO_ROOT_PASSWORD: minioSecretKey
         ports:
           - 9000:9000
+      redis:
+        image: redis:latest
+        ports:
+          - 6379:6379
     steps:
       - uses: actions/checkout@v2
         with:
@@ -57,6 +61,7 @@ jobs:
           tox
         env:
           DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+          DJANGO_ISIC_REDIS_URL: redis://localhost:6379/0
           DJANGO_ISIC_ELASTICSEARCH_URI: http://elastic:elastic@localhost:9200
           DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
           DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey

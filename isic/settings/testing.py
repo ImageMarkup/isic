@@ -12,6 +12,13 @@ DATABASES = {
     )
 }
 
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": os.environ["DJANGO_ISIC_REDIS_URL"],
+    }
+}
+
 # Testing will add 'testserver' to ALLOWED_HOSTS
 ALLOWED_HOSTS: list[str] = []
 
