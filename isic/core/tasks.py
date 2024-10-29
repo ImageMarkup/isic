@@ -54,8 +54,8 @@ def share_collection_with_users_task(collection_pk: int, grantor_pk: int, user_p
 
 
 @shared_task(
-    soft_time_limit=1200,
-    time_limit=1210,
+    soft_time_limit=1800,
+    time_limit=1810,
     autoretry_for=(ConnectionError, TimeoutError),
     retry_backoff=True,
     retry_backoff_max=600,
