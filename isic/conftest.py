@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.models import Group, User
+from django.core.cache import cache
 from django.test.client import Client
 import pytest
 from pytest_factoryboy import register
@@ -54,6 +55,11 @@ def _search_index():
     yield
     es.indices.delete(settings.ISIC_ELASTICSEARCH_IMAGES_INDEX)
     es.indices.delete(settings.ISIC_ELASTICSEARCH_LESIONS_INDEX)
+
+
+@pytest.fixture(autouse=True)
+def _clear_cache():
+    cache.clear()
 
 
 @pytest.fixture()
