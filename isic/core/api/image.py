@@ -1,6 +1,7 @@
 from typing import Any
 
 from django.conf import settings
+from django.core.cache import cache
 from django.http.request import HttpRequest
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
@@ -134,6 +135,12 @@ def search_images(request: HttpRequest, search: SearchQueryIn = Query(...)):
 
 @router.get("/facets/", response=dict, include_in_schema=False)
 def get_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):
+    cache_key = f"get_facets:{search.to_cache_key(request.user)}"
+    cached_facets = cache.get(cache_key)
+
+    if cached_facets:
+        return cached_facets
+
     try:
         query = search.to_es_query(request.user)
     except ParseException as e:
@@ -148,7 +155,10 @@ def get_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):
             Collection.objects.values_list("pk", flat=True),
         )
     )
-    return facets(query, collection_pks)
+
+    ret = facets(query, collection_pks)
+    cache.set(cache_key, ret, 86400)
+    return ret
 
 
 @router.get(
