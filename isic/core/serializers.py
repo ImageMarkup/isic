@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from hashlib import sha1
+import json
 from typing import cast
 
 from django.contrib.auth.models import AnonymousUser, User
@@ -51,6 +53,15 @@ class SearchQueryIn(Schema):
             "query": self.query,
             "collections": self.collections,
         }
+
+    def to_cache_key(self, user=None):
+        token = self.to_token_representation(user)
+
+        if user is not None:
+            # let staff users share the same cache representation
+            token["user"] = "staff" if user.is_staff else user.pk
+
+        return sha1(json.dumps(token, sort_keys=True).encode()).hexdigest()  # noqa: S324
 
     @classmethod
     def from_token_representation(cls, token) -> tuple[User, SearchQueryIn]:

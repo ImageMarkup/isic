@@ -8,6 +8,7 @@ import uuid
 from celery import shared_task
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.db import connection, transaction
@@ -84,6 +85,9 @@ def sync_elasticsearch_indices_task():
         .all()
         .order_by(),
     )
+
+    if hasattr(cache, "delete_pattern"):
+        cache.delete_pattern("get_facets:*")
 
 
 @shared_task(soft_time_limit=1800, time_limit=1810)
