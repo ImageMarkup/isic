@@ -3,7 +3,6 @@ import os
 
 from botocore.config import Config
 import dj_email_url
-from django_cache_url import BACKENDS
 import sentry_sdk
 from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.django import DjangoIntegration
@@ -12,12 +11,6 @@ from sentry_sdk.integrations.pure_eval import PureEvalIntegration
 
 from ._utils import _get_sentry_performance_sample_rate, string_to_bool, string_to_list
 from .base import *  # noqa: F403
-
-# This is an unfortunate monkeypatching of django_cache_url to support an old version
-# of django-redis on a newer version of django.
-# See https://github.com/noripyt/django-cachalot/issues/222 for fixing this.
-BACKENDS["redis"] = BACKENDS["rediss"] = "django_redis.cache.RedisCache"
-
 
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
@@ -114,7 +107,11 @@ ISIC_USE_ELASTICSEARCH_COUNTS = True
 
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        # use django-redis instead of the builtin backend. the builtin redis backend
+        # doesn't support deleting keys by prefix, which is important for invalidating
+        # specific cache keys. this isn't on the roadmap for django, see
+        # https://code.djangoproject.com/ticket/35039#comment:1.
+        "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": os.environ["STACKHERO_REDIS_URL_TLS"],
     }
 }
