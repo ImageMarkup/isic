@@ -1,5 +1,6 @@
 from collections.abc import Callable
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import Any
 
 from django.db.models.query_utils import Q
@@ -354,7 +355,9 @@ django_parser = make_parser()
 es_parser = make_parser(es_query, es_query_and, es_query_or, es_convert_term)
 
 
-# Takes ~16ms to parse a fairly complex query
+# Takes ~150ms to parse a fairly complex query e.g.
+# "diagnosis:foobar OR (diagnosis:foobaz AND (diagnosis:foo* OR age_approx:50))"
+@lru_cache(maxsize=1_000)  # limit the cache size to 1000 to avoid unbounded growth
 def parse_query(parser, query) -> Q | dict | None:
     parse_results = parser.parse_string(query, parse_all=True)
     if parse_results:
