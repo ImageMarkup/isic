@@ -21,7 +21,7 @@ from isic.ingest.views import make_breadcrumbs
 
 
 def cohort_counts(cohort: Cohort) -> dict[str, int]:
-    reviewable = Q(image__isnull=True, status=str(AccessionStatus.SUCCEEDED))
+    reviewable = Q(image__isnull=True, status=AccessionStatus.SUCCEEDED)
     return cohort.accessions.aggregate(
         accession_count=Count("pk"),
         patient_count=Count("patient", distinct=True),
