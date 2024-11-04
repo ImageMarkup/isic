@@ -48,7 +48,7 @@ setup(
         "dj-database-url",
         "django-allauth>=0.56.0",
         "django-auth-style",
-        "django-cachalot",
+        "django-cachalot>=2.7.0",
         "django-cache-url",
         "django-click",
         "django-cors-headers",
