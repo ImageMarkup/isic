@@ -112,7 +112,7 @@ CACHES = {
         # specific cache keys. this isn't on the roadmap for django, see
         # https://code.djangoproject.com/ticket/35039#comment:1.
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": os.environ["STACKHERO_REDIS_URL_TLS"],
+        "LOCATION": os.environ["DJANGO_REDIS_URL"],
     }
 }
 
