@@ -11,6 +11,7 @@ from django.db.models.query import QuerySet
 from isic_metadata import FIELD_REGISTRY
 from isic_metadata.fields import FitzpatrickSkinType, ImageTypeEnum
 from opensearchpy import NotFoundError
+import sentry_sdk
 
 from isic.ingest.models.accession import Accession
 from isic.ingest.models.lesion import Lesion
@@ -87,8 +88,13 @@ def get_elasticsearch_client() -> "OpenSearch":
     from opensearchpy import OpenSearch
     from opensearchpy.transport import Transport
 
+    class InstrumentedTransport(Transport):
+        def perform_request(self, *args: Any, **kwargs: Any) -> Any:
+            with sentry_sdk.start_span(op="es"):
+                return super().perform_request(*args, **kwargs)
+
     # TODO: investigate using retryable requests with transport_class
-    RetryOnTimeoutTransport = partial(Transport, retry_on_timeout=True)  # noqa: N806
+    RetryOnTimeoutTransport = partial(InstrumentedTransport, retry_on_timeout=True)  # noqa: N806
     return OpenSearch(settings.ISIC_ELASTICSEARCH_URI, transport_class=RetryOnTimeoutTransport)  # type: ignore[arg-type]
 
 
