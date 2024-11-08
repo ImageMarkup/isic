@@ -24,6 +24,7 @@ from django.db.models.query_utils import Q
 from girder_utils.files import field_file_to_local_path
 from isic_metadata.fields import ImageTypeEnum, LegacyDxEnum
 from isic_metadata.metadata import MetadataRow
+import numpy as np
 from osgeo import gdal
 import PIL.Image
 from s3_file_field import S3FileField
@@ -680,6 +681,10 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
                 img = PIL.Image.open(blob_stream)
                 # Load the image so the stream can be closed
                 img.load()
+
+        # handle 16-bit grayscale images (RCM tiles) by rescaling to 8-bit
+        if img.mode == "I;16":
+            img = PIL.Image.fromarray(np.right_shift(np.asarray(img), 8).astype(np.uint8))
 
         # LANCZOS provides the best anti-aliasing
         img.thumbnail((256, 256), resample=PIL.Image.LANCZOS)  # type: ignore[attr-defined]

@@ -72,6 +72,7 @@ setup(
         "hiredis",
         "isic-metadata>=4.1.0",
         "jaro-winkler",
+        "numpy",
         "oauth2client",
         "opensearch-py",
         "pandas",
