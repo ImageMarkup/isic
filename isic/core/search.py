@@ -9,7 +9,7 @@ from django.conf import settings
 from django.contrib.auth.models import AnonymousUser, User
 from django.db.models.query import QuerySet
 from isic_metadata import FIELD_REGISTRY
-from isic_metadata.fields import FitzpatrickSkinType, ImageTypeEnum
+from isic_metadata.fields import ImageTypeEnum
 from opensearchpy import NotFoundError
 import sentry_sdk
 
@@ -182,17 +182,6 @@ def _prettify_facets(facets: dict[str, Any]) -> dict[str, Any]:
         return facets
 
     facets = _strip_superfluous_fields(facets)
-
-    fitzpatrick_values = {bucket["key"] for bucket in facets["fitzpatrick_skin_type"]["buckets"]}
-    missing_fitzpatrick = {x.value for x in FitzpatrickSkinType} - fitzpatrick_values
-
-    for value in missing_fitzpatrick:
-        facets["fitzpatrick_skin_type"]["buckets"].append({"key": value, "doc_count": 0})
-
-    # sort the values of fitzpatrick_skin_type buckets by the element in the key field
-    facets["fitzpatrick_skin_type"]["buckets"] = sorted(
-        facets["fitzpatrick_skin_type"]["buckets"], key=lambda x: x["key"]
-    )
 
     image_type_values = {bucket["key"] for bucket in facets["image_type"]["buckets"]}
     missing_image_type = {x.value for x in ImageTypeEnum} - image_type_values
