@@ -1,3 +1,5 @@
+import itertools
+
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models.query import QuerySet
@@ -46,10 +48,21 @@ def study_update(*, study: Study, **fields):
 
 def populate_study_tasks(*, study: Study, users: QuerySet[User]) -> None:
     with transaction.atomic():
-        for image_id in study.collection.images.values_list("id", flat=True).iterator():
-            for user in users:
-                StudyTask.objects.get_or_create(
-                    study_id=study.id,
-                    annotator_id=user.id,
-                    image_id=image_id,
+        for user_image_batch in itertools.batched(
+            itertools.product(
+                users.values_list("id", flat=True),
+                study.collection.images.values_list("id", flat=True),
+            ),
+            1_000,
+        ):
+            tasks = []
+            for user, image in user_image_batch:
+                tasks.append(
+                    StudyTask(
+                        study_id=study.id,
+                        annotator_id=user,
+                        image_id=image,
+                    )
                 )
+
+            StudyTask.objects.bulk_create(tasks, ignore_conflicts=True)
