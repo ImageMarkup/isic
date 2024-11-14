@@ -3,6 +3,7 @@
 {% load accession %}
 {% load localtime %}
 {% load get_key %}
+{% load static %}
 
 {% block title %}{{ image.isic_id }} | {% endblock %}
 
@@ -27,17 +28,24 @@
 
       <div class="flex justify-between pt-4">
         <div>
-          <a href="{{ image.accession.blob.url }}">
-            {% if PLACEHOLDER_IMAGES %}
-              <img src="https://picsum.photos/seed/{{image.accession.id}}/256" style="object-fit: cover;" />
-            {% else %}
-              {% if image.accession.is_cog %}
-                <img src="{{ image.accession.thumbnail_256.url }}" style="object-fit: cover;" />
+          {% if image.accession.is_cog and not PLACEHOLDER_IMAGES %}
+            <div id="image" style="width:512px; height:512px;"></div>
+            <script src="{% static 'core/dist/cog.js' %}"></script>
+            <script type="text/javascript">
+              initializeCogViewer('image', '{{ image.accession.blob.url|safe }}',
+                {{ image.accession.width }},
+                {{ image.accession.height }});
+            </script>
+            <span class="text-sm">Scroll to zoom, click and drag to pan</span>
+          {% else %}
+            <a href="{{ image.accession.blob.url }}">
+              {% if PLACEHOLDER_IMAGES %}
+                <img src="https://picsum.photos/seed/{{image.accession.id}}/256" style="object-fit: cover;" />
               {% else %}
                 <img src="{{ image.accession.blob.url }}" style="object-fit: cover;" />
               {% endif %}
-            {% endif %}
-          </a>
+            </a>
+          {% endif %}
         </div>
 
         {% include 'core/image_detail/right_panel.html' %}

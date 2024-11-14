@@ -8,7 +8,7 @@
     <script src="{% static 'core/dist/cog.js' %}"></script>
 
     <script type="text/javascript">
-        initializeCogViewer('{{ accession.blob.url|safe }}',
+        initializeCogViewer('image', '{{ accession.blob.url|safe }}',
             {{ accession.width }},
             {{ accession.height }});
     </script>
