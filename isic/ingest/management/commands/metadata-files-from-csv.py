@@ -32,24 +32,24 @@ def metadata_files_from_csv(user_id, csv_path, isic_id_column):
     ISIC_ID_COLUMN is the name of the column that refers to the ISIC ID.
     """
     u = User.objects.get(pk=user_id)
-    with Path(csv_path).open() as f:
-        reader = csv.DictReader(f)
-
     columns_to_drop = {"isic_id", "filename", isic_id_column}
 
     cohort_files = defaultdict(list)
     cohort_columns = defaultdict(set)
 
-    for row in reader:
-        accession: Accession = Accession.objects.select_related("cohort").get(
-            image__isic_id=row[isic_id_column]
-        )
-        for column in columns_to_drop:
-            if column in row:
-                del row[column]
-        row["filename"] = accession.original_blob_name
-        cohort_columns[accession.cohort.pk] |= set(row.keys())
-        cohort_files[accession.cohort.pk].append(dict(row))
+    with Path(csv_path).open() as f:
+        reader = csv.DictReader(f)
+
+        for row in reader:
+            accession: Accession = Accession.objects.select_related("cohort").get(
+                image__isic_id=row[isic_id_column]
+            )
+            for column in columns_to_drop:
+                if column in row:
+                    del row[column]
+            row["filename"] = accession.original_blob_name
+            cohort_columns[accession.cohort.pk] |= set(row.keys())
+            cohort_files[accession.cohort.pk].append(dict(row))
 
     for cohort_id, rows in cohort_files.items():
         blob = StreamWriter(io.BytesIO())
