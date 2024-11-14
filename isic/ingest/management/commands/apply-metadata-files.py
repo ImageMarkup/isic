@@ -28,15 +28,16 @@ def apply_metadata_files(user_id, metadata_file_id):
     with transaction.atomic():
         try:
             for metadata_file in metadata_files:
-                for _, row in metadata_file.to_df().iterrows():
-                    accession = Accession.objects.get(
-                        original_blob_name=row["filename"], cohort=metadata_file.cohort
-                    )
-                    # filename doesn't need to be stored in the metadata
-                    del row["filename"]
-                    accession.update_metadata(
-                        user, row, ignore_image_check=True, reset_review=False
-                    )
+                with metadata_file.blob.open("rb") as fh:
+                    for row in metadata_file.to_dict_reader(fh):
+                        accession = Accession.objects.get(
+                            original_blob_name=row["filename"], cohort=metadata_file.cohort
+                        )
+                        # filename doesn't need to be stored in the metadata
+                        del row["filename"]
+                        accession.update_metadata(
+                            user, row, ignore_image_check=True, reset_review=False
+                        )
                 click.secho(f"Applied metadata file {metadata_file.pk} as {user.email}", fg="green")
         except Exception:  # noqa: BLE001
             click.echo(traceback.format_exc(), err=True)
