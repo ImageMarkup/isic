@@ -6,7 +6,7 @@ import View from 'ol/View.js';
 import { getCenter } from 'ol/extent.js';
 
 
-function initializeCogViewer(url, width, height) {
+function initializeCogViewer(target, url, width, height) {
     const extent = [0, 0, width, height];
 
     const projection = new Projection({
@@ -25,7 +25,7 @@ function initializeCogViewer(url, width, height) {
     });
 
     const map = new Map({
-        target: 'image',
+        target: target,
         layers: [
             new TileLayer({
                 source: geotiff,
