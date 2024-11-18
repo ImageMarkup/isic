@@ -57,7 +57,7 @@ def _get_sentry_performance_sample_rate(*args, **kwargs) -> float:
                 "/api/v2/zip-download",
             )
         ):
-            return 0.50
+            return 0.20
     elif args and "celery_job" in args[0]:
         if args[0]["celery_job"]["task"] in infrequent_tasks:
             return 1.0
