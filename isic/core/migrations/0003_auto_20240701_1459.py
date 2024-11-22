@@ -16,7 +16,7 @@ def _block_until_elasticsearch_is_available():
 
     while True:
         try:
-            requests.get(f"{settings.ISIC_ELASTICSEARCH_URI}/_cluster/health", timeout=1)
+            requests.get(f"{settings.ELASTICSEARCH_URL}/_cluster/health", timeout=1)
         except requests.exceptions.ConnectionError:
             time.sleep(1)
             time_slept += 1

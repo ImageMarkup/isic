@@ -95,7 +95,7 @@ def get_elasticsearch_client() -> "OpenSearch":
 
     # TODO: investigate using retryable requests with transport_class
     RetryOnTimeoutTransport = partial(InstrumentedTransport, retry_on_timeout=True)  # noqa: N806
-    return OpenSearch(settings.ISIC_ELASTICSEARCH_URI, transport_class=RetryOnTimeoutTransport)  # type: ignore[arg-type]
+    return OpenSearch(settings.ELASTICSEARCH_URL, transport_class=RetryOnTimeoutTransport)  # type: ignore[arg-type]
 
 
 def maybe_create_index(index: str, mappings: Mapping[str, Any]) -> None:
