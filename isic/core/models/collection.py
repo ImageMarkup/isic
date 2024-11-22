@@ -60,7 +60,10 @@ class Collection(TimeStampedModel):
 
     # unique per user. names of pinned collections can't be used.
     name = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
+    description = models.TextField(
+        blank=True,
+        help_text='Supports <a href="https://www.markdownguide.org/cheat-sheet/">markdown</a>.',
+    )
 
     public = models.BooleanField(default=False)
 

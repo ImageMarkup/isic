@@ -25,6 +25,25 @@ def test_collection_form(authenticated_client, user):
     assert collection.public is False
 
 
+@pytest.mark.django_db()
+def test_collection_form_markdown(authenticated_client, user):
+    markdown_description = "# this-is-an-h1"
+    r = authenticated_client.post(
+        reverse("core/collection-create"),
+        {"name": "foo", "description": markdown_description, "public": False},
+    )
+    assert r.status_code == 302
+    collection = Collection.objects.first()
+    assert collection
+    assert collection.creator == user
+    assert collection.name == "foo"
+    assert collection.description == markdown_description
+
+    r = authenticated_client.get(reverse("core/collection-detail", args=[collection.id]))
+    assert r.status_code == 200
+    assert "<h1>this-is-an-h1</h1>" in r.content.decode("utf-8")
+
+
 @pytest.mark.skip("Unimplemented")
 def test_collection_locked_add_doi():
     # TODO: should be able to register a DOI on a locked collection
