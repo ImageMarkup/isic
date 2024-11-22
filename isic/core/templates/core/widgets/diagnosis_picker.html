@@ -1,0 +1,258 @@
+<div id="diagnosis-picker-{{ widget.name }}" class="diagnosis-picker">
+    <input type="hidden" name="{{ widget.name }}" id="{{ widget.name }}" value="{{ value|default_if_none:'' }}">
+
+    {{ diagnosis_values|json_script:"diagnosis-values" }}
+
+    <script>
+        function frequentDiagnoses() {
+            const mostFrequentDiagnoses = JSON.parse(document.getElementById('most-frequent-diagnoses').textContent);
+
+            return {
+                selectedDiagnosis: null,
+                mostFrequentDiagnoses: mostFrequentDiagnoses.map(diagnosis => {
+                    const sections = diagnosis.choice__text.split(':');
+                    return {
+                        id: diagnosis.choice,
+                        value: sections[sections.length - 1],
+                        fullValue: diagnosis.choice__text,
+                    };
+                }),
+                selectDiagnosis(diagnosisId, diagnosisFullValue) {
+                    this.selectedDiagnosis = diagnosisId;
+
+                    // this logic is duplicated below by the search picker
+                    document.getElementById('selectedDiagnosis').textContent = diagnosisFullValue;
+                    document.getElementById('selection').classList.remove('hidden');
+                    document.getElementById('{{ widget.name }}').value = diagnosisId;
+
+                    // strip all selected values from the tree
+                    document.querySelectorAll('.diagnosis').forEach(d => d.classList.remove('selected'));
+                },
+            }
+        }
+    </script>
+
+    <div class="quick-select" x-data="frequentDiagnoses()">
+        <h3>Recent Diagnoses</h3>
+        <div class="quick-select-list" id="quick-select-list">
+            <template x-for="diagnosis in mostFrequentDiagnoses" :key="diagnosis.id">
+                <div class="quick-select-item"
+                     :class="{ 'quick-select-selected': diagnosis.id == selectedDiagnosis }"
+                     x-text="diagnosis.value"
+                     @click="selectDiagnosis(diagnosis.id, diagnosis.fullValue)"></div>
+            </template>
+        </div>
+    </div>
+
+    <div class="h-8 relative">
+        <hr class="absolute inset-x-0 top-1/2 z-10">
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="search-input" placeholder="Search diagnoses..." autocomplete="off" />
+    </div>
+
+    <div class="tree" id="diagnosis-tree"></div>
+
+    <div id="selection" class="hidden">
+        <div class="font-bold">Selected:</div>
+        <div id="selectedDiagnosis"></span>
+    </div>
+
+    <script>
+        const diagnosisValues = JSON.parse(document.getElementById('diagnosis-values').textContent)
+
+        const containerId = "diagnosis-picker-{{ widget.name }}";
+        const containerEl = document.getElementById(containerId);
+
+        function stringsToTree(strings) {
+            const tree = {};
+            strings.forEach(path => {
+                const parts = path.split(':');
+                let current = tree;
+                parts.forEach(part => {
+                    if (!current[part]) {
+                        current[part] = {};
+                    }
+                    current = current[part];
+                });
+            });
+            return tree;
+        }
+
+        function getNodePath(element) {
+            const path = [];
+            while (element) {
+                const diagnosis = element.querySelector(':scope > .diagnosis');
+                if (diagnosis) {
+                    path.unshift(diagnosis.textContent);
+                }
+                // Move up to parent li if it exists
+                element = element.parentElement?.closest('li');
+            }
+            return path;
+        }
+
+        function createTree(data, parent = null) {
+            const ul = document.createElement('ul');
+
+            Object.entries(data).forEach(([key, value]) => {
+                const li = document.createElement('li');
+                // set li data-diagnosis-string element to the value so it can be used for rendering
+                // the highlighted version.
+                li.setAttribute('data-diagnosis-string', key);
+
+                const hasChildren = Object.keys(value).length > 0;
+
+                const toggle = document.createElement('span');
+                toggle.className = 'tree-toggle';
+                toggle.textContent = hasChildren ? '▶' : ' ';
+
+                const diagnosis = document.createElement('span');
+                diagnosis.className = 'diagnosis';
+                diagnosis.textContent = key;
+
+                li.appendChild(toggle);
+                li.appendChild(diagnosis);
+
+                if (hasChildren) {
+                    const childTree = createTree(value, li);
+                    childTree.classList.add('hidden');
+                    li.appendChild(childTree);
+
+                    toggle.addEventListener('click', () => {
+                        childTree.classList.toggle('hidden');
+                        toggle.textContent = childTree.classList.contains('hidden') ? '▶' : '▼';
+                    });
+                }
+
+                diagnosis.addEventListener('click', () => {
+                    document.querySelectorAll('.diagnosis').forEach(d => d.classList.remove('selected'));
+                    diagnosis.classList.add('selected');
+
+                    const path = getNodePath(li);
+                    // this logic is duplicated above by the recent diagnosis picker
+                    document.getElementById('selectedDiagnosis').textContent = path.join(':');
+                    document.getElementById('selection').classList.remove('hidden');
+                    document.getElementById('{{ widget.name }}').value = diagnosisValues[path.join(':')];
+                });
+
+                ul.appendChild(li);
+            });
+
+            return ul;
+        }
+
+        function highlightTerms(text, terms) {
+            // sort terms by length (longest first) to handle overlapping matches correctly
+            const sortedMatches = [...terms].sort((a, b) => b.length - a.length);
+            const pattern = new RegExp(`(${sortedMatches.join('|')})`, 'gi');
+            return text.replace(pattern, `<span class="match">$1</span>`);
+        }
+
+        function hasMatchInChildren(li, terms) {
+            const allText = li.textContent.toLowerCase();
+            return terms.every(term => allText.includes(term));
+        }
+
+        function filterTree(searchText) {
+            const terms = searchText.toLowerCase().split(' ').filter(term => term.length > 0);
+
+            // remove the highlighted spans
+            containerEl.querySelectorAll('.diagnosis').forEach(d => {
+                d.innerHTML = d.textContent;
+            });
+
+            containerEl.querySelectorAll('li').forEach(li => {
+                li.style.display = '';
+                const ul = li.querySelector('ul');
+                if (ul) {
+                    ul.classList.add('hidden');
+                }
+                const toggle = li.querySelector('.tree-toggle');
+                if (toggle && toggle.textContent !== ' ') {
+                    toggle.textContent = '▶';
+                }
+            });
+
+            if (terms.length === 0) {
+                return;
+            }
+
+            // mark matching nodes and their ancestors
+            const matchingNodes = new Set();
+            const ancestorNodes = new Set();
+
+            containerEl.querySelectorAll('li').forEach(li => {
+                const diagnosisEl = li.querySelector('.diagnosis');
+                const diagnosisText = diagnosisEl.textContent.toLowerCase();
+
+                if (terms.every(term => diagnosisText.includes(term)) || hasMatchInChildren(li, terms)) {
+                    matchingNodes.add(li);
+
+                    let parent = li.parentElement;
+                    while (parent && !parent.classList.contains('tree')) {
+                        if (parent.tagName === 'LI') {
+                            ancestorNodes.add(parent);
+                        }
+                        parent = parent.parentElement;
+                    }
+                }
+            });
+
+            // hide non-matching nodes and show relevant paths
+            containerEl.querySelectorAll('li').forEach(li => {
+                if (!matchingNodes.has(li) && !ancestorNodes.has(li)) {
+                    li.style.display = 'none';
+                } else {
+                    li.style.display = '';
+
+                    // highlight matching terms
+                    if (matchingNodes.has(li)) {
+                        const diagnosisEl = li.querySelector('.diagnosis');
+                        const diagnosisText = diagnosisEl.parentElement.getAttribute('data-diagnosis-string');
+                        diagnosisEl.innerHTML = highlightTerms(diagnosisText, terms);
+
+                    }
+
+                    // expand relevant nodes
+                    if (matchingNodes.has(li) || ancestorNodes.has(li)) {
+                        let parent = li.parentElement;
+                        while (parent && !parent.classList.contains('tree')) {
+                            if (parent.tagName === 'UL') {
+                                parent.classList.remove('hidden');
+                                const parentLi = parent.parentElement;
+                                const toggle = parentLi.querySelector('.tree-toggle');
+                                if (toggle) {
+                                    toggle.textContent = '▼';
+                                }
+                            }
+                            parent = parent.parentElement;
+                        }
+                    }
+
+                    // expand children nodes
+                    if (hasMatchInChildren(li, terms)) {
+                        const ul = li.querySelector('ul');
+                        if (ul) {
+                            ul.classList.remove('hidden');
+                            const toggle = li.querySelector('.tree-toggle');
+                            if (toggle) {
+                                toggle.textContent = '▼';
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        const treeData = stringsToTree(Object.keys(diagnosisValues));
+        const treeContainer = document.getElementById('diagnosis-tree');
+        treeContainer.appendChild(createTree(treeData));
+
+        const searchInput = document.getElementById('search-input');
+        searchInput.addEventListener('input', (e) => {
+            filterTree(e.target.value);
+        });
+    </script>
+</div>

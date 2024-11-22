@@ -1,10 +1,11 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.db.models import Count
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 
-from isic.studies.models import Question, Study
+from isic.studies.models import Question, Response, Study
 
 
 class StudyTaskForm(forms.Form):
@@ -22,6 +23,42 @@ class StudyTaskForm(forms.Form):
         # Note: questions must be annotated with a required attribute
         questions: QuerySet[Question] = kwargs.pop("questions")
         self.questions = {x.pk: x for x in questions}
+
+        num_diagnosis_questions = len(
+            [question for question in questions if question.type == Question.QuestionType.DIAGNOSIS]
+        )
+        if num_diagnosis_questions > 1:
+            # this is a hack because passing a per-question version of most frequent diagnoses is
+            # unreasonably difficult.
+            raise ValueError("Only one diagnosis question is allowed per study.")
+        elif num_diagnosis_questions == 1:  # noqa: RET506
+            # the study and user are necessary for diagnosis questions in order to compute
+            # the most frequently used diagnosis.
+            self.study = kwargs.pop("study")
+            self.user = kwargs.pop("user")
+
+            self.most_frequent_diagnoses = list(
+                Response.objects.filter(
+                    question=next(
+                        question
+                        for question in questions
+                        if question.type == Question.QuestionType.DIAGNOSIS
+                    ),
+                    annotation__study=self.study,
+                    annotation__annotator=self.user,
+                )
+                .values("choice", "choice__text")
+                .alias(count=Count("choice"))
+                .order_by("-count")
+            )
+
+        # remove study/user from kwargs before passing to super
+        if "study" in kwargs:
+            del kwargs["study"]
+
+        if "user" in kwargs:
+            del kwargs["user"]
+
         super().__init__(*args, **kwargs)
         for question in questions:
             # field names for django forms must be strings
