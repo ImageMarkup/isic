@@ -15,7 +15,7 @@ DATABASES = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": os.environ["DJANGO_ISIC_REDIS_URL"],
+        "LOCATION": os.environ["DJANGO_REDIS_URL"],
     }
 }
 
