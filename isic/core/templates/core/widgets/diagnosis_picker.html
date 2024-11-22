@@ -5,7 +5,10 @@
 
     <script>
         function frequentDiagnoses() {
-            const mostFrequentDiagnoses = JSON.parse(document.getElementById('most-frequent-diagnoses').textContent);
+            let mostFrequentDiagnoses = [];
+            if (document.getElementById('most-frequent-diagnoses')) {
+                mostFrequentDiagnoses = JSON.parse(document.getElementById('most-frequent-diagnoses').textContent);
+            }
 
             return {
                 selectedDiagnosis: null,
@@ -34,6 +37,11 @@
 
     <div class="quick-select" x-data="frequentDiagnoses()">
         <h3>Recent Diagnoses</h3>
+
+        <template x-if="mostFrequentDiagnoses.length === 0">
+            <div class="text-sm text-gray-500 text-center">Start annotating to see your recent diagnoses here</div>
+        </template>
+
         <div class="quick-select-list" id="quick-select-list">
             <template x-for="diagnosis in mostFrequentDiagnoses" :key="diagnosis.id">
                 <div class="quick-select-item"
