@@ -74,6 +74,7 @@ class AccessionMetadata(models.Model):
     age = models.PositiveSmallIntegerField(null=True, blank=True)
     sex = models.CharField(max_length=6, null=True, blank=True)
     anatom_site_general = models.CharField(max_length=255, null=True, blank=True)
+    anatom_site_special = models.CharField(max_length=255, null=True, blank=True)
     benign_malignant = models.CharField(max_length=255, null=True, blank=True)
     diagnosis_1 = models.CharField(max_length=255, null=True, blank=True)
     diagnosis_2 = models.CharField(max_length=255, null=True, blank=True)
