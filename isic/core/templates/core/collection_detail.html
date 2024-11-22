@@ -2,6 +2,7 @@
 {% load localtime %}
 {% load get_key %}
 {% load humanize %}
+{% load markdownify %}
 
 {% block head_extra %}
   {{ block.super }}
@@ -112,9 +113,9 @@
       </ul>
     </div>
     {% if collection.description %}
-      <p>
-        {{ collection.description }}
-      </p>
+      <div id="collection-description">
+        {{ collection.description|markdownify }}
+      </div>
     {% endif %}
 
     {% include 'studies/partials/pagination.html' with page_obj=images %}

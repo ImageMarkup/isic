@@ -103,6 +103,7 @@ INSTALLED_APPS = [
     "isic.stats.apps.StatsConfig",
     "isic.studies.apps.StudiesConfig",
     "isic.zip_download.apps.ZipDownloadConfig",
+    "markdownify.apps.MarkdownifyConfig",
     "ninja",  # required because we overwrite ninja/swagger.html
     "oauth2_provider",
     "s3_file_field",
@@ -126,6 +127,27 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
 ]
+
+MARKDOWNIFY = {
+    "default": {
+        # see https://bleach.readthedocs.io/en/latest/clean.html#allowed-tags-tags
+        "WHITELIST_TAGS": [
+            "a",
+            "b",
+            "blockquote",
+            "em",
+            "i",
+            "li",
+            "ol",
+            "p",
+            "strong",
+            "ul",
+            "h1",
+            "h2",
+            "h3",
+        ]
+    }
+}
 
 # django-extensions
 RUNSERVER_PLUS_PRINT_SQL_TRUNCATE = None
