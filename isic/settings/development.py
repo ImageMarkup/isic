@@ -41,7 +41,7 @@ MIDDLEWARE = ["debug_toolbar.middleware.DebugToolbarMiddleware"] + MIDDLEWARE  #
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": os.environ["DJANGO_ISIC_REDIS_URL"],
+        "LOCATION": os.environ["DJANGO_REDIS_URL"],
     }
 }
 

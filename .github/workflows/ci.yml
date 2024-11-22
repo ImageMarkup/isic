@@ -61,11 +61,11 @@ jobs:
           tox
         env:
           DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
-          DJANGO_ISIC_REDIS_URL: redis://localhost:6379/0
           DJANGO_ISIC_ELASTICSEARCH_URI: http://elastic:elastic@localhost:9200
           DJANGO_MINIO_STORAGE_ENDPOINT: localhost:9000
           DJANGO_MINIO_STORAGE_ACCESS_KEY: minioAccessKey
           DJANGO_MINIO_STORAGE_SECRET_KEY: minioSecretKey
+          DJANGO_REDIS_URL: redis://localhost:6379/0
   build-node:
     runs-on: ubuntu-latest
     steps:
