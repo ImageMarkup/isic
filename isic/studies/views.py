@@ -302,7 +302,9 @@ def study_task_detail(request, pk):
         return maybe_redirect_to_next_study_task(request.user, study_task.study)
 
     if request.method == "POST":
-        form = StudyTaskForm(request.POST, questions=questions)
+        form = StudyTaskForm(
+            request.POST, questions=questions, study=study_task.study, user=request.user
+        )
         if form.is_valid():
             with transaction.atomic():
                 annotation = Annotation.objects.create(
@@ -325,7 +327,12 @@ def study_task_detail(request, pk):
 
             return maybe_redirect_to_next_study_task(request.user, study_task.study)
     else:
-        form = StudyTaskForm(initial={"start_time": timezone.now()}, questions=questions)
+        form = StudyTaskForm(
+            initial={"start_time": timezone.now()},
+            questions=questions,
+            study=study_task.study,
+            user=request.user,
+        )
 
     context = {
         "study_task": study_task,
