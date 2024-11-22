@@ -26,15 +26,17 @@ from s3_file_field.fields import S3FileField
 from isic.core.models import Image
 from isic.core.models.collection import Collection
 from isic.core.storages.utils import generate_upload_to
+from isic.studies.widgets import DiagnosisPicker
 
 
 class Question(TimeStampedModel):
     class QuestionType(models.TextChoices):
         SELECT = "select", "Select"
         NUMBER = "number", "Number"
+        DIAGNOSIS = "diagnosis", "Diagnosis"
 
     prompt = models.CharField(max_length=400)
-    type = models.CharField(max_length=6, choices=QuestionType.choices, default=QuestionType.SELECT)
+    type = models.CharField(max_length=9, choices=QuestionType.choices, default=QuestionType.SELECT)
     official = models.BooleanField()
     # TODO: maybe add a default field
 
@@ -51,7 +53,7 @@ class Question(TimeStampedModel):
     def __str__(self) -> str:
         return self.prompt
 
-    def to_form_field(self, *, required: bool):
+    def to_form_field(self, *, required: bool) -> ChoiceField | FormCharField:
         if self.type == self.QuestionType.SELECT:
             return ChoiceField(
                 required=required,
@@ -59,11 +61,18 @@ class Question(TimeStampedModel):
                 label=self.prompt,
                 widget=RadioSelect,
             )
-        if self.type == self.QuestionType.NUMBER:
+        elif self.type == self.QuestionType.NUMBER:  # noqa: RET505
             # TODO: Use floatfield/intfield
             return FormCharField(
                 required=required,
                 label=self.prompt,
+            )
+        elif self.type == self.QuestionType.DIAGNOSIS:
+            return ChoiceField(
+                required=required,
+                choices=[(choice.pk, choice.text) for choice in self.choices.all()],
+                label=self.prompt,
+                widget=DiagnosisPicker,
             )
 
     def save(self, **kwargs):
@@ -83,7 +92,7 @@ class QuestionChoice(TimeStampedModel):
         unique_together = [["question", "text"]]
 
     question = models.ForeignKey(Question, related_name="choices", on_delete=models.CASCADE)
-    text = models.CharField(max_length=100)
+    text = models.CharField(max_length=255)
 
     def __str__(self) -> str:
         return self.text
