@@ -142,6 +142,7 @@ def study_create_view(request):
         Question.objects.filter(official=True)
         .annotate(choice_array=ArrayAgg("choices__text"))
         .values("id", "prompt", "choice_array")
+        .order_by("prompt")
     )
 
     return render(
