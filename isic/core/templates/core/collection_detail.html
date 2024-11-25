@@ -28,38 +28,16 @@
       </div>
     </template>
 
-    <div class="my-4 bg-gray-50 p-2 rounded-sm border-gray-200 border">
-      <ul>
+    <div id="detail-info">
+      <ul x-data="collectionAttributionInformation()">
         <li>
           <span class="font-bold">Name:</span>
           {{ collection.name }}
         </li>
-        {% if request.user.is_staff %}
-          <li>
-            <span class="font-bold">Creator:</span>
-            {{ collection.creator }}
-          </li>
-          <li>
-            <span class="font-bold">Created:</span>
-            {% localtime collection.created %}
-          </li>
-        {% endif %}
         {% if collection.doi %}
           <li>
             <span class="font-bold">DOI:</span>
             <a href="{{ collection.doi.url }}">{{ collection.doi.url }}</a>
-          </li>
-        {% endif %}
-        {% if contributors %}
-          <li>
-            <span class="font-bold">Contributors:</span>
-            <ul class="list-disc">
-              {% for contributor in contributors %}
-                <li class="ml-6">
-                  <a href="{% url 'admin:ingest_contributor_change' contributor.pk %}">{{ contributor.institution_name }}</a>
-                </li>
-              {% endfor %}
-            </ul>
           </li>
         {% endif %}
         <li>
@@ -74,88 +52,129 @@
           <span class="font-bold">Number of lesions:</span>
           {{ collection.num_lesions|intcomma }}
         </li>
-        <li x-data="licenseBreakdown()">
-          <span class="font-bold">Licenses:</span>
-          <a x-show="!fetched" href="#" @click.prevent="fetchLicenseBreakdown()">
+        <li>
+          <span class="font-bold">Attribution:</span>
+          <a x-show="!fetched" href="#" @click.prevent="fetchMetaInformation()">
             View
             <div x-show="loading" class="lds-ring"><div></div><div></div><div></div><div></div></div>
           </a>
           <ul class="list-disc">
-            <template x-for="(count, license) in license_counts">
+            <template x-for="attribution in attributions">
               <li x-show="fetched" class="ml-6">
-                <span x-text="license"></span> (<span x-text="count.toLocaleString()"></span>)
+                <span x-text="attribution.license" class="font-semibold"></span>: <span x-text="attribution.attribution"></span> (<span x-text="attribution.count"></span>)
               </li>
             </template>
           </ul>
         </li>
-        <li>
-          <span class="font-bold">Public:</span>
-          {{ collection.public|yesno }}
-        </li>
-        {% if show_shares %}
-          <li>
-            <span class="font-bold">Directly shared with:</span>
-            {% if collection.shares.exists %}
+      </ul>
+
+      {% if collection.description %}
+        <div id="collection-description">
+          <span class="font-bold">Description:</span>
+          {{ collection.description|markdownify }}
+        </div>
+      {% endif %}
+    </div>
+
+    {% if request.user.is_staff or contributors or show_shares %}
+      <div class="my-4 p-2 rounded-sm bg-gray-100 border border-gray-200">
+        <div class="font-semibold black text-lg">
+          Private Attributes (visible only to you)
+        </div>
+        <ul>
+          {% if request.user.is_staff %}
+            <li>
+              <span class="font-bold">Creator:</span>
+              {{ collection.creator }}
+            </li>
+            <li>
+              <span class="font-bold">Created:</span>
+              {% localtime collection.created %}
+            </li>
+          {% endif %}
+
+          {% if contributors %}
+            <li>
+              <span class="font-bold">Contributors:</span>
               <ul class="list-disc">
-                {% for user in collection.shared_with %}
-                  <li class="ml-6">{{ user }}</li>
+                {% for contributor in contributors %}
+                  <li class="ml-6">
+                    {% if request.user.is_staff %}
+                      <a href="{% url 'admin:ingest_contributor_change' contributor.pk %}">{{ contributor.institution_name }}</a>
+                    {% else %}
+                      {{ contributor.institution_name }}
+                    {% endif %}
+                  </li>
                 {% endfor %}
               </ul>
-            {% else %}
-              <span>nobody</span>
-            {% endif %}
-          </li>
-        {% endif %}
-        <li>
-          <span class="font-bold">Locked:</span>
-          {{ collection.locked|yesno }}
-        </li>
-      </ul>
-    </div>
-    {% if collection.description %}
-      <div id="collection-description">
-        {{ collection.description|markdownify }}
+            </li>
+          {% endif %}
+
+          {% if request.user.is_staff %}
+            <li>
+              <span class="font-bold">Public:</span>
+              {{ collection.public|yesno }}
+            </li>
+          {% endif %}
+
+          {% if show_shares %}
+            <li>
+              <span class="font-bold">Directly shared with:</span>
+              {% if collection.shares.exists %}
+                <ul class="list-disc">
+                  {% for user in collection.shared_with %}
+                    <li class="ml-6">{{ user }}</li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <span>nobody</span>
+              {% endif %}
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+    {% endif %}
+  </div>
+
+
+  {% include 'studies/partials/pagination.html' with page_obj=images %}
+  <div x-data="collectionEditor({{ collection.pk }})">
+    {% if image_removal_mode %}
+      <div class="alert shadow-lg my-6">
+        <div>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info flex-shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span>
+            <span x-text="images.size"></span> images pending removal.
+          </span>
+        </div>
+        <div class="flex-none">
+          <button class="btn btn-sm btn-ghost" @click="resetImages('{% url 'core/collection-detail' collection.id %}')">Abort</button>
+          <button class="btn btn-sm btn-error" @click="deleteImages()">Remove</button>
+        </div>
       </div>
     {% endif %}
 
-    {% include 'studies/partials/pagination.html' with page_obj=images %}
-    <div x-data="collectionEditor({{ collection.pk }})">
-      {% if image_removal_mode %}
-        <div class="alert shadow-lg my-6">
-          <div>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info flex-shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <span>
-              <span x-text="images.size"></span> images pending removal.
-            </span>
-          </div>
-          <div class="flex-none">
-            <button class="btn btn-sm btn-ghost" @click="resetImages('{% url 'core/collection-detail' collection.id %}')">Abort</button>
-            <button class="btn btn-sm btn-error" @click="deleteImages()">Remove</button>
-          </div>
-        </div>
-      {% endif %}
-
-      <div class="mb-4" x-data="thumbnailGrid();">
-        <div class="flex flex-row justify-end pb-3">
-          <a class="px-1" href="#" @click="decrease();">fewer columns</a>
-          |
-          <a class="px-1" href="#" @click="increase();">more columns</a>
-        </div>
-        <div class="grid gap-4" :class="`grid-cols-${numCols}`">
-          {% for image in images %}
-            {% if image_removal_mode %}
-              {% include 'core/partials/edit_collection_image.html' %}
-            {% else %}
-              {% include 'core/partials/image.html' %}
-            {% endif %}
-          {% endfor %}
-        </div>
+    <div class="mb-4" x-data="thumbnailGrid();">
+      <div class="flex flex-row justify-end pb-3">
+        <a class="px-1" href="#" @click="decrease();">fewer columns</a>
+        |
+        <a class="px-1" href="#" @click="increase();">more columns</a>
+      </div>
+      <div class="grid gap-4" :class="`grid-cols-${numCols}`">
+        {% for image in images %}
+          {% if image_removal_mode %}
+            {% include 'core/partials/edit_collection_image.html' %}
+          {% else %}
+            {% include 'core/partials/image.html' %}
+          {% endif %}
+        {% endfor %}
       </div>
     </div>
-    {% include 'studies/partials/pagination.html' with page_obj=images %}
+  </div>
+  {% include 'studies/partials/pagination.html' with page_obj=images %}
 
-    {% include 'ingest/partials/thumbnail_grid_js.html' %}
-    {% include 'core/partials/edit_collection_js.html' %}
+  {% include 'ingest/partials/thumbnail_grid_js.html' %}
+  {% include 'core/partials/edit_collection_js.html' %}
 
   </div>
 
@@ -188,16 +207,16 @@
       };
     }
 
-    function licenseBreakdown() {
+    function collectionAttributionInformation() {
       return {
-        license_counts: {},
+        attributions: [],
         fetched: false,
         loading: false,
-        fetchLicenseBreakdown() {
+        fetchMetaInformation() {
           const _this = this;
           this.loading = true;
-          axios.get('{% url "api:collection_license_breakdown" collection.pk %}').then((resp) => {
-            _this.license_counts = resp.data.license_counts;
+          axios.get('{% url "api:collection_attribution_information" collection.pk %}').then((resp) => {
+            _this.attributions = resp.data;
             _this.loading = false;
             _this.fetched = true;
           });
