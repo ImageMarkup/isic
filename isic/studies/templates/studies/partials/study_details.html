@@ -2,7 +2,7 @@
 {% load display %}
 {% load humanize %}
 
-<div class="my-4 bg-gray-50 p-2 rounded-sm border-gray-200 border">
+<div id="detail-info">
   <ul>
     <li><span class="font-bold">Name:</span> {{ study.name }}</li>
     <li><span class="font-bold">Description:</span> {{ study.description|default:"-" }}</li>
