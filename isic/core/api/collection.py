@@ -1,7 +1,7 @@
 from typing import Literal
 
 from django.contrib import messages
-from django.db.models import Count, Q
+from django.db.models import Count
 from django.http.response import JsonResponse
 from django.shortcuts import get_object_or_404
 from jaro import jaro_winkler_metric
@@ -11,7 +11,6 @@ from pydantic import field_validator
 from pydantic.types import conlist, constr
 
 from isic.core.constants import ISIC_ID_REGEX
-from isic.core.models.base import CopyrightLicense
 from isic.core.models.collection import Collection
 from isic.core.pagination import CursorPagination
 from isic.core.permissions import get_visible_objects
@@ -136,32 +135,24 @@ def collection_share_to_users(request, id: int, payload: CollectionShareIn):
     return 202, {}
 
 
-class CollectionLicenseBreakdown(Schema):
-    license_counts: dict[str, int]
-
-
 @router.get(
-    "/{id}/licenses/",
-    response=CollectionLicenseBreakdown,
-    summary="Retrieve a breakdown of the licenses of the specified collection.",
+    "/{id}/attribution/",
+    summary="Retrieve attribution information of the specified collection.",
     include_in_schema=False,
 )
-def collection_license_breakdown(request, id: int) -> dict[str, int]:
+def collection_attribution_information(request, id: int) -> list[dict[str, int]]:
     qs = get_visible_objects(request.user, "core.view_collection")
     collection = get_object_or_404(qs, id=id)
     images = get_visible_objects(request.user, "core.view_image", collection.images.distinct())
-    license_counts = (
+    counts = (
         Accession.objects.filter(image__in=images)
-        .values("copyright_license")
-        .aggregate(
-            **{
-                license_: Count("copyright_license", filter=Q(copyright_license=license_))
-                for license_ in CopyrightLicense.values
-            }
-        )
+        .values("copyright_license", "cohort__attribution")
+        .annotate(count=Count("id"))
+        .order_by("-count")
+        .values_list("copyright_license", "cohort__attribution", "count")
     )
 
-    return {"license_counts": license_counts}
+    return [{"license": x[0], "attribution": x[1], "count": x[2]} for x in counts]
 
 
 @router.post(
