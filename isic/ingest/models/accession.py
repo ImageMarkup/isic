@@ -27,6 +27,7 @@ from isic_metadata.metadata import MetadataRow
 import numpy as np
 from osgeo import gdal
 import PIL.Image
+import PIL.ImageOps
 from s3_file_field import S3FileField
 
 from isic.core.models import CopyrightLicense, CreationSortedTimeStampedModel
@@ -510,6 +511,9 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
 
             # Any other errors are not expected, so re-raise them natively
             raise
+
+        # rotate the image bytes according to the orientation tag, stripping it in the process
+        PIL.ImageOps.exif_transpose(img, in_place=True)
 
         # Strip any alpha channel
         if self.is_color(img):
