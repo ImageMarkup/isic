@@ -3,6 +3,8 @@ import pathlib
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.urls.base import reverse
+import PIL
+import PIL.ExifTags
 import pytest
 
 from isic.ingest.models.accession import Accession
@@ -33,6 +35,36 @@ def jpg_blob():
 def cc_by_accession_qs(accession_factory):
     accession = accession_factory(copyright_license="CC-BY")
     return Accession.objects.filter(id=accession.id)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_accession_orients_images(user, cohort):
+    name = "image_with_exif_including_orientation.jpg"
+    path = data_dir / name
+
+    with path.open("rb") as stream:
+        original_blob = InMemoryUploadedFile(stream, None, name, None, path.stat().st_size, None)
+
+        original_image = PIL.Image.open(original_blob)
+
+        assert original_image._exif.get(PIL.ExifTags.Base.Make) == "Canon"
+        assert original_image._exif.get(PIL.ExifTags.Base.Orientation) == 6  # 90 degrees clockwise
+
+        accession = accession_create(
+            creator=user,
+            cohort=cohort,
+            original_blob=original_blob,
+            original_blob_name=name,
+            original_blob_size=path.stat().st_size,
+        )
+        accession.refresh_from_db()
+
+        processed_image = PIL.Image.open(accession.blob)
+
+        # assert that all exif data is stripped but the orientation is applied
+        assert processed_image._exif is None
+        assert processed_image.height == original_image.width
+        assert processed_image.width == original_image.height
 
 
 @pytest.mark.django_db(transaction=True)
