@@ -53,7 +53,8 @@ class Cohort(CreationSortedTimeStampedModel):
         help_text=mark_safe(  # noqa: S308
             "The description of your Cohort."
             "<strong>This is private</strong>, and will not be published along "
-            "with your images."
+            "with your images.<br />"
+            'Supports <a href="https://www.markdownguide.org/cheat-sheet/">markdown</a>.'
         )
     )
 
