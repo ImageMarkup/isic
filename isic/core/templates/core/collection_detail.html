@@ -61,7 +61,7 @@
           <ul class="list-disc">
             <template x-for="attribution in attributions">
               <li x-show="fetched" class="ml-6">
-                <span x-text="attribution.license" class="font-semibold"></span>: <span x-text="attribution.attribution"></span> (<span x-text="attribution.count"></span>)
+                <span x-text="attribution.license" class="font-semibold"></span>: <span x-text="attribution.attribution"></span> (<span x-text="attribution.count.toLocaleString()"></span>)
               </li>
             </template>
           </ul>
@@ -99,11 +99,7 @@
               <ul class="list-disc">
                 {% for contributor in contributors %}
                   <li class="ml-6">
-                    {% if request.user.is_staff %}
-                      <a href="{% url 'admin:ingest_contributor_change' contributor.pk %}">{{ contributor.institution_name }}</a>
-                    {% else %}
-                      {{ contributor.institution_name }}
-                    {% endif %}
+                    {{ contributor.institution_name }}
                   </li>
                 {% endfor %}
               </ul>
