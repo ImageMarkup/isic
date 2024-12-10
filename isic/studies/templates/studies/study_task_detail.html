@@ -9,6 +9,41 @@
     </ul>
   {% endif %}
 
+  {% if just_completed_task %}
+    <script>
+      function undoStudyTask() {
+        return {
+          undo: function() {
+            fetch('{% url "api:study_task_undo" just_completed_task.id %}', {
+              method: 'POST',
+              headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+              },
+            }).then(response => {
+              if (response.ok) {
+                window.location.href = '{% url "study-task-detail" just_completed_task.id %}';
+              } else {
+                alert('An error occurred.');
+              }
+            }).catch(error => {
+              console.error('Error:', error);
+              alert('An error occurred.');
+            });
+          }
+        }
+      }
+    </script>
+
+    <div class="toast" x-data="undoStudyTask()">
+      <div class="alert alert-info">
+        <span>
+          <a href="#" @click="undo()">Undo</a>
+        </span>
+      </div>
+
+    </div>
+  {% endif %}
+
   <div class="mb-2">
     <div class="heading-1">{{ study_task.study.name }}</div>
     {% if not preview_mode %}
@@ -35,6 +70,10 @@
         </template>
       </div>
     </div>
+
+
+
+
     {% if study_task.complete %}
       You've finished this task.
     {% else %}
