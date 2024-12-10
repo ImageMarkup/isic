@@ -4,20 +4,20 @@
     {{ diagnosis_values|json_script:"diagnosis-values" }}
 
     <script>
-        function frequentDiagnoses() {
-            let mostFrequentDiagnoses = [];
-            if (document.getElementById('most-frequent-diagnoses')) {
-                mostFrequentDiagnoses = JSON.parse(document.getElementById('most-frequent-diagnoses').textContent);
+        function recentDiagnosesPicker() {
+            let recentDiagnoses = [];
+            if (document.getElementById('recent-diagnoses')) {
+                recentDiagnoses = JSON.parse(document.getElementById('recent-diagnoses').textContent);
             }
 
             return {
                 selectedDiagnosis: null,
-                mostFrequentDiagnoses: mostFrequentDiagnoses.map(diagnosis => {
-                    const sections = diagnosis.choice__text.split(':');
+                recentDiagnoses: recentDiagnoses.map(diagnosis => {
+                    const sections = diagnosis.text.split(':');
                     return {
-                        id: diagnosis.choice,
+                        id: diagnosis.id,
                         value: sections[sections.length - 1],
-                        fullValue: diagnosis.choice__text,
+                        fullValue: diagnosis.text,
                     };
                 }),
                 selectDiagnosis(diagnosisId, diagnosisFullValue) {
@@ -35,15 +35,15 @@
         }
     </script>
 
-    <div class="quick-select" x-data="frequentDiagnoses()">
+    <div class="quick-select" x-data="recentDiagnosesPicker()">
         <h3>Recent Diagnoses</h3>
 
-        <template x-if="mostFrequentDiagnoses.length === 0">
+        <template x-if="recentDiagnoses.length === 0">
             <div class="text-sm text-gray-500 text-center">Start annotating to see your recent diagnoses here</div>
         </template>
 
         <div class="quick-select-list" id="quick-select-list">
-            <template x-for="diagnosis in mostFrequentDiagnoses" :key="diagnosis.id">
+            <template x-for="diagnosis in recentDiagnoses" :key="diagnosis.id">
                 <div class="quick-select-item"
                      :class="{ 'quick-select-selected': diagnosis.id == selectedDiagnosis }"
                      x-text="diagnosis.value"
