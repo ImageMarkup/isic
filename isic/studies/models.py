@@ -20,6 +20,7 @@ from django.forms.fields import CharField as FormCharField
 from django.forms.fields import ChoiceField
 from django.forms.widgets import RadioSelect
 from django.urls import reverse
+from django.utils import timezone
 from django_extensions.db.models import TimeStampedModel
 from s3_file_field.fields import S3FileField
 
@@ -298,6 +299,11 @@ class StudyTaskSet(models.QuerySet):
 
     def for_user(self, user: User):
         return self.filter(annotator=user)
+
+    def just_completed(self):
+        return self.filter(
+            annotation__created__gte=timezone.now() - timezone.timedelta(seconds=60)
+        ).order_by("annotation__created")
 
     def random_next(self):
         # This is really inefficient when performing on large sets of rows,
