@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404
 from ninja import Field, ModelSchema, Router
 from ninja.pagination import paginate
 
-from isic.auth import is_staff
+from isic.auth import is_authenticated, is_staff
 from isic.core.pagination import CursorPagination
 from isic.studies.models import Annotation, Feature, Question, QuestionChoice, Study, StudyTask
 
@@ -97,3 +97,16 @@ def study_task_list(request: HttpRequest):
 @study_task_router.get("/{id}/", response=StudyTaskOut, include_in_schema=False, auth=is_staff)
 def study_task_detail(request: HttpRequest, id: int):
     return get_object_or_404(StudyTask, id=id)
+
+
+@study_task_router.post("/{id}/undo/", include_in_schema=False, auth=is_authenticated)
+def study_task_undo(request: HttpRequest, id: int):
+    study_task: StudyTask = get_object_or_404(
+        StudyTask.objects.select_related("annotation").for_user(request.user).just_completed(),
+        pk=id,
+    )
+
+    # this cascading deletes the response/markup
+    study_task.annotation.delete()
+
+    return {"success": True}
