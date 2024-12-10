@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from django.db.models import Count
+from django.db.models import Min
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 
@@ -28,16 +28,19 @@ class StudyTaskForm(forms.Form):
             [question for question in questions if question.type == Question.QuestionType.DIAGNOSIS]
         )
         if num_diagnosis_questions > 1:
-            # this is a hack because passing a per-question version of most frequent diagnoses is
+            # this is a hack because passing a per-question version of recent diagnoses is
             # unreasonably difficult.
             raise ValueError("Only one diagnosis question is allowed per study.")
         elif num_diagnosis_questions == 1:  # noqa: RET506
             # the study and user are necessary for diagnosis questions in order to compute
-            # the most frequently used diagnosis.
+            # the recently used diagnoses
             self.study = kwargs.pop("study")
             self.user = kwargs.pop("user")
 
-            self.most_frequent_diagnoses = list(
+            # get a list of the diagnoses as they were used in the responses to this question,
+            # from this user. this makes the recent diagnoses list an append-only list which
+            # keeps the same order from question to question.
+            self.recent_diagnoses = (
                 Response.objects.filter(
                     question=next(
                         question
@@ -45,12 +48,17 @@ class StudyTaskForm(forms.Form):
                         if question.type == Question.QuestionType.DIAGNOSIS
                     ),
                     annotation__study=self.study,
-                    annotation__annotator=self.user,
+                    annotation__annotator_id=self.user,
                 )
-                .values("choice", "choice__text")
-                .alias(count=Count("choice"))
-                .order_by("-count")
+                .values("choice__text")
+                .alias(earliest_created=Min("created"))
+                .order_by("earliest_created")
+                .values("choice__id", "choice__text")
             )
+
+            self.recent_diagnoses = [
+                {"id": x["choice__id"], "text": x["choice__text"]} for x in self.recent_diagnoses
+            ]
 
         # remove study/user from kwargs before passing to super
         if "study" in kwargs:
