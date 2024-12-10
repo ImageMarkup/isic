@@ -338,6 +338,7 @@ def study_task_detail(request, pk):
     context = {
         "study_task": study_task,
         "form": form,
+        "just_completed_task": StudyTask.objects.for_user(request.user).just_completed().last(),
         "tasks_remaining": study_task.study.tasks.pending().for_user(request.user).count(),
     }
 
