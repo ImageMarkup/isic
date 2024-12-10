@@ -361,7 +361,9 @@ def study_task_detail_preview(request, pk):
         .all()
     )
 
-    form = StudyTaskForm(initial={"start_time": timezone.now()}, questions=questions)
+    form = StudyTaskForm(
+        initial={"start_time": timezone.now()}, questions=questions, study=study, user=request.user
+    )
 
     return render(
         request,
