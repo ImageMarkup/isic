@@ -38,8 +38,8 @@
     {% if study_task.complete %}
       You've finished this task.
     {% else %}
-      {% if form.most_frequent_diagnoses %}
-        {{ form.most_frequent_diagnoses|json_script:"most-frequent-diagnoses" }}
+      {% if form.recent_diagnoses %}
+        {{ form.recent_diagnoses|json_script:"recent-diagnoses" }}
       {% endif %}
 
       <form class="w-1/3" method="POST" action="">
