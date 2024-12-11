@@ -40,7 +40,6 @@
           <a href="#" @click="undo()">Undo</a>
         </span>
       </div>
-
     </div>
   {% endif %}
 
@@ -71,15 +70,18 @@
       </div>
     </div>
 
-
-
-
     {% if study_task.complete %}
       You've finished this task.
     {% else %}
       {% if form.recent_diagnoses %}
         {{ form.recent_diagnoses|json_script:"recent-diagnoses" }}
       {% endif %}
+
+      {% comment %}
+      this is a hamfisted way of passing data around to the widget since we can't easily pass
+      it as a context variable.
+      {% endcomment %}
+      {{ diagnosis_only_form|json_script:"diagnosis-only-form" }}
 
       <form class="w-1/3" method="POST" action="">
         {{ form.media }}

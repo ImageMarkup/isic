@@ -337,6 +337,8 @@ def study_task_detail(request, pk):
     context = {
         "study_task": study_task,
         "form": form,
+        "diagnosis_only_form": questions.count() == 1
+        and questions.first().type == Question.QuestionType.DIAGNOSIS,
         "just_completed_task": StudyTask.objects.for_user(request.user).just_completed().last(),
         "tasks_remaining": study_task.study.tasks.pending().for_user(request.user).count(),
     }
@@ -371,6 +373,8 @@ def study_task_detail_preview(request, pk):
         {
             "study_task": study_task,
             "form": form,
+            "diagnosis_only_form": questions.count() == 1
+            and questions.first().type == Question.QuestionType.DIAGNOSIS,
             "preview_mode": True,
         },
     )
