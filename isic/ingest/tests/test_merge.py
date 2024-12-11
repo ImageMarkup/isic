@@ -10,6 +10,7 @@ from isic.core.services.collection import collection_merge_magic_collections
 from isic.core.services.collection.image import collection_add_images
 from isic.ingest.models.cohort import Cohort
 from isic.ingest.services.cohort import cohort_merge
+from isic.ingest.services.contributor import contributor_merge
 
 
 @pytest.fixture()
@@ -23,6 +24,34 @@ def full_cohort(cohort_factory, accession_factory, image_factory, collection_fac
         return cohort
 
     return _full_cohort
+
+
+@pytest.fixture()
+def contributor_with_cohort(contributor_factory, cohort_factory, user_factory):
+    def _contributor_with_cohort():
+        user = user_factory()
+        contributor = contributor_factory(creator=user, owners=[user])
+        contributor.cohorts.add(cohort_factory())
+        return contributor
+
+    return _contributor_with_cohort
+
+
+@pytest.mark.django_db()
+def test_merge_contributors(contributor_with_cohort):
+    contributor_a, contributor_b = contributor_with_cohort(), contributor_with_cohort()
+
+    # make sure that the cohorts/owners from contributor_b are transferred to contributor_a.
+    contributor_b_pk = contributor_b.pk
+    contributor_b_cohorts = contributor_b.cohorts.values_list("pk", flat=True)
+    contributor_b_owners = contributor_b.owners.values_list("pk", flat=True)
+
+    contributor_merge(dest_contributor=contributor_a, src_contributor=contributor_b)
+
+    contributor_a.refresh_from_db()
+    assert not Cohort.objects.filter(contributor_id=contributor_b_pk).exists()
+    assert set(contributor_b_cohorts) <= set(contributor_a.cohorts.values_list("pk", flat=True))
+    assert set(contributor_b_owners) <= set(contributor_a.owners.values_list("pk", flat=True))
 
 
 @pytest.mark.django_db()
