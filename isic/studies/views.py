@@ -12,6 +12,7 @@ from django.db.models.expressions import F
 from django.db.models.query import Prefetch
 from django.db.models.query_utils import Q
 from django.forms.formsets import formset_factory
+from django.http import HttpRequest
 from django.http.response import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
@@ -276,10 +277,13 @@ def study_responses_csv(request, pk):
     return response
 
 
-def maybe_redirect_to_next_study_task(user: User, study: Study):
-    next_task = study.tasks.pending().for_user(user).random_next()
+def maybe_redirect_to_next_study_task(request: HttpRequest, study: Study):
+    next_task = study.tasks.pending().for_user(request.user).random_next()
 
     if not next_task:
+        messages.add_message(
+            request, messages.SUCCESS, "You've completed all tasks for this study."
+        )
         return HttpResponseRedirect(reverse("study-detail", args=[study.pk]))
 
     return HttpResponseRedirect(reverse("study-task-detail", args=[next_task.pk]))
@@ -299,7 +303,7 @@ def study_task_detail(request, pk):
     )
 
     if study_task.complete:
-        return maybe_redirect_to_next_study_task(request.user, study_task.study)
+        return maybe_redirect_to_next_study_task(request, study_task.study)
 
     if request.method == "POST":
         form = StudyTaskForm(
@@ -325,7 +329,7 @@ def study_task_detail(request, pk):
                     choices = {x.pk: x for x in question.choices.all()}
                     annotation.responses.create(question=question, choice=choices[int(choice_pk)])
 
-            return maybe_redirect_to_next_study_task(request.user, study_task.study)
+            return maybe_redirect_to_next_study_task(request, study_task.study)
     else:
         form = StudyTaskForm(
             initial={"start_time": timezone.now()},
