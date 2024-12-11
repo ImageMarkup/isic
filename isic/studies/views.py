@@ -4,7 +4,6 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
-from django.contrib.postgres.aggregates.general import ArrayAgg
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
@@ -138,12 +137,12 @@ def study_create_view(request):
 
         return HttpResponseRedirect(reverse("study-detail", args=[study.pk]))
 
-    questions = list(
-        Question.objects.filter(official=True)
-        .annotate(choice_array=ArrayAgg("choices__text"))
-        .values("id", "prompt", "choice_array")
+    questions = [
+        {"id": q.id, "prompt": q.prompt, "choices_for_display": ", ".join(q.choices_for_display())}
+        for q in Question.objects.filter(official=True)
+        .prefetch_related("choices")
         .order_by("prompt")
-    )
+    ]
 
     return render(
         request,

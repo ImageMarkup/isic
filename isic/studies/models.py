@@ -62,7 +62,7 @@ class Question(TimeStampedModel):
                 label=self.prompt,
                 widget=RadioSelect,
             )
-        elif self.type == self.QuestionType.NUMBER:  # noqa: RET505
+        elif self.type == self.QuestionType.NUMBER:
             # TODO: Use floatfield/intfield
             return FormCharField(
                 required=required,
@@ -75,6 +75,16 @@ class Question(TimeStampedModel):
                 label=self.prompt,
                 widget=DiagnosisPicker,
             )
+
+    def choices_for_display(self):
+        if self.type == self.QuestionType.DIAGNOSIS:
+            return [f"All {self.choices.count()} diagnoses"]
+        elif self.type == self.QuestionType.SELECT:
+            return [choice.text for choice in self.choices.all()]
+        elif self.type == self.QuestionType.NUMBER:
+            return ["Numeric"]
+        else:
+            raise ValueError(f"Unknown question type: {self.type}")
 
     def save(self, **kwargs):
         from isic.studies.models import Annotation
