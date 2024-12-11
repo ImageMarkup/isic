@@ -104,7 +104,7 @@
             <span class="font-bold">
               {{ question.prompt }}
             </span>
-            {{ question.choices.all|join:", " }}
+            {{ question.choices_for_display|join:", " }}
           </li>
         {% endfor %}
       </ul>
