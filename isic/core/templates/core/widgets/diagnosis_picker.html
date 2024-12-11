@@ -4,6 +4,8 @@
     {{ diagnosis_values|json_script:"diagnosis-values" }}
 
     <script>
+        const diagnosisOnlyForm = JSON.parse(document.getElementById('diagnosis-only-form').textContent);
+
         function recentDiagnosesPicker() {
             let recentDiagnoses = [];
             if (document.getElementById('recent-diagnoses')) {
@@ -30,6 +32,12 @@
 
                     // strip all selected values from the tree
                     document.querySelectorAll('.diagnosis').forEach(d => d.classList.remove('selected'));
+
+                    if (diagnosisOnlyForm) {
+                        const form = this.$el.closest('form');
+                        const submitButton = form.querySelector('button[type="submit"]');
+                        submitButton.click();
+                    }
                 },
             }
         }
