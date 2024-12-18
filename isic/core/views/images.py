@@ -22,13 +22,13 @@ from isic.types import AuthenticatedHttpRequest
 MAX_RELATED_SHOW_FIRST_N = 50
 
 
-@needs_object_permission("core.view_image", (Image, "pk", "pk"))
-def image_detail(request, pk):
+@needs_object_permission("core.view_image", (Image, "isic_id", "isic_id"))
+def image_detail(request, isic_id):
     image = get_object_or_404(
         Image.objects.select_related(
-            "accession__cohort__contributor__creator", "accession__review"
+            "accession__cohort__contributor__creator", "accession__review__creator"
         ),
-        pk=pk,
+        isic_id=isic_id,
     )
 
     studies = get_visible_objects(

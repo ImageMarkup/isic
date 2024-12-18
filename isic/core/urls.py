@@ -1,10 +1,10 @@
+from django.db.models import Q
 from django.http.response import Http404
 from django.urls import path, register_converter
 from django.views.generic.base import TemplateView
 
 from isic.core.constants import ISIC_ID_REGEX, MONGO_ID_REGEX
 from isic.core.models.image import Image
-from isic.core.models.image_alias import ImageAlias
 from isic.core.views.collections import (
     collection_create_,
     collection_create_doi_,
@@ -21,7 +21,6 @@ from isic.core.views.images import (
 )
 from isic.core.views.lesion import lesion_detail
 from isic.core.views.users import staff_list, user_detail
-from isic.ingest.models.accession import Accession
 
 
 class ImageIdentifierConverter:
@@ -29,26 +28,23 @@ class ImageIdentifierConverter:
 
     def to_python(self, value):
         if value.isnumeric():
-            return int(value)
-
-        image = Image.objects.filter(isic_id=value).first()
-        if image:
-            return image.pk
-
-        image = Image.objects.filter(
-            accession=Accession.objects.filter(girder_id=value).first()
-        ).first()
-        if image:
-            return image.pk
-
-        alias = ImageAlias.objects.filter(isic_id=value).first()
-        if alias:
-            return alias.image.pk
+            image = Image.objects.filter(pk=value).first()
+            if image:
+                return image.isic_id
+        else:
+            for approach in [
+                Q(isic_id=value),
+                Q(accession__girder_id=value),
+                Q(aliases__isic=value),
+            ]:
+                image = Image.objects.filter(approach).order_by().first()
+                if image:
+                    return image.isic_id
 
         raise Http404
 
     def to_url(self, value):
-        return int(value)
+        return value
 
 
 register_converter(ImageIdentifierConverter, "image-identifier")
@@ -95,7 +91,7 @@ urlpatterns = [
         name="core/collection-download-metadata",
     ),
     path(
-        "images/<image-identifier:pk>/",
+        "images/<image-identifier:isic_id>/",
         image_detail,
         name="core/image-detail",
     ),
