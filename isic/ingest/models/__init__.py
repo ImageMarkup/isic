@@ -1,5 +1,6 @@
 from .accession import Accession, AccessionStatus
 from .accession_review import AccessionReview
+from .bulk_metadata_application import BulkMetadataApplication
 from .cohort import Cohort
 from .contributor import Contributor
 from .distinctness_measure import DistinctnessMeasure
@@ -15,6 +16,7 @@ __all__ = [
     "Accession",
     "AccessionReview",
     "AccessionStatus",
+    "BulkMetadataApplication",
     "Cohort",
     "Contributor",
     "DistinctnessMeasure",
