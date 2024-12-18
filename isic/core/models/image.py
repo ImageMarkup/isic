@@ -94,7 +94,7 @@ class Image(CreationSortedTimeStampedModel):
         return self.isic_id
 
     def get_absolute_url(self):
-        return reverse("core/image-detail", args=[self.pk])
+        return reverse("core/image-detail", args=[self.isic_id])
 
     @property
     def has_patient(self) -> bool:
