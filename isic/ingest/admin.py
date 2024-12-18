@@ -19,6 +19,7 @@ from isic.core.admin import StaffReadonlyAdmin
 from isic.ingest.models import (
     Accession,
     AccessionReview,
+    BulkMetadataApplication,
     Cohort,
     Contributor,
     Lesion,
@@ -164,6 +165,16 @@ class MetadataFileAdmin(StaffReadonlyAdmin):
     @admin.display(description="Blob Size", ordering="blob_size")
     def human_blob_size(self, obj):
         return filesizeformat(obj.blob_size)
+
+
+@admin.register(BulkMetadataApplication)
+class BulkMetadataApplicationAdmin(StaffReadonlyAdmin):
+    list_select_related = ["creator", "metadata_file"]
+    list_display = ["id", "created", "creator", "metadata_file", "message"]
+    search_fields = ["id", "creator__username", "metadata_file__blob_name"]
+
+    autocomplete_fields = ["creator", "metadata_file"]
+    readonly_fields = ["created"]
 
 
 class AccessionReviewedFilter(admin.SimpleListFilter):
