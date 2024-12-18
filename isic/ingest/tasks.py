@@ -1,4 +1,4 @@
-from collections.abc import Iterable
+from collections.abc import Generator, Iterable
 import itertools
 import time
 
@@ -8,24 +8,20 @@ from celery.exceptions import SoftTimeLimitExceeded
 from celery.utils.log import get_task_logger
 from django.contrib.auth.models import User
 from django.db import transaction
-from django.db.models import QuerySet
 from django.template.loader import render_to_string
 from isic_metadata.utils import get_unstructured_columns
 
-from isic.core.utils.db import lock_table_for_writes
 from isic.ingest.models import (
     Accession,
     AccessionStatus,
     Cohort,
     DistinctnessMeasure,
-    Lesion,
     MetadataFile,
-    Patient,
     ZipUpload,
     ZipUploadFailReason,
     ZipUploadStatus,
 )
-from isic.ingest.models.rcm_case import RcmCase
+from isic.ingest.services.accession import bulk_accession_update_metadata
 from isic.ingest.services.cohort import cohort_publish
 from isic.ingest.utils.metadata import (
     ColumnRowErrors,
@@ -155,30 +151,28 @@ def update_metadata_task(user_pk: int, metadata_file_pk: int):
     metadata_file = MetadataFile.objects.get(pk=metadata_file_pk)
     user = User.objects.get(pk=user_pk)
 
-    with (
-        transaction.atomic(),
-        # Lock the longitudinal tables during metadata assignment
-        lock_table_for_writes(Lesion),
-        lock_table_for_writes(Patient),
-        lock_table_for_writes(RcmCase),
-        metadata_file.blob.open("rb") as blob,
-    ):
-        rows = MetadataFile.to_dict_reader(blob)
+    def id_metadata_mapping() -> Generator[tuple[int, dict[str, str]], None, None]:
+        with metadata_file.blob.open("rb") as blob:
+            rows = MetadataFile.to_dict_reader(blob)
 
-        for chunk in itertools.batched(rows, 1_000):
-            accessions: QuerySet[Accession] = metadata_file.cohort.accessions.select_related(
-                "image", "review", "lesion", "patient", "rcm_case", "cohort"
-            ).filter(original_blob_name__in=[row["filename"] for row in chunk])
-            accessions_by_filename: dict[str, Accession] = {
-                accession.original_blob_name: accession for accession in accessions
-            }
+            for batch in itertools.batched(rows, 1_000):
+                accession_id_by_filename = dict(
+                    metadata_file.cohort.accessions.filter(
+                        original_blob_name__in=[row["filename"] for row in batch]
+                    ).values_list("original_blob_name", "id")
+                )
 
-            for row in chunk:
-                # filename doesn't need to be stored in the metadata since it's equal to
-                # original_blob_name
-                accession = accessions_by_filename[row["filename"]]
-                del row["filename"]
-                accession.update_metadata(user, row)
+                for row in batch:
+                    # filename doesn't need to be stored in the metadata since it's equal to
+                    # original_blob_name
+                    accession_id = accession_id_by_filename[row["filename"]]
+                    del row["filename"]
+
+                    yield accession_id, row
+
+    bulk_accession_update_metadata(
+        user=user, metadata=id_metadata_mapping(), metadata_file_id=metadata_file.pk
+    )
 
 
 @shared_task(soft_time_limit=3600, time_limit=3660)
