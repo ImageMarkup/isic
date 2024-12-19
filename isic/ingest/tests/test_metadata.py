@@ -84,9 +84,27 @@ def csv_stream_diagnosis_sex_disagreeing_lesion_patient() -> codecs.StreamWriter
 @pytest.fixture()
 def csv_stream_benign() -> codecs.StreamWriter:
     file_stream = StreamWriter(io.BytesIO())
-    writer = csv.DictWriter(file_stream, fieldnames=["filename", "benign_malignant"])
+    writer = csv.DictWriter(
+        file_stream,
+        fieldnames=["filename", "diagnosis", "anatom_site_general"],
+    )
     writer.writeheader()
-    writer.writerow({"filename": "filename.jpg", "benign_malignant": "benign"})
+    writer.writerow(
+        {
+            "filename": "filename.jpg",
+            "diagnosis": "Benign",
+            "anatom_site_general": "lower extremity",
+        }
+    )
+    return file_stream
+
+
+@pytest.fixture()
+def csv_stream_fingernail() -> codecs.StreamWriter:
+    file_stream = StreamWriter(io.BytesIO())
+    writer = csv.DictWriter(file_stream, fieldnames=["filename", "anatom_site_special"])
+    writer.writeheader()
+    writer.writerow({"filename": "filename.jpg", "anatom_site_special": "fingernail"})
     return file_stream
 
 
@@ -111,11 +129,11 @@ def test_apply_metadata(accession_factory, valid_metadatafile, cohort, user) -> 
     accession = accession_factory(cohort=cohort, original_blob_name="filename.jpg")
     update_metadata_task(user.pk, valid_metadatafile.pk)
     accession.refresh_from_db()
-    assert accession.metadata == {"benign_malignant": "benign"}
+    assert accession.metadata == {"diagnosis_1": "Benign"}
     assert accession.unstructured_metadata.value == {"foo": "bar"}
     assert accession.metadata_versions.count() == 1
     version = accession.metadata_versions.first()
-    assert version.metadata == {"benign_malignant": "benign"}
+    assert version.metadata == {"diagnosis_1": "Benign"}
     assert version.unstructured_metadata == {"foo": "bar"}
 
 
@@ -273,62 +291,6 @@ def test_diagnosis_transition(staff_user, accession, image_factory) -> None:
         "diagnosis_2": "Malignant melanocytic proliferations (Melanoma)",
         "diagnosis_3": "Melanoma Invasive",
     }
-
-
-@pytest.mark.django_db()
-def test_apply_metadata_step3(
-    user,
-    staff_client,
-    cohort_with_accession,
-    csv_stream_diagnosis_sex,
-    csv_stream_benign,
-    metadata_file_factory,
-    mocker,
-    django_capture_on_commit_callbacks,
-) -> None:
-    # TODO: refactor this test to split out the first half
-    metadatafile = metadata_file_factory(
-        blob__from_func=lambda: csv_stream_diagnosis_sex, cohort=cohort_with_accession
-    )
-
-    # must use spy here because the results of render_to_string need to get
-    # saved in the database.
-    import isic.ingest.tasks
-
-    render_to_string = mocker.spy(isic.ingest.tasks, "render_to_string")
-
-    with django_capture_on_commit_callbacks(execute=True):
-        r = staff_client.post(
-            reverse("validate-metadata", args=[cohort_with_accession.pk]),
-            {"metadata_file": metadatafile.pk},
-            follow=True,
-        )
-    assert r.status_code == 200, r.status_code
-    assert render_to_string.call_args[0][1]["successful"]
-
-    update_metadata_task(user.pk, metadatafile.pk)
-
-    render_to_string.reset_mock()
-
-    # test step 3 by trying to make a Melanoma Invasive benign
-    benign_metadatafile = metadata_file_factory(
-        blob__from_func=lambda: csv_stream_benign, cohort=cohort_with_accession
-    )
-
-    with django_capture_on_commit_callbacks(execute=True):
-        r = staff_client.post(
-            reverse("validate-metadata", args=[cohort_with_accession.pk]),
-            {"metadata_file": benign_metadatafile.pk},
-            follow=True,
-        )
-    r.context = cast(ApplyMetadataContext, r.context)
-    assert r.status_code == 200, r.status_code
-    assert render_to_string.call_args[0][1]["successful"] is False
-    assert render_to_string.call_args[0][1]["csv_check"] == []
-    assert render_to_string.call_args[0][1]["internal_check"]
-    assert not any(render_to_string.call_args[0][1]["internal_check"])
-    assert render_to_string.call_args[0][1]["archive_check"]
-    assert next(iter(render_to_string.call_args[0][1]["archive_check"][0].keys()))[0] == ""
 
 
 @pytest.mark.django_db()
@@ -491,21 +453,21 @@ def test_accession_remove_unstructured_metadata(user, imageless_accession) -> No
 @pytest.mark.django_db()
 def test_accession_remove_metadata(user, imageless_accession) -> None:
     imageless_accession.update_metadata(
-        user, {"diagnosis": "Melanoma Invasive", "benign_malignant": "malignant"}
+        user, {"diagnosis": "Melanoma Invasive", "family_hx_mm": "true"}
     )
     imageless_accession.remove_metadata(user, ["diagnosis"])
-    assert imageless_accession.metadata == {"benign_malignant": "malignant"}
+    assert imageless_accession.metadata == {"family_hx_mm": True}
     assert imageless_accession.metadata_versions.count() == 2
 
 
 @pytest.mark.django_db()
 def test_accession_remove_metadata_idempotent(user, imageless_accession) -> None:
     imageless_accession.update_metadata(
-        user, {"diagnosis": "Melanoma Invasive", "benign_malignant": "malignant"}
+        user, {"diagnosis": "Melanoma Invasive", "family_hx_mm": "true"}
     )
     imageless_accession.remove_metadata(user, ["diagnosis"])
     imageless_accession.remove_metadata(user, ["diagnosis"])
-    assert imageless_accession.metadata == {"benign_malignant": "malignant"}
+    assert imageless_accession.metadata == {"family_hx_mm": True}
     assert imageless_accession.metadata_versions.count() == 2
 
 
