@@ -14,7 +14,6 @@ def image_with_metadata(image):
         image.creator,
         {
             "age": 32,
-            "benign_malignant": "benign",
             "diagnosis": "Nevus",
             "patient_id": "supersecretpatientid",
             "lesion_id": "supersecretlesionid",
@@ -39,7 +38,6 @@ def test_image_metadata_csv_rows_correct(image_with_metadata):
     assert row == {
         "age_approx": image_with_metadata.accession.age_approx,
         "attribution": image_with_metadata.accession.cohort.attribution,
-        "benign_malignant": image_with_metadata.accession.benign_malignant,
         "copyright_license": image_with_metadata.accession.copyright_license,
         "diagnosis": "nevus",
         "diagnosis_1": "Benign",
@@ -62,7 +60,6 @@ def test_staff_image_metadata_csv_rows_correct(image_with_metadata):
         "age_approx": image_with_metadata.accession.age_approx,
         "age": image_with_metadata.accession.age,
         "attribution": image_with_metadata.accession.cohort.attribution,
-        "benign_malignant": image_with_metadata.accession.benign_malignant,
         "cohort_id": image_with_metadata.accession.cohort_id,
         "cohort": image_with_metadata.accession.cohort.name,
         "copyright_license": image_with_metadata.accession.copyright_license,
