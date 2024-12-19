@@ -12,9 +12,9 @@ StreamWriter = codecs.getwriter("utf-8")
 
 def csv_stream_valid() -> codecs.StreamWriter:
     file_stream = StreamWriter(io.BytesIO())
-    writer = csv.DictWriter(file_stream, fieldnames=["filename", "benign_malignant", "foo"])
+    writer = csv.DictWriter(file_stream, fieldnames=["filename", "diagnosis", "foo"])
     writer.writeheader()
-    writer.writerow({"filename": "filename.jpg", "benign_malignant": "benign", "foo": "bar"})
+    writer.writerow({"filename": "filename.jpg", "diagnosis": "Benign", "foo": "bar"})
     return file_stream
 
 
