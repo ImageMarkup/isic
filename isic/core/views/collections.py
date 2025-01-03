@@ -216,7 +216,6 @@ def collection_detail(request, pk):
             "images": page,
             "num_images": paginator.count,
             "image_removal_mode": image_removal_mode,
-            "show_shares": (request.user.is_staff or request.user == collection.creator)
-            and not collection.public,
+            "show_shares": request.user.is_staff or request.user == collection.creator,
         },
     )
