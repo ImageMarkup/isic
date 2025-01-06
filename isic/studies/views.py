@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import UTC, datetime
 
 from django.contrib import messages
@@ -50,37 +51,38 @@ def study_list(request):
     paginator = Paginator(studies, 10)
     studies_page = paginator.get_page(request.GET.get("page"))
 
-    num_participants = dict(
+    num_participants = defaultdict(
+        int,
         StudyTask.objects.values("study")
         .filter(study__in=studies_page)
         .annotate(count=Count("annotator", distinct=True))
-        .values_list("study", "count")
+        .values_list("study", "count"),
     )
+
+    num_pending_tasks = defaultdict(int)
+    num_completed_tasks = defaultdict(int)
 
     if request.user.is_authenticated:
         # Ideally this could be tacked onto studies as an annotation but the
         # generated SQL is extremely inefficient.
         # Map the study id -> num pending tasks a user has to complete on a study
-        num_pending_tasks = dict(
+        num_pending_tasks.update(
             StudyTask.objects.values("study")
             .filter(study__in=studies_page, annotator=request.user, annotation=None)
             .annotate(count=Count(1))
-            .values_list("study", "count")
+            .values_list("study", "count"),
         )
-        num_completed_tasks = dict(
+        num_completed_tasks.update(
             StudyTask.objects.values("study")
             .filter(study__in=studies_page, annotator=request.user)
             .exclude(annotation=None)
             .annotate(count=Count(1))
-            .values_list("study", "count")
+            .values_list("study", "count"),
         )
-    else:
-        num_pending_tasks = None
-        num_completed_tasks = None
 
     return render(
         request,
-        "studies/study_list.html",
+        "studies/study_list.jinja",
         {
             "studies": studies_page,
             "num_pending_tasks": num_pending_tasks,
