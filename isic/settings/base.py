@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from celery.schedules import crontab
+from django.contrib import messages
 import django_stubs_ext
 
 from .upstream_base import *  # noqa: F403
@@ -93,6 +94,8 @@ INSTALLED_APPS = [
     "django.contrib.postgres",
     "django.contrib.sessions",
     "django.contrib.sites",
+    "django_jinja",
+    "django_jinja.contrib._humanize",
     "whitenoise.runserver_nostatic",  # should be immediately before staticfiles app
     "django.contrib.staticfiles",
     "girder_utils",
@@ -166,6 +169,30 @@ TEMPLATES[0]["OPTIONS"]["context_processors"] += [  # type: ignore[index]  # noq
     "isic.core.context_processors.sandbox_banner",
     "isic.core.context_processors.placeholder_images",
 ]
+
+
+# django_jinja needs to be before the django engine, see https://niwi.nz/django-jinja/latest/#_quick_start
+TEMPLATES.insert(  # noqa: F405
+    0,
+    {
+        "BACKEND": "django_jinja.jinja2.Jinja2",
+        "DIRS": [],
+        "APP_DIRS": True,
+        # see https://niwi.nz/django-jinja/latest/#_complete_example
+        "OPTIONS": {
+            "undefined": "jinja2.StrictUndefined",
+            "globals": {
+                "get_messages": messages.get_messages,
+                "DEFAULT_MESSAGE_LEVELS": messages.constants.DEFAULT_LEVELS,
+            },
+            "filters": {
+                "localtime": "isic.core.jinja2.localtime_filter",
+                "querystring": "isic.core.jinja2.querystring_filter",
+            },
+            "environment": "isic.core.jinja2.environment",
+        },
+    },
+)
 
 # ISIC specific settings
 # This is an unfortunate feature flag that lets us disable this feature in testing,

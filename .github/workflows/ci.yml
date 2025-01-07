@@ -52,6 +52,13 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: "3.12"
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - name: Install packages
+        run: |
+          npm install
       - name: Install tox
         run: |
           pip install --upgrade pip uv
