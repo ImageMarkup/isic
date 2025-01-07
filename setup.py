@@ -55,6 +55,7 @@ setup(
         "django-extensions",
         "django-filter",
         "django-girder-utils",
+        "django-jinja",
         "django-json-widget",
         "django-markdownify",
         "django-ninja>=1.0a3",
