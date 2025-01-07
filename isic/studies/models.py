@@ -413,7 +413,10 @@ class ResponseQuerySet(models.QuerySet):
                     question_prompt=F("question__prompt"),
                     answer=Case(
                         When(
-                            question__type=Question.QuestionType.SELECT,
+                            question__type__in=[
+                                Question.QuestionType.SELECT,
+                                Question.QuestionType.DIAGNOSIS,
+                            ],
                             then=F("choice_answer"),
                         ),
                         default=F("value_answer"),
