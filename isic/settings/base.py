@@ -189,6 +189,11 @@ TEMPLATES.insert(  # noqa: F405
                 "localtime": "isic.core.jinja2.localtime_filter",
                 "querystring": "isic.core.jinja2.querystring_filter",
             },
+            "bytecode_cache": {
+                "name": "default",
+                "backend": "django_jinja.cache.BytecodeCache",
+                "enabled": True,
+            },
             "environment": "isic.core.jinja2.environment",
         },
     },
