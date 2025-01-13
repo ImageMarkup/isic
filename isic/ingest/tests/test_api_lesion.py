@@ -98,7 +98,6 @@ def test_api_lesion_completeness(client, lesion_factory, image_factory):
     lesion = lesion_factory()
     image = image_factory(
         accession__lesion=lesion,
-        accession__benign_malignant="malignant",
         accession__fq__diagnosis="melanoma",
         accession__acquisition_day=1,
         public=True,
@@ -113,7 +112,6 @@ def test_api_lesion_completeness(client, lesion_factory, image_factory):
         resp.json()["results"][0]["outcome_diagnosis"]
         == DiagnosisEnum.malignant_malignant_melanocytic_proliferations_melanoma_melanoma_invasive
     )
-    assert resp.json()["results"][0]["outcome_benign_malignant"] == "malignant"
 
     # verify longitudinally_monitored
     image_factory(
