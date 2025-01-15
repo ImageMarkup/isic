@@ -34,6 +34,10 @@
     "cog": {
       "source": "./node-src/cog.mjs",
       "distDir": "./isic/core/static/core/dist"
+    },
+    "cog_styles": {
+      "source": "./node-src/ol.css",
+      "distDir": "./isic/core/static/core/dist"
     }
   },
   "browserslist": "> 0.5%",
