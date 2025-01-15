@@ -35,7 +35,8 @@ function initializeCogViewer(target, url, width, height) {
             projection: projection,
             center: getCenter(extent),
             extent: extent,
-            zoom: 1,
+            zoom: .75,
+            constrainOnlyCenter: true,
         }),
     });
 }
