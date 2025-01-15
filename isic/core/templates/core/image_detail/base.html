@@ -29,8 +29,9 @@
       <div class="flex justify-between pt-4">
         <div>
           {% if image.accession.is_cog and not PLACEHOLDER_IMAGES %}
-            <div id="image" style="width:512px; height:512px;"></div>
+            <div id="image" style="width:512px; height:512px; border:1px solid #ccc;"></div>
             <script src="{% static 'core/dist/cog.js' %}"></script>
+            <link rel="stylesheet" href="{% static 'core/dist/ol.css' %}">
             <script type="text/javascript">
               initializeCogViewer('image', '{{ image.accession.blob.url|safe }}',
                 {{ image.accession.width }},
