@@ -19,9 +19,7 @@
             <div>
               <div id="image-{{ image.id }}" style="width:512px; height:512px; border:1px solid #ccc;"></div>
               <script type="text/javascript">
-                initializeCogViewer('image-{{ image.id }}', '{{ image.accession.blob.url|safe }}',
-                  {{ image.accession.width }},
-                  {{ image.accession.height }});
+                initializeCogViewer(document.getElementById('image-{{ image.id }}'), '{{ image.accession.blob.url|safe }}');
               </script>
             </div>
           {% else %}

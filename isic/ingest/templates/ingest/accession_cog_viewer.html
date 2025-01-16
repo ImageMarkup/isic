@@ -8,10 +8,7 @@
     <script src="{% static 'core/dist/cog.js' %}"></script>
     <link rel="stylesheet" href="{% static 'core/dist/ol.css' %}">
 
-
     <script type="text/javascript">
-        initializeCogViewer('image', '{{ accession.blob.url|safe }}',
-            {{ accession.width }},
-            {{ accession.height }});
+        initializeCogViewer(document.getElementById('image'), '{{ accession.blob.url|safe }}');
     </script>
 {% endblock %}
