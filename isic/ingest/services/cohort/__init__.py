@@ -1,6 +1,5 @@
 import logging
 
-from cachalot.api import cachalot_disabled
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -57,7 +56,7 @@ def cohort_publish(
     )
 
     # this creates a transaction
-    with lock_table_for_writes(IsicId), cachalot_disabled(), transaction.atomic():
+    with lock_table_for_writes(IsicId), transaction.atomic():
         for accession in cohort.accessions.publishable().iterator():
             image = image_create(creator=publisher, accession=accession, public=public)
             collection_add_images(collection=cohort.collection, image=image, ignore_lock=True)

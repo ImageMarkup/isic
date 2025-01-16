@@ -4,7 +4,6 @@ from functools import lru_cache, partial
 import logging
 from typing import TYPE_CHECKING, Any, NotRequired, TypedDict
 
-from cachalot.api import cachalot_disabled
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser, User
 from django.db.models.query import QuerySet
@@ -147,10 +146,7 @@ def bulk_add_to_search_index(
 
     # The opensearch logger is very noisy when updating records,
     # set it to warning during this operation.
-    with (
-        LoggingContext(logging.getLogger("opensearch"), level=logging.WARNING),
-        cachalot_disabled(),
-    ):
+    with LoggingContext(logging.getLogger("opensearch"), level=logging.WARNING):
         # qs must be generated with with_elasticsearch_properties
         # Use a generator for lazy evaluation
         documents = (obj.to_elasticsearch_document() for obj in qs.iterator(chunk_size=chunk_size))
