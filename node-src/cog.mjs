@@ -1,44 +1,38 @@
-import GeoTIFF from 'ol/source/GeoTIFF.js';
 import Map from 'ol/Map.js';
-import Projection from 'ol/proj/Projection.js';
-import TileLayer from 'ol/layer/WebGLTile.js';
 import View from 'ol/View.js';
-import { getCenter } from 'ol/extent.js';
+import TileLayer from 'ol/layer/WebGLTile.js';
+import GeoTIFF from 'ol/source/GeoTIFF.js';
 
-
-function initializeCogViewer(target, url, width, height) {
-    const extent = [0, 0, width, height];
-
-    const projection = new Projection({
-        code: 'custom',
-        units: 'pixels',
-        extent: extent,
-    });
-
-    const geotiff = new GeoTIFF({
-        sources: [
-            {
-                url: url,
-                nodata: 0,
-            },
-        ],
-    });
-
-    const map = new Map({
-        target: target,
-        layers: [
-            new TileLayer({
-                source: geotiff,
-            }),
-        ],
-        view: new View({
-            projection: projection,
-            center: getCenter(extent),
-            extent: extent,
-            zoom: .75,
-            constrainOnlyCenter: true,
-        }),
-    });
+async function initializeCogViewer(target, url) {
+  const source = new GeoTIFF({
+    sources: [
+      {
+        url,
+        nodata: 0,
+      },
+    ],
+  });
+  const view = new View({
+    // Use the View factory, as it reads the extents from the image.
+    ...(await source.getView()),
+    // Allow panning the view past the edges of the image,
+    // as long as the center of the view is within the image.
+    // This provides a less sticky feeling and makes it easier
+    // to zoom near edges of the image, but unfortunately makes
+    // the initial zoom a bit too far.
+    constrainOnlyCenter: true,
+    // Given constrainOnlyCenter, this makes the min zoom a bit more sane.
+    // The initial zoom is already 1.
+    minZoom: 1,
+    // For now, the default Projection works fine, but once physical unit
+    // measurements need to be made within the image, we probably need to
+    // make a cartesian Projection with appropriate units
+  });
+  new Map({
+    target,
+    layers: [new TileLayer({source})],
+    view,
+  });
 }
 
 window.initializeCogViewer = initializeCogViewer;

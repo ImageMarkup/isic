@@ -33,9 +33,7 @@
             <script src="{% static 'core/dist/cog.js' %}"></script>
             <link rel="stylesheet" href="{% static 'core/dist/ol.css' %}">
             <script type="text/javascript">
-              initializeCogViewer('image', '{{ image.accession.blob.url|safe }}',
-                {{ image.accession.width }},
-                {{ image.accession.height }});
+              initializeCogViewer(document.getElementById('image'), '{{ image.accession.blob.url|safe }}');
             </script>
             <span class="text-sm">Scroll to zoom, click and drag to pan</span>
           {% else %}
