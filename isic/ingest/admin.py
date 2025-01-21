@@ -2,7 +2,6 @@ import csv
 from datetime import UTC, datetime
 import logging
 
-from cachalot.api import cachalot_disabled
 from django.contrib import admin
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.db import models
@@ -138,18 +137,17 @@ class CohortAdmin(StaffReadonlyAdmin):
 
         writer.writeheader()
         for cohort in queryset.select_related("contributor"):
-            with cachalot_disabled():
-                for accession in cohort.accessions.values(
-                    "original_blob_name",
-                    "image__isic_id",
-                ).iterator():
-                    d = {
-                        "contributor": cohort.contributor.institution_name,
-                        "cohort": cohort.name,
-                        "filename": accession["original_blob_name"],
-                        "isic_id": accession["image__isic_id"],
-                    }
-                    writer.writerow(d)
+            for accession in cohort.accessions.values(
+                "original_blob_name",
+                "image__isic_id",
+            ).iterator():
+                d = {
+                    "contributor": cohort.contributor.institution_name,
+                    "cohort": cohort.name,
+                    "filename": accession["original_blob_name"],
+                    "isic_id": accession["image__isic_id"],
+                }
+                writer.writerow(d)
         return response
 
 

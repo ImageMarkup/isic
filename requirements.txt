@@ -9,8 +9,8 @@ asttokens==3.0.0
 bcrypt==4.2.1
 billiard==4.2.1
 bleach==6.2.0
-boto3==1.35.93
-botocore==1.35.93
+boto3==1.36.0
+botocore==1.36.0
 Brotli==1.1.0
 cachetools==5.5.0
 celery==5.4.0
@@ -25,10 +25,10 @@ cryptography==44.0.0
 deepdiff==8.1.1
 dj-database-url==2.3.0
 dj-email-url==1.0.6
-Django==5.1.4
+Django==5.1.5
 django-allauth==65.3.1
 django-auth-style==0.8.1
-django-cachalot==2.7.0
+django-cachalot @ git+https://github.com/noripyt/django-cachalot.git@8d5a1597e5dc0b516090e9056d48df2a2d6173d7
 django-cache-url==3.4.5
 django-click==2.4.0
 django-cors-headers==4.6.0
@@ -44,7 +44,7 @@ django-object-actions==4.3.0
 django-redis==5.4.0
 django-s3-file-field==1.0.1
 django-storages==1.14.4
-django-stubs-ext==5.1.1
+django-stubs-ext==5.1.2
 django-widget-tweaks==1.5.0
 djangorestframework==3.15.2
 dnspython==2.7.0
@@ -82,14 +82,14 @@ pandas==2.2.3
 pillow==11.1.0
 prompt_toolkit==3.0.48
 proto-plus==1.25.0
-protobuf==5.29.2
-psycopg==3.2.3
+protobuf==5.29.3
+psycopg==3.2.4
 pure_eval==0.2.3
 pyasn1==0.6.1
 pyasn1_modules==0.4.1
 pycountry==24.6.1
 pycparser==2.22
-pydantic==2.10.4
+pydantic==2.10.5
 pydantic_core==2.27.2
 Pygments==2.19.1
 pymongo==4.10.1
@@ -101,8 +101,8 @@ redis==5.2.1
 requests==2.32.3
 rich==13.9.4
 rsa==4.9
-s3transfer==0.10.4
-sentry-sdk==2.19.2
+s3transfer==0.11.0
+sentry-sdk==2.20.0
 six==1.17.0
 sqlparse==0.5.3
 tenacity==9.0.0
