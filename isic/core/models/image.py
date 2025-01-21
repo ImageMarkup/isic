@@ -246,16 +246,30 @@ class ImagePermissions:
 
         if user_obj.is_staff:
             return qs
-        if user_obj.is_authenticated:
+        elif user_obj.is_authenticated:
+            image_visibility_requirements = Q(public=True) | Q(
+                # this needs list coercion because otherwise it will be a subquery that contains
+                # the user_id, which doesn't allow users with identical privileges to share
+                # the query cache.
+                accession__cohort__contributor_id__in=list(
+                    user_obj.owned_contributors.order_by().values_list("id", flat=True)
+                )
+            )
+
+            if user_obj.imageshare_set.exists():
+                # this is the worst case scenario where we have to put the specific user into the
+                # query, guaranteeing that they won't share the cache with others.
+                # this is also the only portion that demands a left join, forcing the
+                # caller to wrap the query in a distinct() call.
+                image_visibility_requirements |= Q(shares=user_obj)
+
             # Note: permissions here must be also modified in build_elasticsearch_query and
             # LesionPermissions.view_lesion_list.
             return qs.filter(
-                Q(public=True)
-                | Q(accession__cohort__contributor__owners=user_obj)
-                | Q(shares=user_obj)
+                image_visibility_requirements,
             )
-
-        return qs.public()
+        else:
+            return qs.public()
 
     @staticmethod
     def view_image(user_obj: User, obj: Image) -> bool:
