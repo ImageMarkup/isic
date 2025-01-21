@@ -250,7 +250,9 @@ class Lesion(models.Model):
 class LesionPermissions:
     model = Lesion
     perms = ["view_lesion"]
-    filters = {"view_lesion": "view_lesion_list"}
+    filters = {
+        "view_lesion": "view_lesion_list",
+    }
 
     @staticmethod
     def view_lesion_list(user_obj: User, qs: QuerySet[Lesion] | None = None) -> QuerySet[Lesion]:
@@ -258,7 +260,21 @@ class LesionPermissions:
 
         if user_obj.is_staff:
             return qs
-        if user_obj.is_authenticated:
+        elif user_obj.is_authenticated:
+            lesion_visibility_requirements = Q(accessions__image__public=True) | Q(
+                # this needs list coercion because otherwise it will be a subquery that contains
+                # the user_id, which doesn't allow users with identical privileges to share
+                # the query cache.
+                cohort__contributor_id__in=list(
+                    user_obj.owned_contributors.order_by().values_list("id", flat=True)
+                )
+            )
+
+            # only add the user share requirement if the user has shares, since it will put
+            # the user_id into the query (making query caching less effective).
+            if user_obj.imageshare_set.exists():
+                lesion_visibility_requirements |= Q(user_share_id=user_obj.id)
+
             return qs.filter(
                 id__in=Lesion.objects.values("id")
                 # if an image doesn't have shares it will return null which is skipped by BoolAnd.
@@ -268,22 +284,18 @@ class LesionPermissions:
                 .alias(user_share_id=Coalesce(F("accessions__image__shares"), -1))
                 .annotate(
                     # note that these requirements are copied from ImagePermissions.view_image_list
-                    visible=BoolAnd(
-                        Q(accessions__image__public=True)
-                        | Q(cohort__contributor__owners=user_obj)
-                        | Q(user_share_id=user_obj.id)
-                    )
+                    visible=BoolAnd(lesion_visibility_requirements)
                 )
                 .filter(visible=True)
                 .values("id")
             )
-
-        return qs.filter(
-            id__in=Lesion.objects.values("id")
-            .annotate(visible=BoolAnd(Q(accessions__image__public=True)))
-            .filter(visible=True)
-            .values("id")
-        )
+        else:
+            return qs.filter(
+                id__in=Lesion.objects.values("id")
+                .annotate(visible=BoolAnd(Q(accessions__image__public=True)))
+                .filter(visible=True)
+                .values("id")
+            )
 
     @staticmethod
     def view_lesion(user_obj: User, obj: Lesion) -> bool:
