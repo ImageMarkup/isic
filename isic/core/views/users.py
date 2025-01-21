@@ -15,7 +15,7 @@ from isic.studies.models import Annotation, Study, StudyTask
 @needs_object_permission("auth.view_staff")
 def staff_list(request):
     users = User.objects.filter(is_staff=True).order_by("date_joined")
-    return render(request, "core/staff_list.jinja", {"users": users, "total_users": User.objects})
+    return render(request, "core/staff_list.html", {"users": users, "total_users": User.objects})
 
 
 @staff_member_required

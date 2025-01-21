@@ -2,8 +2,6 @@ from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.core.cache import cache
 from django.test.client import Client
-from django.test.signals import template_rendered
-from django.utils.safestring import mark_safe
 import pytest
 from pytest_factoryboy import register
 
@@ -36,19 +34,6 @@ from isic.studies.tests.factories import (
 )
 
 from .factories import ProfileFactory, UserFactory
-
-
-@pytest.fixture(autouse=True)
-def _patch_jinja_template_render():
-    # work around the django test client not supporting context/templates for all template
-    # backends. see https://code.djangoproject.com/ticket/24622.
-    from django_jinja.backend import Template
-
-    def _render(self, context=None, request=None):
-        template_rendered.send(sender=self, template=self, context=context)
-        return mark_safe(self._process_template(self.template.render, context, request))  # noqa: S308
-
-    Template.render = _render
 
 
 @pytest.fixture(autouse=True)

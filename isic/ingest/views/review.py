@@ -53,7 +53,7 @@ def ingest_review(request):
 
     return render(
         request,
-        "ingest/ingest_review.jinja",
+        "ingest/ingest_review.html",
         {
             "cohorts": cohorts_page,
             "num_cohorts": paginator.count,
