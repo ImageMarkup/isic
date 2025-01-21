@@ -12,8 +12,6 @@
     "npm-run-all": "^4.1.5",
     "parcel": "^2.4.1",
     "postcss": "^8.4.12",
-    "prettier": "^3.4.2",
-    "prettier-plugin-jinja-template": "^2.0.0",
     "remixicon": "^2.5.0",
     "rimraf": "^3.0.2",
     "tailwindcss": "^3.0.24"
