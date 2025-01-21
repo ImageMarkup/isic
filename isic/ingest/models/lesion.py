@@ -75,7 +75,6 @@ class LesionInfo(TypedDict):
 
     images_count: int
     outcome_diagnosis: str
-    outcome_benign_malignant: str
     longitudinally_monitored: bool
 
 
@@ -97,7 +96,6 @@ class LesionQuerySet(models.QuerySet["Lesion"]):
                     partition_by=[F("id")],
                 ),
                 outcome_diagnosis=F("fq_diagnosis"),
-                outcome_benign_malignant=F("accessions__benign_malignant"),
             )
             # this is hard to do without defining a new type of expression because django
             # wants to perform group by on subqueries.

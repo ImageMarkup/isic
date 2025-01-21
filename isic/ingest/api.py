@@ -32,7 +32,6 @@ class LesionOut(ModelSchema):
     longitudinally_monitored: bool
     index_image_id: str | None
     outcome_diagnosis: str | None
-    outcome_benign_malignant: str | None
 
     @staticmethod
     def resolve_images(obj: Lesion) -> list[ImageOut]:
