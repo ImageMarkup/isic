@@ -31,7 +31,7 @@ class StudyTaskForm(forms.Form):
             # this is a hack because passing a per-question version of recent diagnoses is
             # unreasonably difficult.
             raise ValueError("Only one diagnosis question is allowed per study.")
-        elif num_diagnosis_questions == 1:  # noqa: RET506
+        elif num_diagnosis_questions == 1:
             # the study and user are necessary for diagnosis questions in order to compute
             # the recently used diagnoses
             self.study = kwargs.pop("study")
