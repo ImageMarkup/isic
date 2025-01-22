@@ -70,9 +70,6 @@ ZIP_DOWNLOAD_BASIC_AUTH_TOKEN = "insecurezipdownloadauthtoken"  # noqa: S105
 # Requires CloudFront configuration
 ZIP_DOWNLOAD_WILDCARD_URLS = False
 
-
-INSTALLED_APPS.append("django_fastdev")
-
 STORAGES["default"] = {  # noqa: F405
     "BACKEND": "minio_storage.storage.MinioMediaStorage",
 }
