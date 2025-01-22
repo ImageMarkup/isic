@@ -21,6 +21,17 @@ def _oauth2_pkce_required(client_id):
     return oauth_application.client_type != OAuth2Application.CLIENT_CONFIDENTIAL
 
 
+RAISE_MISSING_TEMPLATE_VARIABLES = False
+
+LOGGING["filters"]["missing_variable_error"] = {  # noqa: F405
+    "()": "isic.core.templating.MissingVariableErrorFilter",
+}
+
+LOGGING["loggers"]["django.template"] = {  # noqa: F405
+    "level": "DEBUG",
+    "filters": ["missing_variable_error"],
+}
+
 # PASSWORD_HASHERS are ordered "best" to "worst", appending Girder last means
 # it will be upgraded on login.
 PASSWORD_HASHERS += ["isic.login.hashers.GirderPasswordHasher"]  # noqa: F405
