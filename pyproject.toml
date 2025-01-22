@@ -36,6 +36,7 @@ ignore = [
 
   # Excessive
   "RET503", # implict return
+  "RET506", # else after raise
   "PLR2004", # magic value used in comparison
 
   # Try to fix upstream
