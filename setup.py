@@ -98,7 +98,6 @@ setup(
     extras_require={
         "dev": [
             "django-debug-toolbar",
-            "django-fastdev",
             "django-s3-file-field[minio]>=1",
             "ipython",
             "memray",

@@ -39,9 +39,6 @@ ZIP_DOWNLOAD_SERVICE_URL = "http://service-url.test"
 ZIP_DOWNLOAD_BASIC_AUTH_TOKEN = "insecuretestzipdownloadauthtoken"  # noqa: S105
 ZIP_DOWNLOAD_WILDCARD_URLS = False
 
-
-INSTALLED_APPS.append("django_fastdev")  # noqa: F405
-
 STORAGES["default"] = {"BACKEND": "isic.core.storages.minio.StringableMinioMediaStorage"}  # noqa: F405
 
 
