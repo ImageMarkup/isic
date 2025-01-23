@@ -11,3 +11,11 @@ def sandbox_banner(request):
 
 def placeholder_images(request):
     return {"PLACEHOLDER_IMAGES": settings.ISIC_PLACEHOLDER_IMAGES}
+
+
+def js_sentry(request):
+    return {"JS_SENTRY": settings.ISIC_JS_SENTRY}
+
+
+def js_browser_sync(request):
+    return {"JS_BROWSER_SYNC": settings.ISIC_JS_BROWSER_SYNC}
