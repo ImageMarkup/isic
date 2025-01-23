@@ -80,6 +80,8 @@ def image_detail(request, isic_id):
         "other_lesion_images_count": other_lesion_images.count(),
         "MAX_RELATED_SHOW_FIRST_N": MAX_RELATED_SHOW_FIRST_N,
         "studies": studies,
+        "unstructured_metadata": {},
+        "metadata_versions": [],
     }
 
     ctx["metadata"] = dict(sorted(image.metadata.items()))
