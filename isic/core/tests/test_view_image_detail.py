@@ -74,8 +74,8 @@ def test_view_image_detail_public(client, detailed_image):
     assert r.status_code == 200
     assert set(r.context["sections"].keys()) == {"metadata", "studies"}
 
-    assert "unstructured_metadata" not in r.context
-    assert "metadata_versions" not in r.context
+    assert r.context["unstructured_metadata"] == {}
+    assert r.context["metadata_versions"] == []
 
     assert "age" not in r.context["metadata"]
 

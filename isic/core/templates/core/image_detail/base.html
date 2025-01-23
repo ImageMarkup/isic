@@ -78,15 +78,15 @@
           {% include 'core/image_detail/metadata_tab.html' %}
           {% include 'core/image_detail/studies_tab.html' %}
 
-          {% if sections.patient_images %}
+          {% if 'patient_images' in sections %}
             {% include 'core/image_detail/images_tab.html' with images=other_patient_images images_count=other_patient_images_count section_name='patient_images' %}
           {% endif %}
 
-          {% if sections.lesion_images %}
+          {% if 'lesion_images' in sections %}
             {% include 'core/image_detail/images_tab.html' with images=other_lesion_images images_count=other_lesion_images_count section_name='lesion_images' %}
           {% endif %}
 
-          {% if sections.ingestion_details %}
+          {% if 'ingestion_details' in sections %}
             {% include 'core/image_detail/ingestion_details_tab.html' %}
           {% endif %}
         </div>

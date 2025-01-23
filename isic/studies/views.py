@@ -200,7 +200,12 @@ def annotation_detail(request, pk):
 
 @needs_object_permission("studies.view_study", (Study, "pk", "pk"))
 def study_detail(request, pk):
-    ctx = {"can_edit": request.user.has_perm("studies.edit_study", Study(pk=pk))}
+    ctx = {
+        "can_edit": request.user.has_perm("studies.edit_study", Study(pk=pk)),
+        "pending_tasks": None,
+        "next_task": None,
+        "owners": None,
+    }
     ctx["study"] = get_object_or_404(
         Study.objects.annotate(
             num_annotators=Count("tasks__annotator", distinct=True),
