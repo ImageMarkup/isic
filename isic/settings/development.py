@@ -109,3 +109,5 @@ DEBUG_TOOLBAR_CONFIG = {
     # If this setting is True, large sql queries can cause the page to render slowly
     "PRETTIFY_SQL": False,
 }
+
+ISIC_JS_BROWSER_SYNC = True
