@@ -176,6 +176,8 @@ TEMPLATES[0]["OPTIONS"]["context_processors"] += [  # type: ignore[index]  # noq
     "isic.core.context_processors.noindex",
     "isic.core.context_processors.sandbox_banner",
     "isic.core.context_processors.placeholder_images",
+    "isic.core.context_processors.js_browser_sync",
+    "isic.core.context_processors.js_sentry",
 ]
 
 # ISIC specific settings
@@ -197,6 +199,8 @@ ISIC_OAUTH_ALLOW_REGEX_REDIRECT_URIS = False
 ISIC_NOINDEX = False
 ISIC_SANDBOX_BANNER = False
 ISIC_PLACEHOLDER_IMAGES = False
+ISIC_JS_BROWSER_SYNC = False
+ISIC_JS_SENTRY = False
 
 ISIC_DATACITE_API_URL = os.environ.get(
     "DJANGO_ISIC_DATACITE_API_URL", "https://api.test.datacite.org"
