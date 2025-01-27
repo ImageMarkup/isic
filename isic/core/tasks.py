@@ -15,6 +15,7 @@ from django.db import connection, transaction
 from django.db.models import Prefetch
 from django.template.loader import render_to_string
 from girder_utils.storages import expiring_url
+from oauth2_provider.models import clear_expired as clear_expired_oauth_tokens
 from urllib3.exceptions import ConnectionError, TimeoutError
 
 from isic.core.models.collection import Collection
@@ -124,3 +125,8 @@ def generate_staff_image_list_metadata_csv(user_id: int) -> None:
     send_mail("Metadata CSV Ready", message, settings.DEFAULT_FROM_EMAIL, [user.email])
 
     Path(f.name).unlink()
+
+
+@shared_task(soft_time_limit=10, time_limit=15)
+def prune_expired_oauth_tokens():
+    clear_expired_oauth_tokens()

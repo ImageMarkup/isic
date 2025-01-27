@@ -82,6 +82,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "isic.core.tasks.sync_elasticsearch_indices_task",
         "schedule": crontab(minute="0", hour="0"),
     },
+    "prune-expired-oauth-tokens": {
+        "task": "isic.core.tasks.prune_expired_oauth_tokens",
+        "schedule": timedelta(days=1),
+    },
 }
 
 # Install local apps first, to ensure any overridden resources are found first
