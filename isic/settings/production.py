@@ -166,7 +166,7 @@ ISIC_OAUTH_ALLOW_REGEX_REDIRECT_URIS = string_to_bool(
 )
 
 # This is intended for the sandbox environment
-if string_to_bool(os.environ["DJANGO_ISIC_OAUTH_ALLOW_HTTP_REDIRECT_URIS"]):
+if string_to_bool(os.environ.get("DJANGO_ISIC_OAUTH_ALLOW_HTTP_REDIRECT_URIS", False)):
     OAUTH2_PROVIDER["ALLOWED_REDIRECT_URI_SCHEMES"].append("http")  # noqa: F405
 
 ISIC_SANDBOX_BANNER = string_to_bool(os.environ["DJANGO_ISIC_SANDBOX_BANNER"])
