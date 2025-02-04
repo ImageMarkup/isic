@@ -11,7 +11,7 @@ def revalidate_metadata():
     num_accessions = accessions.count()
     num_errors = 0
 
-    with click.progressbar(accessions.iterator()) as bar:
+    with click.progressbar(accessions.iterator(), length=num_accessions) as bar:
         for accession in bar:
             try:
                 MetadataRow.model_validate(accession.metadata)
