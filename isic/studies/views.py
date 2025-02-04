@@ -350,6 +350,8 @@ def study_task_detail(request, pk):
         and questions.first().type == Question.QuestionType.DIAGNOSIS,
         "just_completed_task": StudyTask.objects.for_user(request.user).just_completed().last(),
         "tasks_remaining": study_task.study.tasks.pending().for_user(request.user).count(),
+        "preview_mode": False,
+        "include_metadata": False,
     }
 
     return render(request, "studies/study_task_detail.html", context)
