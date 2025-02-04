@@ -11,4 +11,7 @@ class DiagnosisPicker(forms.Select):
         # store the choice values for an easier way to perform template
         # rendering of the entire DiagnosisEnum.
         context["diagnosis_values"] = {choice[1]: choice[0] for choice in self.choices}
+
+        # set the default so templates won't complain about undefined variables
+        context.setdefault("value", None)
         return context
