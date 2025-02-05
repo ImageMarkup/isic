@@ -41,6 +41,7 @@ def collection_list(request):
     if request.user.is_authenticated:
         counts = collections.aggregate(
             pinned=Count("pk", filter=Q(pinned=True)),
+            doi=Count("pk", filter=Q(doi__isnull=False)),
             shared_with_me=Count("pk", filter=Q(shares=request.user)),
             mine=Count("pk", filter=Q(creator=request.user)),
             all_=Count("pk"),
@@ -48,6 +49,7 @@ def collection_list(request):
     else:
         counts = collections.aggregate(
             pinned=Count("pk", filter=Q(pinned=True)),
+            doi=Count("pk", filter=Q(doi__isnull=False)),
             all_=Count("pk"),
         )
 
