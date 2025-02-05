@@ -1,9 +1,17 @@
+from pathlib import Path
+import tempfile
+import zipfile
+
 import pytest
 
 from isic.core.forms.doi import CreateDoiForm
 from isic.core.models.doi import Doi
 from isic.core.models.image import Image
-from isic.core.services.collection.doi import collection_build_doi, collection_create_doi
+from isic.core.services.collection.doi import (
+    collection_build_doi,
+    collection_create_doi,
+    collection_create_doi_bundle,
+)
 
 
 @pytest.fixture()
@@ -28,7 +36,7 @@ def staff_user_request(staff_user, mocker):
     return mocker.MagicMock(user=staff_user)
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db(transaction=True)
 def test_collection_create_doi(
     public_collection_with_public_images,
     staff_user,
@@ -40,6 +48,7 @@ def test_collection_create_doi(
     public_collection_with_public_images.refresh_from_db()
     assert public_collection_with_public_images.locked
     assert public_collection_with_public_images.doi
+    assert public_collection_with_public_images.doi.bundle
     assert public_collection_with_public_images.doi.creator == staff_user
     mock_datacite_create_doi.assert_called_once()
     mock_datacite_update_doi.assert_called_once()
@@ -179,3 +188,35 @@ def test_doi_creators_collapse_repeated_creators(collection_with_repeated_creato
     assert creators[1]["name"] == cohort_b.attribution
 
     assert len(creators) == 2
+
+
+@pytest.mark.django_db(transaction=True)
+def test_doi_bundle_contains_expected_files(
+    image_factory,
+    collection_factory,
+    staff_user,
+    mock_datacite_create_doi,
+    mock_datacite_update_doi,
+):
+    collection = collection_factory(public=True)
+    images = [image_factory(public=True) for _ in range(3)]
+    collection.images.set(images)
+
+    doi = collection_create_doi(user=staff_user, collection=collection)
+
+    collection_create_doi_bundle(doi=doi)
+
+    with tempfile.TemporaryDirectory() as temp_dir, zipfile.ZipFile(doi.bundle) as zf:
+        zf.extractall(temp_dir)
+
+        for image in images:
+            image_path = f"images/{image.isic_id}.jpg"
+            assert (Path(temp_dir) / image_path).exists()
+
+        assert (Path(temp_dir) / "metadata.csv").exists()
+
+        licenses = {images[0].accession.copyright_license for image in images}
+        for license_ in licenses:
+            assert (Path(temp_dir) / f"licenses/{license_}.txt").exists()
+
+        assert (Path(temp_dir) / "attribution.txt").exists()

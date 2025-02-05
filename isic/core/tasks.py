@@ -19,6 +19,7 @@ from oauth2_provider.models import clear_expired as clear_expired_oauth_tokens
 from urllib3.exceptions import ConnectionError, TimeoutError
 
 from isic.core.models.collection import Collection
+from isic.core.models.doi import Doi
 from isic.core.models.image import Image
 from isic.core.search import bulk_add_to_search_index
 from isic.core.serializers import SearchQueryIn
@@ -125,6 +126,15 @@ def generate_staff_image_list_metadata_csv(user_id: int) -> None:
     send_mail("Metadata CSV Ready", message, settings.DEFAULT_FROM_EMAIL, [user.email])
 
     Path(f.name).unlink()
+
+
+@shared_task(soft_time_limit=60 * 60 * 12, time_limit=(60 * 60 * 12) + 60)
+def create_doi_bundle_task(doi_id: str) -> None:
+    from isic.core.services.collection.doi import collection_create_doi_bundle
+
+    doi = Doi.objects.get(id=doi_id)
+
+    collection_create_doi_bundle(doi=doi)
 
 
 @shared_task(soft_time_limit=10, time_limit=15)
