@@ -182,6 +182,7 @@ def collection_create_doi_bundle(*, doi: Doi) -> None:
                 with image.accession.blob.open("rb") as blob:
                     bundle.writestr(f"images/{image.isic_id}.jpg", blob.read())
 
+            # the metadata csv could be large enough that it needs to be written to disk first
             with tempfile.NamedTemporaryFile("w") as metadata_file:
                 collection_metadata = image_metadata_csv(qs=images)
                 writer = csv.DictWriter(metadata_file, fieldnames=next(collection_metadata))
@@ -193,20 +194,18 @@ def collection_create_doi_bundle(*, doi: Doi) -> None:
 
                 bundle.write(metadata_file.name, "metadata.csv")
 
-                for license_ in (
-                    images.values_list("accession__copyright_license", flat=True)
-                    .order_by()
-                    .distinct()
-                ):
-                    bundle.writestr(
-                        f"licenses/{license_}.txt",
-                        render_to_string(f"zip_download/{license_}.txt"),
-                    )
-
-                attributions = get_attributions(
-                    images.values_list("accession__cohort__attribution", flat=True)
+            for license_ in (
+                images.values_list("accession__copyright_license", flat=True).order_by().distinct()
+            ):
+                bundle.writestr(
+                    f"licenses/{license_}.txt",
+                    render_to_string(f"zip_download/{license_}.txt"),
                 )
-                bundle.writestr("attribution.txt", "\n\n".join(attributions))
+
+            attributions = get_attributions(
+                images.values_list("accession__cohort__attribution", flat=True)
+            )
+            bundle.writestr("attribution.txt", "\n\n".join(attributions))
 
         with Path(bundle_filename).open("rb") as bundle_file:
             doi.bundle = File(bundle_file)
