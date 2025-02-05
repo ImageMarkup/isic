@@ -10,11 +10,13 @@ class CollectionFilter(django_filters.FilterSet):
         model = Collection
         fields = [
             "pinned",
+            "doi",
             "shared_with_me",
             "mine",
         ]
 
     pinned = BooleanFilter(method="filter_pinned")
+    doi = BooleanFilter(method="filter_doi")
     shared_with_me = BooleanFilter(method="filter_shared_with_me")
     mine = BooleanFilter(method="filter_mine")
 
@@ -24,6 +26,9 @@ class CollectionFilter(django_filters.FilterSet):
 
     def filter_pinned(self, qs: QuerySet, name, value):
         return qs.filter(pinned=value)
+
+    def filter_doi(self, qs: QuerySet, name, value):
+        return qs.filter(doi__isnull=not value)
 
     def filter_shared_with_me(self, qs: QuerySet, name, value):
         if value is True and self.user.is_authenticated:
