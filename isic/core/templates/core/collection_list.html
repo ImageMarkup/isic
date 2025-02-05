@@ -12,20 +12,26 @@
     </div>
     <div class="my-4">
       {% url 'core/collection-list' as base %}
-      <a class="text-white" href="{% querystring pinned="true" shared_with_me=None mine=None %}">
+      <a class="text-white" href="{% querystring pinned="true" doi=None shared_with_me=None mine=None %}">
         <button class="btn btn-secondary primary gap-2">
           Pinned
           <div class="badge badge-accent">{{ counts.pinned }}</div>
         </button>
       </a>
+      <a class="text-white" href="{% querystring pinned=None doi="true" shared_with_me=None mine=None %}">
+        <button class="btn btn-secondary primary gap-2">
+          DOI
+          <div class="badge badge-accent">{{ counts.doi }}</div>
+        </button>
+      </a>
       {% if request.user.is_authenticated %}
-        <a class="text-white" href="{% querystring pinned=None shared_with_me="true" mine=None %}">
+        <a class="text-white" href="{% querystring pinned=None doi=None shared_with_me="true" mine=None %}">
           <button class="btn btn-secondary primary gap-2">
             Shared with Me
             <div class="badge badge-accent">{{ counts.shared_with_me }}</div>
           </button>
         </a>
-        <a class="text-white" href="{% querystring pinned=None shared_with_me=None mine="true" %}">
+        <a class="text-white" href="{% querystring pinned=None doi=None shared_with_me=None mine="true" %}">
           <button class="btn btn-secondary primary gap-2">
             Mine
             <div class="badge badge-accent">{{ counts.mine }}</div>
