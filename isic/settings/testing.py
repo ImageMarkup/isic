@@ -54,3 +54,6 @@ MINIO_STORAGE_MEDIA_USE_PRESIGNED = True
 
 # use md5 in testing for quicker user creation
 PASSWORD_HASHERS.insert(0, "django.contrib.auth.hashers.MD5PasswordHasher")  # noqa: F405
+
+# suppress noisy cache invalidation log messages in testing
+LOGGING["loggers"]["isic.core.signals"] = {"level": "ERROR"}  # noqa: F405
