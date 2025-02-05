@@ -39,5 +39,25 @@
         {% endfor %}
       </dd>
     </div>
+
+    <div class="py-3 flex justify-between text-sm font-medium">
+      <dt class="text-gray-500">Belongs to</dt>
+      <dd class="text-gray-900">
+        {% if image.accession.patient %}
+          <span class="inline-flex items-center px-1.5 py-0.5 my-0.5 rounded-md text-sm font-medium bg-blue-100 text-blue-800">
+            <a href="#">{{ image.accession.patient.id }}</a>
+          </span>
+          <br />
+        {% endif %}
+
+        {% if image.accession.lesion %}
+          <span class="inline-flex items-center px-1.5 py-0.5 my-0.5 rounded-md text-sm font-medium bg-blue-100 text-blue-800">
+            <a href="{{ image.accession.lesion.get_absolute_url }}">{{ image.accession.lesion.id }}</a>
+          </span>
+          <br />
+        {% endif %}
+      </dd>
+    </div>
+
   </dl>
 </div>
