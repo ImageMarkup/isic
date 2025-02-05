@@ -201,4 +201,4 @@ class CollectionAdmin(StaffReadonlyAdmin):
 @admin.register(Doi)
 class DoiAdmin(StaffReadonlyAdmin):
     list_select_related = ["collection"]
-    list_display = ["id", "url", "collection"]
+    list_display = ["id", "url", "collection", "bundle"]
