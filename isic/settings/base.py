@@ -84,7 +84,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     "prune-expired-oauth-tokens": {
         "task": "isic.core.tasks.prune_expired_oauth_tokens",
-        "schedule": timedelta(days=1),
+        "schedule": crontab(minute="0", hour="0"),
     },
 }
 
