@@ -14,6 +14,7 @@ from django.db.models.functions import Concat
 from django.db.models.functions.comparison import Coalesce
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
+from django.urls import reverse
 
 from isic.core.constants import LESION_ID_REGEX
 
@@ -227,6 +228,9 @@ class Lesion(models.Model):
 
     def __str__(self):
         return f"{self.private_lesion_id}->{self.id}"
+
+    def get_absolute_url(self):
+        return reverse("core/lesion-detail", kwargs={"identifier": self.id})
 
     def to_elasticsearch_document(self, *, body_only: bool = False) -> dict | EsLesionDocument:
         document: EsLesionDocument = {"lesion_id": self.pk, "images": []}
