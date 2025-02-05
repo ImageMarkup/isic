@@ -297,7 +297,7 @@ def maybe_redirect_to_next_study_task(request: HttpRequest, study: Study):
 @needs_object_permission("studies.view_study_task", (StudyTask, "pk", "pk"))
 def study_task_detail(request, pk):
     study_task: StudyTask = get_object_or_404(
-        StudyTask.objects.select_related("annotator", "image", "study"),
+        StudyTask.objects.select_related("annotator", "image", "image__accession", "study"),
         pk=pk,
     )
     questions = (
@@ -360,7 +360,12 @@ def study_task_detail(request, pk):
 @needs_object_permission("studies.view_study", (Study, "pk", "pk"))
 def study_task_detail_preview(request, pk):
     study = get_object_or_404(Study, pk=pk)
-    image = Image.objects.filter(pk__in=study.tasks.values("image")).order_by("?").first()
+    image = (
+        Image.objects.select_related("accession")
+        .filter(pk__in=study.tasks.values("image"))
+        .order_by("?")
+        .first()
+    )
 
     # note: a studytask can't be built with an AnonymousUser, so use a dummy User object
     annotator = request.user if not isinstance(request.user, AnonymousUser) else User()
@@ -386,6 +391,8 @@ def study_task_detail_preview(request, pk):
             "form": form,
             "diagnosis_only_form": questions.count() == 1
             and questions.first().type == Question.QuestionType.DIAGNOSIS,
+            "just_completed_task": None,
             "preview_mode": True,
+            "include_metadata": False,
         },
     )

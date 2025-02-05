@@ -55,7 +55,7 @@
       <div x-data="{ open: false, hovered: false }">
         <a class="cursor-pointer">
           {% if PLACEHOLDER_IMAGES %}
-            <img class="max-w-full h-auto" @mouseenter="hovered = true" @click="open = true" src="https://picsum.photos/seed/{{study_task.image.id}}/2000/1000">
+            <img class="max-w-full h-auto" @mouseenter="hovered = true" @click="open = true" src="https://picsum.photos/seed/{{study_task.image.accession.id}}/2000/1000">
           {% else %}
             <img class="max-w-full h-auto" @mouseenter="hovered = true" @click="open = true" src="{{ study_task.image.accession.blob.url }}" />
           {% endif %}

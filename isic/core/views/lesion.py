@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
@@ -36,7 +37,9 @@ def lesion_detail(request, identifier):
     images_list = [
         {
             "id": image.accession.id,
-            "full_url": image.accession.blob.url,
+            "full_url": image.accession.blob.url
+            if not settings.ISIC_PLACEHOLDER_IMAGES
+            else f"https://picsum.photos/seed/{image.accession.id}/256",
             "modality": next(
                 modality
                 for modality in MODALITIES
