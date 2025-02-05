@@ -42,7 +42,7 @@ class MinioS3ProxyStorage(StringableMinioMediaStorage):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def url(self, name: str, *args, **kwargs) -> str:
+    def _ensure_exists(self, name):
         exists_in_minio = super().exists(name)
 
         if not exists_in_minio:
@@ -61,4 +61,10 @@ class MinioS3ProxyStorage(StringableMinioMediaStorage):
                 upstream_file.seek(0)
                 self.client.put_object(self.bucket_name, name, upstream_file, size)
 
+    def open(self, name, *args, **kwargs):
+        self._ensure_exists(name)
+        return super().open(name, *args, **kwargs)
+
+    def url(self, name: str, *args, **kwargs) -> str:
+        self._ensure_exists(name)
         return super().url(name, *args, **kwargs)
