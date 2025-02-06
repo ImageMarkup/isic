@@ -112,8 +112,7 @@ def needs_object_permission(perm: str, lookup_variables=None):  # noqa: C901
                 # Parse lookups
                 if len(lookups) % 2 != 0:
                     raise Exception(
-                        "Lookup variables must be provided "
-                        "as pairs of lookup_string and view_arg"
+                        "Lookup variables must be provided as pairs of lookup_string and view_arg"
                     )
                 lookup_dict = {}
                 for lookup, view_arg in zip(lookups[::2], lookups[1::2], strict=False):

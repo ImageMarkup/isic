@@ -8,7 +8,7 @@ from pytest_lazy_fixtures import lf
 from isic.ingest.models.lesion import Lesion
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_api_lesion_detail(authenticated_client, lesion_factory, image_factory):
     lesion = lesion_factory()
     image_factory(accession__lesion=lesion, public=True)
@@ -17,7 +17,7 @@ def test_api_lesion_detail(authenticated_client, lesion_factory, image_factory):
     assert resp.status_code == 200, resp.json()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.usefixtures("_search_index")
 def test_api_lesion(authenticated_client, lesion_factory, image_factory):
     lesion = lesion_factory()
@@ -27,7 +27,7 @@ def test_api_lesion(authenticated_client, lesion_factory, image_factory):
     assert resp.status_code == 200, resp.json()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.usefixtures("_search_index")
 def test_api_lesion_ignores_imageless_lesions(authenticated_client, lesion_factory, user):
     # give access to the lesion to ensure this isn't passing due to lack of permissions
@@ -38,7 +38,7 @@ def test_api_lesion_ignores_imageless_lesions(authenticated_client, lesion_facto
     assert len(resp.json()["results"]) == 0
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("client_", "image_public_states", "expected_lesion_count"),
     [
@@ -78,7 +78,7 @@ def test_api_lesion_permissions_public(
     assert len(resp.json()["results"]) == expected_lesion_count
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.usefixtures("_search_index")
 def test_api_lesion_permissions_contributor(
     authenticated_client, lesion_factory, image_factory, contributor
@@ -92,7 +92,7 @@ def test_api_lesion_permissions_contributor(
     assert resp.status_code == 200, resp.json()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.usefixtures("_search_index")
 def test_api_lesion_completeness(client, lesion_factory, image_factory):
     lesion = lesion_factory()

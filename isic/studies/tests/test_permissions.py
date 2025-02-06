@@ -6,47 +6,47 @@ from pytest_lazy_fixtures import lf
 from isic.studies.models import StudyTask
 
 
-@pytest.fixture()
+@pytest.fixture
 def public_study(study_factory, user_factory):
     creator = user_factory()
     owners = [creator] + [user_factory() for _ in range(2)]
     return study_factory(public=True, creator=creator, owners=owners)
 
 
-@pytest.fixture()
+@pytest.fixture
 def private_study(study_factory, user_factory):
     creator = user_factory()
     owners = [creator] + [user_factory() for _ in range(2)]
     return study_factory(public=False, creator=creator, owners=owners)
 
 
-@pytest.fixture()
+@pytest.fixture
 def private_study_and_guest(private_study, user_factory, study_task_factory):
     u = user_factory()
     study_task_factory(annotator=user_factory(), study=private_study)
     return private_study, u
 
 
-@pytest.fixture()
+@pytest.fixture
 def private_study_and_annotator(private_study, user_factory, study_task_factory):
     u = user_factory()
     study_task_factory(annotator=u, study=private_study)
     return private_study, u
 
 
-@pytest.fixture()
+@pytest.fixture
 def private_study_and_owner(private_study, study_task_factory):
     study_task_factory(annotator=private_study.owners.first(), study=private_study)
     return private_study, private_study.owners.first()
 
 
-@pytest.fixture()
+@pytest.fixture
 def study_task_with_user(study_task_factory, user_factory):
     u = user_factory()
     return study_task_factory(annotator=u)
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     "client_",
     [
@@ -60,7 +60,7 @@ def test_study_list_permissions(client_):
     assert r.status_code == 200
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("client_", "can_see_private"),
     [
@@ -82,7 +82,7 @@ def test_study_list_objects_public_permissions(
         assert private_study not in r.context["studies"]
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_study_list_objects_owner_permissions(authenticated_client, private_study, public_study):
     for owner in private_study.owners.all():
         authenticated_client.force_login(owner)
@@ -92,7 +92,7 @@ def test_study_list_objects_owner_permissions(authenticated_client, private_stud
         assert private_study in r.context["studies"]
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_study_list_objects_annotator_permissions(
     user, authenticated_client, private_study, public_study, image
 ):
@@ -110,7 +110,7 @@ def test_study_list_objects_annotator_permissions(
     assert private_study in r.context["studies"]
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("client_", "status"),
     [
@@ -124,7 +124,7 @@ def test_study_edit_public_permissions(client_, status, private_study):
     assert r.status_code == status
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_study_edit_creator_permissions(authenticated_client, private_study):
     for owner in private_study.owners.all():
         authenticated_client.force_login(owner)
@@ -132,7 +132,7 @@ def test_study_edit_creator_permissions(authenticated_client, private_study):
         assert r.status_code == 200
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("client_", "status"),
     [
@@ -146,7 +146,7 @@ def test_study_detail_objects_public_permissions(client_, status, private_study)
     assert r.status_code == status
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_study_detail_objects_creator_permissions(authenticated_client, private_study):
     for owner in private_study.owners.all():
         authenticated_client.force_login(owner)
@@ -154,7 +154,7 @@ def test_study_detail_objects_creator_permissions(authenticated_client, private_
         assert r.status_code == 200
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_study_detail_objects_annotator_permissions(
     user, authenticated_client, private_study, image
 ):
@@ -168,7 +168,7 @@ def test_study_detail_objects_annotator_permissions(
     assert r.status_code == 200
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("client_", "status"),
     [
@@ -183,7 +183,7 @@ def test_study_view_responses_csv_private_study_permissions(client_, status, pri
     assert r.status_code == status
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_study_view_responses_csv_private_study_owner_permissions(client, private_study):
     for owner in private_study.owners.all():
         client.force_login(owner)
@@ -191,7 +191,7 @@ def test_study_view_responses_csv_private_study_owner_permissions(client, privat
         assert r.status_code == 200
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     "client_",
     [
@@ -205,7 +205,7 @@ def test_study_view_responses_csv_public_permissions(client_, public_study):
     assert r.status_code == 200
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize("client_", [lf("client"), lf("authenticated_client")])
 def test_study_task_detail_preview_public(client_, study_task_with_user):
     study_task_with_user.study.public = True
@@ -215,7 +215,7 @@ def test_study_task_detail_preview_public(client_, study_task_with_user):
     assert r.status_code == 200
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("study_and_user", "status"),
     [
@@ -230,7 +230,7 @@ def test_study_task_detail_preview_private(client, study_and_user, status):
     assert r.status_code == status
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("client_", "status"),
     [
@@ -244,7 +244,7 @@ def test_study_task_detail_invisible_to_non_annotators(client_, status, study_ta
     assert r.status_code == status
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_study_task_detail_visible_to_annotator(client, user, study_task_factory):
     study_task = study_task_factory(annotator=user)
     client.force_login(user)
@@ -252,7 +252,7 @@ def test_study_task_detail_visible_to_annotator(client, user, study_task_factory
     assert r.status_code == 200
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_study_task_detail_visible_to_study_owner(client, user, study_task_factory, user_factory):
     # make sure the annotator is a different user so the test doesn't accidentally pass
     study_task = study_task_factory(annotator=user_factory(), study__creator=user)
@@ -261,7 +261,7 @@ def test_study_task_detail_visible_to_study_owner(client, user, study_task_facto
     assert r.status_code == 200
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_study_task_detail_shows_private_images_to_annotator(
     user, image_factory, study_task_factory
 ):
@@ -276,7 +276,7 @@ def test_study_task_detail_shows_private_images_to_annotator(
 
 
 @pytest.mark.skip("Migrating model so test is temporarily broken")
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_view_mask_permissions(client, authenticated_client, staff_client, markup):
     r = client.get(reverse("view-mask", args=[markup.pk]))
     assert r.status_code == 302
@@ -293,7 +293,7 @@ def test_view_mask_permissions(client, authenticated_client, staff_client, marku
     assert r.status_code == 200
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_annotation_detail_permissions(client, authenticated_client, staff_client, annotation):
     r = client.get(reverse("annotation-detail", args=[annotation.pk]))
     assert r.status_code == 302
@@ -310,7 +310,7 @@ def test_annotation_detail_permissions(client, authenticated_client, staff_clien
     assert r.status_code == 200
 
 
-@pytest.fixture()
+@pytest.fixture
 def study_scenario(study_factory, question_factory, question_choice_factory):
     study = study_factory()
     question = question_factory()
@@ -320,7 +320,7 @@ def study_scenario(study_factory, question_factory, question_choice_factory):
     return study, question, choice
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_study_task_detail_post(client, study_scenario, study_task_factory, user_factory):
     study, question, choice = study_scenario
     user = user_factory()

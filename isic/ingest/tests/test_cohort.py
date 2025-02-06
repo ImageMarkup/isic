@@ -5,12 +5,12 @@ import pytest
 from isic.ingest.services.cohort import cohort_delete
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_cohort_delete(cohort):
     cohort_delete(cohort=cohort)
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_cohort_delete_with_published_accessions(cohort, accession_factory, image_factory):
     accession = accession_factory(cohort=cohort)
     accession.image = image_factory(accession=accession)
@@ -20,7 +20,7 @@ def test_cohort_delete_with_published_accessions(cohort, accession_factory, imag
         cohort_delete(cohort=cohort)
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_cohort_list_view(staff_client, cohort, user):
     r = staff_client.get(reverse("cohort-list"))
     assert r.status_code == 200

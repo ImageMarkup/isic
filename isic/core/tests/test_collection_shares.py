@@ -5,7 +5,7 @@ from isic.core.services.collection import collection_share
 from isic.core.services.collection.image import collection_add_images
 
 
-@pytest.fixture()
+@pytest.fixture
 def private_collection(image_factory, collection_factory):
     collection = collection_factory(public=False)
     image = image_factory(public=False)
@@ -13,7 +13,7 @@ def private_collection(image_factory, collection_factory):
     return collection
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_collection_shares(staff_user, user, private_collection):
     private_image = private_collection.images.first()
 
@@ -28,7 +28,7 @@ def test_collection_shares(staff_user, user, private_collection):
     assert get_visible_objects(user, "core.view_collection").count() == 1
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_collection_shares_idempotent(staff_user, user, private_collection):
     private_image = private_collection.images.first()
 
@@ -40,7 +40,7 @@ def test_collection_shares_idempotent(staff_user, user, private_collection):
     assert user.has_perm("core.view_collection", private_collection)
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_collection_shares_beget_image_shares(staff_user, user, private_collection, image_factory):
     private_image = private_collection.images.first()
     collection_share(collection=private_collection, grantor=staff_user, grantee=user)

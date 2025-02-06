@@ -19,7 +19,7 @@ def apply_metadata_files(user_id, metadata_file_id):
 
     if missing_files:
         click.secho(
-            f'Unable to find metadata files: {", ".join(map(str, missing_files))}',
+            f"Unable to find metadata files: {', '.join(map(str, missing_files))}",
             fg="red",
             err=True,
         )

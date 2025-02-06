@@ -7,7 +7,7 @@ import pytest
 from isic.core.models import Image
 
 
-@pytest.fixture()
+@pytest.fixture
 def _random_images_with_licenses(image_factory):
     image = image_factory(
         accession__fq__diagnosis="melanoma",
@@ -25,7 +25,7 @@ def _random_images_with_licenses(image_factory):
     image.accession.save()
 
 
-@pytest.fixture()
+@pytest.fixture
 def zip_basic_auth():
     return {
         "HTTP_AUTHORIZATION": "Basic "
@@ -115,7 +115,7 @@ def test_zip_download_listing_wildcard_urls(authenticated_client, zip_basic_auth
         )
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.usefixtures("_random_images_with_licenses")
 @pytest.mark.parametrize(
     ("endpoint", "use_zip_auth_token"),

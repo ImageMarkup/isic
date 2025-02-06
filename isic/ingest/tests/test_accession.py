@@ -15,13 +15,13 @@ from isic.ingest.utils.zip import Blob
 data_dir = pathlib.Path(__file__).parent / "data"
 
 
-@pytest.fixture()
+@pytest.fixture
 def user_with_cohort(user, cohort_factory):
     cohort = cohort_factory(contributor__creator=user)
     return user, cohort
 
 
-@pytest.fixture()
+@pytest.fixture
 def jpg_blob():
     with pathlib.Path(data_dir / "ISIC_0000000.jpg").open("rb") as stream:
         yield Blob(
@@ -31,7 +31,7 @@ def jpg_blob():
         )
 
 
-@pytest.fixture()
+@pytest.fixture
 def cc_by_accession_qs(accession_factory):
     accession = accession_factory(copyright_license="CC-BY")
     return Accession.objects.filter(id=accession.id)
@@ -107,7 +107,7 @@ def test_accession_create_image_types(blob_path, blob_name, mock_as_cog, user, c
         assert b"foobar" not in blob.read()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_accession_generate_thumbnail(accession_factory):
     accession = accession_factory(thumbnail_256=None, thumbnail_256_size=None)
 
@@ -118,7 +118,7 @@ def test_accession_generate_thumbnail(accession_factory):
         assert thumbnail_content.startswith(b"\xff\xd8")
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_accession_without_zip_upload(user, jpg_blob, cohort):
     accession = Accession.from_blob(jpg_blob)
     accession.creator = user
@@ -129,7 +129,7 @@ def test_accession_without_zip_upload(user, jpg_blob, cohort):
     accession.save()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_accession_upload(authenticated_client, s3ff_field_value, user_with_cohort):
     _, cohort = user_with_cohort
     r = authenticated_client.post(
@@ -141,7 +141,7 @@ def test_accession_upload(authenticated_client, s3ff_field_value, user_with_coho
     assert cohort.accessions.first().metadata["age"] == 50
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_accession_upload_duplicate_name(authenticated_client, s3ff_field_value, user_with_cohort):
     _, cohort = user_with_cohort
     r = authenticated_client.post(
@@ -161,7 +161,7 @@ def test_accession_upload_duplicate_name(authenticated_client, s3ff_field_value,
     assert cohort.accessions.count() == 1
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_accession_upload_invalid_cohort(
     authenticated_client, s3ff_field_value, cohort_factory, user_factory
 ):
@@ -178,7 +178,7 @@ def test_accession_upload_invalid_cohort(
     assert r.status_code == 403, r.data
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_accession_mutable_before_publish(user, accession_factory):
     accession = accession_factory()
     accession.update_metadata(user, {"foo": "bar"})
@@ -186,7 +186,7 @@ def test_accession_mutable_before_publish(user, accession_factory):
     accession.save()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_accession_immutable_after_publish(user, image_factory):
     image = image_factory()
 
@@ -195,26 +195,26 @@ def test_accession_immutable_after_publish(user, image_factory):
         # image.accession.save()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_accession_relicense(cc_by_accession_qs):
     bulk_accession_relicense(accessions=cc_by_accession_qs, to_license="CC-0")
     assert cc_by_accession_qs.first().copyright_license == "CC-0"
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_accession_relicense_more_restrictive(cc_by_accession_qs):
     with pytest.raises(ValidationError, match="more restrictive"):
         bulk_accession_relicense(accessions=cc_by_accession_qs, to_license="CC-BY-NC")
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_accession_relicense_more_restrictive_ignore(cc_by_accession_qs):
     bulk_accession_relicense(
         accessions=cc_by_accession_qs, to_license="CC-BY-NC", allow_more_restrictive=True
     )
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_accession_relicense_some_accessions_more_restrictive(
     cc_by_accession_qs, accession_factory
 ):

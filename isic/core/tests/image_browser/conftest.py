@@ -1,7 +1,7 @@
 import pytest
 
 
-@pytest.fixture()
+@pytest.fixture
 def _image_browser_scenario(image_factory, collection_factory):
     image_factory(public=True)
     image_factory(public=False)
