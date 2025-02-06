@@ -5,7 +5,7 @@ from oauth2_provider.models import get_access_token_model, get_application_model
 import pytest
 
 
-@pytest.fixture()
+@pytest.fixture
 def oauth_app(user_factory):
     user = user_factory()
     return get_application_model().objects.create(
@@ -17,7 +17,7 @@ def oauth_app(user_factory):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def oauth_token_factory(oauth_app):
     def f(user):
         return get_access_token_model().objects.create(

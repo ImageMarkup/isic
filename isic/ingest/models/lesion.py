@@ -16,7 +16,7 @@ from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 from django.urls import reverse
 from opensearch_dsl import Search
-from opensearch_dsl.query import Q as OpenSearchQ  # noqa: N811
+from opensearch_dsl.query import Q as OpenSearchQ
 
 from isic.core.constants import LESION_ID_REGEX
 

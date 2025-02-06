@@ -2,7 +2,7 @@ import pytest
 from pytest_lazy_fixtures import lf
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("client_user", "client_", "status"),
     [
@@ -18,7 +18,7 @@ def test_core_api_user_me(client_user, client_, status):
         assert r.json()["id"] == client_user.pk
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("client_user", "client_", "status"),
     [

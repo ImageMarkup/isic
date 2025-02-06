@@ -4,7 +4,7 @@ import requests
 from isic.core.search import add_to_search_index, get_elasticsearch_client
 
 
-@pytest.fixture()
+@pytest.fixture
 def searchable_image(_search_index, image_factory):
     image = image_factory(accession__age=52, public=True)
     add_to_search_index(image)
@@ -13,7 +13,7 @@ def searchable_image(_search_index, image_factory):
     return image
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_core_api_image_ages_are_always_rounded(
     authenticated_client, staff_client, searchable_image
 ):
@@ -38,7 +38,7 @@ def test_core_api_image_ages_are_always_rounded(
         assert r.json()["count"] == 0
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize("image_file", ["full", "thumbnail_256"])
 def test_api_image_urls_thumbnail_256(client, image_factory, image_file):
     image = image_factory(public=True)

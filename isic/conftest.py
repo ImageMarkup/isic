@@ -47,7 +47,7 @@ def _setup_groups(request):
         public.user_set.set(User.objects.all())
 
 
-@pytest.fixture()
+@pytest.fixture
 def _search_index():
     es = get_elasticsearch_client()
     maybe_create_index(settings.ISIC_ELASTICSEARCH_IMAGES_INDEX, IMAGE_INDEX_MAPPINGS)
@@ -62,12 +62,12 @@ def _clear_cache():
     cache.clear()
 
 
-@pytest.fixture()
+@pytest.fixture
 def client() -> Client:
     return Client()
 
 
-@pytest.fixture()
+@pytest.fixture
 def authenticated_client(user):
     # Do not use the client fixture, to prevent mutating its state
     client = Client()
@@ -76,12 +76,12 @@ def authenticated_client(user):
     return client
 
 
-@pytest.fixture()
+@pytest.fixture
 def staff_user(user_factory):
     return user_factory(is_staff=True)
 
 
-@pytest.fixture()
+@pytest.fixture
 def staff_client(staff_user):
     client = Client()
     client.force_login(staff_user)
