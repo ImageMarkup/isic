@@ -15,6 +15,8 @@ from django.db.models.functions.comparison import Coalesce
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 from django.urls import reverse
+from opensearch_dsl import Search
+from opensearch_dsl.query import Q as OpenSearchQ  # noqa: N811
 
 from isic.core.constants import LESION_ID_REGEX
 
@@ -27,39 +29,35 @@ def get_lesion_count_for_user(user: User | AnonymousUser) -> int:
     if user.is_staff:
         return es.count(index=settings.ISIC_ELASTICSEARCH_LESIONS_INDEX)["count"]
 
-    query = {
-        "size": 0,
-        "query": {
-            "bool": {
-                "must_not": {
-                    "nested": {
-                        "path": "images",
-                        "query": {
-                            "bool": {
-                                "must_not": [
-                                    {"bool": {"should": [{"term": {"images.public": True}}]}}
-                                ]
-                            }
-                        },
-                    }
-                }
-            }
-        },
-        "track_total_hits": True,
-    }
+    should = [OpenSearchQ("term", **{"images.public": True})]
 
     if user.is_authenticated:
-        query["query"]["bool"]["must_not"]["nested"]["query"]["bool"]["must_not"][0]["bool"][  # type: ignore[index]
-            "should"
-        ] += [
-            {"term": {"images.contributor_owner_ids": user.pk}},
-            {"term": {"images.shared_to": user.pk}},
+        should += [
+            OpenSearchQ("term", **{"images.contributor_owner_ids": user.pk}),
+            OpenSearchQ("term", **{"images.shared_to": user.pk}),
         ]
 
-    return es.search(
-        index=settings.ISIC_ELASTICSEARCH_LESIONS_INDEX,
-        body=query,
-    )["hits"]["total"]["value"]
+    # find all documents where it's NOT true that the nested images array does NOT
+    # contain any images that match should (OR of should).
+    query = (
+        Search(using=es, index=settings.ISIC_ELASTICSEARCH_LESIONS_INDEX)
+        .query(
+            "bool",
+            must_not=[
+                OpenSearchQ(
+                    "nested",
+                    path="images",
+                    query=OpenSearchQ(
+                        "bool",
+                        must_not=[OpenSearchQ("bool", should=should)],
+                    ),
+                )
+            ],
+        )
+        .extra(track_total_hits=True, size=0)
+    )
+
+    return query.execute().hits.total.value
 
 
 def _default_id():
