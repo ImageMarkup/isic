@@ -8,7 +8,7 @@ ISIC_MODELADMIN_OBJECTS = [
 ]
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     "modeladmin_object", ISIC_MODELADMIN_OBJECTS, ids=[str(x) for x in ISIC_MODELADMIN_OBJECTS]
 )
@@ -17,7 +17,7 @@ def test_admin_search_fields(modeladmin_object):
         modeladmin_object.model._default_manager.filter(**{f"{field}__icontains": "foo"}).count()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     "modeladmin_object", ISIC_MODELADMIN_OBJECTS, ids=[str(x) for x in ISIC_MODELADMIN_OBJECTS]
 )

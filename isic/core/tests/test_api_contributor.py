@@ -2,7 +2,7 @@ import pytest
 from pytest_lazy_fixtures import lf
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("client_", "contributors_", "num_visible"),
     [
@@ -27,7 +27,7 @@ def test_core_api_contributor_list_permissions(client_, contributors_, num_visib
     assert r.json()["count"] == num_visible
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("client_", "contributor_", "visible"),
     [
@@ -61,7 +61,7 @@ def test_core_api_contributor_detail_permissions(client_, contributor_, visible)
         assert r.status_code == 404, r.json()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_core_api_contributor_create(authenticated_client, user):
     r = authenticated_client.post(
         "/api/v2/contributors/",

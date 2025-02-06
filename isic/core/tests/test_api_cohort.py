@@ -2,18 +2,18 @@ import pytest
 from pytest_lazy_fixtures import lf
 
 
-@pytest.fixture()
+@pytest.fixture
 def other_cohort(user_factory, cohort_factory):
     user = user_factory()
     return cohort_factory(contributor__owners=[user])
 
 
-@pytest.fixture()
+@pytest.fixture
 def cohorts(cohort, other_cohort):
     return [cohort, other_cohort]
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("client_", "cohorts_", "num_visible"),
     [
@@ -34,7 +34,7 @@ def test_core_api_cohort_list_permissions(client_, cohorts_, num_visible):
     assert r.json()["count"] == num_visible
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("client_", "cohort_", "visible"),
     [

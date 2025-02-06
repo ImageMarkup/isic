@@ -6,7 +6,7 @@ from pytest_lazy_fixtures import lf
 from isic.core.search import add_to_search_index, facets, get_elasticsearch_client
 
 
-@pytest.fixture()
+@pytest.fixture
 def private_searchable_image(image_factory, _search_index):
     image = image_factory(public=False)
     add_to_search_index(image)
@@ -17,7 +17,7 @@ def private_searchable_image(image_factory, _search_index):
     return image
 
 
-@pytest.fixture()
+@pytest.fixture
 def searchable_images(image_factory, _search_index):
     images = [
         image_factory(
@@ -40,7 +40,7 @@ def searchable_images(image_factory, _search_index):
     return images
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     "route",
     ["api:search_images", "api:list_images"],
@@ -59,7 +59,7 @@ def test_elasticsearch_counts(searchable_images, settings, client, route):
     assert r.json()["count"] == 1, r.json()
 
 
-@pytest.fixture()
+@pytest.fixture
 def searchable_image_with_private_field(image_factory, _search_index):
     image = image_factory(public=True, accession__age=50)
     add_to_search_index(image)
@@ -70,7 +70,7 @@ def searchable_image_with_private_field(image_factory, _search_index):
     return image
 
 
-@pytest.fixture()
+@pytest.fixture
 def private_and_public_images_collections(image_factory, collection_factory, _search_index):
     public_coll, private_coll = collection_factory(public=True), collection_factory(public=False)
     public_image, private_image = (
@@ -89,7 +89,7 @@ def private_and_public_images_collections(image_factory, collection_factory, _se
     return public_coll, private_coll
 
 
-@pytest.fixture()
+@pytest.fixture
 def collection_with_image(_search_index, image_factory, collection_factory):
     public_coll = collection_factory(public=True)
     public_image = image_factory(public=True, accession__age=52)
@@ -99,7 +99,7 @@ def collection_with_image(_search_index, image_factory, collection_factory):
     return public_coll
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_core_api_image_search(searchable_images, staff_client):
     r = staff_client.get("/api/v2/images/search/")
     assert r.status_code == 200, r.json()
@@ -110,28 +110,28 @@ def test_core_api_image_search(searchable_images, staff_client):
     assert r.json()["count"] == 1, r.json()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_core_api_image_search_private_image(private_searchable_image, authenticated_client):
     r = authenticated_client.get("/api/v2/images/search/")
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == 0, r.json()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_core_api_image_search_private_image_as_guest(private_searchable_image, client):
     r = client.get("/api/v2/images/search/")
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == 0, r.json()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_core_api_image_search_images_as_guest(searchable_images, client):
     r = client.get("/api/v2/images/search/")
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == 1, r.json()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_core_api_image_search_contributed(private_searchable_image, authenticated_client, user):
     private_searchable_image.accession.cohort.contributor.owners.add(user)
     add_to_search_index(private_searchable_image)
@@ -142,7 +142,7 @@ def test_core_api_image_search_contributed(private_searchable_image, authenticat
     assert r.json()["count"] == 1, r.json()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_core_api_image_search_shares(
     private_searchable_image, authenticated_client, user, staff_user
 ):
@@ -156,14 +156,14 @@ def test_core_api_image_search_shares(
     assert r.json()["count"] == 1, r.json()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize("route", ["images/search/", "images/facets/"])
 def test_core_api_image_search_invalid_query(route, searchable_images, authenticated_client):
     r = authenticated_client.get(f"/api/v2/{route}", {"query": "age_approx:[[[[]]]]"})
     assert r.status_code == 400, r.json()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     "route",
     ["/api/v2/images/", "/api/v2/images/search/"],
@@ -178,7 +178,7 @@ def test_core_api_image_hides_fields(
         assert "age" not in image["metadata"]
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_core_api_image_search_collection_and_query(collection_with_image, authenticated_client):
     r = authenticated_client.get(
         "/api/v2/images/search/",
@@ -188,7 +188,7 @@ def test_core_api_image_search_collection_and_query(collection_with_image, authe
     assert r.json()["count"] == 1, r.json()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.usefixtures("_search_index")
 @pytest.mark.parametrize(
     ("collection_is_public", "image_is_public", "can_see"),
@@ -223,7 +223,7 @@ def test_core_api_image_search_collection(
         assert r.json()["count"] == 0, r.json()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_core_api_image_search_collection_parsing(
     private_and_public_images_collections, authenticated_client
 ):
@@ -243,7 +243,7 @@ def test_core_api_image_search_collection_parsing(
         lf("authenticated_client"),
     ],
 )
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_core_api_image_faceting_collections(private_and_public_images_collections, client_):
     public_coll, private_coll = private_and_public_images_collections
 
@@ -263,7 +263,7 @@ def test_core_api_image_faceting_collections(private_and_public_images_collectio
         lf("authenticated_client"),
     ],
 )
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_core_api_image_faceting(private_and_public_images_collections, client_):
     public_coll, private_coll = private_and_public_images_collections
 
@@ -276,7 +276,7 @@ def test_core_api_image_faceting(private_and_public_images_collections, client_)
     assert buckets[0] == {"key": public_coll.pk, "doc_count": 1}, buckets
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_core_api_image_faceting_structure(searchable_images, client):
     r = client.get(
         "/api/v2/images/facets/",
@@ -296,7 +296,7 @@ def test_core_api_image_faceting_structure(searchable_images, client):
         lf("authenticated_client"),
     ],
 )
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_core_api_image_faceting_query(private_and_public_images_collections, client_):
     public_coll, private_coll = private_and_public_images_collections
 
@@ -307,7 +307,7 @@ def test_core_api_image_faceting_query(private_and_public_images_collections, cl
     assert buckets[0] == {"key": public_coll.pk, "doc_count": 1}, buckets
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.usefixtures("_search_index")
 def test_facet_search_orders_field_values(image_factory):
     # it's important to create the an image with a later ordered image type first
@@ -324,7 +324,7 @@ def test_facet_search_orders_field_values(image_factory):
         assert actual["image_type"]["buckets"][i]["key"] == image_type.value
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.usefixtures("_search_index")
 def test_facet_search_includes_missing_field_values(image_factory):
     actual = facets()

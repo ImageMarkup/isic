@@ -18,7 +18,7 @@ fake = Faker()
 data_dir = pathlib.Path(__file__).parent / "data"
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_collect_google_analytics_task(mocker, settings):
     # only have one VIEW_ID, otherwise the counts will be multiplied
     settings.ISIC_GOOGLE_ANALYTICS_PROPERTY_IDS = ["just_one"]
@@ -71,7 +71,7 @@ def test_cdn_access_log_parsing(mocker):
     }
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_collect_image_download_records_task(
     mocker, image_factory, django_capture_on_commit_callbacks
 ):

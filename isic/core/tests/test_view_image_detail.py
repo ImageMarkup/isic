@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from isic.core.models.image import Image
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("client_", "image_", "can_see"),
     [
@@ -25,7 +25,7 @@ def test_core_image_detail(client_, image_, can_see):
     assert r.status_code == 200 if can_see else 403
 
 
-@pytest.fixture()
+@pytest.fixture
 def detailed_image(
     image_factory,
     user_factory,
@@ -68,7 +68,7 @@ def detailed_image(
     return main_image
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_view_image_detail_public(client, detailed_image):
     r = client.get(reverse("core/image-detail", args=[detailed_image.pk]))
     assert r.status_code == 200
@@ -88,7 +88,7 @@ def test_view_image_detail_public(client, detailed_image):
     assert list(r.context["other_lesion_images"]) == []
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_view_image_detail_uploader(client, detailed_image):
     client.force_login(detailed_image.accession.cohort.contributor.owners.first())
 

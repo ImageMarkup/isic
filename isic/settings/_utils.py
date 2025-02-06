@@ -14,7 +14,7 @@ def string_to_bool(value: str) -> bool:
     if normalized_value in false_values:
         return False
 
-    raise ValueError("Cannot interpret " f"boolean value {value!r}")
+    raise ValueError(f"Cannot interpret boolean value {value!r}")
 
 
 def _get_sentry_performance_sample_rate(*args, **kwargs) -> float:

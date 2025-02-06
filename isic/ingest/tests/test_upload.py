@@ -13,7 +13,7 @@ from isic.ingest.models.accession import AccessionStatus
 data_dir = pathlib.Path(__file__).parent / "data"
 
 
-@pytest.fixture()
+@pytest.fixture
 def zip_stream_garbage() -> BinaryIO:
     file_stream = io.BytesIO()
 
@@ -44,7 +44,7 @@ def zip_stream_garbage() -> BinaryIO:
         lf("zip_stream_garbage"),
     ],
 )
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_upload_zip(
     cohort_factory,
     user,

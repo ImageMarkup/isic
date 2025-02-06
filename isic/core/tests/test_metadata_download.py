@@ -5,7 +5,7 @@ from isic.core.services import image_metadata_csv, staff_image_metadata_csv
 from isic.ingest.models.accession import Accession
 
 
-@pytest.fixture()
+@pytest.fixture
 def image_with_metadata(image):
     image.accession.copyright_license = "CC-0"
     image.accession.save()
@@ -30,7 +30,7 @@ def image_with_metadata(image):
     return image
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_image_metadata_csv_rows_correct(image_with_metadata):
     rows = image_metadata_csv(qs=Image.objects.filter(pk=image_with_metadata.pk))
     next(rows)
@@ -51,7 +51,7 @@ def test_image_metadata_csv_rows_correct(image_with_metadata):
     }
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_staff_image_metadata_csv_rows_correct(image_with_metadata):
     rows = staff_image_metadata_csv(qs=Image.objects.filter(pk=image_with_metadata.pk))
     next(rows)

@@ -3,14 +3,14 @@ import pytest
 from pytest_lazy_fixtures import lf
 
 
-@pytest.fixture()
+@pytest.fixture
 def public_lesion(image_factory, lesion_factory):
     lesion = lesion_factory()
     image_factory(accession__lesion=lesion, public=True)
     return lesion
 
 
-@pytest.fixture()
+@pytest.fixture
 def partially_public_lesion(image_factory, lesion_factory):
     lesion = lesion_factory()
     image_factory(accession__lesion=lesion, public=True)
@@ -18,7 +18,7 @@ def partially_public_lesion(image_factory, lesion_factory):
     return lesion
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("client_", "lesion_", "can_see"),
     [

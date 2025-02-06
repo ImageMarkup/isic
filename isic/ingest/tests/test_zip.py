@@ -17,26 +17,26 @@ def invalid_zip(request, zip_upload_factory):
     return zip_upload_factory(blob__from_func=lambda: io.BytesIO(request.param))
 
 
-@pytest.fixture()
+@pytest.fixture
 def preexisting_zip(zip_upload, accession_factory):
     # "ISIC_0000001.jpg" is in the zip too
     accession_factory(zip_upload=zip_upload, original_blob_name="ISIC_0000001.jpg")
     return zip_upload
 
 
-@pytest.fixture()
+@pytest.fixture
 def duplicates_zip(zip_upload_factory, zip_stream_duplicates):
     return zip_upload_factory(blob__from_func=lambda: zip_stream_duplicates)
 
 
-@pytest.fixture()
+@pytest.fixture
 def preexisting_and_duplicates_zip(duplicates_zip, accession_factory):
     # "ISIC_0000001.jpg" is in the zip too
     accession_factory(zip_upload=duplicates_zip, original_blob_name="ISIC_0000001.jpg")
     return duplicates_zip
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_zip_get_preexisting_and_duplicates_none(zip_upload):
     blob_name_preexisting, blob_name_duplicates = zip_upload._get_preexisting_and_duplicates()
 
@@ -44,7 +44,7 @@ def test_zip_get_preexisting_and_duplicates_none(zip_upload):
     assert blob_name_duplicates == []
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_zip_get_preexisting_and_duplicates_preexisting(preexisting_zip):
     blob_name_preexisting, blob_name_duplicates = preexisting_zip._get_preexisting_and_duplicates()
 
@@ -52,7 +52,7 @@ def test_zip_get_preexisting_and_duplicates_preexisting(preexisting_zip):
     assert blob_name_duplicates == []
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_zip_get_preexisting_and_duplicates_duplicates(duplicates_zip):
     blob_name_preexisting, blob_name_duplicates = duplicates_zip._get_preexisting_and_duplicates()
 
@@ -60,7 +60,7 @@ def test_zip_get_preexisting_and_duplicates_duplicates(duplicates_zip):
     assert blob_name_duplicates == ["ISIC_0000000.jpg", "ISIC_0000002.jpg"]
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_zip_extract_success(zip_upload):
     zip_upload.extract()
 
@@ -69,7 +69,7 @@ def test_zip_extract_success(zip_upload):
     assert Accession.objects.count() == 5
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_zip_extract_success_accession_status(zip_upload):
     zip_upload.extract()
 
@@ -77,7 +77,7 @@ def test_zip_extract_success_accession_status(zip_upload):
     assert accession.status == AccessionStatus.CREATED
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_zip_extract_success_accession_original_blob_content(zip_upload):
     zip_upload.extract()
 
@@ -89,7 +89,7 @@ def test_zip_extract_success_accession_original_blob_content(zip_upload):
         assert original_blob_content.endswith(b"\xff\xd9")
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_zip_extract_success_accession_original_blob_content_type(zip_upload):
     # Ensure that when an accession's original_blob is created, its content type is stored
     zip_upload.extract()
@@ -100,7 +100,7 @@ def test_zip_extract_success_accession_original_blob_content_type(zip_upload):
     assert original_blob_content_type == "image/jpeg"
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_zip_extract_success_accession_original_blob_size(zip_upload):
     # Ensure that when an accession's original_blob is created, its size is stored
     zip_upload.extract()
@@ -109,7 +109,7 @@ def test_zip_extract_success_accession_original_blob_size(zip_upload):
     assert accession.original_blob.size == 49982
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_zip_extract_creates_accessions_with_unstructured_metadata(zip_upload):
     zip_upload.extract()
 
@@ -117,7 +117,7 @@ def test_zip_extract_creates_accessions_with_unstructured_metadata(zip_upload):
     assert accession.unstructured_metadata is not None
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_zip_extract_invalid(caplog, invalid_zip):
     with pytest.raises(ZipUpload.InvalidExtractError):
         invalid_zip.extract()
@@ -132,7 +132,7 @@ def test_zip_extract_invalid(caplog, invalid_zip):
     assert Accession.objects.count() == 0
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_zip_extract_duplicate(caplog, preexisting_and_duplicates_zip):
     with pytest.raises(ZipUpload.DuplicateExtractError):
         preexisting_and_duplicates_zip.extract()
@@ -147,7 +147,7 @@ def test_zip_extract_duplicate(caplog, preexisting_and_duplicates_zip):
     assert Accession.objects.count() == 1
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_zip_extract_and_notify_success(mailoutbox, zip_upload):
     zip_upload.extract_and_notify()
 
@@ -157,7 +157,7 @@ def test_zip_extract_and_notify_success(mailoutbox, zip_upload):
     assert zip_upload.creator.email in mailoutbox[0].to
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_zip_extract_and_notify_invalid(mailoutbox, invalid_zip):
     with pytest.raises(ZipUpload.InvalidExtractError):
         invalid_zip.extract_and_notify()
@@ -168,7 +168,7 @@ def test_zip_extract_and_notify_invalid(mailoutbox, invalid_zip):
     assert invalid_zip.creator.email in mailoutbox[0].to
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_zip_extract_and_notify_duplicate(mailoutbox, preexisting_and_duplicates_zip):
     with pytest.raises(ZipUpload.DuplicateExtractError):
         preexisting_and_duplicates_zip.extract_and_notify()
@@ -183,7 +183,7 @@ def test_zip_extract_and_notify_duplicate(mailoutbox, preexisting_and_duplicates
     assert preexisting_and_duplicates_zip.creator.email in mailoutbox[0].to
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_zip_reset(zip_upload):
     zip_upload.extract()
 

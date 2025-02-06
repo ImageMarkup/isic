@@ -4,7 +4,7 @@ import pytest
 from isic.core.tasks import sync_elasticsearch_indices_task
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.usefixtures("_search_index")
 def test_faceting_cache(client, django_assert_max_num_queries):
     with django_assert_max_num_queries(1):
