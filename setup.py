@@ -76,6 +76,7 @@ setup(
         "numpy",
         "oauth2client",
         "opensearch-py",
+        "opensearch-dsl",
         "pandas",
         "Pillow",
         "psycopg",
