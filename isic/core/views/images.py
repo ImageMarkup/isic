@@ -100,10 +100,10 @@ def image_detail(request, isic_id):
 
     if request.user.is_staff:
         ctx["sections"]["patient_images"] = (
-            f'Other Patient Images ({ctx["other_patient_images_count"]})'
+            f"Other Patient Images ({ctx['other_patient_images_count']})"
         )
         ctx["sections"]["lesion_images"] = (
-            f'Other Lesion Images ({ctx["other_lesion_images_count"]})'
+            f"Other Lesion Images ({ctx['other_lesion_images_count']})"
         )
         ctx["sections"]["ingestion_details"] = "Ingestion Details"
 

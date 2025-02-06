@@ -5,12 +5,12 @@ from pytest_lazy_fixtures import lf
 from isic.core.services.collection.image import collection_add_images
 
 
-@pytest.fixture()
+@pytest.fixture
 def collections(public_collection, private_collection):
     return [public_collection, private_collection]
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("search_term", "collection_names", "expected_collection_names"),
     [
@@ -38,7 +38,7 @@ def test_core_api_collection_autocomplete(
     assert [c["name"] for c in r.json()] == expected_collection_names
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("client_", "colls", "num_visible"),
     [
@@ -63,7 +63,7 @@ def test_core_api_collection_list_permissions(client_, colls, num_visible):
     assert r.json()["count"] == num_visible
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("client_", "collection", "visible"),
     [
@@ -113,7 +113,7 @@ def test_core_api_collection_detail_permissions(client_, collection, visible):
         assert r.status_code == 404, r.json()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_core_api_collection_populate_from_search(
     authenticated_client,
     collection_factory,
@@ -137,7 +137,7 @@ def test_core_api_collection_populate_from_search(
     assert collection.images.first().accession.metadata["sex"] == "male"
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("endpoint", "data"),
     [
@@ -158,7 +158,7 @@ def test_core_api_collection_modify_locked(endpoint, data, staff_client, collect
     assert r.status_code == 409, r.json()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_core_api_collection_populate_from_list(
     authenticated_client, collection_factory, image_factory, user
 ):
@@ -193,7 +193,7 @@ def test_core_api_collection_populate_from_list(
     assert r.json()["succeeded"] == [public_image.isic_id]
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_core_api_collection_remove_from_list(
     authenticated_client, collection_factory, image_factory, user
 ):
@@ -232,7 +232,7 @@ def test_core_api_collection_remove_from_list(
     }
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_core_api_collection_share(
     staff_client, private_collection, user, django_capture_on_commit_callbacks
 ):
@@ -250,7 +250,7 @@ def test_core_api_collection_share(
     assert user in private_collection.shares.all()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.skip("TODO: fix this test")
 def test_core_api_collection_license_breakdown(
     staff_client, collection_factory, image_factory, user

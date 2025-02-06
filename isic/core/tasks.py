@@ -16,7 +16,8 @@ from django.db.models import Prefetch
 from django.template.loader import render_to_string
 from girder_utils.storages import expiring_url
 from oauth2_provider.models import clear_expired as clear_expired_oauth_tokens
-from urllib3.exceptions import ConnectionError, TimeoutError
+from urllib3.exceptions import ConnectionError as Urllib3ConnectionError
+from urllib3.exceptions import TimeoutError as Urllib3TimeoutError
 
 from isic.core.models.collection import Collection
 from isic.core.models.doi import Doi
@@ -59,7 +60,7 @@ def share_collection_with_users_task(collection_pk: int, grantor_pk: int, user_p
 @shared_task(
     soft_time_limit=1800,
     time_limit=1810,
-    autoretry_for=(ConnectionError, TimeoutError),
+    autoretry_for=(Urllib3ConnectionError, Urllib3TimeoutError),
     retry_backoff=True,
     retry_backoff_max=600,
     retry_kwargs={"max_retries": 3},

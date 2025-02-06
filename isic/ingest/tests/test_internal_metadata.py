@@ -3,12 +3,12 @@ import pytest
 from isic.ingest.models.accession import Accession, RemappedField
 
 
-@pytest.fixture()
+@pytest.fixture
 def imageless_accession(accession_factory):
     return accession_factory()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize("field", Accession.remapped_internal_fields)
 def test_accession_update_remapped_metadata(user, accession_factory, cohort, field: RemappedField):
     accession1 = accession_factory(cohort=cohort)
@@ -29,7 +29,7 @@ def test_accession_update_remapped_metadata(user, accession_factory, cohort, fie
     assert field.external_value(accession1) == field.external_value(accession2)
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize("field", Accession.remapped_internal_fields)
 def test_accession_update_remapped_metadata_idempotent(
     user, imageless_accession: Accession, field: RemappedField
@@ -53,7 +53,7 @@ def test_accession_update_remapped_metadata_idempotent(
     assert field.external_value(imageless_accession) == remapped_id
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.parametrize("field", Accession.remapped_internal_fields)
 def test_accession_update_remapped_metadata_change(user, imageless_accession, field: RemappedField):
     imageless_accession.update_metadata(

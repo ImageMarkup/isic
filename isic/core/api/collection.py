@@ -235,6 +235,6 @@ def remove_from_list(request, id, payload: IsicIdList):
 
     # TODO: this is a weird mixture of concerns between SSR and an API, figure out a better
     # way to handle this.
-    messages.add_message(request, messages.INFO, f'Removed {len(summary["succeeded"])} images.')
+    messages.add_message(request, messages.INFO, f"Removed {len(summary['succeeded'])} images.")
 
     return JsonResponse(summary)

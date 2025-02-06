@@ -4,7 +4,7 @@ import pytest
 from isic.studies.models import Study
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_create_study(
     user,
     authenticated_client,

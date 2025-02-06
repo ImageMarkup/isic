@@ -4,7 +4,7 @@ import pytest
 from isic.core.models.isic_id import IsicId
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_isic_id_safe_create_success():
     IsicId.objects.create_random()
 

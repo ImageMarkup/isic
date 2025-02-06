@@ -7,7 +7,7 @@ from isic.core.models.image import Image
 from isic.ingest.models.accession import AccessionStatus
 
 
-@pytest.fixture()
+@pytest.fixture
 def publishable_cohort(cohort_factory, accession_factory, accession_review_factory, user):
     cohort = cohort_factory(creator=user, contributor__creator=user)
     # Make a 'publishable' accession
@@ -25,7 +25,7 @@ def publishable_cohort(cohort_factory, accession_factory, accession_review_facto
     return cohort
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 @pytest.mark.usefixtures("_search_index")
 def test_publish_cohort(
     staff_client, publishable_cohort, django_capture_on_commit_callbacks, collection_factory
@@ -53,7 +53,7 @@ def test_publish_cohort(
         assert collection.images.count() == 1
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 def test_publish_cohort_into_public_collection(
     staff_client, publishable_cohort, django_capture_on_commit_callbacks, collection_factory
 ):
