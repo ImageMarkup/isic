@@ -2,7 +2,6 @@ import pytest
 
 from isic.core.models.image import Image
 from isic.core.services import image_metadata_csv, staff_image_metadata_csv
-from isic.ingest.models.accession import Accession
 
 
 @pytest.fixture
@@ -24,9 +23,6 @@ def image_with_metadata(image):
         ignore_image_check=True,
     )
 
-    # TODO: transition code that should be removed when iddx/legacy_dx stuff is removed
-    Accession.objects.filter(id=image.accession.id).update(legacy_dx="nevus")
-
     return image
 
 
@@ -39,7 +35,6 @@ def test_image_metadata_csv_rows_correct(image_with_metadata):
         "age_approx": image_with_metadata.accession.age_approx,
         "attribution": image_with_metadata.accession.attribution,
         "copyright_license": image_with_metadata.accession.copyright_license,
-        "diagnosis": "nevus",
         "diagnosis_1": "Benign",
         "diagnosis_2": "Benign melanocytic proliferations",
         "diagnosis_3": "Nevus",
@@ -63,7 +58,6 @@ def test_staff_image_metadata_csv_rows_correct(image_with_metadata):
         "cohort_id": image_with_metadata.accession.cohort_id,
         "cohort": image_with_metadata.accession.cohort.name,
         "copyright_license": image_with_metadata.accession.copyright_license,
-        "diagnosis": "nevus",
         "diagnosis_1": "Benign",
         "diagnosis_2": "Benign melanocytic proliferations",
         "diagnosis_3": "Nevus",
