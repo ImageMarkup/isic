@@ -22,7 +22,7 @@ from django.db.models.fields import Field
 from django.db.models.functions import Cast, Round
 from django.db.models.query_utils import Q
 from girder_utils.files import field_file_to_local_path
-from isic_metadata.fields import ImageTypeEnum, LegacyDxEnum
+from isic_metadata.fields import ImageTypeEnum
 from isic_metadata.metadata import MetadataRow
 import numpy as np
 from osgeo import gdal
@@ -82,7 +82,6 @@ class AccessionMetadata(models.Model):
     diagnosis_3 = models.CharField(max_length=255, null=True, blank=True)
     diagnosis_4 = models.CharField(max_length=255, null=True, blank=True)
     diagnosis_5 = models.CharField(max_length=255, null=True, blank=True)
-    legacy_dx = models.CharField(max_length=255, null=True, blank=True)
     diagnosis_confirm_type = models.CharField(max_length=255, null=True, blank=True)
     personal_hx_mm = models.BooleanField(null=True, blank=True)
     family_hx_mm = models.BooleanField(null=True, blank=True)
@@ -367,7 +366,6 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
                 | Q(image_type__isnull=True)
                 | Q(image_type=ImageTypeEnum.rcm_mosaic),
             ),
-            CheckConstraint(name="valid_legacy_dx", condition=Q(legacy_dx__in=LegacyDxEnum)),
         ]
 
         indexes = [
@@ -403,7 +401,6 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
                 fields=["benign_malignant"],
                 condition=~Q(benign_malignant="benign"),
             ),
-            models.Index(fields=["legacy_dx"]),
             models.Index(
                 name="accession_diagnosis_1",
                 fields=["diagnosis_1"],
@@ -499,10 +496,12 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
     def meets_cog_threshold(img: PIL.Image.Image) -> bool:
         return img.height * img.width > IMAGE_COG_THRESHOLD
 
-    @property
-    def fq_diagnosis(self) -> str:
-        diagnoses = [getattr(self.metadata, f"diagnosis_{i}") for i in range(1, 6)]
-        return ":".join(level for level in diagnoses if level is not None)
+    def get_diagnosis_display(self) -> str:
+        diagnoses = [self.metadata.get(f"diagnosis_{i}") for i in range(1, 6)]
+        if any(diagnoses):
+            return [d for d in diagnoses if d is not None][-1]
+        else:
+            return ""
 
     def _generate_blob(self, img: PIL.Image.Image) -> AccessionBlob:
         # Explicitly load the image, so any decoding errors can be caught
@@ -865,10 +864,6 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
         """Remove metadata from an accession."""
         if self.pk and not ignore_image_check:
             self._require_unpublished()
-
-        if "diagnosis" in metadata_fields:
-            metadata_fields.remove("diagnosis")
-            metadata_fields.extend([f"diagnosis_{i}" for i in range(1, 6)])
 
         modified = False
         with transaction.atomic():

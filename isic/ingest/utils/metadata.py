@@ -134,8 +134,8 @@ def validate_archive_consistency(  # noqa: C901
     Validate that a CSV is consistent with the existing cohort metadata.
 
     This merges the existing cohort metadata with the proposed df and validates the merged
-    metadata. This allows for cross column checks e.g. an existing benign accession against
-    a df with diagnosis=melanoma. It also enables cross row checks, such as verifying that
+    metadata. This allows for cross column checks e.g. an existing dermoscopic accession with
+    a df with tbp_tile_type=2D. It also enables cross row checks, such as verifying that
     a lesion doesn't belong to more than one patient.
     """
 

@@ -22,9 +22,7 @@
     </div>
   </div>
   <div class="flex justify-around">
-    {% if accession.metadata.diagnosis %}
-      <span>{{ accession.metadata.diagnosis }}</span>
-    {% endif %}
+    <span>{{ accession.get_diagnosis_display }}</span>
     {% if include_acquisition_day %}
       <span>
         {% if accession.metadata.acquisition_day %}
