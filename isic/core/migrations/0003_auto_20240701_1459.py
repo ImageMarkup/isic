@@ -65,7 +65,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(update_default_site),
-        migrations.RunPython(setup_groups),
-        migrations.RunPython(create_elasticsearch_index),
+        migrations.RunPython(update_default_site, elidable=False),
+        migrations.RunPython(setup_groups, elidable=False),
+        migrations.RunPython(create_elasticsearch_index, elidable=False),
     ]
