@@ -45,7 +45,7 @@
             </div>
         {% endif %}
         <div class="py-1" role="none">
-            {% if collection.doi.bundle %}
+            {% if collection.doi and collection.doi.bundle %}
                 <a href="{{ collection.doi.bundle.url }}" class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-0">Download Original Collection</a>
             {% else %}
                 <a disabled class="cursor-default hover:bg-gray-100 hover:text-gray-400 text-gray-300 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-0">Download Original Collection</a>
