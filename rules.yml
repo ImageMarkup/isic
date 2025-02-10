@@ -1,5 +1,5 @@
 rules:
-  - id: require_include_in_schema
+  - id: require-include-in-schema
     languages:
       - python
     severity: ERROR
@@ -30,3 +30,16 @@ rules:
     patterns:
       - pattern: shared_task(...)
       - pattern-not: shared_task(..., soft_time_limit=..., time_limit=..., ...)
+
+  - id: require-elidable-arg-in-migration-operations
+    languages:
+      - python
+    severity: ERROR
+    message: Found a migration operation that doesn't set elidable.
+    pattern-either:
+      - patterns:
+          - pattern: django.db.migrations.RunPython(...)
+          - pattern-not: django.db.migrations.RunPython(..., elidable=..., ...)
+      - patterns:
+          - pattern: django.db.migrations.RunSQL(...)
+          - pattern-not: django.db.migrations.RunSQL(..., elidable=..., ...)
