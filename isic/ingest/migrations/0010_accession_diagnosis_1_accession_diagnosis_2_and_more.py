@@ -49,5 +49,5 @@ class Migration(migrations.Migration):
             name="diagnosis_5",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
-        migrations.RunPython(migrate_diagnoses),
+        migrations.RunPython(migrate_diagnoses, elidable=True),
     ]
