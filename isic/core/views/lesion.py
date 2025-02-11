@@ -43,7 +43,7 @@ def lesion_detail(request, identifier):
             "modality": next(
                 modality
                 for modality in MODALITIES
-                if image.accession.image_type.startswith(modality)
+                if image.accession.image_type.lower().startswith(modality)
             )
             if image.accession.image_type
             else None,
