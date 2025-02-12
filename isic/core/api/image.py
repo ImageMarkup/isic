@@ -15,6 +15,7 @@ from isic.core.pagination import CursorPagination, qs_with_hardcoded_count
 from isic.core.permissions import get_visible_objects
 from isic.core.search import facets, get_elasticsearch_client
 from isic.core.serializers import SearchQueryIn
+from isic.stats.models import SearchQuery
 
 router = Router()
 
@@ -113,6 +114,9 @@ def list_images(request: HttpRequest):
 @paginate(CursorPagination)
 def search_images(request: HttpRequest, search: SearchQueryIn = Query(...)):
     try:
+        if search.query:
+            SearchQuery.objects.create(value=search.query)
+
         qs = search.to_queryset(user=request.user, qs=default_qs)
         if settings.ISIC_USE_ELASTICSEARCH_COUNTS:
             es_query = search.to_es_query(request.user)
