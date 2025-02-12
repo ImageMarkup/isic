@@ -58,3 +58,10 @@ class LastEnqueuedS3Log(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+
+class SearchQuery(TimeStampedModel):
+    value = models.TextField()
+
+    def __str__(self):
+        return self.value
