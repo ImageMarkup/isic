@@ -9,6 +9,7 @@ from isic_metadata import FIELD_REGISTRY
 from ninja import Field, ModelSchema, Query, Router, Schema
 from ninja.pagination import paginate
 from pyparsing.exceptions import ParseException
+from sentry_sdk import set_tag
 
 from isic.core.models import Collection, Image
 from isic.core.pagination import CursorPagination, qs_with_hardcoded_count
@@ -141,6 +142,8 @@ def search_images(request: HttpRequest, search: SearchQueryIn = Query(...)):
 def get_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):
     cache_key = f"get_facets:{search.to_cache_key(request.user)}"
     cached_facets = cache.get(cache_key)
+
+    set_tag("cached_facets", cached_facets is not None)
 
     if cached_facets:
         return cached_facets
