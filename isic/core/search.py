@@ -194,7 +194,7 @@ def _prettify_facets(facets: dict[str, Any]) -> dict[str, Any]:
     return facets
 
 
-def facets(query: dict | None = None, collections: list[int] | None = None) -> dict:
+def facets(query: dict | None = None) -> dict:
     """
     Generate the facet counts for a given query.
 
@@ -228,14 +228,6 @@ def facets(query: dict | None = None, collections: list[int] | None = None) -> d
         facets_body["aggs"][field]["meta"] = {
             "missing_count": counts[f"{field}_missing"]["doc_count"],
             "present_count": counts[f"{field}_present"]["value"],
-        }
-
-    if collections is not None:
-        # Note this include statement means we can only filter by ~65k collections. See:
-        # "By default, Elasticsearch limits the terms query to a maximum of 65,536 terms.
-        # You can change this limit using the index.max_terms_count setting."
-        facets_body["aggs"]["collections"] = {
-            "terms": {"field": "collections", "include": collections}
         }
 
     if query:
