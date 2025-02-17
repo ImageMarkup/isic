@@ -11,7 +11,7 @@ from ninja.pagination import paginate
 from pyparsing.exceptions import ParseException
 from sentry_sdk import set_tag
 
-from isic.core.models import Collection, Image
+from isic.core.models import Image
 from isic.core.pagination import CursorPagination, qs_with_hardcoded_count
 from isic.core.permissions import get_visible_objects
 from isic.core.search import facets, get_elasticsearch_client
@@ -153,17 +153,7 @@ def get_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):
     except ParseException as e:
         raise ImageSearchParseError from e
 
-    # Manually pass the list of visible collection PKs through so buckets with
-    # counts of 0 aren't included in the facets output for non-visible collections.
-    collection_pks = list(
-        get_visible_objects(
-            request.user,
-            "core.view_collection",
-            Collection.objects.values_list("pk", flat=True),
-        )
-    )
-
-    ret = facets(query, collection_pks)
+    ret = facets(query)
     cache.set(cache_key, ret, 86400)
     return ret
 
