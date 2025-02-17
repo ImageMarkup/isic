@@ -236,44 +236,18 @@ def test_core_api_image_search_collection_parsing(
     assert r.json()["count"] == 1, r.json()
 
 
-@pytest.mark.parametrize(
-    "client_",
-    [
-        lf("client"),
-        lf("authenticated_client"),
-    ],
-)
 @pytest.mark.django_db
-def test_core_api_image_faceting_collections(private_and_public_images_collections, client_):
-    public_coll, private_coll = private_and_public_images_collections
+def test_core_api_image_faceting_collection_filter(private_and_public_images_collections, client):
+    public_coll, _ = private_and_public_images_collections
 
-    r = client_.get(
-        "/api/v2/images/facets/", {"collections": f"{public_coll.pk},{private_coll.pk}"}
-    )
+    r = client.get("/api/v2/images/facets/", {"collections": f"{public_coll.pk}"})
     assert r.status_code == 200, r.json()
-    buckets = r.json()["collections"]["buckets"]
-    assert len(buckets) == 1
-    assert buckets[0] == {"key": public_coll.pk, "doc_count": 1}
 
-
-@pytest.mark.parametrize(
-    "client_",
-    [
-        lf("client"),
-        lf("authenticated_client"),
-    ],
-)
-@pytest.mark.django_db
-def test_core_api_image_faceting(private_and_public_images_collections, client_):
-    public_coll, private_coll = private_and_public_images_collections
-
-    r = client_.get(
-        "/api/v2/images/facets/",
-    )
-    assert r.status_code == 200, r.json()
-    buckets = r.json()["collections"]["buckets"]
-    assert len(buckets) == 1, buckets
-    assert buckets[0] == {"key": public_coll.pk, "doc_count": 1}, buckets
+    for bucket in r.json()["age_approx"]["buckets"]:
+        if bucket["key"] == 10.0:
+            assert bucket["doc_count"] == 1
+        else:
+            assert bucket["doc_count"] == 0
 
 
 @pytest.mark.django_db
@@ -302,9 +276,12 @@ def test_core_api_image_faceting_query(private_and_public_images_collections, cl
 
     r = client_.get("/api/v2/images/facets/", {"query": "age_approx:10"})
     assert r.status_code == 200, r.json()
-    buckets = r.json()["collections"]["buckets"]
-    assert len(buckets) == 1, buckets
-    assert buckets[0] == {"key": public_coll.pk, "doc_count": 1}, buckets
+    buckets = r.json()["age_approx"]["buckets"]
+    for bucket in buckets:
+        if bucket["key"] == 10.0:
+            assert bucket["doc_count"] == 1
+        else:
+            assert bucket["doc_count"] == 0
 
 
 @pytest.mark.django_db
