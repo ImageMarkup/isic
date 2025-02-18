@@ -206,6 +206,11 @@ def test_doi_bundle_contains_expected_files(
 
     collection_create_doi_bundle(doi=doi)
 
+    doi.refresh_from_db()
+
+    assert doi.bundle is not None
+    assert doi.bundle_size > 0
+
     with tempfile.TemporaryDirectory() as temp_dir, zipfile.ZipFile(doi.bundle) as zf:
         zf.extractall(temp_dir)
 
