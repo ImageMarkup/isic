@@ -13,6 +13,7 @@ from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.db import connection, transaction
 from django.template.loader import render_to_string
+from django.utils.text import slugify
 import requests
 from requests.exceptions import HTTPError
 
@@ -138,7 +139,9 @@ def collection_create_doi(*, user: User, collection: Collection) -> Doi:
 
     with transaction.atomic():
         # First, create the local DOI record to validate uniqueness within our known set
-        doi = Doi(id=doi_id, creator=user, url=f"https://doi.org/{doi_id}")
+        doi = Doi(
+            id=doi_id, slug=slugify(collection.name), creator=user, url=f"https://doi.org/{doi_id}"
+        )
         doi.full_clean()
         doi.save()
 
