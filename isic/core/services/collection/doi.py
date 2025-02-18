@@ -212,6 +212,7 @@ def collection_create_doi_bundle(*, doi: Doi) -> None:
 
         with Path(bundle_filename).open("rb") as bundle_file:
             doi.bundle = File(bundle_file)
+            doi.bundle_size = Path(bundle_filename).stat().st_size
             doi.save()
 
         Path(bundle_filename).unlink()

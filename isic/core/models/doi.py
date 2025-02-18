@@ -14,6 +14,7 @@ class Doi(TimeStampedModel):
     url = models.CharField(max_length=200)
 
     bundle = models.FileField(upload_to="doi-bundles/", null=True, blank=True)
+    bundle_size = models.PositiveBigIntegerField(null=True, blank=True)
 
     def __str__(self):
         return self.id
