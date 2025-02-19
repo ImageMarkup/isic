@@ -15,6 +15,11 @@ from isic.core.services.collection.doi import (
 
 
 @pytest.fixture
+def mock_datacite_citations_fetch(mocker):
+    return mocker.patch("isic.core.services.collection.doi.fetch_doi_citations_task")
+
+
+@pytest.fixture
 def mock_datacite_create_doi(mocker):
     return mocker.patch("isic.core.services.collection.doi._datacite_create_doi")
 
@@ -42,6 +47,7 @@ def test_collection_create_doi(
     staff_user,
     mock_datacite_create_doi,
     mock_datacite_update_doi,
+    mock_datacite_citations_fetch,
 ):
     collection_create_doi(user=staff_user, collection=public_collection_with_public_images)
 
@@ -52,6 +58,7 @@ def test_collection_create_doi(
     assert public_collection_with_public_images.doi.creator == staff_user
     mock_datacite_create_doi.assert_called_once()
     mock_datacite_update_doi.assert_called_once()
+    mock_datacite_citations_fetch.delay_on_commit.assert_called_once()
 
 
 @pytest.mark.django_db
@@ -73,12 +80,13 @@ def test_doi_form_requires_no_existing_doi(public_collection, staff_user_request
     assert not form.is_valid()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_doi_form_creation(
     public_collection_with_public_images,
     staff_user_request,
     mock_datacite_create_doi,
     mock_datacite_update_doi,
+    mock_datacite_citations_fetch,
 ):
     form = CreateDoiForm(
         data={},
@@ -93,6 +101,7 @@ def test_doi_form_creation(
     assert public_collection_with_public_images.locked
     mock_datacite_create_doi.assert_called_once()
     mock_datacite_update_doi.assert_called_once()
+    mock_datacite_citations_fetch.delay_on_commit.assert_called_once()
 
 
 @pytest.fixture
@@ -197,6 +206,7 @@ def test_doi_bundle_contains_expected_files(
     staff_user,
     mock_datacite_create_doi,
     mock_datacite_update_doi,
+    mock_datacite_citations_fetch,
 ):
     collection = collection_factory(public=True)
     images = [image_factory(public=True) for _ in range(3)]
