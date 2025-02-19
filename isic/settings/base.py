@@ -182,6 +182,7 @@ TEMPLATES[0]["OPTIONS"]["context_processors"] += [  # type: ignore[index]  # noq
     "isic.core.context_processors.placeholder_images",
     "isic.core.context_processors.js_browser_sync",
     "isic.core.context_processors.js_sentry",
+    "isic.core.context_processors.citation_styles",
 ]
 
 # ISIC specific settings
@@ -211,6 +212,16 @@ ISIC_DATACITE_API_URL = os.environ.get(
 )
 ISIC_DATACITE_USERNAME: Any = None
 ISIC_DATACITE_PASSWORD: Any = None
+# These are the default styles with their proper names that are used by the
+# DataCite GUI. The full list of supported styles is at https://citation.doi.org/.
+ISIC_DATACITE_CITATION_STYLES: dict[str, str] = {
+    "apa": "APA",
+    "harvard-cite-them-right": "Harvard",
+    "modern-language-association": "MLA",
+    "vancouver": "Vancouver",
+    "chicago-fullnote-bibliography": "Chicago",
+    "ieee": "IEEE",
+}
 ISIC_GOOGLE_ANALYTICS_PROPERTY_IDS = [
     "377090260",  # ISIC Home
     "360152967",  # ISIC Gallery

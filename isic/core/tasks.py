@@ -142,7 +142,7 @@ def create_doi_bundle_task(doi_id: str) -> None:
 @shared_task(soft_time_limit=120, time_limit=180)
 def fetch_doi_citations_task(doi_id: str) -> None:
     doi = Doi.objects.get(id=doi_id)
-    for style in ["apa", "harvard", "mla", "chicago", "vancouver", "ieee"]:
+    for style in settings.ISIC_DATACITE_CITATION_STYLES:
         r = requests.get(
             doi.url,
             headers={"Accept": f"text/x-bibliography; style={style}"},
