@@ -1,10 +1,15 @@
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.db import models
+from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
 
 class Doi(TimeStampedModel):
+    class Meta:
+        verbose_name = "DOI"
+        verbose_name_plural = "DOIs"
+
     id = models.CharField(
         max_length=30, primary_key=True, validators=[RegexValidator(r"^\d+\.\d+/\d+$")]
     )
@@ -23,3 +28,6 @@ class Doi(TimeStampedModel):
 
     def __str__(self):
         return self.id
+
+    def get_absolute_url(self):
+        return reverse("core/doi-detail", kwargs={"slug": self.slug})
