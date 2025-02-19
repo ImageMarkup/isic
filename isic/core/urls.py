@@ -13,6 +13,7 @@ from isic.core.views.collections import (
     collection_edit,
     collection_list,
 )
+from isic.core.views.doi import doi_detail
 from isic.core.views.images import (
     image_browser,
     image_detail,
@@ -111,4 +112,5 @@ urlpatterns = [
         staff_image_list_metadata_download,
         name="core/image-list-metadata-download",
     ),
+    path("doi/<slug:slug>/", doi_detail, name="core/doi-detail"),
 ]

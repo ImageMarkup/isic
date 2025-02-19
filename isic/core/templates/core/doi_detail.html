@@ -1,0 +1,137 @@
+{% extends 'core/base.html' %}
+
+{% load static %}
+{% load localtime %}
+{% load markdownify %}
+{% load get_key %}
+{% load humanize %}
+
+{% block title %}{{ doi.collection.name }} | {% endblock %}
+
+{% block content %}
+
+
+  <div class="heading-1">{{ doi.collection.name }}</div>
+
+  <strong>Created:</strong> {% localtime doi.created %}
+
+  <div id="detail-info">
+
+    <h2>License{% if licenses|length > 1 %}s{% endif %}</h2>
+
+    <div>
+      {% for license in licenses %}
+        <div class="flex">
+          <div class="mr-2"><img src="{% static license_paths|get_key:license %}" alt="{{ license }}" width="116" height="41" /></div>
+          <div>
+            <strong>{{ license }}</strong>
+            <p>{{ license_descriptions|get_key:license }}</p>
+          </div>
+        </div>
+        {% if not forloop.last %}
+          <div class="divider"></div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  {{ doi.citations|json_script:"citations" }}
+  {{ CITATION_STYLES|json_script:"citation-styles" }}
+  <div id="detail-info" x-data="citationSelector('citations')">
+    <div class="flex justify-between items-center mb-2">
+      <h2>How to Cite</h2>
+      {% if not doi.citations %}
+    {# citations are fetched asynchronously on DOI creation #}
+        <p class="text-center">Citations are being generated, check back soon.</p>
+      {% else %}
+        <div>
+          <select x-model="selectedStyle" class="select">
+            <template x-for="(label, value) in citationStyles">
+              <option :value="value" x-text="label"></option>
+            </template>
+          </select>
+
+        </div>
+        </div>
+      {% endif %}
+      <div x-html="currentCitation"></div>
+    </div>
+
+    <div class="mt-4">
+      <a href="{% url 'core/collection-detail' doi.collection.pk %}">
+        <button class="btn btn-primary w-full">
+          View Complete Dataset in the Archive →
+        </button>
+      </a>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="heading-2">Dataset Statistics</div>
+    <div class="flex justify-between gap-4 w-full my-6">
+      {% for stat_label, stat_value in stats.items %}
+        <div class="stats shadow flex-1 text-center">
+          <div class="stat">
+            <div class="stat-title">{{ stat_label }}</div>
+            <div class="stat-value">{{ stat_value|intcomma }}</div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="heading-2">Description</div>
+    <div class="my-6 font-mono">
+      {{ doi.collection.description|markdownify }}
+    </div>
+
+    <div class="heading-2">Files</div>
+
+    {% if not doi.bundle %}
+      <p>Bundle is being generated, check back soon.</p>
+    {% else %}
+      <div class="overflow-x-auto">
+        <table class="table w-full my-6">
+          <thead>
+            <tr>
+              <th>File Name</th>
+              <th>Size</th>
+              <th>Description</th>
+              <th>Type</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th>{{ doi.slug }}.zip</th>
+              <td>{{ doi.bundle.size|filesizeformat }}</td>
+              <td>All dataset files.</td>
+              <td>ZIP</td>
+              <td><a href="{{ doi.bundle.url }}"><button class="btn btn-primary">Download</button></a></td>
+            </tr>
+            <tr>
+              <th>{{ doi.slug }}.csv</th>
+              <td>{{ doi.metadata.size|filesizeformat }}</td>
+              <td>Metadata for all images in the dataset.</td>
+              <td>CSV</td>
+              <td><a href="{{ doi.metadata.url }}"><button class="btn btn-primary">Download</button></a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+
+  </div>
+
+  <script>
+    function citationSelector(citationsElementId) {
+      return {
+        citations: JSON.parse(document.getElementById(citationsElementId).textContent),
+        selectedStyle: 'apa',
+        citationStyles: JSON.parse(document.getElementById('citation-styles').textContent),
+        get currentCitation() {
+          return this.citations[this.selectedStyle]
+        }
+      }
+    }
+  </script>
+{% endblock %}
