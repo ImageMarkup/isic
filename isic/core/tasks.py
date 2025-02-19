@@ -16,6 +16,7 @@ from django.db.models import Prefetch
 from django.template.loader import render_to_string
 from girder_utils.storages import expiring_url
 from oauth2_provider.models import clear_expired as clear_expired_oauth_tokens
+import requests
 from urllib3.exceptions import ConnectionError as Urllib3ConnectionError
 from urllib3.exceptions import TimeoutError as Urllib3TimeoutError
 
@@ -136,6 +137,20 @@ def create_doi_bundle_task(doi_id: str) -> None:
     doi = Doi.objects.get(id=doi_id)
 
     collection_create_doi_bundle(doi=doi)
+
+
+@shared_task(soft_time_limit=120, time_limit=180)
+def fetch_doi_citations_task(doi_id: str) -> None:
+    doi = Doi.objects.get(id=doi_id)
+    for style in ["apa", "harvard", "mla", "chicago", "vancouver", "ieee"]:
+        r = requests.get(
+            doi.url,
+            headers={"Accept": f"text/x-bibliography; style={style}"},
+            timeout=(10, 10),
+        )
+        r.raise_for_status()
+        doi.citations[style] = r.text
+    doi.save(update_fields=["citations"])
 
 
 @shared_task(soft_time_limit=10, time_limit=15)
