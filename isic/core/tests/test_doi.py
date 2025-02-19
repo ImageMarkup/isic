@@ -10,7 +10,7 @@ from isic.core.models.image import Image
 from isic.core.services.collection.doi import (
     collection_build_doi,
     collection_create_doi,
-    collection_create_doi_bundle,
+    collection_create_doi_files,
 )
 
 
@@ -200,7 +200,7 @@ def test_doi_creators_collapse_repeated_creators(collection_with_repeated_creato
 
 
 @pytest.mark.django_db(transaction=True)
-def test_doi_bundle_contains_expected_files(
+def test_doi_files(
     image_factory,
     collection_factory,
     staff_user,
@@ -214,12 +214,15 @@ def test_doi_bundle_contains_expected_files(
 
     doi = collection_create_doi(user=staff_user, collection=collection)
 
-    collection_create_doi_bundle(doi=doi)
+    collection_create_doi_files(doi=doi)
 
     doi.refresh_from_db()
 
     assert doi.bundle is not None
     assert doi.bundle_size > 0
+
+    assert doi.metadata is not None
+    assert doi.metadata_size > 0
 
     with tempfile.TemporaryDirectory() as temp_dir, zipfile.ZipFile(doi.bundle) as zf:
         zf.extractall(temp_dir)

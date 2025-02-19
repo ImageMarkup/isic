@@ -132,11 +132,11 @@ def generate_staff_image_list_metadata_csv(user_id: int) -> None:
 
 @shared_task(soft_time_limit=60 * 60 * 12, time_limit=(60 * 60 * 12) + 60)
 def create_doi_bundle_task(doi_id: str) -> None:
-    from isic.core.services.collection.doi import collection_create_doi_bundle
+    from isic.core.services.collection.doi import collection_create_doi_files
 
     doi = Doi.objects.get(id=doi_id)
 
-    collection_create_doi_bundle(doi=doi)
+    collection_create_doi_files(doi=doi)
 
 
 @shared_task(soft_time_limit=120, time_limit=180)
