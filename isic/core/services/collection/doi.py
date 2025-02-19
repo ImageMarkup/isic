@@ -165,12 +165,11 @@ def collection_create_doi(*, user: User, collection: Collection) -> Doi:
     return doi
 
 
-def collection_create_doi_bundle(*, doi: Doi) -> None:
+def collection_create_doi_files(*, doi: Doi) -> None:
     """
-    Create a frozen bundle of the collection associated with the DOI.
+    Create the files associated with the DOI.
 
-    This contains a lot of overlapping logic with the collection_download_metadata view
-    and the zip_file_listing view.
+    This includes the frozen bundle of the collection as well as the metadata csv and license files.
     """
     collection = Collection.objects.select_related("doi").get(doi=doi)
 
@@ -180,14 +179,14 @@ def collection_create_doi_bundle(*, doi: Doi) -> None:
 
         images = collection.images.select_related("accession").all()
 
-        bundle_filename = f"ISIC-Collection-{doi.id.split('/')[1]}.zip"
+        bundle_filename = f"{doi.slug}.zip"
         with zipfile.ZipFile(bundle_filename, "w") as bundle:
             for image in images.iterator():
                 with image.accession.blob.open("rb") as blob:
                     bundle.writestr(f"images/{image.isic_id}.jpg", blob.read())
 
             # the metadata csv could be large enough that it needs to be written to disk first
-            with tempfile.NamedTemporaryFile("w") as metadata_file:
+            with tempfile.NamedTemporaryFile("w", delete=False) as metadata_file:
                 collection_metadata = image_metadata_csv(qs=images)
                 writer = csv.DictWriter(metadata_file, fieldnames=next(collection_metadata))
                 writer.writeheader()
@@ -211,9 +210,14 @@ def collection_create_doi_bundle(*, doi: Doi) -> None:
             )
             bundle.writestr("attribution.txt", "\n\n".join(attributions))
 
-        with Path(bundle_filename).open("rb") as bundle_file:
+        with (
+            Path(bundle_filename).open("rb") as bundle_file,
+            Path(metadata_file.name).open("rb") as metadata_file,
+        ):
             doi.bundle = File(bundle_file)
             doi.bundle_size = Path(bundle_filename).stat().st_size
+            doi.metadata = File(metadata_file, name=f"{doi.slug}.csv")
+            doi.metadata_size = Path(metadata_file.name).stat().st_size
             doi.save()
 
         Path(bundle_filename).unlink()
