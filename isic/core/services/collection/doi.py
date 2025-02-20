@@ -44,6 +44,12 @@ def collection_build_doi(*, collection: Collection, doi_id: str) -> dict:
         "data": {
             "type": "dois",
             "attributes": {
+                "descriptions": [
+                    {
+                        "description": collection.description,
+                        "descriptionType": "Abstract",
+                    }
+                ],
                 "identifiers": [{"identifierType": "DOI", "identifier": doi_id}],
                 "event": "publish",
                 "doi": doi_id,
@@ -53,7 +59,6 @@ def collection_build_doi(*, collection: Collection, doi_id: str) -> dict:
                         collection=collection
                     )
                 ],
-                "contributor": f"{collection.creator.first_name} {collection.creator.last_name}",
                 "titles": [{"title": collection.name}],
                 "publisher": "ISIC Archive",
                 "publicationYear": collection.images.order_by("created").latest().created.year,
@@ -62,8 +67,6 @@ def collection_build_doi(*, collection: Collection, doi_id: str) -> dict:
                 # TODO: api.?
                 "url": f"https://api.isic-archive.com/collections/{collection.pk}/",
                 "schemaVersion": "http://datacite.org/schema/kernel-4",
-                "description": collection.description,
-                "descriptionType": "Other",
             },
         }
     }
