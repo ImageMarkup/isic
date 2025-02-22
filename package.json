@@ -12,9 +12,11 @@
     "npm-run-all": "^4.1.5",
     "parcel": "^2.4.1",
     "postcss": "^8.4.12",
+    "postcss-nested": "^5.0.6",
     "remixicon": "^2.5.0",
     "rimraf": "^3.0.2",
-    "tailwindcss": "^3.0.24"
+    "tailwindcss": "^3.0.24",
+    "typescript": "^4.6.3"
   },
   "scripts": {
     "build": "npm-run-all --sequential build:clean build:parcel",
@@ -22,9 +24,16 @@
     "build:parcel": "parcel build",
     "start": "npm-run-all --parallel start:parcel start:sync",
     "start:parcel": "parcel watch",
-    "start:sync": "browser-sync start --config ./dev/browser-sync.config.js"
+    "start:sync": "browser-sync start --config ./dev/browser-sync.config.js",
+    "test:tsc": "tsc --noEmit"
   },
   "targets": {
+    "bundle": {
+      "source": "./node-src/bundle.ts",
+      "distDir": "./isic/core/static/core/dist",
+      "context": "browser",
+      "outputFormat": "global"
+    },
     "styles": {
       "source": "./node-src/styles.pcss",
       "distDir": "./isic/core/static/core/dist"
