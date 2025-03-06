@@ -6,6 +6,7 @@ from girder_utils.admin import ReadonlyTabularInline
 
 from isic.core.models import Collection, Doi, GirderDataset, GirderImage, Image, ImageAlias
 from isic.core.models.segmentation import Segmentation, SegmentationReview
+from isic.core.models.supplemental_file import SupplementalFile
 
 # general admin settings
 # https://docs.djangoproject.com/en/3.1/ref/contrib/admin/#adminsite-objects
@@ -189,7 +190,15 @@ class CollectionAdmin(StaffReadonlyAdmin):
         ("doi", admin.EmptyFieldListFilter),
         "locked",
     ]
-    list_display = ["name", "created", "creator", "public", "pinned", "locked", "doi"]
+    list_display = [
+        "name",
+        "created",
+        "creator",
+        "public",
+        "pinned",
+        "locked",
+        "doi",
+    ]
     search_fields = ["creator__email", "name", "doi__id"]
     search_help_text = "Search collections by name, or creator email."
 
@@ -198,7 +207,23 @@ class CollectionAdmin(StaffReadonlyAdmin):
     exclude = ["images"]
 
 
+class SupplementalFileInline(admin.TabularInline):
+    model = SupplementalFile
+    extra = 0
+
+
 @admin.register(Doi)
 class DoiAdmin(StaffReadonlyAdmin):
     list_select_related = ["collection"]
-    list_display = ["id", "url", "collection", "bundle"]
+    list_display = ["id", "url", "collection", "bundle", "num_supplemental_files"]
+    inlines = [SupplementalFileInline]
+
+    @admin.display(ordering="num_supplemental_files", description="Number of supplemental files")
+    def num_supplemental_files(self, obj):
+        return intcomma(obj.num_supplemental_files)
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.annotate(
+            num_supplemental_files=Count("supplemental_files", distinct=True),
+        )

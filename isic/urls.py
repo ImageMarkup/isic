@@ -11,6 +11,7 @@ from ninja.openapi.views import openapi_view
 
 from isic.auth import allow_any
 from isic.core.api.collection import router as collection_router
+from isic.core.api.doi import router as doi_router
 from isic.core.api.image import ImageSearchParseError
 from isic.core.api.image import router as image_router
 from isic.core.api.user import router as user_router
@@ -44,6 +45,7 @@ api.add_router("/autocomplete/", autocomplete_router, tags=["autocomplete"])
 api.add_router("/cohorts/", cohort_router, tags=["cohorts"])
 api.add_router("/collections/", collection_router, tags=["collections"])
 api.add_router("/contributors/", contributor_router, tags=["contributors"])
+api.add_router("/doi/", doi_router, tags=["doi"])
 api.add_router("/images/", image_router, tags=["images"])
 api.add_router("/lesions/", lesion_router, tags=["lesions"])
 api.add_router("/metadata-files/", metadata_file_router, tags=["metadata-files"])

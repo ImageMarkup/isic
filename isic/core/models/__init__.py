@@ -10,6 +10,7 @@ from .image import Image
 from .image_alias import ImageAlias
 from .isic_id import IsicId
 from .segmentation import Segmentation, SegmentationReview
+from .supplemental_file import SupplementalFile
 
 __all__ = [
     "Collection",
@@ -24,6 +25,7 @@ __all__ = [
     "IsicOAuthApplication",
     "Segmentation",
     "SegmentationReview",
+    "SupplementalFile",
 ]
 
 
