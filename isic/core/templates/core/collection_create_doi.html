@@ -1,7 +1,8 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block content %}
-  <div class="heading-1">Create a DOI for {{ collection.name }}<span class="ml-2 text-base font-semibold"><a href="{% url 'core/collection-detail' collection.pk %}">back to collection</a></span></div>
+  <div class="heading-1 mb-4">Create a DOI for {{ collection.name }}<span class="ml-2 text-base font-semibold"><a href="{% url 'core/collection-detail' collection.pk %}">back to collection</a></span></div>
 
   {% if error %}
     <div class="rounded-md bg-red-50 p-4 mb-4">
@@ -23,22 +24,57 @@
       </div>
     </div>
   {% else %}
-    <div class="mt-4">Below is a preview of what your DOI will look like:</div>
+    <div class="flex justify-between">
+      <div class="mt-4">Below is a preview of what your DOI will look like:</div>
+      <label for="file-input" class="btn btn-primary">Add Supplemental Files</label>
+    </div>
+
     <div class="my-4 bg-gray-50 p-2 rounded-sm border-gray-200 border">
       <div class="heading-3">{{ preview.titles.0.title }}</div>
       <div>{{ preview.creators }}</div>
       <div class="font-semibold">Dataset published {{ preview.publicationYear }} via {{ preview.publisher }}</div>
       <div><a href="#">https://doi.org/{{ preview.doi }}</a></div>
-      <div>Contributed by <span class="font-semibold">{{ preview.contributor }}</span></div>
+      <div>Contributed by <span class="font-semibold">{{ preview.creators }}</span></div>
     </div>
 
-    <div class="text-center">
-      <form method="post">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-primary">
+    <div x-data="SupplementalFileUploader()">
+      <form @submit.prevent="createDOI({{ collection.id }})">
+        <div class="text-center">
+          <div class="w-full">
+            {# the cut is a hack to let the token (SimpleLazyObject) be serializable by json_script #}
+            {{ csrf_token|cut:""|json_script:"csrf-token" }}
+
+            <input type="file" id="file-input" class="hidden" @change="handleFileUpload" />
+
+            <table class="table w-full my-6" x-show="files.length > 0" x-cloak>
+              <thead>
+                <tr>
+                  <th>File Name</th>
+                  <th>Size</th>
+                  <th>Description</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="(file, index) in files" :key="file.name">
+                  <tr>
+                    <td x-text="file.name"></td>
+                    <td x-text="formatBytes(file.size)"></td>
+                    <td><textarea x-model="descriptions[index]" required placeholder="Description" class="w-full"></textarea></td>
+                    <td><button type="button" @click="removeFile(index)" :disabled="numFilesInProgress > 0" class="btn btn-danger">Remove</button></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary float-right" :disabled="numFilesInProgress > 0">
           Create this DOI
         </button>
       </form>
     </div>
+
+    <script src="{% static 'core/dist/supplementalFileUploader.js' %}"></script>
   {% endif %}
 {% endblock %}

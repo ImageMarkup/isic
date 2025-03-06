@@ -5,6 +5,10 @@ from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
 
+def doi_upload_to(instance: "Doi", filename: str) -> str:
+    return f"doi-bundles/{instance.slug}/{filename}"
+
+
 class Doi(TimeStampedModel):
     class Meta:
         verbose_name = "DOI"
@@ -18,10 +22,10 @@ class Doi(TimeStampedModel):
 
     url = models.CharField(max_length=200)
 
-    bundle = models.FileField(upload_to="doi-bundles/", null=True, blank=True)
+    bundle = models.FileField(upload_to=doi_upload_to, null=True, blank=True)
     bundle_size = models.PositiveBigIntegerField(null=True, blank=True)
 
-    metadata = models.FileField(upload_to="doi-bundles/", null=True, blank=True)
+    metadata = models.FileField(upload_to=doi_upload_to, null=True, blank=True)
     metadata_size = models.PositiveIntegerField(null=True, blank=True)
 
     citations = models.JSONField(default=dict, blank=True)
