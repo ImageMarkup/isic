@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link rel="stylesheet" href="{% static 'core/dist/styles.css' %}">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@200;300;400;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/remixicon@2/fonts/remixicon.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.min.css" rel="stylesheet">
 
     {% if JS_SENTRY %}
       <script src="https://js.sentry-cdn.com/81572a3d084f4fef90e093440762cedd.min.js" crossorigin="anonymous"></script>
@@ -124,7 +124,7 @@
 
   {% include 'core/partials/navbar.html' %}
 
-  <div class="container max-w-7xl mx-auto p-8">
+  <div class="{% block container_class %}container max-w-7xl mx-auto p-8{% endblock %}">
     {% if messages %}
       {% include 'core/partials/messages.html' %}
     {% endif %}
