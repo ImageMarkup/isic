@@ -2,9 +2,10 @@ from pathlib import Path
 import tempfile
 import zipfile
 
+from django.core.exceptions import ValidationError
+from django.urls import reverse
 import pytest
 
-from isic.core.forms.doi import CreateDoiForm
 from isic.core.models.doi import Doi
 from isic.core.models.image import Image
 from isic.core.services.collection.doi import (
@@ -63,8 +64,8 @@ def test_collection_create_doi(
 
 @pytest.mark.django_db
 def test_doi_form_requires_public_collection(private_collection, staff_user_request):
-    form = CreateDoiForm(data={}, collection=private_collection, request=staff_user_request)
-    assert not form.is_valid()
+    with pytest.raises(ValidationError):
+        collection_create_doi(user=staff_user_request.user, collection=private_collection)
 
 
 @pytest.mark.django_db
@@ -72,29 +73,50 @@ def test_doi_form_requires_no_existing_doi(public_collection, staff_user_request
     public_collection.doi = Doi.objects.create(id="foo", creator=staff_user_request.user, url="foo")
     public_collection.save()
 
-    form = CreateDoiForm(
-        data={},
-        collection=public_collection,
-        request=staff_user_request,
-    )
-    assert not form.is_valid()
+    with pytest.raises(ValidationError):
+        collection_create_doi(user=staff_user_request.user, collection=public_collection)
 
 
 @pytest.mark.django_db(transaction=True)
-def test_doi_form_creation(
+def test_api_doi_creation(
+    public_collection_with_public_images,
+    mock_datacite_create_doi,
+    mock_datacite_update_doi,
+    mock_datacite_citations_fetch,
+    s3ff_field_value,
+    staff_client,
+):
+    r = staff_client.post(
+        reverse("api:create_doi"),
+        {
+            "collection_id": public_collection_with_public_images.id,
+            "supplemental_files": [
+                {
+                    "file": s3ff_field_value,
+                    "description": "test",
+                }
+            ],
+        },
+        content_type="application/json",
+    )
+    assert r.status_code == 200
+
+    doi = Doi.objects.get(collection=public_collection_with_public_images)
+    assert doi.supplemental_files.count() == 1
+    assert doi.supplemental_files.first().description == "test"
+
+
+@pytest.mark.django_db(transaction=True)
+def test_doi_creation(
     public_collection_with_public_images,
     staff_user_request,
     mock_datacite_create_doi,
     mock_datacite_update_doi,
     mock_datacite_citations_fetch,
 ):
-    form = CreateDoiForm(
-        data={},
-        collection=public_collection_with_public_images,
-        request=staff_user_request,
+    collection_create_doi(
+        user=staff_user_request.user, collection=public_collection_with_public_images
     )
-    assert form.is_valid(), form.errors
-    form.save()
 
     public_collection_with_public_images.refresh_from_db()
     assert public_collection_with_public_images.doi is not None

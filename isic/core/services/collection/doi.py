@@ -88,7 +88,9 @@ def collection_generate_random_doi_id():
     return f"{settings.ISIC_DATACITE_DOI_PREFIX}/{random.randint(10_000, 999_999):06}"  # noqa: S311
 
 
-def collection_check_create_doi_allowed(*, user: User, collection: Collection) -> None:
+def collection_check_create_doi_allowed(
+    *, user: User, collection: Collection, supplemental_files=None
+) -> None:
     if not user.has_perm("core.create_doi", collection):
         raise ValidationError("You don't have permissions to do that.")
     if collection.doi:
@@ -101,6 +103,8 @@ def collection_check_create_doi_allowed(*, user: User, collection: Collection) -
         raise ValidationError("An empty collection cannot be the basis of a DOI.")
     if collection.is_magic:
         raise ValidationError("Magic collections cannot be the basis of a DOI.")
+    if supplemental_files and len(supplemental_files) > 10:
+        raise ValidationError("A DOI can only have up to 10 supplemental files.")
 
 
 def _datacite_create_doi(doi: dict) -> None:
@@ -134,8 +138,11 @@ def _datacite_update_doi(doi: dict, doi_id: str):
         raise ValidationError("Something went wrong publishing the DOI.") from e
 
 
-def collection_create_doi(*, user: User, collection: Collection) -> Doi:
-    collection_check_create_doi_allowed(user=user, collection=collection)
+def collection_create_doi(*, user: User, collection: Collection, supplemental_files=None) -> Doi:
+    collection_check_create_doi_allowed(
+        user=user, collection=collection, supplemental_files=supplemental_files
+    )
+
     doi_id = collection_generate_random_doi_id()
     draft_doi_dict = collection_build_draft_doi(doi_id=doi_id)
     doi_dict = collection_build_doi(collection=collection, doi_id=doi_id)
@@ -151,6 +158,15 @@ def collection_create_doi(*, user: User, collection: Collection) -> Doi:
         # Lock the collection, set the DOI on it
         collection_lock(collection=collection)
         collection_update(collection=collection, doi=doi, ignore_lock=True)
+
+        if supplemental_files:
+            for supplemental_file in supplemental_files:
+                doi.supplemental_files.create(
+                    file=supplemental_file["file"].name,
+                    description=supplemental_file["description"],
+                    filename=Path(supplemental_file["file"].name).name,
+                    size=supplemental_file["file"].size,
+                )
 
         # Reserve the DOI using the draft mechanism.
         # If it fails, transaction will rollback, nothing in our database will change.

@@ -1,7 +1,6 @@
 from collections.abc import Iterable
 import csv
 from datetime import UTC, datetime
-from typing import TypedDict
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -14,7 +13,6 @@ from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
 from django.urls.base import reverse
-from django_stubs_ext import StrOrPromise
 
 from isic.core.filters import CollectionFilter
 from isic.core.forms.collection import CollectionForm
@@ -24,8 +22,6 @@ from isic.core.services import image_metadata_csv
 from isic.core.services.collection import collection_create, collection_update
 from isic.core.services.collection.doi import (
     collection_build_doi_preview,
-    collection_check_create_doi_allowed,
-    collection_create_doi,
 )
 from isic.ingest.models import Contributor
 
@@ -156,24 +152,12 @@ def collection_download_metadata(request, pk):
 @needs_object_permission("core.create_doi", (Collection, "pk", "pk"))
 def collection_create_doi_(request, pk):
     collection = get_object_or_404(Collection, pk=pk)
-    Context = TypedDict(  # noqa: UP013
-        "Context", {"collection": Collection, "error": StrOrPromise | None, "preview": dict | None}
-    )
-    context: Context = {"collection": collection, "error": None, "preview": None}
 
-    if request.method == "POST":
-        try:
-            collection_create_doi(user=request.user, collection=collection)
-            return HttpResponseRedirect(reverse("core/collection-detail", args=[collection.pk]))
-        except ValidationError as e:
-            context["error"] = e.message
-    else:
-        try:
-            collection_check_create_doi_allowed(user=request.user, collection=collection)
-        except ValidationError as e:
-            context["error"] = e.message
-        else:
-            context["preview"] = collection_build_doi_preview(collection=collection)
+    context = {
+        "collection": collection,
+        "error": None,
+        "preview": collection_build_doi_preview(collection=collection),
+    }
 
     return render(
         request,
