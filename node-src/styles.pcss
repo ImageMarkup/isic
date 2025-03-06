@@ -14,6 +14,40 @@ select#additional-collections-selection {
     display: none !important;
   }
 
+  #doi-detail {
+    h1 {
+      @apply text-3xl font-bold;
+    }
+
+    h2 {
+      @apply text-lg font-bold;
+    }
+
+    .content-box-heading {
+      @apply mb-2;
+    }
+  }
+
+  #dataset-details,#license-details,#citation-details,#dataset-description,#dataset-files {
+    @apply p-4 rounded-lg border-gray-200 border my-4;
+  }
+
+  .dataset-detail {
+    @apply flex justify-between text-sm;
+  }
+
+  .dataset-detail-label {
+    @apply font-bold;
+  }
+
+  .dataset-detail-stats {
+    @apply mt-4;
+  }
+
+  .dataset-detail-stat {
+    @apply border-gray-200 border rounded-lg p-2 flex-grow m-1;
+  }
+
   #detail-info {
     @apply bg-blue-50 my-4 p-2 rounded-sm border-gray-200 border;
 

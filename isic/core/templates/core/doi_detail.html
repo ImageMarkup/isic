@@ -8,118 +8,179 @@
 
 {% block title %}{{ doi.collection.name }} | {% endblock %}
 
+{% block container_class %}container max-w-8xl mx-auto p-4 lg:p-8{% endblock %}
+
 {% block content %}
-
-
-  <div class="heading-1">{{ doi.collection.name }}</div>
-
-  <strong>Created:</strong> {% localtime doi.created %}
-
-  <div id="detail-info">
-
-    <h2>License{% if licenses|length > 1 %}s{% endif %}</h2>
-
-    <div>
-      {% for license in licenses %}
-        <div class="flex">
-          <div class="mr-2"><img src="{% static license_paths|get_key:license %}" alt="{{ license }}" width="116" height="41" /></div>
-          <div>
-            <strong>{{ license }}</strong>
-            <p>{{ license_descriptions|get_key:license }}</p>
-          </div>
-        </div>
-        {% if not forloop.last %}
-          <div class="divider"></div>
-        {% endif %}
-      {% endfor %}
-    </div>
-  </div>
-
-  {{ doi.citations|json_script:"citations" }}
-  {{ CITATION_STYLES|json_script:"citation-styles" }}
-  <div id="detail-info" x-data="citationSelector('citations')">
-    <div class="flex justify-between items-center mb-2">
-      <h2>How to Cite</h2>
-      {% if not doi.citations %}
-    {# citations are fetched asynchronously on DOI creation #}
-        <p class="text-center">Citations are being generated, check back soon.</p>
-      {% else %}
-        <div>
-          <select x-model="selectedStyle" class="select">
-            <template x-for="(label, value) in citationStyles">
-              <option :value="value" x-text="label"></option>
-            </template>
-          </select>
-
-        </div>
-        </div>
-      {% endif %}
-      <div x-html="currentCitation"></div>
-    </div>
-
-    <div class="mt-4">
-      <a href="{% url 'core/collection-detail' doi.collection.pk %}">
-        <button class="btn btn-primary w-full">
-          View Complete Dataset in the Archive →
-        </button>
-      </a>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="heading-2">Dataset Statistics</div>
-    <div class="flex justify-between gap-4 w-full my-6">
-      {% for stat_label, stat_value in stats.items %}
-        <div class="stats shadow flex-1 text-center">
-          <div class="stat">
-            <div class="stat-title">{{ stat_label }}</div>
-            <div class="stat-value">{{ stat_value|intcomma }}</div>
-          </div>
-        </div>
-      {% endfor %}
-    </div>
-
-    <div class="heading-2">Description</div>
-    <div class="my-6 font-mono">
-      {{ doi.collection.description|markdownify }}
-    </div>
-
-    <div class="heading-2">Files</div>
-
-    {% if not doi.bundle %}
-      <p>Bundle is being generated, check back soon.</p>
-    {% else %}
-      <div class="overflow-x-auto">
-        <table class="table w-full my-6">
-          <thead>
-            <tr>
-              <th>File Name</th>
-              <th>Size</th>
-              <th>Description</th>
-              <th>Type</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th>{{ doi.slug }}.zip</th>
-              <td>{{ doi.bundle.size|filesizeformat }}</td>
-              <td>All dataset files.</td>
-              <td>ZIP</td>
-              <td><a href="{{ doi.bundle.url }}"><button class="btn btn-primary">Download</button></a></td>
-            </tr>
-            <tr>
-              <th>{{ doi.slug }}.csv</th>
-              <td>{{ doi.metadata.size|filesizeformat }}</td>
-              <td>Metadata for all images in the dataset.</td>
-              <td>CSV</td>
-              <td><a href="{{ doi.metadata.url }}"><button class="btn btn-primary">Download</button></a></td>
-            </tr>
-          </tbody>
-        </table>
+  <div id="doi-detail">
+    <div class="flex flex-col lg:flex-row">
+      <div class="w-full lg:w-9/12 lg:mr-6 mb-4 lg:mb-0">
+        <h1>{{ doi.collection.name }}</h1>
       </div>
-    {% endif %}
+      <div class="w-full lg:w-3/12 mb-6 lg:mb-0">
+        <a href="{{ doi.collection.get_absolute_url }}" class="btn w-full" target="_blank">View in ISIC Archive <i class="ri-external-link-line"></i></a>
+      </div>
+    </div>
 
+    <div class="flex flex-col lg:flex-row">
+      <div class="w-full lg:w-9/12 lg:mr-6 mb-6 lg:mb-0">
+        <div id="dataset-description">
+          <h2 class="content-box-heading">Description</h2>
+          <div class="font-mono">
+            {% if not doi.collection.description %}
+              {% lorem %} {# TODO remove #}
+            {% else %}
+              {{ doi.collection.description|markdownify }}
+            {% endif %}
+          </div>
+        </div>
+
+        <div id="dataset-files">
+          <h2 class="content-box-heading">Files</h2>
+
+          {% if not doi.bundle %}
+            <p>Bundle is being generated, check back soon.</p>
+          {% else %}
+            <div class="overflow-x-auto">
+              <table class="table w-full my-6">
+                <thead>
+                  <tr>
+                    <th>Description</th>
+                    <th>Size</th>
+                    <th>Type</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>{% lorem 20 w %}</td>
+                    <td>{{ doi.bundle_size|filesizeformat }}</td>
+                    <td>ZIP</td>
+                    <td><a href="{{ doi.bundle.url }}" title="{{ doi.slug }}.zip"><button class="btn btn-primary">Download</button></a></td>
+                  </tr>
+                  <tr>
+                    <td>{% lorem 20 w %}</td>
+                    <td>{{ doi.metadata_size|filesizeformat }}</td>
+                    <td>CSV</td>
+                    <td><a href="{{ doi.metadata.url }}" title="{{ doi.slug }}.csv"><button class="btn btn-primary">Download</button></a></td>
+                  </tr>
+                  {% for supplemental_file in doi.supplemental_files.all %}
+                    <tr>
+                      <th>{{ supplemental_file.filename }}</th>
+                      <td>{{ supplemental_file.size|filesizeformat }}</td>
+                      <td>{{ supplemental_file.description }}</td>
+                      <td>{{ supplemental_file.file.content_type }}</td>
+                      <td><a href="{{ supplemental_file.url }}" title="{{ supplemental_file.filename }}"><button class="btn btn-primary">Download</button></a></td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="w-full lg:w-3/12">
+        <div id="dataset-details">
+          <div class="flex content-box-heading">
+            <i class="ri-survey-line text-2xl"></i>
+            <h2 class="ml-2 content-center">Dataset Details</h2>
+          </div>
+          <div class="dataset-detail">
+            <div class="dataset-detail-label">Published</div>
+            <div class="dataset-detail-value">{% localtime doi.created %}</div>
+          </div>
+          <div class="divider my-0"></div>
+          <div class="dataset-detail">
+            <div class="dataset-detail-label">DOI</div>
+            <div class="dataset-detail-value">{{ doi.id }}</div>
+          </div>
+          <div class="divider my-0"></div>
+          <div class="dataset-detail flex-col">
+            <div class="dataset-detail-label">Attributions</div>
+            <ul class="list-disc list-inside ml-2">
+              {% for attributing_institution in attributing_institutions %}
+                <li>{{ attributing_institution }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+
+          <div class="dataset-detail-stats lg:flex lg:justify-between">
+            <div class="dataset-detail-stat">
+              <span class="text-xs text-center">Total Images</span>
+              <div class="flex">
+                <i class="ri-image-line"></i>
+                <p class="content-center font-bold">{{ stats.images|intcomma }}</p>
+              </div>
+            </div>
+            <div class="dataset-detail-stat">
+              <span class="text-xs">Total Lesions</span>
+              <div class="flex">
+                <i class="ri-stethoscope-line"></i>
+                <p class="content-center font-bold">{{ stats.lesions|intcomma }}</p>
+              </div>
+            </div>
+            <div class="dataset-detail-stat">
+              <span class="text-xs">Total Patients</span>
+              <div class="flex">
+                <i class="ri-group-line"></i>
+                <p class="content-center font-bold">{{ stats.patients|intcomma }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="license-details">
+          <div class="flex content-box-heading">
+            <i class="ri-shield-line text-2xl"></i>
+            <h2 class="ml-2 content-center">Licenses</h2>
+          </div>
+
+          <div>
+            {% for license in licenses %}
+              <div class="license-detail">
+                <div class="flex mb-2">
+                  <div class="mr-2"><img src="{% static license_paths|get_key:license %}" alt="{{ license }}" width="116" height="41" /></div>
+                  <div class="content-center font-bold">{{ license }}</div>
+                </div>
+                <div>
+                  <p class="text-xs">{{ license_descriptions|get_key:license }}</p>
+                </div>
+                {% if not forloop.last %}
+                  <div class="divider my-1"></div>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        {{ doi.citations|json_script:"citations" }}
+        {{ CITATION_STYLES|json_script:"citation-styles" }}
+        <div id="citation-details" x-data="citationSelector('citations')">
+          <div class="flex justify-between items-center mb-2">
+            <div class="flex content-box-heading">
+              <i class="ri-double-quotes-l text-2xl"></i>
+              <h2 class="ml-2 content-center">How to Cite</h2>
+            </div>
+            {% if not doi.citations %}
+    {# citations are fetched asynchronously on DOI creation #}
+              <p class="text-center">Citations are being generated, check back soon.</p>
+            {% else %}
+              <div>
+                <select x-model="selectedStyle" class="select select-sm select-bordered">
+                  <template x-for="(label, value) in citationStyles">
+                    <option :value="value" x-text="label"></option>
+                  </template>
+                </select>
+              </div>
+            {% endif %}
+          </div>
+          <div x-html="currentCitation" class="bg-gray-100 p-2 rounded-lg"></div>
+          <button class="btn btn-wide w-full mt-4" @click="copyCitation" x-text="buttonText"></button>
+        </div>
+
+
+      </div>
+    </div>
   </div>
 
   <script>
@@ -128,8 +189,16 @@
         citations: JSON.parse(document.getElementById(citationsElementId).textContent),
         selectedStyle: 'apa',
         citationStyles: JSON.parse(document.getElementById('citation-styles').textContent),
+        buttonText: 'Copy Citation',
         get currentCitation() {
           return this.citations[this.selectedStyle]
+        },
+        copyCitation() {
+          navigator.clipboard.writeText(this.currentCitation)
+          this.buttonText = 'Copied!'
+          setTimeout(() => {
+            this.buttonText = 'Copy Citation'
+          }, 2000)
         }
       }
     }
