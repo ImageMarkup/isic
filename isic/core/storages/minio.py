@@ -32,7 +32,7 @@ class FixedMinioMediaStorage(MinioStorage):
     file_class = StringableReadOnlySpooledTemporaryFile
 
     # From https://github.com/py-pa/django-minio-storage/pull/144
-    def __init__(  # noqa: C901
+    def __init__(  # noqa: C901, PLR0913
         self,
         *,
         minio_client: minio.Minio | None = None,
@@ -55,9 +55,9 @@ class FixedMinioMediaStorage(MinioStorage):
         if base_url is None:
             base_url = get_setting("MINIO_STORAGE_MEDIA_URL", None)
         if auto_create_bucket is None:
-            auto_create_bucket = get_setting("MINIO_STORAGE_AUTO_CREATE_MEDIA_BUCKET", False)
+            auto_create_bucket = get_setting("MINIO_STORAGE_AUTO_CREATE_MEDIA_BUCKET", False)  # noqa: FBT003
         if presign_urls is None:
-            presign_urls = get_setting("MINIO_STORAGE_MEDIA_USE_PRESIGNED", False)
+            presign_urls = get_setting("MINIO_STORAGE_MEDIA_USE_PRESIGNED", False)  # noqa: FBT003
         auto_create_policy_setting = get_setting(
             "MINIO_STORAGE_AUTO_CREATE_MEDIA_POLICY", "GET_ONLY"
         )
@@ -78,7 +78,7 @@ class FixedMinioMediaStorage(MinioStorage):
         if backup_bucket is None:
             backup_bucket = get_setting("MINIO_STORAGE_MEDIA_BACKUP_BUCKET", None)
         if assume_bucket_exists is None:
-            assume_bucket_exists = get_setting("MINIO_STORAGE_ASSUME_MEDIA_BUCKET_EXISTS", False)
+            assume_bucket_exists = get_setting("MINIO_STORAGE_ASSUME_MEDIA_BUCKET_EXISTS", False)  # noqa: FBT003
         super().__init__(
             minio_client,
             bucket_name,
