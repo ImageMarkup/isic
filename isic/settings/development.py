@@ -86,7 +86,7 @@ MINIO_STORAGE_AUTO_CREATE_MEDIA_BUCKET = True
 MINIO_STORAGE_AUTO_CREATE_MEDIA_POLICY = "READ_WRITE"
 MINIO_STORAGE_MEDIA_USE_PRESIGNED = True
 
-STORAGES["default"]["BACKEND"] = "isic.core.storages.minio.StringableMinioMediaStorage"  # noqa: F405
+STORAGES["default"]["BACKEND"] = "isic.core.storages.minio.FixedMinioMediaStorage"  # noqa: F405
 
 ISIC_PLACEHOLDER_IMAGES = True
 # Use the MinioS3ProxyStorage for local development with ISIC_PLACEHOLDER_IMAGES

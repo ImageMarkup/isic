@@ -39,7 +39,7 @@ ZIP_DOWNLOAD_SERVICE_URL = "http://service-url.test"
 ZIP_DOWNLOAD_BASIC_AUTH_TOKEN = "insecuretestzipdownloadauthtoken"  # noqa: S105
 ZIP_DOWNLOAD_WILDCARD_URLS = False
 
-STORAGES["default"] = {"BACKEND": "isic.core.storages.minio.StringableMinioMediaStorage"}  # noqa: F405
+STORAGES["default"] = {"BACKEND": "isic.core.storages.minio.FixedMinioMediaStorage"}  # noqa: F405
 
 
 MINIO_STORAGE_ENDPOINT = os.environ["DJANGO_MINIO_STORAGE_ENDPOINT"]
