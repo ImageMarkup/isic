@@ -88,6 +88,13 @@ MINIO_STORAGE_MEDIA_USE_PRESIGNED = True
 
 STORAGES["default"]["BACKEND"] = "isic.core.storages.minio.FixedMinioMediaStorage"  # noqa: F405
 
+STORAGES["sponsored"] = {  # noqa: F405
+    "BACKEND": "isic.core.storages.minio.FixedMinioMediaStorage",
+    "OPTIONS": {
+        "bucket_name": os.environ["DJANGO_SPONSORED_BUCKET_NAME"],
+    },
+}
+
 ISIC_PLACEHOLDER_IMAGES = True
 # Use the MinioS3ProxyStorage for local development with ISIC_PLACEHOLDER_IMAGES
 # set to False to view real images in development.

@@ -41,7 +41,6 @@ ZIP_DOWNLOAD_WILDCARD_URLS = False
 
 STORAGES["default"] = {"BACKEND": "isic.core.storages.minio.FixedMinioMediaStorage"}  # noqa: F405
 
-
 MINIO_STORAGE_ENDPOINT = os.environ["DJANGO_MINIO_STORAGE_ENDPOINT"]
 MINIO_STORAGE_USE_HTTPS = False
 MINIO_STORAGE_ACCESS_KEY = os.environ["DJANGO_MINIO_STORAGE_ACCESS_KEY"]
@@ -51,6 +50,12 @@ MINIO_STORAGE_AUTO_CREATE_MEDIA_BUCKET = True
 MINIO_STORAGE_AUTO_CREATE_MEDIA_POLICY = "READ_WRITE"
 MINIO_STORAGE_MEDIA_USE_PRESIGNED = True
 
+STORAGES["sponsored"] = {  # noqa: F405
+    "BACKEND": "isic.core.storages.minio.FixedMinioMediaStorage",
+    "OPTIONS": {
+        "bucket_name": "test-django-sponsored",
+    },
+}
 
 # use md5 in testing for quicker user creation
 PASSWORD_HASHERS.insert(0, "django.contrib.auth.hashers.MD5PasswordHasher")  # noqa: F405
