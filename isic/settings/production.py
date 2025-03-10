@@ -136,12 +136,18 @@ ZIP_DOWNLOAD_WILDCARD_URLS = True
 
 STORAGES["default"] = {"BACKEND": "isic.core.storages.s3.CacheableCloudFrontStorage"}  # noqa: F405
 
-
 # This exact environ_name is important, as direct use of Boto will also use it
 AWS_S3_REGION_NAME = os.environ["AWS_DEFAULT_REGION"]
 AWS_S3_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
 AWS_S3_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
 AWS_STORAGE_BUCKET_NAME = os.environ["DJANGO_STORAGE_BUCKET_NAME"]
+
+STORAGES["sponsored"] = {  # noqa: F405
+    "BACKEND": "storages.backends.s3.S3Storage",
+    "OPTIONS": {
+        "bucket_name": os.environ["DJANGO_SPONSORED_BUCKET_NAME"],
+    },
+}
 
 # It's critical to use the v4 signature;
 # it isn't the upstream default only for backwards compatability reasons.
