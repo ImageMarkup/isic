@@ -3,7 +3,13 @@ from isic_metadata.fields import ImageTypeEnum
 import pytest
 from pytest_lazy_fixtures import lf
 
-from isic.core.search import add_to_search_index, facets, get_elasticsearch_client
+from isic.core.dsl import es_parser, parse_query
+from isic.core.search import (
+    add_to_search_index,
+    build_elasticsearch_query,
+    facets,
+    get_elasticsearch_client,
+)
 
 
 @pytest.fixture
@@ -256,7 +262,7 @@ def test_core_api_image_faceting_structure(searchable_images, client):
         "/api/v2/images/facets/",
     )
     assert r.status_code == 200, r.json()
-    assert len(r.json()["diagnosis"]["buckets"]) == 1, r.json()
+    assert len(r.json()["diagnosis"]["buckets"]) == 2, r.json()
     assert r.json()["diagnosis"]["meta"] == {
         "missing_count": 0,
         "present_count": 1,
@@ -299,6 +305,23 @@ def test_facet_search_orders_field_values(image_factory):
 
     for i, image_type in enumerate(ImageTypeEnum):
         assert actual["image_type"]["buckets"][i]["key"] == image_type.value
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("_search_index")
+def test_facet_search_includes_empty_facet_values(user, image_factory):
+    image = image_factory(public=True, accession__anatom_site_special="toenail")
+    add_to_search_index(image)
+    get_elasticsearch_client().indices.refresh(index="_all")
+
+    es_query = parse_query(es_parser, "-anatom_site_special:toenail")
+    query = build_elasticsearch_query(es_query, user)
+
+    get_elasticsearch_client().indices.refresh(index="_all")
+    actual = facets(query)
+
+    assert actual["anatom_site_special"]["buckets"][0]["key"] == "toenail"
+    assert actual["anatom_site_special"]["buckets"][0]["doc_count"] == 0
 
 
 @pytest.mark.django_db
