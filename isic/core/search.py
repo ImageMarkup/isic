@@ -230,6 +230,12 @@ def facets(query: dict | None = None) -> dict:
             "present_count": counts[f"{field}_present"]["value"],
         }
 
+    # for term fields (non-ranges), show all facet values even if this query has no
+    # matching documents.
+    for field in facets_body["aggs"]:
+        if "terms" in facets_body["aggs"][field]:
+            facets_body["aggs"][field]["terms"]["min_doc_count"] = 0
+
     if query:
         facets_body["query"] = query
 
