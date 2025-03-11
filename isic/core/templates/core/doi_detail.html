@@ -166,7 +166,7 @@
               <p class="text-center">Citations are being generated, check back soon.</p>
             {% else %}
               <div>
-                <select x-model="selectedStyle" class="select select-sm select-bordered">
+                <select x-model="selectedStyle" class="select select-sm select-bordered py-0">
                   <template x-for="(label, value) in citationStyles">
                     <option :value="value" x-text="label"></option>
                   </template>
