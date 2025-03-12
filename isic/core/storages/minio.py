@@ -1,3 +1,4 @@
+import functools
 import io
 
 import boto3
@@ -93,6 +94,12 @@ class FixedMinioMediaStorage(MinioStorage):
             backup_bucket=backup_bucket,
             assume_bucket_exists=assume_bucket_exists,
         )
+
+
+StaticFixedMinioMediaStorage = functools.partial(
+    FixedMinioMediaStorage,
+    presign_urls=False,
+)
 
 
 class MinioS3ProxyStorage(FixedMinioMediaStorage):
