@@ -191,6 +191,7 @@ def collection_create_doi_files(*, doi: Doi) -> None:
     This includes the frozen bundle of the collection as well as the metadata csv and license files.
     """
     collection = Collection.objects.select_related("doi").get(doi=doi)
+    collection_slug = slugify(collection.name)
 
     with transaction.atomic():
         cursor = connection.cursor()
@@ -198,7 +199,7 @@ def collection_create_doi_files(*, doi: Doi) -> None:
 
         images = collection.images.select_related("accession").all()
 
-        bundle_filename = f"{doi.slug}.zip"
+        bundle_filename = f"{collection_slug}.zip"
         with zipfile.ZipFile(bundle_filename, "w") as bundle:
             for image in images.iterator():
                 with image.accession.blob.open("rb") as blob:
@@ -235,7 +236,7 @@ def collection_create_doi_files(*, doi: Doi) -> None:
         ):
             doi.bundle = File(bundle_file)
             doi.bundle_size = Path(bundle_filename).stat().st_size
-            doi.metadata = File(metadata_file, name=f"{doi.slug}.csv")
+            doi.metadata = File(metadata_file, name=f"{collection_slug}.csv")
             doi.metadata_size = Path(metadata_file.name).stat().st_size
             doi.save()
 

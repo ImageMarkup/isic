@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.core.files.storage import storages
 from django.core.validators import RegexValidator
 from django.db import models
 from django.urls import reverse
@@ -6,7 +7,11 @@ from django_extensions.db.models import TimeStampedModel
 
 
 def doi_upload_to(instance: "Doi", filename: str) -> str:
-    return f"doi-bundles/{instance.slug}/{filename}"
+    return f"dois/{instance.id.replace('/', '-')}/{filename}"
+
+
+def doi_storage():
+    return storages["sponsored"]
 
 
 class Doi(TimeStampedModel):
@@ -22,10 +27,10 @@ class Doi(TimeStampedModel):
 
     url = models.CharField(max_length=200)
 
-    bundle = models.FileField(upload_to=doi_upload_to, null=True, blank=True)
+    bundle = models.FileField(upload_to=doi_upload_to, storage=doi_storage, null=True, blank=True)
     bundle_size = models.PositiveBigIntegerField(null=True, blank=True)
 
-    metadata = models.FileField(upload_to=doi_upload_to, null=True, blank=True)
+    metadata = models.FileField(upload_to=doi_upload_to, storage=doi_storage, null=True, blank=True)
     metadata_size = models.PositiveIntegerField(null=True, blank=True)
 
     citations = models.JSONField(default=dict, blank=True)
