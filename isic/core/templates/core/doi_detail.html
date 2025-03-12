@@ -8,6 +8,14 @@
 
 {% block title %}{{ doi.collection.name }} | {% endblock %}
 
+{% block head_extra %}
+  {% if doi.schema_org_dataset %}
+    <script type="application/ld+json">
+      {{ doi.get_schema_org_dataset_json|safe }}
+    </script>
+  {% endif %}
+{% endblock %}
+
 {% block container_class %}container max-w-8xl mx-auto p-4 lg:p-8{% endblock %}
 
 {% block content %}
@@ -52,13 +60,13 @@
                 </thead>
                 <tbody>
                   <tr>
-                    <td>{% lorem 20 w %}</td>
+                    <td>The complete bundle of all images, metadata, and supplemental files related to this dataset.</td>
                     <td>{{ doi.bundle_size|filesizeformat }}</td>
                     <td>ZIP</td>
                     <td><a href="{{ doi.bundle.url }}" title="{{ doi.slug }}.zip"><button class="btn btn-primary">Download</button></a></td>
                   </tr>
                   <tr>
-                    <td>{% lorem 20 w %}</td>
+                    <td>The metadata for this dataset.</td>
                     <td>{{ doi.metadata_size|filesizeformat }}</td>
                     <td>CSV</td>
                     <td><a href="{{ doi.metadata.url }}" title="{{ doi.slug }}.csv"><button class="btn btn-primary">Download</button></a></td>

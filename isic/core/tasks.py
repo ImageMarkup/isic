@@ -139,6 +139,18 @@ def create_doi_bundle_task(doi_id: str) -> None:
     collection_create_doi_files(doi=doi)
 
 
+@shared_task(soft_time_limit=20, time_limit=25)
+def fetch_doi_schema_org_dataset_task(doi_id: str) -> None:
+    doi = Doi.objects.get(id=doi_id)
+    r = requests.get(
+        f"https://data.crosscite.org/application/vnd.schemaorg.ld+json/{doi.id}",
+        timeout=(10, 10),
+    )
+    r.raise_for_status()
+    doi.schema_org_dataset = r.json()
+    doi.save(update_fields=["schema_org_dataset"])
+
+
 @shared_task(soft_time_limit=120, time_limit=180)
 def fetch_doi_citations_task(doi_id: str) -> None:
     doi = Doi.objects.get(id=doi_id)
