@@ -15,6 +15,18 @@ LICENSE_PATHS = {
     "CC-BY-NC": "core/licenses/cc-by-nc.png",
 }
 
+LICENSE_TITLES = {
+    "CC-0": "CC0 1.0 Universal",
+    "CC-BY": "Attribution 4.0 International",
+    "CC-BY-NC": "Attribution-NonCommercial 4.0 International",
+}
+
+LICENSE_URIS = {
+    "CC-0": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "CC-BY": "https://creativecommons.org/licenses/by/4.0/",
+    "CC-BY-NC": "https://creativecommons.org/licenses/by-nc/4.0/",
+}
+
 
 # @cache_page(timeout=60 * 60 * 24 * 7, key_prefix="doi_detail")
 def doi_detail(request, slug):

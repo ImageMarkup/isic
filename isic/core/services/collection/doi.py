@@ -30,6 +30,7 @@ from isic.core.tasks import (
     fetch_doi_citations_task,
     fetch_doi_schema_org_dataset_task,
 )
+from isic.core.views.doi import LICENSE_TITLES, LICENSE_URIS
 from isic.zip_download.api import get_attributions
 
 logger = logging.getLogger(__name__)
@@ -44,6 +45,19 @@ def collection_build_doi_preview(*, collection: Collection) -> dict[str, Any]:
 
 
 def collection_build_doi(*, collection: Collection, doi_id: str) -> dict:
+    rights = []
+    for license_ in (
+        collection.images.values_list("accession__copyright_license", flat=True)
+        .order_by()
+        .distinct()
+    ):
+        rights.append(  # noqa: PERF401
+            {
+                "rights": LICENSE_TITLES[license_],
+                "rightsUri": LICENSE_URIS[license_],
+                "rightsIdentifier": license_,
+            }
+        )
     return {
         "data": {
             "type": "dois",
@@ -63,6 +77,7 @@ def collection_build_doi(*, collection: Collection, doi_id: str) -> dict:
                         collection=collection
                     )
                 ],
+                "rightsList": rights,
                 "titles": [{"title": collection.name}],
                 "publisher": "ISIC Archive",
                 "publicationYear": collection.images.order_by("created").latest().created.year,
