@@ -143,7 +143,7 @@ AWS_S3_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
 AWS_STORAGE_BUCKET_NAME = os.environ["DJANGO_STORAGE_BUCKET_NAME"]
 
 STORAGES["sponsored"] = {  # noqa: F405
-    "BACKEND": "storages.backends.s3.S3Storage",
+    "BACKEND": "storages.backends.s3.S3StaticStorage",
     "OPTIONS": {
         "bucket_name": os.environ["DJANGO_SPONSORED_BUCKET_NAME"],
     },
