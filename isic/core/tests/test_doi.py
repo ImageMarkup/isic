@@ -21,6 +21,11 @@ def mock_datacite_citations_fetch(mocker):
 
 
 @pytest.fixture
+def mock_datacite_schema_org_dataset_fetch(mocker):
+    return mocker.patch("isic.core.services.collection.doi.fetch_doi_schema_org_dataset_task")
+
+
+@pytest.fixture
 def mock_datacite_create_doi(mocker):
     return mocker.patch("isic.core.services.collection.doi._datacite_create_doi")
 
@@ -49,6 +54,7 @@ def test_collection_create_doi(
     mock_datacite_create_doi,
     mock_datacite_update_doi,
     mock_datacite_citations_fetch,
+    mock_datacite_schema_org_dataset_fetch,
 ):
     collection_create_doi(user=staff_user, collection=public_collection_with_public_images)
 
@@ -60,6 +66,7 @@ def test_collection_create_doi(
     mock_datacite_create_doi.assert_called_once()
     mock_datacite_update_doi.assert_called_once()
     mock_datacite_citations_fetch.delay_on_commit.assert_called_once()
+    mock_datacite_schema_org_dataset_fetch.delay_on_commit.assert_called_once()
 
 
 @pytest.mark.django_db
@@ -83,6 +90,7 @@ def test_api_doi_creation(
     mock_datacite_create_doi,
     mock_datacite_update_doi,
     mock_datacite_citations_fetch,
+    mock_datacite_schema_org_dataset_fetch,
     s3ff_field_value,
     staff_client,
 ):
@@ -113,6 +121,7 @@ def test_doi_creation(
     mock_datacite_create_doi,
     mock_datacite_update_doi,
     mock_datacite_citations_fetch,
+    mock_datacite_schema_org_dataset_fetch,
 ):
     collection_create_doi(
         user=staff_user_request.user, collection=public_collection_with_public_images
@@ -124,6 +133,7 @@ def test_doi_creation(
     mock_datacite_create_doi.assert_called_once()
     mock_datacite_update_doi.assert_called_once()
     mock_datacite_citations_fetch.delay_on_commit.assert_called_once()
+    mock_datacite_schema_org_dataset_fetch.delay_on_commit.assert_called_once()
 
 
 @pytest.fixture
@@ -229,6 +239,7 @@ def test_doi_files(
     mock_datacite_create_doi,
     mock_datacite_update_doi,
     mock_datacite_citations_fetch,
+    mock_datacite_schema_org_dataset_fetch,
 ):
     collection = collection_factory(public=True)
     images = [image_factory(public=True) for _ in range(3)]
