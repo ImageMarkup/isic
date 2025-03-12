@@ -65,35 +65,39 @@ SHELL_PLUS_IMPORTS = [
 CELERY_TASK_ALWAYS_EAGER = os.environ.get("DJANGO_CELERY_TASK_ALWAYS_EAGER", False)
 CELERY_TASK_EAGER_PROPAGATES = os.environ.get("DJANGO_CELERY_TASK_EAGER_PROPAGATES", False)
 ISIC_DATACITE_DOI_PREFIX = "10.80222"
-MINIO_STORAGE_MEDIA_OBJECT_METADATA = {"Content-Disposition": "attachment"}
 
 ZIP_DOWNLOAD_SERVICE_URL = "http://localhost:4008"
 ZIP_DOWNLOAD_BASIC_AUTH_TOKEN = "insecurezipdownloadauthtoken"  # noqa: S105
 # Requires CloudFront configuration
 ZIP_DOWNLOAD_WILDCARD_URLS = False
 
-STORAGES["default"] = {  # noqa: F405
-    "BACKEND": "minio_storage.storage.MinioMediaStorage",
-}
-
-MINIO_STORAGE_MEDIA_URL = None
-MINIO_STORAGE_ENDPOINT = "localhost:9000"
+MINIO_STORAGE_ENDPOINT = os.environ["DJANGO_MINIO_STORAGE_ENDPOINT"]
 MINIO_STORAGE_USE_HTTPS = False
 MINIO_STORAGE_ACCESS_KEY = os.environ["DJANGO_MINIO_STORAGE_ACCESS_KEY"]
 MINIO_STORAGE_SECRET_KEY = os.environ["DJANGO_MINIO_STORAGE_SECRET_KEY"]
-MINIO_STORAGE_MEDIA_BUCKET_NAME = os.environ["DJANGO_STORAGE_BUCKET_NAME"]
+MINIO_STORAGE_MEDIA_URL = os.environ.get("DJANGO_MINIO_STORAGE_MEDIA_URL")
 MINIO_STORAGE_AUTO_CREATE_MEDIA_BUCKET = True
 MINIO_STORAGE_AUTO_CREATE_MEDIA_POLICY = "READ_WRITE"
-MINIO_STORAGE_MEDIA_USE_PRESIGNED = True
+MINIO_STORAGE_MEDIA_OBJECT_METADATA = {"Content-Disposition": "attachment"}
 
-STORAGES["default"]["BACKEND"] = "isic.core.storages.minio.FixedMinioMediaStorage"  # noqa: F405
-
-STORAGES["sponsored"] = {  # noqa: F405
-    "BACKEND": "isic.core.storages.minio.StaticFixedMinioMediaStorage",
-    "OPTIONS": {
-        "bucket_name": os.environ["DJANGO_SPONSORED_BUCKET_NAME"],
-    },
-}
+STORAGES.update(  # noqa: F405
+    {
+        "default": {
+            "BACKEND": "isic.core.storages.minio.FixedMinioMediaStorage",
+            "OPTIONS": {
+                "bucket_name": os.environ["DJANGO_STORAGE_BUCKET_NAME"],
+                "presign_urls": True,
+            },
+        },
+        "sponsored": {
+            "BACKEND": "isic.core.storages.minio.FixedMinioMediaStorage",
+            "OPTIONS": {
+                "bucket_name": os.environ["DJANGO_SPONSORED_BUCKET_NAME"],
+                "presign_urls": False,
+            },
+        },
+    }
+)
 
 ISIC_PLACEHOLDER_IMAGES = True
 # Use the MinioS3ProxyStorage for local development with ISIC_PLACEHOLDER_IMAGES

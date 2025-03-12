@@ -1,3 +1,4 @@
+from datetime import timedelta
 import logging
 import os
 
@@ -119,49 +120,53 @@ DJANGO_REDIS_SCAN_ITERSIZE = 1_000
 
 CACHALOT_ENABLED = True
 
-AWS_CLOUDFRONT_KEY = os.environ["DJANGO_AWS_CLOUDFRONT_KEY"]
-AWS_CLOUDFRONT_KEY_ID = os.environ["DJANGO_AWS_CLOUDFRONT_KEY_ID"]
-AWS_S3_CUSTOM_DOMAIN = os.environ["DJANGO_AWS_S3_CUSTOM_DOMAIN"]
-
-AWS_S3_OBJECT_PARAMETERS = {"ContentDisposition": "attachment"}
-
-AWS_S3_FILE_BUFFER_SIZE = 50 * 1024 * 1024  # 50MB
-
 SENTRY_TRACES_SAMPLE_RATE = 0.01  # sample 1% of requests for performance monitoring
 
 ZIP_DOWNLOAD_SERVICE_URL = os.environ["DJANGO_ZIP_DOWNLOAD_SERVICE_URL"]
 ZIP_DOWNLOAD_BASIC_AUTH_TOKEN = os.environ["DJANGO_ZIP_DOWNLOAD_BASIC_AUTH_TOKEN"]
 ZIP_DOWNLOAD_WILDCARD_URLS = True
 
-
-STORAGES["default"] = {"BACKEND": "isic.core.storages.s3.CacheableCloudFrontStorage"}  # noqa: F405
-
 # This exact environ_name is important, as direct use of Boto will also use it
 AWS_S3_REGION_NAME = os.environ["AWS_DEFAULT_REGION"]
 AWS_S3_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
 AWS_S3_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
-AWS_STORAGE_BUCKET_NAME = os.environ["DJANGO_STORAGE_BUCKET_NAME"]
 
-STORAGES["sponsored"] = {  # noqa: F405
-    "BACKEND": "storages.backends.s3.S3StaticStorage",
-    "OPTIONS": {
-        "bucket_name": os.environ["DJANGO_SPONSORED_BUCKET_NAME"],
-    },
-}
-
+# Settings for generating Storage URLs:
+AWS_S3_OBJECT_PARAMETERS = {"ContentDisposition": "attachment"}
 # It's critical to use the v4 signature;
 # it isn't the upstream default only for backwards compatability reasons.
 AWS_S3_SIGNATURE_VERSION = "s3v4"
+AWS_QUERYSTRING_EXPIRE = timedelta(hours=6).total_seconds()
 
+# Settings for internal Storage access:
+AWS_S3_FILE_BUFFER_SIZE = 50 * 1024 * 1024  # 50MB
 AWS_S3_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 AWS_S3_FILE_OVERWRITE = False
-AWS_QUERYSTRING_EXPIRE = 3600 * 6  # 6 hours
-
 AWS_S3_CLIENT_CONFIG = Config(
     connect_timeout=5,
     read_timeout=10,
     retries={"max_attempts": 5},
     signature_version=AWS_S3_SIGNATURE_VERSION,
+)
+
+STORAGES.update(  # noqa: F405
+    {
+        "default": {
+            "BACKEND": "isic.core.storages.s3.CacheableCloudFrontStorage",
+            "OPTIONS": {
+                "bucket_name": os.environ["DJANGO_STORAGE_BUCKET_NAME"],
+                "custom_domain": os.environ["DJANGO_AWS_S3_CUSTOM_DOMAIN"],
+                "cloudfront_key": os.environ["DJANGO_AWS_CLOUDFRONT_KEY"],
+                "cloudfront_key_id": os.environ["DJANGO_AWS_CLOUDFRONT_KEY_ID"],
+            },
+        },
+        "sponsored": {
+            "BACKEND": "storages.backends.s3.S3StaticStorage",
+            "OPTIONS": {
+                "bucket_name": os.environ["DJANGO_SPONSORED_BUCKET_NAME"],
+            },
+        },
+    }
 )
 
 ISIC_GOOGLE_API_JSON_KEY = os.environ.get("DJANGO_ISIC_GOOGLE_API_JSON_KEY")
