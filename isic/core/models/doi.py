@@ -1,3 +1,5 @@
+import json
+
 from django.contrib.auth.models import User
 from django.core.files.storage import storages
 from django.core.validators import RegexValidator
@@ -34,9 +36,13 @@ class Doi(TimeStampedModel):
     metadata_size = models.PositiveIntegerField(null=True, blank=True)
 
     citations = models.JSONField(default=dict, blank=True)
+    schema_org_dataset = models.JSONField(default=dict, blank=True)
 
     def __str__(self):
         return self.id
 
     def get_absolute_url(self):
         return reverse("core/doi-detail", kwargs={"slug": self.slug})
+
+    def get_schema_org_dataset_json(self):
+        return json.dumps(self.schema_org_dataset)
