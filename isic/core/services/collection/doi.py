@@ -84,7 +84,7 @@ def collection_build_doi(*, collection: Collection, doi_id: str) -> dict:
                 "publicationYear": collection.images.order_by("created").latest().created.year,
                 # resourceType?
                 "types": {"resourceTypeGeneral": "Dataset"},
-                "url": "https://api.isic-archive.com/"
+                "url": "https://api.isic-archive.com"
                 + reverse("core/doi-detail", kwargs={"slug": slugify(collection.name)}),
                 "schemaVersion": "http://datacite.org/schema/kernel-4",
             },
