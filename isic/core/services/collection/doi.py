@@ -13,6 +13,7 @@ from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.db import connection, transaction
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils.text import slugify
 import requests
 from requests.exceptions import HTTPError
@@ -83,8 +84,8 @@ def collection_build_doi(*, collection: Collection, doi_id: str) -> dict:
                 "publicationYear": collection.images.order_by("created").latest().created.year,
                 # resourceType?
                 "types": {"resourceTypeGeneral": "Dataset"},
-                # TODO: api.?
-                "url": f"https://api.isic-archive.com/collections/{collection.pk}/",
+                "url": "https://api.isic-archive.com/"
+                + reverse("core/doi-detail", kwargs={"slug": slugify(collection.name)}),
                 "schemaVersion": "http://datacite.org/schema/kernel-4",
             },
         }
