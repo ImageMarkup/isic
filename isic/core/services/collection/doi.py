@@ -25,7 +25,11 @@ from isic.core.services.collection import (
     collection_lock,
     collection_update,
 )
-from isic.core.tasks import create_doi_bundle_task, fetch_doi_citations_task
+from isic.core.tasks import (
+    create_doi_bundle_task,
+    fetch_doi_citations_task,
+    fetch_doi_schema_org_dataset_task,
+)
 from isic.zip_download.api import get_attributions
 
 logger = logging.getLogger(__name__)
@@ -178,6 +182,7 @@ def collection_create_doi(*, user: User, collection: Collection, supplemental_fi
 
     create_doi_bundle_task.delay_on_commit(doi_id)
     fetch_doi_citations_task.delay_on_commit(doi_id)
+    fetch_doi_schema_org_dataset_task.delay_on_commit(doi_id)
 
     logger.info("User %d created DOI %s for collection %d", user.id, doi.id, collection.id)
 
