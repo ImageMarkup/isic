@@ -4,6 +4,7 @@ import csv
 from datetime import UTC, datetime, timedelta
 import json
 import logging
+from pathlib import PurePosixPath
 
 from botocore.signers import CloudFrontSigner
 from django.conf import settings
@@ -107,6 +108,9 @@ def _cloudfront_signer(message: bytes) -> bytes:
 def zip_file_listing(
     request: NinjaAuthHttpRequest,
 ):
+    def extension_from_str(s: str) -> str:
+        return PurePosixPath(s).suffix.lstrip(".")
+
     # use repeatable read to ensure consistent results
     cursor = connection.cursor()
     cursor.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
@@ -141,7 +145,7 @@ def zip_file_listing(
         files = [
             {
                 "url": signed_url.replace("*", image["accession__blob"]),
-                "zipPath": f"{image['isic_id']}.jpg",
+                "zipPath": f"{image['isic_id']}.{extension_from_str(image['accession__blob'])}",
             }
             for image in qs.values("accession__blob", "isic_id").iterator()
         ]
@@ -150,7 +154,10 @@ def zip_file_listing(
         # this is considerably slower because of the signing and the hydrating of the related
         # objects instead of being able to utilize .values.
         files = [
-            {"url": image.accession.blob.url, "zipPath": f"{image.isic_id}.jpg"}
+            {
+                "url": image.accession.blob.url,
+                "zipPath": f"{image.isic_id}.{image.extension}",
+            }
             for image in qs.iterator()
         ]
 
