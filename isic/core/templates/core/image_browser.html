@@ -27,7 +27,7 @@
       <form method="GET" id="" action="">
         {{ form.non_field_errors }}
 
-        <div class="flex justify-between">
+        <div class="sm:flex sm:justify-between">
           <div>
             {% render_field form.query class+="input input-bordered w-96 max-w-s" %}
             <div>
@@ -78,11 +78,11 @@
     </div>
 
     <div class="mb-4" x-data="thumbnailGrid();">
-      <div class="flex flex-row justify-end pb-3">
+      <div class="flex flex-row justify-end pb-3 hidden sm:block">
         <a class="px-1" href="#" @click="decrease();">fewer columns</a> |
         <a class="px-1" href="#" @click="increase();">more columns</a>
       </div>
-      <div class="grid gap-4" :class="`grid-cols-${numCols}`">
+      <div class="grid gap-4 grid-cols-2" :class="gridClassNames[numCols]">
         {% for image in images %}
           {% include 'core/partials/image.html' %}
         {% endfor %}
