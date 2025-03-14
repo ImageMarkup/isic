@@ -24,12 +24,12 @@
         <div>
           sorted by <span class="italic">original filename</span>
         </div>
-        <div>
+        <div class="hidden sm:flex sm:flex-row sm:justify-end">
           <a class="px-1" href="#" @click="decrease();">fewer columns</a> |
           <a class="px-1" href="#" @click="increase();">more columns</a>
         </div>
       </div>
-      <div class="grid gap-4" :class="`grid-cols-${numCols}`">
+      <div class="grid gap-4 grid-cols-2" :class="gridClassNames[numCols]">
         {% for accession in page_obj %}
           {% include 'ingest/partials/accession.html' with review_mode=1 include_acquisition_day=0 %}
         {% endfor %}
