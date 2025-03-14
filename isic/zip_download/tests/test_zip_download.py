@@ -92,8 +92,12 @@ def test_zip_download_listing_wildcard_urls(authenticated_client, zip_basic_auth
 
     # Mock the CloudFrontSigner to return a predictable signature
     settings.ZIP_DOWNLOAD_WILDCARD_URLS = True
-    settings.AWS_CLOUDFRONT_KEY_ID = "test"
-    settings.AWS_S3_CUSTOM_DOMAIN = "test.test"
+
+    mock_storage = mocker.MagicMock()
+    mock_storage.cloudfront_key_id = "test"
+    mock_storage.custom_domain = "test.test"
+    mocker.patch("isic.zip_download.api.default_storage", mock_storage)
+
     mocker.patch("isic.zip_download.api._cloudfront_signer", return_value="testsigner")
     mocked_signer = mocker.MagicMock()
     mocked_signer.generate_presigned_url = (
