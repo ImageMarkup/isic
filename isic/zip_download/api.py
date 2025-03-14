@@ -8,6 +8,7 @@ import logging
 from botocore.signers import CloudFrontSigner
 from django.conf import settings
 from django.contrib.sites.models import Site
+from django.core.files.storage import default_storage
 from django.core.signing import BadSignature, TimestampSigner
 from django.db import connection, transaction
 from django.http.request import HttpRequest
@@ -96,7 +97,7 @@ def _cloudfront_signer(message: bytes) -> bytes:
     # See the documentation for CloudFrontSigner
     return rsa.sign(
         message,
-        rsa.PrivateKey.load_pkcs1(settings.AWS_CLOUDFRONT_KEY.encode("utf8")),
+        rsa.PrivateKey.load_pkcs1(default_storage.cloudfront_key.encode("utf8")),
         "SHA-1",
     )
 
@@ -127,11 +128,11 @@ def zip_file_listing(
         # this is a performance optimization. repeated signing of individual urls
         # is slow when generating large descriptors. this allows generating one signature and
         # using it for all urls.
-        signer = CloudFrontSigner(settings.AWS_CLOUDFRONT_KEY_ID, _cloudfront_signer)
+        signer = CloudFrontSigner(default_storage.cloudfront_key_id, _cloudfront_signer)
         # create a wildcard signature that allows access to * and pass this to the zipstreamer.
         # since zip_api_auth uses a shared secret that only it and the zipstreamer know, this
         # can't be intercepted by someone looking at the zipstreamer url.
-        url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/*"
+        url = f"https://{default_storage.custom_domain}/*"
         policy = signer.build_policy(
             url,
             date_less_than=datetime.now(tz=UTC) + timedelta(days=1),
