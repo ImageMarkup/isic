@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from pathlib import PurePosixPath
 
 from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates.general import ArrayAgg
@@ -95,6 +96,10 @@ class Image(CreationSortedTimeStampedModel):
 
     def get_absolute_url(self):
         return reverse("core/image-detail", args=[self.isic_id])
+
+    @property
+    def extension(self) -> str:
+        return PurePosixPath(self.accession.blob.file.name).suffix.lstrip(".")
 
     @property
     def has_patient(self) -> bool:
