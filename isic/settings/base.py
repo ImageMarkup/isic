@@ -108,6 +108,7 @@ INSTALLED_APPS = [
     "django.contrib.postgres",
     "django.contrib.sessions",
     "django.contrib.sites",
+    "django.contrib.sitemaps",
     "whitenoise.runserver_nostatic",  # should be immediately before staticfiles app
     "django.contrib.staticfiles",
     "girder_utils",
