@@ -2,6 +2,7 @@ from functools import partial
 
 from django.conf import settings
 from django.contrib import admin
+from django.contrib.sitemaps.views import sitemap
 from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string
 from django.urls import include, path, reverse_lazy
@@ -15,6 +16,7 @@ from isic.core.api.doi import router as doi_router
 from isic.core.api.image import ImageSearchParseError
 from isic.core.api.image import router as image_router
 from isic.core.api.user import router as user_router
+from isic.core.sitemaps import sitemaps
 from isic.find.api import autocomplete_router
 from isic.find.api import router as quickfind_router
 from isic.ingest.api import (
@@ -82,6 +84,9 @@ urlpatterns = [
     path("api/v2/s3-upload/", include("s3_file_field.urls")),
     path("api/v2/", api.urls),
     path("api/docs/swagger/", swagger_view, name="docs-swagger"),
+    path(
+        "sitemap.xml", sitemap, {"sitemaps": sitemaps}, name="django.contrib.sitemaps.views.sitemap"
+    ),
     # Core app
     path("", RedirectView.as_view(url=reverse_lazy("core/image-browser")), name="index"),
     path("", include("isic.core.urls")),

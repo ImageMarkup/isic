@@ -15,6 +15,9 @@ from .image import Image
 
 
 class CollectionQuerySet(models.QuerySet):
+    def pinned(self):
+        return self.filter(pinned=True)
+
     def public(self):
         return self.filter(public=True)
 
