@@ -1,7 +1,7 @@
 import factory
 import factory.django
 
-from isic.core.models import Collection, Image
+from isic.core.models import Collection, Doi, Image
 from isic.core.models.isic_id import IsicId
 from isic.factories import UserFactory
 from isic.ingest.tests.factories import AccessionFactory
@@ -35,3 +35,11 @@ class CollectionFactory(factory.django.DjangoModelFactory):
     public = factory.Faker("boolean")
     pinned = factory.Faker("boolean")
     locked = False
+
+
+class DoiFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Doi
+
+    slug = factory.Faker("slug")
+    creator = factory.SubFactory(UserFactory)
