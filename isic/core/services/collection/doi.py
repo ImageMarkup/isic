@@ -79,6 +79,7 @@ def collection_build_doi(*, collection: Collection, doi_id: str) -> dict:
                     )
                 ],
                 "rightsList": rights,
+                "isAccessibleForFree": True,
                 "titles": [{"title": collection.name}],
                 "publisher": "ISIC Archive",
                 "publicationYear": collection.images.order_by("created").latest().created.year,
