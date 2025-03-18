@@ -74,10 +74,6 @@ CELERY_BEAT_SCHEDULE = {
         "task": "isic.stats.tasks.collect_google_analytics_metrics_task",
         "schedule": timedelta(hours=6),
     },
-    "collect-image-download-stats": {
-        "task": "isic.stats.tasks.collect_image_download_records_task",
-        "schedule": timedelta(hours=2),
-    },
     "sync-elasticsearch-index": {
         "task": "isic.core.tasks.sync_elasticsearch_indices_task",
         "schedule": crontab(minute="0", hour="0"),
