@@ -15,7 +15,7 @@ from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models, transaction
-from django.db.models import FloatField, IntegerField, Transform
+from django.db.models import Deferrable, FloatField, IntegerField, Transform
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.expressions import F
 from django.db.models.fields import Field
@@ -339,6 +339,7 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
                     ("patient_id", "<>"),
                 ],
                 condition=Q(lesion_id__isnull=False) & Q(patient_id__isnull=False),
+                deferrable=Deferrable.IMMEDIATE,
             ),
             # identical rcm_case_id implies identical lesion_id
             ExclusionConstraint(
@@ -348,6 +349,7 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
                     ("lesion_id", "<>"),
                 ],
                 condition=Q(rcm_case_id__isnull=False) & Q(lesion_id__isnull=False),
+                deferrable=Deferrable.IMMEDIATE,
             ),
             # each RCM case can only have at most one macroscopic image
             UniqueConstraint(
