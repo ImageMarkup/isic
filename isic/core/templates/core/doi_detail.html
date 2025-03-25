@@ -73,9 +73,8 @@
                   </tr>
                   {% for supplemental_file in doi.supplemental_files.all %}
                     <tr>
-                      <th>{{ supplemental_file.filename }}</th>
-                      <td>{{ supplemental_file.size|filesizeformat }}</td>
                       <td>{{ supplemental_file.description }}</td>
+                      <td>{{ supplemental_file.size|filesizeformat }}</td>
                       <td>{{ supplemental_file.file.content_type }}</td>
                       <td><a href="{{ supplemental_file.url }}" title="{{ supplemental_file.filename }}"><button class="btn btn-primary">Download</button></a></td>
                     </tr>
