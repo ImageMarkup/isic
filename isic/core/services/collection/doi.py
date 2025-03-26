@@ -252,14 +252,21 @@ def collection_create_doi_files(*, doi: Doi) -> None:
             )
             bundle.writestr("attribution.txt", "\n\n".join(attributions))
 
-        with (
-            Path(bundle_filename).open("rb") as bundle_file,
-            Path(metadata_file.name).open("rb") as metadata_file,
-        ):
-            doi.bundle = File(bundle_file)
-            doi.bundle_size = Path(bundle_filename).stat().st_size
-            doi.metadata = File(metadata_file, name=f"{collection_slug}.csv")
-            doi.metadata_size = Path(metadata_file.name).stat().st_size
-            doi.save()
+    # this should be done outside of the above transaction since it uses
+    # repeatable read and will potentially take a long time to complete. otherwise
+    # if the other DOI related tasks modified the DOI we would get a "could not
+    # serialize" error. see
+    # https://www.postgresql.org/docs/current/transaction-iso.html#XACT-REPEATABLE-READ
+    with (
+        Path(bundle_filename).open("rb") as bundle_file,
+        Path(metadata_file.name).open("rb") as metadata_file,
+        transaction.atomic(),  # necessary for select_for_update
+    ):
+        doi = Doi.objects.select_for_update().get(id=doi.id)
+        doi.bundle = File(bundle_file)
+        doi.bundle_size = Path(bundle_filename).stat().st_size
+        doi.metadata = File(metadata_file, name=f"{collection_slug}.csv")
+        doi.metadata_size = Path(metadata_file.name).stat().st_size
+        doi.save()
 
         Path(bundle_filename).unlink()
