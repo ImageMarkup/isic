@@ -1,3 +1,5 @@
+from pathlib import PurePosixPath
+
 from django.db import models
 from s3_file_field import S3FileField
 
@@ -15,3 +17,6 @@ class SupplementalFile(models.Model):
 
     def __str__(self):
         return self.filename
+
+    def extension(self):
+        return PurePosixPath(self.filename).suffix.replace(".", "")
