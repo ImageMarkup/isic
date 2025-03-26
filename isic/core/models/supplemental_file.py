@@ -9,7 +9,7 @@ from isic.core.models.doi import Doi
 class SupplementalFile(models.Model):
     """Supplemental files that can be attached to collections on DOI creation."""
 
-    file = S3FileField()
+    blob = S3FileField()
     description = models.CharField(max_length=255)
     filename = models.CharField(max_length=255)
     size = models.PositiveBigIntegerField(default=0)

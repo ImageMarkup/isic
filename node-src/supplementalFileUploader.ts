@@ -43,7 +43,7 @@ function SupplementalFileUploader() {
       this.descriptions.push("");
 
       this.numFilesInProgress++;
-      const fieldValue = await s3ffClient.uploadFile(file, "core.SupplementalFile.file");
+      const fieldValue = await s3ffClient.uploadFile(file, "core.SupplementalFile.blob");
       this._fieldValues.push(fieldValue);
       this.numFilesInProgress--;
     },

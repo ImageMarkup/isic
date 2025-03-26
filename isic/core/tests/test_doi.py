@@ -100,7 +100,7 @@ def test_api_doi_creation(
             "collection_id": public_collection_with_public_images.id,
             "supplemental_files": [
                 {
-                    "file": s3ff_field_value,
+                    "blob": s3ff_field_value,
                     "description": "test",
                 }
             ],
