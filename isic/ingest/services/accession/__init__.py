@@ -102,11 +102,18 @@ def bulk_accession_update_metadata(  # noqa: PLR0913
 ) -> None:
     with (
         transaction.atomic(),
+        transaction.get_connection().cursor() as cursor,
         # Lock the longitudinal tables during metadata assignment
         lock_table_for_writes(Lesion),
         lock_table_for_writes(Patient),
         lock_table_for_writes(RcmCase),
     ):
+        # it's possible when updating metadata that the constraints are temporarily
+        # violated. an example being when updating patient ids, it's possible it
+        # could temporarily violate the "identical lesions implies idential patients"
+        # constraint and then later be corrected.
+        cursor.execute("SET CONSTRAINTS ALL DEFERRED")
+
         BulkMetadataApplication.objects.create(
             creator=user,
             message=metadata_application_message,
