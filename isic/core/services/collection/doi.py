@@ -182,10 +182,10 @@ def collection_create_doi(*, user: User, collection: Collection, supplemental_fi
         if supplemental_files:
             for supplemental_file in supplemental_files:
                 doi.supplemental_files.create(
-                    file=supplemental_file["file"].name,
+                    blob=supplemental_file["blob"].name,
                     description=supplemental_file["description"],
-                    filename=Path(supplemental_file["file"].name).name,
-                    size=supplemental_file["file"].size,
+                    filename=Path(supplemental_file["blob"].name).name,
+                    size=supplemental_file["blob"].size,
                 )
 
         # Reserve the DOI using the draft mechanism.

@@ -28,8 +28,8 @@ class CreateDOIIn(Schema):
     @field_validator("supplemental_files")
     def parse_s3_file_field_values(cls, v):  # noqa: N805
         for file in v:
-            file["file"] = S3PlaceholderFile.from_field(file["file"])
-            if file["file"] is None:
+            file["blob"] = S3PlaceholderFile.from_field(file["blob"])
+            if file["blob"] is None:
                 raise ValueError("Invalid S3 file field value.")
         return v
 
