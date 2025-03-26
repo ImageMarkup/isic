@@ -148,6 +148,7 @@ def fetch_doi_schema_org_dataset_task(doi_id: str) -> None:
     )
     r.raise_for_status()
     doi.schema_org_dataset = r.json()
+    doi.schema_org_dataset["isAccessibleForFree"] = True
     doi.save(update_fields=["schema_org_dataset"])
 
 
