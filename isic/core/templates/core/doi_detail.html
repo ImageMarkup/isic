@@ -76,7 +76,7 @@
                       <td>{{ supplemental_file.description }}</td>
                       <td>{{ supplemental_file.size|filesizeformat }}</td>
                       <td>{{ supplemental_file.extension|upper }}</td>
-                      <td><a href="{{ supplemental_file.file.url }}" title="{{ supplemental_file.filename }}"><button class="btn btn-primary">Download</button></a></td>
+                      <td><a href="{{ supplemental_file.blob.url }}" title="{{ supplemental_file.filename }}"><button class="btn btn-primary">Download</button></a></td>
                     </tr>
                   {% endfor %}
                 </tbody>
