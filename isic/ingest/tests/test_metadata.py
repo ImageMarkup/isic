@@ -9,8 +9,9 @@ from django.urls.base import reverse
 from django.utils import timezone
 import pytest
 
-from isic.ingest.models.accession import Accession
+from isic.ingest.models.accession import Accession, Cohort
 from isic.ingest.models.metadata_file import MetadataFile
+from isic.ingest.services.accession import bulk_accession_update_metadata
 from isic.ingest.services.accession.review import accession_review_update_or_create
 from isic.ingest.tasks import update_metadata_task
 from isic.ingest.tests.csv_streams import StreamWriter
@@ -517,3 +518,27 @@ def test_metadata_version_serializes_decimal(user: User, accession: Accession) -
     assert accession.clin_size_long_diam_mm == Decimal("5.0")
     assert accession.metadata_versions.count() == 1
     assert accession.metadata_versions.first().metadata == {"clin_size_long_diam_mm": "5"}  # type: ignore[union-attr]
+
+
+@pytest.mark.django_db
+def test_bulk_accession_update_metadata_defers_constraints(
+    user: User, cohort: Cohort, accession_factory
+) -> None:
+    accession_a, accession_b = accession_factory(cohort=cohort), accession_factory(cohort=cohort)
+    accession_a.update_metadata(user, {"lesion_id": "lesion_foo", "patient_id": "patient_foo"})
+    accession_b.update_metadata(user, {"lesion_id": "lesion_bar", "patient_id": "patient_bar"})
+
+    # it's possible that the constraints are violated
+    # during the update, and we want to ensure that the constraints are deferred. an example
+    # is that accession_a wants to swap lesion_id with accession_b. in this case, the
+    # "identical lesion implies identical patient" constraint will be violated temporarily and
+    # raise the exclusion constraint. this verifies that the constraints are deferred until commit
+    # time so the error isn't raised as long as the end result is valid.
+
+    bulk_accession_update_metadata(
+        user=user,
+        metadata=[
+            (accession_a.id, {"lesion_id": "lesion_bar"}),
+            (accession_b.id, {"lesion_id": "lesion_foo"}),
+        ],
+    )
