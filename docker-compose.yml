@@ -54,3 +54,74 @@ services:
     image: redis/redisinsight:latest
     ports:
       - ${DOCKER_REDIS_INSIGHT_PORT-5540}:5540
+
+  django:
+    build:
+      context: .
+      dockerfile: ./dev/django.Dockerfile
+    command: ["./manage.py", "runserver", "0.0.0.0:8000"]
+    # Log printing via Rich is enhanced by a TTY
+    tty: true
+    env_file: ./dev/.env.docker-compose
+    volumes:
+      - .:/opt/django-project
+    ports:
+      - 8000:8000
+    depends_on:
+      - postgres
+      - elasticsearch
+      - rabbitmq
+      - minio
+
+  celery:
+    build:
+      context: .
+      dockerfile: ./dev/django.Dockerfile
+    command: [
+      "celery",
+      "--app", "isic.celery",
+      "worker",
+      "--loglevel", "INFO",
+      "--without-heartbeat"
+    ]
+    # Docker Compose does not set the TTY width, which causes Celery errors
+    tty: false
+    env_file: ./dev/.env.docker-compose
+    volumes:
+      - .:/opt/django-project
+    depends_on:
+      - postgres
+      - elasticsearch
+      - rabbitmq
+      - minio
+
+  celerybeat:
+    build:
+      context: .
+      dockerfile: ./dev/django.Dockerfile
+    command: [
+      "celery",
+      "--app", "isic.celery",
+      "beat",
+      "--loglevel", "INFO"
+    ]
+    tty: false
+    env_file: ./dev/.env.docker-compose
+    volumes:
+      - .:/opt/django-project
+    depends_on:
+      - postgres
+      - rabbitmq
+      - minio
+
+  node:
+    build:
+      context: .
+      dockerfile: ./dev/node.Dockerfile
+    command: ["yarn", "run", "start"]
+    tty: true
+    volumes:
+      - .:/opt/django-project
+      - /opt/django-project/node_modules
+    ports:
+      - 8383:8383
