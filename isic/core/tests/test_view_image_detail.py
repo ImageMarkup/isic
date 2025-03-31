@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     ],
 )
 def test_core_image_detail(client_, image_, can_see):
-    r = client_.get(reverse("core/image-detail", args=[image_.pk]))
+    r = client_.get(reverse("core/image-detail", args=[image_.isic_id]))
     assert r.status_code == 200 if can_see else 403
 
 
@@ -70,7 +70,7 @@ def detailed_image(
 
 @pytest.mark.django_db
 def test_view_image_detail_public(client, detailed_image):
-    r = client.get(reverse("core/image-detail", args=[detailed_image.pk]))
+    r = client.get(reverse("core/image-detail", args=[detailed_image.isic_id]))
     assert r.status_code == 200
     assert set(r.context["sections"].keys()) == {"metadata", "studies"}
 
@@ -92,7 +92,7 @@ def test_view_image_detail_public(client, detailed_image):
 def test_view_image_detail_uploader(client, detailed_image):
     client.force_login(detailed_image.accession.cohort.contributor.owners.first())
 
-    r = client.get(reverse("core/image-detail", args=[detailed_image.pk]))
+    r = client.get(reverse("core/image-detail", args=[detailed_image.isic_id]))
     assert r.status_code == 200
     assert set(r.context["sections"].keys()) == {"metadata", "studies"}
 
