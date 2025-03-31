@@ -1,10 +1,6 @@
-from django.db.models import Q
-from django.http.response import Http404
-from django.urls import path, register_converter
+from django.urls import path
 from django.views.generic.base import TemplateView
 
-from isic.core.constants import ISIC_ID_REGEX, MONGO_ID_REGEX
-from isic.core.models.image import Image
 from isic.core.views.collections import (
     collection_create_,
     collection_create_doi_,
@@ -22,33 +18,6 @@ from isic.core.views.images import (
 )
 from isic.core.views.lesion import lesion_detail
 from isic.core.views.users import staff_list, user_detail
-
-
-class ImageIdentifierConverter:
-    regex = f"([0-9]+|{MONGO_ID_REGEX}|{ISIC_ID_REGEX})"
-
-    def to_python(self, value):
-        if value.isnumeric():
-            image = Image.objects.filter(pk=value).first()
-            if image:
-                return image.isic_id
-        else:
-            for approach in [
-                Q(isic_id=value),
-                Q(accession__girder_id=value),
-                Q(aliases__isic=value),
-            ]:
-                image = Image.objects.filter(approach).order_by().first()
-                if image:
-                    return image.isic_id
-
-        raise Http404
-
-    def to_url(self, value):
-        return value
-
-
-register_converter(ImageIdentifierConverter, "image-identifier")
 
 urlpatterns = [
     path(
@@ -92,7 +61,7 @@ urlpatterns = [
         name="core/collection-download-metadata",
     ),
     path(
-        "images/<image-identifier:isic_id>/",
+        "images/<str:image_identifier>/",
         image_detail,
         name="core/image-detail",
     ),

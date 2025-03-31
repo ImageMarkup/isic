@@ -22,6 +22,31 @@ from isic.types import AuthenticatedHttpRequest
 MAX_RELATED_SHOW_FIRST_N = 50
 
 
+def resolve_image_identifier(view_func):
+    from django.http import HttpResponsePermanentRedirect
+    from django.urls import reverse
+
+    def wrapper(request, image_identifier):
+        if image_identifier.startswith("ISIC_"):
+            return view_func(request, isic_id=image_identifier)
+
+        filter_ = (
+            Q(pk=image_identifier)
+            if image_identifier.isdigit()
+            else Q(accession__girder_id=image_identifier)
+        )
+
+        image = Image.objects.filter(filter_).order_by().first()
+        if image:
+            redirect_url = reverse("core/image-detail", kwargs={"image_identifier": image.isic_id})
+            return HttpResponsePermanentRedirect(redirect_url)
+
+        return view_func(request, isic_id=image_identifier)
+
+    return wrapper
+
+
+@resolve_image_identifier
 @needs_object_permission("core.view_image", (Image, "isic_id", "isic_id"))
 def image_detail(request, isic_id):
     image = get_object_or_404(
