@@ -15,7 +15,8 @@ class BulkMetadataApplication(models.Model):
     creator = models.ForeignKey(User, on_delete=models.CASCADE)
     metadata_file = models.ForeignKey(
         "MetadataFile",
-        on_delete=models.RESTRICT,
+        # allow users to delete metadata files while keeping a record of the application
+        on_delete=models.SET_NULL,
         related_name="metadata_applications",
         null=True,
         blank=True,
