@@ -64,7 +64,7 @@ def test_image_list_metadata_download_view(staff_client, mailoutbox, user, image
         image.isic_id,
         image.accession.cohort_id,
         image.accession.cohort.name,
-        image.accession.cohort.default_attribution,
+        image.accession.attribution,
         image.accession.copyright_license,
         image.public,
         "57",

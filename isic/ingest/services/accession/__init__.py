@@ -47,6 +47,7 @@ def accession_create(
             creator=creator,
             cohort=cohort,
             copyright_license=cohort.default_copyright_license,
+            attribution=cohort.default_attribution,
             original_blob=original_blob,
             original_blob_name=original_blob_name,
             original_blob_size=original_blob_size,

@@ -246,9 +246,7 @@ def collection_create_doi_files(*, doi: Doi) -> None:
                     render_to_string(f"zip_download/{license_}.txt"),
                 )
 
-            attributions = get_attributions(
-                images.values_list("accession__cohort__default_attribution", flat=True)
-            )
+            attributions = get_attributions(images.values_list("accession__attribution", flat=True))
             bundle.writestr("attribution.txt", "\n\n".join(attributions))
 
     # this should be done outside of the above transaction since it uses

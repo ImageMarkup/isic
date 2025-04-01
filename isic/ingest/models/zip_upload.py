@@ -118,6 +118,7 @@ class ZipUpload(CreationSortedTimeStampedModel):
                         accession.creator = self.creator
                         accession.cohort = self.cohort
                         accession.copyright_license = accession.cohort.default_copyright_license
+                        accession.attribution = accession.cohort.default_attribution
                         accession.unstructured_metadata = UnstructuredMetadata(accession=accession)
                         accession.full_clean(validate_constraints=False)
                         self.accessions.add(accession, bulk=False)

@@ -37,7 +37,7 @@ def test_image_metadata_csv_rows_correct(image_with_metadata):
     row = next(rows)
     assert row == {
         "age_approx": image_with_metadata.accession.age_approx,
-        "attribution": image_with_metadata.accession.cohort.default_attribution,
+        "attribution": image_with_metadata.accession.attribution,
         "copyright_license": image_with_metadata.accession.copyright_license,
         "diagnosis": "nevus",
         "diagnosis_1": "Benign",
@@ -59,7 +59,7 @@ def test_staff_image_metadata_csv_rows_correct(image_with_metadata):
     assert row == {
         "age_approx": image_with_metadata.accession.age_approx,
         "age": image_with_metadata.accession.age,
-        "attribution": image_with_metadata.accession.cohort.default_attribution,
+        "attribution": image_with_metadata.accession.attribution,
         "cohort_id": image_with_metadata.accession.cohort_id,
         "cohort": image_with_metadata.accession.cohort.name,
         "copyright_license": image_with_metadata.accession.copyright_license,
