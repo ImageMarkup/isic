@@ -44,7 +44,7 @@ class ImageOut(ModelSchema):
 
     isic_id: str = Field(alias="isic_id")
     copyright_license: str = Field(alias="accession.copyright_license")
-    attribution: str = Field(alias="accession.cohort.attribution")
+    attribution: str = Field(alias="accession.cohort.default_attribution")
     files: ImageFilesOut
     metadata: dict
 

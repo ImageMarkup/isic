@@ -39,7 +39,7 @@ def doi_detail(request, slug):
     )
 
     attributing_institutions = get_attributions(
-        doi.collection.images.values_list("accession__cohort__attribution", flat=True)
+        doi.collection.images.values_list("accession__cohort__default_attribution", flat=True)
     )
 
     context = {

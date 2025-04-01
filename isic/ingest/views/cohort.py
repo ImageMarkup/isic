@@ -38,7 +38,7 @@ def cohort_list(request):
     contributors = Contributor.objects.prefetch_related(
         # the cohorts call needs to be ordered by attribution/name for the below itertools.groupby
         # call to work correctly.
-        Prefetch("cohorts", queryset=Cohort.objects.order_by("attribution", "name"))
+        Prefetch("cohorts", queryset=Cohort.objects.order_by("default_attribution", "name"))
     ).order_by("institution_name")
 
     counts_by_cohort_qs = Accession.objects.values("cohort_id").annotate(
@@ -53,7 +53,7 @@ def cohort_list(request):
         display_contributor = True
         for attribution, cohorts in itertools.groupby(
             contributor.cohorts.all(),
-            key=lambda cohort: cohort.attribution,
+            key=lambda cohort: cohort.default_attribution,
         ):
             display_attribution = True
             for cohort in cohorts:

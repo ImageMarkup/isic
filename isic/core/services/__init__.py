@@ -82,7 +82,7 @@ def staff_image_metadata_csv(
             "isic_id",
             "accession__cohort_id",
             "accession__cohort__name",
-            "accession__cohort__attribution",
+            "accession__cohort__default_attribution",
             "accession__copyright_license",
             "public",
             *[f"accession__{key}" for key in used_metadata_keys],
@@ -101,7 +101,7 @@ def staff_image_metadata_csv(
             "isic_id": image["isic_id"],
             "cohort_id": image["accession__cohort_id"],
             "cohort": image["accession__cohort__name"],
-            "attribution": image["accession__cohort__attribution"],
+            "attribution": image["accession__cohort__default_attribution"],
             "copyright_license": image["accession__copyright_license"],
             "public": image["public"],
             **{
@@ -181,7 +181,7 @@ def image_metadata_csv(
         qs.order_by("isic_id")
         .values(
             "isic_id",
-            "accession__cohort__attribution",
+            "accession__cohort__default_attribution",
             "accession__copyright_license",
             *[f"accession__{key}" for key in Accession.metadata_keys()],
             *[f"accession__{field.csv_field_name}" for field in Accession.remapped_internal_fields],
@@ -190,7 +190,7 @@ def image_metadata_csv(
     ):
         image = {k.replace("accession__", ""): v for k, v in image.items()}  # noqa: PLW2901
 
-        image["attribution"] = image.pop("cohort__attribution")
+        image["attribution"] = image.pop("cohort__default_attribution")
 
         for computed_field in Accession.computed_fields:
             if image[computed_field.input_field_name]:
