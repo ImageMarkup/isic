@@ -75,7 +75,7 @@ def test_collection_metadata_download(staff_client, collection_with_images, mock
     for i, image in enumerate(collection_with_images.images.order_by("isic_id").all(), start=1):
         assert (
             output_csv[i]
-            == f"{image.isic_id},{image.accession.cohort.default_attribution},{image.accession.copyright_license},{image.accession.age_approx}"  # noqa: E501
+            == f"{image.isic_id},{image.accession.attribution},{image.accession.copyright_license},{image.accession.age_approx}"  # noqa: E501
         )
 
 
@@ -103,7 +103,7 @@ def test_collection_metadata_download_private_images(
 
     assert (
         output_csv[1]
-        == f"{image.isic_id},{image.accession.cohort.default_attribution},{image.accession.copyright_license},{image.accession.age_approx}"  # noqa: E501
+        == f"{image.isic_id},{image.accession.attribution},{image.accession.copyright_license},{image.accession.age_approx}"  # noqa: E501
     )
 
 

@@ -57,7 +57,7 @@ class ImageQuickfindResultOut(QuickfindResultOut):
 
     @staticmethod
     def resolve_subtitle(obj: Image):
-        return f"{obj.accession.cohort.default_attribution} ({obj.accession.copyright_license})"
+        return f"{obj.accession.attribution} ({obj.accession.copyright_license})"
 
     def set_yours(self, obj: Image, user: User) -> None:
         self.yours = user in obj.accession.cohort.contributor.owners.all()
