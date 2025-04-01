@@ -48,7 +48,7 @@ def lesion_detail(request, identifier):
             if image.accession.image_type
             else None,
             "isic_id": image.isic_id,
-            "image_detail_url": reverse("core/image-detail", args=[image.id]),
+            "image_detail_url": reverse("core/image-detail", args=[image.isic_id]),
             "acquisition_day": image.accession.acquisition_day,
         }
         for image in images
