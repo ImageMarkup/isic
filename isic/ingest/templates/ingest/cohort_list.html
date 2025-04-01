@@ -27,7 +27,7 @@
                 {% for row in rows %}
                     <tr>
                         <td>{% if row.display_contributor %}{{ row.contributor.institution_name }}{% endif %}</td>
-                        <td>{% if row.display_attribution %}{{ row.cohort.attribution }}{% endif %}</td>
+                        <td>{% if row.display_attribution %}{{ row.cohort.default_attribution }}{% endif %}</td>
                         <td><a href="{% url 'cohort-detail' row.cohort.id %}">{{ row.cohort.name }}</a></td>
                         <td>{{ row.cohort.default_copyright_license }}</td>
                         <td>{{ row.accession_count|intcomma }}</td>
