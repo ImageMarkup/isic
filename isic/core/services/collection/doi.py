@@ -247,7 +247,7 @@ def collection_create_doi_files(*, doi: Doi) -> None:
                 )
 
             attributions = get_attributions(
-                images.values_list("accession__cohort__attribution", flat=True)
+                images.values_list("accession__cohort__default_attribution", flat=True)
             )
             bundle.writestr("attribution.txt", "\n\n".join(attributions))
 
