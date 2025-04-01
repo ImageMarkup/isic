@@ -6,7 +6,7 @@
   <ul>
     <li><span class="font-bold">Name:</span> {{ cohort.name }}</li>
     <li><span class="font-bold">Description:</span> {{ cohort.description|markdownify }}</li>
-    <li><span class="font-bold">Attribution:</span> {{ cohort.attribution }}</li>
+    <li><span class="font-bold">Default Attribution:</span> {{ cohort.default_attribution }}</li>
     <li><span class="font-bold">Default License:</span> {{ cohort.get_default_copyright_license_display }}</li>
     <li><span class="font-bold">Created by:</span> {{ cohort.creator.first_name }} {{ cohort.creator.last_name }} ({{ cohort.creator }})</li>
     <li><span class="font-bold">Created on:</span> {% localtime cohort.created %}</li>
