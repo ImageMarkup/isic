@@ -124,6 +124,7 @@ def test_accession_without_zip_upload(user, jpg_blob, cohort):
     accession.creator = user
     accession.cohort = cohort
     accession.copyright_license = cohort.default_copyright_license
+    accession.attribution = cohort.default_attribution
     accession.unstructured_metadata = UnstructuredMetadata(accession=accession)
     accession.full_clean(validate_constraints=False)
     accession.save()

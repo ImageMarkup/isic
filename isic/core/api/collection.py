@@ -146,10 +146,10 @@ def collection_attribution_information(request, id: int) -> list[dict[str, int]]
     images = get_visible_objects(request.user, "core.view_image", collection.images.distinct())
     counts = (
         Accession.objects.filter(image__in=images)
-        .values("copyright_license", "cohort__default_attribution")
+        .values("copyright_license", "attribution")
         .annotate(count=Count("id"))
         .order_by("-count")
-        .values_list("copyright_license", "cohort__default_attribution", "count")
+        .values_list("copyright_license", "attribution", "count")
     )
 
     return [{"license": x[0], "attribution": x[1], "count": x[2]} for x in counts]
