@@ -85,7 +85,7 @@ def upload_cohort_create(request, contributor_pk):
             initial={
                 "contributor": contributor.pk,
                 "default_copyright_license": contributor.default_copyright_license,
-                "attribution": contributor.default_attribution,
+                "default_attribution": contributor.default_attribution,
             }
         )
 

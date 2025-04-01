@@ -157,10 +157,14 @@ class CohortOut(ModelSchema):
             "name",
             "description",
             "default_copyright_license",
-            "attribution",
         ]
 
+    attribution: str
     accession_count: int = Field(alias="accession_count")
+
+    @staticmethod
+    def resolve_attribution(obj: Cohort) -> str:
+        return obj.default_attribution
 
 
 @cohort_router.get(

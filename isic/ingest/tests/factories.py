@@ -50,7 +50,7 @@ class CohortFactory(factory.django.DjangoModelFactory):
     default_copyright_license = factory.Faker(
         "random_element", elements=[e[0] for e in CopyrightLicense.choices]
     )
-    attribution = factory.Faker("sentence")
+    default_attribution = factory.Faker("sentence")
 
 
 class MetadataFileFactory(factory.django.DjangoModelFactory):

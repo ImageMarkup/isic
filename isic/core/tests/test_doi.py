@@ -142,9 +142,9 @@ def collection_with_several_creators(image_factory, collection_factory, cohort_f
     # Cohort B and C have the same number of images in collection
     # Therefore, DOI creation should order A (most), then B and C (alphabetical tie breaker)
     cohort_a, cohort_b, cohort_c = (
-        cohort_factory(attribution="Cohort A"),
-        cohort_factory(attribution="Cohort B"),
-        cohort_factory(attribution="Cohort C"),
+        cohort_factory(default_attribution="Cohort A"),
+        cohort_factory(default_attribution="Cohort B"),
+        cohort_factory(default_attribution="Cohort C"),
     )
     collection = collection_factory(public=True)
 
@@ -171,9 +171,9 @@ def test_doi_creators_ordered_by_number_images_contributed(collection_with_sever
     creators = doi["data"]["attributes"]["creators"]
 
     assert len(creators) == 3
-    assert creators[0]["name"] == cohort_a.attribution
-    assert creators[1]["name"] == cohort_b.attribution
-    assert creators[2]["name"] == cohort_c.attribution
+    assert creators[0]["name"] == cohort_a.default_attribution
+    assert creators[1]["name"] == cohort_b.default_attribution
+    assert creators[2]["name"] == cohort_c.default_attribution
 
 
 @pytest.mark.django_db
@@ -181,7 +181,7 @@ def test_doi_creators_order_anonymous_contributions_last(
     collection_with_several_creators, cohort_factory, image_factory, user
 ):
     collection, *_ = collection_with_several_creators
-    anon_cohort = cohort_factory(attribution="Anonymous")
+    anon_cohort = cohort_factory(default_attribution="Anonymous")
     # Give anonymous cohort more contributions than others, assert it's still ordered last
     for _ in range(10):
         collection.images.add(image_factory(public=True, accession__cohort=anon_cohort))
@@ -198,9 +198,9 @@ def collection_with_repeated_creators(image_factory, collection_factory, cohort_
     # Cohort A has the most images in collection
     # Cohort B and C have the same number of images in collection
     # Therefore, DOI creation should order A (most), then B and C (alphabetical tie breaker)
-    cohort_a1 = cohort_factory(attribution="Cohort A")
-    cohort_a2 = cohort_factory(attribution="Cohort A")
-    cohort_b = cohort_factory(attribution="Cohort B")
+    cohort_a1 = cohort_factory(default_attribution="Cohort A")
+    cohort_a2 = cohort_factory(default_attribution="Cohort A")
+    cohort_b = cohort_factory(default_attribution="Cohort B")
     collection = collection_factory(public=True)
 
     for _ in range(3):
@@ -225,8 +225,8 @@ def test_doi_creators_collapse_repeated_creators(collection_with_repeated_creato
 
     creators = doi["data"]["attributes"]["creators"]
 
-    assert creators[0]["name"] == cohort_a1.attribution
-    assert creators[1]["name"] == cohort_b.attribution
+    assert creators[0]["name"] == cohort_a1.default_attribution
+    assert creators[1]["name"] == cohort_b.default_attribution
 
     assert len(creators) == 2
 
