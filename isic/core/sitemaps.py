@@ -10,7 +10,7 @@ class DoiSitemap(Sitemap):
     priority = 0.8
 
     def items(self):
-        return Doi.objects.all()
+        return Doi.objects.order_by("created")
 
 
 class PinnedCollectionSitemap(Sitemap):
@@ -18,7 +18,7 @@ class PinnedCollectionSitemap(Sitemap):
     priority = 0.7
 
     def items(self):
-        return Collection.objects.public().pinned()
+        return Collection.objects.public().pinned().order_by("created")
 
 
 sitemaps = {
