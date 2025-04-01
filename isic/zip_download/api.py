@@ -216,7 +216,9 @@ def zip_file_metadata_file(request: NinjaAuthHttpRequest):
 def zip_file_attribution_file(request: NinjaAuthHttpRequest):
     user, search = SearchQueryIn.from_token_representation(request.auth)
     qs = search.to_queryset(user, Image.objects.select_related("accession__cohort").distinct())
-    attributions = get_attributions(qs.values_list("accession__cohort__attribution", flat=True))
+    attributions = get_attributions(
+        qs.values_list("accession__cohort__default_attribution", flat=True)
+    )
     return HttpResponse("\n\n".join(attributions), content_type="text/plain")
 
 

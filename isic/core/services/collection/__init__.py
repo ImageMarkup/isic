@@ -73,8 +73,8 @@ def collection_get_creators_in_attribution_order(*, collection: Collection) -> l
     """
     creators = (
         collection.images.alias(num_images=Count("accession__image"))
-        .values_list("accession__cohort__attribution", flat=True)
-        .order_by("-num_images", "accession__cohort__attribution")
+        .values_list("accession__cohort__default_attribution", flat=True)
+        .order_by("-num_images", "accession__cohort__default_attribution")
         .distinct()
     )
 
