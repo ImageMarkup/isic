@@ -58,7 +58,7 @@ function SupplementalFileUploader() {
         body: JSON.stringify({
           collection_id: collectionId,
           supplemental_files: this._fieldValues.map((fieldValue, index) => ({
-            file: fieldValue.value,
+            blob: fieldValue.value,
             description: this.descriptions[index],
           })),
         }),
