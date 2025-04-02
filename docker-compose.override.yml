@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: ./dev/django.Dockerfile
-    command: ["./manage.py", "runserver", "0.0.0.0:8000"]
+    command: ["uv", "run", "./manage.py", "runserver", "0.0.0.0:8000"]
     # Log printing via Rich is enhanced by a TTY
     tty: true
     env_file: ./dev/.env.docker-compose
@@ -23,6 +23,8 @@ services:
       context: .
       dockerfile: ./dev/django.Dockerfile
     command: [
+      "uv",
+      "run",
       "celery",
       "--app", "isic.celery",
       "worker",
@@ -46,6 +48,8 @@ services:
       context: .
       dockerfile: ./dev/django.Dockerfile
     command: [
+      "uv",
+      "run",
       "celery",
       "--app", "isic.celery",
       "beat",

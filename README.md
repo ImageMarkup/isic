@@ -4,8 +4,8 @@
 This is the simplest configuration for developers to start with.
 
 ### Initial Setup
-1. Run `docker-compose run --rm django ./manage.py migrate`
-1. Run `docker-compose run --rm django ./manage.py createsuperuser`
+1. Run `docker-compose run --rm django uv run ./manage.py migrate`
+1. Run `docker-compose run --rm django uv run ./manage.py createsuperuser`
    and follow the prompts to create your own user
 
 ### Run Application
@@ -18,7 +18,7 @@ Occasionally, new package dependencies or schema changes will necessitate
 maintenance. To non-destructively update your development stack at any time:
 1. Run `docker-compose pull`
 1. Run `docker-compose build --pull --no-cache`
-1. Run `docker-compose run --rm django ./manage.py migrate`
+1. Run `docker-compose run --rm django uv run ./manage.py migrate`
 
 ## Develop Natively (advanced)
 This configuration still uses Docker to run attached services in the background,
@@ -26,27 +26,17 @@ but allows developers to run Python code on their native system.
 
 ### Initial Setup
 1. Run `docker-compose -f ./docker-compose.yml up -d`
-1. Install Python 3.12
-1. Install
-   [`psycopg2` build prerequisites](https://www.psycopg.org/docs/install.html#build-prerequisites)
-1. Create and activate a new Python virtualenv
-1. Run `pip install -e .[dev]`
-1. Run `source ./dev/export-env.sh`
-1. Run `./manage.py migrate`
-1. Run `./manage.py createsuperuser` and follow the prompts to create your own user
+1. [Install `uv`](https://docs.astral.sh/uv/getting-started/installation/)
+1. Run `export UV_ENV_FILE=./dev/.env.docker-compose-native`
+1. Run `uv run ./manage.py migrate`
+1. Run `uv run ./manage.py createsuperuser` and follow the prompts to create your own user
 1. Run `yarn && yarn build` (must be re-run whenever styles change)
 
 ### Run Application
-1. Ensure `docker-compose -f ./docker-compose.yml up -d` is still active
-1. Run:
-   1. `source ./dev/export-env.sh`
-   1. `./manage.py runserver`
-1. Run in a separate terminal:
-   1. `source ./dev/export-env.sh`
-   1. `celery --app isic.celery worker --loglevel INFO --without-heartbeat`
-1. Run in a seperate terminal:
-   1. `source ./dev/export-env.sh`
-   1. `celery --app isic.celery beat --loglevel INFO`
+1. Ensure `docker compose -f ./docker-compose.yml up -d` is still active
+1. Run: `UV_ENV_FILE=./dev/.env.docker-compose-native uv run ./manage.py runserver`
+1. Run in a separate terminal: `UV_ENV_FILE=./dev/.env.docker-compose-native uv run celery --app isic.celery worker --loglevel INFO --without-heartbeat`
+1. Run in a separate terminal: `UV_ENV_FILE=./dev/.env.docker-compose-native uv run celery --app isic.celery beat --loglevel INFO --without-heartbeat`
 1. When finished, run `docker-compose stop`
 
 ## Remap Service Ports (optional)
@@ -71,21 +61,22 @@ the appropriate `dev/.env.docker-compose*` file as a baseline for overrides.
 
 ## Testing
 ### Initial Setup
-tox is used to execute all tests.
-tox is installed automatically with the `dev` package extra.
+tox is used to manage the execution of all tests.
+[Install `uv`](https://docs.astral.sh/uv/getting-started/installation/) and run tox with
+`uvx tox ...`.
 
 When running the "Develop with Docker" configuration, all tox commands must be run as
-`docker-compose run --rm django tox`; extra arguments may also be appended to this form.
+`docker-compose run --rm django uvx tox`; extra arguments may also be appended to this form.
 
 ### Running Tests
-Run `tox` to launch the full test suite.
+Run `uvx tox` to launch the full test suite.
 
 Individual test environments may be selectively run.
 This also allows additional options to be be added.
 Useful sub-commands include:
-* `tox -e lint`: Run only the style checks
-* `tox -e type`: Run only the type checks
-* `tox -e test`: Run only the pytest-driven tests
+* `uvx tox -e lint`: Run only the style checks
+* `uvx tox -e type`: Run only the type checks
+* `uvx tox -e test`: Run only the pytest-driven tests
 
 To automatically reformat all code to comply with
-some (but not all) of the style checks, run `tox -e format`.
+some (but not all) of the style checks, run `uvx tox -e format`.
