@@ -1,4 +1,3 @@
-import csv
 import logging
 from pathlib import Path
 import random
@@ -31,6 +30,7 @@ from isic.core.tasks import (
     fetch_doi_citations_task,
     fetch_doi_schema_org_dataset_task,
 )
+from isic.core.utils.csv import EscapingDictWriter
 from isic.core.views.doi import LICENSE_TITLES, LICENSE_URIS
 from isic.zip_download.api import get_attributions
 
@@ -229,7 +229,7 @@ def collection_create_doi_files(*, doi: Doi) -> None:
             # the metadata csv could be large enough that it needs to be written to disk first
             with tempfile.NamedTemporaryFile("w", delete=False) as metadata_file:
                 collection_metadata = image_metadata_csv(qs=images)
-                writer = csv.DictWriter(metadata_file, fieldnames=next(collection_metadata))
+                writer = EscapingDictWriter(metadata_file, fieldnames=next(collection_metadata))
                 writer.writeheader()
                 for row in collection_metadata:
                     assert isinstance(row, dict)  # noqa: S101
