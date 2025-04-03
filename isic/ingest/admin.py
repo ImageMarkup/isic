@@ -1,4 +1,3 @@
-import csv
 from datetime import UTC, datetime
 import logging
 
@@ -15,6 +14,7 @@ from django_object_actions.utils import takes_instance_or_queryset
 from girder_utils.admin import ReadonlyTabularInline
 
 from isic.core.admin import StaffReadonlyAdmin
+from isic.core.utils.csv import EscapingDictWriter
 from isic.ingest.models import (
     Accession,
     AccessionReview,
@@ -133,7 +133,7 @@ class CohortAdmin(StaffReadonlyAdmin):
             f'attachment; filename="cohort_file_mapping_{current_time}.csv"'
         )
 
-        writer = csv.DictWriter(response, ["contributor", "cohort", "filename", "isic_id"])
+        writer = EscapingDictWriter(response, ["contributor", "cohort", "filename", "isic_id"])
 
         writer.writeheader()
         for cohort in queryset.select_related("contributor"):
