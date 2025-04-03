@@ -43,3 +43,18 @@ rules:
       - patterns:
           - pattern: django.db.migrations.RunSQL(...)
           - pattern-not: django.db.migrations.RunSQL(..., elidable=..., ...)
+
+  - id: require-csv-dict-writer
+    languages:
+      - python
+    severity: ERROR
+    message: Found a call to a regular csv writer, use EscapingDictWriter instead.
+    pattern: csv.writer(...)
+
+  - id: require-escaping-csv-dict-writer
+    languages:
+      - python
+    severity: ERROR
+    message: Found a call to a csv writer that doesn't escape values, use EscapingDictWriter instead.
+    pattern: csv.DictWriter($...ARGS)
+    fix: EscapingDictWriter($...ARGS)
