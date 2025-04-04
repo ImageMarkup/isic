@@ -73,6 +73,10 @@ def staff_image_metadata_csv(
         + sorted([f"unstructured.{key}" for key in used_unstructured_metadata_keys])
     )
 
+    # avoid calling this multiple times, since it adds up when exporting significant numbers of
+    # images.
+    accession_metadata_keys = Accession.metadata_keys()
+
     # Note this uses .values because populating django ORM objects is very slow, and doing this
     # on large querysets can add ~5s per 100k images to the request time.
     for image in (
@@ -107,7 +111,7 @@ def staff_image_metadata_csv(
             **{
                 k.replace("accession__", ""): v
                 for k, v in image.items()
-                if k.replace("accession__", "") in Accession.metadata_keys()
+                if k.replace("accession__", "") in accession_metadata_keys
             },
             **{
                 field.internal_id_name: image[
