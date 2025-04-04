@@ -1,5 +1,4 @@
 from collections.abc import Generator
-import csv
 from datetime import timedelta
 from typing import Any
 
@@ -26,6 +25,7 @@ from s3_file_field.fields import S3FileField
 from isic.core.models import Image
 from isic.core.models.collection import Collection
 from isic.core.storages.utils import generate_upload_to
+from isic.core.utils.csv import EscapingDictWriter
 from isic.studies.widgets import DiagnosisPicker
 
 
@@ -205,7 +205,7 @@ class Study(TimeStampedModel):
 
     def write_responses_csv(self, stream) -> None:
         fieldnames = ["image", "annotator", "annotation_duration", "question", "answer"]
-        writer = csv.DictWriter(stream, fieldnames)
+        writer = EscapingDictWriter(stream, fieldnames)
 
         writer.writeheader()
 

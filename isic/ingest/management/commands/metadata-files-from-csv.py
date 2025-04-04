@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 import djclick as click
 
+from isic.core.utils.csv import EscapingDictWriter
 from isic.ingest.models import Accession
 from isic.ingest.models.metadata_file import MetadataFile
 
@@ -53,7 +54,7 @@ def metadata_files_from_csv(user_id, csv_path, isic_id_column):
 
     for cohort_id, rows in cohort_files.items():
         blob = StreamWriter(io.BytesIO())
-        w = csv.DictWriter(blob, list(cohort_columns[cohort_id]))
+        w = EscapingDictWriter(blob, list(cohort_columns[cohort_id]))
         w.writeheader()
         for row in rows:
             w.writerow(row)

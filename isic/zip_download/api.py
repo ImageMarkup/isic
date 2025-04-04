@@ -1,6 +1,5 @@
 from collections import Counter
 from collections.abc import Iterable
-import csv
 from datetime import UTC, datetime, timedelta
 import json
 import logging
@@ -25,6 +24,7 @@ import rsa
 from isic.core.models import CopyrightLicense, Image
 from isic.core.serializers import SearchQueryIn
 from isic.core.services import image_metadata_csv
+from isic.core.utils.csv import EscapingDictWriter
 from isic.types import NinjaAuthHttpRequest
 
 logger = logging.getLogger(__name__)
@@ -202,7 +202,7 @@ def zip_file_metadata_file(request: NinjaAuthHttpRequest):
     response = HttpResponse(content_type="text/csv")
 
     metadata_file = image_metadata_csv(qs=qs)
-    writer = csv.DictWriter(response, next(metadata_file))
+    writer = EscapingDictWriter(response, next(metadata_file))
     writer.writeheader()
 
     for metadata_row in metadata_file:

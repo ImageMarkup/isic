@@ -1,5 +1,4 @@
 from collections.abc import Iterable
-import csv
 from datetime import UTC, datetime
 
 from django.contrib import messages
@@ -23,6 +22,7 @@ from isic.core.services.collection import collection_create, collection_update
 from isic.core.services.collection.doi import (
     collection_build_doi_preview,
 )
+from isic.core.utils.csv import EscapingDictWriter
 from isic.ingest.models import Contributor
 
 
@@ -132,7 +132,7 @@ def collection_download_metadata(request, pk):
 
     def csv_rows(buffer: Buffer) -> Iterable[bytes]:
         collection_metadata = image_metadata_csv(qs=qs)
-        writer = csv.DictWriter(buffer, next(collection_metadata))
+        writer = EscapingDictWriter(buffer, next(collection_metadata))
         yield writer.writeheader()
 
         for metadata_row in collection_metadata:

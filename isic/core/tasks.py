@@ -1,4 +1,3 @@
-import csv
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 import tempfile
@@ -28,6 +27,7 @@ from isic.core.serializers import SearchQueryIn
 from isic.core.services import staff_image_metadata_csv
 from isic.core.services.collection import collection_share
 from isic.core.services.collection.image import collection_add_images
+from isic.core.utils.csv import EscapingDictWriter
 from isic.ingest.models.accession import Accession
 from isic.ingest.models.lesion import Lesion
 
@@ -105,7 +105,7 @@ def generate_staff_image_list_metadata_csv(user_id: int) -> None:
 
         qs = Image.objects.all()
         image_csv = staff_image_metadata_csv(qs=qs)
-        writer = csv.DictWriter(f, next(image_csv))
+        writer = EscapingDictWriter(f, next(image_csv))
         writer.writeheader()
 
         for metadata_row in image_csv:
