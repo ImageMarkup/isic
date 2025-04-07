@@ -2,8 +2,8 @@
 {% load localtime %}
 
 <div x-show="selectedTab == 'metadata'">
-  <div class="flex">
-    <div class="flex-col flex-grow-5 mr-6">
+  <div class="md:flex md:justify-between">
+    <div class="flex-col flex-grow-5 md:mr-6 mb-6">
       <div class="heading-3">Clinical</div>
       <div class="overflow-x-auto">
         {% include 'core/image_detail/metadata_table.html' %}
