@@ -3,7 +3,7 @@ The search query uses a simple DSL syntax.
 Some example queries are:
 <pre>
     # Display images diagnosed as melanoma from patients that are approximately 50 years old.
-    age_approx:50 AND diagnosis:melanoma
+    age_approx:50 AND diagnosis_3:"Melanoma Invasive"
 </pre>
 <pre>
     # Display images from male patients that are approximately 20 to 40 years old.
@@ -16,7 +16,11 @@ Some example queries are:
 
 The following fields are exposed to the query parameter:
 <ul>
-    <li>diagnosis</li>
+    <li>diagnosis_1</li>
+    <li>diagnosis_2</li>
+    <li>diagnosis_3</li>
+    <li>diagnosis_4</li>
+    <li>diagnosis_5</li>
     <li>age_approx</li>
     <li>sex</li>
     <li>diagnosis_confirm_type</li>
@@ -35,3 +39,5 @@ The following fields are exposed to the query parameter:
     <li>mel_type</li>
     <li>mel_ulcer</li>
 </ul>
+
+For additional information on the fields, see the [ISIC Data Dictionary](https://www.isic-archive.com/data-dictionary).

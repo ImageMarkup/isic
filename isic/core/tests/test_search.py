@@ -111,7 +111,7 @@ def test_core_api_image_search(searchable_images, staff_client):
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == 2, r.json()
 
-    r = staff_client.get("/api/v2/images/search/", {"query": "diagnosis:nevus"})
+    r = staff_client.get("/api/v2/images/search/", {"query": "diagnosis_3:Nevus"})
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == 1, r.json()
 
