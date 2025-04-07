@@ -115,13 +115,6 @@
 </head>
 
 <body x-data="quickfind()" @keydown.escape="closeQuickfindModal()">
-  {% if SANDBOX_BANNER %}
-    <div class="fixed-banner">
-      This is a testing sandbox for the ISIC Archive.
-      The ISIC Archive is at <a href="https://www.isic-archive.com/">https://isic-archive.com</a>.
-    </div>
-  {% endif %}
-
   {% include 'core/partials/navbar.html' %}
 
   <div class="{% block container_class %}container max-w-7xl mx-auto p-8{% endblock %}">
