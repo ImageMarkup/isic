@@ -180,8 +180,6 @@ ISIC_OAUTH_ALLOW_REGEX_REDIRECT_URIS = string_to_bool(
 if string_to_bool(os.environ.get("DJANGO_ISIC_OAUTH_ALLOW_HTTP_REDIRECT_URIS", "false")):
     OAUTH2_PROVIDER["ALLOWED_REDIRECT_URI_SCHEMES"].append("http")  # noqa: F405
 
-ISIC_SANDBOX_BANNER = string_to_bool(os.environ["DJANGO_ISIC_SANDBOX_BANNER"])
-
 CDN_LOG_BUCKET = os.environ["DJANGO_CDN_LOG_BUCKET"]
 
 ISIC_JS_SENTRY = True
