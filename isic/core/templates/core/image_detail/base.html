@@ -39,7 +39,7 @@
           {% else %}
             <a href="{{ image.accession.blob.url }}">
               <img src="{% if PLACEHOLDER_IMAGES %}https://picsum.photos/seed/{{image.accession.id}}/256{% else %}{{ image.accession.blob.url }}{% endif %}"
-                   class="object-cover max-w-md max-h-96 lg:max-w-xl border border-black" />
+                   class="object-cover sm:max-w-md max-h-96 lg:max-w-xl border border-black" />
             </a>
           {% endif %}
         </div>
