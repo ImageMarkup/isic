@@ -26,7 +26,7 @@
         </div>
       </div>
 
-      <div class="sm:flex justify-between pt-4">
+      <div class="md:flex justify-between pt-4">
         <div class="flex justify-center">
           {% if image.accession.is_cog and not PLACEHOLDER_IMAGES %}
             <div id="image" style="width:512px; height:512px; border:1px solid #ccc;"></div>
@@ -38,11 +38,8 @@
             <span class="text-sm">Scroll to zoom, click and drag to pan</span>
           {% else %}
             <a href="{{ image.accession.blob.url }}">
-              {% if PLACEHOLDER_IMAGES %}
-                <img src="https://picsum.photos/seed/{{image.accession.id}}/256" style="object-fit: cover;" />
-              {% else %}
-                <img src="{{ image.accession.blob.url }}" style="object-fit: cover;" />
-              {% endif %}
+              <img src="{% if PLACEHOLDER_IMAGES %}https://picsum.photos/seed/{{image.accession.id}}/256{% else %}{{ image.accession.blob.url }}{% endif %}"
+                   class="object-cover max-w-md max-h-96 lg:max-w-xl border border-black" />
             </a>
           {% endif %}
         </div>
