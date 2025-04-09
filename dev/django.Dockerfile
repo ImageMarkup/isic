@@ -1,18 +1,15 @@
-FROM ghcr.io/astral-sh/uv:debian
+FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 # Install system librarires for Python packages:
 # * libmagic1
 # * psycopg2
 RUN apt-get update && \
     apt-get install --no-install-recommends --yes \
-        libmagic1 libpq-dev gcc libc6-dev && \
+        libmagic1 libpq-dev gcc libc6-dev git python3-dev && \
     rm -rf /var/lib/apt/lists/*
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+RUN mv /root/.local/bin/uv /usr/local/bin/uv
+RUN mv /root/.local/bin/uvx /usr/local/bin/uvx
 
 WORKDIR /opt/django-project
-
-COPY ./pyproject.toml /opt/django-project/pyproject.toml
-COPY ./uv.toml /opt/django-project/uv.toml
-
-RUN uv sync --compile-bytecode --no-cache
