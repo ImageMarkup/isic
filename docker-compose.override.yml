@@ -16,6 +16,7 @@ services:
       - elasticsearch
       - rabbitmq
       - minio
+      - redis
 
   celery:
     build:
@@ -38,6 +39,7 @@ services:
       - elasticsearch
       - rabbitmq
       - minio
+      - redis
 
   celerybeat:
     build:
@@ -57,7 +59,7 @@ services:
       - postgres
       - rabbitmq
       - minio
-
+      - redis
   node:
     build:
       context: .
