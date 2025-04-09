@@ -9,7 +9,9 @@ from isic.core.serializers import SearchQueryIn
 class ImageSearchForm(forms.Form):
     query = forms.CharField(
         required=False,
-        widget=forms.TextInput(attrs={"placeholder": "diagnosis:melanoma OR diagnosis:nevus"}),
+        widget=forms.TextInput(
+            attrs={"placeholder": 'diagnosis_3:Nevus OR diagnosis_3:"Melanoma Invasive"'}
+        ),
     )
 
     def __init__(self, *args, **kwargs):
