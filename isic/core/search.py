@@ -1,28 +1,26 @@
 from collections.abc import Mapping
 from copy import deepcopy
-from functools import lru_cache, partial
+from functools import lru_cache
+import hashlib
 import logging
-from typing import TYPE_CHECKING, Any, NotRequired, TypedDict
+from typing import Any, NotRequired, TypedDict, override
 
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser, User
+from django.core.cache import cache
 from django.db.models.query import QuerySet
 from isic_metadata import FIELD_REGISTRY
 from isic_metadata.fields import ImageTypeEnum
-from opensearchpy import NotFoundError
+from opensearchpy import NotFoundError, OpenSearch
+from opensearchpy.transport import Transport
 import sentry_sdk
-
-from isic.ingest.models.accession import Accession
-from isic.ingest.models.lesion import Lesion
-
-if TYPE_CHECKING:
-    from opensearchpy import OpenSearch
-
 
 from isic.core.models import Image
 from isic.core.models.collection import Collection
 from isic.core.permissions import get_visible_objects
 from isic.core.utils.logging import LoggingContext
+from isic.ingest.models.accession import Accession
+from isic.ingest.models.lesion import Lesion
 
 logger = logging.getLogger(__name__)
 
@@ -82,19 +80,56 @@ LESION_INDEX_MAPPINGS = {
 }
 
 
+class InstrumentedTransport(Transport):
+    """A transport that adds caching and retries to the base transport."""
+
+    @override
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        kwargs.setdefault("retry_on_timeout", True)
+        super().__init__(*args, **kwargs)
+
+    @staticmethod
+    def _cache_key(  # noqa: PLR0913
+        method: str, url: str, params: Any, body: Any, timeout: Any, ignore: Any, headers: Any
+    ) -> str:
+        return (
+            "es:"
+            + hashlib.sha256(
+                f"{method}:{url}:{params}:{body}:{timeout}:{ignore}:{headers}".encode()
+            ).hexdigest()
+        )
+
+    @override
+    def perform_request(
+        self,
+        method: str,
+        url: str,
+        params: Any = None,
+        body: Any = None,
+        timeout: Any = None,
+        ignore: Any = (),
+        headers: Any = None,
+    ) -> Any:
+        is_cacheable = url.endswith(("/_count", "/_search"))
+
+        if is_cacheable:
+            cache_key = self._cache_key(method, url, params, body, timeout, ignore, headers)
+            cached_result = cache.get(cache_key)
+            if cached_result:
+                return cached_result
+
+        with sentry_sdk.start_span(op="es"):
+            result = super().perform_request(method, url, params, body, timeout, ignore, headers)
+
+        if is_cacheable:
+            cache.set(cache_key, result)
+
+        return result
+
+
 @lru_cache
 def get_elasticsearch_client() -> "OpenSearch":
-    from opensearchpy import OpenSearch
-    from opensearchpy.transport import Transport
-
-    class InstrumentedTransport(Transport):
-        def perform_request(self, *args: Any, **kwargs: Any) -> Any:
-            with sentry_sdk.start_span(op="es"):
-                return super().perform_request(*args, **kwargs)
-
-    # TODO: investigate using retryable requests with transport_class
-    RetryOnTimeoutTransport = partial(InstrumentedTransport, retry_on_timeout=True)  # noqa: N806
-    return OpenSearch(settings.ELASTICSEARCH_URL, transport_class=RetryOnTimeoutTransport)  # type: ignore[arg-type]
+    return OpenSearch(settings.ELASTICSEARCH_URL, transport_class=InstrumentedTransport)
 
 
 def maybe_create_index(index: str, mappings: Mapping[str, Any]) -> None:
