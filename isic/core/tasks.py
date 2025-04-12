@@ -90,8 +90,11 @@ def sync_elasticsearch_indices_task():
         .order_by(),
     )
 
+    # hasattr is necessary because only the upstream django-redis has
+    # the ability to delete patterns.
     if hasattr(cache, "delete_pattern"):
         cache.delete_pattern("get_facets:*")
+        cache.delete_pattern("es:*")
 
 
 @shared_task(soft_time_limit=1800, time_limit=1810)
