@@ -1,3 +1,4 @@
+from cachalot.api import cachalot_disabled
 from django.urls import reverse
 from isic_metadata.fields import ImageTypeEnum
 import pytest
@@ -103,6 +104,40 @@ def collection_with_image(_search_index, image_factory, collection_factory):
     add_to_search_index(public_image)
     get_elasticsearch_client().indices.refresh(index="_all")
     return public_coll
+
+
+@pytest.mark.django_db
+def test_elasticsearch_caching(searchable_images, settings, staff_client, mocker):
+    # using elasticsearch counts is the easiest way to test elasticsearch caching
+    settings.ISIC_USE_ELASTICSEARCH_COUNTS = True
+
+    import isic.core.search
+
+    cache_get = mocker.spy(isic.core.search.cache, "get")
+    cache_set = mocker.spy(isic.core.search.cache, "set")
+
+    with cachalot_disabled():
+        r = staff_client.get("/api/v2/images/search/")
+        assert r.status_code == 200, r.json()
+        assert r.json()["count"] == 2, r.json()
+        assert cache_get.call_count == 1
+        assert cache_set.call_count == 1
+
+        r = staff_client.get("/api/v2/images/search/")
+        assert r.status_code == 200, r.json()
+        assert r.json()["count"] == 2, r.json()
+        assert cache_get.call_count == 2
+        assert cache_set.call_count == 1
+
+        r = staff_client.get("/api/v2/images/search/", {"query": "diagnosis_3:Nevus"})
+        assert r.status_code == 200, r.json()
+        assert r.json()["count"] == 1, r.json()
+        assert cache_get.call_count == 3
+        assert cache_set.call_count == 2
+
+    # make sure all of the calls are related to elasticsearch caching
+    for call in cache_get.mock_calls + cache_set.mock_calls:
+        assert call.args[0].startswith("es:")
 
 
 @pytest.mark.django_db
