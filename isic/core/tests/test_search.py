@@ -142,6 +142,50 @@ def test_elasticsearch_caching(searchable_images, settings, staff_client, client
 
 
 @pytest.mark.django_db
+def test_elasticsearch_cache_sharing(
+    searchable_images, client, user_factory, settings, mocker, contributor_factory
+):
+    # using elasticsearch counts is the easiest way to test elasticsearch caching
+    settings.ISIC_USE_ELASTICSEARCH_COUNTS = True
+
+    import isic.core.search
+
+    cache_get = mocker.spy(isic.core.search.cache, "get")
+    cache_set = mocker.spy(isic.core.search.cache, "set")
+
+    with cachalot_disabled():
+        r = client.get("/api/v2/images/search/")
+        assert r.status_code == 200, r.json()
+        assert r.json()["count"] == 1, r.json()
+        assert cache_get.call_count == 1
+        assert cache_set.call_count == 1
+
+        user = user_factory()
+        client.force_login(user)
+
+        # a public user shares the same cache with a regular user with no special permissions
+        r = client.get("/api/v2/images/search/")
+        assert r.status_code == 200, r.json()
+        assert r.json()["count"] == 1, r.json()
+        assert cache_get.call_count == 2
+        assert cache_set.call_count == 1
+
+        contributor = contributor_factory()
+        user.owned_contributors.add(contributor)
+
+        # now the user has special permissions, so the cache should not be shared
+        r = client.get("/api/v2/images/search/")
+        assert r.status_code == 200, r.json()
+        assert r.json()["count"] == 1, r.json()
+        assert cache_get.call_count == 3
+        assert cache_set.call_count == 2
+
+    # make sure all of the calls are related to elasticsearch caching
+    for call in cache_get.mock_calls + cache_set.mock_calls:
+        assert call.args[0].startswith("es:")
+
+
+@pytest.mark.django_db
 def test_core_api_image_search(searchable_images, staff_client):
     r = staff_client.get("/api/v2/images/search/")
     assert r.status_code == 200, r.json()

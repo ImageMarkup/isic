@@ -252,14 +252,17 @@ class ImagePermissions:
         if user_obj.is_staff:
             return qs
         elif user_obj.is_authenticated:
-            image_visibility_requirements = Q(public=True) | Q(
-                # this needs list coercion because otherwise it will be a subquery that contains
-                # the user_id, which doesn't allow users with identical privileges to share
-                # the query cache.
-                accession__cohort__contributor_id__in=list(
-                    user_obj.owned_contributors.order_by().values_list("id", flat=True)
+            image_visibility_requirements = Q(public=True)
+
+            if user_obj.owned_contributors.exists():
+                image_visibility_requirements |= Q(
+                    # this needs list coercion because otherwise it will be a subquery that contains
+                    # the user_id, which doesn't allow users with identical privileges to share
+                    # the query cache.
+                    accession__cohort__contributor_id__in=list(
+                        user_obj.owned_contributors.order_by().values_list("id", flat=True)
+                    )
                 )
-            )
 
             if user_obj.imageshare_set.exists():
                 # this is the worst case scenario where we have to put the specific user into the
