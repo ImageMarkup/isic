@@ -6,11 +6,13 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
-from django.db.models import Count, Prefetch, Q
+from django.db.models import BooleanField, Case, Count, F, FloatField, Prefetch, Q, When
+from django.db.models.expressions import ExpressionWrapper
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 
+from isic.core.models import Collection
 from isic.core.permissions import needs_object_permission
 from isic.ingest.forms import MergeCohortForm, PublishCohortForm
 from isic.ingest.models import Cohort
@@ -157,3 +159,51 @@ def publish_cohort(request, pk):
     ctx["num_unpublishable"] = ctx["num_accessions"] - ctx["num_publishable"]
 
     return render(request, "ingest/cohort_publish.html", ctx)
+
+
+@staff_member_required
+def cohort_derived_collections(request, pk):
+    cohort = get_object_or_404(Cohort.objects.select_related("creator"), pk=pk)
+
+    collections = list(
+        Collection.objects.filter(images__accession__cohort=cohort)
+        .distinct()
+        .values_list("id", flat=True)
+    )
+
+    collection_counts = (
+        Collection.objects.select_related("cohort")
+        .filter(id__in=collections)
+        .annotate(
+            num_images=Count("images", distinct=True),
+            num_derived_images=Count(
+                "images", distinct=True, filter=Q(images__accession__cohort=cohort)
+            ),
+            is_cohorts_magic_collection=Case(
+                When(cohort=cohort, then=True),
+                default=False,
+                output_field=BooleanField(),
+            ),
+        )
+    )
+
+    collection_counts = collection_counts.annotate(
+        percentage=ExpressionWrapper(
+            F("num_derived_images") * 100.0 / F("num_images"),
+            output_field=FloatField(),
+        )
+    ).order_by("-is_cohorts_magic_collection", "-percentage", "-num_derived_images", "created")
+
+    paginator = Paginator(collection_counts, 10)
+    page = paginator.get_page(request.GET.get("page"))
+
+    return render(
+        request,
+        "ingest/cohort_derived_collections.html",
+        {
+            "cohort": cohort,
+            "collections": page,
+            "num_collections": paginator.count,
+            "breadcrumbs": [*make_breadcrumbs(cohort), ["#", "Derived Collections"]],
+        },
+    )

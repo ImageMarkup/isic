@@ -1,0 +1,46 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block content %}
+  <div class="flex justify-between">
+    {% include 'ingest/partials/breadcrumbs.html' %}
+  </div>
+
+  <div class="mb-5 flex flex-col justify-between">
+    <div class="flex justify-between">
+      <div class="heading-2">Derived Collections for {{ cohort.name }}</div>
+    </div>
+  </div>
+
+  <div>Showing {{ num_collections|intcomma }} collections derived from this cohort</div>
+
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
+    {% for collection in collections %}
+      <div class="relative rounded-lg border border-gray-300 {% if collection.public %}bg-white{% else %}bg-red-100{% endif %} px-6 py-5 shadow-sm flex items-center space-x-3 hover:border-gray-400 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
+        {% if collection.pinned %}
+          <i class="ri-pushpin-2-line"></i>
+        {% elif collection.is_magic %}
+          <i class="ri-sparkling-line"></i>
+        {% endif %}
+
+        <div class="flex-1 min-w-0">
+          <a href="{% url 'core/collection-detail' collection.pk %}" class="focus:outline-none">
+            <span class="absolute inset-0" aria-hidden="true"></span>
+            <p class="text-sm font-medium text-gray-900">
+              {{ collection.name }}
+            </p>
+            <p class="text-sm text-gray-500 truncate">
+              {{ collection.num_images|intcomma }} images ({{ collection.num_derived_images|intcomma }} from this cohort - {{ collection.percentage|floatformat:1 }}%)
+              <br>
+              {{ collection.num_lesions|intcomma }} lesions, {{ collection.num_patients|intcomma }} patients
+            </p>
+          </a>
+        </div>
+      </div>
+    {% empty %}
+      <div class="p-4 text-center">No derived collections found for this cohort.</div>
+    {% endfor %}
+  </div>
+
+  {% include 'studies/partials/pagination.html' with page_obj=collections %}
+{% endblock %}

@@ -52,6 +52,11 @@ urlpatterns = [
     path("staff/ingest-review/", review_views.ingest_review, name="ingest-review"),
     path("staff/ingest-review/<int:pk>/", cohort_views.cohort_detail, name="cohort-detail"),
     path(
+        "staff/ingest-review/<int:pk>/derived-collections/",
+        cohort_views.cohort_derived_collections,
+        name="cohort-derived-collections",
+    ),
+    path(
         "staff/ingest-review/<int:cohort_pk>/gallery/",
         review_views.cohort_review,
         name="cohort-review",
