@@ -107,7 +107,7 @@ def collection_with_image(_search_index, image_factory, collection_factory):
 
 
 @pytest.mark.django_db
-def test_elasticsearch_caching(searchable_images, settings, staff_client, mocker):
+def test_elasticsearch_caching(searchable_images, settings, staff_client, client, mocker):
     # using elasticsearch counts is the easiest way to test elasticsearch caching
     settings.ISIC_USE_ELASTICSEARCH_COUNTS = True
 
@@ -129,7 +129,8 @@ def test_elasticsearch_caching(searchable_images, settings, staff_client, mocker
         assert cache_get.call_count == 2
         assert cache_set.call_count == 1
 
-        r = staff_client.get("/api/v2/images/search/", {"query": "diagnosis_3:Nevus"})
+        # notably the cache is not shared between a staff user and a regular user
+        r = client.get("/api/v2/images/search/")
         assert r.status_code == 200, r.json()
         assert r.json()["count"] == 1, r.json()
         assert cache_get.call_count == 3
