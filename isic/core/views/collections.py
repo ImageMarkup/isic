@@ -31,7 +31,7 @@ def collection_list(request):
     collections = get_visible_objects(
         request.user,
         "core.view_collection",
-        Collection.objects.order_by("-pinned", "name"),
+        Collection.objects.select_related("cohort").order_by("-pinned", "name"),
     )
 
     if request.user.is_authenticated:
