@@ -24,7 +24,7 @@ from isic.core.services import image_metadata_csv
 from isic.core.services.collection import create_collection, update_collection
 from isic.core.utils.csv import EscapingDictWriter
 from isic.core.utils.http import Echo
-from isic.ingest.models import Contributor
+from isic.ingest.models import Cohort, Contributor
 
 
 @login_required
@@ -194,6 +194,16 @@ def collection_list(request: HttpRequest) -> HttpResponse:
     pinned_filter = request.GET.get("pinned_filter", "all")
     exclude_empty = request.GET.get("exclude_empty", "1") == "1"
 
+    cohort_filter = request.GET.get("cohort", "")
+    cohort = None
+    if request.user.is_staff and cohort_filter.isdigit():
+        cohort = get_object_or_404(Cohort, pk=cohort_filter)
+        collections = collections.filter(
+            pk__in=Collection.images.through.objects.filter(image__accession__cohort=cohort).values(
+                "collection_id"
+            )
+        )
+
     if magic_filter == "only":
         collections = collections.magic()
     elif magic_filter == "exclude":
@@ -243,5 +253,6 @@ def collection_list(request: HttpRequest) -> HttpResponse:
             "magic_filter": magic_filter,
             "pinned_filter": pinned_filter,
             "exclude_empty": exclude_empty,
+            "cohort": cohort,
         },
     )

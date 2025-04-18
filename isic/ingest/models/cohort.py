@@ -78,6 +78,12 @@ class Cohort(CreationSortedTimeStampedModel):
         return reverse("ingest/cohort-detail", args=[self.id])
 
     @property
+    def derived_collections_url(self) -> str:
+        # magic_filter is overridden because the collection list excludes magic collections by
+        # default, which would hide the cohort's own collection.
+        return reverse("core/collection-list", query={"cohort": self.id, "magic_filter": "all"})
+
+    @property
     def num_lesions(self):
         return self.accessions.exclude(lesion=None).values("lesion__id").distinct().count()
 
