@@ -52,6 +52,8 @@
       <div class="relative rounded-lg border border-gray-300 {% if collection.public %}bg-white{% else %}bg-red-100{% endif %} px-6 py-5 shadow-sm flex items-center space-x-3 hover:border-gray-400 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
         {% if collection.pinned %}
           <i class="ri-pushpin-2-line"></i>
+        {% elif collection.is_magic %}
+          <i class="ri-bard-line"></i>
         {% endif %}
 
         <div class="flex-1 min-w-0">
