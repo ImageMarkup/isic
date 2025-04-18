@@ -111,7 +111,6 @@ class InstrumentedTransport(Transport):
         headers: Any = None,
     ) -> Any:
         is_cacheable = url.endswith(("/_count", "/_search"))
-
         if is_cacheable:
             cache_key = self._cache_key(method, url, params, body, timeout, ignore, headers)
             cached_result = cache.get(cache_key)
@@ -311,17 +310,35 @@ def build_elasticsearch_query(
         query_dict["bool"]["filter"].append({"terms": {"collections": visible_collection_pks}})
 
     # Note: permissions here must be also modified in ImagePermissions.view_image_list
-    if user.is_anonymous:
+    if user.is_staff:
+        return query_dict
+    elif user.is_authenticated:
+        # the logic below of generalizing the query parameters to avoid user-specific data
+        # is identical to the logic in ImagePermissions.view_image_list.
         query_dict["bool"]["should"] = [{"term": {"public": "true"}}]
         # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html#bool-min-should-match
         query_dict["bool"]["minimum_should_match"] = 1
-    elif not user.is_staff:
-        query_dict["bool"]["should"] = [
-            {"term": {"public": "true"}},
-            {"terms": {"shared_to": [user.pk]}},
-            {"terms": {"contributor_owner_ids": [user.pk]}},
-        ]
+
+        # the logic below of generalizing the query parameters to avoid user-specific data
+        # is identical to the logic in ImagePermissions.view_image_list.
+        if user.owned_contributors.exists():
+            query_dict["bool"]["should"].append(
+                {
+                    "terms": {
+                        "contributor_owner_ids": list(
+                            user.owned_contributors.order_by().values_list("id", flat=True)
+                        )
+                    }
+                }
+            )
+
+        if user.imageshare_set.exists():
+            query_dict["bool"]["should"].append({"terms": {"shared_to": [user.pk]}})
+
+        return query_dict
+    else:
+        query_dict["bool"]["should"] = [{"term": {"public": "true"}}]
         # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html#bool-min-should-match
         query_dict["bool"]["minimum_should_match"] = 1
 
-    return query_dict
+        return query_dict
