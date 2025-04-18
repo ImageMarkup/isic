@@ -10,6 +10,9 @@
     <li><span class="font-bold">Default License:</span> {{ cohort.get_default_copyright_license_display }}</li>
     <li><span class="font-bold">Created by:</span> {{ cohort.creator.first_name }} {{ cohort.creator.last_name }} ({{ cohort.creator }})</li>
     <li><span class="font-bold">Created on:</span> {% localtime cohort.created %}</li>
+    {% if cohort.collection %}
+      <li><span class="font-bold">Magic Collection:</span> <a href="{% url 'core/collection-detail' cohort.collection.pk %}" class="text-blue-500 hover:underline">{{ cohort.collection.name }}</a></li>
+    {% endif %}
     <li><span class="font-bold">Number of accessions:</span> {{ counts.accession_count|intcomma }}</li>
     <li><span class="font-bold">Number of lesions:</span> {{ counts.lesion_count|intcomma }}</li>
     <li><span class="font-bold">Number of patients:</span> {{ counts.patient_count|intcomma }}</li>
