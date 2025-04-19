@@ -41,6 +41,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
+        "asgiref",
         "bcrypt",
         "celery>=5.4.0",
         "deepdiff",
