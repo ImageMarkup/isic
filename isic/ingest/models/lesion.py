@@ -31,11 +31,18 @@ def get_lesion_count_for_user(user: User | AnonymousUser) -> int:
 
     should = [OpenSearchQ("term", **{"images.public": True})]
 
+    # these are structured to make the search dictionary as cacheable as possible.
+    # similar to the logic in build_elasticsearch_query.
     if user.is_authenticated:
-        should += [
-            OpenSearchQ("term", **{"images.contributor_owner_ids": user.pk}),
-            OpenSearchQ("term", **{"images.shared_to": user.pk}),
-        ]
+        if user.owned_contributors.exists():
+            should += [
+                OpenSearchQ("term", **{"images.contributor_owner_ids": user.pk}),
+            ]
+
+        if user.imageshare_set.exists():
+            should += [
+                OpenSearchQ("term", **{"images.shared_to": user.pk}),
+            ]
 
     # find all documents where it's NOT true that the nested images array does NOT
     # contain any images that match should (OR of should).
