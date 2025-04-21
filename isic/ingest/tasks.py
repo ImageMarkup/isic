@@ -92,7 +92,11 @@ def process_distinctness_measure_task(accession_pk: int):
     with accession.blob.open() as blob_stream:
         checksum = DistinctnessMeasure.compute_checksum(blob_stream)
 
-    DistinctnessMeasure.objects.create(accession=accession, checksum=checksum)
+    # use update_or_create to make the function idempotent. this is useful if we ever
+    # have to replace accessions manually.
+    DistinctnessMeasure.objects.update_or_create(
+        accession=accession, defaults={"checksum": checksum}
+    )
 
 
 @shared_task(soft_time_limit=3600 * 2, time_limit=(3600 * 2) + 60)
