@@ -20,7 +20,6 @@ import sentry_sdk
 from isic.core.models import Image
 from isic.core.models.collection import Collection
 from isic.core.permissions import get_visible_objects
-from isic.core.utils.logging import LoggingContext
 from isic.ingest.models.accession import Accession
 from isic.ingest.models.lesion import Lesion
 
@@ -196,27 +195,24 @@ def bulk_add_to_search_index(
     assert_index_exists(index)
     from opensearchpy.helpers import bulk
 
-    # The opensearch logger is very noisy when updating records,
-    # set it to warning during this operation.
-    with LoggingContext(logging.getLogger("opensearch"), level=logging.WARNING):
-        # qs must be generated with with_elasticsearch_properties
-        # Use a generator for lazy evaluation
-        documents = (obj.to_elasticsearch_document() for obj in qs.iterator(chunk_size=chunk_size))
+    # qs must be generated with with_elasticsearch_properties
+    # Use a generator for lazy evaluation
+    documents = (obj.to_elasticsearch_document() for obj in qs.iterator(chunk_size=chunk_size))
 
-        # note we can't use parallel_bulk because the cachalot_disabled context manager
-        # is thread local.
-        success, info = bulk(
-            client=get_elasticsearch_client(),
-            index=index,
-            actions=documents,
-            # The default chunk_size is 2000, but that may be too many models to fit into memory.
-            # Note the default chunk_size matches QuerySet.iterator
-            chunk_size=chunk_size,
-            max_retries=3,
-        )
+    # note we can't use parallel_bulk because the cachalot_disabled context manager
+    # is thread local.
+    success, info = bulk(
+        client=get_elasticsearch_client(),
+        index=index,
+        actions=documents,
+        # The default chunk_size is 2000, but that may be too many models to fit into memory.
+        # Note the default chunk_size matches QuerySet.iterator
+        chunk_size=chunk_size,
+        max_retries=3,
+    )
 
-        if not success:
-            logger.error("Failed to insert document into elasticsearch: %s", info)
+    if not success:
+        logger.error("Failed to insert document into elasticsearch: %s", info)
 
 
 def _prettify_facets(facets: dict[str, Any]) -> dict[str, Any]:
