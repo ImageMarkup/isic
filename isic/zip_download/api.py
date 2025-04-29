@@ -1,5 +1,5 @@
 from collections import Counter
-from collections.abc import Iterable
+from collections.abc import Generator, Iterable
 from datetime import UTC, datetime, timedelta
 import json
 import logging
@@ -11,6 +11,8 @@ from django.contrib.sites.models import Site
 from django.core.files.storage import default_storage
 from django.core.signing import BadSignature, TimestampSigner
 from django.db import connection, transaction
+from django.db.models import QuerySet
+from django.http import StreamingHttpResponse
 from django.http.request import HttpRequest
 from django.http.response import Http404, HttpResponse
 from django.shortcuts import render
@@ -103,13 +105,76 @@ def _cloudfront_signer(message: bytes) -> bytes:
     )
 
 
+def _zip_file_listing_generator(
+    qs: QuerySet[Image], token: str
+) -> Generator[dict[str, str], None, None]:
+    def extension_from_str(s: str) -> str:
+        return PurePosixPath(s).suffix.lstrip(".")
+
+    if settings.ZIP_DOWNLOAD_WILDCARD_URLS:
+        # this is a performance optimization. repeated signing of individual urls
+        # is slow when generating large descriptors. this allows generating one signature and
+        # using it for all urls.
+        signer = CloudFrontSigner(default_storage.cloudfront_key_id, _cloudfront_signer)
+        # create a wildcard signature that allows access to * and pass this to the zipstreamer.
+        # since zip_api_auth uses a shared secret that only it and the zipstreamer know, this
+        # can't be intercepted by someone looking at the zipstreamer url.
+        url = f"https://{default_storage.custom_domain}/*"
+        policy = signer.build_policy(
+            url,
+            date_less_than=datetime.now(tz=UTC) + timedelta(days=1),
+        )
+        signed_url = signer.generate_presigned_url(url, policy=policy)
+        yield from (
+            {
+                "url": signed_url.replace("*", image["accession__blob"]),
+                "zipPath": f"{image['isic_id']}.{extension_from_str(image['accession__blob'])}",
+            }
+            for image in qs.values("accession__blob", "isic_id").iterator()
+        )
+    else:
+        # development doesn't have any cloudfront frontend so we need to sign each individual url.
+        # this is considerably slower because of the signing and the hydrating of the related
+        # objects instead of being able to utilize .values.
+        yield from (
+            {
+                "url": image.accession.blob.url,
+                "zipPath": f"{image.isic_id}.{image.extension}",
+            }
+            for image in qs.iterator()
+        )
+
+    # initialize files with metadata and attribution files
+    domain = Site.objects.get_current().domain
+    for endpoint, zip_path in [
+        [reverse("api:zip_file_metadata_file"), "metadata.csv"],
+        [reverse("api:zip_file_attribution_file"), "attribution.txt"],
+    ]:
+        yield {
+            "url": f"http://{domain}{endpoint}?token={token}",
+            "zipPath": zip_path,
+        }
+
+    yield from (
+        {
+            "url": f"http://{domain}{reverse('api:zip_file_license_file', args=[license_])}",
+            "zipPath": f"licenses/{license_}.txt",
+        }
+        for license_ in (
+            qs.values_list("accession__copyright_license", flat=True).order_by().distinct()
+        )
+    )
+
+
 @zip_router.get("/file-listing/", include_in_schema=False, auth=zip_api_auth)
 @transaction.atomic
 def zip_file_listing(
     request: NinjaAuthHttpRequest,
 ):
-    def extension_from_str(s: str) -> str:
-        return PurePosixPath(s).suffix.lstrip(".")
+    # StreamingHttpResponse requires a File-like class that has a 'write' method
+    class Buffer:
+        def write(self, value: str) -> bytes:
+            return value.encode("utf-8")
 
     # use repeatable read to ensure consistent results
     cursor = connection.cursor()
@@ -128,71 +193,26 @@ def zip_file_listing(
     else:
         suggested_filename = "ISIC-images.zip"
 
-    if settings.ZIP_DOWNLOAD_WILDCARD_URLS:
-        # this is a performance optimization. repeated signing of individual urls
-        # is slow when generating large descriptors. this allows generating one signature and
-        # using it for all urls.
-        signer = CloudFrontSigner(default_storage.cloudfront_key_id, _cloudfront_signer)
-        # create a wildcard signature that allows access to * and pass this to the zipstreamer.
-        # since zip_api_auth uses a shared secret that only it and the zipstreamer know, this
-        # can't be intercepted by someone looking at the zipstreamer url.
-        url = f"https://{default_storage.custom_domain}/*"
-        policy = signer.build_policy(
-            url,
-            date_less_than=datetime.now(tz=UTC) + timedelta(days=1),
-        )
-        signed_url = signer.generate_presigned_url(url, policy=policy)
-        files = [
-            {
-                "url": signed_url.replace("*", image["accession__blob"]),
-                "zipPath": f"{image['isic_id']}.{extension_from_str(image['accession__blob'])}",
-            }
-            for image in qs.values("accession__blob", "isic_id").iterator()
-        ]
-    else:
-        # development doesn't have any cloudfront frontend so we need to sign each individual url.
-        # this is considerably slower because of the signing and the hydrating of the related
-        # objects instead of being able to utilize .values.
-        files = [
-            {
-                "url": image.accession.blob.url,
-                "zipPath": f"{image.isic_id}.{image.extension}",
-            }
-            for image in qs.iterator()
-        ]
-
-    # initialize files with metadata and attribution files
     logger.info(
         "Creating zip file descriptor for %d images: %s",
         file_count,
         json.dumps(request.auth),
     )
-    domain = Site.objects.get_current().domain
-    for endpoint, zip_path in [
-        [reverse("api:zip_file_metadata_file"), "metadata.csv"],
-        [reverse("api:zip_file_attribution_file"), "attribution.txt"],
-    ]:
-        files.append(
-            {
-                "url": f"http://{domain}{endpoint}?token={token}",
-                "zipPath": zip_path,
-            }
-        )
+    files = _zip_file_listing_generator(qs, token)
 
-    files += [
-        {
-            "url": f"http://{domain}{reverse('api:zip_file_license_file', args=[license_])}",
-            "zipPath": f"licenses/{license_}.txt",
-        }
-        for license_ in (
-            qs.values_list("accession__copyright_license", flat=True).order_by().distinct()
-        )
-    ]
+    def write_response(buffer: Buffer) -> Iterable[bytes]:
+        yield f'{{"suggestedFilename": "{suggested_filename}", "files": ['.encode()
 
-    return {
-        "suggestedFilename": suggested_filename,
-        "files": files,
-    }
+        has_preceding_element = False
+        for file in files:
+            if has_preceding_element:
+                yield b","
+            has_preceding_element = True
+            yield json.dumps({"url": file["url"], "zipPath": file["zipPath"]}).encode()
+
+        yield b"]}"
+
+    return StreamingHttpResponse(write_response(Buffer()), content_type="application/json")
 
 
 @zip_router.get("/metadata-file/", include_in_schema=False, auth=ZipDownloadTokenAuth())

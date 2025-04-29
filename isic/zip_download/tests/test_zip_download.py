@@ -1,4 +1,5 @@
 from base64 import b64encode
+import json
 from urllib.parse import parse_qs, urlparse
 
 from django.conf import settings
@@ -49,11 +50,13 @@ def test_zip_download_licenses(authenticated_client):
         HTTP_AUTHORIZATION="Basic "
         + b64encode(b":" + settings.ZIP_DOWNLOAD_BASIC_AUTH_TOKEN.encode()).decode(),
     )
-    assert r.status_code == 200, r.json()
+    assert r.status_code == 200
 
-    assert any("CC-0" in result["url"] for result in r.json()["files"])
-    assert any("CC-BY" in result["url"] for result in r.json()["files"])
-    assert not any("CC-BY-NC" in result["url"] for result in r.json()["files"])
+    output = json.loads(b"".join(r.streaming_content))
+
+    assert any("CC-0" in result["url"] for result in output["files"])
+    assert any("CC-BY" in result["url"] for result in output["files"])
+    assert not any("CC-BY-NC" in result["url"] for result in output["files"])
 
 
 @pytest.mark.django_db(transaction=True)
@@ -73,9 +76,10 @@ def test_zip_download_listing(authenticated_client, zip_basic_auth):
         data={"token": token[0], "limit": 1},
         **zip_basic_auth,
     )
-    assert r.status_code == 200, r.json()
+    output = json.loads(b"".join(r.streaming_content))
+    assert r.status_code == 200, output
     # 6 = 2 images + 1 metadata + 1 attribution + 2 licenses
-    assert len(r.json()["files"]) == 6, r.json()
+    assert len(output["files"]) == 6
 
 
 @pytest.mark.django_db(transaction=True)
@@ -110,12 +114,13 @@ def test_zip_download_listing_wildcard_urls(authenticated_client, zip_basic_auth
         data={"token": token[0], "limit": 1},
         **zip_basic_auth,
     )
-    assert r.status_code == 200, r.json()
+    output = json.loads(b"".join(r.streaming_content))
+    assert r.status_code == 200, output
 
     for image in Image.objects.all():
         assert any(
             file["url"].endswith(f"{image.accession.blob.name}?PretendPolicy=foo")
-            for file in r.json()["files"]
+            for file in output["files"]
         )
 
 
