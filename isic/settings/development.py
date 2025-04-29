@@ -56,7 +56,6 @@ SHELL_PLUS_IMPORTS = [
     "from isic.ingest.tasks import *",
     "from isic.stats.tasks import *",
     "from isic.studies.tasks import *",
-    "from opensearchpy import OpenSearch",
 ]
 # Allow developers to run tasks synchronously for easy debugging
 CELERY_TASK_ALWAYS_EAGER = os.environ.get("DJANGO_CELERY_TASK_ALWAYS_EAGER", False)
