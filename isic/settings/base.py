@@ -225,3 +225,6 @@ CDN_LOG_BUCKET: Any = None
 AWS_CLOUDFRONT_KEY: Any
 AWS_CLOUDFRONT_KEY_ID: Any
 AWS_S3_CUSTOM_DOMAIN: Any
+
+# opensearch logs every single request, which is too verbose
+LOGGING["loggers"]["opensearch"] = {"level": "WARNING"}  # noqa: F405
