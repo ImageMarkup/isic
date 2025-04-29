@@ -53,8 +53,8 @@ def _search_index():
     maybe_create_index(settings.ISIC_ELASTICSEARCH_IMAGES_INDEX, IMAGE_INDEX_MAPPINGS)
     maybe_create_index(settings.ISIC_ELASTICSEARCH_LESIONS_INDEX, LESION_INDEX_MAPPINGS)
     yield
-    es.indices.delete(settings.ISIC_ELASTICSEARCH_IMAGES_INDEX)
-    es.indices.delete(settings.ISIC_ELASTICSEARCH_LESIONS_INDEX)
+    es.indices.delete(index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX)
+    es.indices.delete(index=settings.ISIC_ELASTICSEARCH_LESIONS_INDEX)
 
 
 @pytest.fixture(autouse=True)
