@@ -15,8 +15,8 @@ from django.db.models.functions.comparison import Coalesce
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 from django.urls import reverse
-from opensearch_dsl import Search
-from opensearch_dsl.query import Q as OpenSearchQ
+from elasticsearch_dsl import Search
+from elasticsearch_dsl.query import Q as ESQ
 
 from isic.core.constants import LESION_ID_REGEX
 
@@ -29,19 +29,19 @@ def get_lesion_count_for_user(user: User | AnonymousUser) -> int:
     if user.is_staff:
         return es.count(index=settings.ISIC_ELASTICSEARCH_LESIONS_INDEX)["count"]
 
-    should = [OpenSearchQ("term", **{"images.public": True})]
+    should = [ESQ("term", **{"images.public": True})]
 
     # these are structured to make the search dictionary as cacheable as possible.
     # similar to the logic in build_elasticsearch_query.
     if user.is_authenticated:
         if user.owned_contributors.exists():
             should += [
-                OpenSearchQ("term", **{"images.contributor_owner_ids": user.pk}),
+                ESQ("term", **{"images.contributor_owner_ids": user.pk}),
             ]
 
         if user.imageshare_set.exists():
             should += [
-                OpenSearchQ("term", **{"images.shared_to": user.pk}),
+                ESQ("term", **{"images.shared_to": user.pk}),
             ]
 
     # find all documents where it's NOT true that the nested images array does NOT
@@ -51,12 +51,12 @@ def get_lesion_count_for_user(user: User | AnonymousUser) -> int:
         .query(
             "bool",
             must_not=[
-                OpenSearchQ(
+                ESQ(
                     "nested",
                     path="images",
-                    query=OpenSearchQ(
+                    query=ESQ(
                         "bool",
-                        must_not=[OpenSearchQ("bool", should=should)],
+                        must_not=[ESQ("bool", should=should)],
                     ),
                 )
             ],

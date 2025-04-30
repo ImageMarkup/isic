@@ -179,6 +179,7 @@ TEMPLATES[0]["OPTIONS"]["context_processors"] += [  # type: ignore[index]  # noq
 ISIC_USE_ELASTICSEARCH_COUNTS = False
 
 ELASTICSEARCH_URL = os.environ.get("DJANGO_ELASTICSEARCH_URL")
+ISIC_ELASTICSEARCH_API_KEY = os.environ.get("DJANGO_ELASTICSEARCH_API_KEY")
 ISIC_ELASTICSEARCH_IMAGES_INDEX = "isic"
 ISIC_ELASTICSEARCH_LESIONS_INDEX = "isic-lesions"
 ISIC_GUI_URL = "https://www.isic-archive.com/"
@@ -227,4 +228,4 @@ AWS_CLOUDFRONT_KEY_ID: Any
 AWS_S3_CUSTOM_DOMAIN: Any
 
 # opensearch logs every single request, which is too verbose
-LOGGING["loggers"]["opensearch"] = {"level": "WARNING"}  # noqa: F405
+LOGGING["loggers"]["elastic_transport"] = {"level": "WARNING"}  # noqa: F405
