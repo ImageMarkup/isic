@@ -11,10 +11,11 @@ from django.conf import settings
 from django.contrib.auth.models import AnonymousUser, User
 from django.core.cache import cache
 from django.db.models.query import QuerySet
+from elasticsearch import Elasticsearch, NotFoundError
+from elasticsearch.helpers import bulk
+from elasticsearch.transport import Transport
 from isic_metadata import FIELD_REGISTRY
 from isic_metadata.fields import ImageTypeEnum
-from opensearchpy import NotFoundError, OpenSearch
-from opensearchpy.transport import Transport
 import sentry_sdk
 
 from isic.core.models import Image
@@ -103,39 +104,30 @@ class InstrumentedTransport(Transport):
         super().__init__(*args, **kwargs)
 
     @staticmethod
-    def _cache_key(  # noqa: PLR0913
-        method: str, url: str, params: Any, body: Any, timeout: Any, ignore: Any, headers: Any
-    ) -> str:
-        return (
-            "es:"
-            + hashlib.sha256(
-                f"{method}:{url}:{params}:{body}:{timeout}:{ignore}:{headers}".encode()
-            ).hexdigest()
-        )
+    def _cache_key(method: str, target: str, body: Any) -> str:
+        return "es:" + hashlib.sha256(f"{method}:{target}:{body}".encode()).hexdigest()
 
     @override
     def perform_request(
         self,
         method: str,
-        url: str,
-        params: Any = None,
+        target: str,
+        *,
         body: Any = None,
-        timeout: Any = None,
-        ignore: Any = (),
-        headers: Any = None,
+        **kwargs: Any,
     ) -> Any:
-        is_cacheable = getattr(_search_storage, "es_caching_enabled", True) and url.endswith(
+        is_cacheable = getattr(_search_storage, "es_caching_enabled", True) and target.endswith(
             ("/_count", "/_search")
         )
 
         if is_cacheable:
-            cache_key = self._cache_key(method, url, params, body, timeout, ignore, headers)
+            cache_key = self._cache_key(method, target, body)
             cached_result = cache.get(cache_key)
             if cached_result:
                 return cached_result
 
         with sentry_sdk.start_span(op="es"):
-            result = super().perform_request(method, url, params, body, timeout, ignore, headers)
+            result = super().perform_request(method, target, body=body, **kwargs)
 
         if is_cacheable:
             cache.set(cache_key, result)
@@ -144,13 +136,17 @@ class InstrumentedTransport(Transport):
 
 
 @lru_cache
-def get_elasticsearch_client() -> "OpenSearch":
-    return OpenSearch(settings.ELASTICSEARCH_URL, transport_class=InstrumentedTransport)
+def get_elasticsearch_client() -> "Elasticsearch":
+    return Elasticsearch(
+        settings.ELASTICSEARCH_URL,
+        api_key=settings.ISIC_ELASTICSEARCH_API_KEY,
+        transport_class=InstrumentedTransport,
+    )
 
 
 def maybe_create_index(index: str, mappings: Mapping[str, Any]) -> None:
     try:
-        indices = get_elasticsearch_client().indices.get(index)
+        indices = get_elasticsearch_client().indices.get(index=index)
     except NotFoundError:
         # Need to create
         get_elasticsearch_client().indices.create(index=index, body={"mappings": mappings})
@@ -175,7 +171,7 @@ def assert_index_exists(name: str) -> None:
     To curb this we assert the index exists before doing any writes. This is useful for catching
     tests that don't use the _search_index fixture but write to elasticsearch.
     """
-    get_elasticsearch_client().indices.get(name)
+    get_elasticsearch_client().indices.get(index=name)
 
 
 def add_to_search_index(image: Image) -> None:
@@ -193,7 +189,6 @@ def bulk_add_to_search_index(
     index: str, qs: QuerySet[Image | Lesion], chunk_size: int = 2_000
 ) -> None:
     assert_index_exists(index)
-    from opensearchpy.helpers import bulk
 
     # qs must be generated with with_elasticsearch_properties
     # Use a generator for lazy evaluation
