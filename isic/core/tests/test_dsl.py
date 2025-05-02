@@ -16,10 +16,6 @@ from isic.core.dsl import django_parser, es_parser, parse_query
         ("-isic_id:*", ~Q(isic__id__isnull=False)),
         ("-lesion_id:*", ~Q(accession__lesion__id__isnull=False)),
         ("-mel_thick_mm:*", ~Q(accession__mel_thick_mm__isnull=False)),
-        (
-            "-diagnosis:* OR diagnosis:foobar",
-            ~Q(accession__legacy_dx__isnull=False) | Q(accession__legacy_dx="foobar"),
-        ),
         ("age_approx:[50 TO *]", ParseException),
         ("-melanocytic:*", ~Q(accession__melanocytic__isnull=False)),
         ("melanocytic:*", Q(accession__melanocytic__isnull=False)),
@@ -28,27 +24,9 @@ from isic.core.dsl import django_parser, es_parser, parse_query
             ~Q(accession__age__approx=50) | Q(accession__age__approx__isnull=True),
         ),
         (
-            "-diagnosis:foo*",
-            ~Q(accession__legacy_dx__startswith="foo") | Q(accession__legacy_dx__isnull=True),
-        ),
-        (
             "-age_approx:[50 TO 70]",
             ~Q(accession__age__approx__gte=50, accession__age__approx__lte=70)
             | Q(accession__age__approx__isnull=True),
-        ),
-        (
-            "-diagnosis:foobar OR (diagnosis:foobaz AND (-diagnosis:foo* OR age_approx:50))",
-            (~Q(accession__legacy_dx="foobar") | Q(accession__legacy_dx__isnull=True))
-            | (
-                Q(accession__legacy_dx="foobaz")
-                & (
-                    (
-                        ~Q(accession__legacy_dx__startswith="foo")
-                        | Q(accession__legacy_dx__isnull=True)
-                    )
-                    | Q(accession__age__approx=50)
-                )
-            ),
         ),
         ("isic_id:*123", Q(isic__id__endswith="123")),
         ("lesion_id:IL_123*", Q(accession__lesion__id__startswith="IL_123")),
@@ -58,29 +36,6 @@ from isic.core.dsl import django_parser, es_parser, parse_query
         ("rcm_case_id:123*", Q(accession__rcm_case__id__startswith="123")),
         ("rcm_case_id:*123", Q(accession__rcm_case__id__endswith="123")),
         ('copyright_license:"CC-0"', Q(accession__copyright_license="CC-0")),
-        ("diagnosis:foobar", Q(accession__legacy_dx="foobar")),
-        ('diagnosis:"foo bar"', Q(accession__legacy_dx="foo bar")),
-        ("diagnosis:foo*", Q(accession__legacy_dx__startswith="foo")),
-        ("diagnosis:*foo", Q(accession__legacy_dx__endswith="foo")),
-        ('diagnosis:"foobar"', Q(accession__legacy_dx="foobar")),
-        ('diagnosis:"foo*"', Q(accession__legacy_dx__startswith="foo")),
-        ('diagnosis:"*foo"', Q(accession__legacy_dx__endswith="foo")),
-        (
-            "diagnosis:foobar AND diagnosis:foobaz",
-            Q(accession__legacy_dx="foobar") & Q(accession__legacy_dx="foobaz"),
-        ),
-        (
-            "diagnosis:foobar OR diagnosis:foobaz",
-            Q(accession__legacy_dx="foobar") | Q(accession__legacy_dx="foobaz"),
-        ),
-        (
-            "diagnosis:foobar OR (diagnosis:foobaz AND (diagnosis:foo* OR age_approx:50))",
-            Q(accession__legacy_dx="foobar")
-            | (
-                Q(accession__legacy_dx="foobaz")
-                & (Q(accession__legacy_dx__startswith="foo") | Q(accession__age__approx=50))
-            ),
-        ),
         ("age_approx:50", Q(accession__age__approx=50)),
         (
             "age_approx:[50 TO 70]",
@@ -95,18 +50,10 @@ from isic.core.dsl import django_parser, es_parser, parse_query
             Q(accession__age__approx__gte=50, accession__age__approx__lt=70),
         ),
         (
-            "diagnosis:foo AND age_approx:[10 TO 12.5] AND diagnosis:bar AND diagnosis:baz",
-            Q(accession__legacy_dx="foo")
-            & Q(accession__age__approx__gte=10)
-            & Q(accession__age__approx__lte=12.5)
-            & Q(accession__legacy_dx="bar")
-            & Q(accession__legacy_dx="baz"),
-        ),
-        (
             "mel_thick_mm:[0 TO 0.5]",
             Q(accession__mel_thick_mm__gte=0, accession__mel_thick_mm__lte=0.5),
         ),
-        ("diagnosis:foo randstring", ParseException),
+        ("diagnosis_1:foo randstring", ParseException),
         ("public:true", Q(public=True)),
         ("image_type:dermoscopic", Q(accession__image_type="dermoscopic")),
         # test implicitly AND'ing terms
@@ -136,15 +83,15 @@ def test_dsl_django_parser(query, filter_or_exception):
             {"bool": {"filter": [{"bool": {"must_not": {"exists": {"field": "isic_id"}}}}]}},
         ),
         (
-            "diagnosis:foobar OR (diagnosis:foobaz AND (diagnosis:foo* OR age_approx:50))",
+            "diagnosis_1:foobar OR (diagnosis_1:foobaz AND (diagnosis_1:foo* OR age_approx:50))",
             {
                 "bool": {
                     "should": [
-                        {"bool": {"filter": [{"term": {"diagnosis": "foobar"}}]}},
+                        {"bool": {"filter": [{"term": {"diagnosis_1": "foobar"}}]}},
                         {
                             "bool": {
                                 "filter": [
-                                    {"bool": {"filter": [{"term": {"diagnosis": "foobaz"}}]}},
+                                    {"bool": {"filter": [{"term": {"diagnosis_1": "foobaz"}}]}},
                                     {
                                         "bool": {
                                             "should": [
@@ -153,7 +100,7 @@ def test_dsl_django_parser(query, filter_or_exception):
                                                         "filter": [
                                                             {
                                                                 "wildcard": {
-                                                                    "diagnosis": {"value": "foo*"}
+                                                                    "diagnosis_1": {"value": "foo*"}
                                                                 }
                                                             }
                                                         ]

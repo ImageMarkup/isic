@@ -272,9 +272,6 @@ def convert_term(s, loc, toks):
     for field in Accession.remapped_internal_fields:
         field_to_lookup_map[field.csv_field_name] = f"accession__{field.relation_name}__id"
 
-    # transition code to map old diagnosis searches to the legacy dx
-    field_to_lookup_map["diagnosis"] = "accession__legacy_dx"
-
     if toks[0] in field_to_lookup_map:
         return SearchTermKey(field_to_lookup_map[toks[0]], negate)
 

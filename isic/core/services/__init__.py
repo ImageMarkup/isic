@@ -68,7 +68,7 @@ def staff_image_metadata_csv(
 
     yield (
         headers
-        + sorted([k if k != "legacy_dx" else "diagnosis" for k in used_metadata_keys])
+        + sorted(used_metadata_keys)
         + remapped_keys
         + sorted([f"unstructured.{key}" for key in used_unstructured_metadata_keys])
     )
@@ -139,10 +139,6 @@ def staff_image_metadata_csv(
             if computed_output_fields:
                 value.update(computed_output_fields)
 
-        if "legacy_dx" in value:
-            value["diagnosis"] = value["legacy_dx"]
-            del value["legacy_dx"]
-
         yield value
 
 
@@ -162,10 +158,6 @@ def image_metadata_csv(
     # get the superset of headers for this particular queryset.
     counts = accession_qs.aggregate(**{k: Count(k) for k in Accession.metadata_keys()})
     used_metadata_keys = [k for k, v in counts.items() if v > 0]
-
-    if "legacy_dx" in used_metadata_keys:
-        used_metadata_keys.remove("legacy_dx")
-        used_metadata_keys.append("diagnosis")
 
     for field in Accession.remapped_internal_fields:
         if accession_qs.exclude(**{field.relation_name: None}).exists():
@@ -203,7 +195,5 @@ def image_metadata_csv(
                     image.update(computed_fields)
 
                 del image[computed_field.input_field_name]
-
-        image["diagnosis"] = image.pop("legacy_dx")
 
         yield {k: v for k, v in image.items() if k in fieldnames}
