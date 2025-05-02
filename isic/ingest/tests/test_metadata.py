@@ -261,40 +261,6 @@ def test_apply_metadata_step2_invalid(
 
 
 @pytest.mark.django_db
-def test_diagnosis_transition(staff_user, accession, image_factory) -> None:
-    # this tests that the original diagnosis is preserved even though we're attempting
-    # to change the hierarchical version.
-
-    accession.legacy_dx = "melanoma"
-    accession.save()
-
-    accession.update_metadata(staff_user, {"diagnosis": "Nevus"})
-    assert accession.metadata == {
-        "diagnosis_1": "Benign",
-        "diagnosis_2": "Benign melanocytic proliferations",
-        "diagnosis_3": "Nevus",
-        "legacy_dx": "melanoma",
-    }
-
-    accession.update_metadata(staff_user, {"diagnosis": "Melanoma Invasive"})
-    assert accession.metadata == {
-        "diagnosis_1": "Malignant",
-        "diagnosis_2": "Malignant melanocytic proliferations (Melanoma)",
-        "diagnosis_3": "Melanoma Invasive",
-        "legacy_dx": "melanoma",
-    }
-
-    # create image and assert image.metadata doesn't have legacy_dx
-    image = image_factory(accession=accession)
-    assert image.metadata == {
-        "diagnosis": "melanoma",
-        "diagnosis_1": "Malignant",
-        "diagnosis_2": "Malignant melanocytic proliferations (Melanoma)",
-        "diagnosis_3": "Melanoma Invasive",
-    }
-
-
-@pytest.mark.django_db
 def test_apply_metadata_step3_full_cohort(
     user,
     staff_client,
@@ -456,8 +422,12 @@ def test_accession_remove_metadata(user, imageless_accession) -> None:
     imageless_accession.update_metadata(
         user, {"diagnosis": "Melanoma Invasive", "family_hx_mm": "true"}
     )
-    imageless_accession.remove_metadata(user, ["diagnosis"])
-    assert imageless_accession.metadata == {"family_hx_mm": True}
+    imageless_accession.remove_metadata(user, ["diagnosis_3"])
+    assert imageless_accession.metadata == {
+        "diagnosis_1": "Malignant",
+        "diagnosis_2": "Malignant melanocytic proliferations (Melanoma)",
+        "family_hx_mm": True,
+    }
     assert imageless_accession.metadata_versions.count() == 2
 
 
@@ -466,9 +436,13 @@ def test_accession_remove_metadata_idempotent(user, imageless_accession) -> None
     imageless_accession.update_metadata(
         user, {"diagnosis": "Melanoma Invasive", "family_hx_mm": "true"}
     )
-    imageless_accession.remove_metadata(user, ["diagnosis"])
-    imageless_accession.remove_metadata(user, ["diagnosis"])
-    assert imageless_accession.metadata == {"family_hx_mm": True}
+    imageless_accession.remove_metadata(user, ["diagnosis_3"])
+    imageless_accession.remove_metadata(user, ["diagnosis_3"])
+    assert imageless_accession.metadata == {
+        "diagnosis_1": "Malignant",
+        "diagnosis_2": "Malignant melanocytic proliferations (Melanoma)",
+        "family_hx_mm": True,
+    }
     assert imageless_accession.metadata_versions.count() == 2
 
 

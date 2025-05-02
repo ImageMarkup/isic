@@ -15,7 +15,7 @@ def test_api_stats(client):
     ("query", "expected_count"),
     [
         ("", 0),
-        ("diagnosis:melanoma AND -melanocytic:*", 1),
+        ("diagnosis_1:Benign AND -melanocytic:*", 1),
     ],
 )
 def test_search_query_logging(client, query, expected_count):

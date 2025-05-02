@@ -29,12 +29,10 @@ def searchable_images(image_factory, _search_index):
     images = [
         image_factory(
             public=True,
-            accession__legacy_dx="melanoma",
             accession__fq__diagnosis="melanoma",
         ),
         image_factory(
             public=False,
-            accession__legacy_dx="nevus",
             accession__fq__diagnosis="nevus",
         ),
     ]
@@ -342,8 +340,8 @@ def test_core_api_image_faceting_structure(searchable_images, client):
         "/api/v2/images/facets/",
     )
     assert r.status_code == 200, r.json()
-    assert len(r.json()["diagnosis"]["buckets"]) == 2, r.json()
-    assert r.json()["diagnosis"]["meta"] == {
+    assert len(r.json()["diagnosis_3"]["buckets"]) == 2, r.json()
+    assert r.json()["diagnosis_3"]["meta"] == {
         "missing_count": 0,
         "present_count": 1,
     }, r.json()
