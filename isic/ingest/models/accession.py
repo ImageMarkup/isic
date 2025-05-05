@@ -98,6 +98,8 @@ class AccessionMetadata(models.Model):
 
     acquisition_day = models.IntegerField(null=True, blank=True)
 
+    image_manipulation = models.CharField(max_length=255, null=True, blank=True)
+
     nevus_type = models.CharField(max_length=255, null=True, blank=True)
     image_type = models.CharField(max_length=255, null=True, blank=True)
     dermoscopic_type = models.CharField(max_length=255, null=True, blank=True)
@@ -422,6 +424,7 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
                 name="accession_diagnosis_5",
                 fields=["diagnosis_5"],
             ),
+            models.Index(fields=["image_manipulation"]),
             models.Index(fields=["mel_class"]),
             models.Index(fields=["mel_mitotic_index"]),
             models.Index(fields=["mel_type"]),
