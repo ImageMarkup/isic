@@ -30,6 +30,9 @@ IMAGE_INDEX_MAPPINGS = {"properties": {}}
 DEFAULT_SEARCH_AGGREGATES = {}
 COUNTS_AGGREGATES = {}
 
+MISSING_SUFFIX = "_missing"
+PRESENT_SUFFIX = "_present"
+
 for key, definition in FIELD_REGISTRY.items():
     if definition.search:
         IMAGE_INDEX_MAPPINGS["properties"][key] = definition.search.es_property
@@ -59,8 +62,8 @@ DEFAULT_SEARCH_AGGREGATES["copyright_license"] = {"terms": {"field": "copyright_
 
 
 for key in DEFAULT_SEARCH_AGGREGATES:
-    COUNTS_AGGREGATES[f"{key}_missing"] = {"missing": {"field": key}}
-    COUNTS_AGGREGATES[f"{key}_present"] = {"value_count": {"field": key}}
+    COUNTS_AGGREGATES[f"{key}{MISSING_SUFFIX}"] = {"missing": {"field": key}}
+    COUNTS_AGGREGATES[f"{key}{PRESENT_SUFFIX}"] = {"value_count": {"field": key}}
 
 
 # These are all approaching 10 unique values, which would require passing a size attribute
@@ -222,31 +225,43 @@ def _prettify_facets(facets: dict[str, Any]) -> dict[str, Any]:
 
     facets = _strip_superfluous_fields(facets)
 
-    image_type_values = {bucket["key"] for bucket in facets["image_type"]["buckets"]}
-    missing_image_type = {x.value for x in ImageTypeEnum} - image_type_values
+    if "image_type" in facets:
+        image_type_values = {bucket["key"] for bucket in facets["image_type"]["buckets"]}
+        missing_image_type = {x.value for x in ImageTypeEnum} - image_type_values
 
-    for value in missing_image_type:
-        facets["image_type"]["buckets"].append({"key": value, "doc_count": 0})
+        for value in missing_image_type:
+            facets["image_type"]["buckets"].append({"key": value, "doc_count": 0})
 
-    # sort the values of image_type buckets by the element in the key field
-    facets["image_type"]["buckets"] = sorted(
-        facets["image_type"]["buckets"],
-        key=lambda x: ImageTypeEnum(x["key"])._sort_order_,  # type: ignore[attr-defined]
-    )
+        # sort the values of image_type buckets by the element in the key field
+        facets["image_type"]["buckets"] = sorted(
+            facets["image_type"]["buckets"],
+            key=lambda x: ImageTypeEnum(x["key"])._sort_order_,  # type: ignore[attr-defined]
+        )
 
     return facets
 
 
-def facets(query: dict | None = None) -> dict:
+def facets(query: dict | None = None, facet_keys: list[str] | None = None) -> dict:
     """
     Generate the facet counts for a given query.
 
     This has to perform 2 elasticsearch queries, one for computing the present/absent
     counts for each facet, and another for generating the buckets themselves.
     """
+
+    def _filter_counts_aggregates():
+        if facet_keys:
+            return {
+                k: v
+                for k, v in COUNTS_AGGREGATES.items()
+                if k.replace(MISSING_SUFFIX, "").replace(PRESENT_SUFFIX, "") in facet_keys
+            }
+        else:
+            return COUNTS_AGGREGATES
+
     counts_body = {
         "size": 0,
-        "aggs": COUNTS_AGGREGATES,
+        "aggs": _filter_counts_aggregates(),
     }
 
     if query:
@@ -260,17 +275,23 @@ def facets(query: dict | None = None) -> dict:
     FacetsBody = TypedDict(  # noqa: UP013
         "FacetsBody", {"size": int, "aggs": dict, "query": NotRequired[dict | None]}
     )
+
+    if facet_keys:
+        aggs = deepcopy({k: v for k, v in DEFAULT_SEARCH_AGGREGATES.items() if k in facet_keys})
+    else:
+        aggs = deepcopy(DEFAULT_SEARCH_AGGREGATES)
+
     facets_body: FacetsBody = {
         "size": 0,
-        "aggs": deepcopy(DEFAULT_SEARCH_AGGREGATES),
+        "aggs": aggs,
     }
 
     # pass the counts through as metadata in the final aggregation query
     # https://www.elastic.co/guide/en/elasticsearch/reference/8.10/search-aggregations.html#add-metadata-to-an-agg
     for field in facets_body["aggs"]:
         facets_body["aggs"][field]["meta"] = {
-            "missing_count": counts[f"{field}_missing"]["doc_count"],
-            "present_count": counts[f"{field}_present"]["value"],
+            "missing_count": counts[f"{field}{MISSING_SUFFIX}"]["doc_count"],
+            "present_count": counts[f"{field}{PRESENT_SUFFIX}"]["value"],
         }
 
     # for term fields (non-ranges), show all facet values even if this query has no

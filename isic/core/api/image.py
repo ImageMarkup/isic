@@ -14,7 +14,8 @@ from sentry_sdk import set_tag
 from isic.core.models import Image
 from isic.core.pagination import CursorPagination, qs_with_hardcoded_count
 from isic.core.permissions import get_visible_objects
-from isic.core.search import facets, get_elasticsearch_client
+from isic.core.search import facets as es_facets
+from isic.core.search import get_elasticsearch_client
 from isic.core.serializers import SearchQueryIn
 from isic.stats.models import SearchQuery
 
@@ -139,8 +140,8 @@ def search_images(request: HttpRequest, search: SearchQueryIn = Query(...)):
 
 
 @router.get("/facets/", response=dict, include_in_schema=False)
-def get_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):
-    cache_key = f"get_facets:{search.to_cache_key(request.user)}"
+def get_facets(request: HttpRequest, search: SearchQueryIn = Query(...), facets: str | None = None):
+    cache_key = f"get_facets:{search.to_cache_key(request.user)}:{facets}"
     cached_facets = cache.get(cache_key)
 
     set_tag("cached_facets", cached_facets is not None)
@@ -153,7 +154,7 @@ def get_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):
     except ParseException as e:
         raise ImageSearchParseError from e
 
-    ret = facets(query)
+    ret = es_facets(query, facet_keys=facets.split(",") if facets else None)
     cache.set(cache_key, ret, 86400)
     return ret
 

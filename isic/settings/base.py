@@ -228,4 +228,4 @@ AWS_CLOUDFRONT_KEY_ID: Any
 AWS_S3_CUSTOM_DOMAIN: Any
 
 # opensearch logs every single request, which is too verbose
-LOGGING["loggers"]["elastic_transport"] = {"level": "WARNING"}  # noqa: F405
+LOGGING["loggers"]["elastic_transport"] = {"level": "INFO"}  # noqa: F405

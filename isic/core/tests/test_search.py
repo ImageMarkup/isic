@@ -6,6 +6,7 @@ from pytest_lazy_fixtures import lf
 
 from isic.core.dsl import es_parser, parse_query
 from isic.core.search import (
+    DEFAULT_SEARCH_AGGREGATES,
     add_to_search_index,
     build_elasticsearch_query,
     facets,
@@ -79,7 +80,7 @@ def searchable_image_with_private_field(image_factory, _search_index):
 def private_and_public_images_collections(image_factory, collection_factory, _search_index):
     public_coll, private_coll = collection_factory(public=True), collection_factory(public=False)
     public_image, private_image = (
-        image_factory(public=True, accession__age=10),
+        image_factory(public=True, accession__age=10, accession__fq__diagnosis="melanoma"),
         image_factory(public=False),
     )
 
@@ -366,6 +367,27 @@ def test_core_api_image_faceting_query(private_and_public_images_collections, cl
             assert bucket["doc_count"] == 1
         else:
             assert bucket["doc_count"] == 0
+
+
+@pytest.mark.django_db
+def test_core_api_image_faceting_specific_facets(private_and_public_images_collections, client):
+    public_coll, private_coll = private_and_public_images_collections
+
+    r = client.get("/api/v2/images/facets/", {"facets": "age_approx"})
+    assert r.status_code == 200, r.json()
+    assert list(r.json().keys()) == ["age_approx"]
+
+    r = client.get("/api/v2/images/facets/", {"facets": "diagnosis_3"})
+    assert r.status_code == 200, r.json()
+    assert list(r.json().keys()) == ["diagnosis_3"]
+
+    r = client.get("/api/v2/images/facets/", {"facets": "diagnosis_3,age_approx"})
+    assert r.status_code == 200, r.json()
+    assert set(r.json().keys()) == {"diagnosis_3", "age_approx"}
+
+    r = client.get("/api/v2/images/facets/", {})
+    assert r.status_code == 200, r.json()
+    assert set(r.json().keys()) == set(DEFAULT_SEARCH_AGGREGATES.keys())
 
 
 @pytest.mark.django_db
