@@ -6,7 +6,6 @@ from isic_metadata.fields import (
     AnatomSiteGeneralEnum,
     DermoscopicTypeEnum,
     DiagnosisConfirmTypeEnum,
-    DiagnosisEnum,
     ImageTypeEnum,
 )
 from s3_file_field.forms import S3FormFileField
@@ -52,7 +51,6 @@ class SingleAccessionUploadForm(forms.Form):
     age = forms.IntegerField(min_value=1, max_value=85, required=False)
     sex = forms.ChoiceField(choices=[("male", "male"), ("female", "female")], required=False)
     anatom_site_general = choice_field_from_enum("anatom_site_general", AnatomSiteGeneralEnum)
-    diagnosis = choice_field_from_enum("diagnosis", DiagnosisEnum)
     diagnosis_confirm_type = choice_field_from_enum(
         "diagnosis_confirm_type", DiagnosisConfirmTypeEnum
     )
