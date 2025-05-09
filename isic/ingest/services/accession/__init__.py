@@ -124,7 +124,15 @@ def bulk_accession_update_metadata(  # noqa: PLR0913
         for batch in batched(metadata, 5_000):
             accessions_by_id = (
                 Accession.objects.filter(pk__in=[row[0] for row in batch])
-                .select_related("image", "review", "lesion", "patient", "rcm_case", "cohort")
+                .select_related(
+                    "image",
+                    "review",
+                    "lesion",
+                    "patient",
+                    "rcm_case",
+                    "cohort",
+                    "unstructured_metadata",
+                )
                 .in_bulk()
             )
 
