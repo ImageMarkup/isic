@@ -3,12 +3,10 @@ import logging
 
 from django.contrib import admin
 from django.contrib.humanize.templatetags.humanize import intcomma
-from django.db import models
 from django.db.models import Count
 from django.http import HttpResponse
 from django.template.defaultfilters import filesizeformat
 from django.utils.safestring import mark_safe
-from django_json_widget.widgets import JSONEditorWidget
 from django_object_actions import DjangoObjectActions
 from django_object_actions.utils import takes_instance_or_queryset
 from girder_utils.admin import ReadonlyTabularInline
@@ -230,9 +228,6 @@ class AccessionAdmin(StaffReadonlyAdmin):
 
     readonly_fields = ["created", "modified", "thumbnail_image", "distinctnessmeasure"]
     inlines = [AccessionReviewInline, MetadataVersionInline]
-    formfield_overrides = {
-        models.JSONField: {"widget": JSONEditorWidget},
-    }
 
     @admin.display(description="Original Blob Size", ordering="original_blob_size")
     def human_original_blob_size(self, obj):
