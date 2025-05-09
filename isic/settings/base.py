@@ -1,62 +1,142 @@
+from __future__ import annotations
+
 from datetime import timedelta
-import os
+import logging
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING
 
 from celery.schedules import crontab
 import django_stubs_ext
+from environ import Env
+from resonant_settings.allauth import *
+from resonant_settings.celery import *
+from resonant_settings.django import *
+from resonant_settings.django_extensions import *
+from resonant_settings.logging import *
+from resonant_settings.oauth_toolkit import *
 
-from .upstream_base import *  # noqa: F403
+if TYPE_CHECKING:
+    from urllib.parse import ParseResult
+
 
 django_stubs_ext.monkeypatch()
 
+env = Env()
 
-def _oauth2_pkce_required(client_id):
-    from oauth2_provider.models import get_application_model
+BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
 
-    OAuth2Application = get_application_model()  # noqa: N806
-    oauth_application = OAuth2Application.objects.get(client_id=client_id)
-    # PKCE is only required for public clients, but express the logic this way to make it required
-    # by default for any future new client_types
-    return oauth_application.client_type != OAuth2Application.CLIENT_CONFIDENTIAL
+ROOT_URLCONF = "isic.urls"
 
+INSTALLED_APPS = [
+    # Install local apps first, to ensure any overridden resources are found first
+    "isic.core.apps.CoreConfig",
+    "isic.find.apps.FindConfig",
+    "isic.ingest.apps.IngestConfig",
+    "isic.login.apps.LoginConfig",
+    "isic.stats.apps.StatsConfig",
+    "isic.studies.apps.StudiesConfig",
+    "isic.zip_download.apps.ZipDownloadConfig",
+    # Apps with overrides
+    "auth_style",
+    "resonant_settings.allauth_support",
+    # Everything else
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "cachalot",
+    "corsheaders",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.humanize",
+    "django.contrib.messages",
+    "django.contrib.postgres",
+    "django.contrib.sessions",
+    "django.contrib.sitemaps",
+    "django.contrib.sites",
+    "django.contrib.staticfiles",
+    "django_extensions",
+    "django_filters",
+    "markdownify",
+    # Install "ninja" to force Swagger to be served locally, so it can be overridden
+    "ninja",
+    "oauth2_provider",
+    "resonant_utils",
+    "s3_file_field",
+    "widget_tweaks",
+]
 
-# PASSWORD_HASHERS are ordered "best" to "worst", appending Girder last means
-# it will be upgraded on login.
-PASSWORD_HASHERS += ["isic.login.hashers.GirderPasswordHasher"]  # noqa: F405
+MIDDLEWARE = [
+    # https://docs.djangoproject.com/en/5.2/ref/middleware/#middleware-ordering
+    # CorsMiddleware must be added before other response-generating middleware,
+    # so it can potentially add CORS headers to those responses too.
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.security.SecurityMiddleware",
+    # WhiteNoiseMiddleware must be directly after SecurityMiddleware
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    # GZipMiddleware can be after WhiteNoiseMiddleware, as WhiteNoise performs its own compression
+    "django.middleware.gzip.GZipMiddleware",
+    # "UserTypeTagMiddleware" does nothing for incoming requests, but adds user-based tags to
+    # outgoing response objects, so run this after (on responses) "SessionMiddleware" has completed,
+    # in case that does anything to the current user.
+    "isic.middleware.UserTypeTagMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    # Insert "ExemptBearerAuthFromCSRFMiddleware" just before the CsrfViewMiddleware
+    "isic.middleware.ExemptBearerAuthFromCSRFMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
+]
 
-AUTHENTICATION_BACKENDS = [
-    "allauth.account.auth_backends.AuthenticationBackend",
+# Internal datetimes are timezone-aware, so this only affects rendering and form input
+TIME_ZONE = "UTC"
+
+DATABASES = {
+    "default": {
+        **env.db_url("DJANGO_DATABASE_URL", engine="django.db.backends.postgresql"),
+        "CONN_MAX_AGE": timedelta(minutes=10).total_seconds(),
+    }
+}
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+STORAGES = {
+    # Inject the "default" storage in particular run configurations
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+STATIC_ROOT = BASE_DIR / "staticfiles"
+# Django staticfiles auto-creates any intermediate directories, but do so here to prevent warnings.
+STATIC_ROOT.mkdir(exist_ok=True)
+
+# Django's docs suggest that STATIC_URL should be a relative path,
+# for convenience serving a site on a subpath.
+STATIC_URL = "static/"
+
+# Make Django and Allauth redirects consistent, but both may be changed.
+LOGIN_REDIRECT_URL = "/"
+ACCOUNT_LOGOUT_REDIRECT_URL = "/"
+ACCOUNT_SIGNUP_FORM_CLASS = "resonant_utils.allauth.FullNameSignupForm"
+
+AUTHENTICATION_BACKENDS += [
     "isic.core.permissions.IsicObjectPermissionsBackend",
 ]
 
-ACCOUNT_SIGNUP_FORM_CLASS = "isic.login.forms.RealNameSignupForm"
+# Disallowing CORS credentials is all the security necessary.
+# The API is safe to call by anyone, as it has no side effects.
+CORS_ALLOW_ALL_ORIGINS = True
 
-OAUTH2_PROVIDER.update(  # noqa: F405
-    {
-        # Discourse login does not support PKCE
-        "PKCE_REQUIRED": _oauth2_pkce_required,
-        "SCOPES": {
-            "identity": "Access to your basic profile information",
-            "image:read": "Read access to images",
-            "image:write": "Write access to images",
-        },
-        "DEFAULT_SCOPES": ["identity"],
-    }
-)
-OAUTH2_PROVIDER_APPLICATION_MODEL = "core.IsicOAuthApplication"
-
-CACHES = {
-    "default": {"BACKEND": "django.core.cache.backends.dummy.DummyCache"},
-}
-
-# This seems like an essential setting for correctness, see
-# https://github.com/noripyt/django-cachalot/issues/266.
-CACHALOT_FINAL_SQL_CHECK = True
-
-# Retry connections in case rabbit isn't immediately running
-CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
-CELERY_WORKER_MAX_MEMORY_PER_CHILD = 256 * 1024
+PASSWORD_HASHERS += [
+    # Some very old accounts use this hash
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    # PASSWORD_HASHERS are ordered "best" to "worst", appending Girder last means
+    # it will be upgraded on login.
+    "isic.login.hashers.GirderPasswordHasher",
+]
 
 CELERY_BEAT_SCHEDULE = {
     "collect-google-analytics-stats": {
@@ -76,65 +156,24 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute="*/15", hour="*"),
         "options": {
             # to avoid overcomputing, the message should expire 60 seconds after created
-            "expires": 60
+            "expires": timedelta(seconds=60).total_seconds(),
         },
     },
 }
+CELERY_WORKER_MAX_MEMORY_PER_CHILD = 256 * 1024
 
-# Install local apps first, to ensure any overridden resources are found first
-INSTALLED_APPS = [
-    # auth_style needs to come first to ensure it can override templates
-    "auth_style",
-    "allauth.account",
-    "allauth.socialaccount",
-    "allauth",
-    "cachalot",
-    "corsheaders",
-    "django_extensions",
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.humanize",
-    "django.contrib.messages",
-    "django.contrib.postgres",
-    "django.contrib.sessions",
-    "django.contrib.sites",
-    "django.contrib.sitemaps",
-    "whitenoise.runserver_nostatic",  # should be immediately before staticfiles app
-    "django.contrib.staticfiles",
-    "girder_utils",
-    "resonant_utils",
-    "isic.core.apps.CoreConfig",
-    "isic.find.apps.FindConfig",
-    "isic.ingest.apps.IngestConfig",
-    "isic.login.apps.LoginConfig",
-    "isic.stats.apps.StatsConfig",
-    "isic.studies.apps.StudiesConfig",
-    "isic.zip_download.apps.ZipDownloadConfig",
-    "markdownify.apps.MarkdownifyConfig",
-    "ninja",  # required because we overwrite ninja/swagger.html
-    "oauth2_provider",
-    "s3_file_field",
-    "widget_tweaks",
-]
-
-# Middleware
-MIDDLEWARE = [
-    "isic.middleware.UserTypeTagMiddleware",
-    "django.middleware.security.SecurityMiddleware",
-    "django.middleware.gzip.GZipMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
-    # Insert the ExemptBearerAuthFromCSRFMiddleware just before the CsrfViewMiddleware
-    "isic.middleware.ExemptBearerAuthFromCSRFMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "allauth.account.middleware.AccountMiddleware",
-]
+CACHES = {
+    # use django-redis instead of the builtin backend. the builtin redis backend
+    # doesn't support deleting keys by prefix, which is important for invalidating
+    # specific cache keys. this isn't on the roadmap for django, see
+    # https://code.djangoproject.com/ticket/35039#comment:1.
+    "default": env.cache_url("DJANGO_CACHE_URL", backend="django_redis.cache.RedisCache"),
+}
+DJANGO_REDIS_SCAN_ITERSIZE = 1_000
+CACHALOT_CACHE_ITERATORS = False
+# This seems like an essential setting for correctness, see
+# https://github.com/noripyt/django-cachalot/issues/266
+CACHALOT_FINAL_SQL_CHECK = True
 
 MARKDOWNIFY = {
     "default": {
@@ -157,50 +196,49 @@ MARKDOWNIFY = {
     }
 }
 
-# django-extensions
-RUNSERVER_PLUS_PRINT_SQL_TRUNCATE = None
-SHELL_PLUS_PRINT_SQL = True
-SHELL_PLUS_PRINT_SQL_TRUNCATE = None
-
-# Misc
-BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
-STATIC_ROOT = BASE_DIR / "staticfiles"
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-WSGI_APPLICATION = "isic.wsgi.application"
-ROOT_URLCONF = "isic.urls"
-
-TEMPLATES[0]["OPTIONS"]["context_processors"] += [  # type: ignore[index]  # noqa: F405
-    "isic.core.context_processors.placeholder_images",
-    "isic.core.context_processors.js_browser_sync",
-    "isic.core.context_processors.js_sentry",
-    "isic.core.context_processors.citation_styles",
+SHELL_PLUS_IMPORTS = [
+    "from django.core.files.storage import storages",
+    "from django.core.files.uploadedfile import UploadedFile",
+    "from isic.ingest.services.accession import *",
+    "from isic.ingest.services.zip_upload import *",
+    "from isic.core.dsl import *",
+    "from isic.core.search import *",
+    "from isic.core.tasks import *",
+    "from isic.ingest.services.cohort import *",
+    "from isic.ingest.tasks import *",
+    "from isic.stats.tasks import *",
+    "from isic.studies.tasks import *",
 ]
 
-# ISIC specific settings
+OAUTH2_PROVIDER.update(
+    {
+        # PKCE_REQUIRED is on by default in oauth-toolkit >= 2.0
+        "PKCE_REQUIRED": True,
+        # Normally, "http" would only be allowed in development, but local developers
+        # of the Gallery are allowed to authenticate against the production site
+        "ALLOWED_REDIRECT_URI_SCHEMES": ["http", "https"],
+        "SCOPES": {
+            "identity": "Access to your basic profile information",
+            "image:read": "Read access to images",
+            "image:write": "Write access to images",
+        },
+        "DEFAULT_SCOPES": ["identity"],
+    }
+)
+OAUTH2_PROVIDER_APPLICATION_MODEL = "core.IsicOAuthApplication"
+
+ISIC_ELASTICSEARCH_URL: ParseResult = env.url("DJANGO_ISIC_ELASTICSEARCH_URL")
+ISIC_ELASTICSEARCH_IMAGES_INDEX = "isic"
+ISIC_ELASTICSEARCH_LESIONS_INDEX = "isic-lesions"
 # This is an unfortunate feature flag that lets us disable this feature in testing,
 # where having a permanently available ES index which is updated consistently in real
 # time is too difficult. We hedge by having tests that verify our counts are correct
 # with both methods.
-ISIC_USE_ELASTICSEARCH_COUNTS = False
+ISIC_USE_ELASTICSEARCH_COUNTS = True
+# opensearch logs every single request, which is too verbose
+logging.getLogger("elastic_transport").setLevel(logging.WARNING)
 
-ELASTICSEARCH_URL = os.environ.get("DJANGO_ELASTICSEARCH_URL")
-ISIC_ELASTICSEARCH_IMAGES_INDEX = "isic"
-ISIC_ELASTICSEARCH_LESIONS_INDEX = "isic-lesions"
-ISIC_GUI_URL = "https://www.isic-archive.com/"
-ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = ISIC_GUI_URL
-ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = ISIC_GUI_URL
-
-ISIC_OAUTH_ALLOW_REGEX_REDIRECT_URIS = False
-
-ISIC_PLACEHOLDER_IMAGES = False
-ISIC_JS_BROWSER_SYNC = False
-ISIC_JS_SENTRY = False
-
-ISIC_DATACITE_API_URL = os.environ.get(
-    "DJANGO_ISIC_DATACITE_API_URL", "https://api.test.datacite.org"
-)
-ISIC_DATACITE_USERNAME: Any = None
-ISIC_DATACITE_PASSWORD: Any = None
+ISIC_DATACITE_API_URL: ParseResult | None = env.url("DJANGO_ISIC_DATACITE_API_URL", default=None)
 # These are the default styles with their proper names that are used by the
 # DataCite GUI. The full list of supported styles is at https://citation.doi.org/.
 ISIC_DATACITE_CITATION_STYLES: dict[str, str] = {
@@ -211,6 +249,9 @@ ISIC_DATACITE_CITATION_STYLES: dict[str, str] = {
     "chicago-fullnote-bibliography": "Chicago",
     "ieee": "IEEE",
 }
+ISIC_DATACITE_DOI_PREFIX = "10.80222"
+
+ISIC_GOOGLE_API_JSON_KEY: dict | None = env.json("DJANGO_ISIC_GOOGLE_API_JSON_KEY", default=None)
 ISIC_GOOGLE_ANALYTICS_PROPERTY_IDS = [
     "377090260",  # ISIC Home
     "360152967",  # ISIC Gallery
@@ -221,13 +262,18 @@ ISIC_GOOGLE_ANALYTICS_PROPERTY_IDS = [
     "265233311",  # ISDIS
 ]
 
-ISIC_GOOGLE_API_JSON_KEY: str | None = None
+ISIC_ZIP_DOWNLOAD_SERVICE_URL: ParseResult | None = env.url(
+    "DJANGO_ISIC_ZIP_DOWNLOAD_SERVICE_URL", default=None
+)
+# Requires CloudFront configuration
+ISIC_ZIP_DOWNLOAD_WILDCARD_URLS = True
 
-CDN_LOG_BUCKET: Any = None
+ISIC_CDN_LOG_BUCKET: str | None = env.str("DJANGO_ISIC_CDN_LOG_BUCKET", default=None)
 
-AWS_CLOUDFRONT_KEY: Any
-AWS_CLOUDFRONT_KEY_ID: Any
-AWS_S3_CUSTOM_DOMAIN: Any
-
-# opensearch logs every single request, which is too verbose
-LOGGING["loggers"]["elastic_transport"] = {"level": "WARNING"}  # noqa: F405
+TEMPLATES[0]["OPTIONS"]["context_processors"] += [  # type: ignore[index]
+    "isic.core.context_processors.placeholder_images",
+    "isic.core.context_processors.js_sentry",
+    "isic.core.context_processors.citation_styles",
+]
+ISIC_PLACEHOLDER_IMAGES = False
+ISIC_JS_SENTRY = False

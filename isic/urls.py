@@ -95,7 +95,11 @@ urlpatterns = [
     path("", include("isic.studies.urls")),
 ]
 
-if settings.DEBUG:
-    import debug_toolbar
 
-    urlpatterns = [path("__debug__/", include(debug_toolbar.urls)), *urlpatterns]
+if settings.DEBUG:
+    import debug_toolbar.toolbar
+
+    urlpatterns += [
+        *debug_toolbar.toolbar.debug_toolbar_urls(),
+        path("__reload__/", include("django_browser_reload.urls")),
+    ]

@@ -362,3 +362,4 @@ def parse_query(parser, query) -> Q | dict | None:
         parse_results = parser.parse_string(query, parse_all=True)
         if parse_results:
             return parse_results[0]
+        return None

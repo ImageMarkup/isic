@@ -21,13 +21,13 @@ from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.fields import Field
 from django.db.models.functions import Cast, Round
 from django.db.models.query_utils import Q
-from girder_utils.files import field_file_to_local_path
 from isic_metadata.fields import ImageTypeEnum
 from isic_metadata.metadata import MetadataRow
 import numpy as np
 from osgeo import gdal
 import PIL.Image
 import PIL.ImageOps
+from resonant_utils.files import field_file_to_local_path
 from s3_file_field import S3FileField
 
 from isic.core.models import CopyrightLicense, CreationSortedTimeStampedModel
@@ -218,7 +218,7 @@ def sponsored_blob_storage():
     return storages["sponsored"]
 
 
-class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ignore[django-manager-missing]
+class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
     # the creator is either inherited from the zip creator, or directly attached in the
     # case of a single shot upload.
     creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="accessions")

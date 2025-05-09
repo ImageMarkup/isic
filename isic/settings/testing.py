@@ -1,77 +1,53 @@
-import os
-import secrets
+import logging
+from secrets import randbelow
 
-import dj_database_url
+from minio_storage.policy import Policy
 
-from .base import *  # noqa: F403
+from .base import *
 
-SECRET_KEY = "testingsecret"  # noqa: S105
+# Import these afterwards, to override
+from resonant_settings.testing.minio_storage import *
 
-DATABASES = {
-    "default": dj_database_url.config(
-        default=os.environ["DJANGO_DATABASE_URL"], conn_max_age=600, conn_health_checks=False
-    )
-}
+SECRET_KEY = "insecure-secret"
 
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": os.environ["DJANGO_REDIS_URL"],
-    }
-}
+# Use a fast, insecure hasher to speed up tests
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.MD5PasswordHasher",
+    "isic.login.hashers.GirderPasswordHasher",
+]
 
-# Testing will add 'testserver' to ALLOWED_HOSTS
-ALLOWED_HOSTS: list[str] = []
+STORAGES["staticfiles"]["BACKEND"] = "whitenoise.storage.CompressedStaticFilesStorage"
 
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-
-CELERY_TASK_ACKS_LATE = True
-CELERY_WORKER_CONCURRENCY = None
-CELERY_TASK_ALWAYS_EAGER = True
-CELERY_TASK_EAGER_PROPAGATES = True
-
-CACHALOT_ENABLED = True
-
-ISIC_ELASTICSEARCH_IMAGES_INDEX = "test-isic-images"
-ISIC_ELASTICSEARCH_LESIONS_INDEX = "test-isic-lesions"
-
-ISIC_DATACITE_DOI_PREFIX = "10.80222"
-ZIP_DOWNLOAD_SERVICE_URL = "http://service-url.test"
-ZIP_DOWNLOAD_BASIC_AUTH_TOKEN = "insecuretestzipdownloadauthtoken"  # noqa: S105
-ZIP_DOWNLOAD_WILDCARD_URLS = False
-
-STORAGES["default"] = {"BACKEND": "isic.core.storages.minio.FixedMinioMediaStorage"}  # noqa: F405
-
-MINIO_STORAGE_ENDPOINT = os.environ["DJANGO_MINIO_STORAGE_ENDPOINT"]
-MINIO_STORAGE_USE_HTTPS = False
-MINIO_STORAGE_ACCESS_KEY = os.environ["DJANGO_MINIO_STORAGE_ACCESS_KEY"]
-MINIO_STORAGE_SECRET_KEY = os.environ["DJANGO_MINIO_STORAGE_SECRET_KEY"]
-MINIO_STORAGE_MEDIA_URL = os.environ.get("DJANGO_MINIO_STORAGE_MEDIA_URL")
-MINIO_STORAGE_AUTO_CREATE_MEDIA_BUCKET = True
-MINIO_STORAGE_AUTO_CREATE_MEDIA_POLICY = "READ_WRITE"
-MINIO_STORAGE_MEDIA_OBJECT_METADATA = {"Content-Disposition": "attachment"}
-
-STORAGES.update(  # noqa: F405
+MINIO_STORAGE_MEDIA_BUCKET_NAME = f"test-django-storage-{randbelow(1_000_000):06d}"
+STORAGES.update(
     {
         "default": {
-            "BACKEND": "isic.core.storages.minio.FixedMinioMediaStorage",
-            "OPTIONS": {
-                "bucket_name": f"test-django-storage-{secrets.randbelow(1_000_000):06d}",
-                "presign_urls": True,
-            },
+            "BACKEND": "isic.core.storages.minio.PreventRenamingMinioMediaStorage",
         },
         "sponsored": {
-            "BACKEND": "isic.core.storages.minio.FixedMinioMediaStorage",
+            "BACKEND": "isic.core.storages.minio.PreventRenamingMinioMediaStorage",
             "OPTIONS": {
-                "bucket_name": f"test-django-sponsored-{secrets.randbelow(1_000_000):06d}",
+                "bucket_name": f"test-django-sponsored-{randbelow(1_000_000):06d}",
+                "auto_create_policy": True,
+                "policy_type": Policy.read,
                 "presign_urls": False,
             },
         },
     }
 )
+MINIO_STORAGE_MEDIA_OBJECT_METADATA = {"Content-Disposition": "attachment"}
 
-# use md5 in testing for quicker user creation
-PASSWORD_HASHERS.insert(0, "django.contrib.auth.hashers.MD5PasswordHasher")  # noqa: F405
+# Testing will set EMAIL_BACKEND to use the memory backend
 
-# suppress noisy cache invalidation log messages in testing
-LOGGING["loggers"]["isic.core.signals"] = {"level": "ERROR"}  # noqa: F405
+# ISIC tests expect these to always be enabled, though they are optional in development
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_EAGER_PROPAGATES = True
+
+ISIC_ELASTICSEARCH_IMAGES_INDEX = "test-isic-images"
+ISIC_ELASTICSEARCH_LESIONS_INDEX = "test-isic-lesions"
+ISIC_USE_ELASTICSEARCH_COUNTS = False
+
+ISIC_ZIP_DOWNLOAD_WILDCARD_URLS = False
+
+# suppress noisy cache invalidation log messages
+logging.getLogger("isic.core.signals").setLevel(logging.ERROR)
