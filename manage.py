@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env -S uv run
 import os
 import sys
 
@@ -6,9 +6,12 @@ from django.core.management import execute_from_command_line
 
 
 def main() -> None:
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "isic.settings.production")
+    # Production usage runs manage.py for tasks like collectstatic,
+    # so DJANGO_SETTINGS_MODULE should always be explicitly set in production
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'isic.settings.development')
+
     execute_from_command_line(sys.argv)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

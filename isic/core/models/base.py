@@ -31,9 +31,9 @@ class IsicOAuthApplication(AbstractApplication):
         verbose_name = "ISIC OAuth application"
 
     def redirect_uri_allowed(self, uri):
-        if settings.ISIC_OAUTH_ALLOW_REGEX_REDIRECT_URIS:
-            for redirect_uri in self.redirect_uris.split():
-                if redirect_uri.startswith("^") and re.match(redirect_uri, uri):
-                    return True
+        """Allows regex matching, in addition to the normal behavior."""
+        for redirect_uri in self.redirect_uris.split():
+            if redirect_uri.startswith("^") and re.match(redirect_uri, uri):
+                return True
 
         return super().redirect_uri_allowed(uri)
