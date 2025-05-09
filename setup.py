@@ -56,7 +56,6 @@ setup(
         "django-extensions",
         "django-filter",
         "django-girder-utils",
-        "django-json-widget",
         "django-markdownify",
         "django-ninja>=1.0a3",
         # v2 removed OOB support
