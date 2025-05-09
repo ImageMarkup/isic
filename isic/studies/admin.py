@@ -5,7 +5,7 @@ from django.db.models import Count, Exists, OuterRef
 from django.db.models.expressions import F
 from django.db.models.query import QuerySet
 from django.http import HttpRequest
-from girder_utils.admin import ReadonlyTabularInline
+from resonant_utils.admin import ReadonlyTabularInline
 
 from isic.core.admin import StaffReadonlyAdmin
 from isic.studies.models import (

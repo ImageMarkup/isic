@@ -1,6 +1,6 @@
 from base64 import b64encode
 import json
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import ParseResult, parse_qs, urlparse
 
 from django.conf import settings
 import pytest
@@ -26,17 +26,31 @@ def _random_images_with_licenses(image_factory):
     image.accession.save()
 
 
+# We can't rely on the ZIP service to be present during all tests (particularly CI),
+# so mock the URL. Make this autouse, but it will only apply to this file.
+@pytest.fixture(autouse=True)
+def mock_zip_download_service_url(settings) -> None:
+    settings.ISIC_ZIP_DOWNLOAD_SERVICE_URL = ParseResult(
+        scheme="https",
+        netloc=":password@example.com:1234",
+        path="",
+        params="",
+        query="",
+        fragment="",
+    )
+
+
 @pytest.fixture
 def zip_basic_auth():
     return {
         "HTTP_AUTHORIZATION": "Basic "
-        + b64encode(b":" + settings.ZIP_DOWNLOAD_BASIC_AUTH_TOKEN.encode()).decode()
+        + b64encode(b":" + settings.ISIC_ZIP_DOWNLOAD_SERVICE_URL.password.encode()).decode()
     }
 
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.usefixtures("_random_images_with_licenses")
-def test_zip_download_licenses(authenticated_client):
+def test_zip_download_licenses(authenticated_client, zip_basic_auth):
     r = authenticated_client.post(
         "/api/v2/zip-download/url/", {"query": ""}, content_type="application/json"
     )
@@ -47,8 +61,7 @@ def test_zip_download_licenses(authenticated_client):
     r = authenticated_client.get(
         "/api/v2/zip-download/file-listing/",
         data={"token": token[0]},
-        HTTP_AUTHORIZATION="Basic "
-        + b64encode(b":" + settings.ZIP_DOWNLOAD_BASIC_AUTH_TOKEN.encode()).decode(),
+        **zip_basic_auth,
     )
     assert r.status_code == 200
 
@@ -102,7 +115,7 @@ def test_zip_download_listing_wildcard_urls(
     token = parse_qs(parsed_url.query)["zsid"]
 
     # Mock the CloudFrontSigner to return a predictable signature
-    settings.ZIP_DOWNLOAD_WILDCARD_URLS = True
+    settings.ISIC_ZIP_DOWNLOAD_WILDCARD_URLS = True
 
     mock_storage = mocker.MagicMock()
     mock_storage.cloudfront_key_id = "test"

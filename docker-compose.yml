@@ -1,11 +1,18 @@
 services:
   postgres:
     image: postgres:latest
+    shm_size: 128mb
     environment:
       POSTGRES_DB: django
       POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: ["CMD", "pg_isready", "--username", "postgres"]
+      start_period: 30s
+      start_interval: 2s
     ports:
-      - ${DOCKER_POSTGRES_PORT-5432}:5432
+      - 5432:5432
+    volumes:
+      - postgres:/var/lib/postgresql/data
 
   elasticsearch:
     image: elasticsearch:9.0.2
@@ -15,42 +22,61 @@ services:
       xpack.security.enabled: "true"
       ELASTIC_PASSWORD: elastic
       cluster.routing.allocation.disk.threshold_enabled: "false"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--user", "elastic:elastic", "http://localhost:9200/"]
+      start_period: 30s
+      start_interval: 2s
     ports:
       - 9200:9200
+    volumes:
+      - elasticsearch:/usr/share/elasticsearch/data
 
   rabbitmq:
-    image: rabbitmq:management
+    image: rabbitmq:management-alpine
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      start_period: 30s
+      start_interval: 2s
     ports:
-      - ${DOCKER_RABBITMQ_PORT-5672}:5672
-      - ${DOCKER_RABBITMQ_CONSOLE_PORT-15672}:15672
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq
 
   minio:
     image: minio/minio:latest
     # When run with a TTY, minio prints credentials on startup
     tty: true
-    command: ["server", "/data", "--console-address", ":${DOCKER_MINIO_CONSOLE_PORT-9001}"]
+    command: ["server", "/data", "--console-address", ":9001"]
     environment:
       MINIO_ROOT_USER: minioAccessKey
       MINIO_ROOT_PASSWORD: minioSecretKey
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      # "mc ready" doesn't terminate on failure, so time it out
+      timeout: 1s
+      start_period: 30s
+      start_interval: 2s
     ports:
-      - ${DOCKER_MINIO_PORT-9000}:9000
-      - ${DOCKER_MINIO_CONSOLE_PORT-9001}:9001
-
-  zipstreamer:
-    image: ghcr.io/imagemarkup/isic-zipstreamer:master
-    environment:
-      ZS_LISTFILE_URL_PREFIX: "http://django/api/v2/zip-download/file-listing/?token="
-      ZS_LISTFILE_BASIC_AUTH: "insecurezipdownloadauthtoken"
-    ports:
-      - 4008:4008
+      - 9000:9000
+      - 9001:9001
+    volumes:
+      - minio:/data
 
   redis:
-    image: redis:latest
+    image: redis:alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      start_period: 30s
+      start_interval: 2s
     ports:
-      - ${DOCKER_REDIS_PORT-6379}:6379
+      - 6379:6379
+    volumes:
+      - redis:/data
 
-
-  redisinsight:
-    image: redis/redisinsight:latest
-    ports:
-      - ${DOCKER_REDIS_INSIGHT_PORT-5540}:5540
+volumes:
+  postgres:
+  elasticsearch:
+  minio:
+  rabbitmq:
+  redis:
