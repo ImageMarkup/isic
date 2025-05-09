@@ -1,10 +1,10 @@
 from collections.abc import Generator, Iterable
 from contextlib import contextmanager
-from io import BufferedReader
 import logging
 from pathlib import Path
 import shutil
 import tempfile
+from typing import BinaryIO
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -119,7 +119,7 @@ def accession_publish(
 @contextmanager
 def embed_iptc_metadata(
     field_file: FieldFile, attribution: str, copyright_license: str, isic_id: str
-) -> Generator[BufferedReader]:
+) -> Generator[BinaryIO]:
     # embedding IPTC metadata is not supported for non JPG files at the moment
     file_name = getattr(field_file, "name", "")
     if not file_name.lower().endswith(".jpg"):

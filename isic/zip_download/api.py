@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 import json
 import logging
 from pathlib import PurePosixPath
+from typing import TYPE_CHECKING, Literal
 
 from botocore.signers import CloudFrontSigner
 from django.conf import settings
@@ -18,6 +19,7 @@ from django.http.response import Http404, HttpResponse
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils.crypto import constant_time_compare
+from django.views.decorators.csrf import csrf_exempt
 from ninja import Router
 from ninja.errors import AuthenticationError
 from ninja.security import APIKeyQuery, HttpBasicAuth
@@ -29,6 +31,9 @@ from isic.core.services import image_metadata_csv
 from isic.core.utils.csv import EscapingDictWriter
 from isic.core.utils.http import Buffer
 from isic.types import NinjaAuthHttpRequest
+
+if TYPE_CHECKING:
+    from urllib.parse import ParseResult
 
 logger = logging.getLogger(__name__)
 zip_router = Router()
@@ -45,9 +50,9 @@ def get_attributions(attributions: Iterable[str]) -> list[str]:
 
 
 class ZipDownloadBasicAuth(HttpBasicAuth):
-    def authenticate(self, request, username, password):
+    def authenticate(self, request: HttpRequest, username: str, password: str) -> Literal[True]:
         if username == "" and constant_time_compare(
-            password, settings.ZIP_DOWNLOAD_BASIC_AUTH_TOKEN
+            password, settings.ISIC_ZIP_DOWNLOAD_SERVICE_URL.password
         ):
             return True
 
@@ -88,13 +93,19 @@ def zip_api_auth(request: HttpRequest):
     return ZipDownloadTokenAuth()(request)
 
 
+@csrf_exempt
 @zip_router.post("/url/", response=str, include_in_schema=False)
 def create_zip_download_url(request: HttpRequest, payload: SearchQueryIn):
+    url: ParseResult | None = settings.ISIC_ZIP_DOWNLOAD_SERVICE_URL
+    if url is None:
+        raise ValueError("ISIC_ZIP_DOWNLOAD_SERVICE_URL is not set.")
+
     token = TimestampSigner().sign_object(payload.to_token_representation(user=request.user))
-    return f"{settings.ZIP_DOWNLOAD_SERVICE_URL}/download?zsid={token}"
-
-
-create_zip_download_url.csrf_exempt = True  # type: ignore[attr-defined]
+    return (
+        f"{url.scheme}://{url.hostname}"
+        + (f":{url.port}" if url.port else "")
+        + f"/download?zsid={token}"
+    )
 
 
 def _cloudfront_signer(message: bytes) -> bytes:
@@ -106,13 +117,11 @@ def _cloudfront_signer(message: bytes) -> bytes:
     )
 
 
-def _zip_file_listing_generator(
-    qs: QuerySet[Image], token: str
-) -> Generator[dict[str, str], None, None]:
+def _zip_file_listing_generator(qs: QuerySet[Image], token: str) -> Generator[dict[str, str]]:
     def extension_from_str(s: str) -> str:
         return PurePosixPath(s).suffix.lstrip(".")
 
-    if settings.ZIP_DOWNLOAD_WILDCARD_URLS:
+    if settings.ISIC_ZIP_DOWNLOAD_WILDCARD_URLS:
         # this is a performance optimization. repeated signing of individual urls
         # is slow when generating large descriptors. this allows generating one signature and
         # using it for all urls.

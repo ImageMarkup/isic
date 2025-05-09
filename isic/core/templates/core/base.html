@@ -30,13 +30,6 @@
 
       gtag('config', 'G-VBHRJSWF1T');
     </script>
-
-    {% if JS_BROWSER_SYNC %}
-      <script id="__bs_script__">//<![CDATA[
-        document.write("<script async src='//HOST:8383/browser-sync/browser-sync-client.js'><\/script>".replace("HOST", location.hostname));
-        //]]></script>
-    {% endif %}
-
     <script>
     document.addEventListener('alpine:init', () => {
       Alpine.store('accessions', {

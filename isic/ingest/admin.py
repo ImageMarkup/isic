@@ -7,7 +7,7 @@ from django.db.models import Count
 from django.http import HttpResponse
 from django.template.defaultfilters import filesizeformat
 from django.utils.safestring import mark_safe
-from girder_utils.admin import ReadonlyTabularInline
+from resonant_utils.admin import ReadonlyTabularInline
 
 from isic.core.admin import StaffReadonlyAdmin
 from isic.core.utils.csv import EscapingDictWriter

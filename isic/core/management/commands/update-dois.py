@@ -1,9 +1,7 @@
-from django.conf import settings
 import djclick as click
-import requests
 
 from isic.core.models.doi import Doi
-from isic.core.services.collection.doi import collection_build_doi
+from isic.core.services.collection.doi import _datacite_session, collection_build_doi
 from isic.core.tasks import fetch_doi_citations_task, fetch_doi_schema_org_dataset_task
 
 
@@ -20,17 +18,17 @@ def update_dois(all_, doi_ids):
     """
     doi_queryset = Doi.objects.all() if all_ else Doi.objects.filter(id__in=doi_ids)
 
-    for doi in doi_queryset.iterator():
-        new_doi = collection_build_doi(collection=doi.collection, doi_id=doi.id)
-        r = requests.put(
-            f"{settings.ISIC_DATACITE_API_URL}/dois/{doi.id}",
-            auth=(settings.ISIC_DATACITE_USERNAME, settings.ISIC_DATACITE_PASSWORD),
-            timeout=5,
-            json=new_doi,
-        )
-        if r.status_code != 200:
-            click.echo(f"{doi.id} failed: {r.status_code} {r.text}")
-        else:
-            click.echo(f"{doi.id} succeeded")
-            fetch_doi_citations_task.delay_on_commit(doi.id)
-            fetch_doi_schema_org_dataset_task.delay_on_commit(doi.id)
+    with _datacite_session() as session:
+        for doi in doi_queryset.iterator():
+            new_doi = collection_build_doi(collection=doi.collection, doi_id=doi.id)
+            r = session.put(
+                f"/dois/{doi.id}",
+                json=new_doi,
+                timeout=5,
+            )
+            if r.status_code != 200:
+                click.echo(f"{doi.id} failed: {r.status_code} {r.text}")
+            else:
+                click.echo(f"{doi.id} succeeded")
+                fetch_doi_citations_task.delay_on_commit(doi.id)
+                fetch_doi_schema_org_dataset_task.delay_on_commit(doi.id)

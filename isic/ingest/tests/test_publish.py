@@ -242,4 +242,4 @@ def test_embed_iptc_metadata_idempotency(image_factory):
         accession.save(update_fields=["blob"])
 
     with embed_iptc_metadata(accession.blob, attribution, copyright_license, image.isic_id) as _:
-        ...
+        pass
