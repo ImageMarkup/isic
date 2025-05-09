@@ -23,9 +23,9 @@ def apply_published_metadata(user_id, csv_path, message):
             for batch in batched(reader, 5_000):
                 click.echo(f"Processing batch of {len(batch)}")
                 accession_id_by_isic_id = dict(
-                    Accession.objects.filter(
-                        image__isic_id__in=[row["isic_id"] for row in batch]
-                    ).values_list("image__isic_id", "id")
+                    Accession.objects.filter(image__isic_id__in=[row["isic_id"] for row in batch])
+                    .values_list("image__isic_id", "id")
+                    .order_by()
                 )
 
                 for row in batch:
