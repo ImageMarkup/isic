@@ -27,6 +27,7 @@ from isic.core.models import CopyrightLicense, Image
 from isic.core.serializers import SearchQueryIn
 from isic.core.services import image_metadata_csv
 from isic.core.utils.csv import EscapingDictWriter
+from isic.core.utils.http import Buffer
 from isic.types import NinjaAuthHttpRequest
 
 logger = logging.getLogger(__name__)
@@ -171,11 +172,6 @@ def _zip_file_listing_generator(
 def zip_file_listing(
     request: NinjaAuthHttpRequest,
 ):
-    # StreamingHttpResponse requires a File-like class that has a 'write' method
-    class Buffer:
-        def write(self, value: str) -> bytes:
-            return value.encode("utf-8")
-
     # use repeatable read to ensure consistent results
     cursor = connection.cursor()
     cursor.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
