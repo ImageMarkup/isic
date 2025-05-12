@@ -59,7 +59,7 @@ class Collection(TimeStampedModel):
 
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
 
-    images = models.ManyToManyField(Image, related_name="collections")
+    images = models.ManyToManyField(Image, related_name="collections", through="CollectionImage")
 
     # unique per user. names of pinned collections can't be used.
     name = models.CharField(max_length=200)
@@ -138,6 +138,23 @@ class Collection(TimeStampedModel):
             raise ValidationError("Can't make collection public, it contains private images.")
 
         return super().full_clean(exclude=exclude, validate_unique=validate_unique)
+
+
+class CollectionImage(models.Model):
+    created = models.DateTimeField(auto_now_add=True, db_index=True)
+    collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
+    image = models.ForeignKey(Image, on_delete=models.CASCADE)
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                name="collectionimage_collection_image_unique",
+                fields=["collection", "image"],
+            ),
+        ]
+
+    def __str__(self):
+        return f"collection: {self.collection_id} - image: {self.image_id}"
 
 
 class CollectionShare(TimeStampedModel):
