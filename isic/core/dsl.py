@@ -10,10 +10,12 @@ from pyparsing.common import pyparsing_common
 from pyparsing.core import Literal, OneOrMore, Or, QuotedString, Suppress
 from pyparsing.helpers import one_of
 from pyparsing.results import ParseResults
+import sentry_sdk
 
 from isic.ingest.models.accession import Accession
 
-ParserElement.enablePackrat()
+# the cache size limit is the number of items, not the number of bytes
+ParserElement.enablePackrat(cache_size_limit=2_000)
 
 
 @dataclass(frozen=True)
@@ -356,6 +358,7 @@ es_parser = make_parser(es_query, es_query_and, es_query_or, es_convert_term)
 # "diagnosis:foobar OR (diagnosis:foobaz AND (diagnosis:foo* OR age_approx:50))"
 @lru_cache(maxsize=1_000)  # limit the cache size to 1000 to avoid unbounded growth
 def parse_query(parser, query) -> Q | dict | None:
-    parse_results = parser.parse_string(query, parse_all=True)
-    if parse_results:
-        return parse_results[0]
+    with sentry_sdk.start_span(op="dsl-parsing"):
+        parse_results = parser.parse_string(query, parse_all=True)
+        if parse_results:
+            return parse_results[0]
