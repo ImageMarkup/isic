@@ -215,17 +215,18 @@ def zip_file_listing(
 def zip_file_metadata_file(request: NinjaAuthHttpRequest):
     user, search = SearchQueryIn.from_token_representation(request.auth)
     qs = search.to_queryset(user, Image.objects.select_related("accession__cohort").distinct())
-    response = HttpResponse(content_type="text/csv")
 
     metadata_file = image_metadata_csv(qs=qs)
-    writer = EscapingDictWriter(response, next(metadata_file))
-    writer.writeheader()
 
-    for metadata_row in metadata_file:
-        assert isinstance(metadata_row, dict)  # noqa: S101
-        writer.writerow(metadata_row)
+    def write_response(buffer: Buffer) -> Iterable[bytes]:
+        writer = EscapingDictWriter(buffer, next(metadata_file))
+        yield writer.writeheader()
 
-    return response
+        for metadata_row in metadata_file:
+            assert isinstance(metadata_row, dict)  # noqa: S101
+            yield writer.writerow(metadata_row)
+
+    return StreamingHttpResponse(write_response(Buffer()), content_type="text/csv")
 
 
 @zip_router.get("/attribution-file/", include_in_schema=False, auth=ZipDownloadTokenAuth())
