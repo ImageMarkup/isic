@@ -27,6 +27,7 @@ from isic.core.models import CopyrightLicense, Image
 from isic.core.serializers import SearchQueryIn
 from isic.core.services import image_metadata_csv
 from isic.core.utils.csv import EscapingDictWriter
+from isic.core.utils.http import Buffer
 from isic.types import NinjaAuthHttpRequest
 
 logger = logging.getLogger(__name__)
@@ -171,11 +172,6 @@ def _zip_file_listing_generator(
 def zip_file_listing(
     request: NinjaAuthHttpRequest,
 ):
-    # StreamingHttpResponse requires a File-like class that has a 'write' method
-    class Buffer:
-        def write(self, value: str) -> bytes:
-            return value.encode("utf-8")
-
     # use repeatable read to ensure consistent results
     cursor = connection.cursor()
     cursor.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
@@ -219,17 +215,18 @@ def zip_file_listing(
 def zip_file_metadata_file(request: NinjaAuthHttpRequest):
     user, search = SearchQueryIn.from_token_representation(request.auth)
     qs = search.to_queryset(user, Image.objects.select_related("accession__cohort").distinct())
-    response = HttpResponse(content_type="text/csv")
 
     metadata_file = image_metadata_csv(qs=qs)
-    writer = EscapingDictWriter(response, next(metadata_file))
-    writer.writeheader()
 
-    for metadata_row in metadata_file:
-        assert isinstance(metadata_row, dict)  # noqa: S101
-        writer.writerow(metadata_row)
+    def write_response(buffer: Buffer) -> Iterable[bytes]:
+        writer = EscapingDictWriter(buffer, next(metadata_file))
+        yield writer.writeheader()
 
-    return response
+        for metadata_row in metadata_file:
+            assert isinstance(metadata_row, dict)  # noqa: S101
+            yield writer.writerow(metadata_row)
+
+    return StreamingHttpResponse(write_response(Buffer()), content_type="text/csv")
 
 
 @zip_router.get("/attribution-file/", include_in_schema=False, auth=ZipDownloadTokenAuth())

@@ -23,6 +23,7 @@ from isic.core.services.collection.doi import (
     collection_build_doi_preview,
 )
 from isic.core.utils.csv import EscapingDictWriter
+from isic.core.utils.http import Buffer
 from isic.ingest.models import Contributor
 
 
@@ -118,11 +119,6 @@ def collection_edit(request, pk):
 
 @needs_object_permission("core.view_collection", (Collection, "pk", "pk"))
 def collection_download_metadata(request, pk):
-    # StreamingHttpResponse requires a File-like class that has a 'write' method
-    class Buffer:
-        def write(self, value: str) -> bytes:
-            return value.encode("utf-8")
-
     collection = get_object_or_404(Collection, pk=pk)
     qs = get_visible_objects(
         request.user,
