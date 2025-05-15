@@ -1,6 +1,7 @@
 import itertools
 
 from django.contrib.auth.models import User
+from django.core.files import File
 from django.db import transaction
 from django.db.models import QuerySet
 
@@ -14,6 +15,13 @@ def image_create(*, creator: User, accession: Accession, public: bool) -> Image:
         image = Image(isic=isic_id, creator=creator, accession=accession, public=public)
         image.full_clean()
         image.save()
+
+        if public:
+            accession.public_blob_name = f"{image.isic_id}.{image.extension}"
+            accession.public_blob = File(accession.blob, name=accession.public_blob_name)
+            accession.public_blob_size = accession.blob_size
+            accession.save()
+
         return image
 
 
