@@ -84,7 +84,14 @@ def test_zip_download_listing(authenticated_client, zip_basic_auth):
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.usefixtures("_random_images_with_licenses")
-def test_zip_download_listing_wildcard_urls(authenticated_client, zip_basic_auth, settings, mocker):
+def test_zip_download_listing_wildcard_urls(
+    authenticated_client, zip_basic_auth, settings, image_factory, mocker, user
+):
+    # create a private image to ensure wildcard urls are only present for private images
+    image = image_factory(public=False)
+    # give the current user access to the image so it's included in the zip listing
+    image.accession.cohort.contributor.owners.add(user)
+
     r = authenticated_client.post(
         "/api/v2/zip-download/url/",
         {"query": ""},
@@ -111,17 +118,22 @@ def test_zip_download_listing_wildcard_urls(authenticated_client, zip_basic_auth
 
     r = authenticated_client.get(
         "/api/v2/zip-download/file-listing/",
-        data={"token": token[0], "limit": 1},
+        data={"token": token[0]},
         **zip_basic_auth,
     )
     output = json.loads(b"".join(r.streaming_content))
     assert r.status_code == 200, output
 
+    urls = [file["url"] for file in output["files"]]
+
     for image in Image.objects.all():
-        assert any(
-            file["url"].endswith(f"{image.accession.blob.name}?PretendPolicy=foo")
-            for file in output["files"]
-        )
+        # TODO: check for public once we've migrated all images
+        if image.accession.sponsored_blob:
+            assert any(url.endswith(image.blob.name) for url in urls)
+        else:
+            assert (
+                f"https://{mock_storage.custom_domain}/{image.blob.name}?PretendPolicy=foo" in urls
+            )
 
 
 @pytest.mark.django_db
