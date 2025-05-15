@@ -139,10 +139,10 @@ def _zip_file_listing_generator(
         # objects instead of being able to utilize .values.
         yield from (
             {
-                "url": image.accession.blob.url,
+                "url": image.blob.url,
                 "zipPath": f"{image.isic_id}.{image.extension}",
             }
-            for image in qs.iterator()
+            for image in qs.select_related("accession").iterator()
         )
 
     # initialize files with metadata and attribution files
