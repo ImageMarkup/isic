@@ -13,6 +13,7 @@ from django.contrib.auth.models import User
 from django.contrib.postgres.constraints import ExclusionConstraint
 from django.core.exceptions import ValidationError
 from django.core.files import File
+from django.core.files.storage import storages
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models, transaction
 from django.db.models import Deferrable, FloatField, IntegerField, Transform
@@ -219,6 +220,21 @@ class AccessionBlob:
     is_cog: bool
 
 
+EXTENSION_BUCKET_MAPPING = {
+    "jpg": "jpeg",
+    "png": "png",
+    "tif": "tif",
+}
+
+
+def public_blob_upload_to(instance: "Accession", filename: str) -> str:
+    return f"data/{EXTENSION_BUCKET_MAPPING[instance.blob.name.split('.')[-1]]}/{filename}"
+
+
+def public_blob_storage():
+    return storages["sponsored"]
+
+
 class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ignore[django-manager-missing]
     # the creator is either inherited from the zip creator, or directly attached in the
     # case of a single shot upload.
@@ -246,6 +262,15 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
     # this isn't unique because of the blank case, see constraints above.
     blob = S3FileField(blank=True)
     blob_name = models.CharField(max_length=255, editable=False, blank=True)
+
+    public_blob = S3FileField(
+        blank=True, storage=public_blob_storage, upload_to=public_blob_upload_to
+    )
+    public_blob_name = models.CharField(max_length=255, editable=False, blank=True)
+    public_blob_size = models.PositiveBigIntegerField(
+        null=True, blank=True, default=None, editable=False
+    )
+
     # blob_size/width/height are nullable unless status is succeeded
     blob_size = models.PositiveBigIntegerField(null=True, blank=True, default=None, editable=False)
     width = models.PositiveIntegerField(null=True, blank=True)
@@ -300,11 +325,21 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
             ),
             # blob should be unique when it's filled out
             UniqueConstraint(name="accession_unique_blob", fields=["blob"], condition=~Q(blob="")),
+            UniqueConstraint(
+                name="accession_unique_public_blob",
+                fields=["public_blob"],
+                condition=~Q(public_blob=""),
+            ),
             # blob_name should be unique when it's filled out
             UniqueConstraint(
                 name="accession_unique_blob_name",
                 fields=["blob_name"],
                 condition=~Q(blob_name=""),
+            ),
+            UniqueConstraint(
+                name="accession_unique_public_blob_name",
+                fields=["public_blob_name"],
+                condition=~Q(public_blob_name=""),
             ),
             # the original blob name should always be hidden, so blob_name shouldn't be the same
             CheckConstraint(
