@@ -1,4 +1,5 @@
 import os
+import secrets
 
 import dj_database_url
 
@@ -55,14 +56,14 @@ STORAGES.update(  # noqa: F405
         "default": {
             "BACKEND": "isic.core.storages.minio.FixedMinioMediaStorage",
             "OPTIONS": {
-                "bucket_name": "test-django-storage",
+                "bucket_name": f"test-django-storage-{secrets.randbelow(1_000_000):06d}",
                 "presign_urls": True,
             },
         },
         "sponsored": {
             "BACKEND": "isic.core.storages.minio.FixedMinioMediaStorage",
             "OPTIONS": {
-                "bucket_name": "test-django-sponsored",
+                "bucket_name": f"test-django-sponsored-{secrets.randbelow(1_000_000):06d}",
                 "presign_urls": False,
             },
         },
