@@ -58,3 +58,12 @@ rules:
     message: Found a call to a csv writer that doesn't escape values, use EscapingDictWriter instead.
     pattern: csv.DictWriter($...ARGS)
     fix: EscapingDictWriter($...ARGS)
+
+  - id: use-image-blob-where-possible
+    languages:
+      - python
+      - html
+    severity: ERROR
+    message: Use image.blob where possible, instead of image.accession.blob
+    # this is a bit of a janky regex to try to catch image.accession.blob usage
+    pattern-regex: image\.accession\.blob[.\s,\)]
