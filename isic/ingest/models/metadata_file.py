@@ -23,6 +23,9 @@ class MetadataFile(CreationSortedTimeStampedModel):
     validation_errors = models.TextField(blank=True)
     validation_completed = models.BooleanField(default=False)
 
+    class Meta(CreationSortedTimeStampedModel.Meta):
+        constraints = [models.CheckConstraint(check=~models.Q(blob=""), name="blob_not_empty")]
+
     def __str__(self) -> str:
         return self.blob_name
 
