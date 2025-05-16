@@ -17,7 +17,6 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models, transaction
 from django.db.models import Deferrable, FloatField, IntegerField, Transform
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
-from django.db.models.expressions import F
 from django.db.models.fields import Field
 from django.db.models.functions import Cast, Round
 from django.db.models.query_utils import Q
@@ -212,7 +211,6 @@ class AccessionStatus(models.TextChoices):
 @dataclass
 class AccessionBlob:
     blob: File
-    blob_name: str
     blob_size: int
     height: int
     width: int
@@ -245,7 +243,6 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
     # When instantiated, blob is empty, as it holds the EXIF-stripped image
     # this isn't unique because of the blank case, see constraints above.
     blob = S3FileField(blank=True)
-    blob_name = models.CharField(max_length=255, editable=False, blank=True)
     # blob_size/width/height are nullable unless status is succeeded
     blob_size = models.PositiveBigIntegerField(null=True, blank=True, default=None, editable=False)
     width = models.PositiveIntegerField(null=True, blank=True)
@@ -300,17 +297,6 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
             ),
             # blob should be unique when it's filled out
             UniqueConstraint(name="accession_unique_blob", fields=["blob"], condition=~Q(blob="")),
-            # blob_name should be unique when it's filled out
-            UniqueConstraint(
-                name="accession_unique_blob_name",
-                fields=["blob_name"],
-                condition=~Q(blob_name=""),
-            ),
-            # the original blob name should always be hidden, so blob_name shouldn't be the same
-            CheckConstraint(
-                name="accession_blob_name_not_original_blob_name",
-                condition=~Q(original_blob_name=F("blob_name")),
-            ),
             # require blob_size / width / height for succeeded accessions
             CheckConstraint(
                 name="accession_succeeded_blob_fields",
@@ -322,7 +308,6 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
                     height__isnull=False,
                 )
                 & ~Q(thumbnail_256="")
-                & ~Q(blob_name="")
                 | ~Q(status=AccessionStatus.SUCCEEDED),
             ),
             CheckConstraint(
@@ -534,7 +519,6 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
 
             blob_name = f"{uuid4()}.{'png' if output_format == 'PNG' else 'jpg'}"
             accession_blob = AccessionBlob(
-                blob_name=blob_name,
                 blob=InMemoryUploadedFile(
                     file=stripped_blob_stream,
                     field_name=None,
@@ -590,7 +574,6 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
         with Path(cog_temp_file.name).open("rb") as cog_stream:
             blob_name = f"{uuid4()}.tif"
             accession_blob = AccessionBlob(
-                blob_name=blob_name,
                 blob=InMemoryUploadedFile(
                     file=cog_stream,
                     field_name=None,
@@ -643,13 +626,12 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
             else:
                 accession_blob = self._generate_blob(img)
 
-            self.blob_name = accession_blob.blob_name
             self.blob_size = accession_blob.blob_size
             self.height = accession_blob.height
             self.width = accession_blob.width
             self.is_cog = accession_blob.is_cog
 
-            self.save(update_fields=["blob_name", "blob", "blob_size", "height", "width", "is_cog"])
+            self.save(update_fields=["blob", "blob_size", "height", "width", "is_cog"])
 
             self.generate_thumbnail()
         except InvalidBlobError:

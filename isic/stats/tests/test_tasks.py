@@ -80,7 +80,6 @@ def test_collect_image_download_records_task(
     # TODO: overriding the blob name requires passing the size manually.
     image = image_factory(
         accession__blob="some/exists.jpg",
-        accession__blob_name="exists.jpg",
         accession__blob_size=1,
     )
 
