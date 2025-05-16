@@ -106,7 +106,6 @@ class AccessionFactory(factory.django.DjangoModelFactory):
         from_path=data_dir / "ISIC_0000000.jpg",
         filename=factory.Sequence(lambda n: f"ISIC_{n:07}.jpg"),
     )
-    blob_name = factory.Faker("uuid4")
     blob_size = factory.SelfAttribute("blob.size")
     thumbnail_256 = factory.django.FileField(from_path=data_dir / "ISIC_0000000_thumbnail_256.jpg")
     thumbnail_256_size = factory.SelfAttribute("thumbnail_256.size")
