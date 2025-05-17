@@ -58,6 +58,10 @@ def cohort_publish(
     # this creates a transaction
     with lock_table_for_writes(IsicId), transaction.atomic():
         for accession in cohort.accessions.publishable().iterator():
+            if accession.attribution == "":
+                accession.attribution = accession.cohort.default_attribution
+                accession.save(update_fields=["attribution"])
+
             image = image_create(creator=publisher, accession=accession, public=public)
             collection_add_images(collection=cohort.collection, image=image, ignore_lock=True)
 
