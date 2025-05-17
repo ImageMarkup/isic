@@ -259,8 +259,8 @@ class MetadataFileOut(ModelSchema):
 def delete_metadata_file(request: HttpRequest, id: int):
     metadata_file = get_object_or_404(MetadataFile, id=id)
     metadata_file.delete()
-    # Delete the blob from S3
-    metadata_file.blob.delete()
+    # Delete the blob from S3, making sure to not reattempt saving the same metadata_file model
+    metadata_file.blob.delete(save=False)
     return 204, None
 
 
