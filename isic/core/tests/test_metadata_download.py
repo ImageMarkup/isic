@@ -6,6 +6,7 @@ from isic.core.services import image_metadata_csv, staff_image_metadata_csv
 
 @pytest.fixture
 def image_with_metadata(image):
+    image.accession.attribution = "attribution"
     image.accession.copyright_license = "CC-0"
     image.accession.save()
 

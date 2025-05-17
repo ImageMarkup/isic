@@ -112,7 +112,7 @@ class AccessionFactory(factory.django.DjangoModelFactory):
     copyright_license = factory.Faker(
         "random_element", elements=[e[0] for e in CopyrightLicense.choices]
     )
-    attribution = factory.SelfAttribute("cohort.default_attribution")
+    attribution = factory.Faker("random_element", elements=[factory.Faker("sentence"), ""])
 
     unstructured_metadata = factory.RelatedFactory(UnstructuredMetadataFactory, "accession")
 
