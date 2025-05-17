@@ -232,7 +232,9 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
     cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name="accessions")
 
     copyright_license = models.CharField(choices=CopyrightLicense.choices, max_length=255)
-    attribution = models.CharField(max_length=200)
+    # attribution is initially empty, with cohort.default_attribution being copied over during
+    # publish if not otherwise set.
+    attribution = models.CharField(max_length=200, blank=True)
 
     # the original blob is stored in case blobs need to be reprocessed
     original_blob = S3FileField(unique=True)
