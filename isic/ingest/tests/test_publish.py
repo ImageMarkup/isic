@@ -5,6 +5,7 @@ import pytest
 from isic.core.models.collection import Collection
 from isic.core.models.image import Image
 from isic.ingest.models.accession import AccessionStatus
+from isic.ingest.services.cohort import cohort_publish_initialize
 
 
 @pytest.fixture
@@ -23,6 +24,67 @@ def publishable_cohort(cohort_factory, accession_factory, accession_review_facto
     )
     accession_factory(cohort=cohort, status=AccessionStatus.SKIPPED)
     return cohort
+
+
+@pytest.fixture
+def publishable_cohort_for_attributions(
+    cohort_factory, accession_factory, accession_review_factory, user
+):
+    cohort = cohort_factory(creator=user, contributor__creator=user)
+    # Make publishable accessions, one with an attribution, one without
+    accession_review_factory(
+        accession__attribution="has an attribution",
+        accession__cohort=cohort,
+        accession__status=AccessionStatus.SUCCEEDED,
+        accession__blob_size=1,
+        accession__width=1,
+        accession__height=1,
+        creator=user,
+        reviewed_at=timezone.now(),
+        value=True,
+    )
+    accession_review_factory(
+        accession__attribution="",
+        accession__cohort=cohort,
+        accession__status=AccessionStatus.SUCCEEDED,
+        accession__blob_size=1,
+        accession__width=1,
+        accession__height=1,
+        creator=user,
+        reviewed_at=timezone.now(),
+        value=True,
+    )
+    return cohort
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("_search_index")
+def test_publish_copies_default_attribution(
+    publishable_cohort_for_attributions,
+    user,
+    django_capture_on_commit_callbacks,
+):
+    assert set(
+        publishable_cohort_for_attributions.accessions.values_list("attribution", flat=True)
+    ) == {"has an attribution", ""}
+
+    publishable_cohort_for_attributions.default_attribution = "default attribution"
+    publishable_cohort_for_attributions.save(update_fields=["default_attribution"])
+
+    with django_capture_on_commit_callbacks(execute=True):
+        cohort_publish_initialize(
+            cohort=publishable_cohort_for_attributions,
+            publisher=user,
+            public=True,
+        )
+
+    published_images = Image.objects.filter(accession__cohort=publishable_cohort_for_attributions)
+
+    assert published_images.count() == 2
+    assert set(published_images.values_list("accession__attribution", flat=True)) == {
+        "has an attribution",
+        "default attribution",
+    }
 
 
 @pytest.mark.django_db
