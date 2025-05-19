@@ -8,15 +8,19 @@ from isic.core.tasks import fetch_doi_citations_task, fetch_doi_schema_org_datas
 
 
 @click.command(help="Update all DOIs")
-def update_dois():
+@click.option("--all", "all_", is_flag=True, help="Update all DOIs")
+@click.argument("doi_ids", nargs=-1)
+def update_dois(all_, doi_ids):
     """
-    Update all DOIs on DataCite.
+    Update specified DOIs on DataCite or all if --all is specified.
 
     This is useful after making changes to the metadata provided on DOI creation
     (see collection_build_doi). After updating the DOIs, the citations and schema.org
     information are re-fetched from DataCite.
     """
-    for doi in Doi.objects.iterator():
+    doi_queryset = Doi.objects.all() if all_ else Doi.objects.filter(id__in=doi_ids)
+
+    for doi in doi_queryset.iterator():
         new_doi = collection_build_doi(collection=doi.collection, doi_id=doi.id)
         r = requests.put(
             f"{settings.ISIC_DATACITE_API_URL}/dois/{doi.id}",
