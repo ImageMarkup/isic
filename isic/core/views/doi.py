@@ -50,12 +50,6 @@ def doi_detail(request, slug):
         "attributing_institutions": attributing_institutions,
         "stats": {
             "images": doi.collection.images.count(),
-            "lesions": doi.collection.images.values_list("accession__lesion_id", flat=True)
-            .distinct()
-            .count(),
-            "patients": doi.collection.images.values_list("accession__patient_id", flat=True)
-            .distinct()
-            .count(),
         },
     }
 

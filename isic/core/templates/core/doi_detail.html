@@ -102,6 +102,11 @@
             <div class="dataset-detail-value">{{ doi.id }}</div>
           </div>
           <div class="divider my-0"></div>
+          <div class="dataset-detail">
+            <div class="dataset-detail-label">Images</div>
+            <div class="dataset-detail-value">{{ stats.images|intcomma }}</div>
+          </div>
+          <div class="divider my-0"></div>
           <div class="dataset-detail flex-col">
             <div class="dataset-detail-label">Attributions</div>
             <ul class="list-disc list-inside ml-2">
@@ -109,30 +114,6 @@
                 <li>{{ attributing_institution }}</li>
               {% endfor %}
             </ul>
-          </div>
-
-          <div class="dataset-detail-stats lg:flex lg:justify-between">
-            <div class="dataset-detail-stat">
-              <span class="text-xs text-center">Total Images</span>
-              <div class="flex">
-                <i class="ri-image-line"></i>
-                <p class="content-center font-bold">{{ stats.images|intcomma }}</p>
-              </div>
-            </div>
-            <div class="dataset-detail-stat">
-              <span class="text-xs">Total Lesions</span>
-              <div class="flex">
-                <i class="ri-stethoscope-line"></i>
-                <p class="content-center font-bold">{{ stats.lesions|intcomma }}</p>
-              </div>
-            </div>
-            <div class="dataset-detail-stat">
-              <span class="text-xs">Total Patients</span>
-              <div class="flex">
-                <i class="ri-group-line"></i>
-                <p class="content-center font-bold">{{ stats.patients|intcomma }}</p>
-              </div>
-            </div>
           </div>
         </div>
 
