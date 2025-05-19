@@ -26,7 +26,7 @@
       e.preventDefault();
 
       if (confirm('Are you sure you want to delete this file?')) {
-        fetch(`/api/v2/metadata-files/${pk}`, {
+        fetch(`/api/v2/metadata-files/${pk}/`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
