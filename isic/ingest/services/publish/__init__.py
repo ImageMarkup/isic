@@ -6,6 +6,7 @@ from django.db import transaction
 from django.db.models import QuerySet
 
 from isic.core.models.collection import Collection
+from isic.core.models.image import Image
 from isic.core.models.isic_id import IsicId
 from isic.core.services.collection import collection_create
 from isic.core.services.collection.image import collection_add_images
@@ -64,12 +65,36 @@ def cohort_publish(*, publish_request: PublishRequest) -> None:
                 accession.attribution = accession.cohort.default_attribution
                 accession.save(update_fields=["attribution"])
 
-            image = image_create(
+            image_create(
                 creator=publish_request.creator,
                 accession=accession,
-                public=publish_request.public,
+                public=False,
             )
+        if not publish_request.public:
             for collection in publish_request.collections.all():
-                collection_add_images(collection=collection, image=image, ignore_lock=True)
+                collection_add_images(
+                    collection=collection,
+                    qs=Image.objects.filter(accession__in=publish_request.accessions.all()),
+                    ignore_lock=True,
+                )
+
+    if publish_request.public:
+        with transaction.atomic():
+            unembargo_images(
+                qs=Image.objects.filter(accession__in=publish_request.accessions.all())
+            )
+
+            for collection in publish_request.collections.all():
+                collection_add_images(
+                    collection=collection,
+                    qs=Image.objects.filter(accession__in=publish_request.accessions.all()),
+                    ignore_lock=True,
+                )
 
     sync_elasticsearch_indices_task.delay_on_commit()
+
+
+def unembargo_images(*, qs: QuerySet[Image]) -> None:
+    for image in qs.iterator():
+        image.public = True
+        image.save(update_fields=["public"])
