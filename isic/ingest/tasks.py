@@ -21,7 +21,7 @@ from isic.ingest.models import (
     ZipUploadStatus,
 )
 from isic.ingest.services.accession import bulk_accession_update_metadata
-from isic.ingest.services.cohort import cohort_publish
+from isic.ingest.services.publish import cohort_publish
 from isic.ingest.utils.metadata import (
     ColumnRowErrors,
     Problem,
