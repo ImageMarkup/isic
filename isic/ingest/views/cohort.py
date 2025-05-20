@@ -132,9 +132,7 @@ def publish_cohort(request, pk):
             cohort=cohort,
             publisher=request.user,
             public=form.cleaned_data["public"],
-            collection_ids=list(
-                form.cleaned_data["additional_collections"].values_list("id", flat=True)
-            ),
+            collections=form.cleaned_data["additional_collections"],
         )
 
         # define the count before publishing so it's accurate in development when
