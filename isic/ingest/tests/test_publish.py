@@ -5,7 +5,7 @@ import pytest
 from isic.core.models.collection import Collection
 from isic.core.models.image import Image
 from isic.ingest.models.accession import AccessionStatus
-from isic.ingest.services.cohort import cohort_publish_initialize
+from isic.ingest.services.publish import cohort_publish_initialize
 
 
 @pytest.fixture

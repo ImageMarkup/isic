@@ -16,7 +16,8 @@ from isic.ingest.forms import MergeCohortForm, PublishCohortForm
 from isic.ingest.models import Cohort
 from isic.ingest.models.accession import Accession, AccessionStatus
 from isic.ingest.models.contributor import Contributor
-from isic.ingest.services.cohort import cohort_merge, cohort_publish_initialize
+from isic.ingest.services.cohort import cohort_merge
+from isic.ingest.services.publish import cohort_publish_initialize
 from isic.ingest.views import make_breadcrumbs
 
 
