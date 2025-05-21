@@ -19,12 +19,12 @@
             <div>
               <div id="image-{{ image.id }}" style="width:512px; height:512px; border:1px solid #ccc;"></div>
               <script type="text/javascript">
-                initializeCogViewer(document.getElementById('image-{{ image.id }}'), '{{ image.accession.blob.url|safe }}');
+                initializeCogViewer(document.getElementById('image-{{ image.id }}'), '{{ image.blob.url|safe }}');
               </script>
             </div>
           {% else %}
           {% comment %}Note the single quotes: https://github.com/alpinejs/alpine/issues/466{% endcomment %}
-            <img :src="'{{ image.accession.blob.url }}'" />
+            <img :src="'{{ image.blob.url }}'" />
           {% endif %}
 
         </template>

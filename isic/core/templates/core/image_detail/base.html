@@ -33,12 +33,12 @@
             <script src="{% static 'core/dist/cog.js' %}"></script>
             <link rel="stylesheet" href="{% static 'core/dist/ol.css' %}">
             <script type="text/javascript">
-              initializeCogViewer(document.getElementById('image'), '{{ image.accession.blob.url|safe }}');
+              initializeCogViewer(document.getElementById('image'), '{{ image.blob.url|safe }}');
             </script>
             <span class="text-sm">Scroll to zoom, click and drag to pan</span>
           {% else %}
-            <a href="{{ image.accession.blob.url }}">
-              <img src="{% if PLACEHOLDER_IMAGES %}https://picsum.photos/seed/{{image.accession.id}}/256{% else %}{{ image.accession.blob.url }}{% endif %}"
+            <a href="{{ image.blob.url }}">
+              <img src="{% if PLACEHOLDER_IMAGES %}https://picsum.photos/seed/{{image.accession.id}}/256{% else %}{{ image.blob.url }}{% endif %}"
                    class="object-cover sm:max-w-md max-h-96 lg:max-w-xl border border-black" />
             </a>
           {% endif %}

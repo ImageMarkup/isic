@@ -223,7 +223,7 @@ def collection_create_doi_files(*, doi: Doi) -> None:
         bundle_filename = f"{collection_slug}.zip"
         with zipfile.ZipFile(bundle_filename, "w") as bundle:
             for image in images.iterator():
-                with image.accession.blob.open("rb") as blob:
+                with image.blob.open("rb") as blob:
                     bundle.writestr(f"images/{image.isic_id}.{image.extension}", blob.read())
 
             # the metadata csv could be large enough that it needs to be written to disk first
