@@ -13,9 +13,10 @@ from django.contrib.auth.models import User
 from django.contrib.postgres.constraints import ExclusionConstraint
 from django.core.exceptions import ValidationError
 from django.core.files import File
+from django.core.files.storage import storages
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models, transaction
-from django.db.models import Deferrable, FloatField, IntegerField, Transform
+from django.db.models import Deferrable, FileField, FloatField, IntegerField, Transform
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.fields import Field
 from django.db.models.functions import Cast, Round
@@ -217,6 +218,10 @@ class AccessionBlob:
     is_cog: bool
 
 
+def sponsored_blob_storage():
+    return storages["sponsored"]
+
+
 class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ignore[django-manager-missing]
     # the creator is either inherited from the zip creator, or directly attached in the
     # case of a single shot upload.
@@ -245,6 +250,7 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
     # When instantiated, blob is empty, as it holds the EXIF-stripped image
     # this isn't unique because of the blank case, see constraints above.
     blob = S3FileField(blank=True)
+    sponsored_blob = FileField(blank=True, storage=sponsored_blob_storage, upload_to="images/")
     # blob_size/width/height are nullable unless status is succeeded
     blob_size = models.PositiveBigIntegerField(null=True, blank=True, default=None, editable=False)
     width = models.PositiveIntegerField(null=True, blank=True)
@@ -257,6 +263,9 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
     )
 
     thumbnail_256 = S3FileField(blank=True)
+    sponsored_thumbnail_256_blob = FileField(
+        blank=True, storage=sponsored_blob_storage, upload_to="thumbnails/"
+    )
     thumbnail_256_size = models.PositiveIntegerField(
         null=True, blank=True, default=None, editable=False
     )
@@ -297,8 +306,28 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
                 fields=["girder_id"],
                 condition=~Q(girder_id=""),
             ),
-            # blob should be unique when it's filled out
+            # blob/sponsored_blob/sponsored_thumbnail_256_blob should be unique when filled out
             UniqueConstraint(name="accession_unique_blob", fields=["blob"], condition=~Q(blob="")),
+            UniqueConstraint(
+                name="accession_unique_sponsored_blob",
+                fields=["sponsored_blob"],
+                condition=~Q(sponsored_blob=""),
+            ),
+            UniqueConstraint(
+                name="accession_unique_sponsored_thumbnail_256_blob",
+                fields=["sponsored_thumbnail_256_blob"],
+                condition=~Q(sponsored_thumbnail_256_blob=""),
+            ),
+            # either blob, or sponsored_blob should be filled out, not both
+            CheckConstraint(
+                name="accession_blob_or_sponsored_blob",
+                condition=Q(blob="") | Q(sponsored_blob=""),
+            ),
+            # sponsored_blob implies sponsored_thumbnail_256_blob
+            CheckConstraint(
+                name="accession_sponsored_blob_implies_sponsored_thumbnail_256_blob",
+                condition=~Q(sponsored_blob="") | Q(sponsored_thumbnail_256_blob=""),
+            ),
             # require blob_size / width / height for succeeded accessions
             CheckConstraint(
                 name="accession_succeeded_blob_fields",
@@ -309,7 +338,6 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
                     width__isnull=False,
                     height__isnull=False,
                 )
-                & ~Q(thumbnail_256="")
                 | ~Q(status=AccessionStatus.SUCCEEDED),
             ),
             CheckConstraint(
