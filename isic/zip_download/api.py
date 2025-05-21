@@ -8,7 +8,7 @@ from pathlib import PurePosixPath
 from botocore.signers import CloudFrontSigner
 from django.conf import settings
 from django.contrib.sites.models import Site
-from django.core.files.storage import default_storage
+from django.core.files.storage import default_storage, storages
 from django.core.signing import BadSignature, TimestampSigner
 from django.db import connection, transaction
 from django.db.models import QuerySet
@@ -120,29 +120,40 @@ def _zip_file_listing_generator(
         # create a wildcard signature that allows access to * and pass this to the zipstreamer.
         # since zip_api_auth uses a shared secret that only it and the zipstreamer know, this
         # can't be intercepted by someone looking at the zipstreamer url.
-        url = f"https://{default_storage.custom_domain}/*"
+        bucket_url = f"https://{default_storage.custom_domain}/*"
         policy = signer.build_policy(
-            url,
+            bucket_url,
             date_less_than=datetime.now(tz=UTC) + timedelta(days=1),
         )
-        signed_url = signer.generate_presigned_url(url, policy=policy)
-        yield from (
-            {
-                "url": signed_url.replace("*", image["accession__blob"]),
-                "zipPath": f"{image['isic_id']}.{extension_from_str(image['accession__blob'])}",
+        signed_url = signer.generate_presigned_url(bucket_url, policy=policy)
+        for image in qs.values(
+            "accession__blob", "accession__sponsored_blob", "public", "isic_id"
+        ).iterator():
+            # TODO: check for public once we've migrated all images
+            if image["accession__sponsored_blob"]:
+                url = storages["sponsored"].url(name=image["accession__sponsored_blob"])
+                zip_path = (
+                    f"{image['isic_id']}.{extension_from_str(image['accession__sponsored_blob'])}"
+                )
+            else:
+                url = signed_url.replace("*", image["accession__blob"])
+                zip_path = f"{image['isic_id']}.{extension_from_str(image['accession__blob'])}"
+
+            yield {
+                "url": url,
+                "zipPath": zip_path,
             }
-            for image in qs.values("accession__blob", "isic_id").iterator()
-        )
+
     else:
         # development doesn't have any cloudfront frontend so we need to sign each individual url.
         # this is considerably slower because of the signing and the hydrating of the related
         # objects instead of being able to utilize .values.
         yield from (
             {
-                "url": image.accession.blob.url,
+                "url": image.blob.url,
                 "zipPath": f"{image.isic_id}.{image.extension}",
             }
-            for image in qs.iterator()
+            for image in qs.select_related("accession").iterator()
         )
 
     # initialize files with metadata and attribution files

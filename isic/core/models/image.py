@@ -98,8 +98,15 @@ class Image(CreationSortedTimeStampedModel):
         return reverse("core/image-detail", args=[self.isic_id])
 
     @property
+    def blob(self):
+        # TODO: convert to self.public once we've migrated all images
+        if self.accession.sponsored_blob:
+            return self.accession.sponsored_blob
+        return self.accession.blob
+
+    @property
     def extension(self) -> str:
-        return PurePosixPath(self.accession.blob.file.name).suffix.lstrip(".")
+        return PurePosixPath(self.blob.file.name).suffix.lstrip(".")
 
     @property
     def has_patient(self) -> bool:

@@ -54,7 +54,7 @@ class ImageOut(ModelSchema):
             full_url = f"https://picsum.photos/seed/{image.id}/1000"
             thumbnail_url = f"https://picsum.photos/seed/{image.id}/256"
         else:
-            full_url = image.accession.blob.url
+            full_url = image.blob.url
             thumbnail_url = image.accession.thumbnail_256.url
 
         full_size = image.accession.blob_size
