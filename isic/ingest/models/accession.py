@@ -453,7 +453,7 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
         ]
 
     def __str__(self) -> str:
-        return self.blob_name
+        return f"{self.original_blob_name} ({self.id})"
 
     remapped_internal_fields = [
         RemappedField("lesion_id", "lesion", "private_lesion_id", Lesion),
