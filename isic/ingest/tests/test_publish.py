@@ -1,11 +1,13 @@
 from django.urls.base import reverse
 from django.utils import timezone
+import pyexiv2
 import pytest
+from resonant_utils.files import field_file_to_local_path
 
 from isic.core.models.collection import Collection
 from isic.core.models.image import Image
 from isic.ingest.models.accession import AccessionStatus
-from isic.ingest.services.publish import cohort_publish_initialize
+from isic.ingest.services.publish import cohort_publish_initialize, unembargo_image
 
 
 @pytest.fixture
@@ -129,3 +131,46 @@ def test_publish_cohort_into_public_collection(
         assert (
             "add private images into a public collection" in r.context["form"].errors["__all__"][0]
         )
+
+
+@pytest.mark.django_db
+def test_unembargo_images(image_factory):
+    image = image_factory(
+        public=False, accession__attribution="attribution", accession__copyright_license="CC-0"
+    )
+    unembargo_image(image=image)
+    image.refresh_from_db()
+    assert image.public
+    assert image.accession.sponsored_blob.name == f"images/{image.isic_id}.jpg"
+    assert (
+        image.accession.sponsored_thumbnail_256_blob.name
+        == f"thumbnails/{image.isic_id}_thumbnail.jpg"
+    )
+
+    for blob in [image.accession.sponsored_blob, image.accession.sponsored_thumbnail_256_blob]:
+        with (
+            field_file_to_local_path(blob) as path,
+            pyexiv2.Image(str(path.absolute())) as image_file,
+        ):
+            assert image_file.read_iptc() == {
+                "Iptc.Application2.Credit": "attribution",
+                "Iptc.Application2.Source": "ISIC Archive",
+            }
+            # see https://iptc.org/std/photometadata/specification/IPTC-PhotoMetadata#lang-alt-value-type
+            assert image_file.read_xmp()["Xmp.dc.title"] == {'lang="x-default"': image.isic_id}
+            assert (
+                image_file.read_xmp()["Xmp.plus.ImageSupplier[1]/plus:ImageSupplierName"]
+                == "ISIC Archive"
+            )
+            assert image_file.read_xmp()["Xmp.plus.ImageSupplierImageID"] == image.isic_id
+            # see https://iptc.org/std/photometadata/specification/IPTC-PhotoMetadata#lang-alt-value-type
+            assert image_file.read_xmp()["Xmp.xmpRights.UsageTerms"] == {'lang="x-default"': "CC-0"}
+            assert (
+                image_file.read_xmp()["Xmp.xmpRights.WebStatement"]
+                == "https://creativecommons.org/publicdomain/zero/1.0/"
+            )
+            assert (
+                image_file.read_xmp()["Xmp.plus.Licensor[1]/plus:LicensorURL"]
+                == "https://www.isic-archive.com"
+            )
+            assert image_file.read_xmp()["Xmp.plus.Licensor[1]/plus:LicensorName"] == "ISIC Archive"

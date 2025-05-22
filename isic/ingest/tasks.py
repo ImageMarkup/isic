@@ -1,6 +1,5 @@
-from collections.abc import Generator, Iterable
+from collections.abc import Generator
 import itertools
-import time
 
 from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
@@ -10,6 +9,7 @@ from django.db import transaction
 from django.template.loader import render_to_string
 from isic_metadata.utils import get_unstructured_columns
 
+from isic.core.utils.iterators import throttled_iterator
 from isic.ingest.models import (
     Accession,
     AccessionStatus,
@@ -21,7 +21,7 @@ from isic.ingest.models import (
 )
 from isic.ingest.models.publish_request import PublishRequest
 from isic.ingest.services.accession import bulk_accession_update_metadata
-from isic.ingest.services.publish import cohort_publish
+from isic.ingest.services.publish import accession_publish, cohort_publish
 from isic.ingest.utils.metadata import (
     ColumnRowErrors,
     Problem,
@@ -31,12 +31,6 @@ from isic.ingest.utils.metadata import (
 )
 
 logger = get_task_logger(__name__)
-
-
-def throttled_iterator(iterable: Iterable, max_per_second: int = 100) -> Iterable:
-    for item in iterable:
-        yield item
-        time.sleep(1 / max_per_second)
 
 
 @shared_task(soft_time_limit=60 * 60 * 12, time_limit=60 * 60 * 12 + 30)
@@ -181,3 +175,21 @@ def update_metadata_task(user_pk: int, metadata_file_pk: int):
 def publish_cohort_task(publish_request_pk: int):
     publish_request = PublishRequest.objects.get(pk=publish_request_pk)
     cohort_publish(publish_request=publish_request)
+
+
+@shared_task(soft_time_limit=60, time_limit=90)
+def publish_accession_task(
+    *,
+    accession_pk: int,
+    public: bool,
+    publisher_pk: int,
+    additional_collection_ids: list[int] | None = None,
+):
+    accession = Accession.objects.select_related("cohort").get(pk=accession_pk)
+    publisher = User.objects.get(pk=publisher_pk)
+    accession_publish(
+        accession=accession,
+        public=public,
+        publisher=publisher,
+        additional_collection_ids=additional_collection_ids,
+    )
