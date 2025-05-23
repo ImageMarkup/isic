@@ -218,6 +218,8 @@ class DoiAdmin(StaffReadonlyAdmin):
     list_display = ["id", "url", "collection", "bundle", "num_supplemental_files"]
     inlines = [SupplementalFileInline]
 
+    autocomplete_fields = ["creator"]
+
     @admin.display(ordering="num_supplemental_files", description="Number of supplemental files")
     def num_supplemental_files(self, obj):
         return intcomma(obj.num_supplemental_files)
