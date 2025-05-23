@@ -13,7 +13,11 @@ class SupplementalFile(models.Model):
     description = models.CharField(max_length=255)
     filename = models.CharField(max_length=255)
     size = models.PositiveBigIntegerField(default=0)
+    order = models.PositiveSmallIntegerField(default=0)
     doi = models.ForeignKey(Doi, on_delete=models.CASCADE, related_name="supplemental_files")
+
+    class Meta:
+        ordering = ["order"]
 
     def __str__(self):
         return self.filename
