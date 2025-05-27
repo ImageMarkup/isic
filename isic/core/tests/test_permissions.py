@@ -45,10 +45,10 @@ def test_core_collection_create(client_, visible):
 @pytest.mark.django_db
 def test_core_collection_list(client, authenticated_client, staff_client, private_collection):
     r = client.get(reverse("core/collection-list"))
-    assert r.context["collections"].object_list == []
+    assert r.context["collections"].object_list.count() == 0
 
     r = authenticated_client.get(reverse("core/collection-list"))
-    assert r.context["collections"].object_list == []
+    assert r.context["collections"].object_list.count() == 0
 
     r = staff_client.get(reverse("core/collection-list"))
     assert r.context["collections"].object_list == [private_collection]
@@ -72,7 +72,7 @@ def test_core_collection_list_shares(
 ):
     private_collection.shares.add(user, through_defaults={"grantor": private_collection.creator})
     r = client.get(reverse("core/collection-list"))
-    assert r.context["collections"].object_list == []
+    assert r.context["collections"].object_list.count() == 0
 
     r = authenticated_client.get(reverse("core/collection-list"))
     assert r.context["collections"].object_list == [private_collection]
