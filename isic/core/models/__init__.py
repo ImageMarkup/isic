@@ -4,6 +4,7 @@ from django.dispatch import receiver
 
 from .base import CopyrightLicense, CreationSortedTimeStampedModel, IsicOAuthApplication
 from .collection import Collection
+from .collection_count import CollectionCount
 from .doi import Doi
 from .girder_image import GirderDataset, GirderImage
 from .image import Image
@@ -14,6 +15,7 @@ from .supplemental_file import SupplementalFile
 
 __all__ = [
     "Collection",
+    "CollectionCount",
     "CopyrightLicense",
     "CreationSortedTimeStampedModel",
     "Doi",
