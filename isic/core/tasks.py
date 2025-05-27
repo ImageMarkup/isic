@@ -172,3 +172,9 @@ def fetch_doi_citations_task(doi_id: str) -> None:
 @shared_task(soft_time_limit=10, time_limit=15)
 def prune_expired_oauth_tokens():
     clear_expired_oauth_tokens()
+
+
+@shared_task(soft_time_limit=90, time_limit=120)
+def refresh_materialized_view_collection_counts_task():
+    with connection.cursor() as cursor:
+        cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY materialized_collection_counts;")

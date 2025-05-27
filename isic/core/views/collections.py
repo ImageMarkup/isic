@@ -32,7 +32,7 @@ def collection_list(request):
     collections = get_visible_objects(
         request.user,
         "core.view_collection",
-        Collection.objects.select_related("cohort").order_by("-pinned", "name"),
+        Collection.objects.select_related("cohort", "cached_counts").order_by("-pinned", "name"),
     )
 
     if request.user.is_authenticated:
@@ -53,19 +53,6 @@ def collection_list(request):
     filter_ = CollectionFilter(request.GET, queryset=collections, user=request.user)
     paginator = Paginator(filter_.qs, 25)
     page = paginator.get_page(request.GET.get("page"))
-
-    collection_counts = (
-        Collection.images.through.objects.filter(
-            collection_id__in=page.object_list.values_list("pk", flat=True)  # type: ignore[attr-defined]
-        )
-        .values("collection_id")
-        .annotate(num_images=Count("image_id"))
-    )
-
-    collection_counts = {c["collection_id"]: c["num_images"] for c in collection_counts}
-
-    for collection in page:
-        collection.num_images = collection_counts.get(collection.pk, 0)
 
     return render(
         request,
@@ -164,7 +151,9 @@ def collection_create_doi_(request, pk):
 
 @needs_object_permission("core.view_collection", (Collection, "pk", "pk"))
 def collection_detail(request, pk):
-    collection = get_object_or_404(Collection, pk=pk)
+    collection = get_object_or_404(
+        Collection.objects.select_related("cached_counts", "creator"), pk=pk
+    )
 
     # TODO: if they can see the collection they can see the images?
     images = get_visible_objects(
@@ -174,6 +163,12 @@ def collection_detail(request, pk):
     )
 
     paginator = Paginator(images, 30)
+    # prevent the paginator from doing a slow count. this could potentially cause issues if
+    # people were seeking to specific pages, but once we add cursor pagination this will stop
+    # being an issue.
+    if hasattr(collection, "cached_counts"):
+        paginator.count = collection.cached_counts.image_count
+
     page = paginator.get_page(request.GET.get("page"))
     contributors = get_visible_objects(
         request.user,
@@ -196,7 +191,6 @@ def collection_detail(request, pk):
             "collection": collection,
             "contributors": contributors,
             "images": page,
-            "num_images": paginator.count,
             "image_removal_mode": image_removal_mode,
             "show_shares": request.user.is_staff or request.user == collection.creator,
         },

@@ -44,15 +44,15 @@
         {% endif %}
         <li>
           <span class="font-bold">Number of images:</span>
-          {{ num_images|intcomma }}
+          {{ collection.counts.image_count|intcomma }}
         </li>
         <li>
           <span class="font-bold">Number of lesions:</span>
-          {{ collection.num_lesions|intcomma }}
+          {{ collection.counts.lesion_count|intcomma }}
         </li>
         <li>
           <span class="font-bold">Number of patients:</span>
-          {{ collection.num_patients|intcomma }}
+          {{ collection.counts.patient_count|intcomma }}
         </li>
         <li>
           <span class="font-bold">Attribution:</span>
