@@ -71,6 +71,14 @@ CELERY_BEAT_SCHEDULE = {
         "task": "isic.core.tasks.prune_expired_oauth_tokens",
         "schedule": crontab(minute="0", hour="0"),
     },
+    "refresh-materialized-view-collection-counts": {
+        "task": "isic.core.tasks.refresh_materialized_view_collection_counts_task",
+        "schedule": crontab(minute="*/15", hour="*"),
+        "options": {
+            # to avoid overcomputing, the message should expire 60 seconds after created
+            "expires": 60
+        },
+    },
 }
 
 # Install local apps first, to ensure any overridden resources are found first

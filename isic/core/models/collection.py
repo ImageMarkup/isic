@@ -133,6 +133,16 @@ class Collection(TimeStampedModel):
             .all()
         ]
 
+    @property
+    def counts(self):
+        if not hasattr(self, "cached_counts"):
+            return {
+                "image_count": "-",
+                "lesion_count": "-",
+                "patient_count": "-",
+            }
+        return self.cached_counts
+
     def full_clean(self, exclude=None, validate_unique=True):  # noqa: FBT002
         if self.pk and self.public and self.images.private().exists():  # type: ignore[attr-defined]
             raise ValidationError("Can't make collection public, it contains private images.")
