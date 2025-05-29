@@ -51,6 +51,13 @@ IMAGE_INDEX_MAPPINGS["properties"].update(
     }
 )
 
+# see https://www.elastic.co/docs/reference/elasticsearch/mapping-reference/eager-global-ordinals.
+# this theoretically improves performance by moving the mapping of internal representations to
+# their keywords to write operations instead of read operations.
+for v in IMAGE_INDEX_MAPPINGS["properties"].values():
+    if v["type"] == "keyword":
+        v["eager_global_ordinals"] = True
+
 for computed_field in Accession.computed_fields:
     IMAGE_INDEX_MAPPINGS["properties"].update(computed_field.es_mappings)
     DEFAULT_SEARCH_AGGREGATES.update(computed_field.es_aggregates)
