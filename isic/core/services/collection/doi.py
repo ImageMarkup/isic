@@ -1,17 +1,14 @@
 import logging
 from pathlib import Path
 import random
-import tempfile
 from typing import Any
 from urllib import parse
-import zipfile
 
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files import File
-from django.db import connection, transaction
-from django.template.loader import render_to_string
+from django.db import transaction
 from django.urls import reverse
 from django.utils.text import slugify
 import requests
@@ -19,20 +16,18 @@ from requests.exceptions import HTTPError
 
 from isic.core.models.collection import Collection
 from isic.core.models.doi import Doi
-from isic.core.services import image_metadata_csv
 from isic.core.services.collection import (
     collection_get_creators_in_attribution_order,
     collection_lock,
     collection_update,
 )
+from isic.core.services.snapshot import snapshot_images
 from isic.core.tasks import (
     create_doi_bundle_task,
     fetch_doi_citations_task,
     fetch_doi_schema_org_dataset_task,
 )
-from isic.core.utils.csv import EscapingDictWriter
 from isic.core.views.doi import LICENSE_TITLES, LICENSE_URIS
-from isic.zip_download.api import get_attributions
 
 logger = logging.getLogger(__name__)
 
@@ -214,56 +209,27 @@ def collection_create_doi_files(*, doi: Doi) -> None:
     collection = Collection.objects.select_related("doi").get(doi=doi)
     collection_slug = slugify(collection.name)
 
-    with transaction.atomic():
-        cursor = connection.cursor()
-        cursor.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+    snapshot_filename, metadata_filename = snapshot_images(
+        qs=collection.images.select_related("accession")
+    )
 
-        images = collection.images.select_related("accession").all()
-
-        bundle_filename = f"{collection_slug}.zip"
-        with zipfile.ZipFile(bundle_filename, "w") as bundle:
-            for image in images.iterator():
-                with image.blob.open("rb") as blob:
-                    bundle.writestr(f"images/{image.isic_id}.{image.extension}", blob.read())
-
-            # the metadata csv could be large enough that it needs to be written to disk first
-            with tempfile.NamedTemporaryFile("w", delete=False) as metadata_file:
-                collection_metadata = image_metadata_csv(qs=images)
-                writer = EscapingDictWriter(metadata_file, fieldnames=next(collection_metadata))
-                writer.writeheader()
-                for row in collection_metadata:
-                    assert isinstance(row, dict)  # noqa: S101
-                    writer.writerow(row)
-                metadata_file.flush()
-
-                bundle.write(metadata_file.name, "metadata.csv")
-
-            for license_ in (
-                images.values_list("accession__copyright_license", flat=True).order_by().distinct()
-            ):
-                bundle.writestr(
-                    f"licenses/{license_}.txt",
-                    render_to_string(f"zip_download/{license_}.txt"),
-                )
-
-            attributions = get_attributions(images.values_list("accession__attribution", flat=True))
-            bundle.writestr("attribution.txt", "\n\n".join(attributions))
-
-    # this should be done outside of the above transaction since it uses
-    # repeatable read and will potentially take a long time to complete. otherwise
-    # if the other DOI related tasks modified the DOI we would get a "could not
-    # serialize" error. see
-    # https://www.postgresql.org/docs/current/transaction-iso.html#XACT-REPEATABLE-READ
-    with (
-        Path(bundle_filename).open("rb") as bundle_file,
-        Path(metadata_file.name).open("rb") as metadata_file,
-        transaction.atomic(),  # necessary for select_for_update
-    ):
-        doi = Doi.objects.select_for_update().get(id=doi.id)
-        doi.bundle = File(bundle_file)
-        doi.bundle_size = Path(bundle_filename).stat().st_size
-        doi.metadata = File(metadata_file, name=f"{collection_slug}.csv")
-        doi.metadata_size = Path(metadata_file.name).stat().st_size
-        doi.save()
-
-        Path(bundle_filename).unlink()
+    try:
+        # this should not be done in the same transaction as the snapshotting since it uses
+        # repeatable read and will potentially take a long time to complete. otherwise
+        # if the other DOI related tasks modified the DOI we would get a "could not
+        # serialize" error. see
+        # https://www.postgresql.org/docs/current/transaction-iso.html#XACT-REPEATABLE-READ
+        with (
+            Path(snapshot_filename).open("rb") as bundle_file,
+            Path(metadata_filename).open("rb") as metadata_file,
+            transaction.atomic(),  # necessary for select_for_update
+        ):
+            doi = Doi.objects.select_for_update().get(id=doi.id)
+            doi.bundle = File(bundle_file, name=f"{collection_slug}.zip")
+            doi.bundle_size = Path(snapshot_filename).stat().st_size
+            doi.metadata = File(metadata_file, name=f"{collection_slug}.csv")
+            doi.metadata_size = Path(metadata_file.name).stat().st_size
+            doi.save()
+    finally:
+        Path(snapshot_filename).unlink()
+        Path(metadata_filename).unlink()
