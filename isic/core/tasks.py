@@ -8,7 +8,7 @@ from celery import shared_task
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.cache import cache
-from django.core.files.storage import default_storage
+from django.core.files.storage import default_storage, storages
 from django.core.mail import send_mail
 from django.db import connection, transaction
 from django.db.models import Prefetch
@@ -27,6 +27,7 @@ from isic.core.serializers import SearchQueryIn
 from isic.core.services import staff_image_metadata_csv
 from isic.core.services.collection import collection_share
 from isic.core.services.collection.image import collection_add_images
+from isic.core.services.snapshot import snapshot_images
 from isic.core.utils.csv import EscapingDictWriter
 from isic.ingest.models.accession import Accession
 from isic.ingest.models.lesion import Lesion
@@ -167,6 +168,18 @@ def fetch_doi_citations_task(doi_id: str) -> None:
         r.raise_for_status()
         doi.citations[style] = r.text
     doi.save(update_fields=["citations"])
+
+
+@shared_task(soft_time_limit=12 * 60 * 60, time_limit=12 * 60 * 60 + 60)
+def generate_monthly_snapshot_task() -> None:
+    snapshot_filename, metadata_filename = snapshot_images(qs=Image.objects.public())
+
+    try:
+        with Path(snapshot_filename).open("rb") as snapshot_file:
+            storages["sponsored"].save("snapshots/ISIC_images.zip", snapshot_file)
+    finally:
+        Path(snapshot_filename).unlink()
+        Path(metadata_filename).unlink()
 
 
 @shared_task(soft_time_limit=10, time_limit=15)
