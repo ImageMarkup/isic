@@ -79,10 +79,6 @@ CELERY_BEAT_SCHEDULE = {
             "expires": 60
         },
     },
-    "generate-monthly-snapshot": {
-        "task": "isic.core.tasks.generate_monthly_snapshot_task",
-        "schedule": crontab(minute="0", hour="0", day_of_month="1"),
-    },
 }
 
 # Install local apps first, to ensure any overridden resources are found first

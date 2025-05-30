@@ -3,12 +3,12 @@ import zipfile
 from django.core.files.storage import storages
 import pytest
 
-from isic.core.tasks import generate_monthly_snapshot_task
+from isic.core.tasks import generate_archive_snapshot_task
 
 
 @pytest.mark.django_db(transaction=True)
 def test_snapshot_task(public_image, private_image):
-    generate_monthly_snapshot_task()
+    generate_archive_snapshot_task()
 
     assert storages["sponsored"].exists("snapshots/ISIC_images.zip")
 
