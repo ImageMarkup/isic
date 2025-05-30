@@ -171,7 +171,7 @@ def fetch_doi_citations_task(doi_id: str) -> None:
 
 
 @shared_task(soft_time_limit=12 * 60 * 60, time_limit=12 * 60 * 60 + 60)
-def generate_monthly_snapshot_task() -> None:
+def generate_archive_snapshot_task() -> None:
     snapshot_filename, metadata_filename = snapshot_images(qs=Image.objects.public())
 
     try:
