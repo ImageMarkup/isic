@@ -111,7 +111,8 @@ setup(
             "django-fastdev",
             "factory-boy",
             "hypothesis",
-            "pytest",
+            # see https://github.com/pytest-dev/pytest-factoryboy/issues/232
+            "pytest<8.4.0",
             "pytest-cov",
             "pytest-django",
             "pytest-factoryboy",
