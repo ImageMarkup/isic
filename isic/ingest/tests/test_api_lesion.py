@@ -116,7 +116,6 @@ def test_api_lesion_completeness(client, lesion_factory, image_factory):
     # verify longitudinally_monitored
     image_factory(
         accession__lesion=lesion,
-        accession__benign_malignant="benign",
         accession__fq__diagnosis="nevus",
         accession__acquisition_day=2,
         public=True,
