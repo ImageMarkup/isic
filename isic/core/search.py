@@ -71,7 +71,7 @@ for key in DEFAULT_SEARCH_AGGREGATES:
 
 
 # These are all approaching 10 unique values, which would require passing a size attribute
-# to see them all: nevus_type, anatom_site_general, mel_mitotic_index
+# to see them all: anatom_site_general, mel_mitotic_index
 
 LESION_INDEX_MAPPINGS = {
     "properties": {
