@@ -76,7 +76,6 @@ class AccessionMetadata(models.Model):
     sex = models.CharField(max_length=6, null=True, blank=True)
     anatom_site_general = models.CharField(max_length=255, null=True, blank=True)
     anatom_site_special = models.CharField(max_length=255, null=True, blank=True)
-    benign_malignant = models.CharField(max_length=255, null=True, blank=True)
     diagnosis_1 = models.CharField(max_length=255, null=True, blank=True)
     diagnosis_2 = models.CharField(max_length=255, null=True, blank=True)
     diagnosis_3 = models.CharField(max_length=255, null=True, blank=True)
@@ -90,17 +89,14 @@ class AccessionMetadata(models.Model):
     )
     melanocytic = models.BooleanField(null=True, blank=True)
 
-    mel_class = models.CharField(max_length=255, null=True, blank=True)
     mel_mitotic_index = models.CharField(max_length=255, null=True, blank=True)
     mel_thick_mm = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-    mel_type = models.CharField(max_length=255, null=True, blank=True)
     mel_ulcer = models.BooleanField(null=True, blank=True)
 
     acquisition_day = models.IntegerField(null=True, blank=True)
 
     image_manipulation = models.CharField(max_length=255, null=True, blank=True)
 
-    nevus_type = models.CharField(max_length=255, null=True, blank=True)
     image_type = models.CharField(max_length=255, null=True, blank=True)
     dermoscopic_type = models.CharField(max_length=255, null=True, blank=True)
     tbp_tile_type = models.CharField(max_length=255, null=True, blank=True)
@@ -414,11 +410,6 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
                 ),
             ),
             models.Index(
-                name="accession_benign_malignant",
-                fields=["benign_malignant"],
-                condition=~Q(benign_malignant="benign"),
-            ),
-            models.Index(
                 name="accession_diagnosis_1",
                 fields=["diagnosis_1"],
                 condition=~Q(diagnosis_1="Benign"),
@@ -440,11 +431,8 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
                 fields=["diagnosis_5"],
             ),
             models.Index(fields=["image_manipulation"]),
-            models.Index(fields=["mel_class"]),
             models.Index(fields=["mel_mitotic_index"]),
-            models.Index(fields=["mel_type"]),
             models.Index(fields=["mel_ulcer"]),
-            models.Index(fields=["nevus_type"]),
             models.Index(
                 name="accession_image_type",
                 fields=["image_type"],
