@@ -76,7 +76,6 @@ class AccessionMetadata(models.Model):
     sex = models.CharField(max_length=6, null=True, blank=True)
     anatom_site_general = models.CharField(max_length=255, null=True, blank=True)
     anatom_site_special = models.CharField(max_length=255, null=True, blank=True)
-    benign_malignant = models.CharField(max_length=255, null=True, blank=True)
     diagnosis_1 = models.CharField(max_length=255, null=True, blank=True)
     diagnosis_2 = models.CharField(max_length=255, null=True, blank=True)
     diagnosis_3 = models.CharField(max_length=255, null=True, blank=True)
@@ -409,11 +408,6 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
                 condition=Q(
                     anatom_site_general__in=["palms/soles", "lateral torso", "oral/genital"]
                 ),
-            ),
-            models.Index(
-                name="accession_benign_malignant",
-                fields=["benign_malignant"],
-                condition=~Q(benign_malignant="benign"),
             ),
             models.Index(
                 name="accession_diagnosis_1",
