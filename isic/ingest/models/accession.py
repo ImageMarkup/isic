@@ -98,7 +98,6 @@ class AccessionMetadata(models.Model):
 
     image_manipulation = models.CharField(max_length=255, null=True, blank=True)
 
-    nevus_type = models.CharField(max_length=255, null=True, blank=True)
     image_type = models.CharField(max_length=255, null=True, blank=True)
     dermoscopic_type = models.CharField(max_length=255, null=True, blank=True)
     tbp_tile_type = models.CharField(max_length=255, null=True, blank=True)
@@ -440,7 +439,6 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
             models.Index(fields=["image_manipulation"]),
             models.Index(fields=["mel_mitotic_index"]),
             models.Index(fields=["mel_ulcer"]),
-            models.Index(fields=["nevus_type"]),
             models.Index(
                 name="accession_image_type",
                 fields=["image_type"],
