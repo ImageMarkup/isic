@@ -90,7 +90,6 @@ class AccessionMetadata(models.Model):
     )
     melanocytic = models.BooleanField(null=True, blank=True)
 
-    mel_class = models.CharField(max_length=255, null=True, blank=True)
     mel_mitotic_index = models.CharField(max_length=255, null=True, blank=True)
     mel_thick_mm = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     mel_type = models.CharField(max_length=255, null=True, blank=True)
@@ -440,7 +439,6 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
                 fields=["diagnosis_5"],
             ),
             models.Index(fields=["image_manipulation"]),
-            models.Index(fields=["mel_class"]),
             models.Index(fields=["mel_mitotic_index"]),
             models.Index(fields=["mel_type"]),
             models.Index(fields=["mel_ulcer"]),
