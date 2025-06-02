@@ -25,14 +25,13 @@
         <h1>{{ doi.collection.name }}</h1>
       </div>
       <div class="w-full lg:w-3/12 mb-6 lg:mb-0">
-        <a href="{{ doi.collection.get_absolute_url }}" class="btn w-full" target="_blank">View in ISIC Archive <i class="ri-external-link-line"></i></a>
+        <a href="{{ doi.collection.get_absolute_url }}" class="btn w-full" target="_blank">View in ISIC Archive <i class="ri-external-link-line ml-2"></i></a>
       </div>
     </div>
 
     <div class="flex flex-col lg:flex-row">
       <div class="w-full lg:w-9/12 lg:mr-6 mb-6 lg:mb-0">
         <div id="dataset-description">
-          <h2 class="content-box-heading">Description</h2>
           <div class="font-mono">
             {% if not doi.collection.description %}
               {% lorem %} {# TODO remove #}
@@ -43,7 +42,7 @@
         </div>
 
         <div id="dataset-files">
-          <h2 class="content-box-heading">Files</h2>
+          <h2 class="content-box-heading"><i class="ri-file-copy-2-line"></i> Files</h2>
 
           {% if not doi.bundle %}
             <p>Bundle is being generated, check back soon.</p>
