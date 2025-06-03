@@ -112,6 +112,7 @@ def test_api_lesion_completeness(client, lesion_factory, image_factory):
         resp.json()["results"][0]["outcome_diagnosis"]
         == DiagnosisEnum.malignant_malignant_melanocytic_proliferations_melanoma_melanoma_invasive
     )
+    assert resp.json()["results"][0]["outcome_diagnosis_1"] == "Malignant"
 
     # verify longitudinally_monitored
     image_factory(
@@ -303,4 +304,8 @@ def test_lesion_diagnosis(
 
     lesion_with_diagnosis = Lesion.objects.with_total_info().get(id=lesion.id)
 
+    expected_lesion_diagnosis_1 = (
+        expected_lesion_diagnosis.split(":")[0] if expected_lesion_diagnosis else None
+    )
     assert lesion_with_diagnosis.outcome_diagnosis == expected_lesion_diagnosis
+    assert lesion_with_diagnosis.outcome_diagnosis_1 == expected_lesion_diagnosis_1

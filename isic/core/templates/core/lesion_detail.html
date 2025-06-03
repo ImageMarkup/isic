@@ -123,6 +123,11 @@
                 </div>
 
                 <div class="py-3 flex justify-between text-sm font-medium">
+                  <dt class="text-gray-500">Outcome Diagnosis 1</dt>
+                  <dd class="text-gray-900">{{ lesion.outcome_diagnosis_1|default:"-" }}</dd>
+                </div>
+
+                <div class="py-3 flex justify-between text-sm font-medium">
                   <dt class="text-gray-500">Outcome Diagnosis</dt>
                   <dd class="text-gray-900">{{ lesion.outcome_diagnosis|default:"-" }}</dd>
                 </div>
