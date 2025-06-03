@@ -1,4 +1,5 @@
 from base64 import b64decode, b64encode
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 from urllib import parse
@@ -10,7 +11,7 @@ from ninja.pagination import PaginationBase
 from pydantic import field_validator
 
 
-def qs_with_hardcoded_count(qs: QuerySet, count: int) -> QuerySet:
+def qs_with_hardcoded_count(qs: QuerySet, ordering: Sequence, count: int) -> QuerySet:
     """
     Modify a queryset to return a hardcoded count rather than querying the database.
 
@@ -22,7 +23,7 @@ def qs_with_hardcoded_count(qs: QuerySet, count: int) -> QuerySet:
     # adds an order by which clones the queryset, overriding our hardcoded count. We have to repeat
     # the logic here to make sure the paginator doesn't modify our queryset.
     if not qs.query.order_by:
-        qs = qs.order_by(*CursorPagination.default_ordering)
+        qs = qs.order_by(*ordering)
 
     qs.count = lambda: count
 
@@ -104,13 +105,17 @@ class CursorPagination(PaginationBase):
     max_page_size = 100
     _offset_cutoff = 100  # limit to protect against possibly malicious queries
 
+    def __init__(self, ordering: Sequence = default_ordering, **kwargs: Any) -> None:
+        self.ordering = ordering
+        super().__init__(**kwargs)
+
     def paginate_queryset(
         self, queryset: QuerySet, pagination: Input, request: HttpRequest, **params
     ) -> dict:
         limit = _clamp(pagination.limit or self.max_page_size, 0, self.max_page_size)
 
         if not queryset.query.order_by:
-            queryset = queryset.order_by(*self.default_ordering)
+            queryset = queryset.order_by(*self.ordering)
 
         order = queryset.query.order_by
 

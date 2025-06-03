@@ -90,7 +90,7 @@ class ImageOut(ModelSchema):
 @router.get(
     "/", response=list[ImageOut], summary="Return a list of images.", include_in_schema=True
 )
-@paginate(CursorPagination)
+@paginate(CursorPagination, ordering=Image._meta.ordering)
 def list_images(request: HttpRequest):
     qs = get_visible_objects(request.user, "core.view_image", default_qs)
 
@@ -100,7 +100,7 @@ def list_images(request: HttpRequest):
             index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX,
             body={"query": es_query},
         )["count"]
-        return qs_with_hardcoded_count(qs, es_count)
+        return qs_with_hardcoded_count(qs, Image._meta.ordering, es_count)
 
     return qs
 
@@ -112,7 +112,7 @@ def list_images(request: HttpRequest):
     description=render_to_string("core/swagger_image_search_description.html"),
     include_in_schema=True,
 )
-@paginate(CursorPagination)
+@paginate(CursorPagination, ordering=Image._meta.ordering)
 def search_images(request: HttpRequest, search: SearchQueryIn = Query(...)):
     try:
         if search.query:
@@ -133,7 +133,7 @@ def search_images(request: HttpRequest, search: SearchQueryIn = Query(...)):
                 index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX,
                 body={"query": es_query},
             )["count"]
-            return qs_with_hardcoded_count(qs, es_count)
+            return qs_with_hardcoded_count(qs, Image._meta.ordering, es_count)
 
         return qs
 
