@@ -11,9 +11,9 @@ from django.conf import settings
 from django.contrib.auth.models import AnonymousUser, User
 from django.core.cache import cache
 from django.db.models.query import QuerySet
+from elastic_transport import Transport
 from elasticsearch import Elasticsearch, NotFoundError
 from elasticsearch.helpers import bulk
-from elasticsearch.transport import Transport
 from isic_metadata import FIELD_REGISTRY
 from isic_metadata.fields import ImageTypeEnum
 import sentry_sdk
