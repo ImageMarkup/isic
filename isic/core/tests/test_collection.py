@@ -99,7 +99,7 @@ def test_collection_metadata_download_private_images(
     assert len(output_csv) == 2  # writeheader and 1 writerow call
     assert output_csv[0] == "isic_id,attribution,copyright_license,age_approx"
 
-    image = collection_with_images.images.first()
+    image = collection_with_images.images.filter(public=True).first()
 
     assert (
         output_csv[1]
