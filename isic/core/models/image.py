@@ -65,6 +65,8 @@ class ImageManager(models.Manager["Image"]):
 
 class Image(CreationSortedTimeStampedModel):
     class Meta(CreationSortedTimeStampedModel.Meta):
+        ordering = ["created"]
+
         indexes = [
             # icontains uses Upper(name) for searching
             GinIndex(OpClass(Upper("isic"), name="gin_trgm_ops"), name="isic_name_gin")
