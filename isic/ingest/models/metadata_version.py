@@ -5,7 +5,6 @@ import re
 from django.contrib.auth.models import User
 from django.db import models
 
-from isic.core.models import CreationSortedTimeStampedModel
 from isic.ingest.utils.json import DecimalAwareJSONEncoder
 
 from .accession import Accession
@@ -27,7 +26,9 @@ class MetadataVersionQuerySet(models.QuerySet):
         return diffs
 
 
-class MetadataVersion(CreationSortedTimeStampedModel):
+class MetadataVersion(models.Model):
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
     creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="metadata_versions")
     accession = models.ForeignKey(
         Accession, on_delete=models.PROTECT, related_name="metadata_versions"
@@ -40,6 +41,13 @@ class MetadataVersion(CreationSortedTimeStampedModel):
     rcm_case = models.JSONField(default=dict)
 
     objects = MetadataVersionQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["-created"]
+        get_latest_by = "created"
+
+    def __str__(self) -> str:
+        return self.id
 
     def diff(self, other: MetadataVersion):
         def _strip_root(key: str) -> str:
