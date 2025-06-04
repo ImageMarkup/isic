@@ -3,12 +3,12 @@ from typing import IO
 
 from django.core.validators import RegexValidator
 from django.db import models
-from django_extensions.db.models import TimeStampedModel
 
 from .accession import Accession
 
 
-class DistinctnessMeasure(TimeStampedModel):
+class DistinctnessMeasure(models.Model):
+    created = models.DateTimeField(auto_now_add=True)
     accession = models.OneToOneField(Accession, on_delete=models.CASCADE)
     checksum = models.CharField(
         max_length=64,
@@ -17,11 +17,6 @@ class DistinctnessMeasure(TimeStampedModel):
         blank=True,
         editable=False,
     )
-
-    class Meta:
-        indexes = [
-            models.Index(fields=["checksum"]),
-        ]
 
     def __str__(self) -> str:
         return self.checksum
