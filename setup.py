@@ -73,7 +73,7 @@ setup(
         "google-analytics-data",
         "hashids",
         "hiredis",
-        "isic-metadata>=4.9.0",
+        "isic-metadata>=4.10.0",
         "jaro-winkler",
         "numpy",
         "oauth2client",
