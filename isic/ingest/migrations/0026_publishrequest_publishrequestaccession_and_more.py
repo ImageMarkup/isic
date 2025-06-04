@@ -7,9 +7,8 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("core", "0019_remove_collection_new_images_alter_collection_images"),
         ("ingest", "0025_alter_accession_attribution"),
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+        # migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
