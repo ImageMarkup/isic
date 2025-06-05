@@ -40,6 +40,7 @@ django-ninja==1.4.3
 django-oauth-toolkit==1.7.1
 django-object-actions==5.0.0
 django-redis==5.4.0
+django-resonant-utils==0.14.1
 django-s3-file-field==1.1.0
 django-storages==1.14.6
 django-stubs-ext==5.2.0
@@ -88,6 +89,7 @@ pycountry==24.6.1
 pycparser==2.22
 pydantic==2.11.5
 pydantic_core==2.33.2
+pyexiv2==2.15.4
 Pygments==2.19.1
 pymongo==4.13.0
 pyparsing==3.2.3
