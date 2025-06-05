@@ -31,6 +31,7 @@ from isic.core.services.snapshot import snapshot_images
 from isic.core.utils.csv import EscapingDictWriter
 from isic.ingest.models.accession import Accession
 from isic.ingest.models.lesion import Lesion
+from isic.ingest.services.publish import embed_iptc_metadata
 
 
 @shared_task(soft_time_limit=600, time_limit=610)
@@ -191,3 +192,26 @@ def prune_expired_oauth_tokens():
 def refresh_materialized_view_collection_counts_task():
     with connection.cursor() as cursor:
         cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY materialized_collection_counts;")
+
+
+@shared_task(soft_time_limit=30, time_limit=45)
+def generate_sponsored_blob_task(image_id: int):
+    image = Image.objects.select_related("accession").get(id=image_id, public=True)
+    attribution = image.accession.attribution
+    copyright_license = image.accession.copyright_license
+
+    with (
+        embed_iptc_metadata(
+            image.accession.blob,  # nosem: use-image-blob-where-possible
+            attribution,
+            copyright_license,
+            image.isic_id,
+        ) as sponsored_blob,
+        embed_iptc_metadata(
+            image.accession.thumbnail_256, attribution, copyright_license, image.isic_id
+        ) as sponsored_thumbnail_256_blob,
+    ):
+        storages["sponsored"].save(f"images/{image.isic_id}.{image.extension}", sponsored_blob)
+        storages["sponsored"].save(
+            f"thumbnails/{image.isic_id}_thumbnail.jpg", sponsored_thumbnail_256_blob
+        )
