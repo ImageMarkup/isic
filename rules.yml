@@ -69,3 +69,13 @@ rules:
     pattern-either:
       - pattern-regex: image\.accession\.blob[.\s,\)]
       - pattern-regex: image\.accession\.sponsored_blob[.\s,\)]
+
+  - id: use-image-thumbnail-256-where-possible
+    languages:
+      - python
+      - html
+    severity: ERROR
+    message: Use image.thumbnail_256 where possible, as it points to the correct accession thumbnail_256
+    pattern-either:
+      - pattern-regex: image\.accession\.thumbnail_256[.\s,\)]
+      - pattern-regex: image\.accession\.sponsored_thumbnail_256_blob[.\s,\)]

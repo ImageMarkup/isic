@@ -107,6 +107,13 @@ class Image(CreationSortedTimeStampedModel):
         return self.accession.blob
 
     @property
+    def thumbnail_256(self):
+        # TODO: convert to self.public once we've migrated all images
+        if self.accession.sponsored_thumbnail_256_blob:
+            return self.accession.sponsored_thumbnail_256_blob
+        return self.accession.thumbnail_256
+
+    @property
     def extension(self) -> str:
         return PurePosixPath(self.blob.file.name).suffix.lstrip(".")
 
