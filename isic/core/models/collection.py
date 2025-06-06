@@ -50,7 +50,11 @@ class Collection(TimeStampedModel):
                 name="collection_pinned_has_unique_name",
                 fields=["name"],
                 condition=Q(pinned=True),
-            )
+            ),
+            CheckConstraint(
+                name="collection_pinned_implies_public",
+                condition=Q(pinned=False) | Q(public=True),
+            ),
         ]
         indexes = [
             # icontains uses Upper(name) for searching
