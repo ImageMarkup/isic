@@ -177,7 +177,9 @@ def publish_cohort_task(publish_request_pk: int):
     cohort_publish(publish_request=publish_request)
 
 
-@shared_task(soft_time_limit=60, time_limit=90)
+# keep in mind when setting the time limit that images can be hundreds of megabytes and
+# s3 performs retries on upload.
+@shared_task(soft_time_limit=300, time_limit=300 + 30)
 def publish_accession_task(
     *,
     accession_pk: int,
