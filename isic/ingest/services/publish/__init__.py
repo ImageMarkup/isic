@@ -170,22 +170,29 @@ def unembargo_image(*, image: Image) -> None:
             image.isic_id,
         ) as sponsored_blob,
         embed_iptc_metadata(
-            image.accession.thumbnail_256, attribution, copyright_license, image.isic_id
+            image.accession.thumbnail_256,  # nosem: use-image-thumbnail-256-where-possible
+            attribution,
+            copyright_license,
+            image.isic_id,
         ) as sponsored_thumbnail_256_blob,
     ):
         storage_keys_to_delete.append(
             image.accession.blob.name  # nosem: use-image-blob-where-possible
         )
-        storage_keys_to_delete.append(image.accession.thumbnail_256.name)
+        storage_keys_to_delete.append(
+            image.accession.thumbnail_256.name  # nosem: use-image-thumbnail-256-where-possible
+        )
 
         image.accession.sponsored_blob = File(  # nosem: use-image-blob-where-possible
             sponsored_blob, name=f"{image.isic_id}.{image.extension}"
         )
+        # nosem: use-image-thumbnail-256-where-possible
         image.accession.sponsored_thumbnail_256_blob = File(
-            sponsored_thumbnail_256_blob, name=f"{image.isic_id}_thumbnail.jpg"
+            sponsored_thumbnail_256_blob,
+            name=f"{image.isic_id}_thumbnail.jpg",
         )
         image.accession.blob = ""  # nosem: use-image-blob-where-possible
-        image.accession.thumbnail_256 = ""
+        image.accession.thumbnail_256 = ""  # nosem: use-image-thumbnail-256-where-possible
         image.accession.save(
             update_fields=[
                 "sponsored_blob",

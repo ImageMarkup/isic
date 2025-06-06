@@ -208,7 +208,10 @@ def generate_sponsored_blob_task(image_id: int):
             image.isic_id,
         ) as sponsored_blob,
         embed_iptc_metadata(
-            image.accession.thumbnail_256, attribution, copyright_license, image.isic_id
+            image.accession.thumbnail_256,  # nosem: use-image-thumbnail-256-where-possible
+            attribution,
+            copyright_license,
+            image.isic_id,
         ) as sponsored_thumbnail_256_blob,
     ):
         storages["sponsored"].save(f"images/{image.isic_id}.{image.extension}", sponsored_blob)

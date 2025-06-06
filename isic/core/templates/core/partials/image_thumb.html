@@ -2,7 +2,7 @@
   {% if PLACEHOLDER_IMAGES %}
     <img @mouseenter="hovered = true" @click="open = true" src="https://picsum.photos/seed/{{image.accession.id}}/256">
   {% else %}
-    <img @mouseenter="hovered = true" @click="open = true" src="{{ image.accession.thumbnail_256.url }}" />
+    <img @mouseenter="hovered = true" @click="open = true" src="{{ image.thumbnail_256.url }}" />
   {% endif %}
 </a>
 
