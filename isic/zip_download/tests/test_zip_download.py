@@ -127,8 +127,7 @@ def test_zip_download_listing_wildcard_urls(
     urls = [file["url"] for file in output["files"]]
 
     for image in Image.objects.all():
-        # TODO: check for public once we've migrated all images
-        if image.accession.sponsored_blob:
+        if image.public:
             assert any(url.endswith(image.blob.name) for url in urls)
         else:
             assert (
