@@ -18,3 +18,7 @@ def test_snapshot_task(public_image, private_image):
     ):
         assert f"images/{public_image.isic_id}.jpg" in z.namelist()
         assert f"images/{private_image.isic_id}.jpg" not in z.namelist()
+
+    # clean this up since it's in a predetermined spot and it's useful to sometimes run
+    # tests via pytest-repeat.
+    storages["sponsored"].delete("snapshots/ISIC_images.zip")
