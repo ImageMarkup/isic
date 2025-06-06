@@ -20,8 +20,12 @@ class ImageFactory(factory.django.DjangoModelFactory):
 
     created = factory.Faker("date_time")
     creator = factory.SelfAttribute("accession.creator")
-    accession = factory.SubFactory(AccessionFactory)
     public = factory.Faker("boolean")
+    accession = factory.Maybe(
+        "public",
+        yes_declaration=factory.SubFactory(AccessionFactory, public=True),
+        no_declaration=factory.SubFactory(AccessionFactory, public=False),
+    )
     isic = factory.SubFactory(IsicIdFactory)
 
 
