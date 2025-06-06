@@ -18,7 +18,7 @@ class PinnedCollectionSitemap(Sitemap):
     priority = 0.7
 
     def items(self):
-        return Collection.objects.public().pinned().order_by("created")
+        return Collection.objects.pinned().order_by("created")
 
 
 sitemaps = {
