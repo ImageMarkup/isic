@@ -42,7 +42,7 @@ def detailed_image(
         "patient_id": "IP_1234567",
     }
 
-    private_collection = collection_factory(public=False, pinned=True)
+    private_collection = collection_factory(public=False, pinned=False)
     public_collection = collection_factory(public=True, pinned=True)
     private_study = study_factory(public=False)
     public_study = study_factory(public=True)
