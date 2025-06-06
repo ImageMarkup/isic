@@ -27,19 +27,19 @@ def contributors(contributor, other_contributor):
 
 
 @pytest.fixture
-def public_image(public_reviewed_image_factory):
-    return public_reviewed_image_factory()()
+def private_image(reviewed_image_factory):
+    return reviewed_image_factory()(public=False)
 
 
 @pytest.fixture
-def private_image(private_reviewed_image_factory):
-    return private_reviewed_image_factory()()
+def public_image(reviewed_image_factory):
+    return reviewed_image_factory()(public=True)
 
 
 @pytest.fixture
-def public_reviewed_image_factory(image_factory, accession_factory, user):
+def reviewed_image_factory(image_factory, accession_factory, user):
     def inner():
-        accession = accession_factory(public=True)
+        accession = accession_factory()
 
         accession_review_update_or_create(
             accession=accession,
@@ -48,23 +48,6 @@ def public_reviewed_image_factory(image_factory, accession_factory, user):
             value=True,
         )
 
-        return functools.partial(image_factory, accession=accession, public=True)
-
-    return inner
-
-
-@pytest.fixture
-def private_reviewed_image_factory(image_factory, accession_factory, user):
-    def inner():
-        accession = accession_factory(public=False)
-
-        accession_review_update_or_create(
-            accession=accession,
-            reviewer=user,
-            reviewed_at=accession.created,
-            value=True,
-        )
-
-        return functools.partial(image_factory, accession=accession, public=False)
+        return functools.partial(image_factory, accession=accession)
 
     return inner
