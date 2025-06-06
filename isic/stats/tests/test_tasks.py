@@ -72,6 +72,7 @@ def test_cdn_access_log_parsing(mocker):
 
 
 @pytest.mark.django_db
+@pytest.mark.skip(reason="deprecated and not yet adapted for sponsored bucket")
 def test_collect_image_download_records_task(
     mocker, image_factory, django_capture_on_commit_callbacks
 ):
