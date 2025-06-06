@@ -37,7 +37,7 @@ class CollectionFactory(factory.django.DjangoModelFactory):
     name = factory.Faker("sentence")
     description = factory.Faker("paragraph")
     public = factory.Faker("boolean")
-    pinned = factory.Faker("boolean")
+    pinned = factory.Maybe("public", yes_declaration=factory.Faker("boolean"), no_declaration=False)
     locked = False
 
 
