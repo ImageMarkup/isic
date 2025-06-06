@@ -12,7 +12,8 @@ def test_quickfind_hides_certain_groups(user, user_factory):
 
 
 @pytest.mark.django_db
-def test_quickfind_search_images(user, image):
+def test_quickfind_search_images(user, image_factory):
+    image = image_factory(public=True)
     results = quickfind_execute(image.isic_id, user)
     assert len(results) == 1
     assert results[0]["title"] == image.isic_id
