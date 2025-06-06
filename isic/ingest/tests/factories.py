@@ -93,6 +93,23 @@ class AccessionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Accession
 
+    class Params:
+        # these are all of the relevant fields that need to be set if an accession is related
+        # to a public image.
+        public = factory.Trait(
+            blob="",
+            thumbnail_256="",
+            sponsored_blob=factory.django.FileField(
+                from_path=data_dir / "ISIC_0000000.jpg",
+                filename=factory.Sequence(lambda n: f"ISIC_{n:07}.jpg"),
+            ),
+            blob_size=factory.SelfAttribute("sponsored_blob.size"),
+            sponsored_thumbnail_256_blob=factory.django.FileField(
+                from_path=data_dir / "ISIC_0000000_thumbnail_256.jpg",
+            ),
+            thumbnail_256_size=factory.SelfAttribute("sponsored_thumbnail_256_blob.size"),
+        )
+
     creator = factory.SelfAttribute("cohort.creator")
     zip_upload = factory.SubFactory(ZipUploadFactory)
     cohort = factory.SelfAttribute("zip_upload.cohort")
@@ -106,9 +123,18 @@ class AccessionFactory(factory.django.DjangoModelFactory):
         from_path=data_dir / "ISIC_0000000.jpg",
         filename=factory.Sequence(lambda n: f"ISIC_{n:07}.jpg"),
     )
+    sponsored_blob = ""
+
     blob_size = factory.SelfAttribute("blob.size")
-    thumbnail_256 = factory.django.FileField(from_path=data_dir / "ISIC_0000000_thumbnail_256.jpg")
+
+    thumbnail_256 = factory.django.FileField(
+        from_path=data_dir / "ISIC_0000000_thumbnail_256.jpg",
+    )
+
+    sponsored_thumbnail_256_blob = ""
+
     thumbnail_256_size = factory.SelfAttribute("thumbnail_256.size")
+
     copyright_license = factory.Faker(
         "random_element", elements=[e[0] for e in CopyrightLicense.choices]
     )
