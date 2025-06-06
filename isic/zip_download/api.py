@@ -129,8 +129,7 @@ def _zip_file_listing_generator(
         for image in qs.values(
             "accession__blob", "accession__sponsored_blob", "public", "isic_id"
         ).iterator():
-            # TODO: check for public once we've migrated all images
-            if image["accession__sponsored_blob"]:
+            if image["public"]:
                 url = storages["sponsored"].url(name=image["accession__sponsored_blob"])
                 zip_path = (
                     f"{image['isic_id']}.{extension_from_str(image['accession__sponsored_blob'])}"
