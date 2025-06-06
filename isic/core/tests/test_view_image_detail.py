@@ -32,7 +32,7 @@ def detailed_image(
     study_factory,
     study_task_factory,
     collection_factory,
-    reviewed_image_factory,
+    public_reviewed_image_factory,
 ):
     user = user_factory()
 
@@ -46,14 +46,12 @@ def detailed_image(
     public_collection = collection_factory(public=True, pinned=True)
     private_study = study_factory(public=False)
     public_study = study_factory(public=True)
-    main_image: Image = reviewed_image_factory()(
-        public=True,
+    main_image: Image = public_reviewed_image_factory()(
         accession__cohort__contributor__owners=[user],
     )
 
     # create an image w/ the same longitudinal information
-    secondary_image: Image = reviewed_image_factory()(
-        public=True,
+    secondary_image: Image = public_reviewed_image_factory()(
         accession__cohort__contributor__owners=[user],
     )
     main_image.accession.update_metadata(user, metadata, ignore_image_check=True)
