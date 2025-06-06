@@ -101,15 +101,13 @@ class Image(CreationSortedTimeStampedModel):
 
     @property
     def blob(self):
-        # TODO: convert to self.public once we've migrated all images
-        if self.accession.sponsored_blob:
+        if self.public:
             return self.accession.sponsored_blob
         return self.accession.blob
 
     @property
     def thumbnail_256(self):
-        # TODO: convert to self.public once we've migrated all images
-        if self.accession.sponsored_thumbnail_256_blob:
+        if self.public:
             return self.accession.sponsored_thumbnail_256_blob
         return self.accession.thumbnail_256
 
