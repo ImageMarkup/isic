@@ -155,6 +155,7 @@ def test_unembargo_images(image_factory):
             assert image_file.read_iptc() == {
                 "Iptc.Application2.Credit": "attribution",
                 "Iptc.Application2.Source": "ISIC Archive",
+                "Iptc.Envelope.CharacterSet": "\x1b%G",
             }
             # see https://iptc.org/std/photometadata/specification/IPTC-PhotoMetadata#lang-alt-value-type
             assert image_file.read_xmp()["Xmp.dc.title"] == {'lang="x-default"': image.isic_id}
