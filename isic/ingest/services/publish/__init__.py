@@ -130,6 +130,10 @@ def embed_iptc_metadata(
                     "Iptc.Application2.Credit": attribution,
                     # https://iptc.org/std/photometadata/specification/IPTC-PhotoMetadata#source-supply-chain
                     "Iptc.Application2.Source": "ISIC Archive",
+                    # this is necessary for viewers to interpret the attributions as utf-8.
+                    # see also https://exiv2.org/iptc.html
+                    # and https://github.com/LeoHsiao1/pyexiv2/issues/107#issuecomment-1426647658
+                    "Iptc.Envelope.CharacterSet": "\x1b%G",
                 }
             )
             tmp_image.modify_xmp(
