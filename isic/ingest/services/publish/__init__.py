@@ -116,14 +116,17 @@ def accession_publish(
 
 @contextmanager
 def embed_iptc_metadata(
-    blob: FieldFile, attribution: str, copyright_license: str, isic_id: str
+    field_file: FieldFile, attribution: str, copyright_license: str, isic_id: str
 ) -> Generator[BufferedReader]:
     # pyexiv2 operates on filenames directly, so we need to write to a temp file
     with tempfile.NamedTemporaryFile() as temp_file:
-        shutil.copyfileobj(blob.file, temp_file)
+        shutil.copyfileobj(field_file.file, temp_file)
         temp_file.flush()
 
         with pyexiv2.Image(temp_file.name) as tmp_image:
+            # trying to embed iptc metadata twice can run into weird errors around how our array
+            # metadata is applied, so it's necessary to clear the metadata before re-embedding.
+            tmp_image.clear_iptc()
             tmp_image.modify_iptc(
                 {
                     # https://iptc.org/std/photometadata/specification/IPTC-PhotoMetadata#credit-line
@@ -136,6 +139,7 @@ def embed_iptc_metadata(
                     "Iptc.Envelope.CharacterSet": "\x1b%G",
                 }
             )
+            tmp_image.clear_xmp()
             tmp_image.modify_xmp(
                 {
                     # https://iptc.org/std/photometadata/specification/IPTC-PhotoMetadata#title
