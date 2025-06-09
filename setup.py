@@ -69,7 +69,6 @@ setup(
         "django-widget-tweaks",
         "django[argon2]>=5.1,<6",
         "elasticsearch>=9",
-        "elasticsearch-dsl",
         "gdal",
         "google-analytics-data",
         "hashids",
