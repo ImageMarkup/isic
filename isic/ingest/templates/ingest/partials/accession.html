@@ -8,10 +8,10 @@
       {% else %}
         {% if accession.is_cog %}
           <a href="{% url 'accession-cog-viewer' accession.id %}">
-            <img src="{{ accession.thumbnail.url }}" />
+            <img src="{{ accession.thumbnail_.url }}" />
           </a>
         {% else %}
-          <img @mouseenter="hovered = true" @click="open = true" src="{{ accession.thumbnail.url }}" />
+          <img @mouseenter="hovered = true" @click="open = true" src="{{ accession.thumbnail_.url }}" />
         {% endif %}
 
       {% endif %}
