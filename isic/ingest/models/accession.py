@@ -481,6 +481,14 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
         return not self.reviewed
 
     @property
+    def blob_(self):
+        return self.sponsored_blob or self.blob
+
+    @property
+    def thumbnail_(self):
+        return self.sponsored_thumbnail_256_blob or self.thumbnail_256
+
+    @property
     def metadata(self):
         ret = {}
         for field in self._meta.fields:
