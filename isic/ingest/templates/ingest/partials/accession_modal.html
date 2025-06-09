@@ -16,7 +16,7 @@
       {% else %}
         <template x-if="hovered">
             {% comment %}Note the single quotes: https://github.com/alpinejs/alpine/issues/466{% endcomment %}
-          <img :src="'{{ accession.blob.url }}'" />
+          <img :src="'{{ accession.blob_.url }}'" />
         </template>
       {% endif %}
 
