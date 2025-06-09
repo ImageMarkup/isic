@@ -15,8 +15,8 @@ from django.db.models.functions.comparison import Coalesce
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 from django.urls import reverse
-from elasticsearch_dsl import Search
-from elasticsearch_dsl.query import Q as ESQ
+from elasticsearch.dsl import Search
+from elasticsearch.dsl.query import Q as ESQ
 
 from isic.core.constants import LESION_ID_REGEX
 
