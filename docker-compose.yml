@@ -8,7 +8,7 @@ services:
       - ${DOCKER_POSTGRES_PORT-5432}:5432
 
   elasticsearch:
-    image: elasticsearch:7.14.0
+    image: elasticsearch:9.0.2
     environment:
       ES_JAVA_OPTS: "-Xms250m -Xmx750m"
       discovery.type: single-node
