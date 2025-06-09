@@ -146,7 +146,6 @@ class InstrumentedTransport(Transport):
 def get_elasticsearch_client() -> "Elasticsearch":
     return Elasticsearch(
         settings.ELASTICSEARCH_URL,
-        api_key=settings.ISIC_ELASTICSEARCH_API_KEY,
         transport_class=InstrumentedTransport,
     )
 
