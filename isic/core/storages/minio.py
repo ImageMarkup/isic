@@ -107,6 +107,7 @@ class MinioS3ProxyStorage(FixedMinioMediaStorage):
     """
 
     def __init__(self, *args, **kwargs):
+        self.upstream_bucket_name = kwargs.pop("upstream_bucket_name")
         super().__init__(*args, **kwargs)
 
     def _ensure_exists(self, name):
@@ -115,7 +116,7 @@ class MinioS3ProxyStorage(FixedMinioMediaStorage):
         if not exists_in_minio:
             upstream_file = io.BytesIO()
             s3 = boto3.resource("s3")
-            bucket = s3.Bucket("isic-storage")
+            bucket = s3.Bucket(self.upstream_bucket_name)
             upstream_obj = bucket.Object(name)
 
             try:
