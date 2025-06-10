@@ -62,20 +62,23 @@
                     <td>The complete bundle of all images, metadata, and supplemental files related to this dataset.</td>
                     <td>{{ doi.bundle_size|filesizeformat }}</td>
                     <td>ZIP</td>
-                    <td><a href="{{ doi.bundle.url }}" title="{{ doi.slug }}.zip"><button class="btn btn-primary">Download</button></a></td>
+                    <td><a href="{{ doi.bundle.url }}" title="{{ doi.slug }}.zip"
+                           onclick="gtag('event', 'download', {'event_category': 'doi', 'event_label': '{{ doi.slug }}.zip'});"><button class="btn btn-primary">Download</button></a></td>
                   </tr>
                   <tr>
                     <td>The metadata for this dataset.</td>
                     <td>{{ doi.metadata_size|filesizeformat }}</td>
                     <td>CSV</td>
-                    <td><a href="{{ doi.metadata.url }}" title="{{ doi.slug }}.csv"><button class="btn btn-primary">Download</button></a></td>
+                    <td><a href="{{ doi.metadata.url }}" title="{{ doi.slug }}.csv"
+                           onclick="gtag('event', 'download', {'event_category': 'doi', 'event_label': '{{ doi.slug }}.csv'});"><button class="btn btn-primary">Download</button></a></td>
                   </tr>
                   {% for supplemental_file in doi.supplemental_files.all %}
                     <tr>
                       <td>{{ supplemental_file.description }}</td>
                       <td>{{ supplemental_file.size|filesizeformat }}</td>
                       <td>{{ supplemental_file.extension|upper }}</td>
-                      <td><a href="{{ supplemental_file.blob.url }}" title="{{ supplemental_file.filename }}"><button class="btn btn-primary">Download</button></a></td>
+                      <td><a href="{{ supplemental_file.blob.url }}" title="{{ supplemental_file.filename }}"
+                             onclick="gtag('event', 'download', {'event_category': 'doi', 'event_label': '{{ supplemental_file.filename }}'});"><button class="btn btn-primary">Download</button></a></td>
                     </tr>
                   {% endfor %}
                 </tbody>
