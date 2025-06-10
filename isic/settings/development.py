@@ -98,9 +98,12 @@ STORAGES.update(  # noqa: F405
 ISIC_PLACEHOLDER_IMAGES = True
 # Use the MinioS3ProxyStorage for local development with ISIC_PLACEHOLDER_IMAGES
 # set to False to view real images in development.
-# STORAGES["default"]["BACKEND"] = (
-#    "isic.core.storages.minio.MinioS3ProxyStorage"
-# )
+# STORAGES["default"]["BACKEND"] = "isic.core.storages.minio.MinioS3ProxyStorage"
+# STORAGES["default"]["OPTIONS"]["upstream_bucket_name"] = "isic-storage"
+
+# STORAGES["sponsored"]["BACKEND"] = "isic.core.storages.minio.MinioS3ProxyStorage"
+# STORAGES["sponsored"]["OPTIONS"]["upstream_bucket_name"] = "isic-archive"
+
 
 # Move the debug toolbar middleware after gzip middleware
 # See https://django-debug-toolbar.readthedocs.io/en/latest/installation.html#add-the-middleware
