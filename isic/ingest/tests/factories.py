@@ -15,6 +15,7 @@ from isic.ingest.models import (
     UnstructuredMetadata,
     ZipUpload,
 )
+from isic.ingest.models.accession import AccessionStatus
 from isic.ingest.models.accession_review import AccessionReview
 
 from .csv_streams import csv_stream_without_filename_column
@@ -94,6 +95,12 @@ class AccessionFactory(factory.django.DjangoModelFactory):
         model = Accession
 
     class Params:
+        ingested = factory.Trait(
+            status=AccessionStatus.SUCCEEDED,
+            width=factory.Faker("random_int", min=1, max=1000),
+            height=factory.Faker("random_int", min=1, max=1000),
+        )
+
         # these are all of the relevant fields that need to be set if an accession is related
         # to a public image.
         public = factory.Trait(
@@ -108,6 +115,7 @@ class AccessionFactory(factory.django.DjangoModelFactory):
                 from_path=data_dir / "ISIC_0000000_thumbnail_256.jpg",
             ),
             thumbnail_256_size=factory.SelfAttribute("sponsored_thumbnail_256_blob.size"),
+            ingested=True,
         )
 
     creator = factory.SelfAttribute("cohort.creator")
