@@ -5,10 +5,8 @@ from django.utils.encoding import filepath_to_uri
 from storages.backends.s3 import S3Storage
 from storages.utils import clean_name
 
-from isic.core.storages import PreventRenamingMixin
 
-
-class CacheableCloudFrontStorage(PreventRenamingMixin, S3Storage):
+class CacheableCloudFrontStorage(S3Storage):
     @staticmethod
     def next_expiration_time(now=None):
         # returns a time > 6 days but <= 7.
@@ -40,7 +38,3 @@ class CacheableCloudFrontStorage(PreventRenamingMixin, S3Storage):
                 return self.cloudfront_signer.generate_presigned_url(url, date_less_than=expiration)
 
             return url
-
-
-class S3StaticStorage(PreventRenamingMixin, S3Storage):
-    pass

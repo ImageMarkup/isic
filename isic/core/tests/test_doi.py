@@ -11,6 +11,7 @@ from isic.core.models.image import Image
 from isic.core.services.collection.doi import (
     collection_build_doi,
     collection_create_doi,
+    collection_create_doi_files,
 )
 
 
@@ -90,7 +91,7 @@ def test_api_doi_creation(
     mock_datacite_update_doi,
     mock_datacite_citations_fetch,
     mock_datacite_schema_org_dataset_fetch,
-    s3ff_random_field_value,
+    s3ff_field_value,
     staff_client,
 ):
     r = staff_client.post(
@@ -99,7 +100,7 @@ def test_api_doi_creation(
             "collection_id": public_collection_with_public_images.id,
             "supplemental_files": [
                 {
-                    "blob": s3ff_random_field_value,
+                    "blob": s3ff_field_value,
                     "description": "test",
                 }
             ],
@@ -249,6 +250,8 @@ def test_doi_files(
     collection.images.set(images)
 
     doi = collection_create_doi(user=staff_user, collection=collection)
+
+    collection_create_doi_files(doi=doi)
 
     doi.refresh_from_db()
 

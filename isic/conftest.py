@@ -1,10 +1,6 @@
-import secrets
-
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.core.cache import cache
-from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
 from django.test.client import Client
 import pytest
 from pytest_factoryboy import register
@@ -90,16 +86,6 @@ def staff_client(staff_user):
     client = Client()
     client.force_login(staff_user)
     return client
-
-
-@pytest.fixture
-def s3ff_random_field_value(s3ff_field_value_factory):
-    # this is largely taken from upstream: https://github.com/kitware-resonant/django-s3-file-field/blob/73be92f74f2047d3a8f132c935008ac6234e3d15/s3_file_field/fixtures.py#L16
-    # the difference is we need to run it ourselves because we forbid get_alternative_name.
-    key = default_storage.save(f"test_key_{secrets.token_hex(16)}", ContentFile(b"test content"))
-    with default_storage.open(key) as file_object:
-        yield s3ff_field_value_factory(file_object)
-    default_storage.delete(key)
 
 
 # To make pytest-factoryboy fixture creation work properly, all factories must be registered at
