@@ -8,6 +8,8 @@ from minio_storage.files import ReadOnlySpooledTemporaryFile
 from minio_storage.policy import Policy
 from minio_storage.storage import MinioStorage, create_minio_client_from_settings, get_setting
 
+from isic.core.storages import PreventRenamingMixin
+
 
 class StringableReadOnlySpooledTemporaryFile(ReadOnlySpooledTemporaryFile):
     def read(self, *args, **kwargs):
@@ -27,7 +29,7 @@ class StringableReadOnlySpooledTemporaryFile(ReadOnlySpooledTemporaryFile):
         return super().readline(*args, **kwargs).decode()
 
 
-class FixedMinioMediaStorage(MinioStorage):
+class FixedMinioMediaStorage(PreventRenamingMixin, MinioStorage):
     # From https://github.com/py-pa/django-minio-storage/pull/139
     file_class = StringableReadOnlySpooledTemporaryFile
 
