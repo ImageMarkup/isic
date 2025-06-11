@@ -1,3 +1,4 @@
+from django.core.files import File
 from django.urls.base import reverse
 from django.utils import timezone
 import pyexiv2
@@ -7,7 +8,11 @@ from resonant_utils.files import field_file_to_local_path
 from isic.core.models.collection import Collection
 from isic.core.models.image import Image
 from isic.ingest.models.accession import AccessionStatus
-from isic.ingest.services.publish import cohort_publish_initialize, unembargo_image
+from isic.ingest.services.publish import (
+    cohort_publish_initialize,
+    embed_iptc_metadata,
+    unembargo_image,
+)
 
 
 @pytest.fixture
@@ -175,3 +180,24 @@ def test_unembargo_images(image_factory):
                 == "https://www.isic-archive.com"
             )
             assert image_file.read_xmp()["Xmp.plus.Licensor[1]/plus:LicensorName"] == "ISIC Archive"
+
+
+@pytest.mark.django_db
+def test_embed_iptc_metadata_idempotency(image_factory):
+    image = image_factory(
+        public=False,
+        accession__attribution="attribution",
+        accession__copyright_license="CC-0",
+    )
+    accession = image.accession
+    attribution = accession.attribution
+    copyright_license = accession.copyright_license
+
+    with embed_iptc_metadata(
+        accession.blob, attribution, copyright_license, image.isic_id
+    ) as buffer:
+        accession.blob = File(buffer)
+        accession.save(update_fields=["blob"])
+
+    with embed_iptc_metadata(accession.blob, attribution, copyright_license, image.isic_id) as _:
+        ...
