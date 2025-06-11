@@ -14,12 +14,12 @@ def accessions(accession_factory, accession_review_factory):
 
 
 @pytest.mark.django_db
-def test_api_accession_create(authenticated_client, user, cohort_factory, s3ff_field_value):
+def test_api_accession_create(authenticated_client, user, cohort_factory, s3ff_random_field_value):
     cohort = cohort_factory(contributor__owners=[user])
 
     resp = authenticated_client.post(
         "/api/v2/accessions/",
-        data={"cohort": cohort.pk, "original_blob": s3ff_field_value},
+        data={"cohort": cohort.pk, "original_blob": s3ff_random_field_value},
         content_type="application/json",
     )
 
@@ -29,13 +29,13 @@ def test_api_accession_create(authenticated_client, user, cohort_factory, s3ff_f
 
 @pytest.mark.django_db
 def test_api_accession_create_creates_accessions_with_unstructured_metadata(
-    authenticated_client, user, cohort_factory, s3ff_field_value
+    authenticated_client, user, cohort_factory, s3ff_random_field_value
 ):
     cohort = cohort_factory(contributor__owners=[user])
 
     resp = authenticated_client.post(
         "/api/v2/accessions/",
-        data={"cohort": cohort.pk, "original_blob": s3ff_field_value},
+        data={"cohort": cohort.pk, "original_blob": s3ff_random_field_value},
         content_type="application/json",
     )
 
@@ -46,13 +46,13 @@ def test_api_accession_create_creates_accessions_with_unstructured_metadata(
 
 @pytest.mark.django_db
 def test_api_accession_create_duplicate_blob_name(
-    authenticated_client, user, cohort_factory, s3ff_field_value
+    authenticated_client, user, cohort_factory, s3ff_random_field_value
 ):
     cohort = cohort_factory(contributor__owners=[user])
 
     resp = authenticated_client.post(
         "/api/v2/accessions/",
-        data={"cohort": cohort.pk, "original_blob": s3ff_field_value},
+        data={"cohort": cohort.pk, "original_blob": s3ff_random_field_value},
         content_type="application/json",
     )
     assert resp.status_code == 201, resp.json()
@@ -60,7 +60,7 @@ def test_api_accession_create_duplicate_blob_name(
 
     resp = authenticated_client.post(
         "/api/v2/accessions/",
-        data={"cohort": cohort.pk, "original_blob": s3ff_field_value},
+        data={"cohort": cohort.pk, "original_blob": s3ff_random_field_value},
         content_type="application/json",
     )
     assert resp.status_code == 400, resp.json()
@@ -69,13 +69,13 @@ def test_api_accession_create_duplicate_blob_name(
 
 @pytest.mark.django_db
 def test_api_accession_create_invalid_cohort(
-    authenticated_client, user_factory, cohort_factory, s3ff_field_value
+    authenticated_client, user_factory, cohort_factory, s3ff_random_field_value
 ):
     invalid_cohort = cohort_factory(contributor__creator=user_factory())
 
     resp = authenticated_client.post(
         "/api/v2/accessions/",
-        data={"cohort": invalid_cohort.pk, "original_blob": s3ff_field_value},
+        data={"cohort": invalid_cohort.pk, "original_blob": s3ff_random_field_value},
         content_type="application/json",
     )
 
