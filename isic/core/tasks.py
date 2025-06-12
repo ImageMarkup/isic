@@ -218,3 +218,39 @@ def generate_sponsored_blob_task(image_id: int):
         storages["sponsored"].save(
             f"thumbnails/{image.isic_id}_thumbnail.jpg", sponsored_thumbnail_256_blob
         )
+
+
+@shared_task(soft_time_limit=180, time_limit=200)
+def regenerate_sponsored_blob(image_id: int):
+    image = Image.objects.select_related("accession").get(id=image_id)
+
+    accession = image.accession
+    attribution = accession.attribution
+    copyright_license = accession.copyright_license
+
+    with (
+        embed_iptc_metadata(
+            accession.sponsored_blob,  # nosem: use-accession-active-blob-where-possible
+            attribution,
+            copyright_license,
+            image.isic_id,
+        ) as sponsored_blob,
+        embed_iptc_metadata(
+            # nosem: use-accession-active-thumbnail-256-where-possible
+            accession.sponsored_thumbnail_256_blob,
+            attribution,
+            copyright_license,
+            image.isic_id,
+        ) as sponsored_thumbnail_256_blob,
+    ):
+        s3 = storages["sponsored"]._create_session().client("s3")  # noqa: SLF001
+        s3.upload_fileobj(
+            sponsored_blob,
+            storages["sponsored"].bucket_name,
+            f"images/{image.isic_id}.{image.extension}",
+        )
+        s3.upload_fileobj(
+            sponsored_thumbnail_256_blob,
+            storages["sponsored"].bucket_name,
+            f"thumbnails/{image.isic_id}_thumbnail.jpg",
+        )
