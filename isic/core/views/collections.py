@@ -16,6 +16,7 @@ from django.urls.base import reverse
 from isic.core.filters import CollectionFilter
 from isic.core.forms.collection import CollectionForm
 from isic.core.models import Collection
+from isic.core.pagination import CursorPagination, qs_with_hardcoded_count
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.core.services import image_metadata_csv
 from isic.core.services.collection import collection_create, collection_update
@@ -162,14 +163,17 @@ def collection_detail(request, pk):
         collection.images.select_related("accession").order_by("created").distinct(),
     )
 
-    paginator = Paginator(images, 30)
-    # prevent the paginator from doing a slow count. this could potentially cause issues if
-    # people were seeking to specific pages, but once we add cursor pagination this will stop
-    # being an issue.
-    if hasattr(collection, "cached_counts"):
-        paginator.count = collection.cached_counts.image_count
+    paginator = CursorPagination(ordering=("created",))
+    cursor_input = CursorPagination.Input(
+        limit=request.GET.get("limit", 30), cursor=request.GET.get("cursor")
+    )
 
-    page = paginator.get_page(request.GET.get("page"))
+    # prevent the paginator from doing a slow count.
+    if hasattr(collection, "cached_counts"):
+        images = qs_with_hardcoded_count(images, ("created",), collection.cached_counts.image_count)
+
+    page = paginator.paginate_queryset(images, cursor_input, request)
+
     contributors = get_visible_objects(
         request.user,
         "ingest.view_contributor",
@@ -190,7 +194,8 @@ def collection_detail(request, pk):
         {
             "collection": collection,
             "contributors": contributors,
-            "images": page,
+            "images": page["results"],
+            "page": page,
             "image_removal_mode": image_removal_mode,
             "show_shares": request.user.is_staff or request.user == collection.creator,
         },
