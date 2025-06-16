@@ -135,7 +135,7 @@
   </div>
 
 
-  {% include 'studies/partials/pagination.html' with page_obj=images %}
+  {% include 'studies/partials/cursor_pagination.html' %}
   <div x-data="collectionEditor({{ collection.pk }})">
     {% if image_removal_mode %}
       <div class="alert shadow-lg my-6">
@@ -169,7 +169,7 @@
       </div>
     </div>
   </div>
-  {% include 'studies/partials/pagination.html' with page_obj=images %}
+  {% include 'studies/partials/cursor_pagination.html' %}
 
   {% include 'ingest/partials/thumbnail_grid_js.html' %}
   {% include 'core/partials/edit_collection_js.html' %}
