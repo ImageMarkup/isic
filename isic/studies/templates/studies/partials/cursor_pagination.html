@@ -1,0 +1,17 @@
+{% load humanize %}
+
+<div class="pagination flex justify-end">
+  <span class="step-links">
+    {% if page.previous %}
+      <a href="{{ page.previous }}">previous</a>
+    {% endif %}
+
+    {% if page.previous and page.next %}
+      |
+    {% endif %}
+
+    {% if page.next %}
+      <a href="{{ page.next }}">next</a>
+    {% endif %}
+  </span>
+</div>
