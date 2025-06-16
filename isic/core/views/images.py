@@ -1,8 +1,8 @@
 import json
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from django.core.paginator import Paginator
 from django.db.models import Count
 from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
@@ -12,7 +12,9 @@ from django.urls import reverse
 
 from isic.core.forms.search import ImageSearchForm
 from isic.core.models import Collection, Image
+from isic.core.pagination import CursorPagination, qs_with_hardcoded_count
 from isic.core.permissions import get_visible_objects, needs_object_permission
+from isic.core.search import get_elasticsearch_client
 from isic.core.tasks import generate_staff_image_list_metadata_csv
 from isic.studies.models import Study
 from isic.types import AuthenticatedHttpRequest
@@ -145,11 +147,24 @@ def image_browser(request):
         collections=collections,
     )
     qs: QuerySet[Image] = Image.objects.none()
+
     if search_form.is_valid():
         qs = search_form.results
 
-    paginator = Paginator(qs, 30)
-    page = paginator.get_page(request.GET.get("page"))
+        if settings.ISIC_USE_ELASTICSEARCH_COUNTS:
+            es_query = search_form.serializer.to_es_query(request.user)
+            es_count = get_elasticsearch_client().count(
+                index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX,
+                body={"query": es_query},
+            )["count"]
+            qs = qs_with_hardcoded_count(qs, ("created",), es_count)
+
+    paginator = CursorPagination(ordering=("created",))
+    cursor_input = CursorPagination.Input(
+        limit=request.GET.get("limit", 30), cursor=request.GET.get("cursor")
+    )
+
+    page = paginator.paginate_queryset(qs, cursor_input, request)
 
     if request.user.is_authenticated:
         addable_collections = collections.filter(locked=False)
@@ -163,8 +178,9 @@ def image_browser(request):
         request,
         "core/image_browser.html",
         {
-            "total_images": page.paginator.count,
-            "images": page,
+            "total_images": qs.count(),
+            "images": page["results"],
+            "page": page,
             # The user can only add images to collections that are theirs and unlocked.
             "collections": addable_collections,
             # This gets POSTed to the populate endpoint if called
