@@ -1,4 +1,7 @@
+import pathlib
+
 from django.core.files import File
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.urls.base import reverse
 from django.utils import timezone
 import pyexiv2
@@ -7,12 +10,16 @@ from resonant_utils.files import field_file_to_local_path
 
 from isic.core.models.collection import Collection
 from isic.core.models.image import Image
+from isic.core.views.doi import LICENSE_URIS
 from isic.ingest.models.accession import AccessionStatus
+from isic.ingest.services.accession import accession_create
 from isic.ingest.services.publish import (
+    accession_publish,
     cohort_publish_initialize,
     embed_iptc_metadata,
-    unembargo_image,
 )
+
+data_dir = pathlib.Path(__file__).parent / "data"
 
 
 @pytest.fixture
@@ -138,15 +145,37 @@ def test_publish_cohort_into_public_collection(
         )
 
 
-@pytest.mark.django_db
-def test_unembargo_images(image_factory):
-    image = image_factory(
-        public=False, accession__attribution="attribution", accession__copyright_license="CC-0"
-    )
-    unembargo_image(image=image)
-    image.refresh_from_db()
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize(
+    ("blob_path", "blob_name"),
+    [
+        (pathlib.Path(data_dir / "ISIC_0000000.jpg"), "ISIC_0000000.jpg"),
+        (pathlib.Path(data_dir / "RCM_tile_with_exif.png"), "RCM_tile_with_exif.png"),
+    ],
+    ids=["jpg_image", "rcm_image"],
+)
+def test_unembargo_images(
+    blob_path, blob_name, image_factory, user, cohort_factory, django_capture_on_commit_callbacks
+):
+    cohort = cohort_factory(creator=user, contributor__creator=user)
+    with blob_path.open("rb") as stream:
+        blob = InMemoryUploadedFile(stream, None, blob_name, None, blob_path.stat().st_size, None)
+        accession = accession_create(
+            creator=user,
+            cohort=cohort,
+            original_blob=blob,
+            original_blob_name=blob_name,
+            original_blob_size=blob_path.stat().st_size,
+        )
+    accession.refresh_from_db()
+
+    with django_capture_on_commit_callbacks(execute=True):
+        accession_publish(accession=accession, public=True, publisher=user)
+
+    image = Image.objects.get(accession=accession)
+
     assert image.public
-    assert image.accession.sponsored_blob.name == f"images/{image.isic_id}.jpg"
+    assert image.accession.sponsored_blob.name == f"images/{image.isic_id}.{image.extension}"
     assert (
         image.accession.sponsored_thumbnail_256_blob.name
         == f"thumbnails/{image.isic_id}_thumbnail.jpg"
@@ -157,29 +186,42 @@ def test_unembargo_images(image_factory):
             field_file_to_local_path(blob) as path,
             pyexiv2.Image(str(path.absolute())) as image_file,
         ):
-            assert image_file.read_iptc() == {
-                "Iptc.Application2.Credit": "attribution",
-                "Iptc.Application2.Source": "ISIC Archive",
-                "Iptc.Envelope.CharacterSet": "\x1b%G",
-            }
-            # see https://iptc.org/std/photometadata/specification/IPTC-PhotoMetadata#lang-alt-value-type
-            assert image_file.read_xmp()["Xmp.dc.title"] == {'lang="x-default"': image.isic_id}
-            assert (
-                image_file.read_xmp()["Xmp.plus.ImageSupplier[1]/plus:ImageSupplierName"]
-                == "ISIC Archive"
-            )
-            assert image_file.read_xmp()["Xmp.plus.ImageSupplierImageID"] == image.isic_id
-            # see https://iptc.org/std/photometadata/specification/IPTC-PhotoMetadata#lang-alt-value-type
-            assert image_file.read_xmp()["Xmp.xmpRights.UsageTerms"] == {'lang="x-default"': "CC-0"}
-            assert (
-                image_file.read_xmp()["Xmp.xmpRights.WebStatement"]
-                == "https://creativecommons.org/publicdomain/zero/1.0/"
-            )
-            assert (
-                image_file.read_xmp()["Xmp.plus.Licensor[1]/plus:LicensorURL"]
-                == "https://www.isic-archive.com"
-            )
-            assert image_file.read_xmp()["Xmp.plus.Licensor[1]/plus:LicensorName"] == "ISIC Archive"
+            # non JPG files should not have IPTC metadata embedded
+            if not blob.name.endswith(".jpg"):
+                iptc_data = image_file.read_iptc()
+                xmp_data = image_file.read_xmp()
+                assert iptc_data == {}
+                assert xmp_data == {}
+            else:
+                # For JPEG files, metadata should be present
+                assert image_file.read_iptc() == {
+                    "Iptc.Application2.Credit": image.accession.attribution,
+                    "Iptc.Application2.Source": "ISIC Archive",
+                    "Iptc.Envelope.CharacterSet": "\x1b%G",
+                }
+                # see https://iptc.org/std/photometadata/specification/IPTC-PhotoMetadata#lang-alt-value-type
+                assert image_file.read_xmp()["Xmp.dc.title"] == {'lang="x-default"': image.isic_id}
+                assert (
+                    image_file.read_xmp()["Xmp.plus.ImageSupplier[1]/plus:ImageSupplierName"]
+                    == "ISIC Archive"
+                )
+                assert image_file.read_xmp()["Xmp.plus.ImageSupplierImageID"] == image.isic_id
+                # see https://iptc.org/std/photometadata/specification/IPTC-PhotoMetadata#lang-alt-value-type
+                assert image_file.read_xmp()["Xmp.xmpRights.UsageTerms"] == {
+                    'lang="x-default"': image.accession.copyright_license,
+                }
+                assert (
+                    image_file.read_xmp()["Xmp.xmpRights.WebStatement"]
+                    == LICENSE_URIS[image.accession.copyright_license]
+                )
+                assert (
+                    image_file.read_xmp()["Xmp.plus.Licensor[1]/plus:LicensorURL"]
+                    == "https://www.isic-archive.com"
+                )
+                assert (
+                    image_file.read_xmp()["Xmp.plus.Licensor[1]/plus:LicensorName"]
+                    == "ISIC Archive"
+                )
 
 
 @pytest.mark.django_db
