@@ -2,3 +2,8 @@ User-agent: Amazonbot
 User-agent: AhrefsBot
 User-agent: MJ12bot
 Disallow: /
+
+
+# /lesions is currently a little slow and has mostly low value pages for search engines
+User-agent: *
+Disallow: /lesions/
