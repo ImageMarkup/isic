@@ -91,6 +91,8 @@ def accession_publish(
     publisher: User,
     additional_collection_ids: Iterable[int] | None = None,
 ):
+    additional_collection_ids = additional_collection_ids or []
+
     # wrapping this inside of a transaction ensures that this function can be retried easily
     with lock_table_for_writes(IsicId):
         if accession.attribution == "":
@@ -118,6 +120,13 @@ def accession_publish(
 def embed_iptc_metadata(
     field_file: FieldFile, attribution: str, copyright_license: str, isic_id: str
 ) -> Generator[BufferedReader]:
+    # embedding IPTC metadata is not supported for non JPG files at the moment
+    file_name = getattr(field_file, "name", "")
+    if not file_name.lower().endswith(".jpg"):
+        with field_file.open("rb") as f:
+            yield f
+        return
+
     # pyexiv2 operates on filenames directly, so we need to write to a temp file
     with tempfile.NamedTemporaryFile() as temp_file:
         shutil.copyfileobj(field_file.file, temp_file)
