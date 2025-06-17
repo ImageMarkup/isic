@@ -46,6 +46,7 @@ CACHES = {
 
 
 SHELL_PLUS_IMPORTS = [
+    "from django.core.files.storage import storages",
     "from django.core.files.uploadedfile import UploadedFile",
     "from isic.ingest.services.accession import *",
     "from isic.ingest.services.zip_upload import *",
