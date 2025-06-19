@@ -48,6 +48,7 @@ IMAGE_INDEX_MAPPINGS["properties"].update(
         "copyright_license": {"type": "keyword"},
         "public": {"type": "boolean"},
         "shared_to": {"type": "integer"},
+        "blob_size": {"type": "integer"},
     }
 )
 
