@@ -138,6 +138,33 @@ def search_images(request: HttpRequest, search: SearchQueryIn = Query(...)):
         return qs
 
 
+@router.get(
+    "/search/size/",
+    response={200: dict, 400: dict},
+    summary="Get total size of images matching a search query.",
+    include_in_schema=False,
+)
+def get_search_size(request: HttpRequest, search: SearchQueryIn = Query(...)):
+    try:
+        es_query = search.to_es_query(request.user)
+    except ParseException as e:
+        raise ImageSearchParseError from e
+
+    body = {
+        "size": 0,
+        "aggs": {"total_size": {"sum": {"field": "blob_size"}}},
+        "query": es_query,
+    }
+
+    result = get_elasticsearch_client().search(
+        index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX,
+        body=body,
+    )
+
+    total_size = result["aggregations"]["total_size"]["value"] or 0
+    return {"size": int(total_size)}
+
+
 @router.get("/facets/", response=dict, include_in_schema=False)
 def get_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):
     cache_key = f"get_facets:{search.to_cache_key(request.user)}"
