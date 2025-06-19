@@ -161,7 +161,7 @@ STORAGES.update(  # noqa: F405
             },
         },
         "sponsored": {
-            "BACKEND": "storages.backends.s3.S3StaticStorage",
+            "BACKEND": "isic.core.storages.s3.S3StaticStorage",
             "OPTIONS": {
                 "bucket_name": os.environ["DJANGO_SPONSORED_BUCKET_NAME"],
             },

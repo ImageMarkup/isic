@@ -113,6 +113,7 @@ class AccessionFactory(factory.django.DjangoModelFactory):
             blob_size=factory.SelfAttribute("sponsored_blob.size"),
             sponsored_thumbnail_256_blob=factory.django.FileField(
                 from_path=data_dir / "ISIC_0000000_thumbnail_256.jpg",
+                filename=factory.Sequence(lambda n: f"ISIC_{n:07}_thumbnail_256.jpg"),
             ),
             thumbnail_256_size=factory.SelfAttribute("sponsored_thumbnail_256_blob.size"),
             ingested=True,
