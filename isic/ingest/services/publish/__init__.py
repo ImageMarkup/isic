@@ -201,7 +201,12 @@ def unembargo_image(*, image: Image) -> None:
         )
 
         image.accession.sponsored_blob = File(  # nosem: use-image-blob-where-possible
-            sponsored_blob, name=f"{image.isic_id}.{image.extension}"
+            # image.accession.extension has to be used instead of image.extension since that picks
+            # the blob based on image.public. in the event of reprocessing an accession that's
+            # already public, image.extension would try to reach into the sponsored_blob which
+            # won't exist.
+            sponsored_blob,
+            name=f"{image.isic_id}.{image.accession.extension}",
         )
         # nosem: use-image-thumbnail-256-where-possible
         image.accession.sponsored_thumbnail_256_blob = File(
