@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import io
 import logging
 from mimetypes import guess_type
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import tempfile
 from typing import Literal, TypeVar
 from uuid import uuid4
@@ -483,6 +483,10 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):  # type: ign
     @property
     def blob_(self):
         return self.sponsored_blob or self.blob
+
+    @property
+    def extension(self):
+        return PurePosixPath(self.blob_.name).suffix.lstrip(".")
 
     @property
     def thumbnail_(self):
