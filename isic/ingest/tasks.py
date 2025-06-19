@@ -83,7 +83,7 @@ def accession_generate_blob_task(accession_pk: int):
 def process_distinctness_measure_task(accession_pk: int):
     accession = Accession.objects.get(pk=accession_pk)
 
-    with accession.blob.open() as blob_stream:
+    with accession.blob_.open() as blob_stream:
         checksum = DistinctnessMeasure.compute_checksum(blob_stream)
 
     # use update_or_create to make the function idempotent. this is useful if we ever
