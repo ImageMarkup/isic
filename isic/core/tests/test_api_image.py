@@ -13,6 +13,18 @@ def searchable_image(_search_index, image_factory):
     return image
 
 
+@pytest.fixture
+def searchable_images_with_size(_search_index, image_factory):
+    image1 = image_factory(accession__age=10, accession__blob_size=10, public=True)
+    image2 = image_factory(accession__age=20, accession__blob_size=20, public=True)
+
+    add_to_search_index(image1)
+    add_to_search_index(image2)
+
+    get_elasticsearch_client().indices.refresh(index="_all")
+    return image1, image2
+
+
 @pytest.mark.django_db
 def test_core_api_image_ages_are_always_rounded(
     authenticated_client, staff_client, searchable_image
@@ -59,3 +71,24 @@ def test_api_image_urls_thumbnail_256(client, image_factory, image_file):
     # assert storage_resp.headers['Content-Type'] == 'image/jpeg'
     # TODO: Fix Content-Disposition
     # assert 'thumbnail' in storage_resp.headers['Content-Disposition']
+
+
+@pytest.mark.django_db
+def test_api_image_search_size(client, searchable_images_with_size):
+    image1, image2 = searchable_images_with_size
+
+    r = client.get("/api/v2/images/search/size/")
+    assert r.status_code == 200
+    assert r.json()["size"] == 30  # 10 + 20
+
+    r = client.get("/api/v2/images/search/size/", {"query": "age_approx:10"})
+    assert r.status_code == 200
+    assert r.json()["size"] == 10
+
+    r = client.get("/api/v2/images/search/size/", {"query": "age_approx:20"})
+    assert r.status_code == 200
+    assert r.json()["size"] == 20
+
+    r = client.get("/api/v2/images/search/size/", {"query": "age_approx:30"})
+    assert r.status_code == 200
+    assert r.json()["size"] == 0

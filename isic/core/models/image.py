@@ -164,6 +164,7 @@ class Image(CreationSortedTimeStampedModel):
             "isic_id": self.isic_id,
             "public": self.public,
             "copyright_license": self.accession.copyright_license,
+            "blob_size": self.accession.blob_size,
             # TODO: make sure these fields can't be searched on
             "contributor_owner_ids": self.contributor_owner_ids,
             "shared_to": self.shared_to,
