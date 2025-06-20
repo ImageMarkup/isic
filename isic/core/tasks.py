@@ -13,7 +13,7 @@ from django.core.mail import send_mail
 from django.db import connection, transaction
 from django.db.models import Prefetch
 from django.template.loader import render_to_string
-from girder_utils.storages import expiring_url
+from resonant_utils.storages import expiring_url
 from oauth2_provider.models import clear_expired as clear_expired_oauth_tokens
 import requests
 from urllib3.exceptions import ConnectionError as Urllib3ConnectionError

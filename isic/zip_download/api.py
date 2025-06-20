@@ -47,7 +47,7 @@ def get_attributions(attributions: Iterable[str]) -> list[str]:
 class ZipDownloadBasicAuth(HttpBasicAuth):
     def authenticate(self, request, username, password):
         if username == "" and constant_time_compare(
-            password, settings.ZIP_DOWNLOAD_BASIC_AUTH_TOKEN
+            password, settings.ISIC_ZIP_DOWNLOAD_BASIC_AUTH_TOKEN
         ):
             return True
 
@@ -91,7 +91,7 @@ def zip_api_auth(request: HttpRequest):
 @zip_router.post("/url/", response=str, include_in_schema=False)
 def create_zip_download_url(request: HttpRequest, payload: SearchQueryIn):
     token = TimestampSigner().sign_object(payload.to_token_representation(user=request.user))
-    return f"{settings.ZIP_DOWNLOAD_SERVICE_URL}/download?zsid={token}"
+    return f"{settings.ISIC_ISIC_ZIP_DOWNLOAD_SERVICE_URL}/download?zsid={token}"
 
 
 create_zip_download_url.csrf_exempt = True  # type: ignore[attr-defined]
@@ -112,7 +112,7 @@ def _zip_file_listing_generator(
     def extension_from_str(s: str) -> str:
         return PurePosixPath(s).suffix.lstrip(".")
 
-    if settings.ZIP_DOWNLOAD_WILDCARD_URLS:
+    if settings.ISIC_ZIP_DOWNLOAD_WILDCARD_URLS:
         # this is a performance optimization. repeated signing of individual urls
         # is slow when generating large descriptors. this allows generating one signature and
         # using it for all urls.

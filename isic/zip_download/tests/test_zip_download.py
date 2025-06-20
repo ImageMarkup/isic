@@ -30,7 +30,7 @@ def _random_images_with_licenses(image_factory):
 def zip_basic_auth():
     return {
         "HTTP_AUTHORIZATION": "Basic "
-        + b64encode(b":" + settings.ZIP_DOWNLOAD_BASIC_AUTH_TOKEN.encode()).decode()
+        + b64encode(b":" + settings.ISIC_ZIP_DOWNLOAD_BASIC_AUTH_TOKEN.encode()).decode()
     }
 
 
@@ -48,7 +48,7 @@ def test_zip_download_licenses(authenticated_client):
         "/api/v2/zip-download/file-listing/",
         data={"token": token[0]},
         HTTP_AUTHORIZATION="Basic "
-        + b64encode(b":" + settings.ZIP_DOWNLOAD_BASIC_AUTH_TOKEN.encode()).decode(),
+        + b64encode(b":" + settings.ISIC_ZIP_DOWNLOAD_BASIC_AUTH_TOKEN.encode()).decode(),
     )
     assert r.status_code == 200
 
@@ -102,7 +102,7 @@ def test_zip_download_listing_wildcard_urls(
     token = parse_qs(parsed_url.query)["zsid"]
 
     # Mock the CloudFrontSigner to return a predictable signature
-    settings.ZIP_DOWNLOAD_WILDCARD_URLS = True
+    settings.ISIC_ZIP_DOWNLOAD_WILDCARD_URLS = True
 
     mock_storage = mocker.MagicMock()
     mock_storage.cloudfront_key_id = "test"

@@ -21,7 +21,7 @@ from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.fields import Field
 from django.db.models.functions import Cast, Round
 from django.db.models.query_utils import Q
-from girder_utils.files import field_file_to_local_path
+from resonant_utils.files import field_file_to_local_path
 from isic_metadata.fields import ImageTypeEnum
 from isic_metadata.metadata import MetadataRow
 import numpy as np

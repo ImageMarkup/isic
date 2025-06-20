@@ -22,7 +22,6 @@ data_dir = pathlib.Path(__file__).parent / "data"
 def test_collect_google_analytics_task(mocker, settings):
     # only have one VIEW_ID, otherwise the counts will be multiplied
     settings.ISIC_GOOGLE_ANALYTICS_PROPERTY_IDS = ["just_one"]
-    settings.ISIC_GOOGLE_API_JSON_KEY = "something"
 
     mocker.patch("isic.stats.tasks._get_analytics_client", mocker.MagicMock)
     mocker.patch(
