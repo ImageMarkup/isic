@@ -91,7 +91,6 @@ INSTALLED_APPS = [
     "cachalot",
     "corsheaders",
     "django_extensions",
-    "django_object_actions",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",

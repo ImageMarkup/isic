@@ -7,8 +7,6 @@ from django.db.models import Count
 from django.http import HttpResponse
 from django.template.defaultfilters import filesizeformat
 from django.utils.safestring import mark_safe
-from django_object_actions import DjangoObjectActions
-from django_object_actions.utils import takes_instance_or_queryset
 from girder_utils.admin import ReadonlyTabularInline
 
 from isic.core.admin import StaffReadonlyAdmin
@@ -123,7 +121,6 @@ class CohortAdmin(StaffReadonlyAdmin):
         return intcomma(obj.metadata_files_count)
 
     @admin.action(description="Export original file mapping")
-    @takes_instance_or_queryset
     def export_file_mapping(self, request, queryset):
         current_time = datetime.now(tz=UTC).strftime("%Y-%m-%d")
         response = HttpResponse(content_type="text/csv")
@@ -247,7 +244,7 @@ class AccessionReviewAdmin(StaffReadonlyAdmin):
 
 
 @admin.register(ZipUpload)
-class ZipAdmin(DjangoObjectActions, StaffReadonlyAdmin):
+class ZipAdmin(StaffReadonlyAdmin):
     list_select_related = ["creator", "cohort"]
     list_display = [
         "blob_name",
@@ -264,14 +261,12 @@ class ZipAdmin(DjangoObjectActions, StaffReadonlyAdmin):
 
     autocomplete_fields = ["creator", "cohort"]
     readonly_fields = ["created", "modified", "blob_name", "human_blob_size"]
-    change_actions = ["extract_zip"]
 
     @admin.display(description="Blob Size", ordering="blob_size")
     def human_blob_size(self, obj):
         return filesizeformat(obj.blob_size)
 
     @admin.action(description="Extract zip")
-    @takes_instance_or_queryset
     def extract_zip(self, request, queryset):
         for zip_file in queryset:
             zip_file.reset()
