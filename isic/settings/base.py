@@ -169,7 +169,6 @@ WSGI_APPLICATION = "isic.wsgi.application"
 ROOT_URLCONF = "isic.urls"
 
 TEMPLATES[0]["OPTIONS"]["context_processors"] += [  # type: ignore[index]  # noqa: F405
-    "isic.core.context_processors.noindex",
     "isic.core.context_processors.placeholder_images",
     "isic.core.context_processors.js_browser_sync",
     "isic.core.context_processors.js_sentry",
@@ -192,7 +191,6 @@ ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = ISIC_GUI_URL
 
 ISIC_OAUTH_ALLOW_REGEX_REDIRECT_URIS = False
 
-ISIC_NOINDEX = False
 ISIC_PLACEHOLDER_IMAGES = False
 ISIC_JS_BROWSER_SYNC = False
 ISIC_JS_SENTRY = False
