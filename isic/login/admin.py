@@ -12,7 +12,6 @@ class UserAdmin(BaseUserAdmin, StaffReadonlyAdmin):
         "email",
         "first_name",
         "last_name",
-        "profile__girder_id",
         "profile__hash_id",
         "is_staff",
     ]
@@ -21,10 +20,9 @@ class UserAdmin(BaseUserAdmin, StaffReadonlyAdmin):
         "emailaddress__email",
         "first_name",
         "last_name",
-        "profile__girder_id",
         "profile__hash_id",
     ]
-    search_help_text = "Search by names, email addresses, girder_id, or hash_id."
+    search_help_text = "Search by names, email addresses, or hash_id."
     ordering = ["-date_joined"]
 
 
