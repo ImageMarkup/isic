@@ -171,7 +171,6 @@ STORAGES.update(  # noqa: F405
 
 ISIC_GOOGLE_API_JSON_KEY = os.environ.get("DJANGO_ISIC_GOOGLE_API_JSON_KEY")
 
-ISIC_NOINDEX = string_to_bool(os.environ["DJANGO_ISIC_NOINDEX"])
 ISIC_OAUTH_ALLOW_REGEX_REDIRECT_URIS = string_to_bool(
     os.environ["DJANGO_ISIC_OAUTH_ALLOW_REGEX_REDIRECT_URIS"]
 )
@@ -179,8 +178,6 @@ ISIC_OAUTH_ALLOW_REGEX_REDIRECT_URIS = string_to_bool(
 # This is intended for the sandbox environment
 if string_to_bool(os.environ.get("DJANGO_ISIC_OAUTH_ALLOW_HTTP_REDIRECT_URIS", "false")):
     OAUTH2_PROVIDER["ALLOWED_REDIRECT_URI_SCHEMES"].append("http")  # noqa: F405
-
-ISIC_SANDBOX_BANNER = string_to_bool(os.environ["DJANGO_ISIC_SANDBOX_BANNER"])
 
 CDN_LOG_BUCKET = os.environ["DJANGO_CDN_LOG_BUCKET"]
 
