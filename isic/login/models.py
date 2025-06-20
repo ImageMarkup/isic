@@ -8,8 +8,6 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from hashids import Hashids
 
-from isic.core.constants import MONGO_ID_REGEX
-
 logger = logging.getLogger(__name__)
 
 # Note: this unfortunately has to change in the CLI as well
@@ -33,14 +31,6 @@ def get_hashid(value: int) -> str:
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
-    girder_id = models.CharField(
-        max_length=24,
-        unique=True,
-        blank=True,
-        # Make this nullable to allow a uniqueness constraint
-        null=True,
-        validators=[RegexValidator(f"^{MONGO_ID_REGEX}$")],
-    )
     hash_id = models.CharField(
         max_length=5,
         unique=True,
