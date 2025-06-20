@@ -1,10 +1,6 @@
 from django.conf import settings
 
 
-def noindex(request):
-    return {"NOINDEX": settings.ISIC_NOINDEX}
-
-
 def placeholder_images(request):
     return {"PLACEHOLDER_IMAGES": settings.ISIC_PLACEHOLDER_IMAGES}
 
