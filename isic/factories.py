@@ -1,5 +1,4 @@
 from allauth.account.models import EmailAddress
-from bson import ObjectId
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
@@ -14,7 +13,6 @@ class ProfileFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Profile
 
-    girder_id = factory.LazyFunction(ObjectId)
     hash_id = factory.LazyAttribute(lambda o: get_hashid(o.user.pk))
     accepted_terms = None
 
