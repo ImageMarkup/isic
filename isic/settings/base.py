@@ -103,6 +103,7 @@ INSTALLED_APPS = [
     "whitenoise.runserver_nostatic",  # should be immediately before staticfiles app
     "django.contrib.staticfiles",
     "girder_utils",
+    "resonant_utils",
     "isic.core.apps.CoreConfig",
     "isic.find.apps.FindConfig",
     "isic.ingest.apps.IngestConfig",

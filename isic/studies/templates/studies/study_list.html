@@ -1,7 +1,7 @@
 {% extends 'core/base.html' %}
 {% load humanize %}
 {% load localtime %}
-{% load get_key %}
+{% load resonant_utils %}
 
 {% block content %}
   <div class="mb-5 flex justify-between">
@@ -30,7 +30,7 @@
                       Private
                     </p>
                   {% endif %}
-                  {% with pending_tasks=num_pending_tasks|get_key:study.pk completed_tasks=num_completed_tasks|get_key:study.pk %}
+                  {% with pending_tasks=num_pending_tasks|get_item:study.pk completed_tasks=num_completed_tasks|get_item:study.pk %}
                     {% if pending_tasks %}
                       <p class="px-2 ml-2 text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
                         {{ pending_tasks|intcomma }} remaining tasks
@@ -47,7 +47,7 @@
               <p class="my-2">{{ study.description }}</p>
               <p class="flex items-center text-sm text-gray-500">
                 <i class="ri-group-fill h-5 w-5"></i>
-                {{ num_participants|get_key:study.pk|default:0 }} participating
+                {{ num_participants|get_item:study.pk|default_if_none:0 }} participating
               </p>
             </div>
             <div class="mt-2 text-sm text-gray-500">
