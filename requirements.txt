@@ -40,7 +40,7 @@ django-ninja==1.4.3
 django-oauth-toolkit==1.7.1
 django-object-actions==5.0.0
 django-redis==5.4.0
-django-resonant-utils==0.14.1
+django-resonant-utils==0.15.0
 django-s3-file-field==1.1.0
 django-storages==1.14.6
 django-stubs-ext==5.2.0
