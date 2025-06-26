@@ -126,11 +126,15 @@ def _zip_file_listing_generator(
             date_less_than=datetime.now(tz=UTC) + timedelta(days=1),
         )
         signed_url = signer.generate_presigned_url(bucket_url, policy=policy)
-        for image in qs.values(
-            "accession__blob", "accession__sponsored_blob", "public", "isic_id"
-        ).iterator():
+        for image in (
+            qs.values("accession__blob", "accession__sponsored_blob", "public", "isic_id")
+            .order_by()
+            .iterator()
+        ):
             if image["public"]:
-                url = storages["sponsored"].url(name=image["accession__sponsored_blob"])
+                # storages['sponsored'].url still goes through all of the presigning logic which
+                # significantly slows things down.
+                url = f"https://{storages['sponsored'].bucket_name}.s3.amazonaws.com/{image['accession__sponsored_blob']}"
                 zip_path = (
                     f"{image['isic_id']}.{extension_from_str(image['accession__sponsored_blob'])}"
                 )
@@ -150,9 +154,13 @@ def _zip_file_listing_generator(
         yield from (
             {
                 "url": image.blob.url,
-                "zipPath": f"{image.isic_id}.{image.extension}",
+                # image.extension requires downloading the blob, so use extension_from_str.
+                "zipPath": f"{image.isic_id}.{extension_from_str(image.blob.name)}",
             }
-            for image in qs.select_related("accession").iterator()
+            for image in qs.select_related("accession", "isic")
+            .only("public", "isic", "accession__blob", "accession__sponsored_blob")
+            .order_by()
+            .iterator()
         )
 
     # initialize files with metadata and attribution files
