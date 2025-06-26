@@ -3,7 +3,7 @@
 {% load static %}
 {% load localtime %}
 {% load markdownify %}
-{% load get_key %}
+{% load resonant_utils %}
 {% load humanize %}
 
 {% block title %}{{ doi.collection.name }} | {% endblock %}
@@ -129,11 +129,11 @@
             {% for license in licenses %}
               <div class="license-detail">
                 <div class="flex mb-2">
-                  <div class="mr-2"><img src="{% static license_paths|get_key:license %}" alt="{{ license }}" width="116" height="41" /></div>
+                  <div class="mr-2"><img src="{% static license_paths|get_item:license %}" alt="{{ license }}" width="116" height="41" /></div>
                   <div class="content-center font-bold">{{ license }}</div>
                 </div>
                 <div>
-                  <p class="text-xs">{{ license_descriptions|get_key:license }}</p>
+                  <p class="text-xs">{{ license_descriptions|get_item:license }}</p>
                 </div>
                 {% if not forloop.last %}
                   <div class="divider my-1"></div>
