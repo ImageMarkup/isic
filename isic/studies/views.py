@@ -75,8 +75,8 @@ def study_list(request):
             .values_list("study", "count")
         )
     else:
-        num_pending_tasks = None
-        num_completed_tasks = None
+        num_pending_tasks = {}
+        num_completed_tasks = {}
 
     return render(
         request,
