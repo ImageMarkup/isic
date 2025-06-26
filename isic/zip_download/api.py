@@ -63,20 +63,20 @@ class ZipDownloadBasicAuth(HttpBasicAuth):
 class ZipDownloadTokenAuth(APIKeyQuery):
     param_name = "token"
 
-    def authenticate(self, request: HttpRequest, key: str | None) -> dict:
+    def authenticate(self, request: HttpRequest, key: str | None) -> dict | None:
         if not key:
-            raise AuthenticationError
+            return None
 
         try:
             token_dict = TimestampSigner().unsign_object(key, max_age=timedelta(days=1))
         except BadSignature:
-            raise AuthenticationError from None
+            return None
 
         token_dict["token"] = key
         return token_dict
 
 
-def zip_api_auth(request: HttpRequest):
+def zip_api_auth(request: HttpRequest) -> bool:
     """
     Protects the zip listing endpoint with basic auth.
 
@@ -88,10 +88,10 @@ def zip_api_auth(request: HttpRequest):
     """
     # the default auth argument for ninja routes checks if ANY of the backends validate,
     # but we want to check that ALL of them validate.
-    if not ZipDownloadBasicAuth()(request):
-        return False
-
-    return ZipDownloadTokenAuth()(request)
+    return all((
+        ZipDownloadBasicAuth()(request),
+        ZipDownloadTokenAuth()(request),
+    ))
 
 
 @csrf_exempt
