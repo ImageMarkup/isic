@@ -1,4 +1,5 @@
 import pathlib
+from typing import Any
 
 import factory
 import factory.django
@@ -27,6 +28,7 @@ data_dir = pathlib.Path(__file__).parent / "data"
 class ContributorFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Contributor
+        skip_postgeneration_save = True
 
     institution_name = factory.Faker("sentence", nb_words=5, variable_nb_words=True)
     institution_url = factory.Faker("url")
@@ -93,6 +95,7 @@ class UnstructuredMetadataFactory(factory.django.DjangoModelFactory):
 class AccessionFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Accession
+        skip_postgeneration_save = True
 
     class Params:
         ingested = factory.Trait(
@@ -155,22 +158,25 @@ class AccessionFactory(factory.django.DjangoModelFactory):
     # https://github.com/pytest-dev/pytest-factoryboy/issues/67
 
     @factory.post_generation
-    def fq(self, create, extracted, **kwargs):
-        # fq__diagnosis
-        if not create:
+    def short_diagnosis(self, create: bool, extracted: Any, **kwargs: Any) -> None:  # noqa: FBT001
+        if extracted is None:
+            # Normal flow, no short_diagnosis provided.
             return
 
-        if "diagnosis" in kwargs:
-            extracted = kwargs.pop("diagnosis", None)
+        if extracted == "melanoma":
+            diagnosis = DiagnosisEnum.malignant_malignant_melanocytic_proliferations_melanoma_melanoma_invasive  # noqa: E501
+        elif extracted == "nevus":
+            diagnosis = DiagnosisEnum.benign_benign_melanocytic_proliferations_nevus_nevus_spitz
+        else:
+            raise ValueError(f"Unknown short_diagnosis: {extracted}")
+        if kwargs:
+            raise ValueError("Unknown additional arguments to short_diagnosis: {kwargs}")
 
-            if extracted == "melanoma":
-                extracted = DiagnosisEnum.malignant_malignant_melanocytic_proliferations_melanoma_melanoma_invasive  # noqa: E501
-            elif extracted == "nevus":
-                extracted = DiagnosisEnum.benign_benign_melanocytic_proliferations_nevus_nevus_spitz
+        for key, value in DiagnosisEnum.as_dict(diagnosis).items():
+            setattr(self, key, value)
 
-            if extracted:
-                for key, value in DiagnosisEnum.as_dict(extracted).items():
-                    setattr(self, key, value)
+        if create:
+            self.save()
 
 
 class AccessionReviewFactory(factory.django.DjangoModelFactory):
