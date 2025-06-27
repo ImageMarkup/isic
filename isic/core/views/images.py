@@ -164,7 +164,7 @@ def image_browser(request):
         limit=request.GET.get("limit", 30), cursor=request.GET.get("cursor")
     )
 
-    page = paginator.paginate_queryset(qs, cursor_input, request)
+    page = paginator.paginate_queryset(qs, pagination=cursor_input, request=request)
 
     if request.user.is_authenticated:
         addable_collections = collections.filter(locked=False)

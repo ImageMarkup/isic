@@ -42,5 +42,5 @@ class CacheableCloudFrontStorage(PreventRenamingMixin, S3Storage):
             return url
 
 
-class S3StaticStorage(PreventRenamingMixin, S3StaticStorage):
+class PreventRenamingS3StaticStorage(PreventRenamingMixin, S3StaticStorage):
     pass

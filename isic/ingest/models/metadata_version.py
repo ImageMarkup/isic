@@ -47,7 +47,7 @@ class MetadataVersion(models.Model):
         get_latest_by = "created"
 
     def __str__(self) -> str:
-        return self.id
+        return str(self.id)
 
     def diff(self, other: MetadataVersion):
         def _strip_root(key: str) -> str:

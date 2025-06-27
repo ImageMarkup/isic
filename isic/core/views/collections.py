@@ -172,7 +172,7 @@ def collection_detail(request, pk):
     if hasattr(collection, "cached_counts"):
         images = qs_with_hardcoded_count(images, ("created",), collection.cached_counts.image_count)
 
-    page = paginator.paginate_queryset(images, cursor_input, request)
+    page = paginator.paginate_queryset(images, pagination=cursor_input, request=request)
 
     contributors = get_visible_objects(
         request.user,

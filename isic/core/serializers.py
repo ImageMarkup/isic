@@ -72,7 +72,7 @@ class SearchQueryIn(Schema):
     def to_queryset(
         self, user: User | AnonymousUser, qs: QuerySet[Image] | None = None
     ) -> QuerySet[Image]:
-        qs = qs if qs is not None else cast(QuerySet[Image], Image.objects.all())
+        qs = qs if qs is not None else Image.objects.all()
 
         if self.query:
             qs = qs.from_search_query(self.query)  # type: ignore[attr-defined]

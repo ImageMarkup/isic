@@ -1,6 +1,5 @@
 import re
 
-from django.conf import settings
 from django.db import models
 from django_extensions.db.fields import CreationDateTimeField
 from django_extensions.db.models import TimeStampedModel
@@ -31,9 +30,9 @@ class IsicOAuthApplication(AbstractApplication):
         verbose_name = "ISIC OAuth application"
 
     def redirect_uri_allowed(self, uri):
-        if settings.ISIC_OAUTH_ALLOW_REGEX_REDIRECT_URIS:
-            for redirect_uri in self.redirect_uris.split():
-                if redirect_uri.startswith("^") and re.match(redirect_uri, uri):
-                    return True
+        """Allow regex matching, in addition to the normal behavior."""
+        for redirect_uri in self.redirect_uris.split():
+            if redirect_uri.startswith("^") and re.match(redirect_uri, uri):
+                return True
 
         return super().redirect_uri_allowed(uri)

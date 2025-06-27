@@ -41,9 +41,6 @@ def archive_statistics(duckdb_path: str, start_date: str, end_date: str):
 
     START_DATE and END_DATE are strings in the format YYYY-MM-DD.
     """
-    assert settings.ISIC_GOOGLE_API_JSON_KEY  # noqa: S101
-    assert settings.ISIC_GOOGLE_ANALYTICS_PROPERTY_IDS  # noqa: S101
-
     con = duckdb.connect(duckdb_path)
 
     # produce consumption numbers

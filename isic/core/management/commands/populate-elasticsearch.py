@@ -15,8 +15,8 @@ from isic.core.tasks import sync_elasticsearch_indices_task
 def populate_elasticsearch(chunk_size):
     es = get_elasticsearch_client()
 
-    es.indices.delete(index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX, ignore=[404])
-    es.indices.delete(index=settings.ISIC_ELASTICSEARCH_LESIONS_INDEX, ignore=[404])
+    es.indices.delete(index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX, ignore_unavailable=True)
+    es.indices.delete(index=settings.ISIC_ELASTICSEARCH_LESIONS_INDEX, ignore_unavailable=True)
 
     maybe_create_index(settings.ISIC_ELASTICSEARCH_IMAGES_INDEX, IMAGE_INDEX_MAPPINGS)
     maybe_create_index(settings.ISIC_ELASTICSEARCH_LESIONS_INDEX, LESION_INDEX_MAPPINGS)

@@ -30,6 +30,7 @@ def test_escaping_dict_writer():
     output.seek(0)
     reader = csv.DictReader(output)
 
+    assert reader.fieldnames
     for header in reader.fieldnames:
         assert not any(header.startswith(char) for char in FORBIDDEN_LEADING_CHARS)
 

@@ -103,7 +103,7 @@ def _validate_df_consistency(
                 # enum. only validate as much of the batch as we can. this isn't ideal but the
                 # alternative is to make MetadataRow more complicated and only optionally
                 # validate the rules regarding rcm/image_type.
-                ...
+                pass
             else:
                 batch_metadata_rows.append(batch_metadata_row)
 

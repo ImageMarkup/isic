@@ -15,9 +15,7 @@ class JsonKeys(Func):
     function = "jsonb_object_keys"
 
 
-def staff_image_metadata_csv(
-    *, qs: QuerySet[Image]
-) -> Generator[list[str] | dict[str, Any], None, None]:
+def staff_image_metadata_csv(*, qs: QuerySet[Image]) -> Generator[list[str] | dict[str, Any]]:
     """
     Generate a CSV of image metadata for staff users.
 
@@ -144,7 +142,7 @@ def staff_image_metadata_csv(
 
 def image_metadata_csv(
     *, qs: QuerySet[Image]
-) -> Generator[list[str] | dict[str, str | bool | float], None, None]:
+) -> Generator[list[str] | dict[str, str | bool | float]]:
     """
     Generate a CSV of image metadata for non-staff users.
 
