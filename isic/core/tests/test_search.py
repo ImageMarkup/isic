@@ -29,11 +29,11 @@ def searchable_images(image_factory, _search_index):
     images = [
         image_factory(
             public=True,
-            accession__fq__diagnosis="melanoma",
+            accession__short_diagnosis="melanoma",
         ),
         image_factory(
             public=False,
-            accession__fq__diagnosis="nevus",
+            accession__short_diagnosis="nevus",
         ),
     ]
     for image in images:
