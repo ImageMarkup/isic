@@ -98,7 +98,7 @@ def test_api_lesion_completeness(client, lesion_factory, image_factory):
     lesion = lesion_factory()
     image = image_factory(
         accession__lesion=lesion,
-        accession__fq__diagnosis="melanoma",
+        accession__short_diagnosis="melanoma",
         accession__acquisition_day=1,
         public=True,
     )
@@ -117,7 +117,7 @@ def test_api_lesion_completeness(client, lesion_factory, image_factory):
     # verify longitudinally_monitored
     image_factory(
         accession__lesion=lesion,
-        accession__fq__diagnosis="nevus",
+        accession__short_diagnosis="nevus",
         accession__acquisition_day=2,
         public=True,
     )
@@ -291,14 +291,14 @@ def test_lesion_diagnosis(
         accession__lesion=lesion,
         accession__concomitant_biopsy=accession_a.concomitant_biopsy,
         accession__acquisition_day=accession_a.acquisition_day,
-        accession__fq__diagnosis=accession_a.diagnosis,
+        accession__short_diagnosis=accession_a.diagnosis,
         accession__image_type=accession_a.image_type,
     )
     image_factory(
         accession__lesion=lesion,
         accession__concomitant_biopsy=accession_b.concomitant_biopsy,
         accession__acquisition_day=accession_b.acquisition_day,
-        accession__fq__diagnosis=accession_b.diagnosis,
+        accession__short_diagnosis=accession_b.diagnosis,
         accession__image_type=accession_b.image_type,
     )
 

@@ -11,14 +11,14 @@ from isic.core.models import Image
 @pytest.fixture
 def _random_images_with_licenses(image_factory):
     image = image_factory(
-        accession__fq__diagnosis="melanoma",
+        accession__short_diagnosis="melanoma",
         public=True,
     )
     image.accession.copyright_license = "CC-0"
     image.accession.save()
 
     image = image_factory(
-        accession__fq__diagnosis="nevus",
+        accession__short_diagnosis="nevus",
         public=True,
     )
     # TODO: factory boy overriding doesn't work for subfields of accession__cohort
