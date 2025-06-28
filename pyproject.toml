@@ -131,7 +131,6 @@ explicit = true
 
 [tool.uv.sources]
 gdal = { index = "large_image" }
-django-cachalot = { git = "https://github.com/noripyt/django-cachalot.git", rev = "8d5a1597e5dc0b516090e9056d48df2a2d6173d7" }
 
 [tool.ruff]
 line-length = 100
