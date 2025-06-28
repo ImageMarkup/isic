@@ -54,7 +54,7 @@ STORAGES.update(
             # (auto-detected from env vars), but we override some distinct options.
             "BACKEND": "isic.core.storages.minio.PreventRenamingMinioMediaStorage",
             "OPTIONS": {
-                "bucket_name": cast(str, env.str("DJANGO_ISIC_SPONSORED_BUCKET_NAME")),
+                "bucket_name": cast("str", env.str("DJANGO_ISIC_SPONSORED_BUCKET_NAME")),
                 # Make a public-readable bucket
                 "auto_create_policy": True,
                 "policy_type": Policy.read,

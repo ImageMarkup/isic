@@ -127,7 +127,7 @@ def validate_internal_consistency(
     return _validate_df_consistency(rows)
 
 
-def validate_archive_consistency(  # noqa: C901
+def validate_archive_consistency(
     rows: csv.DictReader, cohort: Cohort
 ) -> tuple[ColumnRowErrors, list[Problem]]:
     """
@@ -163,8 +163,7 @@ def validate_archive_consistency(  # noqa: C901
             This is sort of like Accession.metadata but for a single accession retrieved
             as a dict.
             """
-            if "original_blob_name" in accession_values:
-                del accession_values["original_blob_name"]
+            accession_values.pop("original_blob_name", None)
 
             for field in Accession.remapped_internal_fields:
                 if accession_values[f"{field.relation_name}__{field.internal_id_name}"]:

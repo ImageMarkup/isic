@@ -43,14 +43,14 @@ class Cohort(CreationSortedTimeStampedModel):
 
     name = models.CharField(
         max_length=255,
-        help_text=mark_safe(  # noqa: S308
+        help_text=mark_safe(
             "The name of your Cohort. "
             "<strong>This is private</strong>, and will "
             "not be published along with your images."
         ),
     )
     description = models.TextField(
-        help_text=mark_safe(  # noqa: S308
+        help_text=mark_safe(
             "The description of your Cohort."
             "<strong>This is private</strong>, and will not be published along "
             "with your images.<br />"

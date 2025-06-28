@@ -115,7 +115,7 @@ def generate_staff_image_list_metadata_csv(user_id: int) -> None:
 
         for metadata_row in image_csv:
             # the generator returns a narrowed type after the first element
-            metadata_row = cast(dict[str, str | bool | float], metadata_row)
+            metadata_row = cast("dict[str, str | bool | float]", metadata_row)
             writer.writerow(metadata_row)
 
     current_time = datetime.now(tz=UTC).strftime("%Y-%m-%d")

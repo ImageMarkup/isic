@@ -159,7 +159,7 @@ def upload_single_accession(request, cohort_pk):
                 messages.add_message(
                     request,
                     messages.SUCCESS,
-                    mark_safe("Accession uploaded."),  # noqa: S308
+                    mark_safe("Accession uploaded."),
                 )
                 return HttpResponseRedirect(reverse("upload/cohort-files", args=[cohort.pk]))
     else:
