@@ -3,17 +3,12 @@
 <div class="col accession-col" {% if review_mode %}x-data="accession({{ accession.id }});"{% endif %}>
   <div x-data="{ open: false, hovered: false }" class="pb-4">
     <a class="cursor-pointer">
-      {% if PLACEHOLDER_IMAGES %}
-        <img @mouseenter="hovered = true" @click="open = true" src="https://picsum.photos/seed/{{accession.id}}/256">
+      {% if accession.is_cog %}
+        <a href="{% url 'accession-cog-viewer' accession.id %}">
+          <img src="{{ accession.thumbnail_.url }}" />
+        </a>
       {% else %}
-        {% if accession.is_cog %}
-          <a href="{% url 'accession-cog-viewer' accession.id %}">
-            <img src="{{ accession.thumbnail_.url }}" />
-          </a>
-        {% else %}
-          <img @mouseenter="hovered = true" @click="open = true" src="{{ accession.thumbnail_.url }}" />
-        {% endif %}
-
+        <img @mouseenter="hovered = true" @click="open = true" src="{{ accession.thumbnail_.url }}" />
       {% endif %}
     </a>
 
