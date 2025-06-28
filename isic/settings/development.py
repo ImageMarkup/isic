@@ -68,13 +68,14 @@ MINIO_STORAGE_MEDIA_OBJECT_METADATA = {"Content-Disposition": "attachment"}
 
 ISIC_FAKE_STORAGE: str | None = env.str("DJANGO_ISIC_FAKE_STORAGE", default=None)
 if ISIC_FAKE_STORAGE == "proxy":
-    STORAGES["default"]["BACKEND"] = "isic.core.storages.minio.MinioS3ProxyStorage"
+    STORAGES["default"]["BACKEND"] = "isic.core.storages.minio.S3ProxyMinioStorage"
     STORAGES["default"]["OPTIONS"]["upstream_bucket_name"] = "isic-storage"
 
-    STORAGES["sponsored"]["BACKEND"] = "isic.core.storages.minio.MinioS3ProxyStorage"
+    STORAGES["sponsored"]["BACKEND"] = "isic.core.storages.minio.S3ProxyMinioStorage"
     STORAGES["sponsored"]["OPTIONS"]["upstream_bucket_name"] = "isic-archive"
 elif ISIC_FAKE_STORAGE == "placeholder":
-    ISIC_PLACEHOLDER_IMAGES = True
+    STORAGES["default"]["BACKEND"] = "isic.core.storages.minio.PlaceholderMinioStorage"
+    STORAGES["sponsored"]["BACKEND"] = "isic.core.storages.minio.PlaceholderMinioStorage"
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 

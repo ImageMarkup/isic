@@ -9,26 +9,20 @@
 
   <div @click.away="open = false" class="h-screen overflow-hidden max-w-max mx-auto p-8 transform transition-all" role="dialog" aria-modal="true" aria-labelledby="modal-headline">
     <div class="bg-white h-full relative p-8 rounded-lg text-left shadow-xl">
-      {% if PLACEHOLDER_IMAGES %}
-        <template x-if="hovered">
-          <img src="https://picsum.photos/seed/{{image.id}}/4000" class="max-h-full max-w-full w-auto mx-auto">
-        </template>
-      {% else %}
-        <template x-if="hovered">
-          {% if image.accession.is_cog %}
-            <div>
-              <div id="image-{{ image.id }}" style="width:512px; height:512px; border:1px solid #ccc;"></div>
-              <script type="text/javascript">
-                initializeCogViewer(document.getElementById('image-{{ image.id }}'), '{{ image.blob.url|safe }}');
-              </script>
-            </div>
-          {% else %}
-          {% comment %}Note the single quotes: https://github.com/alpinejs/alpine/issues/466{% endcomment %}
-            <img :src="'{{ image.blob.url }}'" />
-          {% endif %}
+      <template x-if="hovered">
+        {% if image.accession.is_cog %}
+          <div>
+            <div id="image-{{ image.id }}" style="width:512px; height:512px; border:1px solid #ccc;"></div>
+            <script type="text/javascript">
+              initializeCogViewer(document.getElementById('image-{{ image.id }}'), '{{ image.blob.url|safe }}');
+            </script>
+          </div>
+        {% else %}
+        {% comment %}Note the single quotes: https://github.com/alpinejs/alpine/issues/466{% endcomment %}
+          <img :src="'{{ image.blob.url }}'" />
+        {% endif %}
 
-        </template>
-      {% endif %}
+      </template>
 
       {% if include_metadata %}
         <div x-data="{selectedTab: 'Metadata'}">
