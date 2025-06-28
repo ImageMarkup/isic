@@ -36,6 +36,7 @@ api = NinjaAPI(
     version="v2",
     docs_url=None,  # we want to serve the docs next to the ninja root rather than under it
     auth=allow_any,
+    csrf=True,
     urls_namespace="api",
 )
 swagger_view = partial(openapi_view, api=api)
