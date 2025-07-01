@@ -74,6 +74,8 @@ class Question(TimeStampedModel):
                 label=self.prompt,
                 widget=DiagnosisPicker,
             )
+        else:
+            raise ValueError(f"Unknown question type: {self.type}")
 
     def choices_for_display(self):
         if self.type == self.QuestionType.DIAGNOSIS:
@@ -395,10 +397,11 @@ class Annotation(TimeStampedModel):
     def annotation_duration(self) -> timedelta | None:
         if self.start_time:
             return self.created - self.start_time
+        return None
 
 
 class ResponseQuerySet(models.QuerySet):
-    def for_display(self) -> Generator[dict[str, Any], None, None]:
+    def for_display(self) -> Generator[dict[str, Any]]:
         for response in (
             self.annotate(
                 value_answer=Cast(F("value"), CharField()),

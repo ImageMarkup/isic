@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 import random
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib import parse
 
 from django.conf import settings
@@ -11,8 +11,8 @@ from django.core.files import File
 from django.db import transaction
 from django.urls import reverse
 from django.utils.text import slugify
-import requests
 from requests.exceptions import HTTPError
+from requests_toolbelt.sessions import BaseUrlSession
 
 from isic.core.models.collection import Collection
 from isic.core.models.doi import Doi
@@ -28,6 +28,9 @@ from isic.core.tasks import (
     fetch_doi_schema_org_dataset_task,
 )
 from isic.core.views.doi import LICENSE_TITLES, LICENSE_URIS
+
+if TYPE_CHECKING:
+    from urllib.parse import ParseResult
 
 logger = logging.getLogger(__name__)
 
@@ -122,34 +125,48 @@ def collection_check_create_doi_allowed(
         raise ValidationError("A DOI can only have up to 10 supplemental files.")
 
 
-def _datacite_create_doi(doi: dict) -> None:
-    r = requests.post(
-        f"{settings.ISIC_DATACITE_API_URL}/dois",
-        auth=(settings.ISIC_DATACITE_USERNAME, settings.ISIC_DATACITE_PASSWORD),
-        timeout=5,
-        json=doi,
+def _datacite_session() -> BaseUrlSession:
+    api_url: ParseResult | None = settings.ISIC_DATACITE_API_URL
+    if api_url is None:
+        raise ValueError("ISIC_DATACITE_API_URL is not set.")
+
+    session = BaseUrlSession(
+        base_url=f"{api_url.scheme}://{api_url.hostname}"
+        + (f":{api_url.port}" if api_url.port else "")
     )
+    session.auth = (api_url.username, api_url.password)
+    return session
+
+
+def _datacite_create_doi(doi: dict) -> None:
+    with _datacite_session() as session:
+        resp = session.post(
+            "/dois",
+            json=doi,
+            timeout=5,
+        )
 
     try:
-        r.raise_for_status()
+        resp.raise_for_status()
     except HTTPError as e:
-        logger.exception("DOI draft creation failed: %s", r.json())
+        logger.exception("DOI draft creation failed: %s", resp.json())
         raise ValidationError("Something went wrong creating the DOI.") from e
 
 
 def _datacite_update_doi(doi: dict, doi_id: str):
-    doi_quoted = parse.quote(doi_id, safe="")  # escape the / for path
-    r = requests.put(
-        f"{settings.ISIC_DATACITE_API_URL}/dois/{doi_quoted}",
-        auth=(settings.ISIC_DATACITE_USERNAME, settings.ISIC_DATACITE_PASSWORD),
-        timeout=5,
-        json=doi,
-    )
+    # escape the / for path
+    doi_quoted = parse.quote(doi_id, safe="")
+    with _datacite_session() as session:
+        resp = session.put(
+            f"/dois/{doi_quoted}",
+            json=doi,
+            timeout=5,
+        )
 
     try:
-        r.raise_for_status()
+        resp.raise_for_status()
     except HTTPError as e:
-        logger.exception("DOI update failed: %s", r.json())
+        logger.exception("DOI update failed: %s", resp.json())
         raise ValidationError("Something went wrong publishing the DOI.") from e
 
 

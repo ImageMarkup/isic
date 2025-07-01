@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.db.models import Count
 from django.utils.safestring import mark_safe
-from girder_utils.admin import ReadonlyTabularInline
+from resonant_utils.admin import ReadonlyTabularInline
 
 from isic.core.models import Collection, Doi, GirderDataset, GirderImage, Image, ImageAlias
 from isic.core.models.segmentation import Segmentation, SegmentationReview

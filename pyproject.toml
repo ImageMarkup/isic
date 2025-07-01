@@ -1,6 +1,140 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "isic"
+version = "0.0.0"
+requires-python = ">=3.13"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+classifiers = ["Private :: Do Not Upload"]
+dependencies = [
+  # Runtime dependendencies, always needed
+  "bcrypt",
+  "celery",
+  "deepdiff",
+  "django[argon2]",
+  "django-allauth",
+  "django-auth-style",
+  "django-cachalot",
+  "django-click",
+  "django-cors-headers",
+  "django-environ",
+  "django-extensions",
+  "django-filter",
+  "django-json-widget",
+  "django-markdownify",
+  "django-ninja",
+  # v2 removed OOB support: https://github.com/jazzband/django-oauth-toolkit/pull/1124
+  "django-oauth-toolkit<2.0.0",
+  "django-redis",
+  "django-resonant-settings[allauth]",
+  "django-resonant-utils[s3_storage]",
+  "django-stubs-ext",
+  "django-widget-tweaks",
+  "gdal",
+  "google-analytics-data",
+  "elasticsearch",
+  "hashids",
+  "isic-metadata",
+  "jaro-winkler",
+  "numpy",
+  "pandas",
+  "Pillow",
+  "psycopg[binary]",
+  "pycountry",
+  "pydantic",
+  "pyexiv2",
+  "pyparsing",
+  "python-magic",
+  "redis",
+  "requests",
+  "requests-toolbelt",
+  "rich",
+  "tenacity",
+  "whitenoise[brotli]",
+  "zipfile-deflate64",
+  # Production-only
+  "django-s3-file-field[s3]",
+  "django-storages[s3]",
+  "gunicorn",
+  "sentry-sdk[celery,django,pure_eval]",
+]
+
+[project.optional-dependencies]
+development = [
+  # Runtime dependendencies, only needed with "development" settings
+  "django-browser-reload",
+  "django-debug-toolbar",
+  "django-minio-storage",
+  "django-resonant-utils[minio_storage]",
+  "django-s3-file-field[minio]",
+  "ipython",
+  "watchdog",
+  "werkzeug",
+]
+
+[dependency-groups]
+dev = [
+  # Additional developer tools
+  # The "dev" dependency group is installed by default,
+  # so use this to install "development" extras by default too
+  "isic[development]",
+  "tox",
+  "tox-uv",
+]
+lint = [
+  "djhtml",
+  "ruff",
+  "semgrep"
+]
+format = [
+  "djhtml",
+  "ruff",
+]
+type = [
+  "mypy",
+  "celery-types",
+  "django-stubs[compatible-mypy]",
+  "types-requests",
+]
+test = [
+  "factory-boy",
+  "hypothesis",
+  # https://github.com/pytest-dev/pytest-factoryboy/issues/232
+  "pytest<8.4.0",
+  "pytest-cov",
+  "pytest-django",
+  "pytest-factoryboy",
+  "pytest-lazy-fixtures",
+  "pytest-mock",
+  # Enable with "pytest --random-order ..."
+  "pytest-random-order",
+  # Enable with "pytest --count=... ..."
+  "pytest-repeat",
+]
+profile = [
+  "memray",
+  "pyinstrument",
+]
+
+[tool.hatch.build]
+packages = [
+  "isic",
+]
+
+[[tool.uv.index]]
+name = "large_image"
+url = "https://girder.github.io/large_image_wheels/"
+explicit = true
+
+[tool.uv.sources]
+gdal = { index = "large_image" }
+django-cachalot = { git = "https://github.com/noripyt/django-cachalot.git", rev = "8d5a1597e5dc0b516090e9056d48df2a2d6173d7" }
+
 [tool.ruff]
 line-length = 100
-target-version = "py312"
 extend-exclude = ["typings"]
 
 [tool.ruff.lint]
@@ -51,8 +185,13 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"isic/settings.py" = [
-  "FBT003", # boolean positional value
+"isic/settings/*" = [
+  "I001", # unsorted-imports
+  "F403", # undefined-local-with-import-star
+  "F405", # undefined-local-with-import-star-usage
+]
+"isic/settings/{development,testing}.py" = [
+  "S105", # hardcoded-password-string
 ]
 "scripts/**" = [
   "INP001", # File is part of an implicit namespace package
@@ -90,16 +229,53 @@ force-sort-within-sections = true
 convention = "pep257"
 
 [tool.mypy]
-disable_error_code = "var-annotated,return"
-ignore_missing_imports = true
-warn_unused_configs = true
+files = [
+  "isic",
+]
 check_untyped_defs = true
-plugins = ["mypy_django_plugin.main"]
-
-[[tool.mypy.overrides]]
-module = ["isic.core.pagination"]
-ignore_errors = true
+ignore_missing_imports = true
+show_error_codes = true
+warn_redundant_casts = true
+warn_unused_configs = true
+warn_unused_ignores = true
+plugins = [
+    "mypy_django_plugin.main",
+]
 
 [tool.django-stubs]
 django_settings_module = "isic.settings.testing"
-strict_settings = false
+
+[tool.pytest.ini_options]
+addopts = [
+  # Test utilies should be imported absolutely from the pythonpath,
+  # so use the Pytest-recommended "importlib" mode
+  "--import-mode=importlib",
+  "--strict-config",
+  "--strict-markers",
+  "--showlocals",
+  "--verbose",
+  # Specifying as "--ds" will override any value in the environment
+  "--ds=isic.settings.testing",
+  "--cov",
+  "--cov-report=html",
+]
+filterwarnings = [
+  "error",
+  # pytest often causes unclosed socket warnings
+  "ignore:unclosed <socket\\.socket:ResourceWarning",
+  # https://github.com/vitalik/django-ninja/issues/1245
+  "ignore:Support for class-based `config` is deprecated:pydantic.warnings.PydanticDeprecatedSince20",
+  "ignore:csrf argument is deprecated:DeprecationWarning:isic.urls",
+  "ignore:[\\w]+Factory\\._after_postgeneration will stop saving the instance:DeprecationWarning:factory.django",
+  # In test_publish_copies_default_attribution
+  "ignore:Unclosed file <tempfile\\.SpooledTemporaryFile:ResourceWarning",
+  # https://github.com/jazzband/django-widget-tweaks/pull/157
+  # Fixed with v1.5.1, but requires Django 5.2
+  "ignore:'maxsplit' is passed as positional argument:DeprecationWarning:widget_tweaks.templatetags.widget_tweaks",
+]
+
+[tool.coverage.run]
+source_pkgs = [
+  "isic",
+]
+branch = true

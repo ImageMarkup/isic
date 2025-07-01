@@ -3,26 +3,38 @@ services:
     build:
       context: .
       dockerfile: ./dev/django.Dockerfile
-    command: ["./manage.py", "runserver", "0.0.0.0:8000"]
-    # Log printing via Rich is enhanced by a TTY
+    command: [
+      "./manage.py",
+      "runserver_plus", "0.0.0.0:8000"
+    ]
+    # Log printing is enhanced by a TTY
     tty: true
-    env_file: ./dev/.env.docker-compose
+    environment:
+      UV_ENV_FILE: ./dev/.env.docker-compose
+    working_dir: /opt/django-project
     volumes:
       - .:/opt/django-project
+      - uv_cache:/var/cache/uv
     ports:
       - 8000:8000
     depends_on:
-      - postgres
-      - elasticsearch
-      - rabbitmq
-      - minio
-      - redis
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   celery:
     build:
       context: .
       dockerfile: ./dev/django.Dockerfile
     command: [
+      "uv", "run",
       "celery",
       "--app", "isic.celery",
       "worker",
@@ -31,35 +43,46 @@ services:
     ]
     # Docker Compose does not set the TTY width, which causes Celery errors
     tty: false
-    env_file: ./dev/.env.docker-compose
+    environment:
+      UV_ENV_FILE: ./dev/.env.docker-compose
+    working_dir: /opt/django-project
     volumes:
       - .:/opt/django-project
+      - uv_cache:/var/cache/uv
     depends_on:
-      - postgres
-      - elasticsearch
-      - rabbitmq
-      - minio
-      - redis
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   celerybeat:
     build:
       context: .
       dockerfile: ./dev/django.Dockerfile
     command: [
+      "uv", "run",
       "celery",
       "--app", "isic.celery",
       "beat",
       "--loglevel", "INFO"
     ]
     tty: false
-    env_file: ./dev/.env.docker-compose
+    environment:
+      UV_ENV_FILE: ./dev/.env.docker-compose
+    working_dir: /opt/django-project
     volumes:
       - .:/opt/django-project
+      - uv_cache:/var/cache/uv
     depends_on:
-      - postgres
-      - rabbitmq
-      - minio
-      - redis
+      rabbitmq:
+        condition: service_healthy
+
   node:
     build:
       context: .
@@ -69,5 +92,14 @@ services:
     volumes:
       - .:/opt/django-project
       - /opt/django-project/node_modules
+
+  zipstreamer:
+    image: ghcr.io/imagemarkup/isic-zipstreamer:master
+    environment:
+      ZS_LISTFILE_URL_PREFIX: "http://django/api/v2/zip-download/file-listing/?token="
+      ZS_LISTFILE_BASIC_AUTH: "insecurezipdownloadauthtoken"
     ports:
-      - 8383:8383
+      - 4008:4008
+
+volumes:
+  uv_cache:
