@@ -1,12 +1,10 @@
 from collections.abc import Mapping
-from contextlib import contextmanager
 from copy import deepcopy
 from functools import lru_cache
 import hashlib
 import logging
 from typing import Any, NotRequired, TypedDict, override
 
-from asgiref.local import Local
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser, User
 from django.core.cache import cache
@@ -90,19 +88,6 @@ LESION_INDEX_MAPPINGS = {
 }
 
 
-_search_storage = Local()
-
-
-@contextmanager
-def es_caching_disabled():
-    was_enabled = getattr(_search_storage, "es_caching_enabled", True)
-    _search_storage.es_caching_enabled = False
-    try:
-        yield
-    finally:
-        _search_storage.es_caching_enabled = was_enabled
-
-
 class InstrumentedTransport(Transport):
     """A transport that adds caching and retries to the base transport."""
 
@@ -124,9 +109,7 @@ class InstrumentedTransport(Transport):
         body: Any = None,
         **kwargs: Any,
     ) -> Any:
-        is_cacheable = getattr(_search_storage, "es_caching_enabled", True) and target.endswith(
-            ("/_count", "/_search")
-        )
+        is_cacheable = target.endswith(("/_count", "/_search"))
 
         if is_cacheable:
             cache_key = self._cache_key(method, target, body)
@@ -146,7 +129,7 @@ class InstrumentedTransport(Transport):
 @lru_cache
 def get_elasticsearch_client() -> "Elasticsearch":
     return Elasticsearch(
-        settings.ELASTICSEARCH_URL,
+        settings.ISIC_ELASTICSEARCH_URL.geturl(),
         transport_class=InstrumentedTransport,
     )
 

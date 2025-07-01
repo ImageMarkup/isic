@@ -7,7 +7,6 @@ from datetime import timedelta
 import gzip
 from io import BytesIO
 import itertools
-import json
 from types import SimpleNamespace
 import urllib.parse
 
@@ -38,9 +37,11 @@ def _get_analytics_client():
     from google.analytics.data_v1beta import BetaAnalyticsDataClient
     from google.oauth2 import service_account
 
-    assert settings.ISIC_GOOGLE_API_JSON_KEY  # noqa: S101
-    json_acct_info = json.loads(settings.ISIC_GOOGLE_API_JSON_KEY)
-    credentials = service_account.Credentials.from_service_account_info(json_acct_info)
+    if settings.ISIC_GOOGLE_API_JSON_KEY is None:
+        raise ValueError("ISIC_GOOGLE_API_JSON_KEY is not set.")
+    credentials = service_account.Credentials.from_service_account_info(
+        settings.ISIC_GOOGLE_API_JSON_KEY
+    )
     scoped_credentials = credentials.with_scopes(
         ["https://www.googleapis.com/auth/analytics.readonly"]
     )
@@ -100,12 +101,6 @@ def _country_from_iso_code(iso_code: str) -> dict:
     queue="stats-aggregation",
 )
 def collect_google_analytics_metrics_task():
-    if not settings.ISIC_GOOGLE_API_JSON_KEY:
-        logger.info(
-            "Skipping google analytics collection, ISIC_GOOGLE_API_JSON_KEY not configured."
-        )
-        return
-
     client = _get_analytics_client()
     num_sessions = 0
     sessions_per_country = []
@@ -134,7 +129,9 @@ def _cdn_log_objects(s3, after: str | None) -> Iterable[dict]:
     if after:
         kwargs["StartAfter"] = after
 
-    pages = s3.get_paginator("list_objects_v2").paginate(Bucket=settings.CDN_LOG_BUCKET, **kwargs)
+    pages = s3.get_paginator("list_objects_v2").paginate(
+        Bucket=settings.ISIC_CDN_LOG_BUCKET, **kwargs
+    )
     for page in pages:
         yield from page.get("Contents", [])
 
@@ -204,7 +201,7 @@ def process_s3_log_file_task(s3_log_object_key: str):
     s3 = _s3_client()
 
     try:
-        data = s3.get_object(Bucket=settings.CDN_LOG_BUCKET, Key=s3_log_object_key)
+        data = s3.get_object(Bucket=settings.ISIC_CDN_LOG_BUCKET, Key=s3_log_object_key)
     except s3.exceptions.NoSuchKey:
         # ignore the case where it was already processed and deleted by another task
         return
@@ -214,7 +211,7 @@ def process_s3_log_file_task(s3_log_object_key: str):
     _process_s3_log_file_task(log_file_bytes)
 
     delete = s3.delete_object(
-        Bucket=settings.CDN_LOG_BUCKET,
+        Bucket=settings.ISIC_CDN_LOG_BUCKET,
         Key=s3_log_object_key,
     )
 

@@ -30,99 +30,92 @@
 
       gtag('config', 'G-VBHRJSWF1T');
     </script>
-
-    {% if JS_BROWSER_SYNC %}
-      <script id="__bs_script__">//<![CDATA[
-        document.write("<script async src='//HOST:8383/browser-sync/browser-sync-client.js'><\/script>".replace("HOST", location.hostname));
-        //]]></script>
-    {% endif %}
-
     <script>
-    document.addEventListener('alpine:init', () => {
-      Alpine.store('accessions', {
-        items: {},
-        setReview(id, value) {
-          this.items[id] = value;
-        },
-        addItem(id) {
-          this.items[id] = null;
-        },
+      document.addEventListener('alpine:init', () => {
+        Alpine.store('accessions', {
+          items: {},
+          setReview(id, value) {
+            this.items[id] = value;
+          },
+          addItem(id) {
+            this.items[id] = null;
+          },
+        });
       });
-    });
 
-    const axiosSession = axios.create({
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': '{{ csrf_token }}'
-      }
-    });
-  </script>
-
-  <script type="text/javascript">
-    function quickfind() {
-      const controller = new AbortController();
-
-      return {
-        quickfindOpen: false,
-        findText: '',
-        results: {},
-        openQuickfindModal() {
-          this.$nextTick(() => this.$refs.quickfind.focus());
-          this.quickfindOpen = true;
-        },
-        closeQuickfindModal() {
-          this.quickfindOpen = false;
-        },
-        async performFind() {
-          if (this.findText.length < 3) {
-            this.results = {};
-            return;
-          }
-
-          const { data } = await axiosSession.get(`/api/v2/quickfind/?query=${this.findText}`, {
-            signal: controller.signal,
-          });
-          this.results = data;
-        }
-      }
-    }
-  </script>
-
-  <script type="text/javascript">
-    function downloadAsZip(params) {
-      params = params || Object.fromEntries((new URL(document.location)).searchParams);
-      console.log(params);
-
-      axios.post('/api/v2/zip-download/url/', params, {
+      const axiosSession = axios.create({
         headers: {
           'Content-Type': 'application/json',
           'X-CSRFToken': '{{ csrf_token }}'
         }
-      }).then((resp) => {
-        window.location.href = resp.data;
-      }).catch(function(error) {
-        alert('Something went wrong, try again.');
-        console.error(error);
       });
-    }
-  </script>
+    </script>
 
-  {% block head_extra %}{% endblock %}
-</head>
+    <script type="text/javascript">
+      function quickfind() {
+        const controller = new AbortController();
 
-<body x-data="quickfind()" @keydown.escape="closeQuickfindModal()">
-  {% include 'core/partials/navbar.html' %}
+        return {
+          quickfindOpen: false,
+          findText: '',
+          results: {},
+          openQuickfindModal() {
+            this.$nextTick(() => this.$refs.quickfind.focus());
+            this.quickfindOpen = true;
+          },
+          closeQuickfindModal() {
+            this.quickfindOpen = false;
+          },
+          async performFind() {
+            if (this.findText.length < 3) {
+              this.results = {};
+              return;
+            }
 
-  <div class="{% block container_class %}container max-w-7xl mx-auto p-8{% endblock %}">
-    {% if messages %}
-      {% include 'core/partials/messages.html' %}
-    {% endif %}
+            const { data } = await axiosSession.get(`/api/v2/quickfind/?query=${this.findText}`, {
+              signal: controller.signal,
+            });
+            this.results = data;
+          }
+        }
+      }
+    </script>
 
-    {% block content %}{% endblock %}
+    <script type="text/javascript">
+      function downloadAsZip(params) {
+        params = params || Object.fromEntries((new URL(document.location)).searchParams);
+        console.log(params);
 
-    {% include 'find/quickfind_modal.html' %}
-  </div>
+        axios.post('/api/v2/zip-download/url/', params, {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+          }
+        }).then((resp) => {
+          window.location.href = resp.data;
+        }).catch(function(error) {
+          alert('Something went wrong, try again.');
+          console.error(error);
+        });
+      }
+    </script>
 
-  <script type="module" src="https://unpkg.com/@github/time-elements@3.1.2?module"></script>
-</body>
+    {% block head_extra %}{% endblock %}
+  </head>
+
+  <body x-data="quickfind()" @keydown.escape="closeQuickfindModal()">
+    {% include 'core/partials/navbar.html' %}
+
+    <div class="{% block container_class %}container max-w-7xl mx-auto p-8{% endblock %}">
+      {% if messages %}
+        {% include 'core/partials/messages.html' %}
+      {% endif %}
+
+      {% block content %}{% endblock %}
+
+      {% include 'find/quickfind_modal.html' %}
+    </div>
+
+    <script type="module" src="https://unpkg.com/@github/time-elements@3.1.2?module"></script>
+  </body>
 </html>

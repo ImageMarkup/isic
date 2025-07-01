@@ -6,7 +6,7 @@ from typing import IO
 import zipfile_deflate64 as zipfile
 
 
-def _filtered_infolist(zip_file: zipfile.ZipFile) -> Generator[zipfile.ZipInfo, None, None]:
+def _filtered_infolist(zip_file: zipfile.ZipFile) -> Generator[zipfile.ZipInfo]:
     """Filter a ZipFile infolist to only include actual files."""
     for file_info in zip_file.infolist():
         if file_info.is_dir() or not file_info.filename:
@@ -30,7 +30,7 @@ def _base_file_name(path: str) -> str:
     return Path(path.replace("\\", "/")).name
 
 
-def file_names_in_zip(stream: IO[bytes]) -> Generator[str, None, None]:
+def file_names_in_zip(stream: IO[bytes]) -> Generator[str]:
     """Yield the base file names in a zip stream."""
     with zipfile.ZipFile(stream) as zip_file:
         for file_info in _filtered_infolist(zip_file):
@@ -44,7 +44,7 @@ class Blob:
     size: int
 
 
-def items_in_zip(stream: IO[bytes]) -> Generator[Blob, None, None]:
+def items_in_zip(stream: IO[bytes]) -> Generator[Blob]:
     """Yield the items in a zip stream."""
     with zipfile.ZipFile(stream) as zip_file:
         for file_info in _filtered_infolist(zip_file):

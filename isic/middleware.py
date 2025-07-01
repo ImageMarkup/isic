@@ -1,5 +1,8 @@
+from collections.abc import Callable
 import logging
+from typing import Any
 
+from django.http import HttpRequest, HttpResponseBase
 from ninja.operation import PathView
 from sentry_sdk import set_tag
 
@@ -16,7 +19,13 @@ class ExemptBearerAuthFromCSRFMiddleware:
     def __call__(self, request):
         return self.get_response(request)
 
-    def process_view(self, request, view_func, view_args, view_kwargs):
+    def process_view(
+        self,
+        request: HttpRequest,
+        view_func: Callable[..., HttpResponseBase],
+        view_args: tuple[Any, ...],
+        view_kwargs: dict[str, Any],
+    ) -> None:
         klass = getattr(view_func, "__self__", None)
         if klass and isinstance(klass, PathView):
             request._dont_enforce_csrf_checks = True  # noqa: SLF001

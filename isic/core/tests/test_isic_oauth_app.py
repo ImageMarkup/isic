@@ -4,13 +4,7 @@ import pytest
 from isic.core.models.base import IsicOAuthApplication
 
 
-@pytest.fixture
-def _oauth_allow_regex_redirect_uris(settings):
-    settings.ISIC_OAUTH_ALLOW_REGEX_REDIRECT_URIS = True
-
-
 @pytest.mark.django_db
-@pytest.mark.usefixtures("_oauth_allow_regex_redirect_uris")
 @pytest.mark.parametrize(
     ("uri", "allowed_uris", "allowed"),
     [

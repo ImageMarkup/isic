@@ -147,7 +147,7 @@ def update_metadata_task(user_pk: int, metadata_file_pk: int):
     metadata_file = MetadataFile.objects.get(pk=metadata_file_pk)
     user = User.objects.get(pk=user_pk)
 
-    def id_metadata_mapping() -> Generator[tuple[int, dict[str, str]], None, None]:
+    def id_metadata_mapping() -> Generator[tuple[int, dict[str, str]]]:
         with metadata_file.blob.open("rb") as blob:
             rows = MetadataFile.to_dict_reader(blob)
 

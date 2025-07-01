@@ -485,7 +485,7 @@ class Migration(migrations.Migration):
                         output_field=models.IntegerField(),
                     ),
                     rhs=models.Value(1),
-                ),  # type: ignore  # noqa: PGH003
+                ),
                 name="response_choice_or_value_check",
             ),
         ),
