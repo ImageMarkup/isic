@@ -1,3 +1,5 @@
+from typing import Any
+
 import factory
 import factory.django
 
@@ -44,6 +46,7 @@ class FeatureFactory(factory.django.DjangoModelFactory):
 class StudyFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Study
+        skip_postgeneration_save = True
 
     creator = factory.SubFactory(UserFactory)
 
@@ -54,32 +57,25 @@ class StudyFactory(factory.django.DjangoModelFactory):
     public = factory.Faker("boolean")
 
     @factory.post_generation
-    def owners(self, create, extracted, **kwargs):
-        owners = [self.creator] if extracted is None else extracted
-        for owner in owners:
-            self.owners.add(owner)
+    def owners(self, create: bool, extracted: Any, **kwargs: Any) -> None:  # noqa: FBT001
+        if not create:
+            return
+        if extracted is None:
+            # The creator is the default owner.
+            extracted = [self.creator]
+        self.owners.add(*extracted)
 
     @factory.post_generation
-    def features(self, create, extracted, **kwargs):
-        if not create:
-            # Simple build, do nothing.
+    def features(self, create: bool, extracted: Any, **kwargs: Any) -> None:  # noqa: FBT001
+        if not create or not extracted:
             return
-
-        if extracted:
-            # A list of features were passed in, use them
-            for feature in extracted:
-                self.features.add(feature)
+        self.features.add(*extracted)
 
     @factory.post_generation
-    def questions(self, create, extracted, **kwargs):
-        if not create:
-            # Simple build, do nothing.
+    def questions(self, create: bool, extracted: Any, **kwargs: Any) -> None:  # noqa: FBT001
+        if not create or not extracted:
             return
-
-        if extracted:
-            # A list of questions were passed in, use them
-            for question in extracted:
-                self.questions.add(question)
+        self.questions.add(*extracted)
 
 
 class StudyTaskFactory(factory.django.DjangoModelFactory):
