@@ -1,11 +1,33 @@
 from collections.abc import Callable
 
-from ninja.security import HttpBearer, django_auth
+from django.http import HttpRequest
+from ninja.errors import HttpError
+from ninja.operation import PathView
+from ninja.security import HttpBearer, SessionAuth
+from ninja.utils import check_csrf
 from oauth2_provider.oauth2_backends import get_oauthlib_core
 
 from isic.core.permissions import SessionAuthStaffUser
 
 ACCESS_PERMS = ["any", "is_authenticated", "is_staff"]
+
+
+class CsrfFixedSessionAuth(SessionAuth):
+    def _get_key(self, request: HttpRequest) -> str | None:
+        if self.csrf:
+            # Work around https://github.com/vitalik/django-ninja/issues/1068
+            # Maybe related https://github.com/vitalik/django-ninja/issues/1101
+            path_view: PathView = request.resolver_match.func.__self__
+            view_func = path_view._find_operation(request).view_func
+            # The upstream implementation doesn't send "view_func" to "check_csrf", so a
+            # "csrf_exempt" annotation can't be detected.
+            error_response = check_csrf(request, view_func)
+            if error_response:
+                raise HttpError(403, "CSRF check Failed")
+        return request.COOKIES.get(self.param_name)
+
+
+django_auth = CsrfFixedSessionAuth()
 
 
 class OAuth2AuthBearer(HttpBearer):
@@ -38,7 +60,8 @@ class OAuth2AuthBearer(HttpBearer):
             request.oauth2_error = getattr(r, "oauth2_error", {})
 
 
+# Always test OAuth2 before session auth, since OAuth2 doesn't have CSRF messiness.
 # The lambda _: True is to handle the case where a user doesn't pass any authentication.
-allow_any: list[Callable] = [django_auth, OAuth2AuthBearer("any"), lambda _: True]
-is_authenticated = [django_auth, OAuth2AuthBearer("is_authenticated")]
-is_staff = [SessionAuthStaffUser(), OAuth2AuthBearer("is_staff")]
+allow_any: list[Callable] = [OAuth2AuthBearer("any"), lambda _: True, django_auth]
+is_authenticated = [OAuth2AuthBearer("is_authenticated"), django_auth]
+is_staff = [OAuth2AuthBearer("is_staff"), SessionAuthStaffUser()]

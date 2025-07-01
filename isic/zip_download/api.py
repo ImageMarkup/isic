@@ -93,8 +93,8 @@ def zip_api_auth(request: HttpRequest):
     return ZipDownloadTokenAuth()(request)
 
 
-@csrf_exempt
 @zip_router.post("/url/", response=str, include_in_schema=False)
+@csrf_exempt
 def create_zip_download_url(request: HttpRequest, payload: SearchQueryIn):
     url: ParseResult | None = settings.ISIC_ZIP_DOWNLOAD_SERVICE_URL
     if url is None:
