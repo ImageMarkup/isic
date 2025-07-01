@@ -109,7 +109,7 @@ def collection_autocomplete(
 )
 def collection_detail(request, id: int) -> CollectionOut:
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
-    return get_object_or_404(qs, id=id)
+    return get_object_or_404(qs.distinct(), id=id)
 
 
 class CollectionShareIn(Schema):
@@ -119,7 +119,7 @@ class CollectionShareIn(Schema):
 @router.post("/{id}/share/", response={202: None, 404: dict, 403: dict}, include_in_schema=False)
 def collection_share_to_users(request, id: int, payload: CollectionShareIn):
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
-    collection = get_object_or_404(qs, id=id)
+    collection = get_object_or_404(qs.distinct(), id=id)
 
     if not request.user.is_staff:
         return 403, {"error": "You do not have permission to share this collection."}
@@ -142,7 +142,7 @@ def collection_share_to_users(request, id: int, payload: CollectionShareIn):
 )
 def collection_attribution_information(request, id: int) -> list[dict[str, int]]:
     qs = get_visible_objects(request.user, "core.view_collection")
-    collection = get_object_or_404(qs, id=id)
+    collection = get_object_or_404(qs.distinct(), id=id)
     images = get_visible_objects(request.user, "core.view_image", collection.images.distinct())
     counts = (
         Accession.objects.filter(image__in=images)
@@ -162,7 +162,7 @@ def collection_attribution_information(request, id: int) -> list[dict[str, int]]
 )
 def collection_populate_from_search(request, id: int, payload: SearchQueryIn):
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
-    collection = get_object_or_404(qs, id=id)
+    collection = get_object_or_404(qs.distinct(), id=id)
 
     if not request.user.has_perm("core.add_images", collection):
         return 403, {"error": "You do not have permission to add images to this collection."}
@@ -197,7 +197,7 @@ class IsicIdList(Schema):
 )
 def collection_populate_from_list(request, id, payload: IsicIdList):
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
-    collection = get_object_or_404(qs, id=id)
+    collection = get_object_or_404(qs.distinct(), id=id)
 
     if not request.user.has_perm("core.add_images", collection):
         return 403, {"error": "You do not have permission to add images to this collection."}
@@ -219,7 +219,7 @@ def collection_populate_from_list(request, id, payload: IsicIdList):
 )
 def remove_from_list(request, id, payload: IsicIdList):
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
-    collection = get_object_or_404(qs, id=id)
+    collection = get_object_or_404(qs.distinct(), id=id)
 
     if not request.user.has_perm("core.remove_images", collection):
         return 403, {"error": "You do not have permission to add images to this collection."}
