@@ -27,7 +27,7 @@ from isic.ingest.tests.factories import (
     ZipUploadFactory,
 )
 
-from .factories import ProfileFactory, UserFactory
+from .factories import EmailAddressFactory, ProfileFactory, UserFactory
 
 
 @pytest.fixture(autouse=True)
@@ -96,6 +96,7 @@ def s3ff_random_field_value(s3ff_field_value_factory):
 # this top-level conftest, since the factories have inter-app references.
 
 # Top-level factories
+register(EmailAddressFactory)
 register(ProfileFactory)
 register(UserFactory)
 

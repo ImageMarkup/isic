@@ -29,6 +29,20 @@ class ProfileFactory(factory.django.DjangoModelFactory):
 
 
 @factory.django.mute_signals(post_save)
+class EmailAddressFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = EmailAddress
+
+    user = factory.SubFactory(
+        "isic.factories.UserFactory",
+        email_address=None,
+    )
+    email = factory.SelfAttribute("user.email")
+    verified = True
+    primary = True
+
+
+@factory.django.mute_signals(post_save)
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = User
@@ -48,10 +62,10 @@ class UserFactory(factory.django.DjangoModelFactory):
         raw_password=factory.SelfAttribute("..raw_password"),
     )
 
+    email_address = factory.RelatedFactory(
+        EmailAddressFactory,
+        factory_related_name="user",
+    )
+
     class Params:
         raw_password = factory.Faker("password")
-
-    @factory.post_generation
-    def email_address(self, create, extracted, **kwargs):
-        if create:
-            EmailAddress.objects.create(user=self, email=self.email, verified=True, primary=True)
