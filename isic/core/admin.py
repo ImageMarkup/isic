@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.humanize.templatetags.humanize import intcomma
 from django.db.models import Count
-from django.utils.safestring import mark_safe
+from django.utils.html import format_html
 from resonant_utils.admin import ReadonlyTabularInline
 
 from isic.core.models import Collection, Doi, GirderDataset, GirderImage, Image, ImageAlias
@@ -115,7 +115,7 @@ class SegmentationAdmin(StaffReadonlyAdmin):
     @admin.display()
     def mask_thumbnail(self, obj):
         if obj.mask:
-            return mark_safe(f'<img src="{obj.mask.url}" width="256" height="256" />')  # noqa: S308
+            return format_html('<img src="{}" width="256" height="256" />', obj.mask.url)
 
 
 @admin.register(GirderDataset)
@@ -169,7 +169,7 @@ class ImageAdmin(StaffReadonlyAdmin):
 
     @admin.display()
     def thumbnail_image(self, obj):
-        return mark_safe(f'<img src="{obj.accession.thumbnail_256.url}" />')  # noqa: S308
+        return format_html('<img src="{}" />', obj.accession.thumbnail_256.url)
 
 
 @admin.register(ImageAlias)
