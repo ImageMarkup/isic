@@ -1,4 +1,9 @@
-from sentry_sdk._types import SamplingContext
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sentry_sdk._types import SamplingContext
 
 
 def get_sentry_performance_sample_rate(sampling_context: SamplingContext) -> float:
