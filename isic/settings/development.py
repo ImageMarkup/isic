@@ -51,12 +51,12 @@ INTERNAL_IPS = InternalIPS(env.list("DJANGO_INTERNAL_IPS", cast=str, default=["1
 STORAGES.update(
     {
         "default": {
-            "BACKEND": "isic.core.storages.minio.PreventRenamingMinioMediaStorage",
+            "BACKEND": "isic.core.storages.minio.IsicMinioMediaStorage",
         },
         "sponsored": {
             # Using a "MediaStorage" will reuse most of the settings for the default storage
             # (auto-detected from env vars), but we override some distinct options.
-            "BACKEND": "isic.core.storages.minio.PreventRenamingMinioMediaStorage",
+            "BACKEND": "isic.core.storages.minio.IsicMinioMediaStorage",
             "OPTIONS": {
                 "bucket_name": cast(str, env.str("DJANGO_ISIC_SPONSORED_BUCKET_NAME")),
                 "base_url": cast(
@@ -94,7 +94,6 @@ CACHALOT_TIMEOUT = 0
 # In development, always present the approval dialog
 OAUTH2_PROVIDER["REQUEST_APPROVAL_PROMPT"] = "force"
 
-ISIC_ZIP_DOWNLOAD_WILDCARD_URLS = False
 
 # suppress noisy cache invalidation log messages
 logging.getLogger("isic.core.signals").setLevel(logging.ERROR)
