@@ -20,6 +20,9 @@
         "ghcr.io/devcontainers-extra/features/heroku-cli:1": {},
         "ghcr.io/devcontainers/features/github-cli:1": {}
     },
+    "containerEnv": {
+        "HEROKU_APP": "isic"
+    },
     "customizations": {
         "vscode": {
             "extensions": [
