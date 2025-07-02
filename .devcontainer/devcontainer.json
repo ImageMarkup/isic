@@ -38,6 +38,9 @@
                 "python.analysis.autoImportCompletions": true,
                 "mypy.enabled": true,
                 "ruff.importStrategy": "fromEnvironment",
+                "python.analysis.ignore": [
+                    "isic"
+                ]
             }
         }
     },
