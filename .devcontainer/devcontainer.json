@@ -25,7 +25,7 @@
             "extensions": [
                 "matangover.mypy",
                 "ms-python.debugpy",
-                "ms-python.flake8",
+                "charliermarsh.ruff",
                 "ms-python.python",
                 "ms-python.vscode-pylance"
             ],
@@ -37,7 +37,7 @@
                 "python.testing.pytestEnabled": true,
                 "python.analysis.autoImportCompletions": true,
                 "mypy.enabled": true,
-                "flake8.importStrategy": "fromEnvironment"
+                "ruff.importStrategy": "fromEnvironment",
             }
         }
     },
