@@ -69,7 +69,7 @@ sentry_sdk.init(
             event_level=logging.WARNING,
         ),
         sentry_sdk.integrations.django.DjangoIntegration(),
-        sentry_sdk.integrations.celery.CeleryIntegration(),
+        sentry_sdk.integrations.celery.CeleryIntegration(monitor_beat_tasks=True),
         sentry_sdk.integrations.pure_eval.PureEvalIntegration(),
     ],
     # "project_root" defaults to the CWD, but for safety, don't assume that will be set correctly
