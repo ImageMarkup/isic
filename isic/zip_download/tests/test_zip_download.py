@@ -3,9 +3,8 @@ import json
 from urllib.parse import ParseResult, parse_qs, urlparse
 
 from django.conf import settings
+from django.core.files.storage import storages
 import pytest
-
-from isic.core.models import Image
 
 
 @pytest.fixture
@@ -97,13 +96,12 @@ def test_zip_download_listing(authenticated_client, zip_basic_auth):
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.usefixtures("_random_images_with_licenses")
-def test_zip_download_listing_wildcard_urls(
-    authenticated_client, zip_basic_auth, settings, image_factory, mocker, user
-):
-    # create a private image to ensure wildcard urls are only present for private images
-    image = image_factory(public=False)
-    # give the current user access to the image so it's included in the zip listing
-    image.accession.cohort.contributor.owners.add(user)
+def test_zip_download_listing_urls(authenticated_client, zip_basic_auth, image_factory, user):
+    # create both public and private images to test URL generation
+    private_image = image_factory(public=False)
+    public_image = image_factory(public=True)
+    # give the current user access to the private image so it's included in the zip listing
+    private_image.accession.cohort.contributor.owners.add(user)
 
     r = authenticated_client.post(
         "/api/v2/zip-download/url/",
@@ -114,21 +112,6 @@ def test_zip_download_listing_wildcard_urls(
     parsed_url = urlparse(r.json())
     token = parse_qs(parsed_url.query)["zsid"]
 
-    # Mock the CloudFrontSigner to return a predictable signature
-    settings.ISIC_ZIP_DOWNLOAD_WILDCARD_URLS = True
-
-    mock_storage = mocker.MagicMock()
-    mock_storage.cloudfront_key_id = "test"
-    mock_storage.custom_domain = "test.test"
-    mocker.patch("isic.zip_download.api.default_storage", mock_storage)
-
-    mocker.patch("isic.zip_download.api._cloudfront_signer", return_value="testsigner")
-    mocked_signer = mocker.MagicMock()
-    mocked_signer.generate_presigned_url = (
-        lambda url, policy: f"{url}?PretendPolicy=foo"  # noqa: ARG005
-    )
-    mocker.patch("isic.zip_download.api.CloudFrontSigner", return_value=mocked_signer)
-
     r = authenticated_client.get(
         "/api/v2/zip-download/file-listing/",
         data={"token": token[0]},
@@ -137,15 +120,18 @@ def test_zip_download_listing_wildcard_urls(
     output = json.loads(b"".join(r.streaming_content))
     assert r.status_code == 200, output
 
-    urls = [file["url"] for file in output["files"]]
+    files = output["files"]
 
-    for image in Image.objects.all():
-        if image.public:
-            assert any(url.endswith(image.blob.name) for url in urls)
-        else:
-            assert (
-                f"https://{mock_storage.custom_domain}/{image.blob.name}?PretendPolicy=foo" in urls
-            )
+    public_file = next(f for f in files if public_image.isic_id in f["zipPath"])
+    private_file = next(f for f in files if private_image.isic_id in f["zipPath"])
+
+    expected_public_url = storages["sponsored"].unsigned_url(
+        public_image.accession.sponsored_blob.name
+    )
+    expected_private_url = storages["default"].unsigned_url(private_image.accession.blob.name)
+
+    assert public_file["url"] == expected_public_url
+    assert private_file["url"] == expected_private_url
 
 
 @pytest.mark.django_db
