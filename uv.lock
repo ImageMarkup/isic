@@ -939,7 +939,7 @@ wheels = [
 [[package]]
 name = "gdal"
 version = "3.11.0"
-source = { registry = "https://girder.github.io/large_image_wheels/" }
+source = { registry = "https://girder.github.io/large_image_wheels" }
 wheels = [
     { url = "https://github.com/girder/large_image_wheels/raw/wheelhouse/GDAL-3.11.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:160cd084cfd927d0ede5732994cadebd0369b47d2eea25a0b421185a50d7408f" },
     { url = "https://github.com/girder/large_image_wheels/raw/wheelhouse/GDAL-3.11.0-cp313-cp313-manylinux_2_28_aarch64.whl", hash = "sha256:3ccff2ec22c4dbd1e0275e8b4c191cbfb3e8c772c62de46fb6874749e3b67113" },
@@ -1283,7 +1283,7 @@ requires-dist = [
     { name = "django-stubs-ext" },
     { name = "django-widget-tweaks" },
     { name = "elasticsearch" },
-    { name = "gdal", index = "https://girder.github.io/large_image_wheels/" },
+    { name = "gdal", index = "https://girder.github.io/large_image_wheels" },
     { name = "google-analytics-data" },
     { name = "gunicorn" },
     { name = "hashids" },
