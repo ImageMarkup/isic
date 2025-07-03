@@ -50,13 +50,8 @@ class ImageOut(ModelSchema):
 
     @staticmethod
     def resolve_files(image: Image) -> ImageFilesOut:
-        if settings.ISIC_PLACEHOLDER_IMAGES:
-            full_url = f"https://picsum.photos/seed/{image.id}/1000"
-            thumbnail_url = f"https://picsum.photos/seed/{image.id}/256"
-        else:
-            full_url = image.blob.url
-            thumbnail_url = image.thumbnail_256.url
-
+        full_url = image.blob.url
+        thumbnail_url = image.thumbnail_256.url
         full_size = image.accession.blob_size
         thumbnail_size = image.accession.thumbnail_256_size
 
