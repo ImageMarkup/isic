@@ -92,7 +92,7 @@ class SearchQueryIn(Schema):
         es_query: dict | None = None
         if self.query:
             # we know it can't be a Q object because we're using es_parser and not django_parser
-            es_query = cast(dict | None, parse_query(es_parser, self.query))
+            es_query = cast("dict | None", parse_query(es_parser, self.query))
 
         return build_elasticsearch_query(
             es_query or {},

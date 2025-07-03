@@ -61,11 +61,9 @@ class StudyTaskForm(forms.Form):
             ]
 
         # remove study/user from kwargs before passing to super
-        if "study" in kwargs:
-            del kwargs["study"]
+        kwargs.pop("study", None)
 
-        if "user" in kwargs:
-            del kwargs["user"]
+        kwargs.pop("user", None)
 
         super().__init__(*args, **kwargs)
         for question in questions:

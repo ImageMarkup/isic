@@ -29,15 +29,15 @@ STORAGES.update(
             "BACKEND": "isic.core.storages.s3.CacheableCloudFrontStorage",
             "OPTIONS": {
                 "bucket_name": AWS_STORAGE_BUCKET_NAME,
-                "custom_domain": cast(str, env.str("DJANGO_ISIC_STORAGE_CUSTOM_DOMAIN")),
-                "cloudfront_key_id": cast(str, env.str("DJANGO_ISIC_STORAGE_CLOUDFRONT_KEY_ID")),
-                "cloudfront_key": cast(str, env.str("DJANGO_ISIC_STORAGE_CLOUDFRONT_KEY")),
+                "custom_domain": cast("str", env.str("DJANGO_ISIC_STORAGE_CUSTOM_DOMAIN")),
+                "cloudfront_key_id": cast("str", env.str("DJANGO_ISIC_STORAGE_CLOUDFRONT_KEY_ID")),
+                "cloudfront_key": cast("str", env.str("DJANGO_ISIC_STORAGE_CLOUDFRONT_KEY")),
             },
         },
         "sponsored": {
             "BACKEND": "isic.core.storages.s3.PreventRenamingS3StaticStorage",
             "OPTIONS": {
-                "bucket_name": cast(str, env.str("DJANGO_ISIC_SPONSORED_BUCKET_NAME")),
+                "bucket_name": cast("str", env.str("DJANGO_ISIC_SPONSORED_BUCKET_NAME")),
             },
         },
     }
