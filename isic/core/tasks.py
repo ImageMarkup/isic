@@ -5,6 +5,7 @@ from typing import cast
 import uuid
 
 from celery import shared_task
+from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.cache import cache
@@ -19,6 +20,7 @@ from resonant_utils.storages import expiring_url
 from urllib3.exceptions import ConnectionError as Urllib3ConnectionError
 from urllib3.exceptions import TimeoutError as Urllib3TimeoutError
 
+from isic.core.health import run_all_health_checks
 from isic.core.models.collection import Collection
 from isic.core.models.doi import Doi
 from isic.core.models.image import Image
@@ -32,6 +34,8 @@ from isic.core.utils.csv import EscapingDictWriter
 from isic.ingest.models.accession import Accession
 from isic.ingest.models.lesion import Lesion
 from isic.ingest.services.publish import embed_iptc_metadata
+
+logger = get_task_logger(__name__)
 
 
 @shared_task(soft_time_limit=600, time_limit=610)
@@ -254,3 +258,16 @@ def regenerate_sponsored_blob(image_id: int):
             storages["sponsored"].bucket_name,
             f"thumbnails/{image.isic_id}_thumbnail.jpg",
         )
+
+
+@shared_task(soft_time_limit=300, time_limit=360)
+def run_health_checks_task():
+    results = run_all_health_checks()
+
+    for check in results:
+        if check.failed:
+            logger.warning(
+                "Health check failed: %s - %s",
+                check.name,
+                check.message,
+            )

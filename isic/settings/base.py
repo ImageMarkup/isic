@@ -159,6 +159,10 @@ CELERY_BEAT_SCHEDULE = {
             "expires": timedelta(seconds=60).total_seconds(),
         },
     },
+    "run-health-checks": {
+        "task": "isic.core.tasks.run_health_checks_task",
+        "schedule": crontab(minute="0", hour="0"),
+    },
 }
 CELERY_WORKER_MAX_MEMORY_PER_CHILD = 256 * 1024
 
