@@ -47,7 +47,6 @@ ISIC_ELASTICSEARCH_IMAGES_INDEX = "test-isic-images"
 ISIC_ELASTICSEARCH_LESIONS_INDEX = "test-isic-lesions"
 ISIC_USE_ELASTICSEARCH_COUNTS = False
 
-ISIC_ZIP_DOWNLOAD_WILDCARD_URLS = False
 
 # suppress noisy cache invalidation log messages
 logging.getLogger("isic.core.signals").setLevel(logging.ERROR)
