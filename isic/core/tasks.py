@@ -265,7 +265,7 @@ def run_health_checks_task():
     results = run_all_health_checks()
 
     for check in results:
-        if check.failed:
+        if not check.passed:
             logger.warning(
                 "Health check failed: %s - %s",
                 check.name,
