@@ -1,5 +1,7 @@
 import logging
 from secrets import randbelow
+from typing import cast
+from urllib.parse import ParseResult
 
 from minio_storage.policy import Policy
 
@@ -19,6 +21,18 @@ PASSWORD_HASHERS = [
 STORAGES["staticfiles"]["BACKEND"] = "whitenoise.storage.CompressedStaticFilesStorage"
 
 MINIO_STORAGE_MEDIA_BUCKET_NAME = f"test-django-storage-{randbelow(1_000_000):06d}"
+isic_sponsored_bucket_name = f"test-django-sponsored-{randbelow(1_000_000):06d}"
+isic_sponsored_media_url = cast(
+    ParseResult | None, env.url("DJANGO_ISIC_SPONSORED_MEDIA_URL", default=None)
+)
+isic_sponsored_base_url = (
+    # Form a URL with the sponsored bucket media URL host information,
+    # but with the ephemeral testing bucket name.
+    f"{isic_sponsored_media_url.scheme}://{isic_sponsored_media_url.netloc}"
+    f"/{isic_sponsored_bucket_name}"
+    if isic_sponsored_media_url
+    else None
+)
 STORAGES.update(
     {
         "default": {
@@ -27,7 +41,8 @@ STORAGES.update(
         "sponsored": {
             "BACKEND": "isic.core.storages.minio.PreventRenamingMinioMediaStorage",
             "OPTIONS": {
-                "bucket_name": f"test-django-sponsored-{randbelow(1_000_000):06d}",
+                "bucket_name": isic_sponsored_bucket_name,
+                "base_url": isic_sponsored_base_url,
                 "auto_create_policy": True,
                 "policy_type": Policy.read,
                 "presign_urls": False,
