@@ -55,6 +55,9 @@ STORAGES.update(
             "BACKEND": "isic.core.storages.minio.PreventRenamingMinioMediaStorage",
             "OPTIONS": {
                 "bucket_name": cast(str, env.str("DJANGO_ISIC_SPONSORED_BUCKET_NAME")),
+                "base_url": cast(
+                    str | None, env.str("DJANGO_ISIC_SPONSORED_MEDIA_URL", default=None)
+                ),
                 # Make a public-readable bucket
                 "auto_create_policy": True,
                 "policy_type": Policy.read,
