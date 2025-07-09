@@ -13,11 +13,11 @@
         "ghcr.io/robbert229/devcontainer-features/postgresql-client:1": {
             "version": 17
         },
+        "ghcr.io/devcontainers/features/git-lfs:1": {},
         "ghcr.io/nils-geistmann/devcontainers-features/zsh:0": {},
         "ghcr.io/devcontainers-extra/features/fish-apt-get:1": {},
-        // TODO does this also give the extension? :-/
-        //"ghcr.io/devcontainers/features/aws-cli:1": {},
         "ghcr.io/devcontainers-extra/features/heroku-cli:1": {},
+        "ghcr.io/devcontainers/features/aws-cli:1": {},
         "ghcr.io/devcontainers/features/github-cli:1": {}
     },
     "containerEnv": {
@@ -26,6 +26,8 @@
     "customizations": {
         "vscode": {
             "extensions": [
+                // this removes the extension the AWS feature adds, see https://github.com/devcontainers/features/issues/1228
+                "-AmazonWebServices.aws-toolkit-vscode",
                 "matangover.mypy",
                 "ms-python.debugpy",
                 "charliermarsh.ruff",
