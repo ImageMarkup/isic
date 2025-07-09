@@ -21,7 +21,8 @@
         "ghcr.io/devcontainers/features/github-cli:1": {}
     },
     "containerEnv": {
-        "HEROKU_APP": "isic"
+        "HEROKU_APP": "isic",
+        "DJANGO_RUNSERVERPLUS_SERVER_ADDRESS_PORT": "0.0.0.0:8000"
     },
     "customizations": {
         "vscode": {
