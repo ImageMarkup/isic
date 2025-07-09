@@ -37,6 +37,8 @@ DEBUG = True
 
 SECRET_KEY = "insecure-secret"
 
+RUNSERVERPLUS_SERVER_ADDRESS_PORT: str = env.str("DJANGO_RUNSERVERPLUS_SERVER_ADDRESS_PORT")
+
 # The ISIC ZIP download service will resolve "django" when running from Docker;
 # Otherwise, this can be unset, as the default is ["localhost", "127.0.0.1"]
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "django"]
