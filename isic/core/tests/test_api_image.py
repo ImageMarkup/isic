@@ -64,6 +64,7 @@ def test_api_image_urls_thumbnail_256(client, image_factory, image_file):
     assert image_url
 
     # "stream=True", as there's no need to download the actual response body
+    # TODO: image.blob.url is django-storage even though bucket is test-django-sponsored-511072
     storage_resp = requests.get(image_url, stream=True)
     assert storage_resp.status_code == 200
     # TODO: MinioStorage doesn't respect FieldFile.content_type, so there's no point to this
