@@ -275,9 +275,7 @@ ISIC_ZIP_DOWNLOAD_WILDCARD_URLS = True
 ISIC_CDN_LOG_BUCKET: str | None = env.str("DJANGO_ISIC_CDN_LOG_BUCKET", default=None)
 
 TEMPLATES[0]["OPTIONS"]["context_processors"] += [  # type: ignore[index]
-    "isic.core.context_processors.placeholder_images",
     "isic.core.context_processors.js_sentry",
     "isic.core.context_processors.citation_styles",
 ]
-ISIC_PLACEHOLDER_IMAGES = False
 ISIC_JS_SENTRY = False
