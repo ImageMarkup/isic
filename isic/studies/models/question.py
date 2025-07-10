@@ -9,9 +9,6 @@ from django_extensions.db.models import TimeStampedModel
 
 from isic.studies.widgets import DiagnosisPicker
 
-from .annotation import Annotation
-from .study import Study
-
 
 class Question(TimeStampedModel):
     class QuestionType(models.TextChoices):
@@ -72,10 +69,7 @@ class Question(TimeStampedModel):
             raise ValueError(f"Unknown question type: {self.type}")
 
     def save(self, **kwargs):
-        if (
-            self.pk
-            and Annotation.objects.filter(study__in=Study.objects.filter(questions=self)).exists()
-        ):
-            raise ValidationError("Can't modify the question, someone has already answered it.")
+        if self.pk and self.study_set.filter(annotations__isnull=False).exists():
+            raise ValidationError("Can't modify the question, it has already been answered.")
 
         return super().save(**kwargs)

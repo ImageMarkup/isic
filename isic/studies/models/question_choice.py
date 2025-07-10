@@ -2,9 +2,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 
-from .annotation import Annotation
 from .question import Question
-from .study import Study
 
 
 class QuestionChoice(TimeStampedModel):
@@ -20,8 +18,8 @@ class QuestionChoice(TimeStampedModel):
     def save(self, **kwargs):
         if (
             self.pk
-            and Annotation.objects.filter(
-                study__in=Study.objects.filter(question=self.question)
+            and Question.objects.filter(
+                pk=self.question_id, study__annotations__isnull=False
             ).exists()
         ):
             raise ValidationError(

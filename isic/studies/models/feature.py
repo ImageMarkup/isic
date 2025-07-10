@@ -3,9 +3,6 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 
-from .annotation import Annotation
-from .study import Study
-
 
 class Feature(TimeStampedModel):
     class Meta(TimeStampedModel.Meta):
@@ -23,10 +20,7 @@ class Feature(TimeStampedModel):
         return self.label
 
     def save(self, **kwargs):
-        if (
-            self.pk
-            and Annotation.objects.filter(study__in=Study.objects.filter(features=self)).exists()
-        ):
-            raise ValidationError("Can't modify the feature, someone has already annotated it.")
+        if self.pk and self.study_set.filter(annotations__isnull=False).exists():
+            raise ValidationError("Can't modify the feature, it has already been marked up.")
 
         return super().save(**kwargs)
