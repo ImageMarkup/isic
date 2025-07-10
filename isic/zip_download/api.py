@@ -23,6 +23,7 @@ from django.views.decorators.csrf import csrf_exempt
 from ninja import Router
 from ninja.errors import AuthenticationError
 from ninja.security import APIKeyQuery, HttpBasicAuth
+import orjson
 import rsa
 
 from isic.core.models import CopyrightLicense, Image
@@ -231,7 +232,8 @@ def zip_file_listing(
             if has_preceding_element:
                 yield b","
             has_preceding_element = True
-            yield json.dumps({"url": file["url"], "zipPath": file["zipPath"]}).encode()
+            # orjson yields a 7-10x performance improvement over json.dumps
+            yield orjson.dumps({"url": file["url"], "zipPath": file["zipPath"]})
 
         yield b"]}"
 
