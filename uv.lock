@@ -1338,7 +1338,7 @@ profile = [
 test = [
     { name = "factory-boy" },
     { name = "hypothesis" },
-    { name = "pytest", specifier = "<8.4.0" },
+    { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-django" },
     { name = "pytest-factoryboy" },
