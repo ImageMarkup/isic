@@ -102,8 +102,7 @@ type = [
 test = [
   "factory-boy",
   "hypothesis",
-  # https://github.com/pytest-dev/pytest-factoryboy/issues/232
-  "pytest<8.4.0",
+  "pytest",
   "pytest-cov",
   "pytest-django",
   "pytest-factoryboy",
