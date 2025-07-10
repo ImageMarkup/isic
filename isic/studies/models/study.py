@@ -7,11 +7,9 @@ from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
 from isic.core.models.collection import Collection
-from isic.core.utils.csv import EscapingDictWriter
 
 from .feature import Feature
 from .question import Question
-from .response import Response
 
 
 class StudyQuerySet(models.QuerySet):
@@ -66,15 +64,6 @@ class Study(TimeStampedModel):
 
     def get_absolute_url(self) -> str:
         return reverse("study-detail", args=[self.pk])
-
-    def write_responses_csv(self, stream) -> None:
-        fieldnames = ["image", "annotator", "annotation_duration", "question", "answer"]
-        writer = EscapingDictWriter(stream, fieldnames)
-
-        writer.writeheader()
-
-        for response in Response.objects.filter(annotation__study=self).for_display():
-            writer.writerow({field: response[field] for field in fieldnames})
 
     def clean(self):
         if self.public and not self.collection.public:
