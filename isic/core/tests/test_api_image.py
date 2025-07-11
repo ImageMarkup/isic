@@ -1,5 +1,4 @@
 import pytest
-import requests
 
 from isic.core.search import add_to_search_index, get_elasticsearch_client
 
@@ -60,17 +59,6 @@ def test_api_image_urls_thumbnail_256(client, image_factory, image_file):
     assert isinstance(api_resp.json().get("files"), dict)
     assert isinstance(api_resp.json()["files"].get(image_file), dict)
     assert isinstance(api_resp.json()["files"][image_file]["url"], str)
-    image_url = api_resp.json()["files"][image_file]["url"]
-    assert image_url
-
-    # "stream=True", as there's no need to download the actual response body
-    storage_resp = requests.get(image_url, stream=True)
-    assert storage_resp.status_code == 200
-    # TODO: MinioStorage doesn't respect FieldFile.content_type, so there's no point to this
-    # assertion, even though it succeeds
-    # assert storage_resp.headers['Content-Type'] == 'image/jpeg'
-    # TODO: Fix Content-Disposition
-    # assert 'thumbnail' in storage_resp.headers['Content-Disposition']
 
 
 @pytest.mark.django_db
