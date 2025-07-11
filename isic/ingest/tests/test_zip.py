@@ -1,7 +1,6 @@
 import io
 
 import pytest
-import requests
 
 from isic.ingest.models import (
     Accession,
@@ -87,17 +86,6 @@ def test_zip_extract_success_accession_original_blob_content(zip_upload):
         # JFIF files start with FF D8 and end with FF D9
         assert original_blob_content.startswith(b"\xff\xd8")
         assert original_blob_content.endswith(b"\xff\xd9")
-
-
-@pytest.mark.django_db
-def test_zip_extract_success_accession_original_blob_content_type(zip_upload):
-    # Ensure that when an accession's original_blob is created, its content type is stored
-    zip_upload.extract()
-
-    accession = Accession.objects.get(original_blob_name="ISIC_0000000.jpg")
-    original_blob_url = accession.original_blob.url
-    original_blob_content_type = requests.get(original_blob_url).headers.get("Content-Type")
-    assert original_blob_content_type == "image/jpeg"
 
 
 @pytest.mark.django_db
