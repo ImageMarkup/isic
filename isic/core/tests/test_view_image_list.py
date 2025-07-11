@@ -1,15 +1,13 @@
-import re
-
 from django.urls.base import reverse
 import pytest
-import requests
 
 from isic.core.models.image import Image
+import isic.core.tasks
 
 
 # needs a real transaction due to setting the isolation level
 @pytest.mark.django_db(transaction=True)
-def test_image_list_metadata_download_view(staff_client, mailoutbox, user, image: Image):
+def test_image_list_metadata_download_view(mocker, staff_client, mailoutbox, user, image: Image):
     image.accession.update_metadata(
         user,
         {
@@ -22,14 +20,15 @@ def test_image_list_metadata_download_view(staff_client, mailoutbox, user, image
         },
         ignore_image_check=True,
     )
+
+    spy = mocker.spy(isic.core.tasks, "expiring_url")
     r = staff_client.get(reverse("core/image-list-metadata-download"), follow=True)
     assert r.status_code == 200
 
     assert len(mailoutbox) == 1
-    csv_url = re.search(r"https?://[^\s]+", mailoutbox[0].body).group(0)  # type: ignore[union-attr]
-    r = requests.get(csv_url)
-    assert r.status_code == 200
-    actual = r.text
+    assert spy.call_count == 1
+    storage, key, _ = spy.call_args[0]
+    actual = storage.open(key).read().decode()
 
     expected_headers = [
         "original_filename",
