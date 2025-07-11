@@ -1,10 +1,9 @@
 from collections.abc import Generator, Iterable
 from contextlib import contextmanager
 import logging
-from pathlib import Path
 import shutil
 import tempfile
-from typing import BinaryIO
+from typing import IO
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -118,25 +117,25 @@ def accession_publish(
 
 @contextmanager
 def embed_iptc_metadata(
-    field_file: FieldFile, attribution: str, copyright_license: str, isic_id: str
-) -> Generator[BinaryIO]:
+    image_field_file: FieldFile, attribution: str, copyright_license: str, isic_id: str
+) -> Generator[IO[bytes]]:
     # embedding IPTC metadata is not supported for non JPG files at the moment
-    file_name = getattr(field_file, "name", "")
+    file_name = getattr(image_field_file, "name", "")
     if not file_name.lower().endswith(".jpg"):
-        with field_file.open("rb") as f:
-            yield f
+        with image_field_file.open("rb") as image_stream:
+            yield image_stream
         return
 
     # pyexiv2 operates on filenames directly, so we need to write to a temp file
-    with tempfile.NamedTemporaryFile() as temp_file:
-        shutil.copyfileobj(field_file.file, temp_file)
-        temp_file.flush()
+    with tempfile.NamedTemporaryFile() as image_temp_file_stream:
+        with image_field_file.open("rb") as image_stream:
+            shutil.copyfileobj(image_stream, image_temp_file_stream)
 
-        with pyexiv2.Image(temp_file.name) as tmp_image:
+        with pyexiv2.Image(image_temp_file_stream.name) as exiv_image:
             # trying to embed iptc metadata twice can run into weird errors around how our array
             # metadata is applied, so it's necessary to clear the metadata before re-embedding.
-            tmp_image.clear_iptc()
-            tmp_image.modify_iptc(
+            exiv_image.clear_iptc()
+            exiv_image.modify_iptc(
                 {
                     # https://iptc.org/std/photometadata/specification/IPTC-PhotoMetadata#credit-line
                     "Iptc.Application2.Credit": attribution,
@@ -148,8 +147,8 @@ def embed_iptc_metadata(
                     "Iptc.Envelope.CharacterSet": "\x1b%G",
                 }
             )
-            tmp_image.clear_xmp()
-            tmp_image.modify_xmp(
+            exiv_image.clear_xmp()
+            exiv_image.modify_xmp(
                 {
                     # https://iptc.org/std/photometadata/specification/IPTC-PhotoMetadata#title
                     "Xmp.dc.title": isic_id,
@@ -169,8 +168,9 @@ def embed_iptc_metadata(
                     "Xmp.plus.Licensor[1]/plus:LicensorName": "ISIC Archive",
                 }
             )
-        with Path(temp_file.name).open("rb") as f:
-            yield f
+
+        image_temp_file_stream.seek(0)
+        yield image_temp_file_stream
 
 
 def unembargo_image(*, image: Image) -> None:
