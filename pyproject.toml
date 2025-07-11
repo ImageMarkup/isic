@@ -264,7 +264,6 @@ filterwarnings = [
   "ignore:unclosed <socket\\.socket:ResourceWarning",
   # https://github.com/vitalik/django-ninja/issues/1245
   "ignore:Support for class-based `config` is deprecated:pydantic.warnings.PydanticDeprecatedSince20",
-  "ignore:csrf argument is deprecated:DeprecationWarning:isic.urls",
   "ignore:[\\w]+Factory\\._after_postgeneration will stop saving the instance:DeprecationWarning:factory.django",
   # In test_publish_copies_default_attribution
   "ignore:Unclosed file <tempfile\\.SpooledTemporaryFile:ResourceWarning",
