@@ -1,3 +1,4 @@
+import datetime
 import pathlib
 from typing import Any
 
@@ -185,7 +186,7 @@ class AccessionReviewFactory(factory.django.DjangoModelFactory):
 
     creator = factory.SubFactory(UserFactory)
     accession = factory.SubFactory(AccessionFactory)
-    reviewed_at = factory.Faker("date_time", tzinfo=factory.Faker("pytimezone"))
+    reviewed_at = factory.Faker("date_time", tzinfo=datetime.UTC)
     value = factory.Faker("boolean")
 
 
