@@ -23,8 +23,10 @@ class QuestionFactory(factory.django.DjangoModelFactory):
         model = Question
 
     prompt = factory.Faker("sentence")
-    type = factory.Faker("random_element", elements=[e[0] for e in Question.QuestionType.choices])
     official = factory.Faker("boolean")
+    # Make all questions a selection, since we're making choices
+    # TODO: Support other question types
+    type = Question.QuestionType.SELECT
 
     choices = factory.RelatedFactoryList(
         "isic.studies.tests.factories.QuestionChoiceFactory",
@@ -124,16 +126,23 @@ class ResponseFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Response
 
-    annotation = factory.SubFactory(AnnotationFactory)
+    annotation = factory.SubFactory(
+        AnnotationFactory,
+        study__questions=factory.List([factory.SelfAttribute(".....question")]),
+    )
     question = factory.SubFactory(QuestionFactory)
-    choice = factory.SubFactory(QuestionChoiceFactory)
-    value = factory.Faker("pyint")
+    choice = factory.LazyAttribute(lambda o: random.choice(o.question.choices.all()))
+    # QuestionFactory always generate choice questions, so the response has no "value"
+    value = None
 
 
 class MarkupFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Markup
 
-    annotation = factory.SubFactory(AnnotationFactory)
+    annotation = factory.SubFactory(
+        AnnotationFactory,
+        study__features=factory.List([factory.SelfAttribute(".....feature")]),
+    )
     feature = factory.SubFactory(FeatureFactory)
     present = factory.Faker("boolean")

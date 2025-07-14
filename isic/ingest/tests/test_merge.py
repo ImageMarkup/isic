@@ -8,9 +8,11 @@ from isic.core.models.collection import Collection
 from isic.core.models.doi import Doi
 from isic.core.services.collection import collection_merge_magic_collections
 from isic.core.services.collection.image import collection_add_images
+from isic.core.tests.factories import CollectionFactory
 from isic.ingest.models.cohort import Cohort
 from isic.ingest.services.cohort import cohort_merge
 from isic.ingest.services.contributor import contributor_merge
+from isic.studies.tests.factories import StudyFactory
 
 
 @pytest.fixture
@@ -153,12 +155,6 @@ def test_merge_cohorts_view(full_cohort, staff_client):
 
 
 @pytest.fixture
-def collection_with_studies(collection, study_factory):
-    study_factory(collection=collection)
-    return collection
-
-
-@pytest.fixture
 def collection_with_doi(collection, user):
     collection.doi = Doi.objects.create(
         id="10.1000/xyz123", creator=user, url="https://doi.org/10.1000/xyz123"
@@ -207,7 +203,6 @@ def test_merge_collections(full_collection):
 @pytest.mark.parametrize(
     ("unmergeable_collection", "error"),
     [
-        (lf("collection_with_studies"), "studies"),
         (lf("collection_with_doi"), "DOI"),
         (lf("collection_with_shares"), "shares"),
     ],
@@ -216,6 +211,18 @@ def test_merge_collections_unmergeable(collection, unmergeable_collection, error
     with pytest.raises(ValidationError, match=error):
         collection_merge_magic_collections(
             dest_collection=collection, src_collection=unmergeable_collection
+        )
+
+
+@pytest.mark.django_db
+def test_merge_collections_unmergeable_study():
+    src_collection = CollectionFactory.create()
+    StudyFactory.create(collection=src_collection)
+    dest_collection = CollectionFactory.create()
+
+    with pytest.raises(ValidationError, match="studies"):
+        collection_merge_magic_collections(
+            dest_collection=dest_collection, src_collection=src_collection
         )
 
 

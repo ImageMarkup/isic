@@ -26,16 +26,6 @@ from isic.ingest.tests.factories import (
     UnstructuredMetadataFactory,
     ZipUploadFactory,
 )
-from isic.studies.tests.factories import (
-    AnnotationFactory,
-    FeatureFactory,
-    MarkupFactory,
-    QuestionChoiceFactory,
-    QuestionFactory,
-    ResponseFactory,
-    StudyFactory,
-    StudyTaskFactory,
-)
 
 from .factories import ProfileFactory, UserFactory
 
@@ -119,13 +109,3 @@ register(IsicIdFactory)
 register(ImageFactory)
 register(CollectionFactory)
 register(DoiFactory)
-
-# studies factories
-register(QuestionFactory)
-register(QuestionChoiceFactory)
-register(FeatureFactory)
-register(StudyFactory)
-register(StudyTaskFactory)
-register(AnnotationFactory)
-register(ResponseFactory)
-register(MarkupFactory)

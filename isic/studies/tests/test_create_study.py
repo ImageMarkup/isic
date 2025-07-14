@@ -2,6 +2,7 @@ from django.urls.base import reverse
 import pytest
 
 from isic.studies.models import Study
+from isic.studies.tests.factories import QuestionFactory
 
 
 @pytest.mark.django_db
@@ -10,11 +11,11 @@ def test_create_study(
     authenticated_client,
     collection_factory,
     image_factory,
-    question,
     django_capture_on_commit_callbacks,
-):
+) -> None:
     collection = collection_factory(creator=user)
     collection.images.set([image_factory(public=True) for _ in range(10)])
+    question = QuestionFactory.create()
 
     with django_capture_on_commit_callbacks(execute=True):
         authenticated_client.post(
