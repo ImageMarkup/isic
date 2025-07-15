@@ -22,6 +22,7 @@ from django.utils import timezone
 from isic.core.models.image import Image
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.core.templatetags.display import user_nicename
+from isic.core.utils.csv import EscapingDictWriter
 from isic.studies.forms import (
     BaseStudyForm,
     CustomQuestionForm,
@@ -34,6 +35,7 @@ from isic.studies.models import (
     Markup,
     Question,
     QuestionChoice,
+    Response,
     Study,
     StudyTask,
 )
@@ -273,13 +275,21 @@ def study_detail(request, pk):
 @needs_object_permission("studies.view_study_results", (Study, "pk", "pk"))
 def study_responses_csv(request, pk):
     study: Study = get_object_or_404(Study, pk=pk)
+    study_responses = Response.objects.filter(annotation__study=study)
+
+    http_response = HttpResponse(content_type="text/csv")
     current_time = datetime.now(tz=UTC).strftime("%Y-%m-%d")
-    response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = (
+    http_response["Content-Disposition"] = (
         f'attachment; filename="{slugify(study.name)}_responses_{current_time}.csv"'
     )
-    study.write_responses_csv(response)
-    return response
+
+    fieldnames = ["image", "annotator", "annotation_duration", "question", "answer"]
+    writer = EscapingDictWriter(http_response, fieldnames)
+    writer.writeheader()
+    for study_responses_data in study_responses.for_display():
+        writer.writerow({field: study_responses_data[field] for field in fieldnames})
+
+    return http_response
 
 
 def maybe_redirect_to_next_study_task(request: HttpRequest, study: Study):
