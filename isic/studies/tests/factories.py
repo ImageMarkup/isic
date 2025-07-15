@@ -1,3 +1,6 @@
+import datetime
+import random
+
 import factory
 import factory.django
 
@@ -20,15 +23,23 @@ class QuestionFactory(factory.django.DjangoModelFactory):
         model = Question
 
     prompt = factory.Faker("sentence")
-    type = factory.Faker("random_element", elements=[e[0] for e in Question.QuestionType.choices])
     official = factory.Faker("boolean")
+    # Make all questions a selection, since we're making choices
+    # TODO: Support other question types
+    type = Question.QuestionType.SELECT
+
+    choices = factory.RelatedFactoryList(
+        "isic.studies.tests.factories.QuestionChoiceFactory",
+        factory_related_name="question",
+        size=lambda: random.randint(1, 5),
+    )
 
 
 class QuestionChoiceFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = QuestionChoice
 
-    question = factory.SubFactory(QuestionFactory)
+    question = factory.SubFactory(QuestionFactory, choices=[])
     text = factory.Faker("sentence")
 
 
@@ -37,7 +48,7 @@ class FeatureFactory(factory.django.DjangoModelFactory):
         model = Feature
 
     required = factory.Faker("boolean")
-    name = factory.Faker("sentence")
+    name = factory.Faker("words")
     official = factory.Faker("boolean")
 
 
@@ -71,7 +82,7 @@ class StudyFactory(factory.django.DjangoModelFactory):
                 self.features.add(feature)
 
     @factory.post_generation
-    def questions(self, create, extracted, **kwargs):
+    def questions(self, create, extracted, *, required: bool = False, **kwargs):
         if not create:
             # Simple build, do nothing.
             return
@@ -79,7 +90,8 @@ class StudyFactory(factory.django.DjangoModelFactory):
         if extracted:
             # A list of questions were passed in, use them
             for question in extracted:
-                self.questions.add(question)
+                # TODO: the required status should be settable per question
+                self.questions.add(question, through_defaults={"required": required})
 
 
 class StudyTaskFactory(factory.django.DjangoModelFactory):
@@ -96,27 +108,41 @@ class AnnotationFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Annotation
 
-    study = factory.SelfAttribute("task.study")
-    image = factory.SelfAttribute("task.image")
-    task = factory.SubFactory(StudyTaskFactory)
-    annotator = factory.SelfAttribute("task.annotator")
-    start_time = factory.Faker("date_time", tzinfo=factory.Faker("pytimezone"))
+    study = factory.SubFactory(StudyFactory)
+    image = factory.SubFactory(ImageFactory)
+    annotator = factory.SubFactory(UserFactory)
+
+    task = factory.SubFactory(
+        StudyTaskFactory,
+        study=factory.SelfAttribute("..study"),
+        image=factory.SelfAttribute("..image"),
+        annotator=factory.SelfAttribute("..annotator"),
+    )
+
+    start_time = factory.Faker("date_time", tzinfo=datetime.UTC)
 
 
 class ResponseFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Response
 
-    annotation = factory.SubFactory(AnnotationFactory)
+    annotation = factory.SubFactory(
+        AnnotationFactory,
+        study__questions=factory.List([factory.SelfAttribute(".....question")]),
+    )
     question = factory.SubFactory(QuestionFactory)
-    choice = factory.SubFactory(QuestionChoiceFactory)
-    value = factory.Faker("pyint")
+    choice = factory.LazyAttribute(lambda o: random.choice(o.question.choices.all()))
+    # QuestionFactory always generate choice questions, so the response has no "value"
+    value = None
 
 
 class MarkupFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Markup
 
-    annotation = factory.SubFactory(AnnotationFactory)
+    annotation = factory.SubFactory(
+        AnnotationFactory,
+        study__features=factory.List([factory.SelfAttribute(".....feature")]),
+    )
     feature = factory.SubFactory(FeatureFactory)
     present = factory.Faker("boolean")

@@ -4,6 +4,8 @@ from django.urls.base import reverse
 import pytest
 from pytest_lazy_fixtures import lf
 
+from isic.studies.tests.factories import StudyFactory, StudyTaskFactory
+
 if TYPE_CHECKING:
     from isic.core.models.image import Image
 
@@ -29,8 +31,6 @@ def test_core_image_detail(client_, image_, can_see):
 def detailed_image(
     image_factory,
     user_factory,
-    study_factory,
-    study_task_factory,
     collection_factory,
     public_reviewed_image_factory,
 ):
@@ -44,8 +44,8 @@ def detailed_image(
 
     private_collection = collection_factory(public=False, pinned=False)
     public_collection = collection_factory(public=True, pinned=True)
-    private_study = study_factory(public=False)
-    public_study = study_factory(public=True)
+    private_study = StudyFactory.create(public=False)
+    public_study = StudyFactory.create(public=True)
     main_image: Image = public_reviewed_image_factory()(
         accession__cohort__contributor__owners=[user],
     )
@@ -60,8 +60,8 @@ def detailed_image(
     private_collection.images.add(main_image)
     public_collection.images.add(main_image)
 
-    study_task_factory(annotator=user, study=public_study, image=main_image)
-    study_task_factory(annotator=user, study=private_study, image=main_image)
+    StudyTaskFactory.create(annotator=user, study=public_study, image=main_image)
+    StudyTaskFactory.create(annotator=user, study=private_study, image=main_image)
 
     return main_image
 
