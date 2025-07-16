@@ -215,7 +215,7 @@ class SupplementalFileInline(admin.TabularInline):
 @admin.register(Doi)
 class DoiAdmin(StaffReadonlyAdmin):
     list_select_related = ["collection"]
-    list_display = ["id", "url", "collection", "bundle", "num_supplemental_files"]
+    list_display = ["id", "external_url", "collection", "bundle", "num_supplemental_files"]
     inlines = [SupplementalFileInline]
 
     autocomplete_fields = ["creator"]
