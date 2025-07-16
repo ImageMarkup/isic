@@ -83,11 +83,11 @@
     <div class="my-2 p-4">
       <div x-show="selectedTab == 'Images'">
         {% include 'studies/partials/pagination.html' with page_obj=images %}
-        <div class="mb-4" x-data="thumbnailGrid();">
+        <div class="mb-4" x-data="thumbnailGrid">
           <div class="hidden pb-3 sm:flex sm:flex-row sm:justify-end">
-            <a class="px-1" href="#" @click="decrease();">fewer columns</a>
+            <a class="px-1" href="#" @click="decrease">fewer columns</a>
             |
-            <a class="px-1" href="#" @click="increase();">more columns</a>
+            <a class="px-1" href="#" @click="increase">more columns</a>
           </div>
           <div class="grid gap-4 grid-cols-2" :class="gridClassNames[numCols]">
             {% for image in images %}
@@ -96,7 +96,6 @@
           </div>
         </div>
         {% include 'studies/partials/pagination.html' with page_obj=images %}
-        {% include 'ingest/partials/thumbnail_grid_js.html' %}
       </div>
       <ul x-show="selectedTab == 'Questions'">
         {% for question in study.questions.all %}
