@@ -1,14 +1,13 @@
 from django.core.exceptions import ValidationError
 from django.urls import reverse
 import pytest
-from pytest_lazy_fixtures import lf
 
 from isic.core.models.base import CopyrightLicense
 from isic.core.models.collection import Collection
-from isic.core.models.doi import Doi
 from isic.core.services.collection import collection_merge_magic_collections
 from isic.core.services.collection.image import collection_add_images
-from isic.core.tests.factories import CollectionFactory
+from isic.core.tests.factories import CollectionFactory, DoiFactory
+from isic.factories import UserFactory
 from isic.ingest.models.cohort import Cohort
 from isic.ingest.services.cohort import cohort_merge
 from isic.ingest.services.contributor import contributor_merge
@@ -155,22 +154,6 @@ def test_merge_cohorts_view(full_cohort, staff_client):
 
 
 @pytest.fixture
-def collection_with_doi(collection, user):
-    collection.doi = Doi.objects.create(
-        id="10.1000/xyz123", creator=user, url="https://doi.org/10.1000/xyz123"
-    )
-    collection.save()
-    return collection
-
-
-@pytest.fixture
-def collection_with_shares(collection, user_factory):
-    user = user_factory()
-    collection.shares.add(user, through_defaults={"grantor": collection.creator})
-    return collection
-
-
-@pytest.fixture
 def full_collection(collection_factory, image_factory, cohort_factory):
     def _full_collection(*, public: bool):
         collection = collection_factory(public=public)
@@ -200,17 +183,27 @@ def test_merge_collections(full_collection):
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize(
-    ("unmergeable_collection", "error"),
-    [
-        (lf("collection_with_doi"), "DOI"),
-        (lf("collection_with_shares"), "shares"),
-    ],
-)
-def test_merge_collections_unmergeable(collection, unmergeable_collection, error):
-    with pytest.raises(ValidationError, match=error):
+def test_merge_collections_unmergeable_doi():
+    src_collection = CollectionFactory.create()
+    DoiFactory.create(collection=src_collection)
+    dest_collection = CollectionFactory.create()
+
+    with pytest.raises(ValidationError, match="DOI"):
         collection_merge_magic_collections(
-            dest_collection=collection, src_collection=unmergeable_collection
+            dest_collection=dest_collection, src_collection=src_collection
+        )
+
+
+@pytest.mark.django_db
+def test_merge_collections_unmergeable_shares():
+    src_collection = CollectionFactory.create()
+    user = UserFactory.create()
+    src_collection.shares.add(user, through_defaults={"grantor": src_collection.creator})
+    dest_collection = CollectionFactory.create()
+
+    with pytest.raises(ValidationError, match="shares"):
+        collection_merge_magic_collections(
+            dest_collection=dest_collection, src_collection=src_collection
         )
 
 

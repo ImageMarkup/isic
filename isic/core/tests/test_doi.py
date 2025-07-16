@@ -12,6 +12,7 @@ from isic.core.services.collection.doi import (
     collection_build_doi,
     collection_create_doi,
 )
+from isic.core.tests.factories import CollectionFactory, DoiFactory
 
 
 @pytest.fixture
@@ -69,18 +70,20 @@ def test_collection_create_doi(
 
 
 @pytest.mark.django_db
-def test_doi_form_requires_public_collection(private_collection, staff_user_request):
-    with pytest.raises(ValidationError):
-        collection_create_doi(user=staff_user_request.user, collection=private_collection)
+def test_doi_form_requires_public_collection(staff_user_request):
+    collection = CollectionFactory.create(public=False)
+
+    with pytest.raises(ValidationError, match="must be public"):
+        collection_create_doi(user=staff_user_request.user, collection=collection)
 
 
 @pytest.mark.django_db
-def test_doi_form_requires_no_existing_doi(public_collection, staff_user_request):
-    public_collection.doi = Doi.objects.create(id="foo", creator=staff_user_request.user, url="foo")
-    public_collection.save()
+def test_doi_form_requires_no_existing_doi(staff_user_request):
+    collection = CollectionFactory.create(public=True)
+    DoiFactory.create(collection=collection, creator=staff_user_request.user)
 
-    with pytest.raises(ValidationError):
-        collection_create_doi(user=staff_user_request.user, collection=public_collection)
+    with pytest.raises(ValidationError, match="already has a DOI"):
+        collection_create_doi(user=staff_user_request.user, collection=collection)
 
 
 @pytest.mark.django_db(transaction=True)
