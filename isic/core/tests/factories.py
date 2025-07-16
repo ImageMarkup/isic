@@ -46,4 +46,5 @@ class DoiFactory(factory.django.DjangoModelFactory):
         model = Doi
 
     slug = factory.Faker("slug")
+    collection = factory.SubFactory(CollectionFactory)
     creator = factory.SubFactory(UserFactory)

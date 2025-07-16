@@ -58,7 +58,7 @@ def collection_delete(*, collection: Collection, ignore_lock: bool = False) -> N
     if collection.studies.exists():
         raise ValidationError("Collections with derived studies cannot be deleted.")
 
-    if collection.has_doi:
+    if hasattr(collection, "doi"):
         raise ValidationError("Collections with DOIs cannot be deleted.")
 
     collection.delete()
@@ -131,7 +131,7 @@ def collection_merge_magic_collections(
         if hasattr(src_collection, "cohort") and src_collection.cohort != dest_collection.cohort:
             logger.info("Abandoning cohort %s", src_collection.cohort.pk)
 
-        for field in ["public", "pinned", "doi", "locked"]:
+        for field in ["public", "pinned", "locked"]:
             dest_collection_value = getattr(dest_collection, field)
             collection_value = getattr(src_collection, field)
             if dest_collection_value != collection_value:
