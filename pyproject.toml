@@ -60,7 +60,7 @@ dependencies = [
   "django-storages[s3]",
   "gunicorn",
   "sentry-sdk[celery,django,pure_eval]",
-  "orjson>=3.10.18",
+  "orjson",
 ]
 
 [project.optional-dependencies]
