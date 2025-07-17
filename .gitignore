@@ -16,7 +16,7 @@ db.sqlite3
 db.sqlite3-journal
 media
 
-isic/staticfiles/
+staticfiles/
 
 ### Django.Python Stack ###
 # Byte-compiled / optimized / DLL files

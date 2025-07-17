@@ -8,7 +8,7 @@ from .base import *
 # Import these afterwards, to override
 from resonant_settings.development.celery import *
 from resonant_settings.development.debug_toolbar import *
-from resonant_settings.testing.minio_storage import *
+from resonant_settings.development.minio_storage import *
 
 INSTALLED_APPS += [
     "debug_toolbar",
