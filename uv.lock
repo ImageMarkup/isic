@@ -1299,7 +1299,7 @@ requires-dist = [
     { name = "isic-metadata" },
     { name = "jaro-winkler" },
     { name = "numpy" },
-    { name = "orjson", specifier = ">=3.10.18" },
+    { name = "orjson" },
     { name = "pandas" },
     { name = "pillow" },
     { name = "psycopg", extras = ["binary"] },
