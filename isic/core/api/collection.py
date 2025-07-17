@@ -45,9 +45,10 @@ class AutocompleteQueryIn(Schema):
 class CollectionOut(ModelSchema):
     class Meta:
         model = Collection
-        fields = ["id", "name", "description", "public", "pinned", "locked", "doi"]
+        fields = ["id", "name", "description", "public", "pinned", "locked"]
 
-    doi_url: str | None = Field(alias="doi_url")
+    doi: str | None = Field(None, alias="doi.id")
+    doi_url: str | None = Field(None, alias="doi.external_url")
 
 
 @router.get(

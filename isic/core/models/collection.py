@@ -10,7 +10,6 @@ from django.db.models.query_utils import Q
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
-from .doi import Doi
 from .image import Image
 
 
@@ -83,8 +82,6 @@ class Collection(TimeStampedModel):
 
     pinned = models.BooleanField(default=False)
 
-    doi = models.OneToOneField(Doi, on_delete=models.PROTECT, null=True, blank=True)
-
     locked = models.BooleanField(default=False)
 
     objects = CollectionQuerySet.as_manager()
@@ -99,15 +96,6 @@ class Collection(TimeStampedModel):
     def is_magic(self) -> bool:
         """Magic collections are collections pointed to by a cohort."""
         return hasattr(self, "cohort")
-
-    @property
-    def has_doi(self) -> bool:
-        return self.doi is not None
-
-    @property
-    def doi_url(self):
-        if self.doi:
-            return f"https://doi.org/{self.doi}"
 
     @property
     def num_lesions(self):
