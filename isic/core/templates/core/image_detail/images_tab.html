@@ -1,9 +1,9 @@
 <div x-show="selectedTab == '{{ section_name }}'">
   <div class="bg-white shadow overflow-hidden sm:rounded-md">
-    <div class="mb-4" x-data="thumbnailGrid();">
+    <div class="mb-4" x-data="thumbnailGrid">
       <div class="hidden pb-3 sm:flex sm:flex-row sm:justify-end">
-        <a class="px-1" href="#" @click="decrease();">fewer columns</a> |
-        <a class="px-1" href="#" @click="increase();">more columns</a>
+        <a class="px-1" href="#" @click="decrease">fewer columns</a> |
+        <a class="px-1" href="#" @click="increase">more columns</a>
       </div>
       <div class="grid gap-4 grid-cols-2" :class="gridClassNames[numCols]">
         {% for image in images|slice:MAX_RELATED_SHOW_FIRST_N %}
@@ -15,7 +15,5 @@
         <div>Showing first {{ MAX_RELATED_SHOW_FIRST_N }} images.</div>
       {% endif %}
     </div>
-
-    {% include 'ingest/partials/thumbnail_grid_js.html' %}
   </div>
 </div>

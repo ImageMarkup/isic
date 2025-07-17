@@ -105,7 +105,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 STORAGES = {
     # Inject the "default" storage in particular run configurations
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": "isic.core.storages.static_files.JsModuleCompressedManifestStaticFilesStorage",
     },
 }
 

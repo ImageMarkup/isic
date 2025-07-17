@@ -1,0 +1,5 @@
+from whitenoise.storage import CompressedManifestStaticFilesStorage
+
+
+class JsModuleCompressedManifestStaticFilesStorage(CompressedManifestStaticFilesStorage):
+    support_js_module_import_aggregation = True
