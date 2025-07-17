@@ -41,7 +41,9 @@ class CreateDOIIn(Schema):
     include_in_schema=False,
 )
 def create_doi(request, payload: CreateDOIIn):
-    collection = get_object_or_404(Collection, id=payload.collection_id)
+    collection = get_object_or_404(
+        Collection.objects.select_related("doi"), pk=payload.collection_id
+    )
 
     if not request.user.is_staff:
         return 403, {"error": "You do not have permission to create a DOI."}
