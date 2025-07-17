@@ -28,7 +28,8 @@ def test_image_list_metadata_download_view(mocker, staff_client, mailoutbox, use
     assert len(mailoutbox) == 1
     assert spy.call_count == 1
     storage, key, _ = spy.call_args[0]
-    actual = storage.open(key).read().decode()
+    with storage.open(key) as f:
+        actual = f.read().decode()
 
     expected_headers = [
         "original_filename",
