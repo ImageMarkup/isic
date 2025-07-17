@@ -189,10 +189,11 @@ def test_validate_metadata_step1_ignores_bom(metadatafile_bom_filename_column) -
 def test_validate_metadata_step1_requires_filename_column(
     metadatafile_without_filename_column,
 ) -> None:
-    problems = validate_csv_format_and_filenames(
-        MetadataFile.to_dict_reader(metadatafile_without_filename_column.blob.open("rb")),
-        metadatafile_without_filename_column.cohort,
-    )
+    with metadatafile_without_filename_column.blob.open("rb") as f:
+        problems = validate_csv_format_and_filenames(
+            MetadataFile.to_dict_reader(f),
+            metadatafile_without_filename_column.cohort,
+        )
     assert len(problems) == 1
     assert "Unable to find a filename column" in problems[0].message
 
@@ -201,10 +202,11 @@ def test_validate_metadata_step1_requires_filename_column(
 def test_validate_metadata_step1_has_duplicate_filenames(
     metadatafile_duplicate_filenames,
 ) -> None:
-    problems = validate_csv_format_and_filenames(
-        MetadataFile.to_dict_reader(metadatafile_duplicate_filenames.blob.open("rb")),
-        metadatafile_duplicate_filenames.cohort,
-    )
+    with metadatafile_duplicate_filenames.blob.open("rb") as f:
+        problems = validate_csv_format_and_filenames(
+            MetadataFile.to_dict_reader(f),
+            metadatafile_duplicate_filenames.cohort,
+        )
     assert len(problems) == 2
     assert "Duplicate filenames" in problems[0].message
 
