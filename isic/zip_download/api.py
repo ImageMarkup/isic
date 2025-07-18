@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 import json
 import logging
 from pathlib import PurePosixPath
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from botocore.signers import CloudFrontSigner
 from django.conf import settings
@@ -76,7 +76,7 @@ class ZipDownloadTokenAuth(APIKeyQuery):
         return token_dict
 
 
-def zip_api_auth(request: HttpRequest) -> bool:
+def zip_api_auth(request: HttpRequest) -> Any:
     """
     Protects the zip listing endpoint with basic auth.
 
@@ -88,10 +88,10 @@ def zip_api_auth(request: HttpRequest) -> bool:
     """
     # the default auth argument for ninja routes checks if ANY of the backends validate,
     # but we want to check that ALL of them validate.
-    return all((
-        ZipDownloadBasicAuth()(request),
-        ZipDownloadTokenAuth()(request),
-    ))
+    if not ZipDownloadBasicAuth()(request):
+        return False
+
+    return ZipDownloadTokenAuth()(request)
 
 
 @csrf_exempt
