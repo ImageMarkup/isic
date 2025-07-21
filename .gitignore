@@ -1,5 +1,8 @@
 isic/core/static/core/dist/
 
+# VSCode settings
+.vscode/settings.json
+
 # Additional Celery Beat files
 celerybeat-schedule*
 
