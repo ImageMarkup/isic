@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     # Everything else
     "allauth",
     "allauth.account",
+    "allauth.idp.oidc",
     "allauth.socialaccount",
     "cachalot",
     "corsheaders",
@@ -279,3 +280,13 @@ TEMPLATES[0]["OPTIONS"]["context_processors"] += [  # type: ignore[index]
     "isic.core.context_processors.citation_styles",
 ]
 ISIC_JS_SENTRY = False
+
+
+# Django can persist logins for longer than this via cookies,
+# but non-refreshing clients will need to redirect to Django's auth every 24 hours.
+IDP_OIDC_ACCESS_TOKEN_EXPIRES_IN = timedelta(days=1).total_seconds()
+
+# Allow 5 minutes for a flow to exchange an auth code for a token. This is typically
+# 60 seconds but out-of-band flows may take a bit longer. A maximum of 10 minutes is
+# recommended: https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.
+IDP_OIDC_AUTHORIZATION_CODE_EXPIRES_IN = timedelta(minutes=5).total_seconds()
