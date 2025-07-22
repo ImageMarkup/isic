@@ -98,3 +98,8 @@ ISIC_ZIP_DOWNLOAD_WILDCARD_URLS = False
 
 # suppress noisy cache invalidation log messages
 logging.getLogger("isic.core.signals").setLevel(logging.ERROR)
+
+# Set the OIDC private key for the IDP to the (insecure) development key.
+IDP_OIDC_PRIVATE_KEY = (
+    Path(__file__).parents[2] / "dev" / "private_key_development.pem"
+).read_text()
