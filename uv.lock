@@ -692,21 +692,6 @@ wheels = [
 ]
 
 [[package]]
-name = "django-oauth-toolkit"
-version = "1.7.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "django" },
-    { name = "jwcrypto" },
-    { name = "oauthlib" },
-    { name = "requests" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/84/11/7841f88b6e200e49533307425271c356399319b35738aedb3fcb487afc3b/django-oauth-toolkit-1.7.1.tar.gz", hash = "sha256:37b690fa53f340c7391bdbc0fdbb32fd9ef8a7c012e72ee8754c331a2d7b4adb", size = 46685, upload-time = "2022-03-19T22:35:09.076Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/1b/1a/3a8332b8c507ae41491f6b049ff4521225eabca83032d2e67372d63d973b/django_oauth_toolkit-1.7.1-py3-none-any.whl", hash = "sha256:756e44421d0993f27705736b6c33a3d89018393859a31ac926296950f76e4433", size = 63199, upload-time = "2022-03-19T22:35:36.988Z" },
-]
-
-[[package]]
 name = "django-redis"
 version = "6.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1172,7 +1157,6 @@ dependencies = [
     { name = "django-json-widget" },
     { name = "django-markdownify" },
     { name = "django-ninja" },
-    { name = "django-oauth-toolkit" },
     { name = "django-redis" },
     { name = "django-resonant-settings", extra = ["allauth", "celery"] },
     { name = "django-resonant-utils", extra = ["s3-storage"] },
@@ -1276,7 +1260,6 @@ requires-dist = [
     { name = "django-markdownify" },
     { name = "django-minio-storage", marker = "extra == 'development'" },
     { name = "django-ninja" },
-    { name = "django-oauth-toolkit", specifier = "<2.0.0" },
     { name = "django-redis" },
     { name = "django-resonant-settings", extras = ["allauth", "celery"] },
     { name = "django-resonant-utils", extras = ["minio-storage"], marker = "extra == 'development'" },
@@ -1432,19 +1415,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/bf/ce/46fbd9c8119cfc3581ee5643ea49464d168028cfb5caff5fc0596d0cf914/jsonschema_specifications-2025.4.1.tar.gz", hash = "sha256:630159c9f4dbea161a6a2205c3011cc4f18ff381b189fff48bb39b9bf26ae608", size = 15513, upload-time = "2025-04-23T12:34:07.418Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/01/0e/b27cdbaccf30b890c40ed1da9fd4a3593a5cf94dae54fb34f8a4b74fcd3f/jsonschema_specifications-2025.4.1-py3-none-any.whl", hash = "sha256:4653bffbd6584f7de83a67e0d620ef16900b390ddc7939d56684d6c81e33f1af", size = 18437, upload-time = "2025-04-23T12:34:05.422Z" },
-]
-
-[[package]]
-name = "jwcrypto"
-version = "1.5.6"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "cryptography" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/e1/db/870e5d5fb311b0bcf049630b5ba3abca2d339fd5e13ba175b4c13b456d08/jwcrypto-1.5.6.tar.gz", hash = "sha256:771a87762a0c081ae6166958a954f80848820b2ab066937dc8b8379d65b1b039", size = 87168, upload-time = "2024-03-06T19:58:31.831Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/cd/58/4a1880ea64032185e9ae9f63940c9327c6952d5584ea544a8f66972f2fda/jwcrypto-1.5.6-py3-none-any.whl", hash = "sha256:150d2b0ebbdb8f40b77f543fb44ffd2baeff48788be71f67f03566692fd55789", size = 92520, upload-time = "2024-03-06T19:58:29.765Z" },
 ]
 
 [[package]]
