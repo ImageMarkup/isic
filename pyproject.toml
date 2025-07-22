@@ -15,7 +15,7 @@ dependencies = [
   "celery",
   "deepdiff",
   "django[argon2]",
-  "django-allauth",
+  "django-allauth[idp-oidc]>=65.10.0",
   "django-auth-style",
   "django-cachalot",
   "django-click",
