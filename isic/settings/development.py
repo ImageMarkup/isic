@@ -91,9 +91,6 @@ CACHES["default"]["TIMEOUT"] = 0
 # cachalot sets its own expiration time, so it needs to be set to 0 as well
 CACHALOT_TIMEOUT = 0
 
-# In development, always present the approval dialog
-OAUTH2_PROVIDER["REQUEST_APPROVAL_PROMPT"] = "force"
-
 ISIC_ZIP_DOWNLOAD_WILDCARD_URLS = False
 
 # suppress noisy cache invalidation log messages
