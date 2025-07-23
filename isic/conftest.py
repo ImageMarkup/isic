@@ -66,6 +66,11 @@ def authenticated_client(user):
 
 
 @pytest.fixture
+def nonstaff_user(user_factory):
+    return user_factory(is_staff=False)
+
+
+@pytest.fixture
 def staff_user(user_factory):
     return user_factory(is_staff=True)
 
