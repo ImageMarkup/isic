@@ -6,15 +6,12 @@
 
 {% block head_extra %}
   {{ block.super }}
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.26.0/axios.min.js" integrity="sha512-bPh3uwgU5qEMipS/VOmRqynnMXGGSRv+72H/N260MQeXZIK4PG48401Bsby9Nq5P5fz7hy5UGNmC/W1Z51h2GQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" integrity="sha256-9yRP/2EFlblE92vzCA10469Ctd0jT48HnmmMw5rJZrA=" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" integrity="sha256-zaSoHBhwFdle0scfGEFUCwggPN7F+ip9XRglo8IWb4w=" crossorigin="anonymous">
   <script src="{% static 'core/dist/cog.js' %}"></script>
   <link rel="stylesheet" href="{% static 'core/dist/ol.css' %}">
 {% endblock %}
 
 {% block content %}
-  <div x-data="collectionDetail()">
+  <div x-data="collectionDetail({{ collection.pk }})">
     <div class="flex justify-between">
       <div class="flex justify-items">
         <div class="heading-1">{{ collection.name }}</div>
@@ -30,7 +27,7 @@
     </template>
 
     <div id="detail-info">
-      <ul x-data="collectionAttributionInformation()">
+      <ul x-data="collectionAttributionInformation({{ collection.pk }})">
         <li>
           <span class="font-bold">Name:</span>
           {{ collection.name }}
@@ -55,7 +52,7 @@
         </li>
         <li>
           <span class="font-bold">Attribution:</span>
-          <a x-show="!fetched" href="#" @click.prevent="fetchMetaInformation()">
+          <a x-show="!fetched" href="#" @click.prevent="fetchMetaInformation">
             View
             <div x-show="loading" class="lds-ring"><div></div><div></div><div></div><div></div></div>
           </a>
@@ -145,17 +142,17 @@
           </span>
         </div>
         <div class="flex-none">
-          <button class="btn btn-sm btn-ghost" @click="resetImages('{% url 'core/collection-detail' collection.id %}')">Abort</button>
-          <button class="btn btn-sm btn-error" @click="deleteImages()">Remove</button>
+          <button class="btn btn-sm btn-ghost" @click="resetImages">Abort</button>
+          <button class="btn btn-sm btn-error" @click="deleteImages">Remove</button>
         </div>
       </div>
     {% endif %}
 
-    <div class="mb-4" x-data="thumbnailGrid();">
+    <div class="mb-4" x-data="thumbnailGrid">
       <div class="hidden pb-3 sm:flex sm:flex-row sm:justify-end">
-        <a class="px-1" href="#" @click="decrease();">fewer columns</a>
+        <a class="px-1" href="#" @click="decrease">fewer columns</a>
         |
-        <a class="px-1" href="#" @click="increase();">more columns</a>
+        <a class="px-1" href="#" @click="increase">more columns</a>
       </div>
       <div class="grid gap-4 grid-cols-2" :class="gridClassNames[numCols]">
         {% for image in images %}
@@ -169,56 +166,5 @@
     </div>
   </div>
   {% include 'studies/partials/cursor_pagination.html' %}
-
-  {% include 'ingest/partials/thumbnail_grid_js.html' %}
-  {% include 'core/partials/edit_collection_js.html' %}
-
   </div>
-
-  <script type="text/javascript">
-    function collectionDetail() {
-      return {
-        modalOpen: false,
-        errorMessage: '',
-        shareCollectionWithUsers() {
-          let _this = this; // eek
-
-          if ($('#user-selection').val().length === 0) {
-            _this.errorMessage = 'Please select at least one user to share the collection with.';
-            return;
-          }
-
-          if (confirm('Are you sure you want to grant additional access to this collection?')) {
-            axios.post('{% url "api:collection_share_to_users" collection.pk %}', {user_ids: $('#user-selection').val().map(function(n) { return parseInt(n) })}, {
-              headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-              }
-            }).then((resp) => {
-              window.location.reload();
-            }).catch(function(error) {
-              _this.errorMessage = error.response.data[0];
-            });
-          }
-        },
-      };
-    }
-
-    function collectionAttributionInformation() {
-      return {
-        attributions: [],
-        fetched: false,
-        loading: false,
-        fetchMetaInformation() {
-          const _this = this;
-          this.loading = true;
-          axios.get('{% url "api:collection_attribution_information" collection.pk %}').then((resp) => {
-            _this.attributions = resp.data;
-            _this.loading = false;
-            _this.fetched = true;
-          });
-        }
-      }
-    }
-  </script>
 {% endblock %}
