@@ -3,6 +3,8 @@ import json
 from urllib.parse import ParseResult, parse_qs, urlparse
 
 from django.conf import settings
+from django.core.signing import TimestampSigner
+from ninja.errors import AuthenticationError
 import pytest
 
 from isic.core.models import Image
@@ -46,6 +48,30 @@ def zip_basic_auth():
         "HTTP_AUTHORIZATION": "Basic "
         + b64encode(b":" + settings.ISIC_ZIP_DOWNLOAD_SERVICE_URL.password.encode()).decode()
     }
+
+
+@pytest.mark.django_db
+def test_zip_api_auth(mocker, authenticated_client, zip_basic_auth):
+    from isic.zip_download.api import zip_api_auth
+
+    token = TimestampSigner().sign_object({"token": "foo"})
+
+    request = mocker.MagicMock(
+        headers={"Authorization": "Basic " + b64encode(b":badcredentials").decode()}
+    )
+    with pytest.raises(AuthenticationError):
+        zip_api_auth(request)
+
+    request = mocker.MagicMock(
+        headers={"Authorization": zip_basic_auth["HTTP_AUTHORIZATION"]},
+        GET={"token": token},
+    )
+    assert zip_api_auth(request)
+
+    request = mocker.MagicMock(
+        headers={"Authorization": zip_basic_auth["HTTP_AUTHORIZATION"]}, GET={"token": "badtoken"}
+    )
+    assert not zip_api_auth(request)
 
 
 @pytest.mark.django_db(transaction=True)
