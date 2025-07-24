@@ -1,10 +1,13 @@
 from datetime import timedelta
+import secrets
 
+from allauth.idp.oidc.adapter import get_adapter
+from allauth.idp.oidc.models import Client, Token
 from django.test import RequestFactory
 from django.urls import path
 from django.utils import timezone
 from ninja import NinjaAPI
-from oauth2_provider.models import get_access_token_model, get_application_model
+from oauth2_provider.models import get_application_model
 import pytest
 
 from isic import auth
@@ -13,25 +16,29 @@ from isic.core.models.base import IsicOAuthApplication
 
 @pytest.fixture
 def oauth_app(user_factory):
-    user = user_factory()
-    return get_application_model().objects.create(
+    return Client.objects.create(
         name="Test Application",
-        redirect_uris="http://localhost",
-        user=user,
-        client_type=get_application_model().CLIENT_CONFIDENTIAL,
-        authorization_grant_type=get_application_model().GRANT_AUTHORIZATION_CODE,
+        scopes="openid",
+        type=Client.Type.PUBLIC,
+        grant_types=Client.GrantType.DEVICE_CODE,
+        redirect_uris="http://foo.com",
+        response_types="code",
+        skip_consent=False,
     )
 
 
 @pytest.fixture
 def oauth_token_factory(oauth_app):
     def f(user):
-        return get_access_token_model().objects.create(
+        token = secrets.token_hex(8)
+        oauth_app.token_set.create(
             user=user,
-            expires=timezone.now() + timedelta(seconds=300),
-            token="some-token",
-            application=oauth_app,
+            expires_at=timezone.now() + timedelta(seconds=300),
+            hash=get_adapter().hash_token(token),
+            type=Token.Type.ACCESS_TOKEN,
+            scopes=["openid"],
         )
+        return token
 
     return f
 
@@ -89,8 +96,7 @@ def test_oauth_api_endpoints(request):
 
 
 def get_bearer_token(user, oauth_token_factory):
-    token = oauth_token_factory(user)
-    return token.token
+    return oauth_token_factory(user)
 
 
 @pytest.mark.django_db
