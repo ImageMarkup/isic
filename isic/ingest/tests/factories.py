@@ -37,10 +37,13 @@ class ContributorFactory(factory.django.DjangoModelFactory):
     creator = factory.SubFactory(UserFactory)
 
     @factory.post_generation
-    def owners(self, create, extracted, **kwargs):
-        owners = [self.creator] if extracted is None else extracted
-        for owner in owners:
-            self.owners.add(owner)
+    def owners(self, create: bool, extracted: Any, **kwargs: Any) -> None:  # noqa: FBT001
+        if not create:
+            return
+        if extracted is None:
+            # The creator is the default owner.
+            extracted = [self.creator]
+        self.owners.add(*extracted)
 
 
 class CohortFactory(factory.django.DjangoModelFactory):
