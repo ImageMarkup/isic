@@ -1,24 +1,25 @@
-from collections.abc import Callable
+from collections.abc import Callable, Generator
+import contextlib
 from copy import deepcopy
 from dataclasses import dataclass
 import io
 import logging
 from mimetypes import guess_type
-from pathlib import Path, PurePosixPath
+from pathlib import PurePosixPath
 import tempfile
-from typing import Literal, TypeVar
+from typing import IO, Literal, TypeVar
 from uuid import uuid4
 
 from django.contrib.auth.models import User
 from django.contrib.postgres.constraints import ExclusionConstraint
 from django.core.exceptions import ValidationError
-from django.core.files import File
 from django.core.files.storage import storages
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models, transaction
 from django.db.models import Deferrable, FileField, FloatField, IntegerField, Transform
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.fields import Field
+from django.db.models.fields.files import FieldFile
 from django.db.models.functions import Cast, Round
 from django.db.models.query_utils import Q
 from isic_metadata.fields import ImageTypeEnum
@@ -26,6 +27,7 @@ from isic_metadata.metadata import MetadataRow
 import numpy as np
 from osgeo import gdal
 import PIL.Image
+import PIL.ImageFile
 import PIL.ImageOps
 from resonant_utils.files import field_file_to_local_path
 from s3_file_field import S3FileField
@@ -41,6 +43,12 @@ from isic.ingest.utils.zip import Blob
 from .zip_upload import ZipUpload
 
 logger = logging.getLogger(__name__)
+
+# Set a larger max size, to accommodate confocal images
+# This uses ~1.1GB of memory
+PIL.Image.MAX_IMAGE_PIXELS = 20_000 * 20_000 * 3
+
+gdal.UseExceptions()
 
 # Set the GDAL raster block cache to a maximum of 128MB. This is a value that
 # reduces memory usage without noticeably impacting performance for the typical mosaic.
@@ -203,15 +211,6 @@ class AccessionStatus(models.TextChoices):
     SKIPPED = "skipped", "Skipped"
     FAILED = "failed", "Failed"
     SUCCEEDED = "succeeded", "Succeeded"
-
-
-@dataclass
-class AccessionBlob:
-    blob: File
-    blob_size: int
-    height: int
-    width: int
-    is_cog: bool
 
 
 def sponsored_blob_storage():
@@ -500,20 +499,6 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
                 ret[field.name] = getattr(self, field.name)
         return ret
 
-    @staticmethod
-    def metadata_keys():
-        return [
-            field.name for field in Accession._meta.fields if hasattr(AccessionMetadata, field.name)
-        ]
-
-    @staticmethod
-    def is_color(img: PIL.Image.Image) -> bool:
-        return img.mode in {"RGB", "RGBA"}
-
-    @staticmethod
-    def meets_cog_threshold(img: PIL.Image.Image) -> bool:
-        return img.height * img.width > IMAGE_COG_THRESHOLD
-
     def get_diagnosis_display(self) -> str:
         diagnoses = [self.metadata.get(f"diagnosis_{i}") for i in range(1, 6)]
         if any(diagnoses):
@@ -521,110 +506,7 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
         else:
             return ""
 
-    def _generate_blob(self, img: PIL.Image.Image) -> AccessionBlob:
-        # Explicitly load the image, so any decoding errors can be caught
-        try:
-            img.load()
-        except OSError as e:
-            if "image file is truncated" in str(e):
-                raise InvalidBlobError("Blob appears truncated.") from e
-
-            # Any other errors are not expected, so re-raise them natively
-            raise
-
-        # rotate the image bytes according to the orientation tag, stripping it in the process
-        PIL.ImageOps.exif_transpose(img, in_place=True)
-
-        # Strip any alpha channel
-        if self.is_color(img):
-            img = img.convert("RGB")
-
-        with tempfile.SpooledTemporaryFile() as stripped_blob_stream:
-            output_format = "PNG" if img.format == "PNG" and not self.is_color(img) else "JPEG"
-            img.save(stripped_blob_stream, format=output_format)
-
-            stripped_blob_stream.seek(0, io.SEEK_END)
-            stripped_blob_size = stripped_blob_stream.tell()
-            stripped_blob_stream.seek(0)
-
-            blob_name = f"{uuid4()}.{'png' if output_format == 'PNG' else 'jpg'}"
-            accession_blob = AccessionBlob(
-                blob=InMemoryUploadedFile(
-                    file=stripped_blob_stream,
-                    field_name=None,
-                    name=blob_name,
-                    content_type=f"image/{output_format.lower()}",
-                    size=stripped_blob_size,
-                    charset=None,
-                ),
-                blob_size=stripped_blob_size,
-                height=img.height,
-                width=img.width,
-                is_cog=False,
-            )
-            self.blob = accession_blob.blob
-            Accession._meta.get_field("blob").pre_save(self, add=False)
-
-        return accession_blob
-
-    def _generate_blob_as_cog(self, img: PIL.Image.Image) -> AccessionBlob:
-        with (
-            field_file_to_local_path(self.original_blob) as original_blob_path,
-            tempfile.NamedTemporaryFile(delete=False) as cog_temp_file,
-        ):
-            gdal.UseExceptions()
-
-            src_ds = gdal.Open(original_blob_path)
-
-            gdal.Translate(
-                cog_temp_file.name,
-                src_ds,
-                options=gdal.TranslateOptions(
-                    format="COG",
-                    # rescale unsigned 16-bit png band to 8-bit
-                    outputType=gdal.GDT_Byte,
-                    scaleParams=[[0, 2**16 - 1, 0, 2**8 - 1]],
-                    creationOptions={
-                        "BLOCKSIZE": 256,
-                        "COMPRESS": "DEFLATE",
-                        "PREDICTOR": "YES",
-                        "LEVEL": "9",
-                        "BIGTIFF": "IF_SAFER",
-                        # Strip EXIF metadata
-                        "COPY_SRC_MDD": "NO",
-                    },
-                    resampleAlg=gdal.GRA_Lanczos,
-                ),
-            )
-
-            # necessary to close the src_ds (https://gis.stackexchange.com/a/80370)
-            del src_ds
-
-        blob_size = Path(cog_temp_file.name).stat().st_size
-        with Path(cog_temp_file.name).open("rb") as cog_stream:
-            blob_name = f"{uuid4()}.tif"
-            accession_blob = AccessionBlob(
-                blob=InMemoryUploadedFile(
-                    file=cog_stream,
-                    field_name=None,
-                    name=blob_name,
-                    content_type="image/tiff",
-                    size=blob_size,
-                    charset=None,
-                ),
-                blob_size=blob_size,
-                height=img.height,
-                width=img.width,
-                is_cog=True,
-            )
-            self.blob = accession_blob.blob
-            Accession._meta.get_field("blob").pre_save(self, add=False)
-
-        Path(cog_temp_file.name).unlink()
-
-        return accession_blob
-
-    def generate_blob(self):
+    def generate_blob(self):  # noqa: PLR0915
         """
         Generate `blob` and set related attributes.
 
@@ -634,34 +516,55 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
         try:
             with self.original_blob.open("rb") as original_blob_stream:
                 blob_mime_type = guess_mime_type(original_blob_stream, self.original_blob_name)
-            blob_major_mime_type = blob_mime_type.partition("/")[0]
-            if blob_major_mime_type != "image":
-                raise InvalidBlobError(  # noqa: TRY301
-                    f'Blob has a non-image MIME type: "{blob_mime_type}"'
+                if blob_mime_type.partition("/")[0] != "image":
+                    raise InvalidBlobError(  # noqa: TRY301
+                        f'Blob has a non-image MIME type: "{blob_mime_type}"'
+                    )
+
+                try:
+                    img = PIL.Image.open(original_blob_stream)
+                except PIL.Image.UnidentifiedImageError as e:
+                    raise InvalidBlobError("Blob cannot be recognized by PIL.") from e
+                self.height = img.height
+                self.width = img.width
+
+                is_rcm = img.mode.startswith("I;16")
+                if is_rcm:
+                    self.is_cog = self.meets_cog_threshold(img)
+                    if self.is_cog:
+                        converter = self._convert_blob_to_cog
+                        converted_blob_type = "image/tiff"
+                        converted_blob_extension = "tif"
+                    else:
+                        converter = self._convert_blob_to_png
+                        converted_blob_type = "image/png"
+                        converted_blob_extension = "png"
+                else:
+                    if self.meets_cog_threshold(img):
+                        raise InvalidBlobError("Blob is too large to be stored.")  # noqa: TRY301
+                    if not img.mode.startswith("RGB"):
+                        raise InvalidBlobError("Blob has non-RGB mode.")  # noqa: TRY301
+                    self.is_cog = False
+                    converter = self._convert_blob_to_rgb
+                    converted_blob_type = "image/jpeg"
+                    converted_blob_extension = "jpg"
+
+            with converter(self.original_blob) as converted_blob_stream:
+                converted_blob_name = f"{uuid4()}.{converted_blob_extension}"
+
+                converted_blob_stream.seek(0, io.SEEK_END)
+                self.blob_size = converted_blob_stream.tell()
+
+                self.blob = InMemoryUploadedFile(
+                    file=converted_blob_stream,
+                    field_name=None,
+                    name=converted_blob_name,
+                    content_type=converted_blob_type,
+                    size=self.blob_size,
+                    charset=None,
                 )
 
-            # Set a larger max size, to accommodate confocal images
-            # This uses ~1.1GB of memory
-            PIL.Image.MAX_IMAGE_PIXELS = 20_000 * 20_000 * 3
-            try:
-                img = PIL.Image.open(original_blob_stream)
-            except PIL.Image.UnidentifiedImageError as e:
-                raise InvalidBlobError("Blob cannot be recognized by PIL.") from e
-
-            if self.meets_cog_threshold(img):
-                if self.is_color(img):
-                    raise InvalidBlobError("Blob is too large to be stored.")  # noqa: TRY301
-
-                accession_blob = self._generate_blob_as_cog(img)
-            else:
-                accession_blob = self._generate_blob(img)
-
-            self.blob_size = accession_blob.blob_size
-            self.height = accession_blob.height
-            self.width = accession_blob.width
-            self.is_cog = accession_blob.is_cog
-
-            self.save(update_fields=["blob", "blob_size", "height", "width", "is_cog"])
+                self.save(update_fields=["blob", "blob_size", "height", "width", "is_cog"])
 
             self.generate_thumbnail()
         except InvalidBlobError:
@@ -679,58 +582,37 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
             self.status = AccessionStatus.SUCCEEDED
             self.save(update_fields=["status"])
 
-    def _cog_thumbnail(self) -> PIL.Image.Image:
-        """Extract an overview image from a COG to use as a thumbnail."""
-        if not self.is_cog:
-            raise ValueError("Cannot generate thumbnail for non-COG image")
-
-        with field_file_to_local_path(self.blob) as blob_path:
-            dataset = gdal.Open(blob_path)
-            band = dataset.GetRasterBand(1)
-            # exploit the fact that the second to last overview will always have one dimension
-            # that is exactly 256 pixels, making it suitable to pass to the PIL.Image.thumbnail
-            # function to process it identically to other images.
-            overview = band.GetOverview(band.GetOverviewCount() - 2)
-            img = PIL.Image.fromarray(overview.ReadAsArray())
-            del dataset
-            return img
-
     def generate_thumbnail(self) -> None:
-        if self.is_cog:
-            img = self._cog_thumbnail()
-        else:
-            with self.blob.open("rb") as blob_stream:
-                img = PIL.Image.open(blob_stream)
-                # Load the image so the stream can be closed
-                img.load()
+        converter = {
+            "jpg": self._convert_rgb_blob_to_thumbnail_image,
+            "png": self._convert_png_blob_to_thumbnail_image,
+            "tif": self._convert_cog_blob_to_thumbnail_image,
+        }[self.extension]
+        with converter(self.blob) as img:
+            # LANCZOS provides the best anti-aliasing
+            img.thumbnail((256, 256), resample=PIL.Image.Resampling.LANCZOS)
 
-        # handle 16-bit grayscale images (RCM tiles) by rescaling to 8-bit
-        if img.mode == "I;16":
-            img = PIL.Image.fromarray(np.right_shift(np.asarray(img), 8).astype(np.uint8))
+            with io.BytesIO() as thumbnail_stream:
+                # 75 quality uses ~55% as much space as 90 quality, with only a very slight drop in
+                # perceptible quality
+                img.save(thumbnail_stream, format="JPEG", quality=75, optimize=True)
 
-        # LANCZOS provides the best anti-aliasing
-        img.thumbnail((256, 256), resample=PIL.Image.LANCZOS)  # type: ignore[attr-defined]
+                thumbnail_stream.seek(0, io.SEEK_END)
+                self.thumbnail_256_size = thumbnail_stream.tell()
 
-        with io.BytesIO() as thumbnail_stream:
-            # 75 quality uses ~55% as much space as 90 quality, with only a very slight drop in
-            # perceptible quality
-            img.save(thumbnail_stream, format="JPEG", quality=75, optimize=True)
-            thumbnail_stream.seek(0)
-
-            self.thumbnail_256_size = thumbnail_stream.getbuffer().nbytes
-            self.thumbnail_256 = InMemoryUploadedFile(
-                file=thumbnail_stream,
-                field_name=None,
-                name=(
-                    f"{self.image.isic_id}_thumbnail_256.jpg"
-                    if hasattr(self, "image")
-                    else "thumbnail_256.jpg"
-                ),
-                content_type="image/jpeg",
-                size=self.thumbnail_256_size,
-                charset=None,
-            )
-            self.save(update_fields=["thumbnail_256", "thumbnail_256_size"])
+                self.thumbnail_256 = InMemoryUploadedFile(
+                    file=thumbnail_stream,
+                    field_name=None,
+                    name=(
+                        f"{self.image.isic_id}_thumbnail_256.jpg"
+                        if hasattr(self, "image")
+                        else "thumbnail_256.jpg"
+                    ),
+                    content_type="image/jpeg",
+                    size=self.thumbnail_256_size,
+                    charset=None,
+                )
+                self.save(update_fields=["thumbnail_256", "thumbnail_256_size"])
 
     @classmethod
     def from_blob(cls, blob: Blob):
@@ -751,10 +633,6 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
                 charset=None,
             ),
         )
-
-    @staticmethod
-    def _age_approx(age: int) -> int:
-        return int(round(age / 5.0) * 5)
 
     @property
     def age_approx(self) -> int | None:
@@ -932,3 +810,114 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
             raise Exception("unstructured_metadata is required")
 
         super().full_clean(*args, **kwargs)
+
+    @staticmethod
+    def _age_approx(age: int) -> int:
+        return int(round(age / 5.0) * 5)
+
+    @staticmethod
+    def metadata_keys():
+        return [
+            field.name for field in Accession._meta.fields if hasattr(AccessionMetadata, field.name)
+        ]
+
+    @staticmethod
+    def meets_cog_threshold(img: PIL.Image.Image) -> bool:
+        return img.height * img.width > IMAGE_COG_THRESHOLD
+
+    @staticmethod
+    def _ensure_pil_image(img: PIL.ImageFile.ImageFile) -> None:
+        """Explicitly load a PIL image's pixel data, so any decoding errors can be caught."""
+        try:
+            img.load()
+        except OSError as e:
+            if "image file is truncated" in str(e):
+                raise InvalidBlobError("Blob appears truncated.") from e
+            # Any other errors are not expected, so re-raise them natively
+            raise
+
+    @staticmethod
+    @contextlib.contextmanager
+    def _convert_blob_to_rgb(blob: FieldFile) -> Generator[IO[bytes]]:
+        img = PIL.Image.open(blob)
+        Accession._ensure_pil_image(img)
+
+        # rotate the image bytes according to the orientation tag, stripping it in the process
+        PIL.ImageOps.exif_transpose(img, in_place=True)
+
+        # Strip any alpha channel
+        stripped_img = img.convert("RGB")
+
+        with tempfile.SpooledTemporaryFile() as converted_blob_stream:
+            stripped_img.save(converted_blob_stream, format="JPEG")
+            yield converted_blob_stream
+
+    @staticmethod
+    @contextlib.contextmanager
+    def _convert_blob_to_png(blob: FieldFile) -> Generator[IO[bytes]]:
+        img = PIL.Image.open(blob)
+        Accession._ensure_pil_image(img)
+
+        with tempfile.SpooledTemporaryFile() as converted_blob_stream:
+            img.save(converted_blob_stream, format="PNG")
+            yield converted_blob_stream
+
+    @staticmethod
+    @contextlib.contextmanager
+    def _convert_blob_to_cog(blob: FieldFile) -> Generator[IO[bytes]]:
+        with tempfile.NamedTemporaryFile() as converted_blob_stream:
+            with (
+                field_file_to_local_path(blob) as blob_path,
+                gdal.Open(blob_path) as src_dataset,
+            ):
+                gdal.Translate(
+                    converted_blob_stream.name,
+                    src_dataset,
+                    options=gdal.TranslateOptions(
+                        format="COG",
+                        # rescale unsigned 16-bit png band to 8-bit
+                        outputType=gdal.GDT_Byte,
+                        scaleParams=[[0, 2**16 - 1, 0, 2**8 - 1]],
+                        creationOptions={
+                            "BLOCKSIZE": 256,
+                            "COMPRESS": "DEFLATE",
+                            "PREDICTOR": "YES",
+                            "LEVEL": "9",
+                            "BIGTIFF": "IF_SAFER",
+                            # Strip EXIF metadata
+                            "COPY_SRC_MDD": "NO",
+                        },
+                        resampleAlg=gdal.GRA_Lanczos,
+                    ),
+                )
+            yield converted_blob_stream
+
+    @staticmethod
+    @contextlib.contextmanager
+    def _convert_rgb_blob_to_thumbnail_image(blob: FieldFile) -> Generator[PIL.Image.Image]:
+        with blob.open("rb") as blob_stream:
+            yield PIL.Image.open(blob_stream)
+
+    @staticmethod
+    @contextlib.contextmanager
+    def _convert_png_blob_to_thumbnail_image(blob: FieldFile) -> Generator[PIL.Image.Image]:
+        with blob.open("rb") as blob_stream:
+            img = PIL.Image.open(blob_stream)
+
+            if img.mode != "I;16":
+                raise InvalidBlobError("Blob has 16-bit non-standard endianness.")
+
+            yield PIL.Image.fromarray(np.right_shift(np.asarray(img), 8).astype(np.uint8))
+
+    @staticmethod
+    @contextlib.contextmanager
+    def _convert_cog_blob_to_thumbnail_image(blob: FieldFile) -> Generator[PIL.Image.Image]:
+        """Extract an overview image from a COG to use as a thumbnail."""
+        with field_file_to_local_path(blob) as blob_path, gdal.Open(blob_path) as src_dataset:
+            band = src_dataset.GetRasterBand(1)
+            # exploit the fact that the second to last overview will always have one dimension
+            # that is exactly 256 pixels, making it suitable to pass to the PIL.Image.thumbnail
+            # function to process it identically to other images.
+            overview = band.GetOverview(band.GetOverviewCount() - 2)
+            img = PIL.Image.fromarray(overview.ReadAsArray())
+            yield img
