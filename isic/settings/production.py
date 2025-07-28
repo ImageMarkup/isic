@@ -63,6 +63,7 @@ sentry_sdk.init(
     dsn=env.str("DJANGO_SENTRY_DSN", default=None),
     environment=env.str("DJANGO_SENTRY_ENVIRONMENT", default=None),
     release=env.str("DJANGO_SENTRY_RELEASE", default=None),
+    _experiments={"enable_logs": True},
     integrations=[
         sentry_sdk.integrations.logging.LoggingIntegration(
             level=logging.INFO,
