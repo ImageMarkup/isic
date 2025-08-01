@@ -1,0 +1,80 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block content %}
+  <header class="border-b border-gray-100 flex items-center justify-between py-2 pb-4">
+    <div class="flex-col">
+      <div class="heading-1">Embargoed Images</div>
+      <div class="text-sm text-gray-600 mt-2">
+        Total: {{ total_embargoed|intcomma }} images
+      </div>
+    </div>
+  </header>
+
+  {% if cohorts_with_embargoed %}
+    <div class="flex flex-col">
+      <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+        <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+          <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Cohort
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Embargoed Images
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Oldest Embargoed
+                  </th>
+                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Time Span
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for cohort in cohorts_with_embargoed %}
+                  <tr class="{% cycle 'bg-white' 'bg-gray-50' %}">
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                      <a href="{% url 'cohort-detail' pk=cohort.pk %}" class="text-blue-600 hover:text-blue-800">
+                        {{ cohort.name }}
+                        <div class="text-xs text-gray-400">{{ cohort.contributor }}</div>
+                      </a>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                      <span class="font-medium">{{ cohort.embargoed_count|intcomma }}</span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                      <div class="flex flex-col">
+                        <span>{{ cohort.oldest_embargoed|date:"M j, Y" }}</span>
+                        <span class="text-xs text-gray-400">{{ cohort.oldest_embargoed|timesince }} ago</span>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                      {% if not cohort.multiple_time_points %}
+                        {{ cohort.oldest_embargoed|date:"M j, Y" }}
+                      {% else %}
+                        <div class="flex flex-col">
+                          <span class="text-xs">{{ cohort.oldest_embargoed|date:"M j, Y" }} -</span>
+                          <span class="text-xs">{{ cohort.newest_embargoed|date:"M j, Y" }}</span>
+                        </div>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="text-center py-12">
+      <div class="text-gray-500">
+        <h3 class="text-lg font-medium text-gray-900 mb-2">No embargoed images found</h3>
+        <p>All images in the archive are currently public.</p>
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}
