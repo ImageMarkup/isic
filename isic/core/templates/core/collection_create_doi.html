@@ -2,7 +2,8 @@
 {% load static %}
 
 {% block content %}
-  <div class="heading-1 mb-4">Create a DOI for {{ collection.name }}<span class="ml-2 text-base font-semibold"><a href="{% url 'core/collection-detail' collection.pk %}">back to collection</a></span></div>
+  <div class="heading-1 mb-4">Create a DOI for {{ collection.name }}<span class="ml-2 text-base font-semibold"><a
+    href="{% url 'core/collection-detail' collection.pk %}">back to collection</a></span></div>
 
   {% if error %}
     <div class="rounded-md bg-red-50 p-4 mb-4">
@@ -31,11 +32,11 @@
       <div>Contributed by <span class="font-semibold">{{ preview.creators }}</span></div>
     </div>
 
-    <div x-data="SupplementalFileUploader()">
+    <div x-data="DoiCreationForm()">
       <form @submit.prevent="createDOI({{ collection.id }})">
         <div class="text-center">
           <div class="w-full">
-            {# the cut is a hack to let the token (SimpleLazyObject) be serializable by json_script #}
+        {# the cut is a hack to let the token (SimpleLazyObject) be serializable by json_script #}
             {{ csrf_token|cut:""|json_script:"csrf-token" }}
 
             <input type="file" id="file-input" class="hidden" @change="handleFileUpload" />
@@ -54,12 +55,67 @@
                   <tr>
                     <td x-text="file.name"></td>
                     <td x-text="formatBytes(file.size)"></td>
-                    <td><textarea x-model="descriptions[index]" required placeholder="Description" class="w-full"></textarea></td>
-                    <td><button type="button" @click="removeFile(index)" :disabled="numFilesInProgress > 0" class="btn btn-danger">Remove</button></td>
+                    <td><textarea x-model="descriptions[index]" required placeholder="Description"
+                                  class="w-full"></textarea></td>
+                    <td><button type="button" @click="removeFile(index)" :disabled="numFilesInProgress > 0"
+                                class="btn btn-danger">Remove</button></td>
                   </tr>
                 </template>
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <div class="my-6">
+          <h3 class="text-lg font-semibold mb-4">Related Identifiers</h3>
+          <p class="text-sm text-gray-600 mb-6">Add references to related publications or supplemental materials
+            that complement this dataset.</p>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <template x-for="relationConfig in relationTypes" :key="relationConfig.type">
+              <div class="border border-gray-200 rounded-lg p-4">
+                <div class="flex items-center justify-between mb-3">
+                  <h4 class="font-semibold text-base flex items-center">
+                    <span x-text="relationConfig.title"></span>
+                    <a :href="relationConfig.helpUrl" target="_blank" class="ml-2 text-gray-400 hover:text-gray-700">
+                      <i class="ri-question-line inline h-4 w-4 align-text-bottom"
+                         :title="'Help: ' + relationConfig.type"></i>
+                    </a>
+                  </h4>
+                  <button type="button" @click="addRelatedIdentifier(relationConfig.type)" class="btn btn-sm btn-secondary"
+                          x-text="relationConfig.buttonText"
+                          :disabled="relationConfig.unique === true && getIdentifiersArray(relationConfig.type).length > 0"></button>
+                </div>
+                <div class="text-sm text-gray-600 mb-4">
+                  <p class="mb-2" x-html="relationConfig.description"></p>
+                  <p class="text-xs"><strong>Examples:</strong> <span x-text="relationConfig.examples"></span></p>
+                </div>
+
+                <div class="space-y-3">
+                  <template x-for="(identifier, index) in getIdentifiersArray(relationConfig.type)" :key="index">
+                    <div class="flex gap-2">
+                      <div class="flex-1">
+                        <select x-model="identifier.related_identifier_type" required
+                                class="w-full border rounded px-2 py-1 text-sm mb-2">
+                          <option value="">Select type</option>
+                          <option value="DOI">DOI</option>
+                          <option value="URL">URL</option>
+                        </select>
+                        <input :type="identifier.related_identifier_type === 'URL' ? 'url' : 'text'"
+                               x-model="identifier.related_identifier" required class="w-full border rounded px-2 py-1 text-sm"
+                               :placeholder="getPlaceholder(identifier.related_identifier_type, relationConfig)"
+                               :pattern="identifier.related_identifier_type === 'DOI' ? '^10\\.\\d+/.*$' : null"
+                               :title="identifier.related_identifier_type === 'DOI' ? 'Enter a valid DOI format (e.g., ' + relationConfig.doiExample + ')' : null" />
+                      </div>
+                      <button type="button" @click="removeRelatedIdentifier(relationConfig.type, index)"
+                              class="btn btn-sm btn-danger mt-6">×</button>
+                    </div>
+                  </template>
+                  <div x-show="getIdentifiersArray(relationConfig.type).length === 0" class="text-sm text-gray-400 italic"
+                       x-text="relationConfig.emptyMessage"></div>
+                </div>
+              </div>
+            </template>
           </div>
         </div>
 
@@ -69,6 +125,6 @@
       </form>
     </div>
 
-    <script src="{% static 'core/dist/supplementalFileUploader.js' %}"></script>
+    <script src="{% static 'core/dist/doiCreationForm.js' %}"></script>
   {% endif %}
 {% endblock %}
