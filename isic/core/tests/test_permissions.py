@@ -16,6 +16,18 @@ def test_core_staff_list(client, authenticated_client, staff_client):
 
 
 @pytest.mark.django_db
+def test_core_embargoed_dashboard(client, authenticated_client, staff_client):
+    r = client.get(reverse("core/embargoed-dashboard"))
+    assert r.status_code == 302
+
+    r = authenticated_client.get(reverse("core/embargoed-dashboard"))
+    assert r.status_code == 302
+
+    r = staff_client.get(reverse("core/embargoed-dashboard"))
+    assert r.status_code == 200
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("client_", "visible"),
     [
