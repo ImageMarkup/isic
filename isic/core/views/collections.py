@@ -140,8 +140,13 @@ def collection_create_doi_(request, pk):
     context = {
         "collection": collection,
         "error": None,
-        "preview": collection_build_doi_preview(collection=collection),
+        "preview": None,
     }
+
+    if not collection.images.exists():
+        context["error"] = "A DOI cannot be created for an empty collection."
+    else:
+        context["preview"] = collection_build_doi_preview(collection=collection)
 
     return render(
         request,
