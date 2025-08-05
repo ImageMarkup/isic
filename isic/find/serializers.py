@@ -6,6 +6,7 @@ from django.utils.text import capfirst
 from ninja import Field, Schema
 
 from isic.core.models import Collection, Image
+from isic.core.models.doi import Doi
 from isic.ingest.models import Cohort, Contributor
 from isic.studies.models import Study
 
@@ -138,3 +139,31 @@ class UserQuickfindResultOut(QuickfindResultOut):
 
     def set_yours(self, obj, user):
         self.yours = user == obj
+
+
+class DoiQuickfindResultOut(QuickfindResultOut):
+    title: str
+    url: str
+
+    @staticmethod
+    def resolve_title(obj: Doi):
+        return obj.collection.name
+
+    @staticmethod
+    def resolve_url(obj: Doi):
+        return obj.get_absolute_url()
+
+    @staticmethod
+    def resolve_subtitle(obj: Doi):
+        return f"DOI: {obj.id}"
+
+    @staticmethod
+    def resolve_icon(_):
+        return "ri-file-text-line"
+
+    @staticmethod
+    def resolve_result_type(_):
+        return Doi._meta.verbose_name
+
+    def set_yours(self, obj: Doi, user: User) -> None:
+        self.yours = obj.creator == user
