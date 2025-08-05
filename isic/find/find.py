@@ -5,12 +5,14 @@ from django.db.models.query_utils import Q
 from jaro import jaro_winkler_metric
 
 from isic.core.models.collection import Collection
+from isic.core.models.doi import Doi
 from isic.core.models.image import Image
 from isic.core.permissions import get_visible_objects
 from isic.find.serializers import (
     CohortQuickfindResultOut,
     CollectionQuickfindResultOut,
     ContributorQuickfindResultOut,
+    DoiQuickfindResultOut,
     ImageQuickfindResultOut,
     StudyQuickfindResultOut,
     UserQuickfindResultOut,
@@ -69,6 +71,14 @@ def quickfind_execute(query: str, user: User) -> list[dict]:
             ),
             "permission": "",
             "serializer": UserQuickfindResultOut,
+        },
+        "dois": {
+            "filter": Doi.objects.select_related("collection").filter(
+                collection__name__icontains=query
+            ),
+            "sort": lambda v: jaro_winkler_metric(query.upper(), v.collection.name.upper()),
+            "permission": "",
+            "serializer": DoiQuickfindResultOut,
         },
     }
 
