@@ -20,7 +20,9 @@ def get_hashid_hasher():
     # Note: changing the alphabet necessitates changing HASH_ID_REGEX
     return Hashids(
         min_length=5,
-        alphabet=list(set(string.ascii_uppercase + string.digits) - {"I", "1", "O", "0"}),
+        # hashids must have alphabet passed in a consistent order otherwise
+        # different invocations of the hasher will produce different results for the same input.
+        alphabet=sorted(set(string.ascii_uppercase + string.digits) - {"I", "1", "O", "0"}),
     )
 
 
