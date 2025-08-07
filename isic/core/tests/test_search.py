@@ -409,3 +409,16 @@ def test_facet_search_includes_missing_field_values(image_factory):
 
     for image_type in ImageTypeEnum:
         assert any(bucket["key"] == image_type.value for bucket in actual["image_type"]["buckets"])
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("_search_index")
+def test_facet_range_buckets_add_wildcard_to_final_bucket(image_factory):
+    image = image_factory(public=True, accession__mel_thick_mm=5.5)
+    add_to_search_index(image)
+    get_elasticsearch_client().indices.refresh(index="_all")
+
+    actual = facets()
+
+    final_range_bucket = actual["mel_thick_mm"]["buckets"][-1]
+    assert final_range_bucket["to"] == "*"
