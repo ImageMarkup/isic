@@ -36,7 +36,6 @@ dependencies = [
   "gdal",
   "google-analytics-data",
   "elasticsearch",
-  "hashids",
   "isic-metadata",
   "jaro-winkler",
   "numpy",

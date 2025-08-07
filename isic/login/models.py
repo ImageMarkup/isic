@@ -1,4 +1,5 @@
 import logging
+import secrets
 import string
 
 from django.contrib.auth.models import User
@@ -6,7 +7,6 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from hashids import Hashids
 
 logger = logging.getLogger(__name__)
 
@@ -14,18 +14,17 @@ logger = logging.getLogger(__name__)
 # otherwise validation for a hash id would need it's own endpoint.
 HASH_ID_REGEX = "^[A-HJ-NP-Z2-9]{5}$"
 
-
-def get_hashid_hasher():
-    # This alphabet allows for ~250k users before needing a 6th character
-    # Note: changing the alphabet necessitates changing HASH_ID_REGEX
-    return Hashids(
-        min_length=5,
-        alphabet=list(set(string.ascii_uppercase + string.digits) - {"I", "1", "O", "0"}),
-    )
+# A-Z0-9 except for O, 0, 1 and I.
+# This alphabet allows for ~250k users before needing a 6th character
+# Note: changing the alphabet necessitates changing HASH_ID_REGEX
+HASH_ID_ALPHABET = list(set(string.ascii_uppercase + string.digits) - {"I", "1", "O", "0"})
 
 
-def get_hashid(value: int) -> str:
-    return get_hashid_hasher().encode(value)
+def generate_random_hashid() -> str:
+    while True:
+        hash_id = "".join(secrets.choice(HASH_ID_ALPHABET) for _ in range(5))
+        if not Profile.objects.filter(hash_id=hash_id).exists():
+            return hash_id
 
 
 class Profile(models.Model):
@@ -51,4 +50,4 @@ def create_or_save_user_profile(
     **kwargs,
 ):
     if created:
-        Profile.objects.create(user=instance, hash_id=get_hashid(instance.pk))
+        Profile.objects.create(user=instance, hash_id=generate_random_hashid())
