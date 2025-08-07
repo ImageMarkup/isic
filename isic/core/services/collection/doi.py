@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -8,13 +10,14 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.db import transaction
+from django.db.models import QuerySet
 from django.urls import reverse
 from django.utils.text import slugify
 from requests.exceptions import HTTPError
 from requests_toolbelt.sessions import BaseUrlSession
 
 from isic.core.models.collection import Collection
-from isic.core.models.doi import Doi
+from isic.core.models.doi import Doi, DoiRelatedIdentifier
 from isic.core.services.collection import (
     collection_get_creators_in_attribution_order,
     collection_lock,
@@ -28,7 +31,10 @@ from isic.core.tasks import (
 from isic.core.views.doi import LICENSE_TITLES, LICENSE_URIS
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
     from urllib.parse import ParseResult
+
+    from isic.core.api.doi import RelatedIdentifierIn
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +47,12 @@ def collection_build_doi_preview(*, collection: Collection) -> dict[str, Any]:
     return preview
 
 
-def collection_build_doi(*, collection: Collection, doi_id: str) -> dict:
+def collection_build_doi(
+    *,
+    collection: Collection,
+    doi_id: str,
+    related_identifiers: QuerySet[DoiRelatedIdentifier] | None = None,
+) -> dict:
     rights = []
     for license_ in (
         collection.images.values_list("accession__copyright_license", flat=True)
@@ -55,35 +66,49 @@ def collection_build_doi(*, collection: Collection, doi_id: str) -> dict:
                 "rightsIdentifier": license_,
             }
         )
+
+    datacite_related_identifiers = []
+    if related_identifiers:
+        datacite_related_identifiers = [
+            {
+                "relatedIdentifier": related_id.related_identifier,
+                "relatedIdentifierType": related_id.related_identifier_type,
+                "relationType": related_id.relation_type,
+            }
+            for related_id in related_identifiers
+        ]
+
+    attributes = {
+        "descriptions": [
+            {
+                "description": collection.description,
+                "descriptionType": "Abstract",
+            }
+        ],
+        "identifiers": [{"identifierType": "DOI", "identifier": doi_id}],
+        "event": "publish",
+        "doi": doi_id,
+        "creators": [
+            {"name": creator}
+            for creator in collection_get_creators_in_attribution_order(collection=collection)
+        ],
+        "rightsList": rights,
+        "titles": [{"title": collection.name}],
+        "publisher": "ISIC Archive",
+        "publicationYear": collection.images.order_by("created").latest().created.year,
+        "types": {"resourceTypeGeneral": "Dataset"},
+        "url": "https://api.isic-archive.com"
+        + reverse("core/doi-detail", kwargs={"slug": slugify(collection.name)}),
+        "schemaVersion": "http://datacite.org/schema/kernel-4",
+    }
+
+    if datacite_related_identifiers:
+        attributes["relatedIdentifiers"] = datacite_related_identifiers
+
     return {
         "data": {
             "type": "dois",
-            "attributes": {
-                "descriptions": [
-                    {
-                        "description": collection.description,
-                        "descriptionType": "Abstract",
-                    }
-                ],
-                "identifiers": [{"identifierType": "DOI", "identifier": doi_id}],
-                "event": "publish",
-                "doi": doi_id,
-                "creators": [
-                    {"name": creator}
-                    for creator in collection_get_creators_in_attribution_order(
-                        collection=collection
-                    )
-                ],
-                "rightsList": rights,
-                "titles": [{"title": collection.name}],
-                "publisher": "ISIC Archive",
-                "publicationYear": collection.images.order_by("created").latest().created.year,
-                # resourceType?
-                "types": {"resourceTypeGeneral": "Dataset"},
-                "url": "https://api.isic-archive.com"
-                + reverse("core/doi-detail", kwargs={"slug": slugify(collection.name)}),
-                "schemaVersion": "http://datacite.org/schema/kernel-4",
-            },
+            "attributes": attributes,
         }
     }
 
@@ -100,7 +125,11 @@ def collection_build_draft_doi(*, doi_id: str) -> dict:
 
 
 def collection_check_create_doi_allowed(
-    *, user: User, collection: Collection, supplemental_files=None
+    *,
+    user: User,
+    collection: Collection,
+    supplemental_files: Iterable[dict[str, str]] | None = None,
+    related_identifiers: Iterable[RelatedIdentifierIn] | None = None,
 ) -> None:
     if not user.has_perm("core.create_doi", collection):
         raise ValidationError("You don't have permissions to do that.")
@@ -116,6 +145,11 @@ def collection_check_create_doi_allowed(
         raise ValidationError("Magic collections cannot be the basis of a DOI.")
     if supplemental_files and len(supplemental_files) > 10:
         raise ValidationError("A DOI can only have up to 10 supplemental files.")
+    if (
+        related_identifiers
+        and len([r for r in related_identifiers if r.relation_type == "IsDescribedBy"]) > 1
+    ):
+        raise ValidationError("A DOI can only have one IsDescribedBy related identifier.")
 
 
 def _datacite_session() -> BaseUrlSession:
@@ -163,9 +197,18 @@ def _datacite_update_doi(doi: dict, doi_id: str):
         raise ValidationError("Something went wrong publishing the DOI.") from e
 
 
-def collection_create_doi(*, user: User, collection: Collection, supplemental_files=None) -> Doi:
+def collection_create_doi(
+    *,
+    user: User,
+    collection: Collection,
+    supplemental_files: Iterable[dict[str, str]] | None = None,
+    related_identifiers: Iterable[RelatedIdentifierIn] | None = None,
+) -> Doi:
     collection_check_create_doi_allowed(
-        user=user, collection=collection, supplemental_files=supplemental_files
+        user=user,
+        collection=collection,
+        supplemental_files=supplemental_files,
+        related_identifiers=related_identifiers,
     )
 
     with transaction.atomic():
@@ -185,8 +228,18 @@ def collection_create_doi(*, user: User, collection: Collection, supplemental_fi
                     size=supplemental_file["blob"].size,
                 )
 
+        if related_identifiers:
+            for related_identifier in related_identifiers:
+                doi.related_identifiers.create(
+                    relation_type=related_identifier.relation_type,
+                    related_identifier_type=related_identifier.related_identifier_type,
+                    related_identifier=related_identifier.related_identifier,
+                )
+
         draft_doi_dict = collection_build_draft_doi(doi_id=doi.id)
-        doi_dict = collection_build_doi(collection=collection, doi_id=doi.id)
+        doi_dict = collection_build_doi(
+            collection=collection, doi_id=doi.id, related_identifiers=doi.related_identifiers.all()
+        )
 
         # Reserve the DOI using the draft mechanism.
         # If it fails, transaction will rollback, nothing in our database will change.

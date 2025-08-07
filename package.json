@@ -27,8 +27,8 @@
       "source": "./node-src/styles.pcss",
       "distDir": "./isic/core/static/core/dist"
     },
-    "supplementalFileUploader": {
-      "source": "./node-src/supplementalFileUploader.ts",
+    "doiCreationForm": {
+      "source": "./node-src/doiCreationForm.ts",
       "distDir": "./isic/core/static/core/dist"
     },
     "cog": {
