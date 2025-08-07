@@ -87,36 +87,6 @@ def test_doi_form_requires_no_existing_doi(staff_user_request):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_api_doi_creation(
-    public_collection_with_public_images,
-    mock_datacite_create_doi,
-    mock_datacite_update_doi,
-    mock_datacite_citations_fetch,
-    mock_datacite_schema_org_dataset_fetch,
-    s3ff_random_field_value,
-    staff_client,
-):
-    r = staff_client.post(
-        reverse("api:create_doi"),
-        {
-            "collection_id": public_collection_with_public_images.id,
-            "supplemental_files": [
-                {
-                    "blob": s3ff_random_field_value,
-                    "description": "test",
-                }
-            ],
-        },
-        content_type="application/json",
-    )
-    assert r.status_code == 200
-
-    doi = Doi.objects.get(collection=public_collection_with_public_images)
-    assert doi.supplemental_files.count() == 1
-    assert doi.supplemental_files.first().description == "test"
-
-
-@pytest.mark.django_db(transaction=True)
 def test_doi_creation(
     public_collection_with_public_images,
     staff_user_request,
@@ -275,3 +245,135 @@ def test_doi_files(
             assert (Path(temp_dir) / f"licenses/{license_}.txt").exists()
 
         assert (Path(temp_dir) / "attribution.txt").exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_api_doi_creation(
+    public_collection_with_public_images,
+    mock_datacite_create_doi,
+    mock_datacite_update_doi,
+    mock_datacite_citations_fetch,
+    mock_datacite_schema_org_dataset_fetch,
+    s3ff_random_field_value,
+    staff_client,
+):
+    r = staff_client.post(
+        reverse("api:create_doi"),
+        {
+            "collection_id": public_collection_with_public_images.id,
+            "supplemental_files": [
+                {
+                    "blob": s3ff_random_field_value,
+                    "description": "test supplemental file",
+                }
+            ],
+            "related_identifiers": [
+                {
+                    "relation_type": "IsReferencedBy",
+                    "related_identifier_type": "DOI",
+                    "related_identifier": "10.1000/182",
+                },
+                {
+                    "relation_type": "IsSupplementedBy",
+                    "related_identifier_type": "URL",
+                    "related_identifier": "https://example.com/supplemental-data",
+                },
+            ],
+        },
+        content_type="application/json",
+    )
+    assert r.status_code == 200
+
+    doi = Doi.objects.get(collection=public_collection_with_public_images)
+    assert doi.supplemental_files.count() == 1
+    assert doi.supplemental_files.first().description == "test supplemental file"
+
+    assert doi.related_identifiers.count() == 2
+
+    doi_related = doi.related_identifiers.get(related_identifier_type="DOI")
+    assert doi_related.relation_type == "IsReferencedBy"
+    assert doi_related.related_identifier == "10.1000/182"
+
+    url_related = doi.related_identifiers.get(related_identifier_type="URL")
+    assert url_related.relation_type == "IsSupplementedBy"
+    assert url_related.related_identifier == "https://example.com/supplemental-data"
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("related_identifier_type", "related_identifier"),
+    [
+        ("DOI", "invalid-doi-format"),
+        ("URL", "not-a-valid-url"),
+    ],
+)
+def test_api_doi_creation_invalid_related_identifiers(
+    public_collection_with_public_images,
+    staff_client,
+    related_identifier_type,
+    related_identifier,
+):
+    r = staff_client.post(
+        reverse("api:create_doi"),
+        {
+            "collection_id": public_collection_with_public_images.id,
+            "supplemental_files": [],
+            "related_identifiers": [
+                {
+                    "relation_type": "IsReferencedBy",
+                    "related_identifier_type": related_identifier_type,
+                    "related_identifier": related_identifier,
+                }
+            ],
+        },
+        content_type="application/json",
+    )
+    assert r.status_code == 422
+
+
+@pytest.mark.django_db
+def test_api_doi_creation_invalid_related_identifier_relation_type(
+    public_collection_with_public_images,
+    staff_client,
+):
+    r = staff_client.post(
+        reverse("api:create_doi"),
+        {
+            "collection_id": public_collection_with_public_images.id,
+            "supplemental_files": [],
+            "related_identifiers": [
+                {
+                    "relation_type": "InvalidRelationType",
+                    "related_identifier_type": "DOI",
+                    "related_identifier": "10.1000/182",
+                }
+            ],
+        },
+        content_type="application/json",
+    )
+    # TODO: 422 vs 400
+    assert r.status_code == 422
+
+
+@pytest.mark.django_db
+def test_api_doi_creation_invalid_related_identifier_relation_identifier_type(
+    public_collection_with_public_images,
+    staff_client,
+):
+    r = staff_client.post(
+        reverse("api:create_doi"),
+        {
+            "collection_id": public_collection_with_public_images.id,
+            "supplemental_files": [],
+            "related_identifiers": [
+                {
+                    "relation_type": "IsReferencedBy",
+                    "related_identifier_type": "InvalidType",
+                    "related_identifier": "10.1000/182",
+                }
+            ],
+        },
+        content_type="application/json",
+    )
+    # TODO: should we be returning 422 or 400
+    assert r.status_code == 422
