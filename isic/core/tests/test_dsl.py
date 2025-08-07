@@ -16,7 +16,6 @@ from isic.core.dsl import django_parser, es_parser, parse_query
         ("-isic_id:*", ~Q(isic__id__isnull=False)),
         ("-lesion_id:*", ~Q(accession__lesion__id__isnull=False)),
         ("-mel_thick_mm:*", ~Q(accession__mel_thick_mm__isnull=False)),
-        ("age_approx:[50 TO *]", ParseException),
         ("-melanocytic:*", ~Q(accession__melanocytic__isnull=False)),
         ("melanocytic:*", Q(accession__melanocytic__isnull=False)),
         (
@@ -52,6 +51,26 @@ from isic.core.dsl import django_parser, es_parser, parse_query
         (
             "mel_thick_mm:[0 TO 0.5]",
             Q(accession__mel_thick_mm__gte=0, accession__mel_thick_mm__lte=0.5),
+        ),
+        ("age_approx:[50 TO *]", Q(accession__age__approx__gte=50)),
+        ("age_approx:[* TO 70]", Q(accession__age__approx__lte=70)),
+        ("age_approx:{* TO 70}", Q(accession__age__approx__lt=70)),
+        ("age_approx:{5 TO *}", Q(accession__age__approx__gt=5)),
+        ("mel_thick_mm:[5.0 TO *]", Q(accession__mel_thick_mm__gte=5.0)),
+        ("mel_thick_mm:[* TO 10.5]", Q(accession__mel_thick_mm__lte=10.5)),
+        (
+            "-age_approx:[5 TO *]",
+            ~Q(accession__age__approx__gte=5) | Q(accession__age__approx__isnull=True),
+        ),
+        (
+            "-mel_thick_mm:[* TO 10.0]",
+            ~Q(accession__mel_thick_mm__lte=10.0) | Q(accession__mel_thick_mm__isnull=True),
+        ),
+        ("age_approx:[* TO *]", Q(accession__age__approx__isnull=False)),
+        ("mel_thick_mm:{* TO *}", Q(accession__mel_thick_mm__isnull=False)),
+        (
+            "-age_approx:[* TO *]",
+            ~Q(accession__age__approx__isnull=False),
         ),
         ("diagnosis_1:foo randstring", ParseException),
         ("public:true", Q(public=True)),
@@ -120,6 +139,26 @@ def test_dsl_django_parser(query, filter_or_exception):
                     ]
                 }
             },
+        ),
+        (
+            "age_approx:[5 TO *]",
+            {"bool": {"filter": [{"range": {"age_approx": {"gte": 5}}}]}},
+        ),
+        (
+            "age_approx:[* TO 70]",
+            {"bool": {"filter": [{"range": {"age_approx": {"lte": 70}}}]}},
+        ),
+        (
+            "mel_thick_mm:{5.0 TO *}",
+            {"bool": {"filter": [{"range": {"mel_thick_mm": {"gt": 5.0}}}]}},
+        ),
+        (
+            "age_approx:[* TO *]",
+            {"bool": {"filter": [{"exists": {"field": "age_approx"}}]}},
+        ),
+        (
+            "mel_thick_mm:{* TO *}",
+            {"bool": {"filter": [{"exists": {"field": "mel_thick_mm"}}]}},
         ),
     ],
 )
