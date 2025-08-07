@@ -1,0 +1,19 @@
+// allow between 4-8 columns
+export default () => ({
+  gridClassNames: {
+    4: 'sm:grid-cols-4',
+    5: 'sm:grid-cols-5',
+    6: 'sm:grid-cols-6',
+    7: 'sm:grid-cols-7',
+    8: 'sm:grid-cols-8',
+  },
+  numCols: parseInt(localStorage.getItem('numCols')) || 8,
+  increase() {
+    this.numCols = Math.min(8, this.numCols + 1);
+    localStorage.setItem('numCols', this.numCols);
+  },
+  decrease() {
+    this.numCols = Math.max(4, this.numCols - 1);
+    localStorage.setItem('numCols', this.numCols);
+  }
+});
