@@ -5,7 +5,7 @@ from django.db.models.signals import post_save
 import factory
 import factory.django
 
-from isic.login.models import Profile, get_hashid
+from isic.login.models import Profile, generate_random_hashid
 
 
 @factory.django.mute_signals(post_save)
@@ -13,7 +13,7 @@ class ProfileFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Profile
 
-    hash_id = factory.LazyAttribute(lambda o: get_hashid(o.user.pk))
+    hash_id = factory.LazyAttribute(lambda _: generate_random_hashid())
     accepted_terms = None
 
     # Pass in profile=None to prevent UserFactory from creating another profile this disables the
