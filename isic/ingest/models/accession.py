@@ -106,6 +106,9 @@ class AccessionMetadata(models.Model):
 
 
 class AccessionQuerySet(models.QuerySet):
+    def skipped(self):
+        return self.filter(status=AccessionStatus.SKIPPED)
+
     def ingesting(self):
         return self.exclude(
             Q(status=AccessionStatus.SUCCEEDED)
