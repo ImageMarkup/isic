@@ -14,22 +14,59 @@
 
   {% include 'ingest/partials/cohort_details.html' %}
 
-  <div class="flex justify-between">
-    Showing {{ accessions.paginator.count|intcomma }} results
-    {% include 'studies/partials/pagination.html' with page_obj=accessions %}
-  </div>
+  {% if show_skipped %}
+    <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
+      <div class="flex justify-between items-center mb-2">
+        <h3 class="text-lg font-semibold text-yellow-800">Ignored Accessions (Invalid image files)</h3>
+        <a href="{% querystring show_skipped=None %}" class="text-blue-500 hover:underline">← Back to normal view</a>
+      </div>
+      <p class="text-yellow-700 mb-4">
+        These accessions were unable to be processed.
+        The original filenames are listed below:
+      </p>
+    </div>
 
-  <div class="mb-4" x-data="thumbnailGrid();">
-    <div class="hidden pb-3 sm:flex sm:flex-row sm:justify-end">
-      <a class="px-1" href="#" @click="decrease();">fewer columns</a> |
-      <a class="px-1" href="#" @click="increase();">more columns</a>
+    <div class="flex justify-between">
+      Showing {{ accessions.paginator.count|intcomma }} ignored results
+      {% include 'studies/partials/pagination.html' with page_obj=accessions %}
     </div>
-    <div class="grid gap-4 grid-cols-2" :class="gridClassNames[numCols]">
-      {% for accession in accessions %}
-        {% include 'ingest/partials/accession.html' with review_mode=0 include_acquisition_day=0 %}
-      {% endfor %}
+
+    <div class="mb-4">
+      <div class="bg-white border rounded-lg">
+        <div class="px-4 py-3 border-b bg-gray-50">
+          <h4 class="font-medium text-gray-900">Original Filenames</h4>
+        </div>
+        <div class="p-4">
+          {% if show_skipped %}
+            <ul class="space-y-1 text-sm font-mono">
+              {% for accession in accessions %}
+                <li class="text-gray-700">{{ accession.original_blob_name }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-gray-500 italic">No ignored accessions found.</p>
+          {% endif %}
+        </div>
+      </div>
     </div>
-  </div>
+  {% else %}
+    <div class="flex justify-between">
+      Showing {{ accessions.paginator.count|intcomma }} results
+      {% include 'studies/partials/pagination.html' with page_obj=accessions %}
+    </div>
+
+    <div class="mb-4" x-data="thumbnailGrid();">
+      <div class="hidden pb-3 sm:flex sm:flex-row sm:justify-end">
+        <a class="px-1" href="#" @click="decrease();">fewer columns</a> |
+        <a class="px-1" href="#" @click="increase();">more columns</a>
+      </div>
+      <div class="grid gap-4 grid-cols-2" :class="gridClassNames[numCols]">
+        {% for accession in accessions %}
+          {% include 'ingest/partials/accession.html' with review_mode=0 include_acquisition_day=0 %}
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
 
   {% include 'studies/partials/pagination.html' with page_obj=accessions %}
 

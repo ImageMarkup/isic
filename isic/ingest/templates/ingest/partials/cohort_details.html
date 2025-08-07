@@ -20,5 +20,12 @@
     <li><span class="font-bold">Unreviewed:</span> {{ counts.unreviewed_count|intcomma }}</li>
     <li><span class="font-bold">Accepted:</span> {{ counts.accepted_count|intcomma }}</li>
     <li><span class="font-bold">Rejected:</span> {{ counts.rejected_count|intcomma }}</li>
+    <li><span class="font-bold">Ignored (invalid images):</span>
+      {% if counts.skipped_count > 0 %}
+        <a href="{% querystring show_skipped='true' %}" class="text-blue-500 hover:underline">{{ counts.skipped_count|intcomma }}</a>
+      {% else %}
+        {{ counts.skipped_count|intcomma }}
+      {% endif %}
+    </li>
   </ul>
 </div>

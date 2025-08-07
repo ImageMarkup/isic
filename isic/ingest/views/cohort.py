@@ -31,6 +31,7 @@ def cohort_counts(cohort: Cohort) -> dict[str, int]:
         unreviewed_count=Count("pk", filter=reviewable & Q(review=None)),
         accepted_count=Count("pk", filter=reviewable & Q(review__value=True)),
         rejected_count=Count("pk", filter=reviewable & Q(review__value=False)),
+        skipped_count=Count("pk", filter=Q(status=AccessionStatus.SKIPPED)),
     )
 
 
@@ -83,7 +84,15 @@ def cohort_list(request):
 @staff_member_required
 def cohort_detail(request, pk):
     cohort = get_object_or_404(Cohort.objects.select_related("creator", "collection"), pk=pk)
-    paginator = Paginator(cohort.accessions.select_related("unstructured_metadata").ingested(), 50)
+
+    show_skipped = request.GET.get("show_skipped") == "true"
+
+    if show_skipped:
+        accessions_qs = cohort.accessions.skipped().order_by("original_blob_name")
+    else:
+        accessions_qs = cohort.accessions.select_related("unstructured_metadata").ingested()
+
+    paginator = Paginator(accessions_qs, 50)
     accessions = paginator.get_page(request.GET.get("page"))
 
     return render(
@@ -93,6 +102,7 @@ def cohort_detail(request, pk):
             "cohort": cohort,
             "counts": cohort_counts(cohort),
             "accessions": accessions,
+            "show_skipped": show_skipped,
             "breadcrumbs": make_breadcrumbs(cohort),
         },
     )
