@@ -212,6 +212,16 @@ def _prettify_facets(facets: dict[str, Any]) -> dict[str, Any]:
 
     facets = _strip_superfluous_fields(facets)
 
+    # the last bucket in a range facet should have to = '*' such that the UI can pass the filter
+    # back and get the images from the range FROM to infinity (*).
+    # see https://github.com/ImageMarkup/isic-gallery/issues/123#issuecomment-3163314869
+    for facet_data in facets.values():
+        if facet_data.get("buckets"):
+            final_bucket = facet_data["buckets"][-1]
+            # this is a proxy for determining if this is a range field
+            if "from" in final_bucket and "to" not in final_bucket:
+                final_bucket["to"] = "*"
+
     image_type_values = {bucket["key"] for bucket in facets["image_type"]["buckets"]}
     missing_image_type = {x.value for x in ImageTypeEnum} - image_type_values
 
