@@ -146,6 +146,23 @@ def check_collection_image_consistency() -> HealthCheckResult:
     )
 
 
+def check_magic_collections_have_no_doi() -> HealthCheckResult:
+    magic_collections_with_doi = Collection.objects.magic().filter(doi__isnull=False).count()
+
+    passed = magic_collections_with_doi == 0
+    message = (
+        "No magic collections have a DOI"
+        if passed
+        else f"{magic_collections_with_doi} magic collections have a DOI"
+    )
+
+    return HealthCheckResult(
+        name="magic_collections_have_no_doi",
+        passed=passed,
+        message=message,
+    )
+
+
 HEALTH_CHECKS = [
     ("public_images_have_sponsored_blob", check_public_images_have_sponsored_blob),
     ("non_public_images_have_non_sponsored_blob", check_non_public_images_have_non_sponsored_blob),
@@ -153,6 +170,7 @@ HEALTH_CHECKS = [
     # ("no_orphaned_isic_ids", check_no_orphaned_isic_ids),
     ("collections_with_doi_are_locked", check_collections_with_doi_are_locked),
     ("magic_collections_are_locked", check_magic_collections_are_locked),
+    ("magic_collections_have_no_doi", check_magic_collections_have_no_doi),
     ("every_user_has_profile", check_every_user_has_profile),
     ("collection_image_consistency", check_collection_image_consistency),
 ]
