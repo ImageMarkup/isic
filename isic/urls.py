@@ -79,7 +79,7 @@ def handle_image_search_parse_error(request, exc: ImageSearchParseError):
 
 urlpatterns = [
     path("accounts/", include("allauth.urls")),
-    path("oauth/", include("oauth2_provider.urls")),
+    path("oauth/", include("allauth.idp.urls")),
     path("admin/", admin.site.urls),
     path("api/v2/s3-upload/", include("s3_file_field.urls")),
     path("api/v2/", api.urls),
