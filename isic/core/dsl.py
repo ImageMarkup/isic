@@ -132,28 +132,43 @@ class NumberRangeValue(Value):
         self.value = (toks[1].value, toks[2].value)
 
     def to_q(self, key: SearchTermKey) -> Q:
-        start_key, end_key = (
-            f"{key.field_lookup}__{self.lower_lookup}",
-            f"{key.field_lookup}__{self.upper_lookup}",
-        )
         start_value, end_value = self.value
-        if key.negated:
-            return ~Q(**{start_key: start_value, end_key: end_value}) | Q(
-                **{f"{key.field_lookup}__isnull": True}
-            )
 
-        return Q(**{start_key: start_value}, **{end_key: end_value}, _negated=key.negated)
+        # if both values are *, consider it equivalent to an existence check.
+        # e.g. age_approx:[* TO *] == age_approx:*
+        if start_value == "*" and end_value == "*":
+            return Q(**{f"{key.field_lookup}__isnull": False}, _negated=key.negated)
+
+        q_kwargs = {}
+
+        if start_value != "*":
+            q_kwargs[f"{key.field_lookup}__{self.lower_lookup}"] = start_value
+
+        if end_value != "*":
+            q_kwargs[f"{key.field_lookup}__{self.upper_lookup}"] = end_value
+
+        if key.negated:
+            return ~Q(**q_kwargs) | Q(**{f"{key.field_lookup}__isnull": True})
+
+        return Q(**q_kwargs, _negated=key.negated)
 
     def to_es(self, key: SearchTermKey) -> dict:
         start_value, end_value = self.value
-        term = {
-            "range": {
-                key.field_lookup: {
-                    self.lower_lookup: start_value,
-                    self.upper_lookup: end_value,
-                }
-            }
-        }
+
+        # if both values are *, consider it equivalent to an existence check.
+        # e.g. age_approx:[* TO *] == age_approx:*
+        if start_value == "*" and end_value == "*":
+            term = {"exists": {"field": key.field_lookup}}
+        else:
+            range_dict = {}
+
+            if start_value != "*":
+                range_dict[self.lower_lookup] = start_value
+
+            if end_value != "*":
+                range_dict[self.upper_lookup] = end_value
+
+            term = {"range": {key.field_lookup: range_dict}}
 
         if key.negated:
             return {"bool": {"must_not": term}}
@@ -241,13 +256,8 @@ EXISTS = Literal("*")
 # asterisks for wildcard, _ for ISIC ID search, - for license types
 str_value = (Word(alphas + nums + "*" + "_" + "-") | QuotedString('"')).add_parse_action(StrValue)
 number_value = (pyparsing_common.number.copy() | EXISTS).add_parse_action(NumberValue)
-concrete_number_value = pyparsing_common.number.copy().add_parse_action(NumberValue)
 number_range_value = (
-    one_of("[ {")
-    + concrete_number_value
-    + Suppress(Literal("TO"))
-    + concrete_number_value
-    + one_of("] }")
+    one_of("[ {") + number_value + Suppress(Literal("TO")) + number_value + one_of("] }")
 ).add_parse_action(NumberRangeValue)
 bool_value = one_of("true false *").add_parse_action(BoolValue)
 
