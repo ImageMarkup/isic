@@ -20,6 +20,9 @@ def get_archive_stats():
             "collections_count": Collection.objects.count(),
             "public_collections_count": Collection.objects.public().count(),
         },
+        "doi": {
+            "dois_count": Collection.objects.filter(doi__isnull=False).count(),
+        },
         "study": {
             "studies_count": Study.objects.count(),
             "public_studies_count": Study.objects.public().count(),
@@ -47,7 +50,7 @@ def stats(request):
             [
                 ("Users", archive_stats["user"]["users_count"]),
                 ("Sessions (Last 30 days)", archive_stats["engagement"]["30_day_sessions_count"]),
-                ("Collections", archive_stats["collection"]["collections_count"]),
+                ("DOIs", archive_stats["doi"]["dois_count"]),
             ],
             [
                 ("Uploading Users", archive_stats["user"]["uploading_users_count"]),
