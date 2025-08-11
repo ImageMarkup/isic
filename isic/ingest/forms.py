@@ -31,6 +31,20 @@ class CohortForm(ModelForm):
         model = Cohort
         fields = ["name", "description", "default_copyright_license", "default_attribution"]
 
+    def save(self, commit=True):  # noqa: FBT002
+        instance = super().save(commit=False)
+
+        # if the cohort name changed, update the magic collection name
+        if instance.pk and instance.collection and "name" in self.changed_data:
+            instance.collection.name = f"Publish of {instance.name}"
+            if commit:
+                instance.collection.save(update_fields=["name"])
+
+        if commit:
+            instance.save()
+
+        return instance
+
 
 class ContributorForm(ModelForm):
     class Meta:
