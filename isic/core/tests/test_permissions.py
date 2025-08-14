@@ -2,6 +2,8 @@ from django.urls.base import reverse
 import pytest
 from pytest_lazy_fixtures import lf
 
+from isic.core.tests.factories import DoiFactory
+
 
 @pytest.mark.django_db
 def test_core_staff_list(client, authenticated_client, staff_client):
@@ -152,3 +154,14 @@ def test_image_list_metadata_download_permissions(client, authenticated_client, 
     r = staff_client.get(reverse("core/image-list-metadata-download"))
     assert r.status_code == 302
     assert r.url == reverse("core/image-list-export")
+
+
+@pytest.mark.django_db
+def test_core_doi_detail(client, authenticated_client, staff_client):
+    draft_doi = DoiFactory.create(is_draft=True)
+    published_doi = DoiFactory.create(is_draft=False)
+
+    for client_ in [client, authenticated_client, staff_client]:
+        for doi in [draft_doi, published_doi]:
+            r = client_.get(reverse("core/doi-detail", kwargs={"slug": doi.slug}))
+            assert r.status_code == 200

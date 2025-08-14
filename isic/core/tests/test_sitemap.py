@@ -6,7 +6,7 @@ from isic.core.tests.factories import DoiFactory
 
 @pytest.mark.django_db
 def test_sitemap_dois(client):
-    doi = DoiFactory.create()
+    doi = DoiFactory.create(is_draft=False)
 
     response = client.get(reverse("django.contrib.sitemaps.views.sitemap"))
     assert response.status_code == 200

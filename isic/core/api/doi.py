@@ -67,7 +67,7 @@ def create_doi(request, payload: CreateDOIIn):
         Collection.objects.select_related("doi"), pk=payload.collection_id
     )
 
-    if not request.user.is_staff:
+    if not request.user.has_perm("core.create_doi", collection):
         return 403, {"error": "You do not have permission to create a DOI."}
 
     collection_create_doi(
