@@ -40,6 +40,7 @@ class Doi(TimeStampedModel):
     slug = models.SlugField(max_length=150, unique=True)
     collection = models.OneToOneField(Collection, on_delete=models.PROTECT)
     creator = models.ForeignKey(User, on_delete=models.RESTRICT)
+    is_draft = models.BooleanField(default=False)
 
     bundle = models.FileField(upload_to=doi_upload_to, storage=doi_storage, null=True, blank=True)
     bundle_size = models.PositiveBigIntegerField(null=True, blank=True)
