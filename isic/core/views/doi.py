@@ -32,6 +32,10 @@ LICENSE_URIS = {
 def doi_detail(request, slug):
     doi = get_object_or_404(Doi.objects.select_related("collection"), slug=slug)
 
+    # no permission check here - draft DOIs are unlisted but accessible to anyone
+    # with the URL. the DoiPermissions class controls access everywhere else, but direct viewing
+    # access is always allowed.
+
     licenses = (
         doi.collection.images.values_list("accession__copyright_license", flat=True)
         .order_by()

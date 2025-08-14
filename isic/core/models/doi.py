@@ -40,6 +40,7 @@ class Doi(TimeStampedModel):
     slug = models.SlugField(max_length=150, unique=True)
     collection = models.OneToOneField(Collection, on_delete=models.PROTECT)
     creator = models.ForeignKey(User, on_delete=models.RESTRICT)
+    is_draft = models.BooleanField(default=False)
 
     bundle = models.FileField(upload_to=doi_upload_to, storage=doi_storage, null=True, blank=True)
     bundle_size = models.PositiveBigIntegerField(null=True, blank=True)
@@ -144,3 +145,37 @@ class DoiRelatedIdentifier(models.Model):
                 instance.clean()
             except ValidationError as e:
                 raise ValueError(str(e)) from e
+
+
+class DoiPermissions:
+    model = Doi
+    perms = [
+        "view_doi",
+        "change_doi",
+    ]
+    filters = {
+        "view_doi": "view_doi_list",
+    }
+
+    @staticmethod
+    def view_doi_list(user_obj, qs=None):
+        qs = qs if qs is not None else Doi._default_manager.all()
+
+        if user_obj.is_staff:
+            return qs
+
+        return qs.filter(is_draft=False)
+
+    @staticmethod
+    def view_doi(user_obj, obj):
+        if user_obj.is_staff:
+            return True
+
+        return not obj.is_draft
+
+    @staticmethod
+    def change_doi(user_obj, obj):  # noqa: ARG004
+        return user_obj.is_staff
+
+
+Doi.perms_class = DoiPermissions  # type: ignore[attr-defined]
