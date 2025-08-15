@@ -148,30 +148,41 @@ def create_doi_bundle_task(doi_id: str) -> None:
     collection_create_doi_files(doi=doi)
 
 
-@shared_task(soft_time_limit=20, time_limit=25)
-def fetch_doi_schema_org_dataset_task(doi_id: str) -> None:
-    doi = Doi.objects.get(id=doi_id)
+def _fetch_doi_schema_org_dataset(doi_id: str) -> dict:
     r = requests.get(
-        f"https://data.crosscite.org/application/vnd.schemaorg.ld+json/{doi.id}",
+        f"https://api.datacite.org/dois/{doi_id}",
+        headers={"Accept": "application/vnd.schemaorg.ld+json"},
         timeout=(10, 10),
     )
     r.raise_for_status()
-    doi.schema_org_dataset = r.json()
+    return r.json()
+
+
+@shared_task(soft_time_limit=20, time_limit=25)
+def fetch_doi_schema_org_dataset_task(doi_id: str) -> None:
+    doi = Doi.objects.get(id=doi_id)
+    doi.schema_org_dataset = _fetch_doi_schema_org_dataset(doi.id)
     doi.schema_org_dataset["isAccessibleForFree"] = True
     doi.save(update_fields=["schema_org_dataset"])
+
+
+def _fetch_doi_citations(doi_id: str) -> dict[str, str]:
+    citations = {}
+    for style in settings.ISIC_DATACITE_CITATION_STYLES:
+        r = requests.get(
+            f"https://api.datacite.org/dois/{doi_id}",
+            headers={"Accept": f"text/x-bibliography; style={style}"},
+            timeout=(10, 10),
+        )
+        r.raise_for_status()
+        citations[style] = r.text
+    return citations
 
 
 @shared_task(soft_time_limit=120, time_limit=180)
 def fetch_doi_citations_task(doi_id: str) -> None:
     doi = Doi.objects.get(id=doi_id)
-    for style in settings.ISIC_DATACITE_CITATION_STYLES:
-        r = requests.get(
-            doi.url,
-            headers={"Accept": f"text/x-bibliography; style={style}"},
-            timeout=(10, 10),
-        )
-        r.raise_for_status()
-        doi.citations[style] = r.text
+    doi.citations = _fetch_doi_citations(doi.id)
     doi.save(update_fields=["citations"])
 
 
