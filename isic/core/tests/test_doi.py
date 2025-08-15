@@ -16,16 +16,6 @@ from isic.core.tests.factories import CollectionFactory, DoiFactory
 
 
 @pytest.fixture
-def mock_datacite_citations_fetch(mocker):
-    return mocker.patch("isic.core.services.collection.doi.fetch_doi_citations_task")
-
-
-@pytest.fixture
-def mock_datacite_schema_org_dataset_fetch(mocker):
-    return mocker.patch("isic.core.services.collection.doi.fetch_doi_schema_org_dataset_task")
-
-
-@pytest.fixture
 def mock_datacite_create_doi(mocker):
     return mocker.patch("isic.core.services.collection.doi._datacite_create_doi")
 
@@ -53,10 +43,11 @@ def test_collection_create_doi(
     staff_user,
     mock_datacite_create_doi,
     mock_datacite_update_doi,
-    mock_datacite_citations_fetch,
-    mock_datacite_schema_org_dataset_fetch,
+    mock_fetch_doi_citations,
+    mock_fetch_doi_schema_org_dataset,
 ):
-    collection_create_doi(user=staff_user, collection=public_collection_with_public_images)
+    doi = collection_create_doi(user=staff_user, collection=public_collection_with_public_images)
+    doi.refresh_from_db()
 
     public_collection_with_public_images.refresh_from_db()
     assert public_collection_with_public_images.locked
@@ -65,8 +56,12 @@ def test_collection_create_doi(
     assert public_collection_with_public_images.doi.creator == staff_user
     mock_datacite_create_doi.assert_called_once()
     mock_datacite_update_doi.assert_called_once()
-    mock_datacite_citations_fetch.delay_on_commit.assert_called_once()
-    mock_datacite_schema_org_dataset_fetch.delay_on_commit.assert_called_once()
+    assert doi.citations == {"apa": "fake citation", "chicago": "fake citation"}
+    assert doi.schema_org_dataset == {
+        "@type": "Dataset",
+        "name": "fake dataset",
+        "isAccessibleForFree": True,
+    }
 
 
 @pytest.mark.django_db
@@ -92,20 +87,28 @@ def test_doi_creation(
     staff_user_request,
     mock_datacite_create_doi,
     mock_datacite_update_doi,
-    mock_datacite_citations_fetch,
-    mock_datacite_schema_org_dataset_fetch,
+    mock_fetch_doi_citations,
+    mock_fetch_doi_schema_org_dataset,
 ):
-    collection_create_doi(
+    doi = collection_create_doi(
         user=staff_user_request.user, collection=public_collection_with_public_images
     )
+    doi.refresh_from_db()
 
     public_collection_with_public_images.refresh_from_db()
     assert public_collection_with_public_images.doi is not None
     assert public_collection_with_public_images.locked
     mock_datacite_create_doi.assert_called_once()
     mock_datacite_update_doi.assert_called_once()
-    mock_datacite_citations_fetch.delay_on_commit.assert_called_once()
-    mock_datacite_schema_org_dataset_fetch.delay_on_commit.assert_called_once()
+    assert doi.citations == {
+        "apa": "fake citation",
+        "chicago": "fake citation",
+    }
+    assert doi.schema_org_dataset == {
+        "@type": "Dataset",
+        "name": "fake dataset",
+        "isAccessibleForFree": True,
+    }
 
 
 @pytest.fixture
@@ -214,8 +217,8 @@ def test_doi_files(
     staff_user,
     mock_datacite_create_doi,
     mock_datacite_update_doi,
-    mock_datacite_citations_fetch,
-    mock_datacite_schema_org_dataset_fetch,
+    mock_fetch_doi_citations,
+    mock_fetch_doi_schema_org_dataset,
 ):
     collection = collection_factory(public=True)
     images = [image_factory(public=True) for _ in range(3)]
@@ -252,8 +255,8 @@ def test_api_doi_creation(
     public_collection_with_public_images,
     mock_datacite_create_doi,
     mock_datacite_update_doi,
-    mock_datacite_citations_fetch,
-    mock_datacite_schema_org_dataset_fetch,
+    mock_fetch_doi_citations,
+    mock_fetch_doi_schema_org_dataset,
     s3ff_random_field_value,
     staff_client,
 ):
