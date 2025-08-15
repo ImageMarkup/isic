@@ -91,10 +91,12 @@ CACHES["default"]["TIMEOUT"] = 0
 # cachalot sets its own expiration time, so it needs to be set to 0 as well
 CACHALOT_TIMEOUT = 0
 
-# In development, always present the approval dialog
-OAUTH2_PROVIDER["REQUEST_APPROVAL_PROMPT"] = "force"
-
 ISIC_ZIP_DOWNLOAD_WILDCARD_URLS = False
 
 # suppress noisy cache invalidation log messages
 logging.getLogger("isic.core.signals").setLevel(logging.ERROR)
+
+# Set the OIDC private key for the IDP to the (insecure) development key.
+IDP_OIDC_PRIVATE_KEY = (
+    Path(__file__).parents[2] / "dev" / "private_key_development.pem"
+).read_text()
