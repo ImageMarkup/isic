@@ -113,15 +113,29 @@ def _zip_file_listing_generator(qs: QuerySet[Image], token: str) -> Generator[di
 
     if hasattr(default_storage, "base_url") and default_storage.base_url is not None:
         default_url_prefix = default_storage.base_url.rstrip("/")
-    else:
+    elif hasattr(default_storage, "bucket_name") and hasattr(default_storage, "region_name"):
         default_url_prefix = (
             f"https://{default_storage.bucket_name}.s3.{default_storage.region_name}.amazonaws.com"
         )
-
-    if hasattr(storages["sponsored"], "base_url") and default_storage.base_url is not None:
-        sponsored_url_prefix = storages["sponsored"].base_url.rstrip("/")
     else:
-        sponsored_url_prefix = f"https://{storages['sponsored'].bucket_name}.s3.{storages['sponsored'].region_name}.amazonaws.com"
+        msg = "Storage backend must have either base_url or bucket_name/region_name attributes"
+        raise ValueError(msg)
+
+    if hasattr(storages["sponsored"], "base_url") and storages["sponsored"].base_url is not None:
+        sponsored_url_prefix = storages["sponsored"].base_url.rstrip("/")
+    elif hasattr(storages["sponsored"], "bucket_name") and hasattr(
+        storages["sponsored"], "region_name"
+    ):
+        sponsored_url_prefix = (
+            f"https://{storages['sponsored'].bucket_name}"
+            f".s3.{storages['sponsored'].region_name}.amazonaws.com"
+        )
+    else:
+        msg = (
+            "Sponsored storage backend must have either base_url "
+            "or bucket_name/region_name attributes"
+        )
+        raise ValueError(msg)
 
     for image in (
         qs.values("accession__blob", "accession__sponsored_blob", "public", "isic_id")
