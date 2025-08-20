@@ -1,4 +1,6 @@
+import os
 import secrets
+import sys
 
 from django.conf import settings
 from django.contrib.auth.models import Group, User
@@ -28,6 +30,15 @@ from isic.ingest.tests.factories import (
 )
 
 from .factories import EmailAddressFactory, ProfileFactory, UserFactory
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _disable_direct_pytest_usage():
+    # this is useful for LLMs that can forget how to run tests.
+    # also, allow vscode to invoke pytest directly.
+    if "TOX_ENV_NAME" not in os.environ and not os.environ.get("DEBUGPY_RUNNING"):
+        print("Never invoke pytest directly. Use `uv run tox -e test` instead.", file=sys.stderr)  # noqa: T201
+        sys.exit(1)
 
 
 @pytest.fixture(autouse=True)
