@@ -26,10 +26,9 @@ def _generate_random_doi_id():
     return f"{settings.ISIC_DATACITE_DOI_PREFIX}/{random.randint(10_000, 999_999):06}"  # noqa: S311
 
 
-class Doi(TimeStampedModel):
+class AbstractDoi(TimeStampedModel):
     class Meta:
-        verbose_name = "DOI"
-        verbose_name_plural = "DOIs"
+        abstract = True
 
     id = models.CharField(
         max_length=30,
@@ -40,7 +39,6 @@ class Doi(TimeStampedModel):
     slug = models.SlugField(max_length=150, unique=True)
     collection = models.OneToOneField(Collection, on_delete=models.PROTECT)
     creator = models.ForeignKey(User, on_delete=models.RESTRICT)
-    is_draft = models.BooleanField(default=False)
 
     bundle = models.FileField(upload_to=doi_upload_to, storage=doi_storage, null=True, blank=True)
     bundle_size = models.PositiveBigIntegerField(null=True, blank=True)
@@ -65,6 +63,18 @@ class Doi(TimeStampedModel):
         return json.dumps(self.schema_org_dataset)
 
 
+class Doi(AbstractDoi):
+    class Meta:
+        verbose_name = "DOI"
+        verbose_name_plural = "DOIs"
+
+
+class DraftDoi(AbstractDoi):
+    class Meta:
+        verbose_name = "Draft DOI"
+        verbose_name_plural = "Draft DOIs"
+
+
 # https://datacite-metadata-schema.readthedocs.io/en/4.6/appendices/appendix-1/relationType/
 class RelationType(models.TextChoices):
     IS_REFERENCED_BY = "IsReferencedBy", "Is Referenced By"
@@ -78,8 +88,7 @@ class RelatedIdentifierType(models.TextChoices):
     URL = "URL", "URL"
 
 
-class DoiRelatedIdentifier(models.Model):
-    doi = models.ForeignKey(Doi, on_delete=models.CASCADE, related_name="related_identifiers")
+class AbstractDoiRelatedIdentifier(models.Model):
     relation_type = models.CharField(
         max_length=20,
         choices=RelationType.choices,
@@ -91,6 +100,8 @@ class DoiRelatedIdentifier(models.Model):
     related_identifier = models.CharField(max_length=500)
 
     class Meta:
+        abstract = True
+
         unique_together = [
             ["doi", "relation_type", "related_identifier_type", "related_identifier"]
         ]
@@ -98,7 +109,7 @@ class DoiRelatedIdentifier(models.Model):
             models.UniqueConstraint(
                 fields=["doi"],
                 condition=models.Q(relation_type="IsDescribedBy"),
-                name="unique_isdescribedby_per_doi",
+                name="%(class)s_unique_isdescribedby_per_doi",
             )
         ]
 
@@ -122,8 +133,9 @@ class DoiRelatedIdentifier(models.Model):
             url_validator = URLValidator()
             url_validator(self.related_identifier)
 
-        if self.relation_type == RelationType.IS_DESCRIBED_BY:
-            existing_query = DoiRelatedIdentifier.objects.filter(
+        if self.relation_type == RelationType.IS_DESCRIBED_BY and self.doi_id:
+            model_class = self.__class__
+            existing_query = model_class.objects.filter(
                 doi=self.doi, relation_type=RelationType.IS_DESCRIBED_BY
             )
             if self.pk:
@@ -147,35 +159,9 @@ class DoiRelatedIdentifier(models.Model):
                 raise ValueError(str(e)) from e
 
 
-class DoiPermissions:
-    model = Doi
-    perms = [
-        "view_doi",
-        "change_doi",
-    ]
-    filters = {
-        "view_doi": "view_doi_list",
-    }
-
-    @staticmethod
-    def view_doi_list(user_obj, qs=None):
-        qs = qs if qs is not None else Doi._default_manager.all()
-
-        if user_obj.is_staff:
-            return qs
-
-        return qs.filter(is_draft=False)
-
-    @staticmethod
-    def view_doi(user_obj, obj):
-        if user_obj.is_staff:
-            return True
-
-        return not obj.is_draft
-
-    @staticmethod
-    def change_doi(user_obj, obj):  # noqa: ARG004
-        return user_obj.is_staff
+class DoiRelatedIdentifier(AbstractDoiRelatedIdentifier):
+    doi = models.ForeignKey(Doi, on_delete=models.CASCADE, related_name="related_identifiers")
 
 
-Doi.perms_class = DoiPermissions  # type: ignore[attr-defined]
+class DraftDoiRelatedIdentifier(AbstractDoiRelatedIdentifier):
+    doi = models.ForeignKey(DraftDoi, on_delete=models.CASCADE, related_name="related_identifiers")
