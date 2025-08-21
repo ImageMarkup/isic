@@ -77,7 +77,7 @@ def quickfind_execute(query: str, user: User) -> list[dict]:
                 collection__name__icontains=query
             ),
             "sort": lambda v: jaro_winkler_metric(query.upper(), v.collection.name.upper()),
-            "permission": "core.view_doi",
+            "permission": "",
             "serializer": DoiQuickfindResultOut,
         },
     }
