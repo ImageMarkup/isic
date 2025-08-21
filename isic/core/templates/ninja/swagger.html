@@ -3,6 +3,7 @@
 <html>
     <head>
         <link type="text/css" rel="stylesheet" href="{% static 'ninja/swagger-ui.css' %}">
+        <script src="https://cdn.tailwindcss.com"></script>
         <style type="text/css">
             .topbar,
             .information-container a.link,
@@ -21,6 +22,54 @@
     <body
         data-csrf-token="{% if add_csrf %}{{ csrf_token }}{% endif %}"
         data-api-csrf="{% if add_csrf %}true{% endif %}">
+
+        <div class="bg-gradient-to-br from-slate-800 to-slate-700 text-white py-6 px-8 shadow-lg">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-1 h-6 bg-blue-500 rounded"></div>
+                    <h2 class="text-xl font-semibold">
+                        Looking to download ISIC data in bulk?
+                    </h2>
+                </div>
+                <p class="text-gray-200 mb-5 leading-relaxed">
+                    Before using the API for bulk data downloads, please consider these faster and more efficient alternatives.
+                </p>
+                <div class="grid md:grid-cols-2 gap-6 mb-5">
+                    <div class="bg-white/10 rounded-lg p-5 border border-white/20 backdrop-blur flex flex-col">
+                        <div class="flex items-center gap-2 mb-2">
+                            <h3 class="text-base font-semibold text-blue-400">
+                                Prebuilt Data Snapshot
+                            </h3>
+                            <span class="bg-green-600 text-white text-xs px-2 py-0.5 rounded-full font-medium uppercase">
+                                Recommended
+                            </span>
+                        </div>
+                        <p class="text-sm text-gray-300 mb-3 leading-relaxed flex-grow">
+                            Download a complete, recent snapshot of all ISIC data through the <a href="https://registry.opendata.aws/isic-archive/" target="_blank" class="text-blue-400 hover:text-blue-300 underline">AWS Open Data Program</a>. This is significantly faster and includes all publicly available images and metadata.
+                        </p>
+                        <div>
+                            <a href="https://isic-archive.s3.us-east-1.amazonaws.com/snapshots/ISIC_images.zip" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-md text-sm font-medium transition-colors">
+                                Download Data Snapshot (60GB)
+                            </a>
+                        </div>
+                    </div>
+                    <div class="bg-white/10 rounded-lg p-5 border border-white/20 backdrop-blur flex flex-col">
+                        <h3 class="text-base font-semibold text-blue-400 mb-2">
+                            ISIC Command Line Tool
+                        </h3>
+                        <p class="text-sm text-gray-300 mb-3 leading-relaxed flex-grow">
+                            For programmatic access and selective filtering, use our official CLI tool.
+                        </p>
+                        <div>
+                            <a href="https://github.com/ImageMarkup/isic-cli#isic-cli" class="inline-block bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-md text-sm font-medium transition-colors">
+                                Get isic-cli
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
 
         <script type="application/json" id="swagger-settings">
             {{ swagger_settings | safe }}
