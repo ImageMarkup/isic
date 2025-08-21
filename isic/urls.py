@@ -4,7 +4,6 @@ from django.conf import settings
 from django.contrib import admin
 from django.contrib.sitemaps.views import sitemap
 from django.core.exceptions import ValidationError
-from django.template.loader import render_to_string
 from django.urls import include, path, reverse_lazy
 from django.views.generic.base import RedirectView
 from ninja import NinjaAPI
@@ -32,7 +31,6 @@ from isic.zip_download.api import zip_router
 
 api = NinjaAPI(
     title="ISIC Archive",
-    description=render_to_string("core/swagger_description.html"),
     version="v2",
     docs_url=None,  # we want to serve the docs next to the ninja root rather than under it
     auth=allow_any,
