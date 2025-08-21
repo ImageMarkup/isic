@@ -2,7 +2,7 @@ from django.urls.base import reverse
 import pytest
 from pytest_lazy_fixtures import lf
 
-from isic.core.tests.factories import DoiFactory
+from isic.core.tests.factories import DoiFactory, DraftDoiFactory
 
 
 @pytest.mark.django_db
@@ -158,8 +158,8 @@ def test_image_list_metadata_download_permissions(client, authenticated_client, 
 
 @pytest.mark.django_db
 def test_core_doi_detail(client, authenticated_client, staff_client):
-    draft_doi = DoiFactory.create(is_draft=True)
-    published_doi = DoiFactory.create(is_draft=False)
+    draft_doi = DraftDoiFactory.create()
+    published_doi = DoiFactory.create()
 
     for client_ in [client, authenticated_client, staff_client]:
         for doi in [draft_doi, published_doi]:

@@ -2,6 +2,7 @@ import factory
 import factory.django
 
 from isic.core.models import Collection, Doi, Image
+from isic.core.models.doi import DraftDoi
 from isic.core.models.isic_id import IsicId
 from isic.factories import UserFactory
 from isic.ingest.tests.factories import AccessionFactory
@@ -44,6 +45,15 @@ class CollectionFactory(factory.django.DjangoModelFactory):
 class DoiFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Doi
+
+    slug = factory.Faker("slug")
+    collection = factory.SubFactory(CollectionFactory)
+    creator = factory.SubFactory(UserFactory)
+
+
+class DraftDoiFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = DraftDoi
 
     slug = factory.Faker("slug")
     collection = factory.SubFactory(CollectionFactory)

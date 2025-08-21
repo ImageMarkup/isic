@@ -5,8 +5,9 @@ from django.utils.html import format_html
 from resonant_utils.admin import ReadonlyTabularInline
 
 from isic.core.models import Collection, Doi, GirderDataset, GirderImage, Image, ImageAlias
+from isic.core.models.doi import DraftDoi
 from isic.core.models.segmentation import Segmentation, SegmentationReview
-from isic.core.models.supplemental_file import SupplementalFile
+from isic.core.models.supplemental_file import DraftSupplementalFile, SupplementalFile
 
 # general admin settings
 # https://docs.djangoproject.com/en/3.1/ref/contrib/admin/#adminsite-objects
@@ -212,12 +213,9 @@ class SupplementalFileInline(admin.TabularInline):
     extra = 0
 
 
-@admin.register(Doi)
-class DoiAdmin(StaffReadonlyAdmin):
+class BaseDoiAdmin(StaffReadonlyAdmin):
     list_select_related = ["collection"]
     list_display = ["id", "external_url", "collection", "bundle", "num_supplemental_files"]
-    inlines = [SupplementalFileInline]
-
     autocomplete_fields = ["creator"]
 
     @admin.display(ordering="num_supplemental_files", description="Number of supplemental files")
@@ -229,3 +227,17 @@ class DoiAdmin(StaffReadonlyAdmin):
         return qs.annotate(
             num_supplemental_files=Count("supplemental_files", distinct=True),
         )
+
+
+@admin.register(Doi)
+class DoiAdmin(BaseDoiAdmin):
+    inlines = [SupplementalFileInline]
+
+
+class DraftSupplementalFileInline(admin.TabularInline):
+    model = DraftSupplementalFile
+
+
+@admin.register(DraftDoi)
+class DraftDoiAdmin(BaseDoiAdmin):
+    inlines = [DraftSupplementalFileInline]
