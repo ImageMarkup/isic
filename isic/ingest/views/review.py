@@ -3,7 +3,7 @@ import math
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
-from django.db.models import Count
+from django.db.models import Count, Exists, OuterRef
 from django.db.models.query_utils import Q
 from django.shortcuts import get_object_or_404, render
 
@@ -36,7 +36,21 @@ def _cohort_review_progress(cohort: Cohort) -> dict:
 
 @staff_member_required
 def ingest_review(request):
-    cohorts = Cohort.objects.select_related("contributor", "creator").order_by("-created")
+    cohorts = Cohort.objects.select_related("contributor", "creator")
+
+    hide_empty = request.GET.get("hide_empty", "true").lower() == "true"
+
+    if hide_empty:
+        # only include cohorts with non-skipped accessions
+        cohorts = cohorts.annotate(
+            has_non_skipped_accessions=Exists(
+                Accession.objects.filter(cohort=OuterRef("pk")).exclude(
+                    status=AccessionStatus.SKIPPED
+                )
+            )
+        ).filter(has_non_skipped_accessions=True)
+
+    cohorts = cohorts.order_by("-created")
     paginator = Paginator(cohorts, 10)
     cohorts_page = paginator.get_page(request.GET.get("page"))
     unreviewed_counts = (
@@ -58,6 +72,7 @@ def ingest_review(request):
             "cohorts": cohorts_page,
             "num_cohorts": paginator.count,
             "paginator": paginator,
+            "hide_empty": hide_empty,
         },
     )
 
