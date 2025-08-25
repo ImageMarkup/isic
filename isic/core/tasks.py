@@ -4,6 +4,7 @@ import tempfile
 from typing import cast
 import uuid
 
+import boto3
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.conf import settings
@@ -268,6 +269,48 @@ def regenerate_sponsored_blob(image_id: int):
             sponsored_thumbnail_256_blob,
             storages["sponsored"].bucket_name,
             f"thumbnails/{image.isic_id}_thumbnail.jpg",
+        )
+
+
+@shared_task()  # nosem: require-celery-timeouts
+def embed_iptc_metadata_task(image_id: int):
+    image = Image.objects.select_related("accession").get(id=image_id, public=False)
+
+    accession = image.accession
+    attribution = accession.attribution
+    copyright_license = accession.copyright_license
+    isic_id = image.isic_id
+
+    s3_client = boto3.client(
+        "s3",
+        aws_access_key_id=settings.AWS_S3_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_S3_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_S3_REGION_NAME,
+    )
+    bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+
+    with embed_iptc_metadata(
+        accession.blob,
+        attribution,
+        copyright_license,
+        isic_id,
+    ) as blob_with_iptc:
+        s3_client.upload_fileobj(
+            blob_with_iptc,
+            bucket_name,
+            accession.blob.name,
+        )
+
+    with embed_iptc_metadata(
+        accession.thumbnail_256,
+        attribution,
+        copyright_license,
+        isic_id,
+    ) as thumbnail_with_iptc:
+        s3_client.upload_fileobj(
+            thumbnail_with_iptc,
+            bucket_name,
+            accession.thumbnail_256.name,
         )
 
 
