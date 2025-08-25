@@ -5,8 +5,22 @@
 {% block content %}
   <div class="mb-4">
 
-    <div class="heading-1">Ingest Review</div>
-    <p>Cohorts for review</p>
+    <div class="flex justify-between items-start mb-6">
+      <div>
+        <div class="heading-1">Ingest Review</div>
+      </div>
+
+      <label class="inline-flex items-center cursor-pointer bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-200 hover:bg-gray-50 transition-colors">
+        <input type="checkbox"
+               id="hide-empty-toggle"
+               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 focus:ring-2 focus:ring-offset-0"
+               {% if hide_empty %}checked{% endif %}
+               onchange="toggleHideEmpty()">
+        <span class="ml-3 text-sm font-medium text-gray-700">Hide empty cohorts</span>
+        <i class="ri-question-line ml-2 text-gray-400 hover:text-gray-600 cursor-help"
+           title="Hides cohorts with no accessions or only skipped accessions"></i>
+      </label>
+    </div>
 
     {% include 'studies/partials/pagination.html' with page_obj=cohorts %}
   </div>
@@ -57,4 +71,22 @@
       {% endfor %}
     </ul>
   </div>
+
+  <script>
+    function toggleHideEmpty() {
+      const checkbox = document.getElementById('hide-empty-toggle');
+      const url = new URL(window.location);
+
+      if (checkbox.checked) {
+        url.searchParams.set('hide_empty', 'true');
+      } else {
+        url.searchParams.set('hide_empty', 'false');
+      }
+
+      // remove page parameter to go back to first page when toggling
+      url.searchParams.delete('page');
+
+      window.location.href = url.toString();
+    }
+  </script>
 {% endblock %}
