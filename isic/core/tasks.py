@@ -209,32 +209,6 @@ def refresh_materialized_view_collection_counts_task():
         cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY materialized_collection_counts;")
 
 
-@shared_task(soft_time_limit=30, time_limit=45)
-def generate_sponsored_blob_task(image_id: int):
-    image = Image.objects.select_related("accession").get(id=image_id, public=True)
-    attribution = image.accession.attribution
-    copyright_license = image.accession.copyright_license
-
-    with (
-        embed_iptc_metadata(
-            image.accession.blob,  # nosem: use-image-blob-where-possible
-            attribution,
-            copyright_license,
-            image.isic_id,
-        ) as sponsored_blob,
-        embed_iptc_metadata(
-            image.accession.thumbnail_256,  # nosem: use-image-thumbnail-256-where-possible
-            attribution,
-            copyright_license,
-            image.isic_id,
-        ) as sponsored_thumbnail_256_blob,
-    ):
-        storages["sponsored"].save(f"images/{image.isic_id}.{image.extension}", sponsored_blob)
-        storages["sponsored"].save(
-            f"thumbnails/{image.isic_id}_thumbnail.jpg", sponsored_thumbnail_256_blob
-        )
-
-
 @shared_task(soft_time_limit=180, time_limit=200)
 def regenerate_sponsored_blob(image_id: int):
     image = Image.objects.select_related("accession").get(id=image_id)
