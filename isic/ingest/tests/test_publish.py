@@ -146,17 +146,10 @@ def test_publish_cohort_into_public_collection(
 
 
 @pytest.mark.django_db(transaction=True)
-@pytest.mark.parametrize(
-    ("blob_path", "blob_name"),
-    [
-        (pathlib.Path(data_dir / "ISIC_0000000.jpg"), "ISIC_0000000.jpg"),
-        (pathlib.Path(data_dir / "RCM_tile_with_exif.png"), "RCM_tile_with_exif.png"),
-    ],
-    ids=["jpg_image", "rcm_image"],
-)
-def test_unembargo_images(
-    blob_path, blob_name, image_factory, user, cohort_factory, django_capture_on_commit_callbacks
-):
+def test_unembargo_images(user, cohort_factory, django_capture_on_commit_callbacks):
+    blob_path = pathlib.Path(data_dir / "ISIC_0000000.jpg")
+    blob_name = "ISIC_0000000.jpg"
+
     cohort = cohort_factory(creator=user, contributor__creator=user)
     with blob_path.open("rb") as stream:
         blob = InMemoryUploadedFile(stream, None, blob_name, None, blob_path.stat().st_size, None)
@@ -181,7 +174,38 @@ def test_unembargo_images(
         == f"thumbnails/{image.isic_id}_thumbnail.jpg"
     )
 
-    for blob in [image.accession.sponsored_blob, image.accession.sponsored_thumbnail_256_blob]:
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize(
+    ("blob_path", "blob_name"),
+    [
+        (pathlib.Path(data_dir / "ISIC_0000000.jpg"), "ISIC_0000000.jpg"),
+        (pathlib.Path(data_dir / "RCM_tile_with_exif.png"), "RCM_tile_with_exif.png"),
+    ],
+    ids=["jpg_image", "rcm_image"],
+)
+def test_iptc_metadata_embedding(
+    blob_path, blob_name, user, cohort_factory, django_capture_on_commit_callbacks
+):
+    cohort = cohort_factory(creator=user, contributor__creator=user)
+    with blob_path.open("rb") as stream:
+        blob = InMemoryUploadedFile(stream, None, blob_name, None, blob_path.stat().st_size, None)
+        accession = accession_create(
+            creator=user,
+            cohort=cohort,
+            original_blob=blob,
+            original_blob_name=blob_name,
+            original_blob_size=blob_path.stat().st_size,
+        )
+    accession.refresh_from_db()
+
+    with django_capture_on_commit_callbacks(execute=True):
+        accession_publish(accession=accession, public=False, publisher=user)
+
+    image = Image.objects.get(accession=accession)
+    assert not image.public
+
+    for blob in [image.accession.blob, image.accession.thumbnail_256]:
         with (
             field_file_to_local_path(blob) as path,
             pyexiv2.Image(str(path.absolute())) as image_file,

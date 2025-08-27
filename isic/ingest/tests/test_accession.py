@@ -5,7 +5,9 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.urls.base import reverse
 import PIL
 import PIL.ExifTags
+import pyexiv2
 import pytest
+from resonant_utils.files import field_file_to_local_path
 
 from isic.core.models.image import Image
 from isic.ingest.models.accession import Accession
@@ -75,6 +77,13 @@ def test_accession_reprocess(user, cohort_factory, django_capture_on_commit_call
     # verify that the image is still public and has the same blob name
     assert image.public
     assert image.accession.sponsored_blob.name == sponsored_blob_name
+
+    for blob in [image.accession.sponsored_blob, image.accession.sponsored_thumbnail_256_blob]:
+        with (
+            field_file_to_local_path(blob) as path,
+            pyexiv2.Image(str(path.absolute())) as image_file,
+        ):
+            assert image_file.read_iptc(), "IPTC metadata not found"
 
 
 @pytest.mark.django_db(transaction=True)
