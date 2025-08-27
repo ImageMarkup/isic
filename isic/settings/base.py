@@ -206,6 +206,7 @@ SHELL_PLUS_IMPORTS = [
     "from isic.ingest.services.accession import *",
     "from isic.ingest.services.zip_upload import *",
     "from isic.core.dsl import *",
+    "from isic.core.health import *",
     "from isic.core.search import *",
     "from isic.core.tasks import *",
     "from isic.ingest.services.cohort import *",
