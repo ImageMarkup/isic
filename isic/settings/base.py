@@ -13,7 +13,6 @@ from resonant_settings.celery import *
 from resonant_settings.django import *
 from resonant_settings.django_extensions import *
 from resonant_settings.logging import *
-from resonant_settings.oauth_toolkit import *
 
 if TYPE_CHECKING:
     from urllib.parse import ParseResult
@@ -42,6 +41,7 @@ INSTALLED_APPS = [
     # Everything else
     "allauth",
     "allauth.account",
+    "allauth.idp.oidc",
     "allauth.socialaccount",
     "cachalot",
     "corsheaders",
@@ -60,7 +60,6 @@ INSTALLED_APPS = [
     "markdownify",
     # Install "ninja" to force Swagger to be served locally, so it can be overridden
     "ninja",
-    "oauth2_provider",
     "resonant_utils",
     "s3_file_field",
     "widget_tweaks",
@@ -147,10 +146,6 @@ CELERY_BEAT_SCHEDULE = {
         "task": "isic.core.tasks.sync_elasticsearch_indices_task",
         "schedule": crontab(minute="0", hour="0"),
     },
-    "prune-expired-oauth-tokens": {
-        "task": "isic.core.tasks.prune_expired_oauth_tokens",
-        "schedule": crontab(minute="0", hour="0"),
-    },
     "refresh-materialized-view-collection-counts": {
         "task": "isic.core.tasks.refresh_materialized_view_collection_counts_task",
         "schedule": crontab(minute="*/15", hour="*"),
@@ -215,22 +210,6 @@ SHELL_PLUS_IMPORTS = [
     "from isic.studies.tasks import *",
 ]
 
-OAUTH2_PROVIDER.update(
-    {
-        # PKCE_REQUIRED is on by default in oauth-toolkit >= 2.0
-        "PKCE_REQUIRED": True,
-        # Normally, "http" would only be allowed in development, but local developers
-        # of the Gallery are allowed to authenticate against the production site
-        "ALLOWED_REDIRECT_URI_SCHEMES": ["http", "https"],
-        "SCOPES": {
-            "identity": "Access to your basic profile information",
-            "image:read": "Read access to images",
-            "image:write": "Write access to images",
-        },
-        "DEFAULT_SCOPES": ["identity"],
-    }
-)
-OAUTH2_PROVIDER_APPLICATION_MODEL = "core.IsicOAuthApplication"
 
 ISIC_ELASTICSEARCH_URL: ParseResult = env.url("DJANGO_ISIC_ELASTICSEARCH_URL")
 ISIC_ELASTICSEARCH_IMAGES_INDEX = "isic"
@@ -280,3 +259,13 @@ TEMPLATES[0]["OPTIONS"]["context_processors"] += [  # type: ignore[index]
     "isic.core.context_processors.citation_styles",
 ]
 ISIC_JS_SENTRY = False
+
+
+# Django can persist logins for longer than this via cookies,
+# but non-refreshing clients will need to redirect to Django's auth every 24 hours.
+IDP_OIDC_ACCESS_TOKEN_EXPIRES_IN = timedelta(days=1).total_seconds()
+
+# Allow 5 minutes for a flow to exchange an auth code for a token. This is typically
+# 60 seconds but out-of-band flows may take a bit longer. A maximum of 10 minutes is
+# recommended: https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.
+IDP_OIDC_AUTHORIZATION_CODE_EXPIRES_IN = timedelta(minutes=5).total_seconds()

@@ -6,7 +6,6 @@ import django.core.validators
 from django.db import migrations, models
 import django.db.models.deletion
 import django_extensions.db.fields
-import oauth2_provider.generators
 import s3_file_field.fields
 
 
@@ -376,7 +375,7 @@ class Migration(migrations.Migration):
                     "client_id",
                     models.CharField(
                         db_index=True,
-                        default=oauth2_provider.generators.generate_client_id,
+                        default="placeholder",
                         max_length=100,
                         unique=True,
                     ),
@@ -413,7 +412,7 @@ class Migration(migrations.Migration):
                     models.CharField(
                         blank=True,
                         db_index=True,
-                        default=oauth2_provider.generators.generate_client_secret,
+                        default="",
                         max_length=255,
                     ),
                 ),

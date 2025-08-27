@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from .base import CopyrightLicense, CreationSortedTimeStampedModel, IsicOAuthApplication
+from .base import CopyrightLicense, CreationSortedTimeStampedModel
 from .collection import Collection
 from .collection_count import CollectionCount
 from .doi import Doi
@@ -24,7 +24,6 @@ __all__ = [
     "Image",
     "ImageAlias",
     "IsicId",
-    "IsicOAuthApplication",
     "Segmentation",
     "SegmentationReview",
     "SupplementalFile",
