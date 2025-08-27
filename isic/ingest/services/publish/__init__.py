@@ -176,22 +176,11 @@ def embed_iptc_metadata(
 def unembargo_image(*, image: Image) -> None:
     storage_keys_to_delete = []
 
-    attribution = image.accession.attribution
-    copyright_license = image.accession.copyright_license
-
     with (
-        embed_iptc_metadata(
-            image.accession.blob,  # nosem: use-image-blob-where-possible
-            attribution,
-            copyright_license,
-            image.isic_id,
-        ) as sponsored_blob,
-        embed_iptc_metadata(
-            image.accession.thumbnail_256,  # nosem: use-image-thumbnail-256-where-possible
-            attribution,
-            copyright_license,
-            image.isic_id,
-        ) as sponsored_thumbnail_256_blob,
+        image.accession.blob.open("rb") as blob_file,  # nosem: use-image-blob-where-possible
+        image.accession.thumbnail_256.open(  # nosem: use-image-thumbnail-256-where-possible
+            "rb"
+        ) as thumbnail_file,
     ):
         storage_keys_to_delete.append(
             image.accession.blob.name  # nosem: use-image-blob-where-possible
@@ -205,12 +194,12 @@ def unembargo_image(*, image: Image) -> None:
             # the blob based on image.public. in the event of reprocessing an accession that's
             # already public, image.extension would try to reach into the sponsored_blob which
             # won't exist.
-            sponsored_blob,
+            blob_file,
             name=f"{image.isic_id}.{image.accession.extension}",
         )
         # nosem: use-image-thumbnail-256-where-possible
         image.accession.sponsored_thumbnail_256_blob = File(
-            sponsored_thumbnail_256_blob,
+            thumbnail_file,
             name=f"{image.isic_id}_thumbnail.jpg",
         )
         image.accession.blob = ""  # nosem: use-image-blob-where-possible

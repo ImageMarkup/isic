@@ -2,6 +2,9 @@ from dataclasses import dataclass
 import logging
 
 from django.contrib.auth.models import User
+from django.db.models import Q
+import pyexiv2
+from resonant_utils.files import field_file_to_local_path
 
 from isic.core.models.collection import Collection
 from isic.core.models.image import Image
@@ -163,6 +166,35 @@ def check_magic_collections_have_no_doi() -> HealthCheckResult:
     )
 
 
+def check_iptc_metadata_consistency() -> HealthCheckResult:
+    jpg_images = (
+        Image.objects.filter(
+            Q(accession__blob__endswith=".jpg") | Q(accession__sponsored_blob__endswith=".jpg")
+        )
+        .select_related("accession")
+        .order_by("?")[:100]
+    )
+
+    if not jpg_images:
+        return HealthCheckResult(
+            name="iptc_metadata_consistency", passed=True, message="No JPEG images to check"
+        )
+
+    errors = []
+
+    for image in jpg_images:
+        with field_file_to_local_path(image.blob) as path, pyexiv2.Image(str(path)) as img:
+            iptc_credit = img.read_iptc().get("Iptc.Application2.Credit", "")
+            if iptc_credit != image.accession.attribution:
+                errors.append(f"{image.isic_id}: attribution mismatch")
+
+    return HealthCheckResult(
+        name="iptc_metadata_consistency",
+        passed=not errors,
+        message=f"Found issues: {', '.join(errors)}" if errors else "IPTC metadata consistent",
+    )
+
+
 HEALTH_CHECKS = [
     ("public_images_have_sponsored_blob", check_public_images_have_sponsored_blob),
     ("non_public_images_have_non_sponsored_blob", check_non_public_images_have_non_sponsored_blob),
@@ -173,6 +205,7 @@ HEALTH_CHECKS = [
     ("magic_collections_have_no_doi", check_magic_collections_have_no_doi),
     ("every_user_has_profile", check_every_user_has_profile),
     ("collection_image_consistency", check_collection_image_consistency),
+    ("iptc_metadata_consistency", check_iptc_metadata_consistency),
 ]
 
 
