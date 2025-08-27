@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 import json
 import logging
 from pathlib import PurePosixPath
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from botocore.signers import CloudFrontSigner
 from django.conf import settings
@@ -63,20 +63,20 @@ class ZipDownloadBasicAuth(HttpBasicAuth):
 class ZipDownloadTokenAuth(APIKeyQuery):
     param_name = "token"
 
-    def authenticate(self, request: HttpRequest, key: str | None) -> dict:
+    def authenticate(self, request: HttpRequest, key: str | None) -> dict | None:
         if not key:
-            raise AuthenticationError
+            return None
 
         try:
             token_dict = TimestampSigner().unsign_object(key, max_age=timedelta(days=1))
         except BadSignature:
-            raise AuthenticationError from None
+            return None
 
         token_dict["token"] = key
         return token_dict
 
 
-def zip_api_auth(request: HttpRequest):
+def zip_api_auth(request: HttpRequest) -> Any:
     """
     Protects the zip listing endpoint with basic auth.
 
