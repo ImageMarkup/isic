@@ -9,11 +9,16 @@ from isic.ingest.models.accession import Accession
 
 
 def image_create(*, creator: User, accession: Accession, public: bool) -> Image:
+    from isic.core.services.iptc import embed_iptc_metadata_for_image
+
     with transaction.atomic():
         isic_id = IsicId.objects.create_random()
         image = Image(isic=isic_id, creator=creator, accession=accession, public=public)
         image.full_clean()
         image.save()
+
+        embed_iptc_metadata_for_image(image)
+
         return image
 
 

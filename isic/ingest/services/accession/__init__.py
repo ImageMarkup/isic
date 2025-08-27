@@ -12,6 +12,7 @@ from s3_file_field.widgets import S3PlaceholderFile
 
 from isic.core.models.base import CopyrightLicense
 from isic.core.models.image import Image
+from isic.core.services.iptc import embed_iptc_metadata_for_image
 from isic.core.utils.db import lock_table_for_writes
 from isic.ingest.models.accession import Accession
 from isic.ingest.models.bulk_metadata_application import BulkMetadataApplication
@@ -89,8 +90,15 @@ def accession_reprocess(*, accession: Accession) -> None:
         accession.save(update_fields=["sponsored_blob", "sponsored_thumbnail_256_blob"])
         accession_generate_blob_task(accession.pk)
 
-        if hasattr(accession, "image") and accession.image.public:
-            unembargo_image(image=Image.objects.get(accession=accession))
+        if hasattr(accession, "image"):
+            # the existing accession.image has no blob values, so fresh Image objects
+            # need to be fetched.
+            embed_iptc_metadata_for_image(
+                Image.objects.get(accession=accession), ignore_public_check=True
+            )
+
+            if accession.image.public:
+                unembargo_image(image=Image.objects.get(accession=accession))
 
 
 def accession_purge(*, accession: Accession) -> None:
