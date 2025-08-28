@@ -20,9 +20,6 @@ from isic.core.pagination import CursorPagination, qs_with_hardcoded_count
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.core.services import image_metadata_csv
 from isic.core.services.collection import collection_create, collection_update
-from isic.core.services.collection.doi import (
-    collection_build_doi_preview,
-)
 from isic.core.utils.csv import EscapingDictWriter
 from isic.core.utils.http import Buffer
 from isic.ingest.models import Contributor
@@ -140,13 +137,12 @@ def collection_create_doi_(request, pk):
     context = {
         "collection": collection,
         "error": None,
-        "preview": None,
     }
 
-    if not collection.images.exists():
+    if hasattr(collection, "doi") or hasattr(collection, "draftdoi"):
+        context["error"] = "This collection already has a DOI."
+    elif not collection.images.exists():
         context["error"] = "A DOI cannot be created for an empty collection."
-    else:
-        context["preview"] = collection_build_doi_preview(collection=collection)
 
     return render(
         request,

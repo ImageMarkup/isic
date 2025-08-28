@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block content %}
-  <div class="heading-1 mb-4">Create a DOI for {{ collection.name }}<span class="ml-2 text-base font-semibold"><a
+  <div class="heading-1 mb-4">Create a Draft DOI for {{ collection.name }}<span class="ml-2 text-base font-semibold"><a
     href="{% url 'core/collection-detail' collection.pk %}">back to collection</a></span></div>
 
   {% if error %}
@@ -20,16 +20,7 @@
     </div>
   {% else %}
     <div class="flex justify-between">
-      <div class="mt-4">Below is a preview of what your DOI will look like:</div>
       <label for="file-input" class="btn btn-primary">Add Supplemental Files</label>
-    </div>
-
-    <div class="my-4 bg-gray-50 p-2 rounded-sm border-gray-200 border">
-      <div class="heading-3">{{ preview.titles.0.title }}</div>
-      <div>{{ preview.creators }}</div>
-      <div class="font-semibold">Dataset published {{ preview.publicationYear }} via {{ preview.publisher }}</div>
-      <div><a href="#">https://doi.org/{{ preview.doi }}</a></div>
-      <div>Contributed by <span class="font-semibold">{{ preview.creators }}</span></div>
     </div>
 
     <div x-data="DoiCreationForm()">
@@ -120,7 +111,7 @@
         </div>
 
         <button type="submit" class="btn btn-primary float-right" :disabled="numFilesInProgress > 0">
-          Create this DOI
+          Create Draft DOI
         </button>
       </form>
     </div>

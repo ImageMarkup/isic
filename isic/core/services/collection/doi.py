@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from urllib import parse
 
 from django.conf import settings
@@ -37,14 +37,6 @@ if TYPE_CHECKING:
     from isic.core.api.doi import RelatedIdentifierIn
 
 logger = logging.getLogger(__name__)
-
-
-def collection_build_doi_preview(*, collection: Collection) -> dict[str, Any]:
-    preview = collection_build_doi(
-        collection=collection, doi_id=f"{settings.ISIC_DATACITE_DOI_PREFIX}/123456"
-    )["data"]["attributes"]
-    preview["creators"] = ", ".join([c["name"] for c in preview["creators"]])
-    return preview
 
 
 def collection_build_doi(
