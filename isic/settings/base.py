@@ -270,8 +270,6 @@ ISIC_GOOGLE_ANALYTICS_PROPERTY_IDS = [
 ISIC_ZIP_DOWNLOAD_SERVICE_URL: ParseResult | None = env.url(
     "DJANGO_ISIC_ZIP_DOWNLOAD_SERVICE_URL", default=None
 )
-# Requires CloudFront configuration
-ISIC_ZIP_DOWNLOAD_WILDCARD_URLS = True
 
 ISIC_CDN_LOG_BUCKET: str | None = env.str("DJANGO_ISIC_CDN_LOG_BUCKET", default=None)
 
