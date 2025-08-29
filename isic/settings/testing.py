@@ -36,10 +36,10 @@ isic_sponsored_base_url = (
 STORAGES.update(
     {
         "default": {
-            "BACKEND": "isic.core.storages.minio.PreventRenamingMinioMediaStorage",
+            "BACKEND": "isic.core.storages.minio.IsicMinioMediaStorage",
         },
         "sponsored": {
-            "BACKEND": "isic.core.storages.minio.PreventRenamingMinioMediaStorage",
+            "BACKEND": "isic.core.storages.minio.IsicMinioMediaStorage",
             "OPTIONS": {
                 "bucket_name": isic_sponsored_bucket_name,
                 "base_url": isic_sponsored_base_url,
@@ -62,7 +62,6 @@ ISIC_ELASTICSEARCH_IMAGES_INDEX = "test-isic-images"
 ISIC_ELASTICSEARCH_LESIONS_INDEX = "test-isic-lesions"
 ISIC_USE_ELASTICSEARCH_COUNTS = False
 
-ISIC_ZIP_DOWNLOAD_WILDCARD_URLS = False
 
 # suppress noisy cache invalidation log messages
 logging.getLogger("isic.core.signals").setLevel(logging.ERROR)

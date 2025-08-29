@@ -1,5 +1,6 @@
 from datetime import timedelta
 import io
+from urllib.parse import quote
 
 import boto3
 from botocore.exceptions import ClientError
@@ -8,11 +9,27 @@ from minio_storage import MinioMediaStorage
 from isic.core.storages import PreventRenamingMixin
 
 
-class PreventRenamingMinioMediaStorage(PreventRenamingMixin, MinioMediaStorage):
-    pass
+class IsicMinioMediaStorage(PreventRenamingMixin, MinioMediaStorage):
+    def unsigned_url(self, name: str) -> str:
+        def strip_beg(path):
+            while path.startswith("/"):
+                path = path[1:]
+            return path
+
+        def strip_end(path):
+            while path.endswith("/"):
+                path = path[:-1]
+            return path
+
+        if self.base_url is not None:
+            url = f"{strip_end(self.base_url)}/{quote(strip_beg(name))}"
+        else:
+            url = f"{strip_end(self.endpoint_url)}/{self.bucket_name}/{quote(strip_beg(name))}"
+
+        return url
 
 
-class PlaceholderMinioStorage(PreventRenamingMinioMediaStorage):
+class PlaceholderMinioStorage(IsicMinioMediaStorage):
     def url(self, name: str | None, *, max_age: timedelta | None = None) -> str:
         if name is None:
             raise ValueError("name must be provided.")
@@ -25,7 +42,7 @@ class PlaceholderMinioStorage(PreventRenamingMinioMediaStorage):
         return super().url(name, max_age=max_age)
 
 
-class S3ProxyMinioStorage(PreventRenamingMinioMediaStorage):
+class S3ProxyMinioStorage(IsicMinioMediaStorage):
     """
     A storage backend which proxies to S3 if the file doesn't exist in Minio.
 

@@ -42,5 +42,7 @@ class CacheableCloudFrontStorage(PreventRenamingMixin, S3Storage):
             return url
 
 
-class PreventRenamingS3StaticStorage(PreventRenamingMixin, S3StaticStorage):
-    pass
+class IsicS3StaticStorage(PreventRenamingMixin, S3StaticStorage):
+    def unsigned_url(self, name: str) -> str:
+        name = self._normalize_name(clean_name(name))
+        return f"https://{self.bucket_name}.s3.{self.region_name}.amazonaws.com/{name}"
