@@ -35,7 +35,7 @@ STORAGES.update(
             },
         },
         "sponsored": {
-            "BACKEND": "isic.core.storages.s3.PreventRenamingS3StaticStorage",
+            "BACKEND": "isic.core.storages.s3.IsicS3StaticStorage",
             "OPTIONS": {
                 "bucket_name": cast(str, env.str("DJANGO_ISIC_SPONSORED_BUCKET_NAME")),
             },
