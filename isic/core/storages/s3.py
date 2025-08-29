@@ -8,7 +8,13 @@ from storages.utils import clean_name
 from isic.core.storages import PreventRenamingMixin
 
 
-class CacheableCloudFrontStorage(PreventRenamingMixin, S3Storage):
+class S3UnsignedUrlMixin:
+    def unsigned_url(self, name: str) -> str:
+        name = self._normalize_name(clean_name(name))
+        return f"https://{self.bucket_name}.s3.{self.region_name}.amazonaws.com/{name}"
+
+
+class CacheableCloudFrontStorage(PreventRenamingMixin, S3Storage, S3UnsignedUrlMixin):
     @staticmethod
     def next_expiration_time(now=None):
         # returns a time > 6 days but <= 7.
@@ -42,7 +48,5 @@ class CacheableCloudFrontStorage(PreventRenamingMixin, S3Storage):
             return url
 
 
-class IsicS3StaticStorage(PreventRenamingMixin, S3StaticStorage):
-    def unsigned_url(self, name: str) -> str:
-        name = self._normalize_name(clean_name(name))
-        return f"https://{self.bucket_name}.s3.{self.region_name}.amazonaws.com/{name}"
+class IsicS3StaticStorage(PreventRenamingMixin, S3StaticStorage, S3UnsignedUrlMixin):
+    pass
