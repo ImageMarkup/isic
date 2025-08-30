@@ -208,7 +208,7 @@ GROUP BY 1;
 CREATE UNIQUE INDEX IF NOT EXISTS materialized_collection_counts_id_idx ON
 materialized_collection_counts (id);
             """,
-            elidable=False,
+            elidable=True,
         ),
         migrations.CreateModel(
             name="CollectionCount",
