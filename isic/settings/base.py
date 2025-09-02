@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     "oauth2_provider",
     "resonant_utils",
     "s3_file_field",
+    "template_partials",
     "widget_tweaks",
 ]
 
