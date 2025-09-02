@@ -116,7 +116,6 @@ services:
     image: ghcr.io/imagemarkup/isic-zipstreamer:master
     environment:
       ZS_LISTFILE_URL_PREFIX: "http://django/api/v2/zip-download/file-listing/?token="
-      ZS_LISTFILE_BASIC_AUTH: "insecurezipdownloadauthtoken"
     ports:
       - 4008:4008
 
