@@ -1,8 +1,7 @@
-from base64 import b64encode
 import json
+from typing import Literal
 from urllib.parse import ParseResult, parse_qs, urlparse
 
-from django.conf import settings
 from django.core.files.storage import storages
 import pytest
 
@@ -31,7 +30,7 @@ def _random_images_with_licenses(image_factory):
 def mock_zip_download_service_url(settings) -> None:
     settings.ISIC_ZIP_DOWNLOAD_SERVICE_URL = ParseResult(
         scheme="https",
-        netloc=":password@example.com:1234",
+        netloc="example.com:1234",
         path="",
         params="",
         query="",
@@ -39,17 +38,9 @@ def mock_zip_download_service_url(settings) -> None:
     )
 
 
-@pytest.fixture
-def zip_basic_auth():
-    return {
-        "HTTP_AUTHORIZATION": "Basic "
-        + b64encode(b":" + settings.ISIC_ZIP_DOWNLOAD_SERVICE_URL.password.encode()).decode()
-    }
-
-
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.usefixtures("_random_images_with_licenses")
-def test_zip_download_licenses(authenticated_client, zip_basic_auth):
+def test_zip_download_licenses(authenticated_client):
     r = authenticated_client.post(
         "/api/v2/zip-download/url/", {"query": ""}, content_type="application/json"
     )
@@ -60,7 +51,6 @@ def test_zip_download_licenses(authenticated_client, zip_basic_auth):
     r = authenticated_client.get(
         "/api/v2/zip-download/file-listing/",
         data={"token": token[0]},
-        **zip_basic_auth,
     )
     assert r.status_code == 200
 
@@ -73,7 +63,7 @@ def test_zip_download_licenses(authenticated_client, zip_basic_auth):
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.usefixtures("_random_images_with_licenses")
-def test_zip_download_listing(authenticated_client, zip_basic_auth):
+def test_zip_download_listing(authenticated_client):
     r = authenticated_client.post(
         "/api/v2/zip-download/url/",
         {"query": ""},
@@ -86,7 +76,6 @@ def test_zip_download_listing(authenticated_client, zip_basic_auth):
     r = authenticated_client.get(
         "/api/v2/zip-download/file-listing/",
         data={"token": token[0], "limit": 1},
-        **zip_basic_auth,
     )
     output = json.loads(b"".join(r.streaming_content))
     assert r.status_code == 200, output
@@ -96,7 +85,7 @@ def test_zip_download_listing(authenticated_client, zip_basic_auth):
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.usefixtures("_random_images_with_licenses")
-def test_zip_download_listing_urls(authenticated_client, zip_basic_auth, image_factory, user):
+def test_zip_download_listing_urls(authenticated_client, image_factory, user):
     # create both public and private images to test URL generation
     private_image = image_factory(public=False)
     public_image = image_factory(public=True)
@@ -115,7 +104,6 @@ def test_zip_download_listing_urls(authenticated_client, zip_basic_auth, image_f
     r = authenticated_client.get(
         "/api/v2/zip-download/file-listing/",
         data={"token": token[0]},
-        **zip_basic_auth,
     )
     output = json.loads(b"".join(r.streaming_content))
     assert r.status_code == 200, output
@@ -137,15 +125,18 @@ def test_zip_download_listing_urls(authenticated_client, zip_basic_auth, image_f
 @pytest.mark.django_db
 @pytest.mark.usefixtures("_random_images_with_licenses")
 @pytest.mark.parametrize(
-    ("endpoint", "use_zip_auth_token"),
+    ("endpoint", "zip_auth_token"),
     [
-        ("/api/v2/zip-download/metadata-file/", True),
-        ("/api/v2/zip-download/metadata-file/", False),
-        ("/api/v2/zip-download/attribution-file/", True),
-        ("/api/v2/zip-download/attribution-file/", False),
+        ("/api/v2/zip-download/metadata-file/", "malformed"),
+        ("/api/v2/zip-download/metadata-file/", "good"),
+        ("/api/v2/zip-download/metadata-file/", "missing"),
+        ("/api/v2/zip-download/attribution-file/", "good"),
+        ("/api/v2/zip-download/attribution-file/", "missing"),
     ],
 )
-def test_zip_download_authentication(endpoint, use_zip_auth_token, authenticated_client):
+def test_zip_download_authentication(
+    endpoint, zip_auth_token: Literal["malformed", "good", "missing"], authenticated_client
+):
     r = authenticated_client.post(
         "/api/v2/zip-download/url/",
         {"query": ""},
@@ -155,10 +146,15 @@ def test_zip_download_authentication(endpoint, use_zip_auth_token, authenticated
     parsed_url = urlparse(r.json())
     token = parse_qs(parsed_url.query)["zsid"]
 
-    data = {"token": token[0]} if use_zip_auth_token else {}
+    if zip_auth_token == "good":
+        data = {"token": token[0]}
+    elif zip_auth_token == "malformed":
+        data = {"token": "malformed"}
+    else:
+        data = {}
 
     r = authenticated_client.get(endpoint, data=data)
-    if use_zip_auth_token:
+    if zip_auth_token == "good":
         assert r.status_code == 200, r.content
     else:
         assert r.status_code == 401, r.content
