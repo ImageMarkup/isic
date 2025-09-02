@@ -4,7 +4,7 @@ from datetime import timedelta
 import json
 import logging
 from pathlib import PurePosixPath
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.contrib.sites.models import Site
@@ -17,11 +17,10 @@ from django.http.request import HttpRequest
 from django.http.response import Http404, HttpResponse
 from django.shortcuts import render
 from django.urls import reverse
-from django.utils.crypto import constant_time_compare
 from django.views.decorators.csrf import csrf_exempt
 from ninja import Router
 from ninja.errors import AuthenticationError
-from ninja.security import APIKeyQuery, HttpBasicAuth
+from ninja.security import APIKeyQuery
 import orjson
 
 from isic.core.models import CopyrightLicense, Image
@@ -48,16 +47,6 @@ def get_attributions(attributions: Iterable[str]) -> list[str]:
     return [x[0] for x in attributions]
 
 
-class ZipDownloadBasicAuth(HttpBasicAuth):
-    def authenticate(self, request: HttpRequest, username: str, password: str) -> Literal[True]:
-        if username == "" and constant_time_compare(
-            password, settings.ISIC_ZIP_DOWNLOAD_SERVICE_URL.password
-        ):
-            return True
-
-        raise AuthenticationError
-
-
 class ZipDownloadTokenAuth(APIKeyQuery):
     param_name = "token"
 
@@ -74,24 +63,6 @@ class ZipDownloadTokenAuth(APIKeyQuery):
         return token_dict
 
 
-def zip_api_auth(request: HttpRequest):
-    """
-    Protects the zip listing endpoint with basic auth.
-
-    This requires both basic auth and a valid token auth. The basic auth credential is shared
-    with the zipstreamer service and can't be intercepted. This is necessary because the signed
-    URLs from zip_file_listing are wildcard signed, so they grant access to all files in the bucket.
-    Without an additional layer of security, anyone who can see the zipstreamer url could download
-    any file in the bucket.
-    """
-    # the default auth argument for ninja routes checks if ANY of the backends validate,
-    # but we want to check that ALL of them validate.
-    if not ZipDownloadBasicAuth()(request):
-        return False
-
-    return ZipDownloadTokenAuth()(request)
-
-
 @csrf_exempt
 @zip_router.post("/url/", response=str, include_in_schema=False)
 def create_zip_download_url(request: HttpRequest, payload: SearchQueryIn):
@@ -100,11 +71,7 @@ def create_zip_download_url(request: HttpRequest, payload: SearchQueryIn):
         raise ValueError("ISIC_ZIP_DOWNLOAD_SERVICE_URL is not set.")
 
     token = TimestampSigner().sign_object(payload.to_token_representation(user=request.user))
-    return (
-        f"{url.scheme}://{url.hostname}"
-        + (f":{url.port}" if url.port else "")
-        + f"/download?zsid={token}"
-    )
+    return f"{url.scheme}://{url.netloc}" + f"/download?zsid={token}"
 
 
 def _zip_file_listing_generator(qs: QuerySet[Image], token: str) -> Generator[dict[str, str]]:
@@ -152,7 +119,7 @@ def _zip_file_listing_generator(qs: QuerySet[Image], token: str) -> Generator[di
     )
 
 
-@zip_router.get("/file-listing/", include_in_schema=False, auth=zip_api_auth)
+@zip_router.get("/file-listing/", include_in_schema=False, auth=ZipDownloadTokenAuth())
 @transaction.atomic
 def zip_file_listing(
     request: NinjaAuthHttpRequest,
