@@ -1,5 +1,15 @@
 {% extends 'core/base.html' %}
 {% load humanize %}
+{% load partials %}
+
+{% partialdef filter-button %}
+  <a class="text-white" href="{{ href }}">
+    <button class="btn btn-secondary primary gap-2">
+      {{ label }}
+      <div class="badge badge-accent">{{ count }}</div>
+    </button>
+  </a>
+{% endpartialdef %}
 
 {% block content %}
   <div class="mb-5 flex flex-col justify-between">
@@ -11,38 +21,31 @@
     </div>
     <div class="my-4">
       {% url 'core/collection-list' as base %}
-      <a class="text-white" href="{% querystring pinned="true" doi=None shared_with_me=None mine=None %}">
-        <button class="btn btn-secondary primary gap-2">
-          Pinned
-          <div class="badge badge-accent">{{ counts.pinned }}</div>
-        </button>
-      </a>
-      <a class="text-white" href="{% querystring pinned=None doi="true" shared_with_me=None mine=None %}">
-        <button class="btn btn-secondary primary gap-2">
-          DOI
-          <div class="badge badge-accent">{{ counts.doi }}</div>
-        </button>
-      </a>
+      {% querystring pinned="true" doi=None shared_with_me=None mine=None as pinned_url %}
+      {% with href=pinned_url label="Pinned" count=counts.pinned %}
+        {% partial filter-button %}
+      {% endwith %}
+
+      {% querystring pinned=None doi="true" shared_with_me=None mine=None as doi_url %}
+      {% with href=doi_url label="DOI" count=counts.doi %}
+        {% partial filter-button %}
+      {% endwith %}
+
       {% if request.user.is_authenticated %}
-        <a class="text-white" href="{% querystring pinned=None doi=None shared_with_me="true" mine=None %}">
-          <button class="btn btn-secondary primary gap-2">
-            Shared with Me
-            <div class="badge badge-accent">{{ counts.shared_with_me }}</div>
-          </button>
-        </a>
-        <a class="text-white" href="{% querystring pinned=None doi=None shared_with_me=None mine="true" %}">
-          <button class="btn btn-secondary primary gap-2">
-            Mine
-            <div class="badge badge-accent">{{ counts.mine }}</div>
-          </button>
-        </a>
+        {% querystring pinned=None doi=None shared_with_me="true" mine=None as shared_url %}
+        {% with href=shared_url label="Shared with Me" count=counts.shared_with_me %}
+          {% partial filter-button %}
+        {% endwith %}
+
+        {% querystring pinned=None doi=None shared_with_me=None mine="true" as mine_url %}
+        {% with href=mine_url label="Mine" count=counts.mine %}
+          {% partial filter-button %}
+        {% endwith %}
       {% endif %}
-      <a class="text-white" href="{{ base }}">
-        <button class="btn btn-secondary primary gap-2">
-          All
-          <div class="badge badge-accent">{{ counts.all_ }}</div>
-        </button>
-      </a>
+
+      {% with href=base label="All" count=counts.all_ %}
+        {% partial filter-button %}
+      {% endwith %}
     </div>
   </div>
 
