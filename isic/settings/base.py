@@ -166,13 +166,13 @@ CELERY_BEAT_SCHEDULE = {
 }
 CELERY_WORKER_MAX_MEMORY_PER_CHILD = 256 * 1024
 
-# CACHES = {
-#     # use django-redis instead of the builtin backend. the builtin redis backend
-#     # doesn't support deleting keys by prefix, which is important for invalidating
-#     # specific cache keys. this isn't on the roadmap for django, see
-#     # https://code.djangoproject.com/ticket/35039#comment:1.
-#     "default": env.cache_url("DJANGO_CACHE_URL", backend="django_redis.cache.RedisCache"),
-# }
+CACHES = {
+    # use django-redis instead of the builtin backend. the builtin redis backend
+    # doesn't support deleting keys by prefix, which is important for invalidating
+    # specific cache keys. this isn't on the roadmap for django, see
+    # https://code.djangoproject.com/ticket/35039#comment:1.
+    "default": env.cache_url("DJANGO_CACHE_URL", backend="django_redis.cache.RedisCache"),
+}
 DJANGO_REDIS_SCAN_ITERSIZE = 1_000
 CACHALOT_CACHE_ITERATORS = False
 # This seems like an essential setting for correctness, see
