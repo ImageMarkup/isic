@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
     "cachalot",
     "corsheaders",
     "django.contrib.admin",
@@ -108,6 +109,33 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
+
+
+SOCIALACCOUNT_PROVIDERS = {}
+
+# the presence of "google" inside SOCIALACCOUNT_PROVIDERS causes the GUI to display
+# the sign in with google button. guard it so it only shows if it has credentials.
+if env.str("DJANGO_ISIC_GOOGLE_OAUTH_CLIENT_ID", default=None) and env.str(
+    "DJANGO_ISIC_GOOGLE_OAUTH_CLIENT_SECRET", default=None
+):
+    SOCIALACCOUNT_PROVIDERS["google"] = {
+        "APPS": [
+            {
+                "client_id": env.str("DJANGO_ISIC_GOOGLE_OAUTH_CLIENT_ID"),
+                "secret": env.str("DJANGO_ISIC_GOOGLE_OAUTH_CLIENT_SECRET"),
+            }
+        ],
+        "SCOPE": ["email"],
+        "OAUTH_PKCE_ENABLED": True,
+        # treat this identical to logging in with this email to ISIC
+        "EMAIL_AUTHENTICATION": True,
+        # trust google that the user owns this email address
+        "VERIFIED_EMAIL": True,
+    }
+
+
+# automatically connect oauth email addresses to the local account
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
 # Django staticfiles auto-creates any intermediate directories, but do so here to prevent warnings.
