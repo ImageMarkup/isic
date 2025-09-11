@@ -1,7 +1,9 @@
 from collections.abc import Callable
+import json
 import logging
 from typing import Any
 
+from django.conf import settings
 from django.http import HttpRequest, HttpResponseBase
 from ninja.operation import PathView
 from sentry_sdk import set_tag
@@ -31,12 +33,30 @@ class ExemptBearerAuthFromCSRFMiddleware:
             request._dont_enforce_csrf_checks = True  # noqa: SLF001
 
 
-class UserTypeTagMiddleware:
+class SentryMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
         response = self.get_response(request)
+
+        if settings.DJANGO_ISIC_SENTRY_CSP_REPORT_URL:
+            response.headers.setdefault(
+                "Report-To",
+                json.dumps(
+                    {
+                        "group": "csp-endpoint",
+                        "max_age": 10886400,
+                        "endpoints": [{"url": settings.DJANGO_ISIC_SENTRY_CSP_REPORT_URL}],
+                        "include_subdomains": True,
+                    }
+                ),
+            )
+            response.headers.setdefault(
+                "Reporting-Endpoints",
+                f'csp-endpoint="{settings.DJANGO_ISIC_SENTRY_CSP_REPORT_URL}"',
+            )
+
         # always run the logger after the view has been called. django-ninja does auth inside of
         # the view and sometimes authentications uses OAuth, so request.user won't be set until the
         # view has been called.

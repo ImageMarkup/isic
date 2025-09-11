@@ -5,8 +5,8 @@
 
 {% block head_extra %}
   {{ block.super }}
-  <script src="https://unpkg.com/chart.js@3"></script>
-  <script src="https://unpkg.com/chartjs-chart-geo@3"></script>
+  <script src="https://unpkg.com/chart.js@3" nonce="{{ CSP_NONCE }}"></script>
+  <script src="https://unpkg.com/chartjs-chart-geo@3" nonce="{{ CSP_NONCE }}"></script>
 {% endblock %}
 
 {% block content %}
@@ -42,7 +42,7 @@
 
   {{ 30_day_sessions_per_country|json_script:"country_data" }}
 
-  <script type="text/javascript">
+  <script type="text/javascript" nonce="{{ CSP_NONCE }}">
     const country_values = JSON.parse(document.getElementById("country_data").textContent);
 
     fetch('https://unpkg.com/world-atlas/countries-110m.json').then((r) => r.json()).then((data) => {
