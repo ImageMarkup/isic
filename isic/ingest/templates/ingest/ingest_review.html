@@ -15,7 +15,7 @@
                id="hide-empty-toggle"
                class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 focus:ring-2 focus:ring-offset-0"
                {% if hide_empty %}checked{% endif %}
-               onchange="toggleHideEmpty()">
+               @change="toggleHideEmpty()">
         <span class="ml-3 text-sm font-medium text-gray-700">Hide empty cohorts</span>
         <i class="ri-question-line ml-2 text-gray-400 hover:text-gray-600 cursor-help"
            title="Hides cohorts with no accessions or only skipped accessions"></i>
@@ -72,7 +72,7 @@
     </ul>
   </div>
 
-  <script>
+  <script type="text/javascript" nonce="{{ CSP_NONCE }}">
     function toggleHideEmpty() {
       const checkbox = document.getElementById('hide-empty-toggle');
       const url = new URL(window.location);
