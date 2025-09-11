@@ -3,8 +3,8 @@
 <html>
     <head>
         <link type="text/css" rel="stylesheet" href="{% static 'ninja/swagger-ui.css' %}">
-        <script src="https://cdn.tailwindcss.com"></script>
-        <style type="text/css">
+        <script src="https://cdn.tailwindcss.com" nonce="{{ CSP_NONCE }}"></script>
+        <style type="text/css" nonce="{{ CSP_NONCE }}">
             .topbar,
             .information-container a.link,
             .scheme-container,
