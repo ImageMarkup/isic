@@ -82,3 +82,5 @@ sentry_sdk.init(
     traces_sampler=get_sentry_performance_sample_rate,
     profiles_sampler=get_sentry_performance_sample_rate,
 )
+
+SECURE_HSTS_SECONDS = int(timedelta(days=365).total_seconds())
