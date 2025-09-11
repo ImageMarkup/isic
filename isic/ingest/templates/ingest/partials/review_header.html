@@ -1,4 +1,4 @@
-<script type="text/javascript">
+<script type="text/javascript" nonce="{{ CSP_NONCE }}">
   function accession(id) {
     Alpine.store('accessions').addItem(id);
 
@@ -20,7 +20,7 @@
   }
 </script>
 
-<style type="text/css" media="screen">
+<style type="text/css" media="screen" nonce="{{ CSP_NONCE }}">
   .dim {
     opacity: 40%;
   }
