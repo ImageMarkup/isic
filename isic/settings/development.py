@@ -10,6 +10,9 @@ from resonant_settings.development.celery import *
 from resonant_settings.development.debug_toolbar import *
 from resonant_settings.development.minio_storage import *
 
+from csp.constants import SELF, NONCE
+
+
 INSTALLED_APPS += [
     "debug_toolbar",
     "django_browser_reload",
@@ -97,3 +100,7 @@ OAUTH2_PROVIDER["REQUEST_APPROVAL_PROMPT"] = "force"
 
 # suppress noisy cache invalidation log messages
 logging.getLogger("isic.core.signals").setLevel(logging.ERROR)
+
+# transfer trust to any dynamically injected scripts. debug toolbar uses a nonce
+# and re-wraps every fetch call, so it's necessary for the trust to be transferred.
+CONTENT_SECURITY_POLICY["DIRECTIVES"]["strict-dynamic"] = [SELF, NONCE]

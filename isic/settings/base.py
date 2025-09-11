@@ -321,6 +321,7 @@ CONTENT_SECURITY_POLICY = {
             "cdn.jsdelivr.net",
             NONCE,
         ],
+        "connect-src": [SELF, NONCE],
         "script-src": [SELF, NONCE],
         "style-src": [SELF, NONCE],
         "frame-src": [NONE],
