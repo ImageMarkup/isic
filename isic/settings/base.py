@@ -311,7 +311,7 @@ TEMPLATES[0]["OPTIONS"]["context_processors"] += [  # type: ignore[index]
 ]
 ISIC_JS_SENTRY = False
 
-CONTENT_SECURITY_POLICY = {
+CONTENT_SECURITY_POLICY_REPORT_ONLY = {
     # https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy#directives
     "DIRECTIVES": {
         "default-src": [SELF, NONCE],
