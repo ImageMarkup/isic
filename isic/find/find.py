@@ -40,19 +40,21 @@ def quickfind_execute(query: str, user: User) -> list[dict]:
             "serializer": CollectionQuickfindResultOut,
         },
         "studies": {
-            "filter": Study.objects.filter(name__icontains=query),
+            "filter": Study.objects.select_related("creator").filter(name__icontains=query),
             "sort": "name",
             "permission": "studies.view_study",
             "serializer": StudyQuickfindResultOut,
         },
         "cohorts": {
-            "filter": Cohort.objects.filter(name__icontains=query),
+            "filter": Cohort.objects.select_related("creator").filter(name__icontains=query),
             "sort": "name",
             "permission": "ingest.view_cohort",
             "serializer": CohortQuickfindResultOut,
         },
         "contributors": {
-            "filter": Contributor.objects.filter(institution_name__icontains=query),
+            "filter": Contributor.objects.select_related("creator").filter(
+                institution_name__icontains=query
+            ),
             "sort": "institution_name",
             "permission": "ingest.view_contributor",
             "serializer": ContributorQuickfindResultOut,
@@ -73,7 +75,7 @@ def quickfind_execute(query: str, user: User) -> list[dict]:
             "serializer": UserQuickfindResultOut,
         },
         "dois": {
-            "filter": Doi.objects.select_related("collection").filter(
+            "filter": Doi.objects.select_related("collection", "creator").filter(
                 collection__name__icontains=query
             ),
             "sort": lambda v: jaro_winkler_metric(query.upper(), v.collection.name.upper()),
