@@ -29,4 +29,4 @@ def populate_elasticsearch(chunk_size):
 
     es.indices.refresh(index="_all")
 
-    click.echo("Done", color="green")
+    click.secho("Done", fg="green", err=True)
