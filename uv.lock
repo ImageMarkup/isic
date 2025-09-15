@@ -852,6 +852,18 @@ wheels = [
 ]
 
 [[package]]
+name = "django-template-partials"
+version = "25.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/24/91/08f3278cc7402499c73ac655e64d73cdf31e820180dc5701a6f04e0c142a/django_template_partials-25.1.tar.gz", hash = "sha256:200c3b395dc6d0d89d17baf2d7f9afee88a6ba9633ebf593b61317b35fafed1f", size = 17272, upload-time = "2025-08-06T09:36:26.551Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bf/7b/f9939d5b8d8c5613e7e14293756f655b7153520285bde966ea360167b010/django_template_partials-25.1-py2.py3-none-any.whl", hash = "sha256:c32137a972a8e4d5102422f5cd6176bea33df5b84745e9ceb3ede9aa004bd6ea", size = 9398, upload-time = "2025-08-06T09:36:25.284Z" },
+]
+
+[[package]]
 name = "django-widget-tweaks"
 version = "1.5.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1199,6 +1211,7 @@ dependencies = [
     { name = "django-s3-file-field", extra = ["s3"] },
     { name = "django-storages", extra = ["s3"] },
     { name = "django-stubs-ext" },
+    { name = "django-template-partials" },
     { name = "django-widget-tweaks" },
     { name = "elasticsearch" },
     { name = "gdal" },
@@ -1306,6 +1319,7 @@ requires-dist = [
     { name = "django-s3-file-field", extras = ["s3"] },
     { name = "django-storages", extras = ["s3"] },
     { name = "django-stubs-ext" },
+    { name = "django-template-partials" },
     { name = "django-widget-tweaks" },
     { name = "elasticsearch" },
     { name = "gdal", index = "https://girder.github.io/large_image_wheels/" },
