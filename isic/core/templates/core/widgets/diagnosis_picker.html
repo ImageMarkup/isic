@@ -3,7 +3,7 @@
 
     {{ diagnosis_values|json_script:"diagnosis-values" }}
 
-    <script type="text/javascript" nonce="{{ CSP_NONCE }}">
+    <script type="text/javascript">
         const diagnosisOnlyForm = JSON.parse(document.getElementById('diagnosis-only-form').textContent);
 
         function recentDiagnosesPicker() {
@@ -75,7 +75,7 @@
         <div id="selectedDiagnosis"></span>
     </div>
 
-    <script type="text/javascript" nonce="{{ CSP_NONCE }}">
+    <script type="text/javascript">
         const diagnosisValues = JSON.parse(document.getElementById('diagnosis-values').textContent)
 
         const containerId = "diagnosis-picker-{{ widget.name }}";
