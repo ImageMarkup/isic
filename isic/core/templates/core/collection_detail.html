@@ -3,6 +3,7 @@
 {% load localtime %}
 {% load humanize %}
 {% load markdownify %}
+{% load partials %}
 
 {% block head_extra %}
   {{ block.super }}
@@ -29,30 +30,36 @@
       </div>
     </template>
 
+    {% partialdef detail-item %}
+      <li>
+        <span class="font-bold">{{ label }}:</span>
+        {% if link %}
+          <a href="{{ link }}">{{ value }}</a>
+        {% else %}
+          {{ value }}
+        {% endif %}
+      </li>
+    {% endpartialdef %}
+
     <div id="detail-info">
       <ul x-data="collectionAttributionInformation()">
-        <li>
-          <span class="font-bold">Name:</span>
-          {{ collection.name }}
-        </li>
+        {% with label="Name" value=collection.name %}
+          {% partial detail-item %}
+        {% endwith %}
         {% if collection.doi %}
-          <li>
-            <span class="font-bold">DOI:</span>
-            <a href="{{ collection.doi.external_url }}">{{ collection.doi.external_url }}</a>
-          </li>
+          {% with label="DOI" value=collection.doi.external_url link=collection.doi.external_url %}
+            {% partial detail-item %}
+          {% endwith %}
         {% endif %}
-        <li>
-          <span class="font-bold">Number of images:</span>
-          {{ collection.counts.image_count|intcomma }}
-        </li>
-        <li>
-          <span class="font-bold">Number of lesions:</span>
-          {{ collection.counts.lesion_count|intcomma }}
-        </li>
-        <li>
-          <span class="font-bold">Number of patients:</span>
-          {{ collection.counts.patient_count|intcomma }}
-        </li>
+        {% with label="Number of images" value=collection.counts.image_count|intcomma %}
+          {% partial detail-item %}
+        {% endwith %}
+        {% with label="Number of lesions" value=collection.counts.lesion_count|intcomma %}
+          {% partial detail-item %}
+        {% endwith %}
+        {% with label="Number of patients" value=collection.counts.patient_count|intcomma %}
+          {% partial detail-item %}
+        {% endwith %}
         <li>
           <span class="font-bold">Attribution:</span>
           <a x-show="!fetched" href="#" @click.prevent="fetchMetaInformation()">

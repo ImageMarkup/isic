@@ -2,6 +2,7 @@
 {% load widget_tweaks %}
 {% load static %}
 {% load humanize %}
+{% load partials %}
 
 {% block head_extra %}
   {{ block.super }}
@@ -96,25 +97,27 @@
 
   {% include 'core/partials/image_browser_js.html' %}
 
+  {% partialdef example-query %}
+    <div class="{% if not last %}mb-6{% else %}mb-2{% endif %}">
+      {{ description }}
+      <code class="block bg-gray-200 p-2">{{ query }}</code>
+    </div>
+  {% endpartialdef %}
+
   <input type="checkbox" id="my-modal-4" class="modal-toggle">
   <label for="my-modal-4" class="modal cursor-pointer">
     <label class="modal-box max-w-5xl">
       <div class="heading-3 mb-2">Example Search Queries</div>
       <div>
-        <div class="mb-6">
-          Display images diagnosed as melanoma from patients that are approximately 50 years old.
-          <code class="block bg-gray-200 p-2 ">age_approx:50 AND diagnosis_3:"Melanoma Invasive"</code>
-        </div>
-
-        <div class="mb-6">
-          Display images from male patients that are approximately 20 to 40 years old.
-          <code class="block bg-gray-200 p-2 ">age_approx:[20 TO 40] AND sex:male</code>
-        </div>
-
-        <div class="mb-2">
-          Display images from the anterior, posterior, or lateral torso anatomical site where the diagnosis was confirmed by single image expert consensus.
-          <code class="block bg-gray-200 p-2 ">anatom_site_general:*torso AND diagnosis_confirm_type:"single image expert consensus"</code>
-        </div>
+        {% with description="Display images diagnosed as melanoma from patients that are approximately 50 years old." query='age_approx:50 AND diagnosis_3:"Melanoma Invasive"' %}
+          {% partial example-query %}
+        {% endwith %}
+        {% with description="Display images from male patients that are approximately 20 to 40 years old." query="age_approx:[20 TO 40] AND sex:male" %}
+          {% partial example-query %}
+        {% endwith %}
+        {% with description="Display images from the anterior, posterior, or lateral torso anatomical site where the diagnosis was confirmed by single image expert consensus." query='anatom_site_general:*torso AND diagnosis_confirm_type:"single image expert consensus"' last=True %}
+          {% partial example-query %}
+        {% endwith %}
       </div>
     </label>
   </label>
