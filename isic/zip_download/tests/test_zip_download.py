@@ -60,6 +60,14 @@ def test_zip_download_licenses(authenticated_client):
     assert any("CC-BY" in result["url"] for result in output["files"])
     assert not any("CC-BY-NC" in result["url"] for result in output["files"])
 
+    for result in output["files"]:
+        if "CC-" in result["zipPath"]:
+            r = authenticated_client.get(
+                result["url"],
+                data={"token": token[0]},
+            )
+            assert r.status_code == 200
+
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.usefixtures("_random_images_with_licenses")
