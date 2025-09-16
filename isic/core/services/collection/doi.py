@@ -16,11 +16,16 @@ from django.utils.text import slugify
 from requests.exceptions import HTTPError
 from requests_toolbelt.sessions import BaseUrlSession
 
-from isic.core.models.collection import Collection
-from isic.core.models.doi import Doi, DoiRelatedIdentifier
+from isic.core.models.doi import (
+    AbstractDoi,
+    Doi,
+    DoiRelatedIdentifier,
+    DraftDoi,
+)
 from isic.core.services.collection import (
     collection_get_creators_in_attribution_order,
     collection_lock,
+    collection_update,
 )
 from isic.core.services.snapshot import snapshot_images
 from isic.core.tasks import (
@@ -29,12 +34,14 @@ from isic.core.tasks import (
     fetch_doi_schema_org_dataset_task,
 )
 from isic.core.views.doi import LICENSE_TITLES, LICENSE_URIS
+from isic.ingest.services.publish import unembargo_image
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
     from urllib.parse import ParseResult
 
     from isic.core.api.doi import RelatedIdentifierIn
+    from isic.core.models.collection import Collection
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +50,7 @@ def collection_build_doi(
     *,
     collection: Collection,
     doi_id: str,
+    is_draft: bool,
     related_identifiers: QuerySet[DoiRelatedIdentifier] | None = None,
 ) -> dict:
     rights = []
@@ -78,7 +86,6 @@ def collection_build_doi(
             }
         ],
         "identifiers": [{"identifierType": "DOI", "identifier": doi_id}],
-        "event": "publish",
         "doi": doi_id,
         "creators": [
             {"name": creator}
@@ -94,6 +101,9 @@ def collection_build_doi(
         "schemaVersion": "http://datacite.org/schema/kernel-4",
     }
 
+    if not is_draft:
+        attributes["event"] = "publish"
+
     if datacite_related_identifiers:
         attributes["relatedIdentifiers"] = datacite_related_identifiers
 
@@ -105,18 +115,7 @@ def collection_build_doi(
     }
 
 
-def collection_build_draft_doi(*, doi_id: str) -> dict:
-    return {
-        "data": {
-            "type": "dois",
-            "attributes": {
-                "doi": doi_id,
-            },
-        }
-    }
-
-
-def collection_check_create_doi_allowed(
+def collection_check_create_draft_doi_allowed(
     *,
     user: User,
     collection: Collection,
@@ -125,12 +124,8 @@ def collection_check_create_doi_allowed(
 ) -> None:
     if not user.has_perm("core.create_doi", collection):
         raise ValidationError("You don't have permissions to do that.")
-    if hasattr(collection, "doi"):
+    if hasattr(collection, "doi") or hasattr(collection, "draftdoi"):
         raise ValidationError("This collection already has a DOI.")
-    if not collection.public:
-        raise ValidationError("A collection must be public to issue a DOI.")
-    if collection.images.private().exists():  # type: ignore[attr-defined]
-        raise ValidationError("This collection contains private images.")
     if not collection.images.exists():
         raise ValidationError("An empty collection cannot be the basis of a DOI.")
     if collection.is_magic:
@@ -157,7 +152,7 @@ def _datacite_session() -> BaseUrlSession:
     return session
 
 
-def _datacite_create_doi(doi: dict) -> None:
+def _datacite_create_draft_doi(doi: dict) -> None:
     with _datacite_session() as session:
         resp = session.post(
             "/dois",
@@ -172,7 +167,7 @@ def _datacite_create_doi(doi: dict) -> None:
         raise ValidationError("Something went wrong creating the DOI.") from e
 
 
-def _datacite_update_doi(doi: dict, doi_id: str):
+def _datacite_promote_draft_doi_to_findable(doi: dict, doi_id: str):
     # escape the / for path
     doi_quoted = parse.quote(doi_id, safe="")
     with _datacite_session() as session:
@@ -189,14 +184,14 @@ def _datacite_update_doi(doi: dict, doi_id: str):
         raise ValidationError("Something went wrong publishing the DOI.") from e
 
 
-def collection_create_doi(
+def collection_create_draft_doi(
     *,
     user: User,
     collection: Collection,
     supplemental_files: Iterable[dict[str, str]] | None = None,
     related_identifiers: Iterable[RelatedIdentifierIn] | None = None,
-) -> Doi:
-    collection_check_create_doi_allowed(
+) -> DraftDoi:
+    collection_check_create_draft_doi_allowed(
         user=user,
         collection=collection,
         supplemental_files=supplemental_files,
@@ -204,16 +199,15 @@ def collection_create_doi(
     )
 
     with transaction.atomic():
-        # First, create the local DOI record to validate uniqueness within our known set
-        doi = Doi(slug=slugify(collection.name), collection=collection, creator=user)
-        doi.full_clean()
-        doi.save()
+        draft_doi = DraftDoi(slug=slugify(collection.name), collection=collection, creator=user)
+        draft_doi.full_clean()
+        draft_doi.save()
 
         collection_lock(collection=collection)
 
         if supplemental_files:
             for supplemental_file in supplemental_files:
-                doi.supplemental_files.create(
+                draft_doi.supplemental_files.create(
                     blob=supplemental_file["blob"].name,
                     description=supplemental_file["description"],
                     filename=Path(supplemental_file["blob"].name).name,
@@ -222,41 +216,35 @@ def collection_create_doi(
 
         if related_identifiers:
             for related_identifier in related_identifiers:
-                doi.related_identifiers.create(
+                draft_doi.related_identifiers.create(
                     relation_type=related_identifier.relation_type,
                     related_identifier_type=related_identifier.related_identifier_type,
                     related_identifier=related_identifier.related_identifier,
                 )
 
-        draft_doi_dict = collection_build_draft_doi(doi_id=doi.id)
-        doi_dict = collection_build_doi(
-            collection=collection, doi_id=doi.id, related_identifiers=doi.related_identifiers.all()
+        draft_doi_dict = collection_build_doi(
+            collection=collection,
+            doi_id=draft_doi.id,
+            is_draft=True,
+            related_identifiers=draft_doi.related_identifiers.all(),
         )
 
-        # Reserve the DOI using the draft mechanism.
-        # If it fails, transaction will rollback, nothing in our database will change.
-        _datacite_create_doi(draft_doi_dict)
+        _datacite_create_draft_doi(draft_doi_dict)
 
-    # Convert to a published DOI. If this fails, someone will have to come along later and
-    # retry to publish it. (May want a django-admin action for this if it ever happens.)
-    _datacite_update_doi(doi_dict, doi.id)
+    create_doi_bundle_task.delay_on_commit(draft_doi.id, "DraftDoi")
+    fetch_doi_citations_task.delay_on_commit(draft_doi.id, "DraftDoi")
+    fetch_doi_schema_org_dataset_task.delay_on_commit(draft_doi.id, "DraftDoi")
 
-    create_doi_bundle_task.delay_on_commit(doi.id)
-    fetch_doi_citations_task.delay_on_commit(doi.id)
-    fetch_doi_schema_org_dataset_task.delay_on_commit(doi.id)
-
-    logger.info("User %d created DOI %s for collection %d", user.id, doi.id, collection.id)
-
-    return doi
+    return draft_doi
 
 
-def collection_create_doi_files(*, doi: Doi) -> None:
+def collection_create_doi_files(*, doi: AbstractDoi) -> None:
     """
     Create the files associated with the DOI.
 
     This includes the frozen bundle of the collection as well as the metadata csv and license files.
     """
-    collection = Collection.objects.select_related("doi").get(doi=doi)
+    collection = doi.collection
     collection_slug = slugify(collection.name)
 
     snapshot_filename, metadata_filename = snapshot_images(
@@ -274,7 +262,7 @@ def collection_create_doi_files(*, doi: Doi) -> None:
             Path(metadata_filename).open("rb") as metadata_file,
             transaction.atomic(),  # necessary for select_for_update
         ):
-            doi = Doi.objects.select_for_update().get(id=doi.id)
+            doi = doi.__class__.objects.select_for_update().get(id=doi.id)
             doi.bundle = File(bundle_file, name=f"{collection_slug}.zip")
             doi.bundle_size = Path(snapshot_filename).stat().st_size
             doi.metadata = File(metadata_file, name=f"{collection_slug}.csv")
@@ -283,3 +271,65 @@ def collection_create_doi_files(*, doi: Doi) -> None:
     finally:
         Path(snapshot_filename).unlink()
         Path(metadata_filename).unlink()
+
+
+def draft_doi_publish(*, user: User, draft_doi: DraftDoi) -> Doi:
+    """Publish a draft DOI to become a final, findable DOI."""
+    collection = draft_doi.collection
+
+    if not user.has_perm("core.create_doi", collection):
+        raise ValidationError("You don't have permissions to publish this DOI.")
+
+    for image in collection.images.private().select_related("accession").iterator():
+        unembargo_image(image=image)
+
+    collection_update(collection=collection, public=True, ignore_lock=True)
+
+    with transaction.atomic():
+        doi = Doi.objects.create(
+            id=draft_doi.id,
+            slug=draft_doi.slug,
+            collection=draft_doi.collection,
+            creator=draft_doi.creator,
+            bundle=draft_doi.bundle,
+            bundle_size=draft_doi.bundle_size,
+            metadata=draft_doi.metadata,
+            metadata_size=draft_doi.metadata_size,
+            citations=draft_doi.citations,
+            schema_org_dataset=draft_doi.schema_org_dataset,
+        )
+
+        for draft_supplemental_file in draft_doi.supplemental_files.all():
+            doi.supplemental_files.create(
+                blob=draft_supplemental_file.blob,
+                description=draft_supplemental_file.description,
+                filename=draft_supplemental_file.filename,
+                size=draft_supplemental_file.size,
+                order=draft_supplemental_file.order,
+            )
+
+        for draft_related_identifier in draft_doi.related_identifiers.all():
+            doi.related_identifiers.create(
+                relation_type=draft_related_identifier.relation_type,
+                related_identifier_type=draft_related_identifier.related_identifier_type,
+                related_identifier=draft_related_identifier.related_identifier,
+            )
+
+        doi_dict = collection_build_doi(
+            collection=collection,
+            doi_id=doi.id,
+            is_draft=False,
+            related_identifiers=doi.related_identifiers.all(),
+        )
+
+        _datacite_promote_draft_doi_to_findable(doi_dict, doi.id)
+
+        # delete all draft records (this will cascade to supplemental files and related identifiers)
+        draft_doi.delete()
+
+    # trigger async tasks for final DOI
+    create_doi_bundle_task.delay_on_commit(doi.id, "Doi")
+    fetch_doi_citations_task.delay_on_commit(doi.id, "Doi")
+    fetch_doi_schema_org_dataset_task.delay_on_commit(doi.id, "Doi")
+
+    return doi
