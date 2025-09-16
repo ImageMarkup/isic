@@ -28,7 +28,7 @@
       <div class="md:flex justify-between pt-4">
         <div class="flex justify-center">
           {% if image.accession.is_cog %}
-            <div id="image" style="width:512px; height:512px; border:1px solid #ccc;"></div>
+            <div id="image" class="w-[512px] h-[512px] border border-gray-300"></div>
             <script src="{% static 'core/dist/cog.js' %}" nonce="{{ CSP_NONCE }}"></script>
             <link rel="stylesheet" href="{% static 'core/dist/ol.css' %}" nonce="{{ CSP_NONCE }}">
             <script type="text/javascript" nonce="{{ CSP_NONCE }}">
