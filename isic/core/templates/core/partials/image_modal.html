@@ -12,7 +12,7 @@
       <template x-if="hovered">
         {% if image.accession.is_cog %}
           <div>
-            <div id="image-{{ image.id }}" style="width:512px; height:512px; border:1px solid #ccc;"></div>
+            <div id="image-{{ image.id }}" class="w-[512px] h-[512px] border border-gray-300"></div>
             <script type="text/javascript" nonce="{{ CSP_NONCE }}">
               initializeCogViewer(document.getElementById('image-{{ image.id }}'), '{{ image.blob.url|safe }}');
             </script>
