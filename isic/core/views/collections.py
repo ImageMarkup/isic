@@ -140,7 +140,14 @@ def collection_create_doi_(request, pk):
     }
 
     if hasattr(collection, "doi") or hasattr(collection, "draftdoi"):
-        context["error"] = "This collection already has a DOI."
+        return HttpResponseRedirect(
+            reverse(
+                "core/doi-detail",
+                args=[
+                    collection.doi.slug if hasattr(collection, "doi") else collection.draftdoi.slug
+                ],
+            )
+        )
     elif not collection.images.exists():
         context["error"] = "A DOI cannot be created for an empty collection."
 
@@ -154,7 +161,7 @@ def collection_create_doi_(request, pk):
 @needs_object_permission("core.view_collection", (Collection, "pk", "pk"))
 def collection_detail(request, pk):
     collection = get_object_or_404(
-        Collection.objects.select_related("cached_counts", "creator"), pk=pk
+        Collection.objects.select_related("cached_counts", "creator", "draftdoi", "doi"), pk=pk
     )
 
     # TODO: if they can see the collection they can see the images?
