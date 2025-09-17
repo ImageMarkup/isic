@@ -13,7 +13,7 @@
         {% if image.accession.is_cog %}
           <div>
             <div id="image-{{ image.id }}" class="w-[512px] h-[512px] border border-gray-300"></div>
-            <script type="text/javascript" nonce="{{ CSP_NONCE }}">
+            <script type="text/javascript">
               initializeCogViewer(document.getElementById('image-{{ image.id }}'), '{{ image.blob.url|safe }}');
             </script>
           </div>
