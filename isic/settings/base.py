@@ -15,8 +15,6 @@ from resonant_settings.django_extensions import *
 from resonant_settings.logging import *
 from resonant_settings.oauth_toolkit import *
 
-from csp.constants import SELF, NONCE, NONE
-
 if TYPE_CHECKING:
     from urllib.parse import ParseResult
 
@@ -76,14 +74,13 @@ MIDDLEWARE = [
     # so it can potentially add CORS headers to those responses too.
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    "csp.middleware.CSPMiddleware",
     # WhiteNoiseMiddleware must be directly after SecurityMiddleware
     "whitenoise.middleware.WhiteNoiseMiddleware",
     # GZipMiddleware can be after WhiteNoiseMiddleware, as WhiteNoise performs its own compression
     "django.middleware.gzip.GZipMiddleware",
-    # "SentryMiddleware" does nothing for incoming requests, but adds user-based tags and
-    # CSP reporting info to outgoing response objects, so run this after (on responses)
-    # "SessionMiddleware" has completed, in case that does anything to the current user.
+    # "SentryMiddleware" does nothing for incoming requests, but adds user-based tags
+    # to outgoing response objects, so run this after (on responses) "SessionMiddleware"
+    # has completed, in case that does anything to the current user.
     "isic.middleware.SentryMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -308,44 +305,5 @@ ISIC_CDN_LOG_BUCKET: str | None = env.str("DJANGO_ISIC_CDN_LOG_BUCKET", default=
 TEMPLATES[0]["OPTIONS"]["context_processors"] += [  # type: ignore[index]
     "isic.core.context_processors.js_sentry",
     "isic.core.context_processors.citation_styles",
-    "csp.context_processors.nonce",
 ]
 ISIC_JS_SENTRY = False
-
-CONTENT_SECURITY_POLICY_REPORT_ONLY = {
-    # https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy#directives
-    "DIRECTIVES": {
-        "default-src": [SELF, NONCE],
-        "img-src": [SELF, "https:", "data:"],
-        "font-src": [
-            SELF,
-            "fonts.gstatic.com",
-            "cdn.jsdelivr.net",
-            NONCE,
-        ],
-        "connect-src": [
-            SELF,
-            NONCE,
-            "https://unpkg.com/world-atlas/countries-110m.json",
-            "https://www.google-analytics.com",
-        ],
-        "script-src": [SELF, NONCE],
-        "style-src": [SELF, NONCE, "fonts.googleapis.com"],
-        "frame-src": [NONE],
-        "media-src": [NONE],
-        "object-src": [NONE],
-        "base-uri": [NONE],
-        "form-action": [SELF],
-        "frame-ancestors": [NONE],
-        "report-to": "csp-endpoint",
-    }
-}
-
-DJANGO_ISIC_SENTRY_CSP_REPORT_URL: str | None = env.str(
-    "DJANGO_ISIC_SENTRY_CSP_REPORT_URL", default=None
-)
-
-if DJANGO_ISIC_SENTRY_CSP_REPORT_URL:
-    CONTENT_SECURITY_POLICY_REPORT_ONLY["DIRECTIVES"]["report-uri"] = (
-        DJANGO_ISIC_SENTRY_CSP_REPORT_URL
-    )

@@ -29,9 +29,9 @@
         <div class="flex justify-center">
           {% if image.accession.is_cog %}
             <div id="image" class="w-[512px] h-[512px] border border-gray-300"></div>
-            <script src="{% static 'core/dist/cog.js' %}" nonce="{{ CSP_NONCE }}"></script>
-            <link rel="stylesheet" href="{% static 'core/dist/ol.css' %}" nonce="{{ CSP_NONCE }}">
-            <script type="text/javascript" nonce="{{ CSP_NONCE }}">
+            <script src="{% static 'core/dist/cog.js' %}"></script>
+            <link rel="stylesheet" href="{% static 'core/dist/ol.css' %}">
+            <script type="text/javascript">
               initializeCogViewer(document.getElementById('image'), '{{ image.blob.url|safe }}');
             </script>
             <span class="text-sm">Scroll to zoom, click and drag to pan</span>
