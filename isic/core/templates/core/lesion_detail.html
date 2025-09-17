@@ -12,7 +12,7 @@
       </div>
 
       {{ images_by_modality|json_script:"images_by_modality" }}
-      <script type="text/javascript" nonce="{{ CSP_NONCE }}">
+      <script type="text/javascript">
         function imageRibbon() {
           const imagesByModality = JSON.parse(document.getElementById('images_by_modality').textContent);
           const offsetsByModality = {};
