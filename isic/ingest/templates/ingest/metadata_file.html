@@ -16,7 +16,7 @@ This has to be included in this file even though the errors are stored as HTML i
 database because a csrf_token is only available for templates rendered within a request context,
 not for templates rendered with render_to_string.
 {% endcomment %}
-  <script type="text/javascript" nonce="{{ CSP_NONCE }}">
+  <script type="text/javascript">
     function applyMetadataButton() {
       return {
         applying: false,

@@ -3,7 +3,7 @@
 {% block content %}
   {{ existing_questions|json_script:"existing-questions" }}
 
-  <script type="text/javascript" nonce="{{ CSP_NONCE }}">
+  <script type="text/javascript">
     const questions = JSON.parse(document.getElementById('existing-questions').textContent);
 
     function displayOfficialQuestions() {
@@ -319,7 +319,7 @@
         </div>
       </form>
 
-      <script type="text/javascript" nonce="{{ CSP_NONCE }}">
+      <script type="text/javascript">
         document.querySelectorAll(`#custom-questions input[type="text"]`).forEach((function(x) {
           x.setAttribute('required', true);
         }));

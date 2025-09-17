@@ -1,6 +1,5 @@
 from datetime import UTC, datetime
 
-from csp.decorators import csp_update
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
@@ -369,18 +368,6 @@ def study_task_detail(request, pk):
 
 
 @needs_object_permission("studies.view_study", (Study, "pk", "pk"))
-@csp_update(
-    {
-        # this is an unfortunate requirement to get around the fact that the diagnosis picker widget
-        # is defined dynamically and can't easily access the CSP nonce which is in the request
-        # object. this is also easier than trying to use UNSAFE_INLINE.
-        "script-src": [
-            "'sha256-UwKSvnvvhXkSbaWpW8h+JOZWDXnBNDG4fTx+PIhC++8='",
-            "'sha256-js+3bn3D+Lmah54TVETaXV58tVj9gFzq7O59e3kfwmU='",
-        ]
-    },
-    REPORT_ONLY=True,
-)
 def study_task_detail_preview(request, pk):
     study = get_object_or_404(Study, pk=pk)
     image = (

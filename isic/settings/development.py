@@ -1,6 +1,5 @@
 from typing import cast
 
-from csp.constants import UNSAFE_EVAL
 from django_extensions.utils import InternalIPS
 from minio_storage.policy import Policy
 
@@ -99,12 +98,3 @@ OAUTH2_PROVIDER["REQUEST_APPROVAL_PROMPT"] = "force"
 
 # suppress noisy cache invalidation log messages
 logging.getLogger("isic.core.signals").setLevel(logging.ERROR)
-
-# transfer trust to any dynamically injected scripts. debug toolbar uses a nonce
-# and re-wraps every fetch call, so it's necessary for the trust to be transferred.
-
-# images may be loaded via minio
-CONTENT_SECURITY_POLICY_REPORT_ONLY["DIRECTIVES"]["img-src"].append("http:")
-# both of these are necessary for parcel
-CONTENT_SECURITY_POLICY_REPORT_ONLY["DIRECTIVES"]["connect-src"].append("ws:")
-CONTENT_SECURITY_POLICY_REPORT_ONLY["DIRECTIVES"]["script-src"].append(UNSAFE_EVAL)
