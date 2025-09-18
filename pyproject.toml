@@ -16,7 +16,7 @@ dependencies = [
   "deepdiff",
   "django[argon2]",
   "django-allauth[socialaccount]",
-  "django-auth-style[oauth-toolkit]",
+  "django-auth-style[allauth,oauth-toolkit]",
   "django-cachalot",
   "django-click",
   "django-cors-headers",
