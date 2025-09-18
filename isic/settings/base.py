@@ -16,6 +16,7 @@ from resonant_settings.logging import *
 from resonant_settings.oauth_toolkit import *
 
 if TYPE_CHECKING:
+    from typing import Any
     from urllib.parse import ParseResult
 
 
@@ -111,19 +112,20 @@ STORAGES = {
     },
 }
 
-
-SOCIALACCOUNT_PROVIDERS = {}
+SOCIALACCOUNT_PROVIDERS: dict[str, dict[str, Any]] = {}
 
 # the presence of "google" inside SOCIALACCOUNT_PROVIDERS causes the GUI to display
 # the sign in with google button. guard it so it only shows if it has credentials.
-if env.str("DJANGO_ISIC_GOOGLE_OAUTH_CLIENT_ID", default=None) and env.str(
+_google_oauth_client_id: str | None = env.str("DJANGO_ISIC_GOOGLE_OAUTH_CLIENT_ID", default=None)
+_google_oauth_client_secret: str | None = env.str(
     "DJANGO_ISIC_GOOGLE_OAUTH_CLIENT_SECRET", default=None
-):
+)
+if _google_oauth_client_id and _google_oauth_client_secret:
     SOCIALACCOUNT_PROVIDERS["google"] = {
         "APPS": [
             {
-                "client_id": env.str("DJANGO_ISIC_GOOGLE_OAUTH_CLIENT_ID"),
-                "secret": env.str("DJANGO_ISIC_GOOGLE_OAUTH_CLIENT_SECRET"),
+                "client_id": _google_oauth_client_id,
+                "secret": _google_oauth_client_secret,
             }
         ],
         "SCOPE": ["email"],
