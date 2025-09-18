@@ -551,6 +551,9 @@ wheels = [
 ]
 
 [package.optional-dependencies]
+allauth = [
+    { name = "django-allauth" },
+]
 oauth-toolkit = [
     { name = "django-oauth-toolkit" },
 ]
@@ -1180,7 +1183,7 @@ dependencies = [
     { name = "deepdiff" },
     { name = "django", extra = ["argon2"] },
     { name = "django-allauth", extra = ["socialaccount"] },
-    { name = "django-auth-style", extra = ["oauth-toolkit"] },
+    { name = "django-auth-style", extra = ["allauth", "oauth-toolkit"] },
     { name = "django-cachalot" },
     { name = "django-click" },
     { name = "django-cors-headers" },
@@ -1282,7 +1285,7 @@ requires-dist = [
     { name = "deepdiff" },
     { name = "django", extras = ["argon2"] },
     { name = "django-allauth", extras = ["socialaccount"] },
-    { name = "django-auth-style", extras = ["oauth-toolkit"] },
+    { name = "django-auth-style", extras = ["allauth", "oauth-toolkit"] },
     { name = "django-browser-reload", marker = "extra == 'development'" },
     { name = "django-cachalot" },
     { name = "django-click" },
