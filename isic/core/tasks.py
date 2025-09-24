@@ -15,7 +15,6 @@ from django.db import connection, transaction
 from django.db.models import Prefetch
 from django.template.loader import render_to_string
 from oauth2_provider.models import clear_expired as clear_expired_oauth_tokens
-import requests
 from resonant_utils.storages import expiring_url
 from urllib3.exceptions import ConnectionError as Urllib3ConnectionError
 from urllib3.exceptions import TimeoutError as Urllib3TimeoutError
@@ -149,13 +148,16 @@ def create_doi_bundle_task(doi_id: str) -> None:
 
 
 def _fetch_doi_schema_org_dataset(doi_id: str) -> dict:
-    r = requests.get(
-        f"https://api.datacite.org/dois/{doi_id}",
-        headers={"Accept": "application/vnd.schemaorg.ld+json"},
-        timeout=(10, 10),
-    )
-    r.raise_for_status()
-    return r.json()
+    from isic.core.services.collection.doi import _datacite_session
+
+    with _datacite_session() as session:
+        resp = session.get(
+            f"/dois/{doi_id}",
+            headers={"Accept": "application/vnd.schemaorg.ld+json"},
+            timeout=10,
+        )
+    resp.raise_for_status()
+    return resp.json()
 
 
 @shared_task(soft_time_limit=20, time_limit=25)
@@ -167,15 +169,18 @@ def fetch_doi_schema_org_dataset_task(doi_id: str) -> None:
 
 
 def _fetch_doi_citations(doi_id: str) -> dict[str, str]:
+    from isic.core.services.collection.doi import _datacite_session
+
     citations = {}
-    for style in settings.ISIC_DATACITE_CITATION_STYLES:
-        r = requests.get(
-            f"https://api.datacite.org/dois/{doi_id}",
-            headers={"Accept": f"text/x-bibliography; style={style}"},
-            timeout=(10, 10),
-        )
-        r.raise_for_status()
-        citations[style] = r.text
+    with _datacite_session() as session:
+        for style in settings.ISIC_DATACITE_CITATION_STYLES:
+            resp = session.get(
+                f"/dois/{doi_id}",
+                headers={"Accept": f"text/x-bibliography; style={style}"},
+                timeout=10,
+            )
+            resp.raise_for_status()
+            citations[style] = resp.text
     return citations
 
 
