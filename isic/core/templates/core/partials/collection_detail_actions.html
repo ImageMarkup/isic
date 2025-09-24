@@ -31,11 +31,16 @@
                 {% endif %}
             </div>
         {% endif %}
-        {% if request.user.is_staff and not collection.doi %}
+        {% if request.user.is_staff %}
             <div class="py-1" role="none">
-                <a href="{% url 'core/collection-create-doi' collection.pk %}"
-                   class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem"
-                   tabindex="-1" id="menu-item-0">Create Draft DOI</a>
+                {% if not collection.doi %}
+                    <a href="{% url 'core/collection-create-doi' collection.pk %}"
+                       class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm"
+                       role="menuitem"
+                       tabindex="-1"
+                       id="menu-item-0"
+                    >Create Draft DOI</a>
+                {% endif %}
             </div>
         {% endif %}
         <div class="py-1" role="none">
