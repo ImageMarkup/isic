@@ -190,7 +190,8 @@ function DoiCreationForm() {
       });
 
       if (response.ok) {
-        window.location.href = `/collections/${collectionId}`;
+        const data = await response.json();
+        window.location.href = `/doi/${data.slug}`;
       } else {
         let errorMessage = "Failed to create DOI";
         const errorData = await response.json();
