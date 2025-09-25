@@ -20,12 +20,36 @@
 
 {% block content %}
   <div id="doi-detail">
+    {% if is_draft %}
+      <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <i class="ri-draft-line text-xl text-yellow-600 mr-3"></i>
+            <div>
+              <h3 class="text-yellow-800 font-semibold">Draft DOI</h3>
+              <p class="text-yellow-700 text-sm">This is a draft DOI that has not yet been published. It is not publicly indexed or findable.</p>
+            </div>
+          </div>
+          {% if user.is_staff %}
+            <button
+              x-data="doiPublisher('{{ doi.slug }}')"
+              @click="publish"
+              :disabled="isPublishing"
+              class="btn btn-primary ml-4 flex items-center">
+              <i :class="isPublishing ? 'ri-loader-line mr-2 animate-spin' : 'ri-upload-line mr-2'"></i>
+              <span x-text="buttonText"></span>
+            </button>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
     <div class="flex flex-col lg:flex-row">
       <div class="w-full lg:w-9/12 lg:mr-6 mb-4 lg:mb-0">
         <h1>{{ doi.collection.name }}</h1>
       </div>
       <div class="w-full lg:w-3/12 mb-6 lg:mb-0">
-        <a href="{{ doi.collection.get_absolute_url }}" class="btn w-full" target="_blank">View in ISIC Archive <i class="ri-external-link-line ml-2"></i></a>
+        <a href="{{ doi.collection.get_absolute_url }}" class="btn w-full mb-3" target="_blank">View in ISIC Archive <i class="ri-external-link-line ml-2"></i></a>
       </div>
     </div>
 
@@ -173,6 +197,8 @@
     </div>
   </div>
 
+  {{ is_publishing|json_script:"is-publishing" }}
+
   <script type="text/javascript">
     function citationSelector(citationsElementId) {
       return {
@@ -189,6 +215,54 @@
           setTimeout(() => {
             this.buttonText = 'Copy Citation'
           }, 2000)
+        }
+      }
+    }
+
+    function doiPublisher(slug) {
+      const isPublishing = JSON.parse(document.getElementById('is-publishing').textContent);
+      return {
+        slug: slug,
+        isPublishing: isPublishing,
+        buttonText: isPublishing ? 'Publishing...' : 'Publish DOI',
+
+        async publish() {
+          if (this.isPublishing) {
+            return;
+          }
+
+          if (!confirm('Are you sure you want to publish this draft DOI? This action cannot be undone and will make the DOI publicly findable.')) {
+            return;
+          }
+
+          this.isPublishing = true;
+          this.buttonText = 'Publishing...';
+
+          try {
+            const response = await fetch(`/api/v2/doi/${this.slug}/publish/`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+              },
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+              this.isPublishing = true;
+              this.buttonText = 'Publishing..';
+              window.location.reload();
+            } else {
+              throw new Error(data.error || 'Failed to publish DOI');
+            }
+          } catch (error) {
+            console.error('Error publishing DOI:', error);
+            alert('Error publishing DOI: ' + error.message);
+
+            this.isPublishing = false;
+            this.buttonText = 'Publish DOI';
+          }
         }
       }
     }

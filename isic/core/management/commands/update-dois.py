@@ -30,5 +30,5 @@ def update_dois(all_, doi_ids):
                 click.echo(f"{doi.id} failed: {r.status_code} {r.text}")
             else:
                 click.echo(f"{doi.id} succeeded")
-                fetch_doi_citations_task.delay_on_commit(doi.id)
-                fetch_doi_schema_org_dataset_task.delay_on_commit(doi.id)
+                fetch_doi_citations_task.delay_on_commit(doi.id, "Doi")
+                fetch_doi_schema_org_dataset_task.delay_on_commit(doi.id, "Doi")

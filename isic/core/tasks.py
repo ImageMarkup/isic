@@ -1,11 +1,12 @@
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 import tempfile
-from typing import cast
+from typing import Literal, cast
 import uuid
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.cache import cache
@@ -21,7 +22,6 @@ from urllib3.exceptions import TimeoutError as Urllib3TimeoutError
 
 from isic.core.health import run_all_health_checks
 from isic.core.models.collection import Collection
-from isic.core.models.doi import Doi
 from isic.core.models.image import Image
 from isic.core.search import bulk_add_to_search_index
 from isic.core.serializers import SearchQueryIn
@@ -35,6 +35,8 @@ from isic.ingest.models.lesion import Lesion
 from isic.ingest.services.publish import embed_iptc_metadata
 
 logger = get_task_logger(__name__)
+
+DoiType = Literal["Doi", "DraftDoi"]
 
 
 @shared_task(soft_time_limit=600, time_limit=610)
@@ -139,10 +141,11 @@ def generate_staff_image_list_metadata_csv(user_id: int) -> None:
 
 
 @shared_task(soft_time_limit=60 * 60 * 12, time_limit=(60 * 60 * 12) + 60)
-def create_doi_bundle_task(doi_id: str) -> None:
+def create_doi_bundle_task(doi_id: str, doi_type: DoiType = "Doi") -> None:
     from isic.core.services.collection.doi import collection_create_doi_files
 
-    doi = Doi.objects.get(id=doi_id)
+    model_class = apps.get_model("core", doi_type)
+    doi = model_class.objects.get(id=doi_id)
 
     collection_create_doi_files(doi=doi)
 
@@ -161,8 +164,9 @@ def _fetch_doi_schema_org_dataset(doi_id: str) -> dict:
 
 
 @shared_task(soft_time_limit=20, time_limit=25)
-def fetch_doi_schema_org_dataset_task(doi_id: str) -> None:
-    doi = Doi.objects.get(id=doi_id)
+def fetch_doi_schema_org_dataset_task(doi_id: str, doi_type: DoiType = "Doi") -> None:
+    model_class = apps.get_model("core", doi_type)
+    doi = model_class.objects.get(id=doi_id)
     doi.schema_org_dataset = _fetch_doi_schema_org_dataset(doi.id)
     doi.schema_org_dataset["isAccessibleForFree"] = True
     doi.save(update_fields=["schema_org_dataset"])
@@ -185,10 +189,24 @@ def _fetch_doi_citations(doi_id: str) -> dict[str, str]:
 
 
 @shared_task(soft_time_limit=120, time_limit=180)
-def fetch_doi_citations_task(doi_id: str) -> None:
-    doi = Doi.objects.get(id=doi_id)
+def fetch_doi_citations_task(doi_id: str, doi_type: DoiType = "Doi") -> None:
+    model_class = apps.get_model("core", doi_type)
+    doi = model_class.objects.get(id=doi_id)
     doi.citations = _fetch_doi_citations(doi.id)
     doi.save(update_fields=["citations"])
+
+
+@shared_task(soft_time_limit=60 * 5, time_limit=60 * 5 + 30)
+def publish_draft_doi_task(draft_doi_id: str, user_id: int) -> None:
+    """Publish a draft DOI to become a final, findable DOI."""
+    from isic.core.services.collection.doi import draft_doi_publish
+
+    DraftDoi = apps.get_model("core", "DraftDoi")
+
+    draft_doi = DraftDoi.objects.get(id=draft_doi_id, is_publishing=True)
+    user = User.objects.get(id=user_id)
+
+    draft_doi_publish(user=user, draft_doi=draft_doi)
 
 
 @shared_task(soft_time_limit=12 * 60 * 60, time_limit=12 * 60 * 60 + 60)

@@ -40,10 +40,10 @@ class AbstractDoi(TimeStampedModel):
     collection = models.OneToOneField(Collection, on_delete=models.PROTECT)
     creator = models.ForeignKey(User, on_delete=models.RESTRICT)
 
-    bundle = models.FileField(upload_to=doi_upload_to, storage=doi_storage, null=True, blank=True)
+    bundle = models.FileField(null=True, blank=True)
     bundle_size = models.PositiveBigIntegerField(null=True, blank=True)
 
-    metadata = models.FileField(upload_to=doi_upload_to, storage=doi_storage, null=True, blank=True)
+    metadata = models.FileField(null=True, blank=True)
     metadata_size = models.PositiveIntegerField(null=True, blank=True)
 
     citations = models.JSONField(default=dict, blank=True)
@@ -68,11 +68,17 @@ class Doi(AbstractDoi):
         verbose_name = "DOI"
         verbose_name_plural = "DOIs"
 
+    # these fields are overridden just for their storage/upload_to values
+    bundle = models.FileField(upload_to=doi_upload_to, storage=doi_storage, null=True, blank=True)
+    metadata = models.FileField(upload_to=doi_upload_to, storage=doi_storage, null=True, blank=True)
+
 
 class DraftDoi(AbstractDoi):
     class Meta:
         verbose_name = "Draft DOI"
         verbose_name_plural = "Draft DOIs"
+
+    is_publishing = models.BooleanField(default=False)
 
 
 # https://datacite-metadata-schema.readthedocs.io/en/4.6/appendices/appendix-1/relationType/
