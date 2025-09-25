@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from ninja import Router, Schema
 from pydantic import field_validator
@@ -82,19 +83,26 @@ def create_doi(request, payload: CreateDOIIn):
 
 @router.post(
     "/{draft_doi_slug}/publish/",
-    response={200: dict, 403: dict, 404: dict},
+    response={200: dict, 403: dict, 404: dict, 409: dict},
     summary="Publish a draft DOI to make it findable.",
     include_in_schema=False,
 )
 def publish_draft_doi(request, draft_doi_slug: str):
-    draft_doi = get_object_or_404(
-        DraftDoi.objects.select_related("collection"), slug=draft_doi_slug
-    )
+    with transaction.atomic():
+        draft_doi = get_object_or_404(
+            DraftDoi.objects.select_for_update().select_related("collection"), slug=draft_doi_slug
+        )
 
-    if not request.user.has_perm("core.create_doi", draft_doi.collection):
-        return 403, {"error": "You do not have permission to publish this DOI."}
+        if not request.user.has_perm("core.create_doi", draft_doi.collection):
+            return 403, {"error": "You do not have permission to publish this DOI."}
 
-    publish_draft_doi_task.delay_on_commit(draft_doi.id, request.user.id)
+        if draft_doi.is_publishing:
+            return 409, {"error": "This DOI is already being published."}
+
+        draft_doi.is_publishing = True
+        draft_doi.save(update_fields=["is_publishing"])
+
+        publish_draft_doi_task.delay_on_commit(draft_doi.id, request.user.id)
 
     messages.add_message(request, messages.INFO, "Publishing DOI, this may take several minutes.")
 

@@ -78,6 +78,8 @@ class DraftDoi(AbstractDoi):
         verbose_name = "Draft DOI"
         verbose_name_plural = "Draft DOIs"
 
+    is_publishing = models.BooleanField(default=False)
+
 
 # https://datacite-metadata-schema.readthedocs.io/en/4.6/appendices/appendix-1/relationType/
 class RelationType(models.TextChoices):

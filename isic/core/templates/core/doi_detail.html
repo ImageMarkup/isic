@@ -197,6 +197,8 @@
     </div>
   </div>
 
+  {{ is_publishing|json_script:"is-publishing" }}
+
   <script type="text/javascript">
     function citationSelector(citationsElementId) {
       return {
@@ -218,12 +220,17 @@
     }
 
     function doiPublisher(slug) {
+      const isPublishing = JSON.parse(document.getElementById('is-publishing').textContent);
       return {
         slug: slug,
-        isPublishing: false,
-        buttonText: 'Publish DOI',
+        isPublishing: isPublishing,
+        buttonText: isPublishing ? 'Publishing...' : 'Publish DOI',
 
         async publish() {
+          if (this.isPublishing) {
+            return;
+          }
+
           if (!confirm('Are you sure you want to publish this draft DOI? This action cannot be undone and will make the DOI publicly findable.')) {
             return;
           }
