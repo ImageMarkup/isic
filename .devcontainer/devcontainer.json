@@ -18,7 +18,8 @@
         "ghcr.io/devcontainers-extra/features/fish-apt-get:1": {},
         "ghcr.io/devcontainers-extra/features/heroku-cli:1": {},
         "ghcr.io/devcontainers/features/aws-cli:1": {},
-        "ghcr.io/devcontainers/features/github-cli:1": {}
+        "ghcr.io/devcontainers/features/github-cli:1": {},
+        "ghcr.io/devcontainers/features/node:1": {}
     },
     "containerEnv": {
         "HEROKU_APP": "isic",
