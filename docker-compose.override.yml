@@ -17,6 +17,7 @@ services:
       UV_CACHE_DIR: /home/vscode/uv/cache
       UV_PYTHON_INSTALL_DIR: /home/vscode/uv/bin
       UV_LINK_MODE: symlink
+      TOX_WORK_DIR: /home/vscode/tox
     working_dir: /home/vscode/isic
     env_file: ./dev/.env.docker-compose
     volumes:
@@ -58,6 +59,7 @@ services:
       UV_CACHE_DIR: /home/vscode/uv/cache
       UV_PYTHON_INSTALL_DIR: /home/vscode/uv/bin
       UV_LINK_MODE: symlink
+      TOX_WORK_DIR: /home/vscode/tox
     working_dir: /home/vscode/isic
     volumes:
       - .:/home/vscode/isic
@@ -94,6 +96,7 @@ services:
       UV_CACHE_DIR: /home/vscode/uv/cache
       UV_PYTHON_INSTALL_DIR: /home/vscode/uv/bin
       UV_LINK_MODE: symlink
+      TOX_WORK_DIR: /home/vscode/tox
     working_dir: /home/vscode/isic
     volumes:
       - .:/home/vscode/isic
