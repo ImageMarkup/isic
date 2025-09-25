@@ -53,6 +53,8 @@ def doi_detail(request, slug):
         "license_descriptions": LICENSE_SHORTHAND_DESCRIPTIONS,
         "license_paths": LICENSE_PATHS,
         "attributing_institutions": attributing_institutions,
+        "is_draft": isinstance(doi, DraftDoi),
+        "is_publishing": getattr(doi, "is_publishing", False),
         "stats": {
             "images": doi.collection.images.count(),
         },

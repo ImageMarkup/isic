@@ -241,3 +241,12 @@ class DraftSupplementalFileInline(admin.TabularInline):
 @admin.register(DraftDoi)
 class DraftDoiAdmin(BaseDoiAdmin):
     inlines = [DraftSupplementalFileInline]
+    list_display = [
+        "id",
+        "external_url",
+        "collection",
+        "bundle",
+        "num_supplemental_files",
+        "is_publishing",
+    ]
+    readonly_fields = ["is_publishing"]

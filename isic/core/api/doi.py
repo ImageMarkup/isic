@@ -1,11 +1,14 @@
+from django.contrib import messages
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from ninja import Router, Schema
 from pydantic import field_validator
 from s3_file_field.widgets import S3PlaceholderFile
 
 from isic.core.models.collection import Collection
-from isic.core.models.doi import DoiRelatedIdentifier
-from isic.core.services.collection.doi import collection_create_doi
+from isic.core.models.doi import DraftDoi, DraftDoiRelatedIdentifier
+from isic.core.services.collection.doi import collection_create_draft_doi
+from isic.core.tasks import publish_draft_doi_task
 
 router = Router()
 
@@ -43,7 +46,7 @@ class CreateDOIIn(Schema):
 
     @field_validator("related_identifiers")
     def validate_related_identifiers(cls, v):  # noqa: N805
-        DoiRelatedIdentifier.validate_related_identifiers(
+        DraftDoiRelatedIdentifier.validate_related_identifiers(
             [
                 {
                     "relation_type": related_identifier.relation_type,
@@ -58,21 +61,49 @@ class CreateDOIIn(Schema):
 
 @router.post(
     "/",
-    response={200: None, 403: dict, 409: dict},
-    summary="Create a DOI for a collection.",
+    response={201: dict, 403: dict, 409: dict},
+    summary="Create a draft DOI for a collection.",
     include_in_schema=False,
 )
 def create_doi(request, payload: CreateDOIIn):
-    collection = get_object_or_404(
-        Collection.objects.select_related("doi"), pk=payload.collection_id
-    )
+    collection = get_object_or_404(Collection, pk=payload.collection_id)
 
     if not request.user.has_perm("core.create_doi", collection):
         return 403, {"error": "You do not have permission to create a DOI."}
 
-    collection_create_doi(
+    draft_doi = collection_create_draft_doi(
         user=request.user,
         collection=collection,
         supplemental_files=payload.supplemental_files,
         related_identifiers=payload.related_identifiers,
     )
+
+    return 201, {"slug": draft_doi.slug}
+
+
+@router.post(
+    "/{draft_doi_slug}/publish/",
+    response={200: dict, 403: dict, 404: dict, 409: dict},
+    summary="Publish a draft DOI to make it findable.",
+    include_in_schema=False,
+)
+def publish_draft_doi(request, draft_doi_slug: str):
+    with transaction.atomic():
+        draft_doi = get_object_or_404(
+            DraftDoi.objects.select_for_update().select_related("collection"), slug=draft_doi_slug
+        )
+
+        if not request.user.has_perm("core.create_doi", draft_doi.collection):
+            return 403, {"error": "You do not have permission to publish this DOI."}
+
+        if draft_doi.is_publishing:
+            return 409, {"error": "This DOI is already being published."}
+
+        draft_doi.is_publishing = True
+        draft_doi.save(update_fields=["is_publishing"])
+
+        publish_draft_doi_task.delay_on_commit(draft_doi.id, request.user.id)
+
+    messages.add_message(request, messages.INFO, "Publishing DOI, this may take several minutes.")
+
+    return 200, {"message": "DOI publish task started successfully."}

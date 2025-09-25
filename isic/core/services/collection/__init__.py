@@ -7,7 +7,7 @@ from django.db.models.aggregates import Count
 from django.db.models.query_utils import Q
 
 from isic.core.models.collection import Collection, CollectionShare
-from isic.core.models.doi import Doi
+from isic.core.models.doi import Doi, DraftDoi
 from isic.core.services.collection.image import collection_move_images
 from isic.core.services.image import image_share
 from isic.studies.models import Study
@@ -116,7 +116,10 @@ def collection_merge_magic_collections(
 
     if Study.objects.filter(from_collection_filter).exists():
         raise ValidationError("Collections with derived studies cannot be merged.")
-    if Doi.objects.filter(from_collection_filter).exists():
+    if (
+        Doi.objects.filter(from_collection_filter).exists()
+        or DraftDoi.objects.filter(from_collection_filter).exists()
+    ):
         raise ValidationError("Collections with DOIs cannot be merged.")
     if CollectionShare.objects.filter(from_collection_filter).exists():
         # TODO: This should be allowed, but might require some additional logic. I'm not sure it's
