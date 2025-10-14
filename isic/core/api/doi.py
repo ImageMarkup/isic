@@ -21,6 +21,7 @@ class RelatedIdentifierIn(Schema):
 
 class CreateDOIIn(Schema):
     collection_id: int
+    description: str
     supplemental_files: list[dict[str, str]]
     related_identifiers: list[RelatedIdentifierIn] = []
 
@@ -74,6 +75,7 @@ def create_doi(request, payload: CreateDOIIn):
     draft_doi = collection_create_draft_doi(
         user=request.user,
         collection=collection,
+        description=payload.description,
         supplemental_files=payload.supplemental_files,
         related_identifiers=payload.related_identifiers,
     )

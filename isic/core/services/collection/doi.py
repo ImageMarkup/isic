@@ -188,6 +188,7 @@ def collection_create_draft_doi(
     *,
     user: User,
     collection: Collection,
+    description: str,
     supplemental_files: Iterable[dict[str, str]] | None = None,
     related_identifiers: Iterable[RelatedIdentifierIn] | None = None,
 ) -> DraftDoi:
@@ -203,6 +204,7 @@ def collection_create_draft_doi(
         draft_doi.full_clean()
         draft_doi.save()
 
+        collection_update(collection=collection, description=description, ignore_lock=True)
         collection_lock(collection=collection)
 
         if supplemental_files:
