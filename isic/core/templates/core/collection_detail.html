@@ -35,6 +35,10 @@
         <span class="font-bold">{{ label }}:</span>
         {% if link %}
           <a href="{{ link }}">{{ value }}</a>
+        {% elif value == "None" %}
+          <span class="tooltip" data-tip="Counts are being calculated and will be available shortly">
+            - <i class="ri-information-line"></i>
+          </span>
         {% else %}
           {{ value }}
         {% endif %}

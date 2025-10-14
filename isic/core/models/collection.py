@@ -129,9 +129,9 @@ class Collection(TimeStampedModel):
     def counts(self):
         if not hasattr(self, "cached_counts"):
             return {
-                "image_count": "-",
-                "lesion_count": "-",
-                "patient_count": "-",
+                "image_count": None,
+                "lesion_count": None,
+                "patient_count": None,
             }
         return self.cached_counts
 

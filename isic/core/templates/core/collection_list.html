@@ -64,9 +64,11 @@
             <p class="text-sm font-medium text-gray-900">
               {{ collection.name }}
             </p>
-            <p class="text-sm text-gray-500 truncate">
-              {{ collection.counts.image_count|intcomma }} images
-            </p>
+            {% if collection.counts.image_count is not None %}
+              <p class="text-sm text-gray-500 truncate">
+                {{ collection.counts.image_count|intcomma }} images
+              </p>
+            {% endif %}
           </a>
         </div>
       </div>
