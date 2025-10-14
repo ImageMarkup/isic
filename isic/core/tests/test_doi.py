@@ -45,7 +45,9 @@ def test_create_draft_doi(
     mock_fetch_doi_schema_org_dataset,
 ):
     draft_doi = collection_create_draft_doi(
-        user=staff_user, collection=public_collection_with_public_images
+        user=staff_user,
+        collection=public_collection_with_public_images,
+        description="Test description",
     )
     draft_doi.refresh_from_db()
 
@@ -77,7 +79,9 @@ def test_collection_create_draft_and_publish_doi(
     mock_fetch_doi_schema_org_dataset,
 ):
     draft_doi = collection_create_draft_doi(
-        user=staff_user, collection=public_collection_with_public_images
+        user=staff_user,
+        collection=public_collection_with_public_images,
+        description="Test description",
     )
     draft_doi.refresh_from_db()
 
@@ -117,7 +121,9 @@ def test_draft_doi_allows_private_collection(
 ):
     collection = CollectionFactory.create(public=False)
     collection.images.set([image_factory(public=False)])
-    collection_create_draft_doi(user=staff_user, collection=collection)
+    collection_create_draft_doi(
+        user=staff_user, collection=collection, description="Test description"
+    )
 
 
 @pytest.mark.django_db
@@ -127,7 +133,9 @@ def test_draft_doi_form_requires_no_existing_doi(staff_user, image_factory):
     DoiFactory.create(collection=collection, creator=staff_user)
 
     with pytest.raises(ValidationError, match="already has a DOI"):
-        collection_create_draft_doi(user=staff_user, collection=collection)
+        collection_create_draft_doi(
+            user=staff_user, collection=collection, description="Test description"
+        )
 
 
 @pytest.fixture
@@ -243,7 +251,9 @@ def test_doi_files(
     images = [image_factory(public=True) for _ in range(3)]
     collection.images.set(images)
 
-    draft_doi = collection_create_draft_doi(user=staff_user, collection=collection)
+    draft_doi = collection_create_draft_doi(
+        user=staff_user, collection=collection, description="Test description"
+    )
     doi = draft_doi_publish(user=staff_user, draft_doi=draft_doi)
 
     doi.refresh_from_db()
@@ -284,6 +294,7 @@ def test_api_doi_creation(
         reverse("api:create_doi"),
         {
             "collection_id": public_collection_with_public_images.id,
+            "description": "Test description",
             "supplemental_files": [
                 {
                     "blob": s3ff_random_field_value,
@@ -340,6 +351,7 @@ def test_api_doi_creation_invalid_related_identifiers(
         reverse("api:create_doi"),
         {
             "collection_id": public_collection_with_public_images.id,
+            "description": "Test description",
             "supplemental_files": [],
             "related_identifiers": [
                 {
@@ -363,6 +375,7 @@ def test_api_doi_creation_invalid_related_identifier_relation_type(
         reverse("api:create_doi"),
         {
             "collection_id": public_collection_with_public_images.id,
+            "description": "Test description",
             "supplemental_files": [],
             "related_identifiers": [
                 {
@@ -387,6 +400,7 @@ def test_api_doi_creation_invalid_related_identifier_relation_identifier_type(
         reverse("api:create_doi"),
         {
             "collection_id": public_collection_with_public_images.id,
+            "description": "Test description",
             "supplemental_files": [],
             "related_identifiers": [
                 {
@@ -476,6 +490,7 @@ def test_draft_doi_complete_lifecycle(  # noqa: PLR0915
     draft_doi = collection_create_draft_doi(
         user=staff_user,
         collection=collection,
+        description="Test description for lifecycle",
         supplemental_files=supplemental_files,
         related_identifiers=related_identifiers,
     )
