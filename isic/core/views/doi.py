@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404, render
 
 from isic.core.models.doi import Doi, DraftDoi, RelationType
+from isic.core.permissions import needs_object_permission
 from isic.zip_download.api import get_attributions
 
 LICENSE_SHORTHAND_DESCRIPTIONS = {
@@ -71,3 +72,14 @@ def doi_detail(request, slug):
     }
 
     return render(request, "core/doi_detail.html", context)
+
+
+@needs_object_permission("core.create_doi", ("core.Collection", "draftdoi__slug", "slug"))
+def draft_doi_edit(request, slug):
+    draft_doi = get_object_or_404(DraftDoi.objects.select_related("collection"), slug=slug)
+
+    context = {
+        "draft_doi": draft_doi,
+    }
+
+    return render(request, "core/draft_doi_edit.html", context)
