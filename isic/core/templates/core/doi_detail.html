@@ -44,17 +44,38 @@
       </div>
     {% endif %}
 
-    <div class="flex flex-col lg:flex-row">
-      <div class="w-full lg:w-9/12 lg:mr-6 mb-4 lg:mb-0">
+    <div class="flex flex-col lg:flex-row mb-6">
+      <div class="w-full lg:w-9/12 lg:mr-6">
         <h1>{{ doi.collection.name }}</h1>
       </div>
-      <div class="w-full lg:w-3/12 mb-6 lg:mb-0">
-        <a href="{{ doi.collection.get_absolute_url }}" class="btn w-full mb-3" target="_blank">View in ISIC Archive <i class="ri-external-link-line ml-2"></i></a>
+      <div class="w-full lg:w-3/12">
+        <a href="{{ doi.collection.get_absolute_url }}" class="btn w-full" target="_blank">View in ISIC Archive <i class="ri-external-link-line ml-2"></i></a>
       </div>
     </div>
 
     <div class="flex flex-col lg:flex-row">
       <div class="w-full lg:w-9/12 lg:mr-6 mb-6 lg:mb-0">
+        {% if is_described_by %}
+          <div id="described-by-details" class="border border-gray-200 rounded-lg mt-4 mb-4 p-4">
+            <div class="text-sm text-gray-600 mb-1">This dataset is described in detail by:</div>
+            {% if is_described_by.related_identifier_type == 'DOI' %}
+              <a href="https://doi.org/{{ is_described_by.related_identifier }}"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 class="text-blue-600 hover:text-blue-800 break-all">
+                {{ is_described_by.related_identifier }} <i class="ri-external-link-line"></i>
+              </a>
+            {% else %}
+              <a href="{{ is_described_by.related_identifier }}"
+                 target="_blank"
+                 rel="noopener noreferrer"
+                 class="text-blue-600 hover:text-blue-800 break-all">
+                {{ is_described_by.related_identifier }} <i class="ri-external-link-line"></i>
+              </a>
+            {% endif %}
+          </div>
+        {% endif %}
+
         <div id="dataset-description">
           <div class="font-mono">
             {% if not doi.collection.description %}
@@ -191,6 +212,39 @@
           <div x-html="currentCitation" class="bg-gray-100 p-2 rounded-lg"></div>
           <button class="btn btn-wide w-full mt-4" @click="copyCitation" x-text="buttonText"></button>
         </div>
+
+        {% if is_referenced_by %}
+          <div id="inbound-references-details" class="border border-gray-200 rounded-lg mt-4 mb-4 p-4">
+            <div class="flex content-box-heading">
+              <i class="ri-article-line text-2xl"></i>
+              <h2 class="ml-2 content-center">Inbound References</h2>
+            </div>
+            <div>
+              {% for reference in is_referenced_by %}
+                <div>
+                  {% if reference.related_identifier_type == 'DOI' %}
+                    <a href="https://doi.org/{{ reference.related_identifier }}"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="text-sm text-blue-600 hover:text-blue-800 break-all">
+                      {{ reference.related_identifier }} <i class="ri-external-link-line text-xs"></i>
+                    </a>
+                  {% else %}
+                    <a href="{{ reference.related_identifier }}"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="text-sm text-blue-600 hover:text-blue-800 break-all">
+                      {{ reference.related_identifier }} <i class="ri-external-link-line text-xs"></i>
+                    </a>
+                  {% endif %}
+                </div>
+                {% if not forloop.last %}
+                  <div class="divider my-0"></div>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
 
 
       </div>
