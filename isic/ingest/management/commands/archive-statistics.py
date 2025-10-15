@@ -68,6 +68,15 @@ def archive_statistics(duckdb_path: str, start_date: str, end_date: str):
     assert total_downloads is not None  # noqa: S101
     click.echo(f"{total_downloads[0]:,}")
 
+    avg_per_second_query = f"""
+        select
+            count(*)::numeric / (epoch('{end_date}'::timestamp) - epoch('{start_date}'::timestamp)) as avg_downloads_per_second
+        from logs
+        where download_time > epoch('{start_date}'::timestamp) and download_time < epoch('{end_date}'::timestamp)
+    """  # noqa: E501, S608
+    avg_downloads_per_second = con.sql(avg_per_second_query).fetchone()
+    click.echo(f"\nImages downloaded per second: {avg_downloads_per_second[0]:.1f}")
+
     # add utc offset to start and end dates
     start_date_dt = datetime.strptime(start_date, "%Y-%m-%d").replace(tzinfo=UTC)
     end_date_dt = datetime.strptime(end_date, "%Y-%m-%d").replace(tzinfo=UTC)
