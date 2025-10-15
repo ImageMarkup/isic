@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404, render
 
-from isic.core.models.doi import Doi, DraftDoi
+from isic.core.models.doi import Doi, DraftDoi, RelationType
 from isic.zip_download.api import get_attributions
 
 LICENSE_SHORTHAND_DESCRIPTIONS = {
@@ -47,6 +47,14 @@ def doi_detail(request, slug):
         doi.collection.images.values_list("accession__attribution", flat=True)
     )
 
+    is_described_by = doi.related_identifiers.filter(
+        relation_type=RelationType.IS_DESCRIBED_BY
+    ).first()
+
+    is_referenced_by = doi.related_identifiers.filter(
+        relation_type=RelationType.IS_REFERENCED_BY
+    ).all()
+
     context = {
         "doi": doi,
         "licenses": licenses,
@@ -55,6 +63,8 @@ def doi_detail(request, slug):
         "attributing_institutions": attributing_institutions,
         "is_draft": isinstance(doi, DraftDoi),
         "is_publishing": getattr(doi, "is_publishing", False),
+        "is_described_by": is_described_by,
+        "is_referenced_by": is_referenced_by,
         "stats": {
             "images": doi.collection.images.count(),
         },
