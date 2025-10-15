@@ -5,7 +5,7 @@ from django.utils.html import format_html
 from resonant_utils.admin import ReadonlyTabularInline
 
 from isic.core.models import Collection, Doi, GirderDataset, GirderImage, Image, ImageAlias
-from isic.core.models.doi import DraftDoi
+from isic.core.models.doi import DoiRelatedIdentifier, DraftDoi, DraftDoiRelatedIdentifier
 from isic.core.models.segmentation import Segmentation, SegmentationReview
 from isic.core.models.supplemental_file import DraftSupplementalFile, SupplementalFile
 
@@ -208,11 +208,6 @@ class CollectionAdmin(StaffReadonlyAdmin):
     exclude = ["images"]
 
 
-class SupplementalFileInline(admin.TabularInline):
-    model = SupplementalFile
-    extra = 0
-
-
 class BaseDoiAdmin(StaffReadonlyAdmin):
     list_select_related = ["collection"]
     list_display = ["id", "external_url", "collection", "bundle", "num_supplemental_files"]
@@ -229,18 +224,34 @@ class BaseDoiAdmin(StaffReadonlyAdmin):
         )
 
 
+class SupplementalFileInline(admin.TabularInline):
+    model = SupplementalFile
+    extra = 0
+
+
+class RelatedIdentifierInline(admin.TabularInline):
+    model = DoiRelatedIdentifier
+    extra = 0
+
+
 @admin.register(Doi)
 class DoiAdmin(BaseDoiAdmin):
-    inlines = [SupplementalFileInline]
+    inlines = [SupplementalFileInline, RelatedIdentifierInline]
 
 
 class DraftSupplementalFileInline(admin.TabularInline):
     model = DraftSupplementalFile
+    extra = 0
+
+
+class DraftRelatedIdentifierInline(admin.TabularInline):
+    model = DraftDoiRelatedIdentifier
+    extra = 0
 
 
 @admin.register(DraftDoi)
 class DraftDoiAdmin(BaseDoiAdmin):
-    inlines = [DraftSupplementalFileInline]
+    inlines = [DraftSupplementalFileInline, DraftRelatedIdentifierInline]
     list_display = [
         "id",
         "external_url",
