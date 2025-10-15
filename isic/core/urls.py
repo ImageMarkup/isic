@@ -9,7 +9,7 @@ from isic.core.views.collections import (
     collection_edit,
     collection_list,
 )
-from isic.core.views.doi import doi_detail
+from isic.core.views.doi import doi_detail, draft_doi_edit
 from isic.core.views.embargoed import embargoed_dashboard
 from isic.core.views.images import (
     image_browser,
@@ -84,4 +84,5 @@ urlpatterns = [
         name="core/image-list-metadata-download",
     ),
     path("doi/<slug:slug>/", doi_detail, name="core/doi-detail"),
+    path("doi/<slug:slug>/edit/", draft_doi_edit, name="core/draft-doi-edit"),
 ]

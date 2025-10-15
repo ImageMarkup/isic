@@ -83,6 +83,33 @@ def create_doi(request, payload: CreateDOIIn):
     return 201, {"slug": draft_doi.slug}
 
 
+class UpdateDraftDOIIn(Schema):
+    description: str
+
+
+@router.patch(
+    "/{draft_doi_slug}/",
+    response={200: dict, 403: dict, 404: dict},
+    summary="Update a draft DOI.",
+    include_in_schema=False,
+)
+def update_draft_doi(request, draft_doi_slug: str, payload: UpdateDraftDOIIn):
+    from isic.core.services.collection import collection_update
+
+    draft_doi = get_object_or_404(
+        DraftDoi.objects.select_related("collection"), slug=draft_doi_slug
+    )
+
+    if not request.user.has_perm("core.create_doi", draft_doi.collection):
+        return 403, {"error": "You do not have permission to update this DOI."}
+
+    collection_update(
+        collection=draft_doi.collection, description=payload.description, ignore_lock=True
+    )
+
+    return 200, {"message": "Draft DOI updated successfully."}
+
+
 @router.post(
     "/{draft_doi_slug}/publish/",
     response={200: dict, 403: dict, 404: dict, 409: dict},
