@@ -31,14 +31,20 @@
             </div>
           </div>
           {% if user.is_staff %}
-            <button
-              x-data="doiPublisher('{{ doi.slug }}')"
-              @click="publish"
-              :disabled="isPublishing"
-              class="btn btn-primary ml-4 flex items-center">
-              <i :class="isPublishing ? 'ri-loader-line mr-2 animate-spin' : 'ri-upload-line mr-2'"></i>
-              <span x-text="buttonText"></span>
-            </button>
+            <div class="flex gap-2 ml-4">
+              <a href="{% url 'core/draft-doi-edit' doi.slug %}" class="btn btn-secondary flex items-center">
+                <i class="ri-edit-line mr-2"></i>
+                Edit
+              </a>
+              <button
+                x-data="doiPublisher('{{ doi.slug }}')"
+                @click="publish"
+                :disabled="isPublishing"
+                class="btn btn-primary flex items-center">
+                <i :class="isPublishing ? 'ri-loader-line mr-2 animate-spin' : 'ri-upload-line mr-2'"></i>
+                <span x-text="buttonText"></span>
+              </button>
+            </div>
           {% endif %}
         </div>
       </div>

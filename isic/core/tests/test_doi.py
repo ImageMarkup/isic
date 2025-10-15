@@ -5,6 +5,7 @@ import zipfile
 from django.core.exceptions import ValidationError
 from django.urls import reverse
 import pytest
+from pytest_lazy_fixtures import lf
 from s3_file_field.widgets import S3PlaceholderFile
 
 from isic.core.api.doi import RelatedIdentifierIn
@@ -15,7 +16,7 @@ from isic.core.services.collection.doi import (
     collection_create_draft_doi,
     draft_doi_publish,
 )
-from isic.core.tests.factories import CollectionFactory, DoiFactory
+from isic.core.tests.factories import CollectionFactory, DoiFactory, DraftDoiFactory
 
 
 @pytest.fixture
@@ -577,3 +578,51 @@ def test_draft_doi_complete_lifecycle(  # noqa: PLR0915
     assert final_doi.bundle_size > 0
     assert final_doi.metadata is not None
     assert final_doi.metadata_size > 0
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("client_", "expected_status"),
+    [
+        (lf("client"), 302),
+        (lf("authenticated_client"), 403),
+        (lf("staff_client"), 200),
+    ],
+    ids=["guest", "user", "staff"],
+)
+def test_draft_doi_edit_view_permissions(
+    client_, expected_status, public_collection_with_public_images
+):
+    draft_doi = DraftDoiFactory.create(collection=public_collection_with_public_images)
+
+    r = client_.get(reverse("core/draft-doi-edit", args=[draft_doi.slug]))
+
+    assert r.status_code == expected_status
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("client_", "expected_status"),
+    [
+        (lf("client"), 403),
+        (lf("authenticated_client"), 403),
+        (lf("staff_client"), 200),
+    ],
+    ids=["guest", "user", "staff"],
+)
+def test_api_update_draft_doi_permissions(
+    client_, expected_status, public_collection_with_public_images
+):
+    draft_doi = DraftDoiFactory.create(collection=public_collection_with_public_images)
+
+    r = client_.patch(
+        reverse("api:update_draft_doi", args=[draft_doi.slug]),
+        {"description": "Updated description"},
+        content_type="application/json",
+    )
+
+    assert r.status_code == expected_status
+
+    if r.status_code == 200:
+        draft_doi.refresh_from_db()
+        assert draft_doi.collection.description == "Updated description"
