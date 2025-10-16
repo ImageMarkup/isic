@@ -1,6 +1,7 @@
 from typing import cast
 
 from botocore.config import Config
+import logging
 
 import sentry_sdk
 import sentry_sdk.integrations.celery
@@ -20,7 +21,8 @@ WSGI_APPLICATION = "isic.wsgi.application"
 
 SECRET_KEY: str = env.str("DJANGO_SECRET_KEY")
 
-# This only needs to be defined in production. Testing will add 'testserver'.
+# This only needs to be defined in production. Testing will add 'testserver'. In development
+# (specifically when DEBUG is True), 'localhost' and '127.0.0.1' will be added.
 ALLOWED_HOSTS: list[str] = env.list("DJANGO_ALLOWED_HOSTS", cast=str)
 
 STORAGES.update(
@@ -58,7 +60,7 @@ ISIC_DATACITE_DOI_PREFIX = "10.34970"
 ISIC_JS_SENTRY = True
 
 # sentry_sdk is able to directly use environment variables like 'SENTRY_DSN', but prefix them
-# with 'DJANGO_' to avoid avoiding conflicts with other Sentry-using services.
+# with 'DJANGO_' to avoid conflicts with other Sentry-using services.
 sentry_sdk.init(
     dsn=env.str("DJANGO_SENTRY_DSN", default=None),
     environment=env.str("DJANGO_SENTRY_ENVIRONMENT", default=None),
@@ -82,5 +84,3 @@ sentry_sdk.init(
     traces_sampler=get_sentry_performance_sample_rate,
     profiles_sampler=get_sentry_performance_sample_rate,
 )
-
-SECURE_HSTS_SECONDS = int(timedelta(days=365).total_seconds())

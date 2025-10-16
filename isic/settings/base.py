@@ -105,7 +105,7 @@ DATABASES = {
 }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-STORAGES = {
+STORAGES: dict[str, dict[str, Any]] = {
     # Inject the "default" storage in particular run configurations
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
@@ -230,21 +230,6 @@ MARKDOWNIFY = {
         ]
     }
 }
-
-SHELL_PLUS_IMPORTS = [
-    "from django.core.files.storage import storages",
-    "from django.core.files.uploadedfile import UploadedFile",
-    "from isic.ingest.services.accession import *",
-    "from isic.ingest.services.zip_upload import *",
-    "from isic.core.dsl import *",
-    "from isic.core.health import *",
-    "from isic.core.search import *",
-    "from isic.core.tasks import *",
-    "from isic.ingest.services.cohort import *",
-    "from isic.ingest.tasks import *",
-    "from isic.stats.tasks import *",
-    "from isic.studies.tasks import *",
-]
 
 OAUTH2_PROVIDER.update(
     {
