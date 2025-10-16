@@ -109,7 +109,7 @@ services:
     build:
       context: .
       dockerfile: ./dev/node.Dockerfile
-    command: ["yarn", "run", "start"]
+    command: ["npm", "run", "start"]
     tty: true
     volumes:
       - .:/opt/django-project
