@@ -172,13 +172,12 @@ def image_browser(request):
 
     page = paginator.paginate_queryset(qs, pagination=cursor_input, request=request)
 
+    recent_collections = []
     if request.user.is_authenticated:
-        addable_collections = collections.filter(locked=False)
-
-        if not request.user.is_staff:
-            addable_collections = addable_collections.filter(creator=request.user)
-    else:
-        addable_collections = []
+        recent_collections_qs = request.user.collection_set.filter(locked=False).order_by(
+            "-created"
+        )[:5]
+        recent_collections = list(recent_collections_qs.values("id", "name"))
 
     return render(
         request,
@@ -187,11 +186,10 @@ def image_browser(request):
             "total_images": qs.count(),
             "images": page["results"],
             "page": page,
-            # The user can only add images to collections that are theirs and unlocked.
-            "collections": addable_collections,
             # This gets POSTed to the populate endpoint if called
             "search_body": json.dumps(request.GET),
             "form": search_form,
+            "recent_collections": recent_collections,
         },
     )
 
