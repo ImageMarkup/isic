@@ -14,7 +14,7 @@ from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
-from pgvector.django import HalfVectorField
+from pgvector.django import HalfVectorField, IvfflatIndex
 
 from isic.core.dsl import django_parser, parse_query
 from isic.core.models.base import CreationSortedTimeStampedModel
@@ -70,7 +70,13 @@ class Image(CreationSortedTimeStampedModel):
 
         indexes = [
             # icontains uses Upper(name) for searching
-            GinIndex(OpClass(Upper("isic"), name="gin_trgm_ops"), name="isic_name_gin")
+            GinIndex(OpClass(Upper("isic"), name="gin_trgm_ops"), name="isic_name_gin"),
+            IvfflatIndex(
+                name="image_embedding_ivfflat_idx",
+                fields=["embedding"],
+                lists=1000,
+                opclasses=["halfvec_l2_ops"],
+            ),
         ]
         constraints = [
             CheckConstraint(
