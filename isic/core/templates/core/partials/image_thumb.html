@@ -1,5 +1,5 @@
 <a class="cursor-pointer">
-  <img @mouseenter="hovered = true" @click="open = true" src="{{ image.thumbnail_256.url }}" />
+  <img @mouseenter="hovered = true" @click="open = true" src="{{ image.thumbnail_256.url }}" loading="{% if lazy %}lazy{% else %}eager{% endif %}" />
 </a>
 
 <template x-if="true">
