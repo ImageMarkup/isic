@@ -94,6 +94,8 @@ def image_detail(request, isic_id):
         image.same_lesion_images().select_related("accession"),
     )
 
+    similar_images = image.similar_images().select_related("accession")
+
     ctx = {
         "image": image,
         "pinned_collections": get_visible_objects(
@@ -105,6 +107,7 @@ def image_detail(request, isic_id):
         "other_patient_images_count": other_patient_images.count(),
         "other_lesion_images": other_lesion_images,
         "other_lesion_images_count": other_lesion_images.count(),
+        "similar_images": similar_images[:MAX_RELATED_SHOW_FIRST_N],
         "MAX_RELATED_SHOW_FIRST_N": MAX_RELATED_SHOW_FIRST_N,
         "studies": studies,
         "unstructured_metadata": {},
@@ -124,6 +127,9 @@ def image_detail(request, isic_id):
         "metadata": "Metadata",
         "studies": f"Studies ({studies.count()})",
     }
+
+    if image.has_embedding:
+        ctx["sections"]["similar_images"] = "Similar Images"
 
     if request.user.is_staff:
         ctx["sections"]["patient_images"] = (
