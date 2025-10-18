@@ -2,8 +2,6 @@
 
 from django.conf import settings
 from django.db import migrations
-from django.db.backends.base.schema import BaseDatabaseSchemaEditor
-from django.db.migrations.state import StateApps
 
 from isic.core.search import IMAGE_INDEX_MAPPINGS, LESION_INDEX_MAPPINGS, maybe_create_index
 
@@ -11,19 +9,6 @@ from isic.core.search import IMAGE_INDEX_MAPPINGS, LESION_INDEX_MAPPINGS, maybe_
 def create_elasticsearch_index(apps, schema_editor):
     maybe_create_index(settings.ISIC_ELASTICSEARCH_IMAGES_INDEX, IMAGE_INDEX_MAPPINGS)
     maybe_create_index(settings.ISIC_ELASTICSEARCH_LESIONS_INDEX, LESION_INDEX_MAPPINGS)
-
-
-def update_default_site(apps: StateApps, schema_editor: BaseDatabaseSchemaEditor):
-    Site = apps.get_model("sites", "Site")
-
-    # A default site object may or may not exist.
-    # If this is a brand-new database, the post_migrate will not fire until the very end of the
-    # "migrate" command, so the sites app will not have created a default site object yet.
-    # If this is an existing database, the sites app will likely have created an default site
-    # object already.
-    Site.objects.update_or_create(
-        pk=settings.SITE_ID, defaults={"domain": "api.isic-archive.com", "name": "ISIC Archive"}
-    )
 
 
 def setup_groups(apps, schema_editor):
@@ -45,7 +30,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(update_default_site, elidable=False),
         migrations.RunPython(setup_groups, elidable=False),
         migrations.RunPython(create_elasticsearch_index, elidable=False),
     ]
