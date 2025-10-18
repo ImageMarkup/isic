@@ -74,6 +74,10 @@
           {% include 'core/image_detail/metadata_tab.html' %}
           {% include 'core/image_detail/studies_tab.html' %}
 
+          {% if 'similar_images' in sections %}
+            {% include 'core/image_detail/images_tab.html' with images=similar_images section_name='similar_images' lazy=1 %}
+          {% endif %}
+
           {% if 'patient_images' in sections %}
             {% include 'core/image_detail/images_tab.html' with images=other_patient_images images_count=other_patient_images_count section_name='patient_images' lazy=1 %}
           {% endif %}

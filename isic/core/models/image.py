@@ -14,7 +14,7 @@ from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
-from pgvector.django import HalfVectorField, IvfflatIndex
+from pgvector.django import HalfVectorField, IvfflatIndex, L2Distance
 
 from isic.core.dsl import django_parser, parse_query
 from isic.core.models.base import CreationSortedTimeStampedModel
@@ -79,6 +79,8 @@ class Image(CreationSortedTimeStampedModel):
             ),
         ]
         constraints = [
+            # embedding => public. if this is changed then permission handling will need to added
+            # to areas looking for similar images.
             CheckConstraint(
                 name="image_embedding_public_check",
                 condition=Q(embedding__isnull=True) | Q(public=True),
@@ -226,6 +228,17 @@ class Image(CreationSortedTimeStampedModel):
             Image.objects.filter(accession__cohort_id=self.accession.cohort_id)
             .filter(accession__rcm_case_id=self.accession.rcm_case_id)
             .exclude(pk=self.pk)
+        )
+
+    def similar_images(self) -> QuerySet[Image]:
+        if not self.has_embedding:
+            return Image.objects.none()
+
+        return (
+            Image.objects.filter(embedding__isnull=False)
+            .exclude(pk=self.pk)
+            .annotate(distance=L2Distance("embedding", self.embedding))
+            .order_by("distance")
         )
 
 
