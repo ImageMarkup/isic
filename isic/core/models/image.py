@@ -14,6 +14,7 @@ from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
+from pgvector.django import HalfVectorField
 
 from isic.core.dsl import django_parser, parse_query
 from isic.core.models.base import CreationSortedTimeStampedModel
@@ -37,7 +38,7 @@ class ImageQuerySet(models.QuerySet["Image"]):
 
 class ImageManager(models.Manager["Image"]):
     def get_queryset(self) -> ImageQuerySet:
-        return ImageQuerySet(self.model, using=self._db)
+        return ImageQuerySet(self.model, using=self._db).defer("embedding")
 
     def with_elasticsearch_properties(self):
         return self.select_related("accession__cohort").annotate(
@@ -71,6 +72,12 @@ class Image(CreationSortedTimeStampedModel):
             # icontains uses Upper(name) for searching
             GinIndex(OpClass(Upper("isic"), name="gin_trgm_ops"), name="isic_name_gin")
         ]
+        constraints = [
+            CheckConstraint(
+                name="image_embedding_public_check",
+                condition=Q(embedding__isnull=True) | Q(public=True),
+            ),
+        ]
 
     accession = models.OneToOneField(
         Accession,
@@ -90,6 +97,8 @@ class Image(CreationSortedTimeStampedModel):
     public = models.BooleanField(default=False, db_index=True)
 
     shares = models.ManyToManyField(User, through="ImageShare", through_fields=("image", "grantee"))
+
+    embedding = HalfVectorField(dimensions=3584, null=True, blank=True)
 
     objects = ImageManager()
 
@@ -126,6 +135,10 @@ class Image(CreationSortedTimeStampedModel):
     @property
     def has_rcm_case(self) -> bool:
         return self.accession.rcm_case_id is not None
+
+    @property
+    def has_embedding(self) -> bool:
+        return self.embedding is not None
 
     @property
     def metadata(self) -> dict:
