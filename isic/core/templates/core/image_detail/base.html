@@ -50,10 +50,10 @@
         <div class="mt-2">
           <div class="sm:hidden">
             <label for="tabs" class="sr-only">Select a tab</label>
-            <select id="tabs" name="tabs" class="block w-full focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md">
+            <select x-model="selectedTab" id="tabs" name="tabs" class="block w-full focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md">
 
               {% for k,v in sections.items %}
-                <option :selected="selectedTab == '{{ k }}'">{{ v }}</option>
+                <option value="{{ k }}">{{ v }}</option>
               {% endfor %}
             </select>
           </div>
