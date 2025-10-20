@@ -7,7 +7,7 @@ stats_router = Router()
 
 
 @stats_router.get(
-    "/", response=dict, summary="Return ISIC Archive statistics.", include_in_schema=True
+    "/", response=dict, summary="Return ISIC Archive statistics.", include_in_schema=False
 )
 def stats(request: HttpRequest):
     archive_stats = get_archive_stats()
