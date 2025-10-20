@@ -29,12 +29,11 @@
         this.feedback = feedbackType;
 
         try {
-          const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
           const response = await fetch(`/api/v2/images/${sourceImageId}/similar-feedback/`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-CSRFToken': csrfToken || ''
+              'X-CSRFToken': '{{ csrf_token }}'
             },
             body: JSON.stringify({
               similar_image_id: similarImageId,
