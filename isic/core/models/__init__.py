@@ -7,7 +7,7 @@ from .collection import Collection
 from .collection_count import CollectionCount
 from .doi import Doi
 from .girder_image import GirderDataset, GirderImage
-from .image import Image
+from .image import Image, SimilarImageFeedback
 from .image_alias import ImageAlias
 from .isic_id import IsicId
 from .segmentation import Segmentation, SegmentationReview
@@ -27,6 +27,7 @@ __all__ = [
     "IsicOAuthApplication",
     "Segmentation",
     "SegmentationReview",
+    "SimilarImageFeedback",
     "SupplementalFile",
 ]
 

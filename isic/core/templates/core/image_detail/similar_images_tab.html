@@ -1,0 +1,56 @@
+<div x-show="selectedTab == 'similar_images'">
+  <div class="bg-white shadow overflow-hidden sm:rounded-md">
+    <div class="mb-4" x-data="thumbnailGrid();">
+      <div class="hidden pb-3 sm:flex sm:flex-row sm:justify-end">
+        <a class="px-1" href="#" @click="decrease();">fewer columns</a> |
+        <a class="px-1" href="#" @click="increase();">more columns</a>
+      </div>
+      <div class="grid gap-4 grid-cols-2" :class="gridClassNames[numCols]">
+        {% for image in similar_images|slice:MAX_RELATED_SHOW_FIRST_N %}
+          {% include 'core/partials/similar_image_with_feedback.html' with source_image_id=source_image.isic_id %}
+        {% endfor %}
+      </div>
+
+      {% if similar_images_count and similar_images_count > MAX_RELATED_SHOW_FIRST_N %}
+        <div>Showing first {{ MAX_RELATED_SHOW_FIRST_N }} images.</div>
+      {% endif %}
+    </div>
+
+    {% include 'ingest/partials/thumbnail_grid_js.html' %}
+  </div>
+</div>
+
+<script>
+function similarImageFeedback(sourceImageId, similarImageId) {
+  return {
+    feedback: null,
+    async submitFeedback(feedbackType) {
+      const previousFeedback = this.feedback;
+      this.feedback = feedbackType;
+      
+      try {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        const response = await fetch(`/api/v2/images/${sourceImageId}/similar-feedback/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken || ''
+          },
+          body: JSON.stringify({
+            similar_image_id: similarImageId,
+            feedback: feedbackType
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to submit feedback');
+        }
+      } catch (error) {
+        console.error('Error submitting feedback:', error);
+        this.feedback = previousFeedback;
+        alert('Failed to submit feedback. Please try again.');
+      }
+    }
+  };
+}
+</script>
