@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 import pytest
 
 from isic.core.models import SimilarImageFeedback
@@ -180,7 +181,7 @@ def test_similar_image_feedback_unique_constraint(user, image_factory):
     similar_image = image_factory(public=True)
 
     # Create first feedback
-    feedback1 = SimilarImageFeedback.objects.create(
+    SimilarImageFeedback.objects.create(
         image=source_image,
         similar_image=similar_image,
         user=user,
@@ -189,8 +190,6 @@ def test_similar_image_feedback_unique_constraint(user, image_factory):
 
     # Trying to create another feedback with same combination should work
     # because update_or_create handles it, but direct create should fail
-    from django.db import IntegrityError
-
     with pytest.raises(IntegrityError):
         SimilarImageFeedback.objects.create(
             image=source_image,

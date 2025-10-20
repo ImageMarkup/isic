@@ -11,7 +11,7 @@ from ninja.pagination import paginate
 from pyparsing.exceptions import ParseException
 from sentry_sdk import set_tag
 
-from isic.core.models import Image
+from isic.core.models import Image, SimilarImageFeedback
 from isic.core.pagination import CursorPagination, qs_with_hardcoded_count
 from isic.core.permissions import get_visible_objects
 from isic.core.search import facets, get_elasticsearch_client
@@ -202,11 +202,7 @@ class SimilarImageFeedbackIn(Schema):
     summary="Submit feedback for a similar image recommendation.",
     include_in_schema=True,
 )
-def submit_similar_image_feedback(
-    request: HttpRequest, isic_id: str, data: SimilarImageFeedbackIn
-):
-    from isic.core.models import SimilarImageFeedback
-
+def submit_similar_image_feedback(request: HttpRequest, isic_id: str, data: SimilarImageFeedbackIn):
     if not request.user.is_authenticated:
         return 401, {"message": "Authentication required"}
 

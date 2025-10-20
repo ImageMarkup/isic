@@ -301,7 +301,10 @@ class SimilarImageFeedback(TimeStampedModel):
     feedback = models.CharField(max_length=10, choices=FEEDBACK_CHOICES)
 
     def __str__(self):
-        return f"{self.user.username}: {self.image.isic_id} -> {self.similar_image.isic_id} ({self.feedback})"
+        return (
+            f"{self.user.username}: {self.image.isic_id} -> "
+            f"{self.similar_image.isic_id} ({self.feedback})"
+        )
 
 
 class ImagePermissions:
