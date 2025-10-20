@@ -21,36 +21,36 @@
 </div>
 
 <script>
-function similarImageFeedback(sourceImageId, similarImageId) {
-  return {
-    feedback: null,
-    async submitFeedback(feedbackType) {
-      const previousFeedback = this.feedback;
-      this.feedback = feedbackType;
-      
-      try {
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
-        const response = await fetch(`/api/v2/images/${sourceImageId}/similar-feedback/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrfToken || ''
-          },
-          body: JSON.stringify({
-            similar_image_id: similarImageId,
-            feedback: feedbackType
-          })
-        });
+  function similarImageFeedback(sourceImageId, similarImageId) {
+    return {
+      feedback: null,
+      async submitFeedback(feedbackType) {
+        const previousFeedback = this.feedback;
+        this.feedback = feedbackType;
 
-        if (!response.ok) {
-          throw new Error('Failed to submit feedback');
+        try {
+          const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+          const response = await fetch(`/api/v2/images/${sourceImageId}/similar-feedback/`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': csrfToken || ''
+            },
+            body: JSON.stringify({
+              similar_image_id: similarImageId,
+              feedback: feedbackType
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to submit feedback');
+          }
+        } catch (error) {
+          console.error('Error submitting feedback:', error);
+          this.feedback = previousFeedback;
+          alert('Failed to submit feedback. Please try again.');
         }
-      } catch (error) {
-        console.error('Error submitting feedback:', error);
-        this.feedback = previousFeedback;
-        alert('Failed to submit feedback. Please try again.');
       }
-    }
-  };
-}
+    };
+  }
 </script>
