@@ -7,8 +7,20 @@
       open: false,
       selectedCollection:'',
       errorMessage: '',
+      init() {
+        window.addEventListener('collection-selected', (e) => {
+          this.selectedCollection = e.detail.id;
+          this.addSearchResultsToCollection();
+        });
+        this.$watch('modalOpen', (value) => {
+          if (!value) {
+            this.selectedCollection = '';
+            this.errorMessage = '';
+          }
+        });
+      },
       addSearchResultsToCollection() {
-        let _this = this; // eek
+        let _this = this;
         if (confirm('Are you sure you want to add {{ total_images|intcomma }} images to this collection?')) {
           axios.post(`/api/v2/collections/${this.selectedCollection}/populate-from-search/`, '{{ search_body|escapejs }}', {
             headers: {
@@ -20,6 +32,8 @@
           }).catch(function(error) {
             _this.errorMessage = error.response.data[0];
           });
+        } else {
+          this.selectedCollection = '';
         }
       },
       isicCliDownloadCommand() {

@@ -86,8 +86,13 @@ def collection_autocomplete(
     qs = get_visible_objects(
         request.user,
         "core.view_collection",
-        Collection.objects.select_related("doi").filter(name__icontains=payload.query),
+        Collection.objects.select_related("doi").filter(
+            name__icontains=payload.query, locked=False
+        ),
     )
+
+    if not request.user.is_staff and request.user.is_authenticated:
+        qs = qs.filter(creator=request.user)
 
     # sort by jaro winkler, then name to make something like "challenge" return the
     # challenge collections in order.
