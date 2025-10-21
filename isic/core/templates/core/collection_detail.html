@@ -58,10 +58,10 @@
         {% with label="Number of images" value=collection.counts.image_count|intcomma %}
           {% partial detail-item %}
         {% endwith %}
-        {% with label="Number of defined lesions" value=collection.counts.lesion_count|intcomma %}
+        {% with label="Number of specified lesions" value=collection.counts.lesion_count|intcomma %}
           {% partial detail-item %}
         {% endwith %}
-        {% with label="Number of defined patients" value=collection.counts.patient_count|intcomma %}
+        {% with label="Number of specified patients" value=collection.counts.patient_count|intcomma %}
           {% partial detail-item %}
         {% endwith %}
         <li>
