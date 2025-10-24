@@ -16,7 +16,7 @@
         "ghcr.io/devcontainers/features/git-lfs:1": {},
         "ghcr.io/nils-geistmann/devcontainers-features/zsh:0": {},
         "ghcr.io/devcontainers-extra/features/fish-apt-get:1": {},
-        "ghcr.io/devcontainers-extra/features/heroku-cli:1": {},
+        "ghcr.io/devcontainers-extra/features/heroku-cli:1.0.5": {},
         "ghcr.io/devcontainers/features/aws-cli:1": {},
         "ghcr.io/devcontainers/features/github-cli:1": {},
         "ghcr.io/devcontainers/features/node:1": {}
