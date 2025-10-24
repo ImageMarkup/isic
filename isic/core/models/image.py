@@ -14,7 +14,7 @@ from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
-from pgvector.django import HalfVectorField, IvfflatIndex, L2Distance
+from pgvector.django import L2Distance
 
 from isic.core.dsl import django_parser, parse_query
 from isic.core.models.base import CreationSortedTimeStampedModel
@@ -38,7 +38,7 @@ class ImageQuerySet(models.QuerySet["Image"]):
 
 class ImageManager(models.Manager["Image"]):
     def get_queryset(self) -> ImageQuerySet:
-        return ImageQuerySet(self.model, using=self._db).defer("embedding")
+        return ImageQuerySet(self.model, using=self._db)
 
     def with_elasticsearch_properties(self):
         return self.select_related("accession__cohort").annotate(
@@ -58,7 +58,7 @@ class ImageManager(models.Manager["Image"]):
         )
 
     def has_embedding(self):
-        return self.filter(Q(embedding_relation__isnull=False) | Q(embedding__isnull=False))
+        return self.filter(embedding_relation__isnull=False)
 
     def public(self):
         return self.filter(public=True)
@@ -74,20 +74,6 @@ class Image(CreationSortedTimeStampedModel):
         indexes = [
             # icontains uses Upper(name) for searching
             GinIndex(OpClass(Upper("isic"), name="gin_trgm_ops"), name="isic_name_gin"),
-            IvfflatIndex(
-                name="image_embedding_ivfflat_idx",
-                fields=["embedding"],
-                lists=1000,
-                opclasses=["halfvec_l2_ops"],
-            ),
-        ]
-        constraints = [
-            # embedding => public. if this is changed then permission handling will need to added
-            # to areas looking for similar images.
-            CheckConstraint(
-                name="image_embedding_public_check",
-                condition=Q(embedding__isnull=True) | Q(public=True),
-            ),
         ]
 
     accession = models.OneToOneField(
@@ -108,8 +94,6 @@ class Image(CreationSortedTimeStampedModel):
     public = models.BooleanField(default=False, db_index=True)
 
     shares = models.ManyToManyField(User, through="ImageShare", through_fields=("image", "grantee"))
-
-    embedding = HalfVectorField(dimensions=3584, null=True, blank=True)
 
     objects = ImageManager()
 
@@ -149,7 +133,7 @@ class Image(CreationSortedTimeStampedModel):
 
     @property
     def has_embedding(self) -> bool:
-        return hasattr(self, "embedding_relation") or self.embedding is not None
+        return hasattr(self, "embedding_relation")
 
     @property
     def metadata(self) -> dict:
@@ -237,24 +221,16 @@ class Image(CreationSortedTimeStampedModel):
         if not self.has_embedding:
             return Image.objects.none()
 
-        if hasattr(self, "embedding_relation"):
-            return (
-                Image.objects.filter(embedding_relation__isnull=False)
-                .exclude(pk=self.pk)
-                .annotate(
-                    distance=L2Distance(
-                        "embedding_relation__embedding", self.embedding_relation.embedding
-                    )
+        return (
+            Image.objects.filter(embedding_relation__isnull=False)
+            .exclude(pk=self.pk)
+            .annotate(
+                distance=L2Distance(
+                    "embedding_relation__embedding", self.embedding_relation.embedding
                 )
-                .order_by("distance")
             )
-        else:
-            return (
-                Image.objects.filter(embedding__isnull=False)
-                .exclude(pk=self.pk)
-                .annotate(distance=L2Distance("embedding", self.embedding))
-                .order_by("distance")
-            )
+            .order_by("distance")
+        )
 
 
 class ImageShare(TimeStampedModel):
