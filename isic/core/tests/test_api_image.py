@@ -80,3 +80,25 @@ def test_api_image_search_size(client, searchable_images_with_size):
     r = client.get("/api/v2/images/search/size/", {"query": "age_approx:30"})
     assert r.status_code == 200
     assert r.json()["size"] == 0
+
+
+@pytest.mark.django_db
+def test_api_image_similar_images(client, image_factory, image_embedding_factory):
+    image_with_embedding = image_embedding_factory(image__public=True).image
+    other_image = image_embedding_factory(image__public=True).image
+
+    r = client.get(f"/api/v2/images/{image_with_embedding.isic_id}/similar/")
+    assert r.status_code == 200
+    results = r.json()
+    assert len(results) == 1
+    assert results[0]["isic_id"] == other_image.isic_id
+    assert "distance" in results[0]
+
+
+@pytest.mark.django_db
+def test_api_image_similar_images_without_embedding(client, image_factory):
+    image_without_embedding = image_factory(public=True)
+
+    r = client.get(f"/api/v2/images/{image_without_embedding.isic_id}/similar/")
+    assert r.status_code == 200
+    assert r.json() == []
