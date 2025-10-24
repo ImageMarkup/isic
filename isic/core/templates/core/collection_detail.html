@@ -139,6 +139,13 @@
               {% endif %}
             </li>
           {% endif %}
+
+          {% if collection.draftdoi %}
+            <li>
+              <span class="font-bold">Draft DOI:</span>
+              <a href="{% url 'core/doi-detail' collection.draftdoi.slug %}">{{ collection.draftdoi.id }}</a>
+            </li>
+          {% endif %}
         </ul>
       </div>
     {% endif %}
