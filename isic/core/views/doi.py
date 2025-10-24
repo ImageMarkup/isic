@@ -56,6 +56,10 @@ def doi_detail(request, slug):
         relation_type=RelationType.IS_REFERENCED_BY
     ).all()
 
+    is_supplemented_by = doi.related_identifiers.filter(
+        relation_type=RelationType.IS_SUPPLEMENTED_BY
+    ).all()
+
     context = {
         "doi": doi,
         "licenses": licenses,
@@ -66,6 +70,7 @@ def doi_detail(request, slug):
         "is_publishing": getattr(doi, "is_publishing", False),
         "is_described_by": is_described_by,
         "is_referenced_by": is_referenced_by,
+        "is_supplemented_by": is_supplemented_by,
         "stats": {
             "images": doi.collection.images.count(),
         },
