@@ -92,12 +92,12 @@ jobs:
         with:
           lfs: true
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: current
       - name: Install packages
         run: |
-          yarn install --frozen-lockfile
+          npm ci
       - name: Run build
         run: |
-          yarn run build
+          npm run build
