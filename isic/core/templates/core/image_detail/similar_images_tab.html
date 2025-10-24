@@ -29,7 +29,9 @@
                   <img @mouseenter="hovered = true"
                        @click="open = true"
                        :src="image.files.thumbnail_256.url"
-                       loading="lazy" />
+                       {% comment %}forcibly set the width and height to 256px to account for TBP tiles which can be smaller{% endcomment %}
+                       width="256"
+                       height="256" />
                 </a>
 
                 <template x-if="open">
