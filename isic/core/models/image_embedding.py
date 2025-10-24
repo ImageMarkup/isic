@@ -19,7 +19,7 @@ class ImageEmbedding(models.Model):
                 name="imageembedding_embed_ivfflat",
                 fields=["embedding"],
                 lists=1000,
-                opclasses=["halfvec_l2_ops"],
+                opclasses=["halfvec_cosine_ops"],
             ),
         ]
 
