@@ -50,7 +50,7 @@
         <div class="mt-2">
           <div class="sm:hidden">
             <label for="tabs" class="sr-only">Select a tab</label>
-            <select x-model="selectedTab" id="tabs" name="tabs" class="block w-full focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md">
+            <select x-model="selectedTab" @change="$dispatch('tab-changed', selectedTab)" id="tabs" name="tabs" class="block w-full focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md">
 
               {% for k,v in sections.items %}
                 <option value="{{ k }}">{{ v }}</option>
@@ -60,7 +60,7 @@
           <div class="hidden sm:block">
             <nav class="flex space-x-4" aria-label="Tabs">
               {% for k,v in sections.items %}
-                <a href="" @click.prevent="selectedTab = '{{ k }}'" class="px-3 py-2 font-medium text-sm rounded-md"
+                <a href="" @click.prevent="selectedTab = '{{ k }}'; $dispatch('tab-changed', '{{ k }}')" class="px-3 py-2 font-medium text-sm rounded-md"
                    :class="{'bg-indigo-100 text-indigo-700': selectedTab == '{{ k }}',
                            'text-gray-500 hover:text-gray-700': selectedTab != '{{ k }}'}">
                   {{ v }}
@@ -75,7 +75,7 @@
           {% include 'core/image_detail/studies_tab.html' %}
 
           {% if 'similar_images' in sections %}
-            {% include 'core/image_detail/images_tab.html' with images=similar_images section_name='similar_images' lazy=1 %}
+            {% include 'core/image_detail/similar_images_tab.html' %}
           {% endif %}
 
           {% if 'patient_images' in sections %}

@@ -3,6 +3,7 @@ import factory.django
 
 from isic.core.models import Collection, Doi, Image
 from isic.core.models.doi import DraftDoi
+from isic.core.models.image_embedding import ImageEmbedding
 from isic.core.models.isic_id import IsicId
 from isic.factories import UserFactory
 from isic.ingest.tests.factories import AccessionFactory
@@ -28,6 +29,14 @@ class ImageFactory(factory.django.DjangoModelFactory):
         no_declaration=factory.SubFactory(AccessionFactory, public=False),
     )
     isic = factory.SubFactory(IsicIdFactory)
+
+
+class ImageEmbeddingFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = ImageEmbedding
+
+    image = factory.SubFactory(ImageFactory)
+    embedding = factory.LazyFunction(lambda: [0.0] * 3584)
 
 
 class CollectionFactory(factory.django.DjangoModelFactory):

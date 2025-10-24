@@ -17,7 +17,12 @@ from isic.core.search import (
     get_elasticsearch_client,
     maybe_create_index,
 )
-from isic.core.tests.factories import CollectionFactory, ImageFactory, IsicIdFactory
+from isic.core.tests.factories import (
+    CollectionFactory,
+    ImageEmbeddingFactory,
+    ImageFactory,
+    IsicIdFactory,
+)
 from isic.ingest.tests.factories import (
     AccessionFactory,
     AccessionReviewFactory,
@@ -124,4 +129,5 @@ register(ZipUploadFactory)
 # core factories
 register(IsicIdFactory)
 register(ImageFactory)
+register(ImageEmbeddingFactory)
 register(CollectionFactory)
