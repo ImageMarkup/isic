@@ -57,6 +57,9 @@ class ImageManager(models.Manager["Image"]):
             ),
         )
 
+    def has_embedding(self):
+        return self.filter(Q(embedding_relation__isnull=False) | Q(embedding__isnull=False))
+
     def public(self):
         return self.filter(public=True)
 
@@ -146,7 +149,7 @@ class Image(CreationSortedTimeStampedModel):
 
     @property
     def has_embedding(self) -> bool:
-        return self.embedding is not None
+        return hasattr(self, "embedding_relation") or self.embedding is not None
 
     @property
     def metadata(self) -> dict:
@@ -234,12 +237,24 @@ class Image(CreationSortedTimeStampedModel):
         if not self.has_embedding:
             return Image.objects.none()
 
-        return (
-            Image.objects.filter(embedding__isnull=False)
-            .exclude(pk=self.pk)
-            .annotate(distance=L2Distance("embedding", self.embedding))
-            .order_by("distance")
-        )
+        if hasattr(self, "embedding_relation"):
+            return (
+                Image.objects.filter(embedding_relation__isnull=False)
+                .exclude(pk=self.pk)
+                .annotate(
+                    distance=L2Distance(
+                        "embedding_relation__embedding", self.embedding_relation.embedding
+                    )
+                )
+                .order_by("distance")
+            )
+        else:
+            return (
+                Image.objects.filter(embedding__isnull=False)
+                .exclude(pk=self.pk)
+                .annotate(distance=L2Distance("embedding", self.embedding))
+                .order_by("distance")
+            )
 
 
 class ImageShare(TimeStampedModel):
