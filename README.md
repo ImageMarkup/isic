@@ -1,4 +1,4 @@
-# ISIC
+# ISIC Archive
 
 ## Develop with Docker (recommended quickstart)
 This is the simplest configuration for developers to start with.

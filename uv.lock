@@ -730,14 +730,14 @@ wheels = [
 
 [[package]]
 name = "django-resonant-settings"
-version = "0.33.0"
+version = "0.41.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django-environ" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f0/d7/62d1cc60f7745012603213af343ccc1d7a0187c19cb8265cc2caca74d1c0/django_resonant_settings-0.33.0.tar.gz", hash = "sha256:864dc6606af7e77f2885b499bcdb0c8d1d3d9eb7d98b553a52280aab114e5730", size = 17483, upload-time = "2025-07-17T03:02:41.16Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ee/19/4fa035cec41b5c7ceb1348f5aec7692ec6a71b0a1d79cec7746aa2e1926a/django_resonant_settings-0.41.0.tar.gz", hash = "sha256:1324c12d33329a36a198c500695434db57206ac75ee63fa8da35d390831bc8de", size = 17654, upload-time = "2025-10-16T20:11:42.172Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d4/c1/e7f792518e3e132b248475d9bcbb1ef5186fb0ea945e9fab32b81e61b48f/django_resonant_settings-0.33.0-py3-none-any.whl", hash = "sha256:65615f85a1cb52bb37e3e60c4bdead89f9d64e55865e56a056836d7cf5bff93f", size = 23464, upload-time = "2025-07-17T03:02:39.995Z" },
+    { url = "https://files.pythonhosted.org/packages/38/d3/ac3e2ffd10139f3f209acafc1f8dd7b9d177c1b7b26b71cdd60e2f36020e/django_resonant_settings-0.41.0-py3-none-any.whl", hash = "sha256:10be63da455eaaa67a34b057dabe9f15b380917c945cb8c33f929ad1afde2b47", size = 24123, upload-time = "2025-10-16T20:11:41.112Z" },
 ]
 
 [package.optional-dependencies]
@@ -1332,7 +1332,7 @@ requires-dist = [
     { name = "requests" },
     { name = "requests-toolbelt" },
     { name = "rich" },
-    { name = "sentry-sdk", extras = ["celery", "django", "pure-eval"], specifier = ">=2.28.0" },
+    { name = "sentry-sdk", extras = ["celery", "django", "pure-eval"] },
     { name = "tenacity" },
     { name = "watchdog", marker = "extra == 'development'" },
     { name = "werkzeug", marker = "extra == 'development'" },

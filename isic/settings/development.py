@@ -1,5 +1,6 @@
 from typing import cast
 
+import logging
 from django_extensions.utils import InternalIPS
 from minio_storage.policy import Policy
 
@@ -92,9 +93,24 @@ CACHES["default"]["TIMEOUT"] = 0
 # cachalot sets its own expiration time, so it needs to be set to 0 as well
 CACHALOT_TIMEOUT = 0
 
+OAUTH2_PROVIDER["ALLOWED_REDIRECT_URI_SCHEMES"] = ["http", "https"]
 # In development, always present the approval dialog
 OAUTH2_PROVIDER["REQUEST_APPROVAL_PROMPT"] = "force"
 
+SHELL_PLUS_IMPORTS = [
+    "from django.core.files.storage import storages",
+    "from django.core.files.uploadedfile import UploadedFile",
+    "from isic.ingest.services.accession import *",
+    "from isic.ingest.services.zip_upload import *",
+    "from isic.core.dsl import *",
+    "from isic.core.health import *",
+    "from isic.core.search import *",
+    "from isic.core.tasks import *",
+    "from isic.ingest.services.cohort import *",
+    "from isic.ingest.tasks import *",
+    "from isic.stats.tasks import *",
+    "from isic.studies.tasks import *",
+]
 
 # suppress noisy cache invalidation log messages
 logging.getLogger("isic.core.signals").setLevel(logging.ERROR)
