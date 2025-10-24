@@ -1,5 +1,11 @@
 <a class="cursor-pointer">
-  <img @mouseenter="hovered = true" @click="open = true" src="{{ image.thumbnail_256.url }}" loading="{% if lazy %}lazy{% else %}eager{% endif %}" />
+  <img @mouseenter="hovered = true"
+       @click="open = true"
+       src="{{ image.thumbnail_256.url }}"
+       {% comment %}forcibly set the width and height to 256px to account for TBP tiles which can be smaller{% endcomment %}
+       width="256"
+       height="256"
+       loading="{% if lazy %}lazy{% else %}eager{% endif %}" />
 </a>
 
 <template x-if="true">
