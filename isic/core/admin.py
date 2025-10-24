@@ -4,7 +4,15 @@ from django.db.models import Count
 from django.utils.html import format_html
 from resonant_utils.admin import ReadonlyTabularInline
 
-from isic.core.models import Collection, Doi, GirderDataset, GirderImage, Image, ImageAlias
+from isic.core.models import (
+    Collection,
+    Doi,
+    GirderDataset,
+    GirderImage,
+    Image,
+    ImageAlias,
+    SimilarImageFeedback,
+)
 from isic.core.models.doi import DoiRelatedIdentifier, DraftDoi, DraftDoiRelatedIdentifier
 from isic.core.models.segmentation import Segmentation, SegmentationReview
 from isic.core.models.supplemental_file import DraftSupplementalFile, SupplementalFile
@@ -261,3 +269,30 @@ class DraftDoiAdmin(BaseDoiAdmin):
         "is_publishing",
     ]
     readonly_fields = ["is_publishing"]
+
+
+@admin.register(SimilarImageFeedback)
+class SimilarImageFeedbackAdmin(StaffReadonlyAdmin):
+    list_display = ["id", "created", "user", "image_link", "similar_image_link", "feedback"]
+    list_filter = ["feedback", "created"]
+    search_fields = ["user__username", "image__isic_id", "similar_image__isic_id"]
+    date_hierarchy = "created"
+    ordering = ["-created"]
+
+    def image_link(self, obj):
+        return format_html(
+            '<a href="/images/{}">{}</a>',
+            obj.image.isic_id,
+            obj.image.isic_id,
+        )
+
+    image_link.short_description = "Source Image"
+
+    def similar_image_link(self, obj):
+        return format_html(
+            '<a href="/images/{}">{}</a>',
+            obj.similar_image.isic_id,
+            obj.similar_image.isic_id,
+        )
+
+    similar_image_link.short_description = "Similar Image"

@@ -11,7 +11,7 @@ from ninja.pagination import paginate
 from pyparsing.exceptions import ParseException
 from sentry_sdk import set_tag
 
-from isic.core.models import Image
+from isic.core.models import Image, SimilarImageFeedback
 from isic.core.pagination import CursorPagination, qs_with_hardcoded_count
 from isic.core.permissions import get_visible_objects
 from isic.core.search import facets, get_elasticsearch_client
@@ -189,3 +189,44 @@ def get_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):
 def retrieve_image(request: HttpRequest, isic_id: str):
     qs = get_visible_objects(request.user, "core.view_image", default_qs)
     return get_object_or_404(qs, isic_id=isic_id)
+
+
+class SimilarImageFeedbackIn(Schema):
+    similar_image_id: str
+    feedback: str
+
+
+@router.post(
+    "/{isic_id}/similar-feedback/",
+    response={200: dict, 400: dict, 401: dict},
+    summary="Submit feedback for a similar image recommendation.",
+    include_in_schema=True,
+)
+def submit_similar_image_feedback(request: HttpRequest, isic_id: str, data: SimilarImageFeedbackIn):
+    if not request.user.is_authenticated:
+        return 401, {"message": "Authentication required"}
+
+    # Validate feedback value
+    if data.feedback not in [SimilarImageFeedback.THUMBS_UP, SimilarImageFeedback.THUMBS_DOWN]:
+        return 400, {"message": "Invalid feedback value"}
+
+    # Get the source image
+    qs = get_visible_objects(request.user, "core.view_image", default_qs)
+    source_image = get_object_or_404(qs, isic_id=isic_id)
+
+    # Get the similar image
+    similar_image = get_object_or_404(qs, isic_id=data.similar_image_id)
+
+    # Create or update feedback
+    feedback, created = SimilarImageFeedback.objects.update_or_create(
+        image=source_image,
+        similar_image=similar_image,
+        user=request.user,
+        defaults={"feedback": data.feedback},
+    )
+
+    return 200, {
+        "message": "Feedback submitted successfully",
+        "created": created,
+        "feedback": feedback.feedback,
+    }

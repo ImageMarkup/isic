@@ -251,6 +251,53 @@ class ImageShare(TimeStampedModel):
     grantee = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
+class SimilarImageFeedback(TimeStampedModel):
+    """
+    Feedback for similar image search results.
+
+    Allows authenticated users to provide thumbs up/down feedback on similar image
+    recommendations for auditing purposes.
+    """
+
+    class Meta(TimeStampedModel.Meta):
+        constraints = [
+            models.UniqueConstraint(
+                name="similar_image_feedback_unique",
+                fields=["image", "similar_image", "user"],
+            ),
+        ]
+        verbose_name = "Similar Image Feedback"
+        verbose_name_plural = "Similar Image Feedback"
+
+    THUMBS_UP = "up"
+    THUMBS_DOWN = "down"
+    FEEDBACK_CHOICES = [
+        (THUMBS_UP, "Thumbs Up"),
+        (THUMBS_DOWN, "Thumbs Down"),
+    ]
+
+    image = models.ForeignKey(
+        Image,
+        on_delete=models.CASCADE,
+        related_name="similarity_feedback_source",
+        help_text="The source image being viewed",
+    )
+    similar_image = models.ForeignKey(
+        Image,
+        on_delete=models.CASCADE,
+        related_name="similarity_feedback_target",
+        help_text="The similar image being rated",
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    feedback = models.CharField(max_length=10, choices=FEEDBACK_CHOICES)
+
+    def __str__(self):
+        return (
+            f"{self.user.username}: {self.image.isic_id} -> "
+            f"{self.similar_image.isic_id} ({self.feedback})"
+        )
+
+
 class ImagePermissions:
     model = Image
     perms = ["view_image", "view_full_metadata"]
