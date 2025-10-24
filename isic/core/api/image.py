@@ -189,3 +189,27 @@ def get_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):
 def retrieve_image(request: HttpRequest, isic_id: str):
     qs = get_visible_objects(request.user, "core.view_image", default_qs)
     return get_object_or_404(qs, isic_id=isic_id)
+
+
+class SimilarImageOut(ImageOut):
+    distance: float
+
+
+@router.get(
+    "/{isic_id}/similar/",
+    response=list[SimilarImageOut],
+    summary="Find images similar to the specified image.",
+    include_in_schema=True,
+)
+def get_similar_images(
+    request: HttpRequest, isic_id: str, limit: int = Query(10, le=50)
+) -> list[SimilarImageOut]:
+    qs = get_visible_objects(request.user, "core.view_image", default_qs)
+    image = get_object_or_404(qs, isic_id=isic_id)
+
+    if not image.has_embedding:
+        return []
+
+    similar_qs = image.similar_images().select_related("accession__cohort")
+    similar_qs = get_visible_objects(request.user, "core.view_image", similar_qs)
+    return similar_qs[:limit]

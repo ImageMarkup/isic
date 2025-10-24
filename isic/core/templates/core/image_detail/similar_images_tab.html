@@ -1,0 +1,107 @@
+<div x-show="selectedTab == 'similar_images'"
+     x-data="similarImagesTab('{{ image.isic_id }}')"
+     @tab-changed.window="if ($event.detail === 'similar_images' && images.length === 0) loadSimilarImages()">
+  <div class="bg-white shadow overflow-hidden sm:rounded-md">
+    <div class="mb-4">
+      <div x-show="loading" class="text-center py-8">
+        <p class="mt-2 text-gray-600">Loading similar images...</p>
+      </div>
+
+      <div x-show="error" class="text-center py-8 text-red-600">
+        <p x-text="error"></p>
+      </div>
+
+      <div x-show="!loading && !error && images.length === 0" class="text-center py-8 text-gray-600">
+        <p>No similar images found.</p>
+      </div>
+
+      <div x-show="!loading && !error && images.length > 0" x-data="thumbnailGrid()">
+        <div class="hidden pb-3 sm:flex sm:flex-row sm:justify-end">
+          <a class="px-1" href="#" @click.prevent="decrease()">fewer columns</a> |
+          <a class="px-1" href="#" @click.prevent="increase()">more columns</a>
+        </div>
+
+        <div class="grid gap-4 grid-cols-2" :class="gridClassNames[numCols]">
+          <template x-for="image in images" :key="image.isic_id">
+            <div>
+              <div x-data="{ open: false, hovered: false }" class="pb-4">
+                <a class="cursor-pointer">
+                  <img @mouseenter="hovered = true"
+                       @click="open = true"
+                       :src="image.files.thumbnail_256.url"
+                       loading="lazy" />
+                </a>
+
+                <template x-if="open">
+                  <div x-show="open" @click.away="open = false" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+                      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                      <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+                        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                          <img :src="image.files.full.url" class="w-full" />
+                        </div>
+                        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                          <button @click="open = false" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                            Close
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+
+              <div class="flex">
+                <a :href="`/images/${image.isic_id}/`" x-text="image.isic_id"></a>
+                <a :href="image.files.full.url">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        {% include 'ingest/partials/thumbnail_grid_js.html' %}
+
+        <div x-show="images.length >= limit" class="mt-4 text-gray-600">
+          <p>Showing first <span x-text="limit"></span> images.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  function similarImagesTab(isicId) {
+    return {
+      images: [],
+      loading: false,
+      error: null,
+      limit: 50,
+
+      async loadSimilarImages() {
+        this.loading = true;
+        this.error = null;
+
+        try {
+          const response = await fetch(`/api/v2/images/${isicId}/similar/?limit=${this.limit}`);
+
+          if (!response.ok) {
+            throw new Error(`Failed to load similar images: ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          this.images = data;
+        } catch (err) {
+          this.error = err.message;
+          console.error('Error loading similar images:', err);
+        } finally {
+          this.loading = false;
+        }
+      }
+    }
+  }
+</script>
