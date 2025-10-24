@@ -7,10 +7,10 @@ name = "isic"
 version = "0.0.0"
 requires-python = ">=3.13"
 license = "Apache-2.0"
-license-files = ["LICENSE"]
+license-files = ["LICENSE", "NOTICE"]
 classifiers = ["Private :: Do Not Upload"]
 dependencies = [
-  # Runtime dependendencies, always needed
+  # Runtime dependencies, always needed
   "bcrypt",
   "celery",
   "deepdiff",
@@ -58,7 +58,7 @@ dependencies = [
   "django-s3-file-field[s3]",
   "django-storages[s3]",
   "gunicorn",
-  "sentry-sdk[celery,django,pure_eval]>=2.28.0",
+  "sentry-sdk[celery,django,pure_eval]",
   "orjson",
   "django-template-partials",
   "pgvector",
@@ -66,7 +66,7 @@ dependencies = [
 
 [project.optional-dependencies]
 development = [
-  # Runtime dependendencies, only needed with "development" settings
+  # Runtime dependencies, only needed with "development" settings
   "django-browser-reload",
   "django-debug-toolbar",
   "django-minio-storage",
@@ -247,7 +247,7 @@ django_settings_module = "isic.settings.testing"
 
 [tool.pytest.ini_options]
 addopts = [
-  # Test utilies should be imported absolutely from the pythonpath,
+  # Test utilities should be imported absolutely from the pythonpath,
   # so use the Pytest-recommended "importlib" mode
   "--import-mode=importlib",
   "--strict-config",
