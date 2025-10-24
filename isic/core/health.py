@@ -8,6 +8,7 @@ from resonant_utils.files import field_file_to_local_path
 
 from isic.core.models.collection import Collection
 from isic.core.models.image import Image
+from isic.core.models.image_embedding import ImageEmbedding
 from isic.core.models.isic_id import IsicId
 from isic.login.models import Profile
 
@@ -195,6 +196,23 @@ def check_iptc_metadata_consistency() -> HealthCheckResult:
     )
 
 
+def check_embeddings_only_for_public_images() -> HealthCheckResult:
+    embeddings_for_private_images = ImageEmbedding.objects.filter(image__public=False).count()
+
+    passed = embeddings_for_private_images == 0
+    message = (
+        "All embeddings are for public images"
+        if passed
+        else f"{embeddings_for_private_images} embeddings found for private images"
+    )
+
+    return HealthCheckResult(
+        name="embeddings_only_for_public_images",
+        passed=passed,
+        message=message,
+    )
+
+
 HEALTH_CHECKS = [
     ("public_images_have_sponsored_blob", check_public_images_have_sponsored_blob),
     ("non_public_images_have_non_sponsored_blob", check_non_public_images_have_non_sponsored_blob),
@@ -206,6 +224,7 @@ HEALTH_CHECKS = [
     ("every_user_has_profile", check_every_user_has_profile),
     ("collection_image_consistency", check_collection_image_consistency),
     ("iptc_metadata_consistency", check_iptc_metadata_consistency),
+    ("embeddings_only_for_public_images", check_embeddings_only_for_public_images),
 ]
 
 
