@@ -14,7 +14,7 @@ from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
-from pgvector.django import L2Distance
+from pgvector.django import CosineDistance
 
 from isic.core.dsl import django_parser, parse_query
 from isic.core.models.base import CreationSortedTimeStampedModel
@@ -225,7 +225,7 @@ class Image(CreationSortedTimeStampedModel):
             Image.objects.filter(embedding_relation__isnull=False)
             .exclude(pk=self.pk)
             .annotate(
-                distance=L2Distance(
+                distance=CosineDistance(
                     "embedding_relation__embedding", self.embedding_relation.embedding
                 )
             )
