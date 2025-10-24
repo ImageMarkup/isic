@@ -83,6 +83,7 @@
         {% endif %}
 
         <div id="dataset-description">
+          <h2 class="content-box-heading"><i class="ri-file-text-line"></i> Description</h2>
           <div class="font-mono">
             {% if not doi.collection.description %}
               {% lorem %} {# TODO remove #}
@@ -109,15 +110,32 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>The complete bundle of all images, metadata, and supplemental files related to this dataset.</td>
+                  <tr class="bg-blue-50 border-l-4 border-blue-500">
+                    <td>
+                      <div class="flex flex-col">
+                        <div class="flex items-center gap-2 mb-1">
+                          <span class="badge badge-primary badge-sm">Recommended</span>
+                          <span class="font-semibold">Complete Bundle</span>
+                        </div>
+                        <div class="text-sm">All images, metadata, and supplemental files related to this dataset.</div>
+                        <div class="text-xs text-gray-600 mt-2 flex items-center">
+                          <i class="ri-information-line mr-1"></i>
+                          <span>Includes all files listed below</span>
+                        </div>
+                      </div>
+                    </td>
                     <td>{{ doi.bundle_size|filesizeformat }}</td>
                     <td>ZIP</td>
                     <td><a href="{{ doi.bundle.url }}" title="{{ doi.slug }}.zip"
                            onclick="gtag('event', 'download', {'event_category': 'doi', 'event_label': '{{ doi.slug }}.zip'});"><button class="btn btn-primary">Download</button></a></td>
                   </tr>
-                  <tr>
-                    <td>The metadata for this dataset.</td>
+                  <tr class="border-t-2 border-gray-300">
+                    <td>
+                      <div class="flex items-center gap-2">
+                        <i class="ri-corner-down-right-line text-gray-400"></i>
+                        <span>The metadata for this dataset.</span>
+                      </div>
+                    </td>
                     <td>{{ doi.metadata_size|filesizeformat }}</td>
                     <td>CSV</td>
                     <td><a href="{{ doi.metadata.url }}" title="{{ doi.slug }}.csv"
@@ -125,7 +143,12 @@
                   </tr>
                   {% for supplemental_file in doi.supplemental_files.all %}
                     <tr>
-                      <td>{{ supplemental_file.description }}</td>
+                      <td>
+                        <div class="flex items-center gap-2">
+                          <i class="ri-corner-down-right-line text-gray-400"></i>
+                          <span>{{ supplemental_file.description }}</span>
+                        </div>
+                      </td>
                       <td>{{ supplemental_file.size|filesizeformat }}</td>
                       <td>{{ supplemental_file.extension|upper }}</td>
                       <td><a href="{{ supplemental_file.blob.url }}" title="{{ supplemental_file.filename }}"
