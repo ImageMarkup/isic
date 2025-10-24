@@ -158,6 +158,37 @@
                 </tbody>
               </table>
             </div>
+
+            {% if is_supplemented_by %}
+              <div class="border border-gray-200 rounded-lg p-4 mt-4">
+                <div class="text-sm font-semibold text-gray-700 mb-2">
+                  External Supplemental Materials
+                </div>
+                <div class="text-xs text-gray-600 mb-3">This dataset is supplemented by the following external resources:</div>
+                <div class="space-y-2">
+                  {% for supplement in is_supplemented_by %}
+                    <div class="flex items-start">
+                      <i class="ri-arrow-right-s-line text-gray-400 mt-0.5"></i>
+                      {% if supplement.related_identifier_type == 'DOI' %}
+                        <a href="https://doi.org/{{ supplement.related_identifier }}"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="text-sm text-blue-600 hover:text-blue-800 break-all">
+                          {{ supplement.related_identifier }} <i class="ri-external-link-line text-xs"></i>
+                        </a>
+                      {% else %}
+                        <a href="{{ supplement.related_identifier }}"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="text-sm text-blue-600 hover:text-blue-800 break-all">
+                          {{ supplement.related_identifier }} <i class="ri-external-link-line text-xs"></i>
+                        </a>
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endif %}
           {% endif %}
         </div>
       </div>
