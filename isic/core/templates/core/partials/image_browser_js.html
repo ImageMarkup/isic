@@ -1,6 +1,91 @@
 {% load humanize %}
 
+{{ collections_ids_names|json_script:"collections-ids-names" }}
+
 <script type="text/javascript">
+  function collectionPicker() {
+    return {
+      collections: JSON.parse(document.getElementById('collections-ids-names').textContent),
+      selectedCollections: new Set(),
+      collectionInput: '',
+      filteredCollections: [],
+      highlightedIndex: -1,
+      dropdownOpen: false,
+
+      init() {
+        this.filteredCollections = [...this.collections];
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const collectionsParams = urlParams.getAll('collections');
+        if (collectionsParams.length > 0) {
+          const ids = collectionsParams.map(id => parseInt(id)).filter(id => !isNaN(id));
+          this.selectedCollections = new Set(ids);
+        }
+
+        document.addEventListener('click', (e) => {
+          if (!this.$el.contains(e.target)) {
+            this.closeDropdown();
+          }
+        });
+      },
+
+      filterCollections() {
+        const searchTerm = this.collectionInput.toLowerCase().trim();
+        this.filteredCollections = this.collections.filter(c =>
+          c.name.toLowerCase().includes(searchTerm) &&
+          !this.selectedCollections.has(c.id)
+        );
+        this.highlightedIndex = -1;
+        this.dropdownOpen = true;
+      },
+
+      selectCollection(collection) {
+        this.selectedCollections.add(collection.id);
+        this.collectionInput = '';
+        this.filterCollections();
+        if (this.$refs.collectionInput) {
+          this.$refs.collectionInput.focus();
+        }
+      },
+
+      removeCollection(collectionId) {
+        this.selectedCollections.delete(collectionId);
+        this.filterCollections();
+      },
+
+      getCollectionName(collectionId) {
+        const collection = this.collections.find(c => c.id === collectionId);
+        return collection ? collection.name : '';
+      },
+
+      showDropdown() {
+        this.filterCollections();
+        this.dropdownOpen = true;
+      },
+
+      closeDropdown() {
+        this.dropdownOpen = false;
+      },
+
+      handleKeydown(event) {
+        if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          this.highlightedIndex = Math.min(this.highlightedIndex + 1, this.filteredCollections.length - 1);
+        } else if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          this.highlightedIndex = Math.max(this.highlightedIndex - 1, -1);
+        } else if (event.key === 'Enter') {
+          event.preventDefault();
+          if (this.highlightedIndex >= 0 && this.highlightedIndex < this.filteredCollections.length) {
+            this.selectCollection(this.filteredCollections[this.highlightedIndex]);
+          }
+        } else if (event.key === 'Escape') {
+          this.closeDropdown();
+        }
+      }
+    };
+  }
+
   function imageBrowser() {
     return {
       modalOpen: false,
