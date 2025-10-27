@@ -142,7 +142,7 @@ def image_detail(request, isic_id):
 
 def image_browser(request):
     collections = get_visible_objects(
-        request.user, "core.view_collection", Collection.objects.order_by("name")
+        request.user, "core.view_collection", Collection.objects.pinned().order_by("name")
     )
     search_form = ImageSearchForm(
         request.GET,
@@ -187,6 +187,7 @@ def image_browser(request):
             "search_body": json.dumps(request.GET),
             "form": search_form,
             "recent_collections": recent_collections,
+            "collections_ids_names": list(collections.values("id", "name")),
         },
     )
 

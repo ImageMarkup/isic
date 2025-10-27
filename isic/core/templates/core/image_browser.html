@@ -24,28 +24,77 @@
       </div>
     </template>
 
-    <div class="my-4 bg-gray-50 p-2 rounded-sm border-gray-200 border">
+    <div class="my-4 bg-white border border-gray-200 rounded-lg p-4">
       <form method="GET" id="" action="">
         {{ form.non_field_errors }}
 
-        <div class="sm:flex sm:justify-between">
-          <div>
-            {% render_field form.query class+="input input-bordered w-96 max-w-s" %}
-            <div>
-              <label for="my-modal-4" class="modal-button inline cursor-pointer text-primary">example searches</label>
-              {{ form.query.errors }}
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="col-span-2">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Query</label>
+            <div class="flex justify-between items-center gap-2">
+              {% render_field form.query class+="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono" placeholder="age_approx:[20 TO 40] AND sex:male" %}
+              <label for="my-modal-4" class="modal-button cursor-pointer text-xs text-blue-600 hover:text-blue-800 whitespace-nowrap">syntax help</label>
             </div>
+            {{ form.query.errors }}
           </div>
 
-          <div>
-            {{ form.collections.label }}
-            {{ form.collections }}
+          <div x-data="collectionPicker()">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Collections</label>
+            <div class="relative">
+              <input
+                type="text"
+                x-ref="collectionInput"
+                x-model="collectionInput"
+                @click="showDropdown()"
+                @input="filterCollections()"
+                @keydown="handleKeydown($event)"
+                placeholder="Type or select collections..."
+                class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+
+              <div x-show="dropdownOpen" x-cloak class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-y-auto" style="max-height: 16rem;">
+                <div class="py-1">
+                  <template x-for="(collection, index) in filteredCollections" :key="collection.id">
+                    <div
+                      @click="selectCollection(collection)"
+                      :class="{'bg-gray-100': highlightedIndex === index}"
+                      class="px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm flex justify-between items-center"
+                    >
+                      <span x-text="collection.name"></span>
+                    </div>
+                  </template>
+                  <div x-show="filteredCollections.length === 0" class="px-3 py-2 text-sm text-gray-500 text-center">
+                    No collections found
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap gap-1 mt-2" x-show="selectedCollections.size > 0">
+                <template x-for="collectionId in Array.from(selectedCollections)" :key="collectionId">
+                  <span class="inline-flex items-center gap-1 px-2 py-1 mr-1 bg-blue-100 text-blue-700 rounded text-xs">
+                    <span x-text="getCollectionName(collectionId)"></span>
+                    <button @click="removeCollection(collectionId)" type="button" class="hover:bg-blue-200 rounded">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                      </svg>
+                    </button>
+                  </span>
+                </template>
+              </div>
+
+              <template x-for="collectionId in Array.from(selectedCollections)" :key="collectionId">
+                <input type="hidden" name="collections" :value="collectionId" />
+              </template>
+            </div>
           </div>
         </div>
 
-        <button type="submit" class="btn btn-primary">
-          <span>Search</span>
-        </button>
+        <div class="mt-3 flex justify-end">
+          <div class="flex gap-2">
+            <a href="{% url 'core/image-browser' %}" class="px-3 py-1 text-xs text-gray-600 hover:text-gray-800">Clear</a>
+            <button type="submit" class="px-4 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">Search</button>
+          </div>
+        </div>
       </form>
     </div>
 
