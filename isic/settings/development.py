@@ -75,7 +75,7 @@ STORAGES.update(
 )
 MINIO_STORAGE_MEDIA_OBJECT_METADATA = {"Content-Disposition": "attachment"}
 
-ISIC_FAKE_STORAGE: str | None = env.str("DJANGO_ISIC_FAKE_STORAGE", default="placeholder")
+ISIC_FAKE_STORAGE: str | None = env.str("DJANGO_ISIC_FAKE_STORAGE", default=None)
 if ISIC_FAKE_STORAGE == "proxy":
     STORAGES["default"]["BACKEND"] = "isic.core.storages.minio.S3ProxyMinioStorage"
     STORAGES["default"].setdefault("OPTIONS", {})["upstream_bucket_name"] = "isic-storage"
