@@ -184,6 +184,10 @@ def bulk_add_to_search_index(
     # Use a generator for lazy evaluation
     documents = (obj.to_elasticsearch_document() for obj in qs.iterator(chunk_size=chunk_size))
 
+    # for whatever reason, bulk can't gracefully fail if the queryset is empty.
+    if not qs.exists():
+        return
+
     # note we can't use parallel_bulk because the cachalot_disabled context manager
     # is thread local.
     success, info = bulk(
