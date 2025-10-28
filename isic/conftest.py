@@ -41,7 +41,8 @@ from .factories import EmailAddressFactory, ProfileFactory, UserFactory
 def _disable_direct_pytest_usage():
     # this is useful for LLMs that can forget how to run tests.
     # also, allow vscode to invoke pytest directly.
-    if "TOX_ENV_NAME" not in os.environ and not os.environ.get("DEBUGPY_RUNNING"):
+    # TEST_RUN_PIPE is set by the test runner so it works when using debugpy or not.
+    if "TOX_ENV_NAME" not in os.environ and not os.environ.get("TEST_RUN_PIPE"):
         print("Never invoke pytest directly. Use `uv run tox -e test` instead.", file=sys.stderr)  # noqa: T201
         sys.exit(1)
 
