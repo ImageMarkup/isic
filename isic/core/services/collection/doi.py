@@ -250,7 +250,8 @@ def collection_create_doi_files(*, doi: AbstractDoi) -> None:
     collection_slug = slugify(collection.name)
 
     snapshot_filename, metadata_filename = snapshot_images(
-        qs=collection.images.select_related("accession")
+        qs=collection.images.select_related("accession"),
+        supplemental_files=doi.supplemental_files.all(),
     )
 
     try:
