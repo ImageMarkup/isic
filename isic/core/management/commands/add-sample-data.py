@@ -11,6 +11,7 @@ import requests
 
 from isic.core.models import CopyrightLicense, Image, IsicId
 from isic.core.services.iptc import embed_iptc_metadata_for_image
+from isic.core.tasks import sync_elasticsearch_indices_task
 from isic.core.utils.db import lock_table_for_writes
 from isic.ingest.models import Accession, Cohort, Contributor
 from isic.ingest.models.unstructured_metadata import UnstructuredMetadata
@@ -84,6 +85,8 @@ def add_sample_data(n):
             )
 
             created_images.append(isic_id)
+
+    sync_elasticsearch_indices_task()
 
     click.secho("\nCreated images:", fg="green", err=True)
     for isic_id in created_images:
