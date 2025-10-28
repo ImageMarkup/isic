@@ -5,13 +5,17 @@ from django.db import connection, transaction
 from django.db.models import QuerySet
 from django.template.loader import render_to_string
 
-from isic.core.models import Image
+from isic.core.models import Image, SupplementalFile
 from isic.core.services import image_metadata_csv
 from isic.core.utils.csv import EscapingDictWriter
 from isic.zip_download.api import get_attributions
 
+CHUNK_SIZE = 5 * 1024 * 1024  # 5MB
 
-def snapshot_images(*, qs: QuerySet[Image]) -> tuple[str, str]:
+
+def snapshot_images(
+    *, qs: QuerySet[Image], supplemental_files: QuerySet[SupplementalFile] | None = None
+) -> tuple[str, str]:
     with transaction.atomic():
         cursor = connection.cursor()
         cursor.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
@@ -48,5 +52,20 @@ def snapshot_images(*, qs: QuerySet[Image]) -> tuple[str, str]:
 
             attributions = get_attributions(qs.values_list("accession__attribution", flat=True))
             bundle.writestr("attribution.txt", "\n\n".join(attributions))
+
+            supplemental_files = (
+                supplemental_files
+                if supplemental_files is not None
+                else SupplementalFile.objects.none()
+            )
+            for supplemental_file in supplemental_files.iterator():
+                with (
+                    supplemental_file.blob.open("rb") as blob,
+                    bundle.open(f"supplements/{supplemental_file.filename}", "w") as zip_file,
+                ):
+                    chunk = blob.read(CHUNK_SIZE)
+                    while chunk:
+                        zip_file.write(chunk)
+                        chunk = blob.read(CHUNK_SIZE)
 
         return snapshot_file.name, metadata_file.name

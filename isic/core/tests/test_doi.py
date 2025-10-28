@@ -334,6 +334,51 @@ def test_api_doi_creation(
     assert url_related.related_identifier == "https://example.com/supplemental-data"
 
 
+@pytest.mark.django_db(transaction=True)
+def test_doi_bundle_includes_supplemental_files(
+    image_factory,
+    collection_factory,
+    staff_user,
+    mock_datacite_create_draft_doi,
+    mock_datacite_promote_draft_doi_to_findable,
+    mock_fetch_doi_citations,
+    mock_fetch_doi_schema_org_dataset,
+    s3ff_random_field_value,
+):
+    from s3_file_field.widgets import S3PlaceholderFile
+
+    collection = collection_factory(public=True)
+    collection.images.add(image_factory(public=True))
+
+    draft_doi = collection_create_draft_doi(
+        user=staff_user,
+        collection=collection,
+        description="Test description",
+        supplemental_files=[
+            {
+                "blob": S3PlaceholderFile.from_field(s3ff_random_field_value),
+                "description": "Test supplemental file",
+            }
+        ],
+    )
+    doi = draft_doi_publish(user=staff_user, draft_doi=draft_doi)
+
+    doi.refresh_from_db()
+
+    assert doi.bundle is not None
+    assert doi.supplemental_files.count() == 1
+    supplemental_file = doi.supplemental_files.first()
+
+    with tempfile.TemporaryDirectory() as temp_dir, zipfile.ZipFile(doi.bundle) as zf:
+        zf.extractall(temp_dir)
+
+        supplements_dir = Path(temp_dir) / "supplements"
+        assert supplements_dir.exists()
+
+        supplemental_path = supplements_dir / supplemental_file.filename
+        assert supplemental_path.read_bytes() == supplemental_file.blob.read()
+
+
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     ("related_identifier_type", "related_identifier"),
