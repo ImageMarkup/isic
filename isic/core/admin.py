@@ -212,6 +212,8 @@ class BaseDoiAdmin(StaffReadonlyAdmin):
     list_select_related = ["collection"]
     list_display = ["id", "external_url", "collection", "bundle", "num_supplemental_files"]
     autocomplete_fields = ["creator"]
+    search_fields = ["id", "collection__name"]
+    search_help_text = "Search DOIs by ID or collection name."
 
     @admin.display(ordering="num_supplemental_files", description="Number of supplemental files")
     def num_supplemental_files(self, obj):
