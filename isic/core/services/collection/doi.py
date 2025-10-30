@@ -303,13 +303,18 @@ def draft_doi_publish(*, user: User, draft_doi: DraftDoi) -> Doi:
         )
 
         for draft_supplemental_file in draft_doi.supplemental_files.all():
-            doi.supplemental_files.create(
-                blob=draft_supplemental_file.blob,
+            supplemental_file = doi.supplemental_files.create(
                 description=draft_supplemental_file.description,
                 filename=draft_supplemental_file.filename,
                 size=draft_supplemental_file.size,
                 order=draft_supplemental_file.order,
             )
+            with draft_supplemental_file.blob.open("rb") as blob_file:
+                supplemental_file.blob.save(
+                    draft_supplemental_file.filename,
+                    File(blob_file),
+                    save=True,
+                )
 
         for draft_related_identifier in draft_doi.related_identifiers.all():
             doi.related_identifiers.create(
