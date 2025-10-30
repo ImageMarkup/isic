@@ -3,6 +3,7 @@ import tempfile
 import zipfile
 
 from django.core.exceptions import ValidationError
+from django.core.files.storage import storages
 from django.urls import reverse
 import pytest
 from pytest_lazy_fixtures import lf
@@ -554,6 +555,7 @@ def test_draft_doi_complete_lifecycle(  # noqa: PLR0915
     assert draft_doi.supplemental_files.count() == 1
     supplemental_file = draft_doi.supplemental_files.first()
     assert supplemental_file.description == "Test supplemental file"
+    assert storages["default"].exists(supplemental_file.blob.name)
 
     assert draft_doi.related_identifiers.count() == 2
     related_ids = list(draft_doi.related_identifiers.all())
@@ -611,6 +613,11 @@ def test_draft_doi_complete_lifecycle(  # noqa: PLR0915
     assert final_doi.supplemental_files.count() == 1
     final_supplemental_file = final_doi.supplemental_files.first()
     assert final_supplemental_file.description == "Test supplemental file"
+
+    assert storages["sponsored"].exists(final_supplemental_file.blob.name)
+    assert final_supplemental_file.blob.name.startswith(
+        f"dois/{final_doi.id.replace('/', '-')}/supplements/"
+    )
 
     assert final_doi.related_identifiers.count() == 2
     final_related_ids = list(final_doi.related_identifiers.all())
