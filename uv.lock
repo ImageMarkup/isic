@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.13"
 
 [[package]]
@@ -1381,14 +1381,14 @@ type = [
 
 [[package]]
 name = "isic-metadata"
-version = "4.10.0"
+version = "4.11.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ee/e5/3f6c8f582ab26516fa653023fa055a829bb8c11b156866d9452f65c15b68/isic_metadata-4.10.0.tar.gz", hash = "sha256:d16b514db664902de8d7722d6027223d53977bf7d4fdfcd996ddfb24cc54169e", size = 28748, upload-time = "2025-06-03T12:12:43.422Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/40/38/cb100876a50eb4292222a4206fc3aab435d1ff4a0553405fd1c0cd1d0f55/isic_metadata-4.11.0.tar.gz", hash = "sha256:457e3f3ac43fddade45f6c03bbcd536903162b1112dcaf639db8bbec19ca61ec", size = 28750, upload-time = "2025-11-05T19:31:22.085Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/29/4c/eb6d129b516f1991d018de26de7c4fd64fd577bf145fa4da1fdb225e2164/isic_metadata-4.10.0-py3-none-any.whl", hash = "sha256:65ba2ded2702de697da314ffa8d5bbf4ecb3ec96a918277f4463f19b0d1f074a", size = 27609, upload-time = "2025-06-03T12:12:42.182Z" },
+    { url = "https://files.pythonhosted.org/packages/82/f5/e7a92af039dcc27b650cf73bbb24a9ba125c10afbe87b8ecf477e5d0ddf4/isic_metadata-4.11.0-py3-none-any.whl", hash = "sha256:45eaaf9d2eb2a453428d07c10a0e84578fead06beb7e6e43e6d3114fd39e8950", size = 27634, upload-time = "2025-11-05T19:31:20.877Z" },
 ]
 
 [[package]]
