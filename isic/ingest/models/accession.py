@@ -84,12 +84,14 @@ class AccessionMetadata(models.Model):
     diagnosis_confirm_type = models.CharField(max_length=255, null=True, blank=True)
     personal_hx_mm = models.BooleanField(null=True, blank=True)
     family_hx_mm = models.BooleanField(null=True, blank=True)
+    # max_digits/decimal_places must match in isic-metadata
     clin_size_long_diam_mm = models.DecimalField(
         max_digits=5, decimal_places=2, null=True, blank=True
     )
     melanocytic = models.BooleanField(null=True, blank=True)
 
     mel_mitotic_index = models.CharField(max_length=255, null=True, blank=True)
+    # max_digits/decimal_places must match in isic-metadata
     mel_thick_mm = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     mel_ulcer = models.BooleanField(null=True, blank=True)
 
