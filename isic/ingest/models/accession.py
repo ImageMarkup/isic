@@ -130,8 +130,14 @@ class AccessionQuerySet(models.QuerySet):
     def published(self):
         return self.filter(image__isnull=False)
 
+    def publish_requested(self):
+        return self.exclude(publishrequest=None)
+
+    def publish_not_requested(self):
+        return self.filter(publishrequest=None)
+
     def publishable(self):
-        return self.accepted()
+        return self.accepted().publish_not_requested()
 
     def reviewable(self):
         return self.ingested().unpublished()
