@@ -23,6 +23,7 @@ from isic.ingest.models import (
     ZipUpload,
 )
 from isic.ingest.models.metadata_version import MetadataVersion
+from isic.ingest.models.publish_request import PublishRequest
 from isic.ingest.models.rcm_case import RcmCase
 from isic.ingest.tasks import extract_zip_task
 
@@ -271,3 +272,22 @@ class ZipAdmin(StaffReadonlyAdmin):
         for zip_file in queryset:
             zip_file.reset()
             extract_zip_task.delay_on_commit(zip_file.pk)
+
+
+@admin.register(PublishRequest)
+class PublishRequestAdmin(StaffReadonlyAdmin):
+    list_select_related = ["creator"]
+    list_display = ["id", "created", "creator", "public", "accession_count"]
+    list_filter = ["public", "created"]
+    search_fields = ["id", "creator__username"]
+
+    autocomplete_fields = ["creator", "collections"]
+    readonly_fields = ["created"]
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.annotate(accessions_count=Count("accessions", distinct=True))
+
+    @admin.display(ordering="accessions_count")
+    def accession_count(self, obj):
+        return intcomma(obj.accessions_count)
