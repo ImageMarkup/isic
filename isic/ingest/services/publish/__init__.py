@@ -54,7 +54,7 @@ def cohort_publish_initialize(
                 public=False,  # the collection is always private to avoid leaking cohort names
                 locked=True,
             )
-        cohort.save(update_fields=["collection"])
+            cohort.save(update_fields=["collection"])
 
         publish_request = PublishRequest.objects.create(
             creator=publisher,
