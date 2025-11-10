@@ -138,21 +138,17 @@ def publish_cohort(request, pk):
     form = PublishCohortForm(request.POST)
 
     if request.method == "POST" and form.is_valid():
-        cohort_publish_initialize(
+        publish_request = cohort_publish_initialize(
             cohort=cohort,
             publisher=request.user,
             public=form.cleaned_data["public"],
             collections=form.cleaned_data["additional_collections"],
         )
 
-        # define the count before publishing so it's accurate in development when
-        # accessions are published synchronously.
-        publishable_accession_count = cohort.accessions.publishable().count()
-
         messages.add_message(
             request,
             messages.SUCCESS,
-            f"Publishing {intcomma(publishable_accession_count)} images. This may take several minutes.",  # noqa: E501
+            f"Publishing {intcomma(publish_request.accessions.count())} images. This may take several minutes.",  # noqa: E501
         )
         return HttpResponseRedirect(reverse("cohort-detail", args=[cohort.pk]))
 
