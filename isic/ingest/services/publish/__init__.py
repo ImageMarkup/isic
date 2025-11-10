@@ -37,7 +37,7 @@ def cohort_publish_initialize(
     publisher: User,
     public: bool,
     collections: QuerySet[Collection] | None = None,
-) -> None:
+) -> PublishRequest:
     from isic.ingest.tasks import publish_cohort_task
 
     collections = collections or Collection.objects.none()
@@ -66,6 +66,8 @@ def cohort_publish_initialize(
         publish_request.collections.add(cohort.collection)
 
     publish_cohort_task.delay_on_commit(publish_request.pk)
+
+    return publish_request
 
 
 def cohort_publish(*, publish_request: PublishRequest) -> None:
