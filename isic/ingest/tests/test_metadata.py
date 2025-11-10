@@ -178,10 +178,11 @@ def test_valid_batch_invalid_row() -> None:
 
 @pytest.mark.django_db
 def test_validate_metadata_step1_ignores_bom(metadatafile_bom_filename_column) -> None:
-    problems = validate_csv_format_and_filenames(
-        MetadataFile.to_dict_reader(metadatafile_bom_filename_column.blob.open("rb")),
-        metadatafile_bom_filename_column.cohort,
-    )
+    with metadatafile_bom_filename_column.blob.open("rb") as f:
+        problems = validate_csv_format_and_filenames(
+            MetadataFile.to_dict_reader(f),
+            metadatafile_bom_filename_column.cohort,
+        )
     assert not problems
 
 
