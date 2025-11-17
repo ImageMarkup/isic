@@ -25,9 +25,14 @@
                    class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem"
                    tabindex="-1" id="menu-item-0">Edit Collection</a>
                 {% if not image_removal_mode %}
-                    <a href="{% querystring image_removal_mode="1" %}"
-                       class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem"
-                       tabindex="-1" id="menu-item-0">Remove Images</a>
+                    {% if collection.locked %}
+                        <span class="text-gray-400 block px-4 py-2 text-sm cursor-not-allowed" role="menuitem"
+                              tabindex="-1" title="Cannot remove images from a locked collection">Remove Images</span>
+                    {% else %}
+                        <a href="{% querystring image_removal_mode="1" %}"
+                           class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem"
+                           tabindex="-1" id="menu-item-0">Remove Images</a>
+                    {% endif %}
                 {% endif %}
             </div>
         {% endif %}
