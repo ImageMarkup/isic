@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: pgvector/pgvector:pg17
+    image: pgvector/pgvector:pg18
     shm_size: 128mb
     environment:
       POSTGRES_DB: django
@@ -11,7 +11,7 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - postgres:/var/lib/postgresql/data
+      - postgres:/var/lib/postgresql
 
   elasticsearch:
     image: elasticsearch:9.0.2
