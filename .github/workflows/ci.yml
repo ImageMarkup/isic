@@ -48,8 +48,7 @@ jobs:
           - 5672:5672
       minio:
         # This image does not require any command arguments (which GitHub Actions don't support)
-        # see: https://github.com/bitnami/containers/issues/83267
-        image: bitnamilegacy/minio:2025.4.22
+        image: bitnamilegacy/minio:latest
         env:
           MINIO_ROOT_USER: minioAccessKey
           MINIO_ROOT_PASSWORD: minioSecretKey
@@ -70,7 +69,7 @@ jobs:
           - 6379:6379
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           lfs: true
       - name: Install uv
@@ -82,7 +81,7 @@ jobs:
           DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
           DJANGO_ISIC_ELASTICSEARCH_URL: http://elastic:elastic@localhost:9200
           DJANGO_CELERY_BROKER_URL: amqp://localhost:5672/
-          DJANGO_MINIO_STORAGE_URL: http://minioAccessKey:minioSecretKey@localhost:9000/django-storage-testing
+          DJANGO_MINIO_STORAGE_URL: http://minioAccessKey:minioSecretKey@localhost:9000/django-storage
           DJANGO_CACHE_URL: redis://localhost:6379/0
   build-node:
     runs-on: ubuntu-latest

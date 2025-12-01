@@ -30,7 +30,7 @@ dependencies = [
   "django-oauth-toolkit<2.0.0",
   "django-redis",
   "django-resonant-settings[allauth,celery]",
-  "django-resonant-utils[s3_storage]",
+  "django-resonant-utils[allauth,s3_storage]",
   "django-stubs-ext",
   "django-widget-tweaks",
   "gdal",
