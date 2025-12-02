@@ -2,41 +2,43 @@
 
 {% block content %}
 
-    <div class="heading-1">Upload to {{ cohort.name }}</div>
+    <div class="max-w-lg">
+        <div class="heading-1">Upload to {{ cohort.name }}</div>
 
-    {{ form.media }}
-    <form method="post">
-        {% csrf_token %}
+        {{ form.media }}
+        <form method="post">
+            {% csrf_token %}
 
-        <div class="my-4">
-            {{ form.original_blob.errors }}
-            {{ form.original_blob.label }}
-            {{ form.original_blob }}
-        </div>
+            <div class="my-4">
+                {{ form.original_blob.errors }}
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.original_blob.label }}</label>
+                {{ form.original_blob }}
+            </div>
 
-        <div class="divider"></div>
+            <div class="divider"></div>
 
-        {% for field in form %}
-            {% if field.name != 'original_blob' %}
-                <div class="mb-4">
-                    {{ field.errors }}
-                    {{ field.label }}
-                    {% if field.name == 'age' %}
-                        {{ field }}
-                    {% else %}
-                        <select class="select select-bordered w-full max-w-xs" name="{{ field.name }}">
-                            <option disabled selected>Optional</option>
-                            {% for choice in field.field.choices %}
-                                <option value="{{ choice.0 }}" {% if field.value == choice.0 %}selected="selected"{% endif %}>
-                                    {{ choice.1 }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    {% endif %}
-                </div>
-            {% endif %}
-        {% endfor %}
+            {% for field in form %}
+                {% if field.name != 'original_blob' %}
+                    <div class="mb-4">
+                        {{ field.errors }}
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
+                        {% if field.name == 'age' %}
+                            <input type="number" name="{{ field.name }}" value="{{ field.value|default:'' }}" class="input input-bordered w-full">
+                        {% else %}
+                            <select class="select select-bordered w-full" name="{{ field.name }}">
+                                <option disabled selected>Optional</option>
+                                {% for choice in field.field.choices %}
+                                    <option value="{{ choice.0 }}" {% if field.value == choice.0 %}selected="selected"{% endif %}>
+                                        {{ choice.1 }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
 
-        <button type="submit" class="btn btn-primary">Upload</button>
-    </form>
+            <button type="submit" class="btn btn-primary w-full sm:w-auto">Upload</button>
+        </form>
+    </div>
 {% endblock %}
