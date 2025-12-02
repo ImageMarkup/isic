@@ -730,14 +730,14 @@ wheels = [
 
 [[package]]
 name = "django-resonant-settings"
-version = "0.43.0"
+version = "0.41.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django-environ" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cc/53/ea5e3bda1cdade97bcab5e208ee4cc9c338cfe021961b861ac71bc52cf61/django_resonant_settings-0.43.0.tar.gz", hash = "sha256:2a4cd9179c9b24a2c96afe3cb9bf90b26c20d6b2dab50d532867d85d9875b906", size = 18095, upload-time = "2025-12-01T20:00:31.552Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ee/19/4fa035cec41b5c7ceb1348f5aec7692ec6a71b0a1d79cec7746aa2e1926a/django_resonant_settings-0.41.0.tar.gz", hash = "sha256:1324c12d33329a36a198c500695434db57206ac75ee63fa8da35d390831bc8de", size = 17654, upload-time = "2025-10-16T20:11:42.172Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7f/30/cabcb03d269119df36b7f460ede9a4026c69a0ea1afddbc51c5f9321701b/django_resonant_settings-0.43.0-py3-none-any.whl", hash = "sha256:63d7eb64524de1f7d9034b1cb4d92e841f2f7f126fe654756a62d8704c93576b", size = 24733, upload-time = "2025-12-01T20:00:30.774Z" },
+    { url = "https://files.pythonhosted.org/packages/38/d3/ac3e2ffd10139f3f209acafc1f8dd7b9d177c1b7b26b71cdd60e2f36020e/django_resonant_settings-0.41.0-py3-none-any.whl", hash = "sha256:10be63da455eaaa67a34b057dabe9f15b380917c945cb8c33f929ad1afde2b47", size = 24123, upload-time = "2025-10-16T20:11:41.112Z" },
 ]
 
 [package.optional-dependencies]
