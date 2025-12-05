@@ -13,7 +13,6 @@
         "ghcr.io/robbert229/devcontainer-features/postgresql-client:1": {
             "version": 17
         },
-        "ghcr.io/devcontainers/features/git-lfs:1": {},
         "ghcr.io/nils-geistmann/devcontainers-features/zsh:0": {},
         "ghcr.io/devcontainers-extra/features/fish-apt-get:1": {},
         "ghcr.io/devcontainers-extra/features/heroku-cli:1.0.5": {},

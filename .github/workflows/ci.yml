@@ -70,8 +70,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-        with:
-          lfs: true
       - name: Install uv
         uses: astral-sh/setup-uv@v7
       - name: Run tests
@@ -88,8 +86,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
-        with:
-          lfs: true
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
