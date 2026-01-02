@@ -1,0 +1,70 @@
+{% extends 'core/base.html' %}
+{% load display %}
+
+{% block content %}
+  <div class="space-y-8">
+    <div class="max-w-2xl">
+      <div class="heading-1">
+        Add Annotators to {{ study.name }}
+      </div>
+    </div>
+
+    {% if existing_annotators %}
+      <div>
+        <h2 class="text-lg font-medium text-gray-900 mb-4">Current Annotators</h2>
+        <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg max-w-lg">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Annotator
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for annotator in existing_annotators %}
+                <tr class="{% cycle 'bg-white' 'bg-gray-50' %}">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {% with user_slug=annotator.profile.hash_id %}
+                      {% if show_real_names %}
+                        {{ annotator|user_nicename }} (User {{ user_slug }})
+                      {% else %}
+                        User {{ user_slug }}
+                      {% endif %}
+                    {% endwith %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% else %}
+      <p class="text-gray-500">No annotators have been added to this study yet.</p>
+    {% endif %}
+
+    <form class="space-y-6" method="post">
+      {% csrf_token %}
+
+      {{ form.non_field_errors }}
+
+      <div class="max-w-lg">
+        <label for="{{ form.annotators.html_name }}" class="block text-sm font-medium text-gray-700">
+          Add New Annotators
+        </label>
+        <div class="mt-1">
+          <textarea id="{{ form.annotators.html_name }}" name="{{ form.annotators.html_name }}" rows="5" class="border outline-none shadow-sm p-4 block w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md" placeholder="user@example.com&#10;ABC12&#10;another@example.com"></textarea>
+          <p class="mt-2 text-sm text-gray-500">{{ form.annotators.help_text }}</p>
+          {{ form.annotators.errors }}
+        </div>
+      </div>
+
+      <div class="flex justify-end max-w-lg">
+        <a href="{% url 'study-detail' study.pk %}" class="btn btn-secondary mr-3">Cancel</a>
+        <button type="submit" class="btn btn-primary">
+          Add Annotators
+        </button>
+      </div>
+    </form>
+  </div>
+{% endblock %}
