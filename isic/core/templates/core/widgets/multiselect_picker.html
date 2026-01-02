@@ -1,0 +1,72 @@
+<script>
+    function multiselectPicker(valueScriptId, choicesScriptId) {
+        const initialValue = JSON.parse(document.getElementById(valueScriptId).textContent) || [];
+        const choices = JSON.parse(document.getElementById(choicesScriptId).textContent);
+        return {
+            search: '',
+            selected: initialValue.map(String),
+            choices: choices,
+            get filteredChoices() {
+                const terms = this.search.toLowerCase().split(' ').filter(t => t.length > 0);
+                if (terms.length === 0) {
+                    return this.choices;
+                }
+                return this.choices.filter(c => terms.every(t => c.text.toLowerCase().includes(t)));
+            },
+            selectAllVisible() {
+                this.filteredChoices.forEach(c => {
+                    if (!this.selected.includes(String(c.pk))) {
+                        this.selected.push(String(c.pk));
+                    }
+                });
+            },
+            clearAll() {
+                this.selected = [];
+            },
+            isSelected(pk) {
+                return this.selected.includes(String(pk));
+            },
+            toggle(pk) {
+                const pkStr = String(pk);
+                const idx = this.selected.indexOf(pkStr);
+                if (idx === -1) {
+                    this.selected.push(pkStr);
+                } else {
+                    this.selected.splice(idx, 1);
+                }
+            }
+        };
+    }
+</script>
+
+{{ widget.value|default_if_none:''|json_script:widget_value_id }}
+{{ choice_list|json_script:choice_list_id }}
+
+<div x-data="multiselectPicker('{{ widget_value_id }}', '{{ choice_list_id }}')" class="multiselect-picker">
+    <div class="mb-2">
+        <input type="text" x-model="search" placeholder="Search options..." autocomplete="off" class="input input-bordered w-full" />
+    </div>
+
+    <div class="flex gap-2 mb-2">
+        <button type="button" @click="selectAllVisible()" class="btn btn-xs btn-outline">Select All Visible</button>
+        <button type="button" @click="clearAll()" class="btn btn-xs btn-outline">Clear All</button>
+    </div>
+
+    <div class="multiselect-list border rounded-md p-2 max-h-64 overflow-y-auto">
+        <template x-for="choice in filteredChoices" :key="choice.pk">
+            <label class="multiselect-item flex items-center gap-2 p-1 hover:bg-base-200 rounded cursor-pointer">
+                <input type="checkbox"
+                       name="{{ widget.name }}"
+                       :value="choice.pk"
+                       :checked="isSelected(choice.pk)"
+                       @change="toggle(choice.pk)"
+                       class="checkbox checkbox-sm">
+                <span class="multiselect-text" x-text="choice.text"></span>
+            </label>
+        </template>
+    </div>
+
+    <div class="text-sm text-gray-500 mt-1">
+        <span x-text="selected.length"></span> selected
+    </div>
+</div>

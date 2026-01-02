@@ -36,6 +36,7 @@ def test_create_study(
                 "custom-TOTAL_FORMS": 1,
                 "custom-MAX_NUM_FORMS": "",
                 "custom-0-prompt": "A Custom Question",
+                "custom-0-question_type": "select",
                 "custom-0-choices": "choice1\nchoice2",
                 "custom-0-required": True,
             },

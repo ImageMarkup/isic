@@ -3,7 +3,8 @@ from django.utils import timezone
 import pytest
 
 from isic.factories import UserFactory
-from isic.studies.models import Question
+from isic.studies.models import Question, Response
+from isic.studies.models.question_choice import QuestionChoice
 from isic.studies.tests.factories import (
     AnnotationFactory,
     QuestionFactory,
@@ -90,3 +91,53 @@ def test_study_add_annotators(client, django_capture_on_commit_callbacks, image_
     assert r.status_code == 302
 
     assert study.tasks.filter(annotator=new_user).exists()
+
+
+@pytest.mark.django_db
+def test_multiselect_question_response_and_export(staff_client) -> None:
+    question = QuestionFactory.create(
+        type=Question.QuestionType.MULTISELECT,
+        choices=[],
+    )
+    choice1 = QuestionChoice.objects.create(question=question, text="Option A")
+    QuestionChoice.objects.create(question=question, text="Option B")
+    choice3 = QuestionChoice.objects.create(question=question, text="Option C")
+
+    study = StudyFactory.create(public=False, questions=[question])
+    annotation = AnnotationFactory.create(study=study)
+
+    Response.objects.create(
+        annotation=annotation,
+        question=question,
+        value={"choices": [choice1.pk, choice3.pk]},
+    )
+
+    r = staff_client.get(reverse("study-download-responses", args=[study.pk]))
+    assert r.status_code == 200
+    lines = r.content.decode().splitlines()
+    assert len(lines) == 2
+    assert "Option A|Option C" in lines[1]
+
+
+@pytest.mark.django_db
+def test_multiselect_question_empty_response(staff_client) -> None:
+    question = QuestionFactory.create(
+        type=Question.QuestionType.MULTISELECT,
+        choices=[],
+    )
+    QuestionChoice.objects.create(question=question, text="Option A")
+
+    study = StudyFactory.create(public=False, questions=[question])
+    annotation = AnnotationFactory.create(study=study)
+
+    Response.objects.create(
+        annotation=annotation,
+        question=question,
+        value={"choices": []},
+    )
+
+    r = staff_client.get(reverse("study-download-responses", args=[study.pk]))
+    assert r.status_code == 200
+    lines = r.content.decode().splitlines()
+    assert len(lines) == 2
+    assert lines[1].endswith(",")

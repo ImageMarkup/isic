@@ -17,6 +17,8 @@ from .question_choice import QuestionChoice
 
 class ResponseQuerySet(models.QuerySet):
     def for_display(self) -> Generator[dict[str, Any]]:
+        choice_text_cache: dict[int, str] = {}
+
         for response in (
             self.annotate(
                 value_answer=Cast(F("value"), CharField()),
@@ -27,6 +29,7 @@ class ResponseQuerySet(models.QuerySet):
                 annotator=F("annotation__annotator__profile__hash_id"),
                 annotation_duration=F("annotation__created") - F("annotation__start_time"),
                 question_prompt=F("question__prompt"),
+                question_type=F("question__type"),
                 answer=Case(
                     When(
                         question__type__in=[
@@ -47,7 +50,9 @@ class ResponseQuerySet(models.QuerySet):
                 "annotator",
                 "annotation_duration",
                 "question_prompt",
+                "question_type",
                 "answer",
+                "value",
             )
             .iterator()
         ):
@@ -58,6 +63,19 @@ class ResponseQuerySet(models.QuerySet):
                 # 2 days, H:M:S.ms
                 annotation_duration = response["annotation_duration"].total_seconds()
 
+            answer = response["answer"]
+            if response["question_type"] == Question.QuestionType.MULTISELECT:
+                value = response["value"]
+                if value and "choices" in value:
+                    choice_pks = value["choices"]
+                    missing_pks = [pk for pk in choice_pks if pk not in choice_text_cache]
+                    if missing_pks:
+                        for choice in QuestionChoice.objects.filter(pk__in=missing_pks):
+                            choice_text_cache[choice.pk] = choice.text
+                    answer = "|".join(choice_text_cache[pk] for pk in choice_pks)
+                else:
+                    answer = ""
+
             yield {
                 "study_id": response["study_id"],
                 "study": response["study"],
@@ -65,7 +83,8 @@ class ResponseQuerySet(models.QuerySet):
                 "annotator": response["annotator"],
                 "annotation_duration": annotation_duration,
                 "question": response["question_prompt"],
-                "answer": response["answer"],
+                "question_type": response["question_type"],
+                "answer": answer,
             }
 
 
