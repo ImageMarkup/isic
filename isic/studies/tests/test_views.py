@@ -2,6 +2,7 @@ from django.urls.base import reverse
 from django.utils import timezone
 import pytest
 
+from isic.factories import UserFactory
 from isic.studies.models import Question
 from isic.studies.tests.factories import (
     AnnotationFactory,
@@ -71,3 +72,21 @@ def test_study_task_detail_post_number_question(client, input_value, expected_va
     assert response.choice is None
     assert response.value == expected_value
     assert type(response.value) is type(expected_value)
+
+
+@pytest.mark.django_db
+def test_study_add_annotators(client, django_capture_on_commit_callbacks, image_factory):
+    study_task = StudyTaskFactory.create()
+    study = study_task.study
+    study.collection.images.add(image_factory())
+    new_user = UserFactory.create()
+
+    client.force_login(study.creator)
+    with django_capture_on_commit_callbacks(execute=True):
+        r = client.post(
+            reverse("study-add-annotators", args=[study.pk]),
+            {"annotators": new_user.email},
+        )
+    assert r.status_code == 302
+
+    assert study.tasks.filter(annotator=new_user).exists()

@@ -8,6 +8,26 @@ from django.db.models.query_utils import Q
 from isic.studies.models import Question, Response, Study
 
 
+def parse_user_identifiers(value: str) -> list[int]:
+    values = {e.strip() for e in value.splitlines() if e.strip()}
+    user_pks = set()
+
+    for email_or_hash_id in values:
+        user = User.objects.filter(
+            Q(is_active=True)
+            & (
+                Q(profile__hash_id__iexact=email_or_hash_id)
+                | Q(emailaddress__email__iexact=email_or_hash_id)
+            )
+        ).first()
+        if not user:
+            raise ValidationError(f"Can't find any user with the identifier {email_or_hash_id}.")
+
+        user_pks.add(user.pk)
+
+    return list(user_pks)
+
+
 class StudyTaskForm(forms.Form):
     """
     A dynamically generated form for a StudyTask.
@@ -91,23 +111,7 @@ class BaseStudyForm(forms.Form):
     annotators = forms.CharField()
 
     def clean_annotators(self) -> list[int]:
-        value: str = self.cleaned_data["annotators"]
-        values = {e.strip() for e in value.splitlines()}
-        user_pks = set()
-
-        for email_or_hash_id in values:
-            user = User.objects.filter(
-                Q(is_active=True) & Q(profile__hash_id__iexact=email_or_hash_id)
-                | Q(emailaddress__email__iexact=email_or_hash_id)
-            ).first()
-            if not user:
-                raise ValidationError(
-                    f"Can't find any user with the identifier {email_or_hash_id}."
-                )
-
-            user_pks.add(user.pk)
-
-        return list(user_pks)
+        return parse_user_identifiers(self.cleaned_data["annotators"])
 
     def clean_collection(self) -> bool:
         value = self.cleaned_data["collection"]
@@ -140,3 +144,13 @@ class StudyEditForm(forms.Form):
 
     name = fields["name"]
     description = fields["description"]
+
+
+class StudyAddAnnotatorsForm(forms.Form):
+    annotators = forms.CharField(
+        widget=forms.Textarea(attrs={"rows": 5}),
+        help_text="A list of email addresses or hash IDs (one per line) of the annotators to add.",
+    )
+
+    def clean_annotators(self) -> list[int]:
+        return parse_user_identifiers(self.cleaned_data["annotators"])
