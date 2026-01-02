@@ -27,6 +27,7 @@ from isic.studies.forms import (
     BaseStudyForm,
     CustomQuestionForm,
     OfficialQuestionForm,
+    StudyAddAnnotatorsForm,
     StudyEditForm,
     StudyTaskForm,
 )
@@ -176,6 +177,51 @@ def study_edit(request, pk):
             return HttpResponseRedirect(reverse("study-detail", args=[study.pk]))
 
     return render(request, "studies/study_edit.html", {"form": form, "study": study})
+
+
+@needs_object_permission("studies.edit_study", (Study, "pk", "pk"))
+def study_add_annotators(request, pk):
+    study = get_object_or_404(Study, pk=pk)
+
+    existing_annotators = (
+        User.objects.filter(pk__in=study.tasks.values("annotator").distinct())
+        .select_related("profile")
+        .order_by("last_name", "first_name")
+    )
+    existing_user_pks = set(existing_annotators.values_list("pk", flat=True))
+
+    show_real_names = request.user.is_staff or request.user in study.owners.all()
+
+    if request.method == "POST":
+        form = StudyAddAnnotatorsForm(request.POST)
+        if form.is_valid():
+            additional_user_pks = form.cleaned_data["annotators"]
+            new_user_pks = [pk for pk in additional_user_pks if pk not in existing_user_pks]
+
+            if new_user_pks:
+                populate_study_tasks_task.delay_on_commit(study.pk, new_user_pks)
+                messages.add_message(
+                    request, messages.INFO, "Adding annotator(s), this may take a few minutes."
+                )
+            else:
+                messages.add_message(
+                    request, messages.WARNING, "All specified users are already annotators."
+                )
+
+            return HttpResponseRedirect(reverse("study-detail", args=[study.pk]))
+    else:
+        form = StudyAddAnnotatorsForm()
+
+    return render(
+        request,
+        "studies/study_add_annotators.html",
+        {
+            "study": study,
+            "form": form,
+            "existing_annotators": existing_annotators,
+            "show_real_names": show_real_names,
+        },
+    )
 
 
 @staff_member_required

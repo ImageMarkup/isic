@@ -91,6 +91,7 @@ def test_study_list_objects_permissions_annotator(client):
     "view_name",
     [
         "study-edit",
+        "study-add-annotators",
         "study-detail",
         "study-download-responses",
     ],
@@ -115,6 +116,7 @@ def test_study_view_permissions(view_name, client_, status):
     "view_name",
     [
         "study-edit",
+        "study-add-annotators",
         "study-detail",
         "study-download-responses",
     ],
@@ -134,6 +136,7 @@ def test_study_view_permissions_owner(view_name, client):
     ("view_name", "status"),
     [
         ("study-edit", 403),
+        ("study-add-annotators", 403),
         ("study-detail", 200),
         ("study-download-responses", 403),
     ],
