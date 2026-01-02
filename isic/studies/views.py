@@ -337,12 +337,21 @@ def study_task_detail(request, pk):
                 del form.cleaned_data["start_time"]
 
                 # TODO: markups, one day?
-                for question_pk, choice_pk in form.cleaned_data.items():
-                    if choice_pk == "":  # ignore optional questions
+                for question_pk, response_value in form.cleaned_data.items():
+                    if response_value == "":
                         continue
                     question = form.questions[int(question_pk)]
-                    choices = {x.pk: x for x in question.choices.all()}
-                    annotation.responses.create(question=question, choice=choices[int(choice_pk)])
+                    if question.type == Question.QuestionType.NUMBER:
+                        annotation.responses.create(
+                            question=question,
+                            value=int(response_value)
+                            if float(response_value).is_integer()
+                            else float(response_value),
+                        )
+                    else:
+                        choices = {x.pk: x for x in question.choices.all()}
+                        choice = choices[int(response_value)]
+                        annotation.responses.create(question=question, choice=choice)
 
             return maybe_redirect_to_next_study_task(request, study_task.study)
     else:
