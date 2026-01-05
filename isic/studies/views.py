@@ -131,7 +131,11 @@ def study_create_view(request):
             )
 
         for custom_question in custom_question_formset.cleaned_data:
-            q = Question.objects.create(prompt=custom_question["prompt"], official=False)
+            q = Question.objects.create(
+                prompt=custom_question["prompt"],
+                type=custom_question["question_type"],
+                official=False,
+            )
             for choice in custom_question["choices"]:
                 QuestionChoice.objects.create(question=q, text=choice)
             study.questions.add(q, through_defaults={"required": custom_question["required"]})
@@ -329,7 +333,14 @@ def study_responses_csv(request, pk):
         f'attachment; filename="{slugify(study.name)}_responses_{current_time}.csv"'
     )
 
-    fieldnames = ["image", "annotator", "annotation_duration", "question", "answer"]
+    fieldnames = [
+        "image",
+        "annotator",
+        "annotation_duration",
+        "question",
+        "question_type",
+        "answer",
+    ]
     writer = EscapingDictWriter(http_response, fieldnames)
     writer.writeheader()
     for study_responses_data in study_responses.for_display():
@@ -394,10 +405,16 @@ def study_task_detail(request, pk):
                             if float(response_value).is_integer()
                             else float(response_value),
                         )
+                    elif question.type == Question.QuestionType.MULTISELECT:
+                        choice_pks = [int(pk) for pk in response_value]
+                        annotation.responses.create(
+                            question=question, value={"choices": choice_pks}
+                        )
                     else:
                         choices = {x.pk: x for x in question.choices.all()}
-                        choice = choices[int(response_value)]
-                        annotation.responses.create(question=question, choice=choice)
+                        annotation.responses.create(
+                            question=question, choice=choices[int(response_value)]
+                        )
 
             return maybe_redirect_to_next_study_task(request, study_task.study)
     else:

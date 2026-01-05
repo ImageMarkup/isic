@@ -129,6 +129,13 @@ class OfficialQuestionForm(forms.Form):
 
 class CustomQuestionForm(forms.Form):
     prompt = forms.CharField()
+    question_type = forms.ChoiceField(
+        choices=[
+            (Question.QuestionType.SELECT.value, "Single Select"),
+            (Question.QuestionType.MULTISELECT.value, "Multi Select"),
+        ],
+        initial=Question.QuestionType.SELECT.value,
+    )
     choices = forms.CharField(
         help_text="A list of possible choices, one per line.", widget=forms.Textarea()
     )
