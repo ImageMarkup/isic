@@ -3,21 +3,24 @@ from django.db import models
 from django.db.models.constraints import UniqueConstraint
 from django.db.models.query_utils import Q
 from django.forms.fields import CharField as FormCharField
-from django.forms.fields import ChoiceField
+from django.forms.fields import ChoiceField, MultipleChoiceField
 from django.forms.widgets import RadioSelect
 from django_extensions.db.models import TimeStampedModel
 
-from isic.studies.widgets import DiagnosisPicker
+from isic.studies.widgets import DiagnosisPicker, MultiselectPicker
 
 
 class Question(TimeStampedModel):
     class QuestionType(models.TextChoices):
         SELECT = "select", "Select"
+        MULTISELECT = "multiselect", "Multiselect"
         NUMBER = "number", "Number"
         DIAGNOSIS = "diagnosis", "Diagnosis"
 
     prompt = models.CharField(max_length=400)
-    type = models.CharField(max_length=9, choices=QuestionType.choices, default=QuestionType.SELECT)
+    type = models.CharField(
+        max_length=11, choices=QuestionType.choices, default=QuestionType.SELECT
+    )
     official = models.BooleanField()
     # TODO: maybe add a default field
 
@@ -34,13 +37,20 @@ class Question(TimeStampedModel):
     def __str__(self) -> str:
         return self.prompt
 
-    def to_form_field(self, *, required: bool) -> ChoiceField | FormCharField:
+    def to_form_field(self, *, required: bool) -> ChoiceField | MultipleChoiceField | FormCharField:
         if self.type == self.QuestionType.SELECT:
             return ChoiceField(
                 required=required,
                 choices=[(choice.pk, choice.text) for choice in self.choices.all()],
                 label=self.prompt,
                 widget=RadioSelect,
+            )
+        elif self.type == self.QuestionType.MULTISELECT:
+            return MultipleChoiceField(
+                required=required,
+                choices=[(choice.pk, choice.text) for choice in self.choices.all()],
+                label=self.prompt,
+                widget=MultiselectPicker,
             )
         elif self.type == self.QuestionType.NUMBER:
             # TODO: Use floatfield/intfield
@@ -62,6 +72,11 @@ class Question(TimeStampedModel):
         if self.type == self.QuestionType.DIAGNOSIS:
             return [f"All {self.choices.count()} diagnoses"]
         elif self.type == self.QuestionType.SELECT:
+            return [choice.text for choice in self.choices.all()]
+        elif self.type == self.QuestionType.MULTISELECT:
+            count = self.choices.count()
+            if count > 10:
+                return [f"Select from {count} options"]
             return [choice.text for choice in self.choices.all()]
         elif self.type == self.QuestionType.NUMBER:
             return ["Numeric"]
