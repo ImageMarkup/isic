@@ -2,6 +2,7 @@ from django.urls.base import reverse
 from django.utils import timezone
 import pytest
 
+from isic.core.tests.factories import ImageFactory
 from isic.factories import UserFactory
 from isic.studies.models import Question, Response
 from isic.studies.models.question_choice import QuestionChoice
@@ -141,3 +142,35 @@ def test_multiselect_question_empty_response(staff_client) -> None:
     lines = r.content.decode().splitlines()
     assert len(lines) == 2
     assert lines[1].endswith(",")
+
+
+@pytest.mark.django_db
+def test_study_detail_hides_image_metadata(client):
+    image = ImageFactory.create(public=False, accession__sex="male")
+    study = StudyFactory.create(public=True)
+    study.collection.images.add(image)
+    study_task = StudyTaskFactory.create(study=study, image=image)
+
+    client.force_login(study_task.annotator)
+
+    r = client.get(reverse("study-detail", args=[study.pk]))
+    assert r.status_code == 200
+    content = r.content.decode()
+
+    assert "male" not in content
+
+
+@pytest.mark.django_db
+def test_study_task_detail_hides_image_metadata(client):
+    image = ImageFactory.create(public=False, accession__sex="male")
+    study = StudyFactory.create(public=True)
+    study.collection.images.add(image)
+    study_task = StudyTaskFactory.create(study=study, image=image)
+
+    client.force_login(study_task.annotator)
+
+    r = client.get(reverse("study-task-detail", args=[study_task.pk]))
+    assert r.status_code == 200
+    content = r.content.decode()
+
+    assert "male" not in content
