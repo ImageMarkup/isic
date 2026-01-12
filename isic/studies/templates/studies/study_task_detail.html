@@ -60,7 +60,7 @@
 
         <template x-if="true">
           <div x-show="open">
-            {% include 'core/partials/image_modal.html' with image=study_task.image %}
+            {% include 'core/partials/image_modal.html' with image=study_task.image include_metadata=False %}
           </div>
         </template>
       </div>
