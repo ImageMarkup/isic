@@ -10,8 +10,6 @@
 
 <template x-if="true">
   <div x-show="open">
-    {% block image_modal %}
-      {% include 'core/partials/image_modal.html' with include_metadata=1 %}
-    {% endblock %}
+    {% include 'core/partials/image_modal.html' with include_metadata=include_metadata|default_if_none:1 %}
   </div>
 </template>
