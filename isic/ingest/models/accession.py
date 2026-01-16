@@ -645,8 +645,7 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
         try:
             with self.original_blob.open("rb") as original_blob_stream:
                 blob_mime_type = guess_mime_type(original_blob_stream, self.original_blob_name)
-            blob_major_mime_type = blob_mime_type.partition("/")[0]
-            if blob_major_mime_type != "image":
+            if blob_mime_type.major != "image":
                 raise InvalidBlobError(  # noqa: TRY301
                     f'Blob has a non-image MIME type: "{blob_mime_type}"'
                 )
