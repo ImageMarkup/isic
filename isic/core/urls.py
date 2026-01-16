@@ -8,6 +8,7 @@ from isic.core.views.collections import (
     collection_download_metadata,
     collection_edit,
     collection_list,
+    collection_table,
 )
 from isic.core.views.doi import doi_detail, draft_doi_edit
 from isic.core.views.embargoed import embargoed_dashboard
@@ -36,6 +37,11 @@ urlpatterns = [
         "collections/",
         collection_list,
         name="core/collection-list",
+    ),
+    path(
+        "collections/table/",
+        collection_table,
+        name="core/collection-table",
     ),
     path(
         "collections/<int:pk>/",

@@ -162,3 +162,20 @@ def test_collection_move_images_already_exist_in_collection(collection_factory, 
 
     assert collection_src.images.count() == 0
     assert collection_dest.images.count() == 1
+
+
+@pytest.mark.django_db
+def test_collection_table_staff_only(
+    client, authenticated_client, staff_client, collection_factory
+):
+    collection_factory(name="Test Collection")
+
+    r = client.get(reverse("core/collection-table"))
+    assert r.status_code == 302
+
+    r = authenticated_client.get(reverse("core/collection-table"))
+    assert r.status_code == 302
+
+    r = staff_client.get(reverse("core/collection-table") + "?exclude_empty=0")
+    assert r.status_code == 200
+    assert b"Test Collection" in r.content

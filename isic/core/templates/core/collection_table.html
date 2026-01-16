@@ -1,0 +1,132 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+{% load partials %}
+
+{% partialdef sortable-header %}
+  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+    {% if current_sort == field %}
+      {% if current_order == "asc" %}
+        <a href="{% querystring sort=field order='desc' page=None %}" class="flex items-center gap-1 hover:text-gray-900">
+          {{ label }} <i class="ri-arrow-up-s-line"></i>
+        </a>
+      {% else %}
+        <a href="{% querystring sort=field order='asc' page=None %}" class="flex items-center gap-1 hover:text-gray-900">
+          {{ label }} <i class="ri-arrow-down-s-line"></i>
+        </a>
+      {% endif %}
+    {% else %}
+      <a href="{% querystring sort=field order='asc' page=None %}" class="hover:text-gray-900">
+        {{ label }}
+      </a>
+    {% endif %}
+  </th>
+{% endpartialdef %}
+
+{% block content %}
+  <header class="border-b border-gray-100 flex items-center justify-between py-2 pb-4">
+    <div class="flex-col">
+      <div class="heading-1">Collections ({{ page.paginator.count|intcomma }})</div>
+    </div>
+  </header>
+
+  <div class="my-4 flex gap-6">
+    <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+      <input type="checkbox" id="exclude-magic" {% if exclude_magic %}checked{% endif %} class="rounded border-gray-300">
+      Exclude magic collections
+    </label>
+    <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+      <input type="checkbox" id="exclude-empty" {% if exclude_empty %}checked{% endif %} class="rounded border-gray-300">
+      Exclude empty collections
+    </label>
+    <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+      <input type="checkbox" id="exclude-pinned" {% if exclude_pinned %}checked{% endif %} class="rounded border-gray-300">
+      Exclude pinned collections
+    </label>
+  </div>
+
+  <script>
+    function updateFilter(param, checked) {
+      const url = new URL(window.location.href);
+      url.searchParams.set(param, checked ? '1' : '0');
+      url.searchParams.delete('page');
+      window.location.href = url.href;
+    }
+    document.getElementById('exclude-magic').addEventListener('change', function() {
+      updateFilter('exclude_magic', this.checked);
+    });
+    document.getElementById('exclude-empty').addEventListener('change', function() {
+      updateFilter('exclude_empty', this.checked);
+    });
+    document.getElementById('exclude-pinned').addEventListener('change', function() {
+      updateFilter('exclude_pinned', this.checked);
+    });
+  </script>
+
+  <div class="flex flex-col">
+    <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+      <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+        <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                {% with field="name" label="Name" %}{% partial sortable-header %}{% endwith %}
+                {% with field="public" label="Public" %}{% partial sortable-header %}{% endwith %}
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DOI</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Images</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lesions</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patients</th>
+                {% with field="created" label="Created" %}{% partial sortable-header %}{% endwith %}
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for collection in page %}
+                <tr class="{% cycle 'bg-white' 'bg-gray-50' %}">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <a href="{{ collection.get_absolute_url }}" class="text-indigo-600 hover:text-indigo-900 flex items-center gap-1">
+                      {% if collection.pinned %}<i class="ri-pushpin-2-fill text-gray-400"></i>{% endif %}
+                      {{ collection.name }}
+                    </a>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {% if collection.public %}<i class="ri-check-line text-green-600"></i>{% else %}<i class="ri-close-line text-red-600"></i>{% endif %}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {% if collection.doi %}
+                      <a href="{{ collection.doi.url }}" class="text-indigo-600 hover:text-indigo-900">{{ collection.doi.id }}</a>
+                    {% else %}
+                      -
+                    {% endif %}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {% if collection.counts.image_count is not None %}{{ collection.counts.image_count|intcomma }}{% else %}-{% endif %}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {% if collection.counts.lesion_count is not None %}{{ collection.counts.lesion_count|intcomma }}{% else %}-{% endif %}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {% if collection.counts.patient_count is not None %}{{ collection.counts.patient_count|intcomma }}{% else %}-{% endif %}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{ collection.created|date:"Y-m-d" }}
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                    {{ collection.description|truncatechars:50 }}
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="8" class="px-6 py-4 text-sm text-gray-500 text-center">
+                    No collections found.
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% include 'studies/partials/pagination.html' with page_obj=page %}
+{% endblock %}

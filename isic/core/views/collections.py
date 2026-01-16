@@ -2,12 +2,13 @@ from collections.abc import Iterable
 from datetime import UTC, datetime
 
 from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Count
 from django.db.models.query_utils import Q
-from django.http import StreamingHttpResponse
+from django.http import HttpRequest, HttpResponse, StreamingHttpResponse
 from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
@@ -206,5 +207,47 @@ def collection_detail(request, pk):
             "page": page,
             "image_removal_mode": image_removal_mode,
             "show_shares": request.user.is_staff or request.user == collection.creator,
+        },
+    )
+
+
+@staff_member_required
+def collection_table(request: HttpRequest) -> HttpResponse:
+    collections = Collection.objects.select_related("cohort", "cached_counts", "doi").all()
+
+    exclude_magic = request.GET.get("exclude_magic", "1") == "1"
+    exclude_empty = request.GET.get("exclude_empty", "1") == "1"
+    exclude_pinned = request.GET.get("exclude_pinned", "0") == "1"
+
+    if exclude_magic:
+        collections = collections.regular()
+
+    if exclude_empty:
+        collections = collections.filter(cached_counts__image_count__gt=0)
+
+    if exclude_pinned:
+        collections = collections.filter(pinned=False)
+
+    sort = request.GET.get("sort", "name")
+    order = request.GET.get("order", "asc")
+    valid_sorts: set[str] = {"name", "created", "public"}
+
+    if sort in valid_sorts:
+        order_field = f"-{sort}" if order == "desc" else sort
+        collections = collections.order_by(order_field)
+
+    paginator = Paginator(collections, 50)
+    page = paginator.get_page(request.GET.get("page"))
+
+    return render(
+        request,
+        "core/collection_table.html",
+        {
+            "page": page,
+            "current_sort": sort,
+            "current_order": order,
+            "exclude_magic": exclude_magic,
+            "exclude_empty": exclude_empty,
+            "exclude_pinned": exclude_pinned,
         },
     )
