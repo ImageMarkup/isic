@@ -207,7 +207,10 @@
           }
 
           if (confirm('Are you sure you want to grant additional access to this collection?')) {
-            axios.post('{% url "api:collection_share_to_users" collection.pk %}', {user_ids: $('#user-selection').val().map(function(n) { return parseInt(n) })}, {
+            axios.post('{% url "api:collection_share_to_users" collection.pk %}', {
+              user_ids: $('#user-selection').val().map(function(n) { return parseInt(n) }),
+              notify: document.getElementById('notify-users').checked
+            }, {
               headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': '{{ csrf_token }}'

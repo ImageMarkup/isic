@@ -235,7 +235,7 @@ def test_core_api_collection_remove_from_list(
 
 @pytest.mark.django_db
 def test_core_api_collection_share(
-    staff_client, private_collection, user, django_capture_on_commit_callbacks
+    staff_client, private_collection, user, django_capture_on_commit_callbacks, mailoutbox
 ):
     with django_capture_on_commit_callbacks(execute=True):
         r = staff_client.post(
@@ -247,8 +247,29 @@ def test_core_api_collection_share(
         )
 
     assert r.status_code == 202, r.json()
-
     assert user in private_collection.shares.all()
+    assert len(mailoutbox) == 1
+    assert mailoutbox[0].to == [user.email]
+    assert private_collection.name in mailoutbox[0].body
+
+
+@pytest.mark.django_db
+def test_core_api_collection_share_no_notify(
+    staff_client, private_collection, user, django_capture_on_commit_callbacks, mailoutbox
+):
+    with django_capture_on_commit_callbacks(execute=True):
+        r = staff_client.post(
+            reverse("api:collection_share_to_users", args=[private_collection.pk]),
+            {
+                "user_ids": [user.pk],
+                "notify": False,
+            },
+            content_type="application/json",
+        )
+
+    assert r.status_code == 202, r.json()
+    assert user in private_collection.shares.all()
+    assert len(mailoutbox) == 0
 
 
 @pytest.mark.django_db

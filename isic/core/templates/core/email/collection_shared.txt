@@ -1,0 +1,3 @@
+{{ grantor.first_name }} {{ grantor.last_name }} ({{ grantor.email }}) has shared the collection "{{ collection.name }}" with you.
+
+View the collection: {{ collection_url }}
