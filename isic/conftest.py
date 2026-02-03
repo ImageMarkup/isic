@@ -19,6 +19,8 @@ from isic.core.search import (
 )
 from isic.core.tests.factories import (
     CollectionFactory,
+    DoiFactory,
+    DraftDoiFactory,
     ImageEmbeddingFactory,
     ImageFactory,
     IsicIdFactory,
@@ -33,6 +35,7 @@ from isic.ingest.tests.factories import (
     UnstructuredMetadataFactory,
     ZipUploadFactory,
 )
+from isic.studies.tests.factories import StudyFactory
 
 from .factories import EmailAddressFactory, ProfileFactory, UserFactory
 
@@ -132,3 +135,8 @@ register(IsicIdFactory)
 register(ImageFactory)
 register(ImageEmbeddingFactory)
 register(CollectionFactory)
+register(DoiFactory)
+register(DraftDoiFactory)
+
+# studies factories
+register(StudyFactory)

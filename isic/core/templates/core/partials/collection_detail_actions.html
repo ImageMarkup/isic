@@ -1,3 +1,10 @@
+{% load partials %}
+
+{% partialdef disabled-menu-item %}
+    <span class="text-gray-400 block px-4 py-2 text-sm cursor-not-allowed" role="menuitem"
+          tabindex="-1" title="{{ title }}">{{ label }}</span>
+{% endpartialdef %}
+
 <div class="relative inline-block text-left" x-data="{open: false}">
     <div>
         <button @click.away="open = false" @click="open = !open" type="button"
@@ -26,13 +33,36 @@
                    tabindex="-1" id="menu-item-0">Edit Collection</a>
                 {% if not image_removal_mode %}
                     {% if collection.locked %}
-                        <span class="text-gray-400 block px-4 py-2 text-sm cursor-not-allowed" role="menuitem"
-                              tabindex="-1" title="Cannot remove images from a locked collection">Remove Images</span>
+                        {% with label="Remove Images" title="Cannot remove images from a locked collection" %}
+                            {% partial disabled-menu-item %}
+                        {% endwith %}
                     {% else %}
                         <a href="{% querystring image_removal_mode="1" %}"
                            class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem"
                            tabindex="-1" id="menu-item-0">Remove Images</a>
                     {% endif %}
+                {% endif %}
+
+                {% if collection.studies.exists %}
+                    {% with label="Delete Collection" title="Cannot delete a collection with associated studies" %}
+                        {% partial disabled-menu-item %}
+                    {% endwith %}
+                {% elif collection.doi %}
+                    {% with label="Delete Collection" title="Cannot delete a collection with a DOI" %}
+                        {% partial disabled-menu-item %}
+                    {% endwith %}
+                {% elif collection.draftdoi %}
+                    {% with label="Delete Collection" title="Cannot delete a collection with a draft DOI" %}
+                        {% partial disabled-menu-item %}
+                    {% endwith %}
+                {% elif collection.locked %}
+                    {% with label="Delete Collection" title="Cannot delete a locked collection" %}
+                        {% partial disabled-menu-item %}
+                    {% endwith %}
+                {% else %}
+                    <a href="#" @click.prevent="deleteCollection()"
+                       class="text-red-600 hover:bg-gray-100 hover:text-red-700 block px-4 py-2 text-sm" role="menuitem"
+                       tabindex="-1">Delete Collection</a>
                 {% endif %}
             </div>
         {% endif %}

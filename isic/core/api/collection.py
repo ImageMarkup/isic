@@ -1,6 +1,7 @@
 from typing import Literal
 
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.db.models import Count
 from django.http.response import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -15,6 +16,7 @@ from isic.core.models.collection import Collection
 from isic.core.pagination import CursorPagination
 from isic.core.permissions import get_visible_objects
 from isic.core.serializers import SearchQueryIn
+from isic.core.services.collection import collection_delete
 from isic.core.services.collection.image import (
     collection_add_images_from_isic_ids,
     collection_remove_images_from_isic_ids,
@@ -116,6 +118,26 @@ def collection_autocomplete(
 def collection_detail(request, id: int) -> CollectionOut:
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
     return get_object_or_404(qs.distinct(), id=id)
+
+
+@router.delete(
+    "/{id}/",
+    response={204: None, 400: dict, 403: dict},
+    include_in_schema=False,
+)
+def collection_delete_(request, id: int):
+    qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
+    collection = get_object_or_404(qs.distinct(), id=id)
+
+    if not request.user.has_perm("core.edit_collection", collection):
+        return 403, {"error": "You do not have permission to delete this collection."}
+
+    try:
+        collection_delete(collection=collection)
+    except ValidationError as e:
+        return 400, {"error": e.message}
+
+    return 204, None
 
 
 class CollectionShareIn(Schema):
