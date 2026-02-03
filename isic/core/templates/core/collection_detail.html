@@ -219,6 +219,23 @@
             });
           }
         },
+        deleteCollection() {
+          if (confirm('Are you sure you want to delete this collection? This action cannot be undone.')) {
+            axios.delete('/api/v2/collections/{{ collection.pk }}/', {
+              headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+              }
+            }).then((resp) => {
+              window.location.href = '{% url "core/collection-list" %}';
+            }).catch(function(error) {
+              if (error.response && error.response.data && error.response.data.error) {
+                alert(error.response.data.error);
+              } else {
+                alert('Something went wrong.');
+              }
+            });
+          }
+        },
       };
     }
 
