@@ -142,6 +142,7 @@ def collection_delete_(request, id: int):
 
 class CollectionShareIn(Schema):
     user_ids: list[int]
+    notify: bool = True
 
 
 @router.post("/{id}/share/", response={202: None, 404: dict, 403: dict}, include_in_schema=False)
@@ -153,7 +154,7 @@ def collection_share_to_users(request, id: int, payload: CollectionShareIn):
         return 403, {"error": "You do not have permission to share this collection."}
 
     share_collection_with_users_task.delay_on_commit(
-        collection.id, request.user.id, payload.user_ids
+        collection.id, request.user.id, payload.user_ids, notify=payload.notify
     )
 
     messages.add_message(
