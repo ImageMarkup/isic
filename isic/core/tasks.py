@@ -9,6 +9,7 @@ from celery.utils.log import get_task_logger
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.contrib.sites.models import Site
 from django.core.cache import cache
 from django.core.files.storage import default_storage, storages
 from django.core.mail import send_mail
@@ -54,8 +55,10 @@ def populate_collection_from_search_task(
 
 
 @shared_task(soft_time_limit=1800, time_limit=1810)
-def share_collection_with_users_task(collection_pk: int, grantor_pk: int, user_pks: list[int]):
-    collection = Collection.objects.get(pk=collection_pk)
+def share_collection_with_users_task(
+    collection_pk: int, grantor_pk: int, user_pks: list[int], *, notify: bool = True
+):
+    collection = Collection.objects.select_related("cohort").get(pk=collection_pk)
     grantor = User.objects.get(pk=grantor_pk)
     users = User.objects.filter(pk__in=user_pks)
 
@@ -63,6 +66,26 @@ def share_collection_with_users_task(collection_pk: int, grantor_pk: int, user_p
     # no need to wrap this in a transaction.
     for user in users:
         collection_share(collection=collection, grantor=grantor, grantee=user)
+
+    if notify:
+        site = Site.objects.get_current()
+        collection_url = f"https://{site.domain}{collection.get_absolute_url()}"
+
+        for user in users:
+            message = render_to_string(
+                "core/email/collection_shared.txt",
+                {
+                    "grantor": grantor,
+                    "collection": collection,
+                    "collection_url": collection_url,
+                },
+            )
+            send_mail(
+                f"[{site.name}] Collection shared with you",
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+            )
 
 
 @shared_task(

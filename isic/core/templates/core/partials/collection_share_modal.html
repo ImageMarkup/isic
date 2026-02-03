@@ -10,6 +10,13 @@
       <div class="heading-3" class="mb-2">Share "{{ collection.name }}" with others:</div>
       <select id="user-selection" name="user_ids[]" multiple="multiple"></select>
 
+      <div class="mt-4">
+        <label class="flex items-center gap-2">
+          <input type="checkbox" id="notify-users" checked>
+          <span>Send email notification to selected users</span>
+        </label>
+      </div>
+
       <div x-text="errorMessage"></div>
 
       <button @click="shareCollectionWithUsers()" type="submit" class="mt-2 relative inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
