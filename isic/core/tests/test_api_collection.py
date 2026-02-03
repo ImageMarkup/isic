@@ -2,6 +2,7 @@ from django.urls import reverse
 import pytest
 from pytest_lazy_fixtures import lf
 
+from isic.core.models.collection import Collection
 from isic.core.services.collection.image import collection_add_images
 
 
@@ -273,3 +274,75 @@ def test_core_api_collection_license_breakdown(
             "CC-BY-NC": 0,
         }
     }
+
+
+@pytest.fixture
+def deletable_collection(collection_factory, user):
+    return collection_factory(locked=False, creator=user, public=True)
+
+
+@pytest.fixture
+def other_user_client(user_factory):
+    from django.test.client import Client
+
+    client = Client()
+    client.force_login(user_factory())
+    return client
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("client_", "expected_status"),
+    [
+        (lf("authenticated_client"), 204),
+        (lf("staff_client"), 204),
+        (lf("other_user_client"), 403),
+        (lf("client"), 403),
+    ],
+    ids=["creator", "staff", "other-user", "anonymous"],
+)
+def test_core_api_collection_delete_permissions(client_, deletable_collection, expected_status):
+    r = client_.delete(f"/api/v2/collections/{deletable_collection.pk}/")
+
+    assert r.status_code == expected_status
+    if expected_status == 204:
+        assert not Collection.objects.filter(pk=deletable_collection.pk).exists()
+    else:
+        assert Collection.objects.filter(pk=deletable_collection.pk).exists()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "blocking_fixture",
+    [
+        "locked_collection",
+        "collection_with_study",
+        "collection_with_doi",
+        "collection_with_draft_doi",
+    ],
+)
+def test_core_api_collection_delete_blocked(
+    blocking_fixture,
+    authenticated_client,
+    collection_factory,
+    study_factory,
+    doi_factory,
+    draft_doi_factory,
+    user,
+):
+    if blocking_fixture == "locked_collection":
+        collection = collection_factory(locked=True, creator=user)
+    elif blocking_fixture == "collection_with_study":
+        collection = collection_factory(locked=False, creator=user)
+        study_factory(collection=collection, creator=user)
+    elif blocking_fixture == "collection_with_doi":
+        collection = collection_factory(locked=False, creator=user)
+        doi_factory(collection=collection)
+    elif blocking_fixture == "collection_with_draft_doi":
+        collection = collection_factory(locked=False, creator=user)
+        draft_doi_factory(collection=collection)
+
+    r = authenticated_client.delete(f"/api/v2/collections/{collection.pk}/")
+
+    assert r.status_code == 400
+    assert Collection.objects.filter(pk=collection.pk).exists()

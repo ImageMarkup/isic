@@ -61,6 +61,9 @@ def collection_delete(*, collection: Collection, ignore_lock: bool = False) -> N
     if hasattr(collection, "doi"):
         raise ValidationError("Collections with DOIs cannot be deleted.")
 
+    if hasattr(collection, "draftdoi"):
+        raise ValidationError("Collections with draft DOIs cannot be deleted.")
+
     collection.delete()
 
 
