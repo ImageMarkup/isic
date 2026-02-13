@@ -12,75 +12,9 @@ concurrency:
   cancel-in-progress: true
 jobs:
   test:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: pgvector/pgvector:pg17
-        env:
-          POSTGRES_DB: django
-          POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd "pg_isready --username postgres"
-          --health-start-period 30s
-          --health-start-interval 2s
-        ports:
-          - 5432:5432
-      elasticsearch:
-        image: elasticsearch:7.17.28
-        env:
-          ES_JAVA_OPTS: "-Xms250m -Xmx750m"
-          discovery.type: single-node
-          xpack.security.enabled: "true"
-          ELASTIC_PASSWORD: elastic
-        options: >-
-          --health-cmd "curl --fail --user elastic:elastic http://localhost:9200/"
-          --health-start-period 30s
-          --health-start-interval 2s
-        ports:
-          - 9200:9200
-      rabbitmq:
-        image: rabbitmq:management-alpine
-        options: >-
-          --health-cmd "rabbitmq-diagnostics ping"
-          --health-start-period 30s
-          --health-start-interval 2s
-        ports:
-          - 5672:5672
-      minio:
-        # This image does not require any command arguments (which GitHub Actions don't support)
-        image: bitnamilegacy/minio:latest
-        env:
-          MINIO_ROOT_USER: minioAccessKey
-          MINIO_ROOT_PASSWORD: minioSecretKey
-        options: >-
-          --health-cmd "mc ready local"
-          --health-timeout 1s
-          --health-start-period 30s
-          --health-start-interval 2s
-        ports:
-          - 9000:9000
-      redis:
-        image: redis:alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-start-period 30s
-          --health-start-interval 2s
-        ports:
-          - 6379:6379
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-      - name: Run tests
-        run: |
-          uv run tox
-        env:
-          DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
-          DJANGO_ISIC_ELASTICSEARCH_URL: http://elastic:elastic@localhost:9200
-          DJANGO_CELERY_BROKER_URL: amqp://localhost:5672/
-          DJANGO_MINIO_STORAGE_URL: http://minioAccessKey:minioSecretKey@localhost:9000/django-storage
-          DJANGO_CACHE_URL: redis://localhost:6379/0
+    uses: ./.github/workflows/test.yml
+    with:
+      tox-command: uv run tox
   build-node:
     runs-on: ubuntu-latest
     steps:
