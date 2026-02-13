@@ -128,13 +128,16 @@ def image_detail(request, isic_id):
     if image.has_embedding:
         ctx["sections"]["similar_images"] = "Similar Images"
 
-    if request.user.is_staff:
+    if ctx["other_patient_images_count"]:
         ctx["sections"]["patient_images"] = (
             f"Other Patient Images ({ctx['other_patient_images_count']})"
         )
+    if ctx["other_lesion_images_count"]:
         ctx["sections"]["lesion_images"] = (
             f"Other Lesion Images ({ctx['other_lesion_images_count']})"
         )
+
+    if request.user.is_staff:
         ctx["sections"]["ingestion_details"] = "Ingestion Details"
 
     return render(request, "core/image_detail/base.html", ctx)
