@@ -86,6 +86,7 @@ def test_oauth_api_endpoints(request):
     yield
 
     urlpatterns.remove(urlpattern)
+    NinjaAPI._registry.remove(request.function.__name__)
 
 
 def get_bearer_token(user, oauth_token_factory):
