@@ -1,0 +1,12 @@
+name: nightly-flaky-tests
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+    with:
+      tox-command: uv run tox -e test -- --count 5 --random-order

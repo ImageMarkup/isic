@@ -21,5 +21,8 @@ def test_expiration_time(t_now):
 
 def test_prevent_renaming():
     storages["default"].save("foo", ContentFile(b"test"))
-    with pytest.raises(Exception, match="already exists."):
-        storages["default"].save("foo", ContentFile(b"test"))
+    try:
+        with pytest.raises(Exception, match="already exists."):
+            storages["default"].save("foo", ContentFile(b"test"))
+    finally:
+        storages["default"].delete("foo")
