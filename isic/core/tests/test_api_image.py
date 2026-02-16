@@ -1,3 +1,4 @@
+from django.db import connection
 import pytest
 
 from isic.core.search import add_to_search_index, get_elasticsearch_client
@@ -86,6 +87,15 @@ def test_api_image_search_size(client, searchable_images_with_size):
 def test_api_image_similar_images(client, image_factory, image_embedding_factory):
     image_with_embedding = image_embedding_factory(image__public=True).image
     other_image = image_embedding_factory(image__public=True).image
+
+    # Unlike standard B-tree indexes, pgvector's IVFFlat index scans are approximate and can
+    # return different (incomplete) results compared to a sequential scan. The IVFFlat index is
+    # built on an empty table during migrations, so it has no meaningful centroids. After enough
+    # repeated test runs, autoanalyze can cause the planner to switch to the index scan, which
+    # returns no results. Disabling index scans forces an exact sequential scan so the test can
+    # be run repeatedly without flaking.
+    with connection.cursor() as cursor:
+        cursor.execute("SET enable_indexscan = off")
 
     r = client.get(f"/api/v2/images/{image_with_embedding.isic_id}/similar/")
     assert r.status_code == 200
