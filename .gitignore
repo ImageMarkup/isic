@@ -1,5 +1,9 @@
 isic/core/static/core/dist/
 
+# Local dev customizations
+dev/local-setup.sh
+docker-compose.local.yml
+
 # VSCode settings
 .vscode/settings.json
 
