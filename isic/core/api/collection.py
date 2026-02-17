@@ -157,9 +157,11 @@ def collection_share_to_users(request, id: int, payload: CollectionShareIn):
         collection.id, request.user.id, payload.user_ids, notify=payload.notify
     )
 
-    messages.add_message(
-        request, messages.INFO, "Sharing collection with user(s), this may take a few minutes."
-    )
+    if payload.notify:
+        msg = "Sharing collection with user(s) and notifying them via email, this may take a few minutes."  # noqa: E501
+    else:
+        msg = "Sharing collection with user(s), this may take a few minutes."
+    messages.add_message(request, messages.INFO, msg)
 
     return 202, {}
 
