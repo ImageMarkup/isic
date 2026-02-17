@@ -18,13 +18,15 @@ services:
       UV_PYTHON_INSTALL_DIR: /home/vscode/uv/bin
       UV_LINK_MODE: symlink
       TOX_WORK_DIR: /home/vscode/tox
+      DJANGO_MINIO_STORAGE_MEDIA_URL: "http://localhost:${MINIO_API_PORT:-9000}/django-storage"
+      DJANGO_ISIC_SPONSORED_MEDIA_URL: "http://localhost:${MINIO_API_PORT:-9000}/django-sponsored"
     working_dir: /home/vscode/isic
     env_file: ./dev/.env.docker-compose
     volumes:
       - .:/home/vscode/isic
       - uv_cache:/home/vscode/uv
     ports:
-      - 8000:8000
+      - "${DJANGO_PORT:-8000}:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -60,6 +62,8 @@ services:
       UV_PYTHON_INSTALL_DIR: /home/vscode/uv/bin
       UV_LINK_MODE: symlink
       TOX_WORK_DIR: /home/vscode/tox
+      DJANGO_MINIO_STORAGE_MEDIA_URL: "http://localhost:${MINIO_API_PORT:-9000}/django-storage"
+      DJANGO_ISIC_SPONSORED_MEDIA_URL: "http://localhost:${MINIO_API_PORT:-9000}/django-sponsored"
     working_dir: /home/vscode/isic
     volumes:
       - .:/home/vscode/isic
@@ -97,6 +101,8 @@ services:
       UV_PYTHON_INSTALL_DIR: /home/vscode/uv/bin
       UV_LINK_MODE: symlink
       TOX_WORK_DIR: /home/vscode/tox
+      DJANGO_MINIO_STORAGE_MEDIA_URL: "http://localhost:${MINIO_API_PORT:-9000}/django-storage"
+      DJANGO_ISIC_SPONSORED_MEDIA_URL: "http://localhost:${MINIO_API_PORT:-9000}/django-sponsored"
     working_dir: /home/vscode/isic
     volumes:
       - .:/home/vscode/isic
@@ -120,7 +126,7 @@ services:
     environment:
       ZS_LISTFILE_URL_PREFIX: "http://django/api/v2/zip-download/file-listing/?token="
     ports:
-      - 4008:4008
+      - "${ZIPSTREAMER_PORT:-4008}:4008"
 
 volumes:
   uv_cache:
