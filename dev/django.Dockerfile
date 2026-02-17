@@ -17,6 +17,9 @@ RUN apt-get update && \
 
 USER vscode
 
+# The glob ensures COPY doesn't fail when the file doesn't exist
+COPY dev/local-setup.sh* /tmp/
+RUN if [ -f /tmp/local-setup.sh ]; then bash /tmp/local-setup.sh; fi
 
 RUN mkdir /home/vscode/uv
 
