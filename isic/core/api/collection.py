@@ -109,6 +109,35 @@ def collection_autocomplete(
     return collections[:20]
 
 
+@router.get("/sharing-info/", response={200: list, 403: dict}, include_in_schema=False)
+def collection_sharing_info(request, collection_ids: list[int] = Query(...)):
+    if not request.user.is_staff:
+        return 403, {"error": "You do not have permission to view sharing info."}
+
+    collections = (
+        Collection.objects.filter(id__in=collection_ids)
+        .select_related("creator")
+        .prefetch_related("shares")
+    )
+
+    def display_name(user):
+        return user.get_full_name() or user.email
+
+    return [
+        {
+            "id": collection.id,
+            "name": collection.name,
+            "public": collection.public,
+            "owner": {
+                "id": collection.creator.id,
+                "name": display_name(collection.creator),
+            },
+            "shared_with": [{"id": u.id, "name": display_name(u)} for u in collection.shared_with],
+        }
+        for collection in collections
+    ]
+
+
 @router.get(
     "/{id}/",
     response=CollectionOut,
