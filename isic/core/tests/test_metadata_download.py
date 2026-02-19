@@ -15,6 +15,7 @@ def image_with_metadata(image):
         {
             "age": 32,
             "diagnosis": "Nevus",
+            "anatom_site": "Scalp",
             "patient_id": "supersecretpatientid",
             "lesion_id": "supersecretlesionid",
             "rcm_case_id": "supersecretrcmcaseid",
@@ -34,6 +35,9 @@ def test_image_metadata_csv_rows_correct(image_with_metadata):
     row = next(rows)
     assert row == {
         "age_approx": image_with_metadata.accession.age_approx,
+        "anatom_site_1": "Head and neck",
+        "anatom_site_2": "Head",
+        "anatom_site_3": "Scalp",
         "attribution": image_with_metadata.accession.attribution,
         "copyright_license": image_with_metadata.accession.copyright_license,
         "diagnosis_1": "Benign",
@@ -55,6 +59,9 @@ def test_staff_image_metadata_csv_rows_correct(image_with_metadata):
     assert row == {
         "age_approx": image_with_metadata.accession.age_approx,
         "age": image_with_metadata.accession.age,
+        "anatom_site_1": "Head and neck",
+        "anatom_site_2": "Head",
+        "anatom_site_3": "Scalp",
         "attribution": image_with_metadata.accession.attribution,
         "cohort_id": image_with_metadata.accession.cohort_id,
         "cohort": image_with_metadata.accession.cohort.name,

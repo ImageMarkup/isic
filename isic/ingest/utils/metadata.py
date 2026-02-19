@@ -127,7 +127,15 @@ def validate_internal_consistency(
     return _validate_df_consistency(rows)
 
 
-def validate_archive_consistency(  # noqa: C901
+def _reassemble_hierarchical_fields(values: dict[str, Any]) -> None:
+    """Reassemble level fields (e.g. diagnosis_1..5) into colon-separated parent fields."""
+    for field_name in ["diagnosis", "anatom_site"]:
+        level_fields = [f"{field_name}_{i}" for i in range(1, 6) if f"{field_name}_{i}" in values]
+        if any(values[f] for f in level_fields):
+            values[field_name] = ":".join(values[f] for f in level_fields if values[f])
+
+
+def validate_archive_consistency(
     rows: csv.DictReader, cohort: Cohort
 ) -> tuple[ColumnRowErrors, list[Problem]]:
     """
@@ -173,13 +181,7 @@ def validate_archive_consistency(  # noqa: C901
                     ]
                     del accession_values[f"{field.relation_name}__{field.internal_id_name}"]
 
-            diagnosis_fields = [
-                f"diagnosis_{i}" for i in range(1, 6) if f"diagnosis_{i}" in accession_values
-            ]
-            if any(accession_values[field] for field in diagnosis_fields):
-                accession_values["diagnosis"] = ":".join(
-                    accession_values[field] for field in diagnosis_fields if accession_values[field]
-                )
+            _reassemble_hierarchical_fields(accession_values)
 
             return {k: v for (k, v) in accession_values.items() if v is not None}
 

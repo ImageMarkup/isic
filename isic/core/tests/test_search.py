@@ -30,10 +30,12 @@ def searchable_images(image_factory, _search_index):
         image_factory(
             public=True,
             accession__short_diagnosis="melanoma",
+            accession__short_anatom_site="scalp",
         ),
         image_factory(
             public=False,
             accession__short_diagnosis="nevus",
+            accession__short_anatom_site="forearm",
         ),
     ]
     for image in images:
@@ -193,6 +195,14 @@ def test_core_api_image_search(searchable_images, staff_client):
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == 1, r.json()
 
+    r = staff_client.get("/api/v2/images/search/", {"query": "anatom_site_3:Scalp"})
+    assert r.status_code == 200, r.json()
+    assert r.json()["count"] == 1, r.json()
+
+    r = staff_client.get("/api/v2/images/search/", {"query": 'anatom_site_1:"Upper extremity"'})
+    assert r.status_code == 200, r.json()
+    assert r.json()["count"] == 1, r.json()
+
 
 @pytest.mark.django_db
 def test_core_api_image_search_private_image(private_searchable_image, authenticated_client):
@@ -342,6 +352,16 @@ def test_core_api_image_faceting_structure(searchable_images, client):
     assert r.status_code == 200, r.json()
     assert len(r.json()["diagnosis_3"]["buckets"]) == 2, r.json()
     assert r.json()["diagnosis_3"]["meta"] == {
+        "missing_count": 0,
+        "present_count": 1,
+    }, r.json()
+
+    assert len(r.json()["anatom_site_3"]["buckets"]) == 1, r.json()
+    assert r.json()["anatom_site_3"]["meta"] == {
+        "missing_count": 0,
+        "present_count": 1,
+    }, r.json()
+    assert r.json()["anatom_site_1"]["meta"] == {
         "missing_count": 0,
         "present_count": 1,
     }, r.json()

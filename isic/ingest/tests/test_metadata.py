@@ -398,6 +398,28 @@ def test_accession_update_metadata_iddx(user, imageless_accession) -> None:
 
 
 @pytest.mark.django_db
+def test_accession_update_metadata_anatom_site(user, imageless_accession) -> None:
+    imageless_accession.update_metadata(user, {"anatom_site": "Scalp"})
+    assert imageless_accession.metadata == {
+        "anatom_site_1": "Head and neck",
+        "anatom_site_2": "Head",
+        "anatom_site_3": "Scalp",
+    }
+    assert imageless_accession.metadata_versions.count() == 1
+
+
+@pytest.mark.django_db
+def test_accession_remove_metadata_anatom_site(user, imageless_accession) -> None:
+    imageless_accession.update_metadata(user, {"anatom_site": "Scalp"})
+    imageless_accession.remove_metadata(user, ["anatom_site_3"])
+    assert imageless_accession.metadata == {
+        "anatom_site_1": "Head and neck",
+        "anatom_site_2": "Head",
+    }
+    assert imageless_accession.metadata_versions.count() == 2
+
+
+@pytest.mark.django_db
 def test_accession_update_metadata_idempotent(user, imageless_accession) -> None:
     imageless_accession.update_metadata(user, {"sex": "male", "foo": "bar", "baz": "qux"})
     imageless_accession.update_metadata(user, {"sex": "male", "foo": "bar", "baz": "qux"})
