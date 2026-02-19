@@ -60,6 +60,15 @@
           </label>
         </div>
 
+        <div x-data="sharingInfo()" x-show="entries.length > 0" x-cloak class="text-left my-4 p-4 bg-base-200 rounded-lg">
+          <strong>Publishing to these collections will give access to:</strong>
+          <ul class="list-disc list-inside mt-2">
+            <template x-for="entry in entries" :key="entry">
+              <li x-text="entry"></li>
+            </template>
+          </ul>
+        </div>
+
         <button onclick="return confirm('Are you sure you want to publish {{ num_publishable|intcomma }} images?')" type="submit" class="btn btn-primary">
           Publish {{ num_publishable|intcomma }} accessions
         </button>
@@ -106,6 +115,45 @@
       );
 
       return $container;
+    }
+
+    function sharingInfo() {
+      return {
+        entries: [],
+
+        init() {
+          const select = document.getElementById("additional-collections-selection");
+          select.addEventListener("change", () => {
+            this.fetchSharingInfo();
+          });
+        },
+
+        async fetchSharingInfo() {
+          const select = document.getElementById("additional-collections-selection");
+          const selectedIds = Array.from(select.selectedOptions, opt => opt.value);
+
+          if (selectedIds.length === 0) {
+            this.entries = [];
+            return;
+          }
+
+          const params = new URLSearchParams();
+          selectedIds.forEach(id => params.append("collection_ids", id));
+
+          const { data } = await axios.get(
+            "{% url 'api:collection_sharing_info' %}?" + params.toString()
+          );
+
+          const entries = [];
+          data.forEach(col => {
+            entries.push(col.owner.name + " (owner of " + col.name + ")");
+            col.shared_with.forEach(user => {
+              entries.push(user.name + " (shared with " + col.name + ")");
+            });
+          });
+          this.entries = entries;
+        },
+      };
     }
   </script>
 

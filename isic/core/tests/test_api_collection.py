@@ -273,6 +273,50 @@ def test_core_api_collection_share_no_notify(
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("client_", "expected_status"),
+    [
+        (lf("client"), 403),
+        (lf("authenticated_client"), 403),
+        (lf("staff_client"), 200),
+    ],
+    ids=["anonymous", "authenticated", "staff"],
+)
+def test_core_api_collection_sharing_info_permissions(client_, expected_status, collection_factory):
+    collection = collection_factory(public=True)
+    r = client_.get(
+        reverse("api:collection_sharing_info"),
+        {"collection_ids": [collection.pk]},
+    )
+    assert r.status_code == expected_status
+
+
+@pytest.mark.django_db
+def test_core_api_collection_sharing_info(staff_client, collection_factory, user_factory):
+    owner = user_factory()
+    grantee = user_factory()
+    collection = collection_factory(creator=owner, public=False)
+    collection.shares.add(grantee, through_defaults={"grantor": owner})
+
+    r = staff_client.get(
+        reverse("api:collection_sharing_info"),
+        {"collection_ids": [collection.pk]},
+    )
+
+    assert r.status_code == 200
+    data = r.json()
+    assert len(data) == 1
+    assert data[0]["id"] == collection.pk
+    assert data[0]["name"] == collection.name
+    assert data[0]["public"] is False
+    assert data[0]["owner"]["id"] == owner.pk
+    assert data[0]["owner"]["name"] == owner.get_full_name() or owner.email
+    assert len(data[0]["shared_with"]) == 1
+    assert data[0]["shared_with"][0]["id"] == grantee.pk
+    assert data[0]["shared_with"][0]["name"] == grantee.get_full_name() or grantee.email
+
+
+@pytest.mark.django_db
 @pytest.mark.skip("TODO: fix this test")
 def test_core_api_collection_license_breakdown(
     staff_client, collection_factory, image_factory, user
