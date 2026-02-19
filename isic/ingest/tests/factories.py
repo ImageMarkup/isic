@@ -4,7 +4,7 @@ from typing import Any
 
 import factory
 import factory.django
-from isic_metadata.fields import DiagnosisEnum
+from isic_metadata.fields import AnatomSiteEnum, DiagnosisEnum
 
 from isic.core.models import CopyrightLicense
 from isic.factories import UserFactory
@@ -177,6 +177,24 @@ class AccessionFactory(factory.django.DjangoModelFactory):
             raise ValueError("Unknown additional arguments to short_diagnosis: {kwargs}")
 
         for key, value in DiagnosisEnum.as_dict(diagnosis).items():
+            setattr(self, key, value)
+
+        if create:
+            self.save()
+
+    @factory.post_generation
+    def short_anatom_site(self, create: bool, extracted: Any, **kwargs: Any) -> None:  # noqa: FBT001
+        if extracted is None:
+            return
+
+        if extracted == "scalp":
+            anatom_site = AnatomSiteEnum.head_and_neck_head_scalp
+        elif extracted == "forearm":
+            anatom_site = AnatomSiteEnum.upper_extremity_forearm
+        else:
+            raise ValueError(f"Unknown short_anatom_site: {extracted}")
+
+        for key, value in AnatomSiteEnum.as_dict(anatom_site).items():
             setattr(self, key, value)
 
         if create:
