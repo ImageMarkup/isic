@@ -265,8 +265,6 @@ filterwarnings = [
   # https://github.com/vitalik/django-ninja/issues/1245
   "ignore:Support for class-based `config` is deprecated:pydantic.warnings.PydanticDeprecatedSince20",
   "ignore:csrf argument is deprecated:DeprecationWarning:isic.urls",
-  # In test_publish_copies_default_attribution
-  "ignore:Unclosed file <tempfile\\.SpooledTemporaryFile:ResourceWarning",
   # https://github.com/jazzband/django-widget-tweaks/pull/157
   # Fixed with v1.5.1, but requires Django 5.2
   "ignore:'maxsplit' is passed as positional argument:DeprecationWarning:widget_tweaks.templatetags.widget_tweaks",
