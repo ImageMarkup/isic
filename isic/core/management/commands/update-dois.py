@@ -1,34 +1,52 @@
+from itertools import chain
+
 import djclick as click
 
-from isic.core.models.doi import Doi
+from isic.core.models.doi import Doi, DraftDoi
 from isic.core.services.collection.doi import _datacite_session, collection_build_doi
 from isic.core.tasks import fetch_doi_citations_task, fetch_doi_schema_org_dataset_task
 
 
-@click.command(help="Update all DOIs")
-@click.option("--all", "all_", is_flag=True, help="Update all DOIs")
+@click.command(help="Update DOIs on DataCite")
 @click.argument("doi_ids", nargs=-1)
-def update_dois(all_, doi_ids):
+def update_dois(doi_ids):
     """
-    Update specified DOIs on DataCite or all if --all is specified.
+    Update DOIs (published and draft) on DataCite.
+
+    If specific DOI IDs are provided, only those are updated. Otherwise all DOIs are updated.
 
     This is useful after making changes to the metadata provided on DOI creation
     (see collection_build_doi). After updating the DOIs, the citations and schema.org
     information are re-fetched from DataCite.
     """
-    doi_queryset = Doi.objects.all() if all_ else Doi.objects.filter(id__in=doi_ids)
+    if doi_ids:
+        dois = chain(
+            ((doi, False) for doi in Doi.objects.filter(id__in=doi_ids).iterator()),
+            ((doi, True) for doi in DraftDoi.objects.filter(id__in=doi_ids).iterator()),
+        )
+    else:
+        dois = chain(
+            ((doi, False) for doi in Doi.objects.iterator()),
+            ((doi, True) for doi in DraftDoi.objects.iterator()),
+        )
 
     with _datacite_session() as session:
-        for doi in doi_queryset.iterator():
-            new_doi = collection_build_doi(collection=doi.collection, doi_id=doi.id)
+        for doi, is_draft in dois:
+            doi_type = "DraftDoi" if is_draft else "Doi"
+            new_doi = collection_build_doi(
+                collection=doi.collection,
+                doi_id=doi.id,
+                is_draft=is_draft,
+                related_identifiers=doi.related_identifiers.all(),
+            )
             r = session.put(
                 f"/dois/{doi.id}",
                 json=new_doi,
                 timeout=5,
             )
             if r.status_code != 200:
-                click.echo(f"{doi.id} failed: {r.status_code} {r.text}")
+                click.echo(f"{doi.id} ({doi_type}) failed: {r.status_code} {r.text}")
             else:
-                click.echo(f"{doi.id} succeeded")
-                fetch_doi_citations_task.delay_on_commit(doi.id, "Doi")
-                fetch_doi_schema_org_dataset_task.delay_on_commit(doi.id, "Doi")
+                click.echo(f"{doi.id} ({doi_type}) succeeded")
+                fetch_doi_citations_task.delay_on_commit(doi.id, doi_type)
+                fetch_doi_schema_org_dataset_task.delay_on_commit(doi.id, doi_type)
