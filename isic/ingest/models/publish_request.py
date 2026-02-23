@@ -25,6 +25,7 @@ class PublishRequest(models.Model):
     # the additional collections to which the images will be added, including the magic collection
     collections = models.ManyToManyField("core.Collection")
     public = models.BooleanField(default=False)
+    default_attribution = models.CharField(max_length=200, default="")
 
     def __str__(self) -> str:
         return f"PublishRequest {self.pk}"
