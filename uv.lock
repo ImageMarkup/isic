@@ -1318,7 +1318,7 @@ requires-dist = [
     { name = "google-analytics-data" },
     { name = "gunicorn" },
     { name = "ipython", marker = "extra == 'development'" },
-    { name = "isic-metadata" },
+    { name = "isic-metadata", specifier = ">=4.12.0" },
     { name = "jaro-winkler" },
     { name = "numpy" },
     { name = "orjson" },
@@ -1384,14 +1384,14 @@ type = [
 
 [[package]]
 name = "isic-metadata"
-version = "4.11.0"
+version = "4.12.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/40/38/cb100876a50eb4292222a4206fc3aab435d1ff4a0553405fd1c0cd1d0f55/isic_metadata-4.11.0.tar.gz", hash = "sha256:457e3f3ac43fddade45f6c03bbcd536903162b1112dcaf639db8bbec19ca61ec", size = 28750, upload-time = "2025-11-05T19:31:22.085Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5e/52/aa3b6dd8e313b734b788838c5ebdd7242b59f75b1896820776f9a69523de/isic_metadata-4.12.0.tar.gz", hash = "sha256:ef1e5ac481e82bdb3a16a8f6873e378da998c0d5b01e587089c5503a71b13706", size = 33158, upload-time = "2026-02-23T06:57:31.703Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/82/f5/e7a92af039dcc27b650cf73bbb24a9ba125c10afbe87b8ecf477e5d0ddf4/isic_metadata-4.11.0-py3-none-any.whl", hash = "sha256:45eaaf9d2eb2a453428d07c10a0e84578fead06beb7e6e43e6d3114fd39e8950", size = 27634, upload-time = "2025-11-05T19:31:20.877Z" },
+    { url = "https://files.pythonhosted.org/packages/32/c5/0b8e41cfde6dd9b73d931219c3d0acc6e62d68637ca361c38496e156f577/isic_metadata-4.12.0-py3-none-any.whl", hash = "sha256:4c1a4cff4eb3bff838ee75323da590e14431a04cb3f885763e2e068043fd0658", size = 32866, upload-time = "2026-02-23T06:57:30.848Z" },
 ]
 
 [[package]]
