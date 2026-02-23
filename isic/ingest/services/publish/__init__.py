@@ -59,6 +59,7 @@ def cohort_publish_initialize(
         publish_request = PublishRequest.objects.create(
             creator=publisher,
             public=public,
+            default_attribution=cohort.default_attribution,
         )
         publish_request.accessions.set(cohort.accessions.publishable())
         publish_request.collections.set(collections)
@@ -83,6 +84,7 @@ def cohort_publish(*, publish_request: PublishRequest) -> None:
             public=publish_request.public,
             publisher_pk=publish_request.creator.pk,
             additional_collection_ids=additional_collection_ids,
+            default_attribution=publish_request.default_attribution,
         )
 
 
@@ -92,13 +94,18 @@ def accession_publish(
     public: bool,
     publisher: User,
     additional_collection_ids: Iterable[int] | None = None,
+    default_attribution: str = "",
 ):
     additional_collection_ids = additional_collection_ids or []
 
     # wrapping this inside of a transaction ensures that this function can be retried easily
     with lock_table_for_writes(IsicId):
         if accession.attribution == "":
-            accession.attribution = accession.cohort.default_attribution
+            if not default_attribution:
+                raise ValueError(
+                    "default_attribution must be provided when accession has no attribution"
+                )
+            accession.attribution = default_attribution
             accession.save(update_fields=["attribution"])
 
         image_create(

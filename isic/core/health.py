@@ -196,6 +196,25 @@ def check_iptc_metadata_consistency() -> HealthCheckResult:
     )
 
 
+def check_published_images_have_attribution() -> HealthCheckResult:
+    published_without_attribution = Image.objects.filter(
+        accession__attribution="",
+    ).count()
+
+    passed = published_without_attribution == 0
+    message = (
+        "All published images have attribution"
+        if passed
+        else f"{published_without_attribution} published images missing attribution"
+    )
+
+    return HealthCheckResult(
+        name="published_images_have_attribution",
+        passed=passed,
+        message=message,
+    )
+
+
 def check_embeddings_only_for_public_images() -> HealthCheckResult:
     embeddings_for_private_images = ImageEmbedding.objects.filter(image__public=False).count()
 
@@ -224,6 +243,7 @@ HEALTH_CHECKS = [
     ("every_user_has_profile", check_every_user_has_profile),
     ("collection_image_consistency", check_collection_image_consistency),
     ("iptc_metadata_consistency", check_iptc_metadata_consistency),
+    ("published_images_have_attribution", check_published_images_have_attribution),
     ("embeddings_only_for_public_images", check_embeddings_only_for_public_images),
 ]
 

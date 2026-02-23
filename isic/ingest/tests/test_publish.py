@@ -86,11 +86,13 @@ def test_publish_copies_default_attribution(
     publishable_cohort_for_attributions.save(update_fields=["default_attribution"])
 
     with django_capture_on_commit_callbacks(execute=True):
-        cohort_publish_initialize(
+        publish_request = cohort_publish_initialize(
             cohort=publishable_cohort_for_attributions,
             publisher=user,
             public=True,
         )
+
+    assert publish_request.default_attribution == "default attribution"
 
     published_images = Image.objects.filter(accession__cohort=publishable_cohort_for_attributions)
 
@@ -161,6 +163,8 @@ def test_unembargo_images(user, cohort_factory, django_capture_on_commit_callbac
             original_blob_size=blob_path.stat().st_size,
         )
     accession.refresh_from_db()
+    accession.attribution = "test attribution"
+    accession.save(update_fields=["attribution"])
 
     with django_capture_on_commit_callbacks(execute=True):
         accession_publish(accession=accession, public=True, publisher=user)
@@ -198,6 +202,8 @@ def test_iptc_metadata_embedding(
             original_blob_size=blob_path.stat().st_size,
         )
     accession.refresh_from_db()
+    accession.attribution = "test attribution"
+    accession.save(update_fields=["attribution"])
 
     with django_capture_on_commit_callbacks(execute=True):
         accession_publish(accession=accession, public=False, publisher=user)

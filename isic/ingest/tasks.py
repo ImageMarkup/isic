@@ -186,6 +186,7 @@ def publish_accession_task(
     public: bool,
     publisher_pk: int,
     additional_collection_ids: list[int] | None = None,
+    default_attribution: str = "",
 ):
     accession = Accession.objects.select_related("cohort").get(pk=accession_pk)
     publisher = User.objects.get(pk=publisher_pk)
@@ -194,4 +195,5 @@ def publish_accession_task(
         public=public,
         publisher=publisher,
         additional_collection_ids=additional_collection_ids,
+        default_attribution=default_attribution,
     )
