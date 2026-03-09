@@ -6,6 +6,7 @@
 <div class="modal" :class="{'modal-open': quickfindOpen}" x-show="quickfindOpen">
   <div class="absolute top-6 modal-box w-11/12 max-w-5xl" @click.outside="closeQuickfindModal()">
     <input type="search"
+           id="quickfind-input"
            x-ref="quickfind"
            @input.debounce.250ms="performFind"
            x-model="findText"
