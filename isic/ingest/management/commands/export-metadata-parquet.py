@@ -50,7 +50,11 @@ def export_metadata_parquet():
                 writer.write_table(table)
                 bar.update(len(batch))
 
+        storage = storages["sponsored"]
+        if storage.exists(storage_key):
+            storage.delete(storage_key)
+
         with tmp_path.open("rb") as f:
-            storages["sponsored"].save(storage_key, f)
+            storage.save(storage_key, f)
 
     click.echo(f"Uploaded to storage key: {storage_key}", err=True)
