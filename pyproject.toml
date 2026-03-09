@@ -62,6 +62,8 @@ dependencies = [
   "orjson",
   "django-template-partials",
   "pgvector",
+  "pyarrow",
+  "pydantic-to-pyarrow",
 ]
 
 [project.optional-dependencies]
@@ -132,6 +134,7 @@ explicit = true
 
 [tool.uv.sources]
 gdal = { index = "large_image" }
+pydantic-to-pyarrow = { git = "https://github.com/danlamanna/pydantic-to-pyarrow", rev = "support-computed-fields" }
 
 [tool.ruff]
 line-length = 100
