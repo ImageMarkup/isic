@@ -10,6 +10,7 @@ from isic.core.views.collections import (
     collection_list,
     collection_table,
 )
+from isic.core.views.data_explorer import data_explorer
 from isic.core.views.doi import doi_detail, draft_doi_edit
 from isic.core.views.embargoed import embargoed_dashboard
 from isic.core.views.images import (
@@ -27,6 +28,7 @@ urlpatterns = [
         TemplateView.as_view(template_name="core/robots.txt", content_type="text/plain"),
     ),
     path("staff/users/", staff_list, name="core/staff-list"),
+    path("data-explorer/", data_explorer, name="core/data-explorer"),
     path("staff/embargoed-dashboard/", embargoed_dashboard, name="core/embargoed-dashboard"),
     path(
         "images/",
