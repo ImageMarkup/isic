@@ -116,6 +116,7 @@ test = [
   "pytest-random-order",
   # Enable with "pytest --count=... ..."
   "pytest-repeat",
+  "pytest-playwright",
 ]
 profile = [
   "memray",
@@ -249,6 +250,7 @@ plugins = [
 django_settings_module = "isic.settings.testing"
 
 [tool.pytest.ini_options]
+markers = ["playwright"]
 addopts = [
   # Test utilities should be imported absolutely from the pythonpath,
   # so use the Pytest-recommended "importlib" mode
