@@ -8,7 +8,10 @@ if TYPE_CHECKING:
 
 def get_sentry_performance_sample_rate(sampling_context: SamplingContext) -> float:
     """Determine sample rate of sentry performance."""
-    from isic.core.tasks import populate_collection_from_search_task
+    from isic.core.tasks import (
+        populate_collection_from_isic_ids_task,
+        populate_collection_from_search_task,
+    )
     from isic.ingest.tasks import (
         extract_zip_task,
         publish_cohort_task,
@@ -24,6 +27,7 @@ def get_sentry_performance_sample_rate(sampling_context: SamplingContext) -> flo
             validate_metadata_task,
             update_metadata_task,
             publish_cohort_task,
+            populate_collection_from_isic_ids_task,
             populate_collection_from_search_task,
             populate_study_tasks_task,
         ]

@@ -235,7 +235,11 @@ def test_core_api_collection_remove_from_list(
 
 @pytest.mark.django_db
 def test_core_api_collection_share(
-    staff_client, private_collection, user, django_capture_on_commit_callbacks, mailoutbox
+    staff_client,
+    private_collection,
+    user,
+    django_capture_on_commit_callbacks,
+    mailoutbox,
 ):
     with django_capture_on_commit_callbacks(execute=True):
         r = staff_client.post(
@@ -255,7 +259,11 @@ def test_core_api_collection_share(
 
 @pytest.mark.django_db
 def test_core_api_collection_share_no_notify(
-    staff_client, private_collection, user, django_capture_on_commit_callbacks, mailoutbox
+    staff_client,
+    private_collection,
+    user,
+    django_capture_on_commit_callbacks,
+    mailoutbox,
 ):
     with django_capture_on_commit_callbacks(execute=True):
         r = staff_client.post(
@@ -411,3 +419,46 @@ def test_core_api_collection_delete_blocked(
 
     assert r.status_code == 400
     assert Collection.objects.filter(pk=collection.pk).exists()
+
+
+@pytest.mark.django_db
+def test_core_api_collection_create_from_isic_ids(
+    client,
+    authenticated_client,
+    staff_client,
+    image_factory,
+    user,
+    django_capture_on_commit_callbacks,
+):
+    img1 = image_factory(public=True)
+    img2 = image_factory(public=True)
+
+    payload = {
+        "name": "Test Explorer Collection",
+        "isic_ids": [img1.isic_id, img2.isic_id],
+    }
+
+    r = client.post(
+        "/api/v2/collections/create-from-isic-ids/",
+        payload,
+        content_type="application/json",
+    )
+    assert r.status_code == 401
+
+    with django_capture_on_commit_callbacks(execute=True):
+        r = authenticated_client.post(
+            "/api/v2/collections/create-from-isic-ids/",
+            payload,
+            content_type="application/json",
+        )
+
+    assert r.status_code == 202, r.json()
+    collection = Collection.objects.get(pk=r.json()["collection_id"])
+    assert collection.name == payload["name"]
+    assert collection.creator == user
+    assert not collection.public
+    assert not collection.locked
+    assert set(collection.images.values_list("isic_id", flat=True)) == {
+        img1.isic_id,
+        img2.isic_id,
+    }
