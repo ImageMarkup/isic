@@ -28,7 +28,10 @@ from isic.core.search import bulk_add_to_search_index
 from isic.core.serializers import SearchQueryIn
 from isic.core.services import staff_image_metadata_csv
 from isic.core.services.collection import collection_share
-from isic.core.services.collection.image import collection_add_images
+from isic.core.services.collection.image import (
+    collection_add_images,
+    collection_add_images_from_isic_ids,
+)
 from isic.core.services.snapshot import snapshot_images
 from isic.core.utils.csv import EscapingDictWriter
 from isic.ingest.models.accession import Accession
@@ -52,6 +55,15 @@ def populate_collection_from_search_task(
 
     serializer = SearchQueryIn(**search_params)
     collection_add_images(collection=collection, qs=serializer.to_queryset(user))
+
+
+@shared_task(soft_time_limit=600, time_limit=610)
+def populate_collection_from_isic_ids_task(
+    collection_pk: int, user_pk: int, isic_ids: list[str]
+) -> None:
+    user = User.objects.get(pk=user_pk)
+    collection = Collection.objects.get(pk=collection_pk)
+    collection_add_images_from_isic_ids(user=user, collection=collection, isic_ids=isic_ids)
 
 
 @shared_task(soft_time_limit=1800, time_limit=1810)

@@ -11,17 +11,19 @@ from ninja.pagination import paginate
 from pydantic import field_validator
 from pydantic.types import conlist, constr
 
+from isic.auth import is_authenticated
 from isic.core.constants import ISIC_ID_REGEX
 from isic.core.models.collection import Collection
 from isic.core.pagination import CursorPagination
 from isic.core.permissions import get_visible_objects
 from isic.core.serializers import SearchQueryIn
-from isic.core.services.collection import collection_delete
+from isic.core.services.collection import collection_create, collection_delete
 from isic.core.services.collection.image import (
     collection_add_images_from_isic_ids,
     collection_remove_images_from_isic_ids,
 )
 from isic.core.tasks import (
+    populate_collection_from_isic_ids_task,
     populate_collection_from_search_task,
     share_collection_with_users_task,
 )
@@ -72,6 +74,46 @@ def collection_list(
         queryset = queryset.order_by(sort)
 
     return queryset
+
+
+class CreateCollectionFromIsicIdsIn(Schema):
+    name: str
+    description: str = ""
+    isic_ids: conlist(constr(pattern=ISIC_ID_REGEX), min_length=1)  # type: ignore[valid-type]
+
+    model_config = {"extra": "forbid"}
+
+
+class CreateCollectionFromIsicIdsOut(Schema):
+    collection_id: int
+
+
+@router.post(
+    "/create-from-isic-ids/",
+    response={202: CreateCollectionFromIsicIdsOut},
+    include_in_schema=False,
+    auth=is_authenticated,
+)
+def collection_create_from_isic_ids(request, payload: CreateCollectionFromIsicIdsIn):
+    new_collection = collection_create(
+        creator=request.user,
+        name=payload.name,
+        description=payload.description,
+        public=False,
+        locked=False,
+    )
+
+    populate_collection_from_isic_ids_task.delay_on_commit(
+        new_collection.pk, request.user.pk, payload.isic_ids
+    )
+
+    messages.add_message(
+        request,
+        messages.INFO,
+        f"Created collection '{new_collection.name}'. Adding {len(payload.isic_ids)} images, this may take a few minutes.",  # noqa: E501
+    )
+
+    return 202, {"collection_id": new_collection.pk}
 
 
 # Note that this route needs to be defined before collection_detail to resolve the ambiguity
