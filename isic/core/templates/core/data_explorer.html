@@ -190,14 +190,25 @@
       return params.get('q') || null;
     }
 
-    function updateUrlWithQuery(query) {
+    // Google Tag Manager hooks into history.replaceState and makes its own History API
+    // calls to track page views. During page load, GTM's calls combined with ours can
+    // exceed the browser's rate limit, causing a SecurityError. We catch that specific
+    // error, and callers in hot paths should debounce to reduce the likelihood.
+    function replaceUrlQuery(query) {
       const params = new URLSearchParams(window.location.search);
       params.set('q', query);
       const newUrl = window.location.pathname + '?' + params.toString();
-      window.history.replaceState(null, '', newUrl);
+      try {
+        window.history.replaceState(null, '', newUrl);
+      } catch (e) {
+        if (e.name !== 'SecurityError') {
+          throw e;
+        }
+      }
     }
 
     function dataExplorer() {
+      let updateUrlPending = null;
       const defaultQuery = `SELECT
   diagnosis_1,
   COUNT(*) AS count
@@ -370,7 +381,7 @@ ORDER BY st.total DESC, sd.rank`
         },
 
         async copyLink() {
-          updateUrlWithQuery(this.getQuery());
+          replaceUrlQuery(this.getQuery());
           await navigator.clipboard.writeText(window.location.href);
           this.copyLabel = 'Copied!';
           setTimeout(() => { this.copyLabel = 'Copy Link'; }, 2000);
@@ -469,7 +480,8 @@ ORDER BY st.total DESC, sd.rank`
 
           const queryText = this.getQuery();
           this.lastQueryText = queryText;
-          updateUrlWithQuery(queryText);
+          clearTimeout(updateUrlPending);
+          updateUrlPending = setTimeout(() => replaceUrlQuery(queryText), 100);
 
           const limitedQuery = `SELECT * FROM (${queryText}) sub LIMIT ${MAX_DISPLAY_ROWS + 1}`;
 
