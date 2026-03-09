@@ -1,0 +1,615 @@
+{% extends "core/base.html" %}
+
+{% block title %}Data Explorer | {% endblock %}
+
+{% block head_extra %}
+  <script type="module">
+    import * as duckdb from 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.32.0/+esm';
+    window.duckdb = duckdb;
+    window.dispatchEvent(new Event('duckdb-ready'));
+  </script>
+  <script type="module">
+    import {EditorView, basicSetup} from 'https://esm.sh/codemirror@6.0.1';
+    import {sql, PostgreSQL} from 'https://esm.sh/@codemirror/lang-sql@6';
+    window.cmModules = {EditorView, basicSetup, sql, PostgreSQL};
+    window.dispatchEvent(new Event('codemirror-ready'));
+  </script>
+{% endblock %}
+
+{% block content %}
+  <div x-data="dataExplorer()">
+    <div x-show="!ready && !error" class="flex flex-col items-center justify-center py-24">
+      <span class="loading loading-spinner loading-lg mb-4"></span>
+      <span class="text-gray-500" x-text="status"></span>
+    </div>
+
+    <div x-show="!ready && error" x-cloak class="py-24">
+      <div class="alert alert-error">
+          <pre class="whitespace-pre-wrap text-sm" x-text="error"></pre>
+      </div>
+    </div>
+
+    <div id="data-explorer-main" x-show="ready" x-cloak>
+      <h1 class="text-2xl font-bold mb-2">ISIC Data Explorer</h1>
+      <p class="mb-6 text-gray-600">
+        Query the public
+        <a href="https://www.isic-archive.com" class="link link-primary" target="_blank" rel="noopener">ISIC Archive</a>
+        metadata (<span x-text="Number(totalImages).toLocaleString() + ' images'"></span>, as of <span x-text="snapshotTimestamp"></span>) using
+        <a href="https://duckdb.org/docs/sql/introduction" class="link link-primary" target="_blank" rel="noopener">SQL</a>.
+        Data is loaded as a Parquet file and queried entirely in your browser.
+      </p>
+
+      <div class="mb-2">
+        <label class="label font-semibold">SQL Query</label>
+        <div id="sql-editor" class="border border-gray-300 rounded overflow-hidden"></div>
+      </div>
+
+      <div class="flex items-center gap-4 mb-4">
+        <button
+          id="run-query-btn"
+          @click="runQuery()"
+          :disabled="running"
+          class="btn btn-primary btn-sm"
+        >
+          <span x-show="!running">Run Query</span>
+          <span x-show="running">Running...</span>
+        </button>
+        <button
+          @click="setQuery('SUMMARIZE metadata'); runQuery()"
+          :disabled="running"
+          class="btn btn-outline btn-sm"
+        >
+          Summarize Table
+        </button>
+        <button
+          @click="copyLink()"
+          class="btn btn-ghost btn-sm"
+        >
+          <span x-text="copyLabel">Copy Link</span>
+        </button>
+        <div :class="{'tooltip': !canCreateCollection}" :data-tip="createCollectionTooltip">
+          <button
+            @click="showCreateCollectionModal()"
+            :disabled="!canCreateCollection || running || creatingCollection"
+            class="btn btn-secondary btn-sm"
+          >
+            <span x-show="!creatingCollection">Create Collection</span>
+            <span x-show="creatingCollection">Creating...</span>
+          </button>
+        </div>
+        <span x-show="elapsed" class="text-sm text-gray-500" x-text="elapsed"></span>
+      </div>
+
+      <div x-show="error" class="mb-4">
+        <div id="query-error" class="alert alert-error">
+        <pre class="whitespace-pre-wrap text-sm" x-text="error"></pre>
+        </div>
+      </div>
+
+      <details class="mb-6 bg-base-200 rounded-lg p-2">
+        <summary class="cursor-pointer font-semibold text-sm p-2">Example Queries</summary>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2 p-2">
+          <template x-for="example in examples" :key="example.name">
+            <button
+              class="btn btn-ghost btn-sm justify-start text-left h-auto py-2 normal-case"
+              @click="setQuery(example.sql)"
+            >
+              <span class="font-semibold" x-text="example.name"></span>
+            </button>
+          </template>
+        </div>
+      </details>
+
+      <div x-show="columns.length > 0" class="overflow-x-auto">
+        <div class="text-sm text-gray-500 mb-2">
+          <span x-show="!showingSubset" x-text="rows.length + ' rows returned'"></span>
+          <span x-show="showingSubset" x-text="'Showing ' + rows.length.toLocaleString() + ' of ' + totalQueryRows.toLocaleString() + ' rows'"></span>
+        </div>
+        <div x-show="showingSubset" class="alert alert-warning mb-2 text-sm py-2">
+          <span>Results limited to <span x-text="rows.length"></span> rows. Add a LIMIT clause to your query to control the result size.</span>
+        </div>
+        <table id="query-results" class="table table-xs table-zebra w-full">
+          <thead>
+            <tr>
+              <template x-for="col in columns" :key="col">
+                <th class="text-xs font-bold" x-text="col"></th>
+              </template>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="(row, i) in rows" :key="i">
+              <tr>
+                <template x-for="col in columns" :key="col">
+                  <td class="text-sm font-mono">
+                    <template x-if="col === 'isic_id' && row[col]">
+                      <span class="inline-flex items-center gap-1.5">
+                        <a :href="'/images/' + row[col] + '/'" class="link link-primary" target="_blank" rel="noopener" x-text="row[col]"></a>
+                        <span
+                          class="inline-block"
+                          @mouseenter="showThumbnail($event, row[col])"
+                          @mouseleave="removeThumbnail()"
+                        >
+                          <i class="ri-image-line ml-1 text-gray-400 hover:text-primary cursor-pointer"></i>
+                        </span>
+                      </span>
+                    </template>
+                    <template x-if="col !== 'isic_id' || !row[col]">
+                      <span x-text="row[col] !== null && row[col] !== undefined ? row[col] : ''"></span>
+                    </template>
+                  </td>
+                </template>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <input type="checkbox" id="create-collection-modal" class="modal-toggle" x-ref="createCollectionToggle">
+    <label for="create-collection-modal" class="modal cursor-pointer">
+      <label class="modal-box">
+        <h3 class="font-bold text-lg mb-4">Create Collection</h3>
+        <p class="mb-4 text-sm text-gray-600" x-text="'This will create a collection with ' + collectionImageCount.toLocaleString() + ' images from your query results.'"></p>
+        <div class="form-control mb-4">
+          <label class="label font-semibold">Collection Name</label>
+          <input
+            type="text"
+            x-model="collectionName"
+            class="input input-bordered w-full"
+            placeholder="My collection"
+            @keydown.enter="createCollection()"
+          >
+        </div>
+        <div x-show="createCollectionError" class="alert alert-error mb-4 text-sm">
+            <pre class="whitespace-pre-wrap" x-text="createCollectionError"></pre>
+        </div>
+        <div class="modal-action">
+          <label for="create-collection-modal" class="btn btn-ghost">Cancel</label>
+          <button
+            class="btn btn-primary"
+            :disabled="!collectionName.trim() || creatingCollection"
+            @click="createCollection()"
+          >
+            <span x-show="!creatingCollection">Create</span>
+            <span x-show="creatingCollection">Creating...</span>
+          </button>
+        </div>
+      </label>
+    </label>
+  </div>
+
+  <script>
+    const PARQUET_URL = '{{ parquet_url|escapejs }}';
+    const THUMBNAIL_BASE_URL = '{{ thumbnail_base_url|escapejs }}';
+    const IS_AUTHENTICATED = {{ request.user.is_authenticated|yesno:"true,false" }};
+    const MAX_DISPLAY_ROWS = 1000;
+
+    function getQueryFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('q') || null;
+    }
+
+    function updateUrlWithQuery(query) {
+      const params = new URLSearchParams(window.location.search);
+      params.set('q', query);
+      const newUrl = window.location.pathname + '?' + params.toString();
+      window.history.replaceState(null, '', newUrl);
+    }
+
+    function dataExplorer() {
+      const defaultQuery = `SELECT
+  diagnosis_1,
+  COUNT(*) AS count
+FROM metadata
+GROUP BY diagnosis_1
+ORDER BY count DESC`;
+      const initialQuery = getQueryFromUrl() || defaultQuery;
+
+      return {
+        db: null,
+        conn: null,
+        editor: null,
+        ready: false,
+        running: false,
+        status: 'Initializing...',
+        columns: [],
+        rows: [],
+        totalImages: null,
+        snapshotTimestamp: null,
+        totalQueryRows: 0,
+        error: '',
+        elapsed: '',
+        copyLabel: 'Copy Link',
+        lastQueryText: '',
+        creatingCollection: false,
+        collectionName: '',
+        collectionImageCount: 0,
+        createCollectionError: '',
+        examples: [
+          {
+            name: 'Look up images by ISIC ID',
+            sql: `SELECT
+  isic_id,
+  diagnosis_1,
+  age_approx,
+  sex,
+  anatom_site_general
+FROM metadata
+WHERE isic_id IN ('ISIC_0000000', 'ISIC_0000001', 'ISIC_0000002')`
+          },
+          {
+            name: 'Diagnosis overview',
+            sql: `SELECT
+  diagnosis_1,
+  COUNT(*) AS count
+FROM metadata
+GROUP BY diagnosis_1
+ORDER BY count DESC`
+          },
+          {
+            name: 'Demographics by sex',
+            sql: `SELECT
+  sex,
+  ROUND(AVG(age_approx), 1) AS avg_age,
+  COUNT(*) AS count
+FROM metadata
+GROUP BY sex`
+          },
+          {
+            name: 'Diagnosis by anatomic site',
+            sql: `SELECT
+  anatom_site_general,
+  diagnosis_1,
+  COUNT(*) AS count
+FROM metadata
+GROUP BY 1, 2
+ORDER BY 1, count DESC`
+          },
+          {
+            name: 'Melanoma thickness distribution',
+            sql: `SELECT
+  mel_thick_mm,
+  COUNT(*) AS count
+FROM metadata
+WHERE mel_thick_mm IS NOT NULL
+GROUP BY mel_thick_mm
+ORDER BY mel_thick_mm`
+          },
+          {
+            name: 'Image type breakdown',
+            sql: `SELECT
+  image_type,
+  COUNT(*) AS count
+FROM metadata
+GROUP BY image_type
+ORDER BY count DESC`
+          },
+          {
+            name: 'Fitzpatrick skin type distribution',
+            sql: `SELECT
+  fitzpatrick_skin_type,
+  COUNT(*) AS count
+FROM metadata
+GROUP BY fitzpatrick_skin_type
+ORDER BY fitzpatrick_skin_type`
+          },
+          {
+            name: 'Top 3 diagnoses per anatomic site with demographics',
+            sql: `WITH site_diagnosis AS (
+  SELECT
+    anatom_site_general,
+    diagnosis_1,
+    COUNT(*) AS count,
+    ROUND(AVG(age_approx), 1) AS avg_age,
+    ROUND(100.0 * COUNT(*) FILTER (WHERE sex = 'male') / COUNT(*), 1) AS pct_male,
+    ROW_NUMBER() OVER (
+      PARTITION BY anatom_site_general
+      ORDER BY COUNT(*) DESC
+    ) AS rank
+  FROM metadata
+  WHERE anatom_site_general IS NOT NULL
+    AND diagnosis_1 IS NOT NULL
+  GROUP BY 1, 2
+),
+site_totals AS (
+  SELECT
+    anatom_site_general,
+    SUM(count) AS total
+  FROM site_diagnosis
+  GROUP BY 1
+)
+SELECT
+  sd.anatom_site_general AS site,
+  sd.diagnosis_1 AS diagnosis,
+  sd.count,
+  ROUND(100.0 * sd.count / st.total, 1) AS pct_of_site,
+  sd.avg_age,
+  sd.pct_male
+FROM site_diagnosis sd
+JOIN site_totals st USING (anatom_site_general)
+WHERE sd.rank <= 3
+ORDER BY st.total DESC, sd.rank`
+          }
+        ],
+
+        get showingSubset() {
+          return this.totalQueryRows > this.rows.length;
+        },
+
+        get hasIsicId() {
+          return this.columns.includes('isic_id');
+        },
+
+        get canCreateCollection() {
+          return IS_AUTHENTICATED && this.hasIsicId;
+        },
+
+        get createCollectionTooltip() {
+          if (!IS_AUTHENTICATED) {
+            return 'Log in to create collections';
+          }
+          if (!this.hasIsicId) {
+            return 'Query must include an isic_id column';
+          }
+          return undefined;
+        },
+
+        getQuery() {
+          return this.editor ? this.editor.state.doc.toString() : defaultQuery;
+        },
+
+        setQuery(text) {
+          if (!this.editor) {
+            return;
+          }
+
+          this.editor.dispatch({
+            changes: {from: 0, to: this.editor.state.doc.length, insert: text}
+          });
+        },
+
+        async copyLink() {
+          updateUrlWithQuery(this.getQuery());
+          await navigator.clipboard.writeText(window.location.href);
+          this.copyLabel = 'Copied!';
+          setTimeout(() => { this.copyLabel = 'Copy Link'; }, 2000);
+        },
+
+        initEditor() {
+          const setupEditor = () => {
+            const {EditorView, basicSetup, sql, PostgreSQL} = window.cmModules;
+            this.editor = new EditorView({
+              doc: initialQuery,
+              extensions: [
+                basicSetup,
+                sql({dialect: PostgreSQL}),
+                EditorView.theme({
+                  '&': {fontSize: '14px'},
+                  '.cm-content': {fontFamily: 'monospace'},
+                  '.cm-scroller': {height: '10lh', overflow: 'auto'},
+                }),
+              ],
+              parent: document.getElementById('sql-editor'),
+            });
+          };
+
+          if (window.cmModules) {
+            setupEditor();
+          } else {
+            window.addEventListener('codemirror-ready', () => setupEditor());
+          }
+        },
+
+        init() {
+          this.initEditor();
+
+          const initDuckDB = async () => {
+            try {
+              this.status = 'Initializing DuckDB...';
+              const DUCKDB_CONFIG = await duckdb.selectBundle({
+                eh: {
+                  mainModule: 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.32.0/dist/duckdb-eh.wasm',
+                  mainWorker: 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.32.0/dist/duckdb-browser-eh.worker.js',
+                },
+              });
+              const logger = new duckdb.ConsoleLogger();
+              const workerResponse = await fetch(DUCKDB_CONFIG.mainWorker);
+              const workerBlob = new Blob([await workerResponse.text()], {type: 'application/javascript'});
+              const workerUrl = URL.createObjectURL(workerBlob);
+              const worker = new Worker(workerUrl);
+              URL.revokeObjectURL(workerUrl);
+              this.db = new duckdb.AsyncDuckDB(logger, worker);
+              await this.db.instantiate(DUCKDB_CONFIG.mainModule);
+              this.conn = await this.db.connect();
+
+              await this.conn.query(`
+                CREATE VIEW metadata AS SELECT * FROM read_parquet('${PARQUET_URL}')
+              `);
+
+              const countResult = await this.conn.query('SELECT COUNT(*) AS n FROM metadata');
+              this.totalImages = countResult.toArray()[0].n;
+
+              const tsResult = await this.conn.query(
+                `SELECT value FROM parquet_kv_metadata('${PARQUET_URL}') WHERE key = 'snapshot_timestamp'`
+              );
+              const tsRows = tsResult.toArray();
+              if (tsRows.length > 0) {
+                const raw = tsRows[0].value;
+                const str = raw instanceof Uint8Array ? new TextDecoder().decode(raw) : String(raw);
+                const d = new Date(str);
+                this.snapshotTimestamp = isNaN(d) ? str : d.toLocaleDateString(undefined, {year: 'numeric', month: 'long', day: 'numeric'});
+              }
+
+              this.ready = true;
+              if (getQueryFromUrl()) this.runQuery();
+            } catch (e) {
+              this.error = 'Failed to initialize: ' + e.message;
+            }
+          };
+
+          if (window.duckdb) {
+            initDuckDB();
+          } else {
+            window.addEventListener('duckdb-ready', () => initDuckDB());
+          }
+        },
+
+        async runQuery() {
+          if (!this.ready || this.running) {
+            return;
+          }
+
+          this.error = '';
+          this.columns = [];
+          this.rows = [];
+          this.elapsed = '';
+          this.running = true;
+          this.totalQueryRows = 0;
+
+          const queryText = this.getQuery();
+          this.lastQueryText = queryText;
+          updateUrlWithQuery(queryText);
+
+          const limitedQuery = `SELECT * FROM (${queryText}) sub LIMIT ${MAX_DISPLAY_ROWS + 1}`;
+
+          const start = performance.now();
+          try {
+            const result = await this.conn.query(limitedQuery);
+
+            const fields = result.schema.fields;
+            this.columns = fields.map(f => f.name);
+            const allRows = result.toArray();
+            const overLimit = allRows.length > MAX_DISPLAY_ROWS;
+            const displayRows = overLimit ? allRows.slice(0, MAX_DISPLAY_ROWS) : allRows;
+
+            if (overLimit) {
+              const countResult = await this.conn.query(`SELECT COUNT(*) AS n FROM (${queryText}) sub`);
+              this.totalQueryRows = Number(countResult.toArray()[0].n);
+            } else {
+              this.totalQueryRows = displayRows.length;
+            }
+
+            this.rows = displayRows.map(row => {
+              const obj = {};
+              for (let i = 0; i < this.columns.length; i++) {
+                const col = this.columns[i];
+                let val = row[col];
+                if (val != null) {
+                  const scale = fields[i].type.scale;
+                  if (scale > 0) {
+                    val = Number(val) / Math.pow(10, scale);
+                  } else if (typeof val === 'bigint') {
+                    val = Number(val);
+                  }
+                }
+                obj[col] = val;
+              }
+              return obj;
+            });
+            const elapsedMs = performance.now() - start;
+            this.elapsed = `${(elapsedMs / 1000).toFixed(2)}s | ${this.showingSubset ? this.totalQueryRows.toLocaleString() + ' total' : this.rows.length} rows`;
+          } catch (e) {
+            this.error = e.message;
+            this.elapsed = '';
+          } finally {
+            this.running = false;
+          }
+        },
+
+        async showCreateCollectionModal() {
+          this.createCollectionError = '';
+          this.collectionName = '';
+          this.collectionImageCount = 0;
+          this.$refs.createCollectionToggle.checked = true;
+
+          try {
+            if (!this.showingSubset) {
+              const ids = new Set(this.rows.map(r => r.isic_id).filter(Boolean));
+              this.collectionImageCount = ids.size;
+            } else {
+              const countResult = await this.conn.query(
+                `SELECT COUNT(DISTINCT isic_id) AS n FROM (${this.lastQueryText}) sub`
+              );
+              this.collectionImageCount = Number(countResult.toArray()[0].n);
+            }
+          } catch (e) {
+            this.createCollectionError = 'Failed to count images: ' + e.message;
+          }
+        },
+
+        activePopup: null,
+
+        thumbnailUrl(isicId) {
+          return THUMBNAIL_BASE_URL + isicId + '_thumbnail.jpg';
+        },
+
+        removeThumbnail() {
+          if (this.activePopup) {
+            this.activePopup.remove();
+            this.activePopup = null;
+          }
+        },
+
+        showThumbnail(event, isicId) {
+          this.removeThumbnail();
+
+          const rect = event.currentTarget.getBoundingClientRect();
+          const popup = document.createElement('div');
+          popup.className = 'bg-white border border-gray-300 rounded shadow-lg';
+          popup.style.cssText = `position:fixed;z-index:9999;padding:2px;left:${rect.left}px;top:${rect.top}px;transform:translateY(-100%);`;
+          popup.innerHTML = `<img src="${this.thumbnailUrl(isicId)}" width="256" height="256" class="rounded" />`;
+          document.body.appendChild(popup);
+          this.activePopup = popup;
+        },
+
+        async createCollection() {
+          if (!this.collectionName.trim() || this.creatingCollection)
+          {
+            return;
+          }
+
+          this.creatingCollection = true;
+          this.createCollectionError = '';
+
+          try {
+            const idsResult = await this.conn.query(
+              `SELECT DISTINCT isic_id FROM (${this.lastQueryText}) sub WHERE isic_id IS NOT NULL`
+            );
+            const isicIds = idsResult.toArray().map(r => r.isic_id);
+
+            if (isicIds.length === 0) {
+              this.createCollectionError = 'No images found in query results.';
+              return;
+            }
+
+            const {data} = await axiosSession.post('/api/v2/collections/create-from-isic-ids/', {
+              name: this.collectionName.trim(),
+              isic_ids: isicIds,
+            });
+
+            this.$refs.createCollectionToggle.checked = false;
+            window.location.href = '/collections/' + data.collection_id + '/';
+          } catch (e) {
+            if (e.response && e.response.data) {
+              const errData = e.response.data;
+              if (typeof errData === 'string') {
+                this.createCollectionError = errData;
+              } else if (errData.detail) {
+                this.createCollectionError = typeof errData.detail === 'string'
+                  ? errData.detail
+                  : JSON.stringify(errData.detail);
+              } else {
+                this.createCollectionError = JSON.stringify(errData);
+              }
+            } else {
+              this.createCollectionError = e.message;
+            }
+          } finally {
+            this.creatingCollection = false;
+          }
+        }
+      }
+    }
+  </script>
+{% endblock %}
