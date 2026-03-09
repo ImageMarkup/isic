@@ -60,8 +60,19 @@
           findText: '',
           results: {},
           openQuickfindModal() {
-            this.$nextTick(() => this.$refs.quickfind.focus());
             this.quickfindOpen = true;
+            // x-show defers the style change asynchronously, so focusing
+            // immediately (or via $nextTick) races with it. Observe the
+            // actual DOM mutation to focus once the element is visible.
+            const input = this.$refs.quickfind;
+            const modal = input.closest('[x-show]');
+            const observer = new MutationObserver(() => {
+              if (modal.style.display !== 'none') {
+                input.focus();
+                observer.disconnect();
+              }
+            });
+            observer.observe(modal, {attributes: true, attributeFilter: ['style']});
           },
           closeQuickfindModal() {
             this.quickfindOpen = false;
