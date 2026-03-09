@@ -294,3 +294,7 @@ TEMPLATES[0]["OPTIONS"]["context_processors"] += [  # type: ignore[index]
     "isic.core.context_processors.citation_styles",
 ]
 ISIC_JS_SENTRY = False
+
+ISIC_DATA_EXPLORER_PARQUET_KEY = env.str(
+    "DJANGO_ISIC_DATA_EXPLORER_PARQUET_KEY", default="snapshots/ISIC_metadata.parquet"
+)
