@@ -69,6 +69,7 @@
         </button>
         <div :class="{'tooltip': !canCreateCollection}" :data-tip="createCollectionTooltip">
           <button
+            id="create-collection-btn"
             @click="showCreateCollectionModal()"
             :disabled="!canCreateCollection || running || creatingCollection"
             class="btn btn-secondary btn-sm"
@@ -155,7 +156,9 @@
           <label class="label font-semibold">Collection Name</label>
           <input
             type="text"
+            id="collection-name-input"
             x-model="collectionName"
+            x-ref="collectionNameInput"
             class="input input-bordered w-full"
             placeholder="My collection"
             @keydown.enter="createCollection()"
@@ -534,6 +537,7 @@ ORDER BY st.total DESC, sd.rank`
           this.collectionName = '';
           this.collectionImageCount = 0;
           this.$refs.createCollectionToggle.checked = true;
+          this.$nextTick(() => this.$refs.collectionNameInput.focus());
 
           try {
             if (!this.showingSubset) {

@@ -103,6 +103,27 @@ def staff_client(staff_user):
 
 
 @pytest.fixture
+def authenticated_page(page, live_server, user):
+    from django.conf import settings as django_settings
+
+    client = Client()
+    client.force_login(user)
+    session_key = client.cookies[django_settings.SESSION_COOKIE_NAME].value
+
+    page.goto(live_server.url)
+    page.context.add_cookies(
+        [
+            {
+                "name": django_settings.SESSION_COOKIE_NAME,
+                "value": session_key,
+                "url": live_server.url,
+            }
+        ]
+    )
+    return page
+
+
+@pytest.fixture
 def s3ff_random_field_value(s3ff_field_value_factory):
     # this is largely taken from upstream: https://github.com/kitware-resonant/django-s3-file-field/blob/73be92f74f2047d3a8f132c935008ac6234e3d15/s3_file_field/fixtures.py#L16
     # the difference is we need to run it ourselves because we forbid get_alternative_name.
