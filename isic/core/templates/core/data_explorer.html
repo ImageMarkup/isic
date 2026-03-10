@@ -42,8 +42,8 @@
       </p>
 
       <div class="mb-2">
-        <div class="flex items-center justify-between">
-          <label class="label font-semibold">SQL Query</label>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+          <label class="label font-semibold p-0">SQL Query</label>
           <div class="flex items-center gap-2">
             <button
               @click="setQuery('SUMMARIZE metadata'); runQuery()"
@@ -54,7 +54,7 @@
             </button>
             <select
               id="example-query-select"
-              class="select select-bordered select-xs"
+              class="border border-gray-300 rounded px-2 py-1 text-sm font-semibold min-w-0"
               @change="if ($el.value) { setQuery(examples[$el.value].sql); }"
               x-html="'<option value=\'\'>Example queries...</option>' + examples.map((e, i) => `<option value=\'${i}\'>${e.name}</option>`).join('')"
             ></select>
@@ -63,7 +63,7 @@
         <div id="sql-editor" class="border border-gray-300 rounded overflow-hidden"></div>
       </div>
 
-      <div class="flex flex-wrap items-center gap-2 sm:gap-4 mb-2">
+      <div class="flex flex-wrap items-center gap-2 mb-2">
         <button
           id="run-query-btn"
           @click="runQuery()"
@@ -74,7 +74,7 @@
           <span x-show="running">Running...</span>
         </button>
         <span x-show="elapsed" class="text-sm text-gray-500" x-text="elapsed"></span>
-        <div class="ml-auto flex items-center gap-2">
+        <div class="flex items-center gap-2 sm:ml-auto">
           <button
             @click="copyLink()"
             class="btn btn-ghost btn-sm"
@@ -397,7 +397,7 @@ ORDER BY st.total DESC, sd.rank`
                 EditorView.theme({
                   '&': {fontSize: '14px'},
                   '.cm-content': {fontFamily: 'monospace'},
-                  '.cm-scroller': {height: '10lh', overflow: 'auto'},
+                  '.cm-scroller': {height: window.innerWidth < 640 ? '6lh' : '10lh', overflow: 'auto'},
                 }),
               ],
               parent: document.getElementById('sql-editor'),
