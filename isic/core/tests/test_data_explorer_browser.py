@@ -144,3 +144,25 @@ def test_data_explorer_no_parquet_shows_error(page, live_server):
     page.goto(f"{live_server.url}{reverse('core/data-explorer')}")
 
     expect(page.locator("body")).to_contain_text("Failed to initialize", timeout=30_000)
+
+
+@pytest.mark.playwright
+@pytest.mark.django_db(transaction=True)
+def test_data_explorer_create_collection_focuses_name_input(
+    authenticated_page, live_server, data_explorer_parquet
+):
+    page = authenticated_page
+    page.goto(f"{live_server.url}{reverse('core/data-explorer')}", timeout=30_000)
+    _wait_for_ready(page)
+
+    _run_query(page, "SELECT isic_id FROM metadata")
+    results = page.locator("#query-results")
+    expect(results).to_contain_text("ISIC_", timeout=30_000)
+
+    create_btn = page.locator("#create-collection-btn")
+    expect(create_btn).to_be_enabled(timeout=30_000)
+    create_btn.click()
+
+    name_input = page.locator("#collection-name-input")
+    expect(name_input).to_be_visible()
+    expect(name_input).to_be_focused()
