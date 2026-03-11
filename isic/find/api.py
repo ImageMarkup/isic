@@ -57,7 +57,7 @@ def cohort_autocomplete(request: HttpRequest, query=Query(..., min_length=3)):
 
 
 @autocomplete_router.get("/collection/", response=list[CollectionOut], include_in_schema=False)
-def collection_autocomplete(request: HttpRequest, query=Query(..., min_length=3)):
+def find_collection_autocomplete(request: HttpRequest, query=Query(..., min_length=3)):
     # exclude magic collections
     qs = get_visible_objects(
         request.user,

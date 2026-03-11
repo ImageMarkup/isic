@@ -1,3 +1,4 @@
+from django.urls import reverse
 import pytest
 from pytest_lazy_fixtures import lf
 
@@ -21,7 +22,7 @@ from pytest_lazy_fixtures import lf
     ],
 )
 def test_core_api_contributor_list_permissions(client_, contributors_, num_visible):
-    r = client_.get("/api/v2/contributors/")
+    r = client_.get(reverse("api:contributor_list"))
 
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == num_visible
@@ -52,7 +53,7 @@ def test_core_api_contributor_list_permissions(client_, contributors_, num_visib
     ],
 )
 def test_core_api_contributor_detail_permissions(client_, contributor_, visible):
-    r = client_.get(f"/api/v2/contributors/{contributor_.pk}/")
+    r = client_.get(reverse("api:contributor_detail", kwargs={"id": contributor_.pk}))
 
     if visible:
         assert r.status_code == 200, r.json()
@@ -64,7 +65,7 @@ def test_core_api_contributor_detail_permissions(client_, contributor_, visible)
 @pytest.mark.django_db
 def test_core_api_contributor_create(authenticated_client, user):
     r = authenticated_client.post(
-        "/api/v2/contributors/",
+        reverse("api:contributor_create"),
         data={
             "institution_name": "string",
             "institution_url": "http://google.com",
