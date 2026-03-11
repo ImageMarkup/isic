@@ -66,7 +66,7 @@ class CreateDOIIn(Schema):
     summary="Create a draft DOI for a collection.",
     include_in_schema=False,
 )
-def create_doi(request, payload: CreateDOIIn):
+def doi_create(request, payload: CreateDOIIn):
     collection = get_object_or_404(Collection, pk=payload.collection_id)
 
     if not request.user.has_perm("core.create_doi", collection):
@@ -93,7 +93,7 @@ class UpdateDraftDOIIn(Schema):
     summary="Update a draft DOI.",
     include_in_schema=False,
 )
-def update_draft_doi(request, draft_doi_slug: str, payload: UpdateDraftDOIIn):
+def doi_update_draft(request, draft_doi_slug: str, payload: UpdateDraftDOIIn):
     from isic.core.services.collection import collection_update
 
     draft_doi = get_object_or_404(
@@ -116,7 +116,7 @@ def update_draft_doi(request, draft_doi_slug: str, payload: UpdateDraftDOIIn):
     summary="Publish a draft DOI to make it findable.",
     include_in_schema=False,
 )
-def publish_draft_doi(request, draft_doi_slug: str):
+def doi_publish_draft(request, draft_doi_slug: str):
     with transaction.atomic():
         draft_doi = get_object_or_404(
             DraftDoi.objects.select_for_update().select_related("collection"), slug=draft_doi_slug

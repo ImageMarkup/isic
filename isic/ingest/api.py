@@ -15,8 +15,10 @@ from isic.core.pagination import CursorPagination
 from isic.core.permissions import get_visible_objects
 from isic.ingest.models import Accession, Cohort, Contributor, Lesion, MetadataFile
 from isic.ingest.models.lesion import get_lesion_count_for_user
-from isic.ingest.services.accession import accession_create
-from isic.ingest.services.accession.review import accession_review_bulk_create
+from isic.ingest.services.accession import accession_create as accession_create_service
+from isic.ingest.services.accession.review import (
+    accession_review_bulk_create as accession_review_bulk_create_service,
+)
 from isic.ingest.tasks import update_metadata_task
 
 lesion_router = Router()
@@ -104,7 +106,7 @@ class AccessionOut(ModelSchema):
     summary="Create an Accession.",
     include_in_schema=False,
 )
-def create_accession(request: HttpRequest, payload: AccessionIn):
+def accession_create(request: HttpRequest, payload: AccessionIn):
     cohort = get_object_or_404(Cohort, pk=payload.cohort)
     if not request.user.is_staff and not request.user.has_perm("ingest.add_accession", cohort):
         return 403, {"error": "You do not have permission to add accessions to this cohort."}
@@ -113,7 +115,7 @@ def create_accession(request: HttpRequest, payload: AccessionIn):
     # TODO: how to make django-ninja schema aware of S3PlaceholderFile while using str for input?
     assert isinstance(payload.original_blob, S3PlaceholderFile)  # noqa: S101
 
-    return 201, accession_create(
+    return 201, accession_create_service(
         cohort=cohort,
         creator=request.user,
         original_blob=payload.original_blob,
@@ -132,11 +134,11 @@ class AccessionReview(Schema):
 @accession_router.post(
     "/create-review-bulk/", response={403: dict, 201: dict}, include_in_schema=False
 )
-def create_review_bulk(request: HttpRequest, payload: list[AccessionReview]):
+def accession_review_bulk_create(request: HttpRequest, payload: list[AccessionReview]):
     if not request.user.is_staff:
         return 403, {"error": "Only staff users may bulk create reviews."}
 
-    accession_review_bulk_create(
+    accession_review_bulk_create_service(
         reviewer=request.user,
         accession_ids_values={x.id: x.value for x in payload},
     )
@@ -241,7 +243,7 @@ def contributor_detail(request: HttpRequest, id: int):
     "/", response={201: ContributorOut}, include_in_schema=False, auth=is_authenticated
 )
 @transaction.atomic
-def create_contributor(request: HttpRequest, payload: ContributorIn):
+def contributor_create(request: HttpRequest, payload: ContributorIn):
     contributor = Contributor.objects.create(creator=request.user, **payload.dict())
     contributor.owners.add(request.user)
     return 201, contributor
@@ -257,7 +259,7 @@ class MetadataFileOut(ModelSchema):
 
 
 @metadata_file_router.delete("/{id}/", response={204: None}, include_in_schema=False, auth=is_staff)
-def delete_metadata_file(request: HttpRequest, id: int):
+def metadata_file_delete(request: HttpRequest, id: int):
     metadata_file = get_object_or_404(MetadataFile, id=id)
     metadata_file.delete()
     # Delete the blob from S3, making sure to not reattempt saving the same metadata_file model
@@ -271,7 +273,7 @@ def delete_metadata_file(request: HttpRequest, id: int):
     include_in_schema=False,
     auth=is_staff,
 )
-def update_metadata(request: HttpRequest, id: int):
+def metadata_file_update_metadata(request: HttpRequest, id: int):
     metadata_file = get_object_or_404(MetadataFile, id=id)
     update_metadata_task.delay_on_commit(request.user.pk, metadata_file.pk)
     return 202, None

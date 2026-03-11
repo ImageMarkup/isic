@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Literal
 
+from django.urls import reverse
 from isic_metadata.fields import DiagnosisEnum
 import pytest
 from pytest_lazy_fixtures import lf
@@ -13,7 +14,7 @@ def test_api_lesion_detail(authenticated_client, lesion_factory, image_factory):
     lesion = lesion_factory()
     image_factory(accession__lesion=lesion, public=True)
 
-    resp = authenticated_client.get(f"/api/v2/lesions/{lesion.id}/")
+    resp = authenticated_client.get(reverse("api:lesion_detail", kwargs={"id": lesion.id}))
     assert resp.status_code == 200, resp.json()
 
 
@@ -23,7 +24,7 @@ def test_api_lesion(authenticated_client, lesion_factory, image_factory):
     lesion = lesion_factory()
     image_factory(accession__lesion=lesion)
 
-    resp = authenticated_client.get("/api/v2/lesions/")
+    resp = authenticated_client.get(reverse("api:lesion_list"))
     assert resp.status_code == 200, resp.json()
 
 
@@ -33,7 +34,7 @@ def test_api_lesion_ignores_imageless_lesions(authenticated_client, lesion_facto
     # give access to the lesion to ensure this isn't passing due to lack of permissions
     lesion_factory(cohort__contributor__owners=[user])
 
-    resp = authenticated_client.get("/api/v2/lesions/")
+    resp = authenticated_client.get(reverse("api:lesion_list"))
     assert resp.status_code == 200, resp.json()
     assert len(resp.json()["results"]) == 0
 
@@ -73,7 +74,7 @@ def test_api_lesion_permissions_public(
             accession__cohort__contributor__owners=[other_user],
         )
 
-    resp = client_.get("/api/v2/lesions/")
+    resp = client_.get(reverse("api:lesion_list"))
     assert resp.status_code == 200, resp.json()
     assert len(resp.json()["results"]) == expected_lesion_count
 
@@ -88,7 +89,7 @@ def test_api_lesion_permissions_contributor(
         accession__lesion=lesion, accession__cohort__contributor=contributor, public=False
     )
 
-    resp = authenticated_client.get("/api/v2/lesions/")
+    resp = authenticated_client.get(reverse("api:lesion_list"))
     assert resp.status_code == 200, resp.json()
 
 
@@ -103,7 +104,7 @@ def test_api_lesion_completeness(client, lesion_factory, image_factory):
         public=True,
     )
 
-    resp = client.get("/api/v2/lesions/")
+    resp = client.get(reverse("api:lesion_list"))
     assert resp.status_code == 200, resp.json()
     assert resp.json()["results"][0]["images_count"] == 1
     assert not resp.json()["results"][0]["longitudinally_monitored"]
@@ -122,7 +123,7 @@ def test_api_lesion_completeness(client, lesion_factory, image_factory):
         public=True,
     )
 
-    resp = client.get("/api/v2/lesions/")
+    resp = client.get(reverse("api:lesion_list"))
     assert resp.status_code == 200, resp.json()
     assert resp.json()["results"][0]["images_count"] == 2
     assert resp.json()["results"][0]["longitudinally_monitored"]

@@ -85,7 +85,7 @@ class ImageOut(ModelSchema):
     "/", response=list[ImageOut], summary="Return a list of images.", include_in_schema=True
 )
 @paginate(CursorPagination, ordering=Image._meta.ordering)
-def list_images(request: HttpRequest):
+def image_list(request: HttpRequest):
     qs = get_visible_objects(request.user, "core.view_image", default_qs)
 
     if settings.ISIC_USE_ELASTICSEARCH_COUNTS:
@@ -107,7 +107,7 @@ def list_images(request: HttpRequest):
     include_in_schema=True,
 )
 @paginate(CursorPagination, ordering=Image._meta.ordering)
-def search_images(request: HttpRequest, search: SearchQueryIn = Query(...)):
+def image_search(request: HttpRequest, search: SearchQueryIn = Query(...)):
     try:
         qs = search.to_queryset(user=request.user, qs=default_qs)
         if settings.ISIC_USE_ELASTICSEARCH_COUNTS:
@@ -135,7 +135,7 @@ def search_images(request: HttpRequest, search: SearchQueryIn = Query(...)):
     summary="Get total size of images matching a search query.",
     include_in_schema=False,
 )
-def get_search_size(request: HttpRequest, search: SearchQueryIn = Query(...)):
+def image_search_size(request: HttpRequest, search: SearchQueryIn = Query(...)):
     try:
         es_query = search.to_es_query(request.user)
     except ParseException as e:
@@ -157,8 +157,8 @@ def get_search_size(request: HttpRequest, search: SearchQueryIn = Query(...)):
 
 
 @router.get("/facets/", response=dict, include_in_schema=False)
-def get_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):
-    cache_key = f"get_facets:{search.to_cache_key(request.user)}"
+def image_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):
+    cache_key = f"image_facets:{search.to_cache_key(request.user)}"
     cached_facets = cache.get(cache_key)
 
     set_tag("cached_facets", cached_facets is not None)
@@ -182,7 +182,7 @@ def get_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):
     summary="Retrieve a single image by ISIC ID.",
     include_in_schema=True,
 )
-def retrieve_image(request: HttpRequest, isic_id: str):
+def image_detail(request: HttpRequest, isic_id: str):
     qs = get_visible_objects(request.user, "core.view_image", default_qs)
     return get_object_or_404(qs, isic_id=isic_id)
 
@@ -197,7 +197,7 @@ class SimilarImageOut(ImageOut):
     summary="Find images similar to the specified image.",
     include_in_schema=True,
 )
-def get_similar_images(
+def image_similar(
     request: HttpRequest, isic_id: str, limit: int = Query(10, le=50)
 ) -> list[SimilarImageOut]:
     qs = get_visible_objects(request.user, "core.view_image", default_qs)

@@ -17,7 +17,8 @@ from isic.core.models.collection import Collection
 from isic.core.pagination import CursorPagination
 from isic.core.permissions import get_visible_objects
 from isic.core.serializers import SearchQueryIn
-from isic.core.services.collection import collection_create, collection_delete
+from isic.core.services.collection import collection_create
+from isic.core.services.collection import collection_delete as collection_delete_service
 from isic.core.services.collection.image import (
     collection_add_images_from_isic_ids,
     collection_remove_images_from_isic_ids,
@@ -196,7 +197,7 @@ def collection_detail(request, id: int) -> CollectionOut:
     response={204: None, 400: dict, 403: dict},
     include_in_schema=False,
 )
-def collection_delete_(request, id: int):
+def collection_delete(request, id: int):
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
     collection = get_object_or_404(qs.distinct(), id=id)
 
@@ -204,7 +205,7 @@ def collection_delete_(request, id: int):
         return 403, {"error": "You do not have permission to delete this collection."}
 
     try:
-        collection_delete(collection=collection)
+        collection_delete_service(collection=collection)
     except ValidationError as e:
         return 400, {"error": e.message}
 
@@ -319,7 +320,7 @@ def collection_populate_from_list(request, id, payload: IsicIdList):
 @router.post(
     "/{id}/remove-from-list/", response={200: None, 403: dict, 409: dict}, include_in_schema=False
 )
-def remove_from_list(request, id, payload: IsicIdList):
+def collection_remove_from_list(request, id, payload: IsicIdList):
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
     collection = get_object_or_404(qs.distinct(), id=id)
 
