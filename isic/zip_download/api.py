@@ -65,7 +65,7 @@ class ZipDownloadTokenAuth(APIKeyQuery):
 
 @csrf_exempt
 @zip_router.post("/url/", response=str, include_in_schema=False)
-def create_zip_download_url(request: HttpRequest, payload: SearchQueryIn):
+def zip_download_url(request: HttpRequest, payload: SearchQueryIn):
     url: ParseResult | None = settings.ISIC_ZIP_DOWNLOAD_SERVICE_URL
     if url is None:
         raise ValueError("ISIC_ZIP_DOWNLOAD_SERVICE_URL is not set.")
@@ -100,8 +100,8 @@ def _zip_file_listing_generator(qs: QuerySet[Image], token: str) -> Generator[di
     # initialize files with metadata and attribution files
     domain = Site.objects.get_current().domain
     for endpoint, zip_path in [
-        [reverse("api:zip_file_metadata_file"), "metadata.csv"],
-        [reverse("api:zip_file_attribution_file"), "attribution.txt"],
+        [reverse("api:zip_download_metadata_file"), "metadata.csv"],
+        [reverse("api:zip_download_attribution_file"), "attribution.txt"],
     ]:
         yield {
             "url": f"http://{domain}{endpoint}?token={token}",
@@ -110,7 +110,7 @@ def _zip_file_listing_generator(qs: QuerySet[Image], token: str) -> Generator[di
 
     yield from (
         {
-            "url": f"http://{domain}{reverse('api:zip_file_license_file', args=[license_])}",
+            "url": f"http://{domain}{reverse('api:zip_download_license_file', args=[license_])}",
             "zipPath": f"licenses/{license_}.txt",
         }
         for license_ in (
@@ -121,7 +121,7 @@ def _zip_file_listing_generator(qs: QuerySet[Image], token: str) -> Generator[di
 
 @zip_router.get("/file-listing/", include_in_schema=False, auth=ZipDownloadTokenAuth())
 @transaction.atomic
-def zip_file_listing(
+def zip_download_listing(
     request: NinjaAuthHttpRequest,
 ):
     # use repeatable read to ensure consistent results
@@ -165,7 +165,7 @@ def zip_file_listing(
 
 
 @zip_router.get("/metadata-file/", include_in_schema=False, auth=ZipDownloadTokenAuth())
-def zip_file_metadata_file(request: NinjaAuthHttpRequest):
+def zip_download_metadata_file(request: NinjaAuthHttpRequest):
     user, search = SearchQueryIn.from_token_representation(request.auth)
     qs = search.to_queryset(user, Image.objects.select_related("accession__cohort").distinct())
 
@@ -183,7 +183,7 @@ def zip_file_metadata_file(request: NinjaAuthHttpRequest):
 
 
 @zip_router.get("/attribution-file/", include_in_schema=False, auth=ZipDownloadTokenAuth())
-def zip_file_attribution_file(request: NinjaAuthHttpRequest):
+def zip_download_attribution_file(request: NinjaAuthHttpRequest):
     user, search = SearchQueryIn.from_token_representation(request.auth)
     qs = search.to_queryset(user, Image.objects.select_related("accession__cohort").distinct())
     attributions = get_attributions(qs.values_list("accession__attribution", flat=True))
@@ -191,7 +191,7 @@ def zip_file_attribution_file(request: NinjaAuthHttpRequest):
 
 
 @zip_router.get("/license-file/{license_type}/", include_in_schema=False)
-def zip_file_license_file(request: HttpRequest, license_type: str):
+def zip_download_license_file(request: HttpRequest, license_type: str):
     if license_type not in CopyrightLicense.values:
         raise Http404
 

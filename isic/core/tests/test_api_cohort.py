@@ -1,3 +1,4 @@
+from django.urls import reverse
 import pytest
 from pytest_lazy_fixtures import lf
 
@@ -28,7 +29,7 @@ def cohorts(cohort, other_cohort):
     ],
 )
 def test_core_api_cohort_list_permissions(client_, cohorts_, num_visible):
-    r = client_.get("/api/v2/cohorts/")
+    r = client_.get(reverse("api:cohort_list"))
 
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == num_visible
@@ -55,7 +56,7 @@ def test_core_api_cohort_list_permissions(client_, cohorts_, num_visible):
     ],
 )
 def test_core_api_cohort_detail_permissions(client_, cohort_, visible):
-    r = client_.get(f"/api/v2/cohorts/{cohort_.pk}/")
+    r = client_.get(reverse("api:cohort_detail", kwargs={"id": cohort_.pk}))
 
     if visible:
         assert r.status_code == 200, r.json()

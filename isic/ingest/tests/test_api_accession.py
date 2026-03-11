@@ -1,3 +1,4 @@
+from django.urls import reverse
 import pytest
 
 from isic.ingest.models.accession import Accession
@@ -18,7 +19,7 @@ def test_api_accession_create(authenticated_client, user, cohort_factory, s3ff_r
     cohort = cohort_factory(contributor__owners=[user])
 
     resp = authenticated_client.post(
-        "/api/v2/accessions/",
+        reverse("api:accession_create"),
         data={"cohort": cohort.pk, "original_blob": s3ff_random_field_value},
         content_type="application/json",
     )
@@ -34,7 +35,7 @@ def test_api_accession_create_creates_accessions_with_unstructured_metadata(
     cohort = cohort_factory(contributor__owners=[user])
 
     resp = authenticated_client.post(
-        "/api/v2/accessions/",
+        reverse("api:accession_create"),
         data={"cohort": cohort.pk, "original_blob": s3ff_random_field_value},
         content_type="application/json",
     )
@@ -51,7 +52,7 @@ def test_api_accession_create_duplicate_blob_name(
     cohort = cohort_factory(contributor__owners=[user])
 
     resp = authenticated_client.post(
-        "/api/v2/accessions/",
+        reverse("api:accession_create"),
         data={"cohort": cohort.pk, "original_blob": s3ff_random_field_value},
         content_type="application/json",
     )
@@ -59,7 +60,7 @@ def test_api_accession_create_duplicate_blob_name(
     assert cohort.accessions.count() == 1
 
     resp = authenticated_client.post(
-        "/api/v2/accessions/",
+        reverse("api:accession_create"),
         data={"cohort": cohort.pk, "original_blob": s3ff_random_field_value},
         content_type="application/json",
     )
@@ -74,7 +75,7 @@ def test_api_accession_create_invalid_cohort(
     invalid_cohort = cohort_factory(contributor__creator=user_factory())
 
     resp = authenticated_client.post(
-        "/api/v2/accessions/",
+        reverse("api:accession_create"),
         data={"cohort": invalid_cohort.pk, "original_blob": s3ff_random_field_value},
         content_type="application/json",
     )
@@ -87,7 +88,7 @@ def test_api_accession_create_review_bulk(staff_client, accession_factory):
     accessions = [accession_factory() for _ in range(4)]
 
     resp = staff_client.post(
-        "/api/v2/accessions/create-review-bulk/",
+        reverse("api:accession_review_bulk_create"),
         data=[{"id": accession.id, "value": True} for accession in accessions],
         content_type="application/json",
     )

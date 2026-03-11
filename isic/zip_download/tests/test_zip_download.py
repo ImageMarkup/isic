@@ -3,6 +3,7 @@ from typing import Literal
 from urllib.parse import ParseResult, parse_qs, urlparse
 
 from django.core.files.storage import storages
+from django.urls import reverse
 import pytest
 
 
@@ -42,14 +43,14 @@ def mock_zip_download_service_url(settings) -> None:
 @pytest.mark.usefixtures("_random_images_with_licenses")
 def test_zip_download_licenses(authenticated_client):
     r = authenticated_client.post(
-        "/api/v2/zip-download/url/", {"query": ""}, content_type="application/json"
+        reverse("api:zip_download_url"), {"query": ""}, content_type="application/json"
     )
     assert r.status_code == 200, r.json()
     parsed_url = urlparse(r.json())
     token = parse_qs(parsed_url.query)["zsid"]
 
     r = authenticated_client.get(
-        "/api/v2/zip-download/file-listing/",
+        reverse("api:zip_download_listing"),
         data={"token": token[0]},
     )
     assert r.status_code == 200
@@ -73,7 +74,7 @@ def test_zip_download_licenses(authenticated_client):
 @pytest.mark.usefixtures("_random_images_with_licenses")
 def test_zip_download_listing(authenticated_client):
     r = authenticated_client.post(
-        "/api/v2/zip-download/url/",
+        reverse("api:zip_download_url"),
         {"query": ""},
         content_type="application/json",
     )
@@ -82,7 +83,7 @@ def test_zip_download_listing(authenticated_client):
     token = parse_qs(parsed_url.query)["zsid"]
 
     r = authenticated_client.get(
-        "/api/v2/zip-download/file-listing/",
+        reverse("api:zip_download_listing"),
         data={"token": token[0], "limit": 1},
     )
     output = json.loads(b"".join(r.streaming_content))
@@ -101,7 +102,7 @@ def test_zip_download_listing_urls(authenticated_client, image_factory, user):
     private_image.accession.cohort.contributor.owners.add(user)
 
     r = authenticated_client.post(
-        "/api/v2/zip-download/url/",
+        reverse("api:zip_download_url"),
         {"query": ""},
         content_type="application/json",
     )
@@ -110,7 +111,7 @@ def test_zip_download_listing_urls(authenticated_client, image_factory, user):
     token = parse_qs(parsed_url.query)["zsid"]
 
     r = authenticated_client.get(
-        "/api/v2/zip-download/file-listing/",
+        reverse("api:zip_download_listing"),
         data={"token": token[0]},
     )
     output = json.loads(b"".join(r.streaming_content))
@@ -133,20 +134,20 @@ def test_zip_download_listing_urls(authenticated_client, image_factory, user):
 @pytest.mark.django_db
 @pytest.mark.usefixtures("_random_images_with_licenses")
 @pytest.mark.parametrize(
-    ("endpoint", "zip_auth_token"),
+    ("endpoint_name", "zip_auth_token"),
     [
-        ("/api/v2/zip-download/metadata-file/", "malformed"),
-        ("/api/v2/zip-download/metadata-file/", "good"),
-        ("/api/v2/zip-download/metadata-file/", "missing"),
-        ("/api/v2/zip-download/attribution-file/", "good"),
-        ("/api/v2/zip-download/attribution-file/", "missing"),
+        ("api:zip_download_metadata_file", "malformed"),
+        ("api:zip_download_metadata_file", "good"),
+        ("api:zip_download_metadata_file", "missing"),
+        ("api:zip_download_attribution_file", "good"),
+        ("api:zip_download_attribution_file", "missing"),
     ],
 )
 def test_zip_download_authentication(
-    endpoint, zip_auth_token: Literal["malformed", "good", "missing"], authenticated_client
+    endpoint_name, zip_auth_token: Literal["malformed", "good", "missing"], authenticated_client
 ):
     r = authenticated_client.post(
-        "/api/v2/zip-download/url/",
+        reverse("api:zip_download_url"),
         {"query": ""},
         content_type="application/json",
     )
@@ -161,7 +162,7 @@ def test_zip_download_authentication(
     else:
         data = {}
 
-    r = authenticated_client.get(endpoint, data=data)
+    r = authenticated_client.get(reverse(endpoint_name), data=data)
     if zip_auth_token == "good":
         assert r.status_code == 200, r.content
     else:

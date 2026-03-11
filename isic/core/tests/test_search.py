@@ -50,7 +50,7 @@ def searchable_images(image_factory, _search_index):
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     "route",
-    ["api:search_images", "api:list_images"],
+    ["api:image_search", "api:image_list"],
 )
 def test_elasticsearch_counts(searchable_images, settings, client, route):
     settings.ISIC_USE_ELASTICSEARCH_COUNTS = False
@@ -117,20 +117,20 @@ def test_elasticsearch_caching(searchable_images, settings, staff_client, client
     cache_set = mocker.spy(isic.core.search.cache, "set")
 
     with cachalot_disabled():
-        r = staff_client.get("/api/v2/images/search/")
+        r = staff_client.get(reverse("api:image_search"))
         assert r.status_code == 200, r.json()
         assert r.json()["count"] == 2, r.json()
         assert cache_get.call_count == 1
         assert cache_set.call_count == 1
 
-        r = staff_client.get("/api/v2/images/search/")
+        r = staff_client.get(reverse("api:image_search"))
         assert r.status_code == 200, r.json()
         assert r.json()["count"] == 2, r.json()
         assert cache_get.call_count == 2
         assert cache_set.call_count == 1
 
         # notably the cache is not shared between a staff user and a regular user
-        r = client.get("/api/v2/images/search/")
+        r = client.get(reverse("api:image_search"))
         assert r.status_code == 200, r.json()
         assert r.json()["count"] == 1, r.json()
         assert cache_get.call_count == 3
@@ -154,7 +154,7 @@ def test_elasticsearch_cache_sharing(
     cache_set = mocker.spy(isic.core.search.cache, "set")
 
     with cachalot_disabled():
-        r = client.get("/api/v2/images/search/")
+        r = client.get(reverse("api:image_search"))
         assert r.status_code == 200, r.json()
         assert r.json()["count"] == 1, r.json()
         assert cache_get.call_count == 1
@@ -164,7 +164,7 @@ def test_elasticsearch_cache_sharing(
         client.force_login(user)
 
         # a public user shares the same cache with a regular user with no special permissions
-        r = client.get("/api/v2/images/search/")
+        r = client.get(reverse("api:image_search"))
         assert r.status_code == 200, r.json()
         assert r.json()["count"] == 1, r.json()
         assert cache_get.call_count == 2
@@ -174,7 +174,7 @@ def test_elasticsearch_cache_sharing(
         user.owned_contributors.add(contributor)
 
         # now the user has special permissions, so the cache should not be shared
-        r = client.get("/api/v2/images/search/")
+        r = client.get(reverse("api:image_search"))
         assert r.status_code == 200, r.json()
         assert r.json()["count"] == 1, r.json()
         assert cache_get.call_count == 3
@@ -187,40 +187,40 @@ def test_elasticsearch_cache_sharing(
 
 @pytest.mark.django_db
 def test_core_api_image_search(searchable_images, staff_client):
-    r = staff_client.get("/api/v2/images/search/")
+    r = staff_client.get(reverse("api:image_search"))
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == 2, r.json()
 
-    r = staff_client.get("/api/v2/images/search/", {"query": "diagnosis_3:Nevus"})
+    r = staff_client.get(reverse("api:image_search"), {"query": "diagnosis_3:Nevus"})
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == 1, r.json()
 
-    r = staff_client.get("/api/v2/images/search/", {"query": "anatom_site_3:Scalp"})
+    r = staff_client.get(reverse("api:image_search"), {"query": "anatom_site_3:Scalp"})
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == 1, r.json()
 
-    r = staff_client.get("/api/v2/images/search/", {"query": 'anatom_site_1:"Upper extremity"'})
+    r = staff_client.get(reverse("api:image_search"), {"query": 'anatom_site_1:"Upper extremity"'})
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == 1, r.json()
 
 
 @pytest.mark.django_db
 def test_core_api_image_search_private_image(private_searchable_image, authenticated_client):
-    r = authenticated_client.get("/api/v2/images/search/")
+    r = authenticated_client.get(reverse("api:image_search"))
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == 0, r.json()
 
 
 @pytest.mark.django_db
 def test_core_api_image_search_private_image_as_guest(private_searchable_image, client):
-    r = client.get("/api/v2/images/search/")
+    r = client.get(reverse("api:image_search"))
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == 0, r.json()
 
 
 @pytest.mark.django_db
 def test_core_api_image_search_images_as_guest(searchable_images, client):
-    r = client.get("/api/v2/images/search/")
+    r = client.get(reverse("api:image_search"))
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == 1, r.json()
 
@@ -231,7 +231,7 @@ def test_core_api_image_search_contributed(private_searchable_image, authenticat
     add_to_search_index(private_searchable_image)
     get_elasticsearch_client().indices.refresh(index="_all")
 
-    r = authenticated_client.get("/api/v2/images/search/")
+    r = authenticated_client.get(reverse("api:image_search"))
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == 1, r.json()
 
@@ -245,27 +245,27 @@ def test_core_api_image_search_shares(
     add_to_search_index(private_searchable_image)
     get_elasticsearch_client().indices.refresh(index="_all")
 
-    r = authenticated_client.get("/api/v2/images/search/")
+    r = authenticated_client.get(reverse("api:image_search"))
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == 1, r.json()
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("route", ["images/search/", "images/facets/"])
+@pytest.mark.parametrize("route", ["api:image_search", "api:image_facets"])
 def test_core_api_image_search_invalid_query(route, searchable_images, authenticated_client):
-    r = authenticated_client.get(f"/api/v2/{route}", {"query": "age_approx:[[[[]]]]"})
+    r = authenticated_client.get(reverse(route), {"query": "age_approx:[[[[]]]]"})
     assert r.status_code == 400, r.json()
 
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
     "route",
-    ["/api/v2/images/", "/api/v2/images/search/"],
+    ["api:image_list", "api:image_search"],
 )
 def test_core_api_image_hides_fields(
     authenticated_client, searchable_image_with_private_field, route
 ):
-    r = authenticated_client.get(route)
+    r = authenticated_client.get(reverse(route))
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == 1, r.json()
     for image in r.json()["results"]:
@@ -275,7 +275,7 @@ def test_core_api_image_hides_fields(
 @pytest.mark.django_db
 def test_core_api_image_search_collection_and_query(collection_with_image, authenticated_client):
     r = authenticated_client.get(
-        "/api/v2/images/search/",
+        reverse("api:image_search"),
         {"collections": f"{collection_with_image.pk}", "query": "age_approx:50"},
     )
     assert r.status_code == 200, r.json()
@@ -308,7 +308,7 @@ def test_core_api_image_search_collection(
     add_to_search_index(image)
     get_elasticsearch_client().indices.refresh(index="_all")
 
-    r = authenticated_client.get("/api/v2/images/search/", {"collections": str(collection.pk)})
+    r = authenticated_client.get(reverse("api:image_search"), {"collections": str(collection.pk)})
     assert r.status_code == 200, r.json()
 
     if can_see:
@@ -324,7 +324,7 @@ def test_core_api_image_search_collection_parsing(
     public_coll, private_coll = private_and_public_images_collections
 
     r = authenticated_client.get(
-        "/api/v2/images/search/", {"collections": f"{public_coll.pk},{private_coll.pk}"}
+        reverse("api:image_search"), {"collections": f"{public_coll.pk},{private_coll.pk}"}
     )
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == 1, r.json()
@@ -334,7 +334,7 @@ def test_core_api_image_search_collection_parsing(
 def test_core_api_image_faceting_collection_filter(private_and_public_images_collections, client):
     public_coll, _ = private_and_public_images_collections
 
-    r = client.get("/api/v2/images/facets/", {"collections": f"{public_coll.pk}"})
+    r = client.get(reverse("api:image_facets"), {"collections": f"{public_coll.pk}"})
     assert r.status_code == 200, r.json()
 
     for bucket in r.json()["age_approx"]["buckets"]:
@@ -347,7 +347,7 @@ def test_core_api_image_faceting_collection_filter(private_and_public_images_col
 @pytest.mark.django_db
 def test_core_api_image_faceting_structure(searchable_images, client):
     r = client.get(
-        "/api/v2/images/facets/",
+        reverse("api:image_facets"),
     )
     assert r.status_code == 200, r.json()
     assert len(r.json()["diagnosis_3"]["buckets"]) == 2, r.json()
@@ -378,7 +378,7 @@ def test_core_api_image_faceting_structure(searchable_images, client):
 def test_core_api_image_faceting_query(private_and_public_images_collections, client_):
     public_coll, private_coll = private_and_public_images_collections
 
-    r = client_.get("/api/v2/images/facets/", {"query": "age_approx:10"})
+    r = client_.get(reverse("api:image_facets"), {"query": "age_approx:10"})
     assert r.status_code == 200, r.json()
     buckets = r.json()["age_approx"]["buckets"]
     for bucket in buckets:
