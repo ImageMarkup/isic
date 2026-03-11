@@ -42,7 +42,7 @@ def user_me(request: AuthenticatedHttpRequest):
 
 
 @router.put("/accept-terms/", include_in_schema=False, auth=is_authenticated)
-def accept_terms_of_use(request: AuthenticatedHttpRequest):
+def user_accept_terms(request: AuthenticatedHttpRequest):
     if not request.user.profile.accepted_terms:
         request.user.profile.accepted_terms = timezone.now()
         request.user.profile.save(update_fields=["accepted_terms"])

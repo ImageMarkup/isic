@@ -293,7 +293,7 @@ def test_api_doi_creation(
     staff_client,
 ):
     r = staff_client.post(
-        reverse("api:create_doi"),
+        reverse("api:doi_create"),
         {
             "collection_id": public_collection_with_public_images.id,
             "description": "Test description",
@@ -395,7 +395,7 @@ def test_api_doi_creation_invalid_related_identifiers(
     related_identifier,
 ):
     r = staff_client.post(
-        reverse("api:create_doi"),
+        reverse("api:doi_create"),
         {
             "collection_id": public_collection_with_public_images.id,
             "description": "Test description",
@@ -419,7 +419,7 @@ def test_api_doi_creation_invalid_related_identifier_relation_type(
     staff_client,
 ):
     r = staff_client.post(
-        reverse("api:create_doi"),
+        reverse("api:doi_create"),
         {
             "collection_id": public_collection_with_public_images.id,
             "description": "Test description",
@@ -444,7 +444,7 @@ def test_api_doi_creation_invalid_related_identifier_relation_identifier_type(
     staff_client,
 ):
     r = staff_client.post(
-        reverse("api:create_doi"),
+        reverse("api:doi_create"),
         {
             "collection_id": public_collection_with_public_images.id,
             "description": "Test description",
@@ -668,7 +668,7 @@ def test_api_update_draft_doi_permissions(
     draft_doi = DraftDoiFactory.create(collection=public_collection_with_public_images)
 
     r = client_.patch(
-        reverse("api:update_draft_doi", args=[draft_doi.slug]),
+        reverse("api:doi_update_draft", args=[draft_doi.slug]),
         {"description": "Updated description"},
         content_type="application/json",
     )

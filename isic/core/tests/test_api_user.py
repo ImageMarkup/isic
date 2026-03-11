@@ -1,3 +1,4 @@
+from django.urls import reverse
 import pytest
 from pytest_lazy_fixtures import lf
 
@@ -12,7 +13,7 @@ from pytest_lazy_fixtures import lf
     ],
 )
 def test_core_api_user_me(client_user, client_, status):
-    r = client_.get("/api/v2/users/me/")
+    r = client_.get(reverse("api:user_me"))
     assert r.status_code == status, r.json()
     if status == 200:
         assert r.json()["id"] == client_user.pk
@@ -28,7 +29,7 @@ def test_core_api_user_me(client_user, client_, status):
     ],
 )
 def test_core_api_user_accept_terms(client_user, client_, status):
-    r = client_.put("/api/v2/users/accept-terms/", content_type="application/json")
+    r = client_.put(reverse("api:user_accept_terms"), content_type="application/json")
     assert r.status_code == status, r.json()
 
     if status == 200:

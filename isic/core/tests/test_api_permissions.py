@@ -13,19 +13,19 @@ def images(image_factory):
 @pytest.mark.django_db
 def test_core_api_image_list(images, client, authenticated_client, staff_client):
     for client_ in [client, authenticated_client]:
-        r = client_.get("/api/v2/images/")
+        r = client_.get(reverse("api:image_list"))
         assert r.status_code == 200, r.json()
         assert r.json()["count"] == 1
         assert {x["public"] for x in r.json()["results"]} == {True}
 
-    r = staff_client.get("/api/v2/images/")
+    r = staff_client.get(reverse("api:image_list"))
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == 2
 
 
 @pytest.mark.django_db
 def test_core_api_image_list_private(private_image, authenticated_client):
-    r = authenticated_client.get("/api/v2/images/")
+    r = authenticated_client.get(reverse("api:image_list"))
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == 0
 
@@ -34,7 +34,7 @@ def test_core_api_image_list_private(private_image, authenticated_client):
 def test_core_api_image_list_contributed(private_image, authenticated_client, user):
     private_image.accession.cohort.contributor.owners.add(user)
 
-    r = authenticated_client.get("/api/v2/images/")
+    r = authenticated_client.get(reverse("api:image_list"))
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == 1
 
@@ -44,7 +44,7 @@ def test_core_api_image_list_shares(private_image, authenticated_client, user, s
     private_image.shares.add(user, through_defaults={"grantor": staff_user})
     private_image.save()
 
-    r = authenticated_client.get("/api/v2/images/")
+    r = authenticated_client.get(reverse("api:image_list"))
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == 1
 
@@ -56,7 +56,7 @@ def test_core_api_image_list_no_duplicates(private_image, authenticated_client, 
     private_image.shares.add(user, through_defaults={"grantor": staff_user})
     private_image.save()
 
-    r = authenticated_client.get("/api/v2/images/")
+    r = authenticated_client.get(reverse("api:image_list"))
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == 1
 
@@ -66,23 +66,27 @@ def test_core_api_image_detail(images, authenticated_client, staff_client):
     public_image_id = images[0].isic_id
     private_image_id = images[1].isic_id
 
-    r = authenticated_client.get(f"/api/v2/images/{public_image_id}/")
+    public_url = reverse("api:image_detail", kwargs={"isic_id": public_image_id})
+    private_url = reverse("api:image_detail", kwargs={"isic_id": private_image_id})
+
+    r = authenticated_client.get(public_url)
     assert r.status_code == 200, r.json()
-    r = authenticated_client.get(f"/api/v2/images/{private_image_id}/")
+    r = authenticated_client.get(private_url)
     assert r.status_code == 404, r.json()
 
-    r = staff_client.get(f"/api/v2/images/{public_image_id}/")
+    r = staff_client.get(public_url)
     assert r.status_code == 200, r.json()
-    r = staff_client.get(f"/api/v2/images/{private_image_id}/")
+    r = staff_client.get(private_url)
     assert r.status_code == 200, r.json()
 
 
 @pytest.mark.django_db
 def test_api_auth_staff_user(authenticated_client, staff_client, metadata_file):
-    r = authenticated_client.delete(f"/api/v2/metadata-files/{metadata_file.pk}/")
+    url = reverse("api:metadata_file_delete", kwargs={"id": metadata_file.pk})
+    r = authenticated_client.delete(url)
     assert r.status_code == 401, r.json()
 
-    r = staff_client.delete(f"/api/v2/metadata-files/{metadata_file.pk}/")
+    r = staff_client.delete(url)
     assert r.status_code == 204, r.json()
 
 

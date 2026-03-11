@@ -33,7 +33,7 @@ def test_core_api_collection_autocomplete(
     for name in collection_names:
         collection_factory(name=name, public=True)
 
-    r = client.get(f"/api/v2/collections/autocomplete/?query={search_term}")
+    r = client.get(reverse("api:collection_autocomplete"), {"query": search_term})
     assert r.status_code == 200, r.json()
 
     assert [c["name"] for c in r.json()] == expected_collection_names
@@ -58,7 +58,7 @@ def test_core_api_collection_autocomplete(
     ],
 )
 def test_core_api_collection_list_permissions(client_, colls, num_visible):
-    r = client_.get("/api/v2/collections/")
+    r = client_.get(reverse("api:collection_list"))
 
     assert r.status_code == 200, r.json()
     assert r.json()["count"] == num_visible
@@ -105,7 +105,7 @@ def test_core_api_collection_list_permissions(client_, colls, num_visible):
     ],
 )
 def test_core_api_collection_detail_permissions(client_, collection, visible):
-    r = client_.get(f"/api/v2/collections/{collection.pk}/")
+    r = client_.get(reverse("api:collection_detail", kwargs={"id": collection.pk}))
 
     if visible:
         assert r.status_code == 200, r.json()
@@ -128,7 +128,7 @@ def test_core_api_collection_populate_from_search(
 
     with django_capture_on_commit_callbacks(execute=True):
         r = authenticated_client.post(
-            f"/api/v2/collections/{collection.pk}/populate-from-search/",
+            reverse("api:collection_populate_from_search", kwargs={"id": collection.pk}),
             {"query": "sex:male"},
             content_type="application/json",
         )
@@ -140,18 +140,18 @@ def test_core_api_collection_populate_from_search(
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    ("endpoint", "data"),
+    ("url_name", "data"),
     [
-        ("populate-from-search", {"query": "sex:male"}),
-        ("populate-from-list", {"isic_ids": ["ISIC_0000000"]}),
-        ("remove-from-list", {"isic_ids": ["ISIC_0000000"]}),
+        ("api:collection_populate_from_search", {"query": "sex:male"}),
+        ("api:collection_populate_from_list", {"isic_ids": ["ISIC_0000000"]}),
+        ("api:collection_remove_from_list", {"isic_ids": ["ISIC_0000000"]}),
     ],
 )
-def test_core_api_collection_modify_locked(endpoint, data, staff_client, collection_factory, user):
+def test_core_api_collection_modify_locked(url_name, data, staff_client, collection_factory, user):
     collection = collection_factory(locked=True, creator=user)
 
     r = staff_client.post(
-        f"/api/v2/collections/{collection.pk}/{endpoint}/",
+        reverse(url_name, kwargs={"id": collection.pk}),
         data,
         content_type="application/json",
     )
@@ -173,7 +173,7 @@ def test_core_api_collection_populate_from_list(
     )
 
     r = authenticated_client.post(
-        f"/api/v2/collections/{collection.pk}/populate-from-list/",
+        reverse("api:collection_populate_from_list", kwargs={"id": collection.pk}),
         {
             "isic_ids": [
                 public_image.isic_id,
@@ -210,7 +210,7 @@ def test_core_api_collection_remove_from_list(
     collection.images.add(public_image, private_image_shared, private_image_unshared)
 
     r = authenticated_client.post(
-        f"/api/v2/collections/{collection.pk}/remove-from-list/",
+        reverse("api:collection_remove_from_list", kwargs={"id": collection.pk}),
         {
             "isic_ids": [
                 public_image.isic_id,
@@ -375,7 +375,7 @@ def other_user_client(user_factory):
     ids=["creator", "staff", "other-user", "anonymous"],
 )
 def test_core_api_collection_delete_permissions(client_, deletable_collection, expected_status):
-    r = client_.delete(f"/api/v2/collections/{deletable_collection.pk}/")
+    r = client_.delete(reverse("api:collection_delete", kwargs={"id": deletable_collection.pk}))
 
     assert r.status_code == expected_status
     if expected_status == 204:
@@ -415,7 +415,7 @@ def test_core_api_collection_delete_blocked(
         collection = collection_factory(locked=False, creator=user)
         draft_doi_factory(collection=collection)
 
-    r = authenticated_client.delete(f"/api/v2/collections/{collection.pk}/")
+    r = authenticated_client.delete(reverse("api:collection_delete", kwargs={"id": collection.pk}))
 
     assert r.status_code == 400
     assert Collection.objects.filter(pk=collection.pk).exists()
@@ -439,7 +439,7 @@ def test_core_api_collection_create_from_isic_ids(
     }
 
     r = client.post(
-        "/api/v2/collections/create-from-isic-ids/",
+        reverse("api:collection_create_from_isic_ids"),
         payload,
         content_type="application/json",
     )
@@ -447,7 +447,7 @@ def test_core_api_collection_create_from_isic_ids(
 
     with django_capture_on_commit_callbacks(execute=True):
         r = authenticated_client.post(
-            "/api/v2/collections/create-from-isic-ids/",
+            reverse("api:collection_create_from_isic_ids"),
             payload,
             content_type="application/json",
         )
