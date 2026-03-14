@@ -183,6 +183,8 @@
     const THUMBNAIL_BASE_URL = '{{ thumbnail_base_url|escapejs }}';
     const IS_AUTHENTICATED = {{ request.user.is_authenticated|yesno:"true,false" }};
     const MAX_DISPLAY_ROWS = 1000;
+    const ISIC_ID_COL = 'isic_id';
+    const DUCKDB_CDN = 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.32.0';
 
     function getQueryFromUrl() {
       const params = new URLSearchParams(window.location.search);
@@ -348,7 +350,7 @@ ORDER BY st.total DESC, sd.rank`
         },
 
         get hasIsicId() {
-          return this.columns.includes('isic_id');
+          return this.columns.includes(ISIC_ID_COL);
         },
 
         get canCreateCollection() {
@@ -419,8 +421,8 @@ ORDER BY st.total DESC, sd.rank`
               this.status = 'Initializing DuckDB...';
               const DUCKDB_CONFIG = await duckdb.selectBundle({
                 eh: {
-                  mainModule: 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.32.0/dist/duckdb-eh.wasm',
-                  mainWorker: 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.32.0/dist/duckdb-browser-eh.worker.js',
+                  mainModule: DUCKDB_CDN + '/dist/duckdb-eh.wasm',
+                  mainWorker: DUCKDB_CDN + '/dist/duckdb-browser-eh.worker.js',
                 },
               });
               const logger = new duckdb.ConsoleLogger();
@@ -452,7 +454,9 @@ ORDER BY st.total DESC, sd.rank`
               }
 
               this.ready = true;
-              if (getQueryFromUrl()) this.runQuery();
+              if (getQueryFromUrl()) {
+                this.runQuery();
+              }
             } catch (e) {
               this.error = 'Failed to initialize: ' + e.message;
             }
@@ -537,7 +541,7 @@ ORDER BY st.total DESC, sd.rank`
 
           try {
             if (!this.showingSubset) {
-              const ids = new Set(this.rows.map(r => r.isic_id).filter(Boolean));
+              const ids = new Set(this.rows.map(r => r[ISIC_ID_COL]).filter(Boolean));
               this.collectionImageCount = ids.size;
             } else {
               const countResult = await this.conn.query(
@@ -588,7 +592,7 @@ ORDER BY st.total DESC, sd.rank`
             const idsResult = await this.conn.query(
               `SELECT DISTINCT isic_id FROM (${this.lastQueryText}) sub WHERE isic_id IS NOT NULL`
             );
-            const isicIds = idsResult.toArray().map(r => r.isic_id);
+            const isicIds = idsResult.toArray().map(r => r[ISIC_ID_COL]);
 
             if (isicIds.length === 0) {
               this.createCollectionError = 'No images found in query results.';
