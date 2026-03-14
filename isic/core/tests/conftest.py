@@ -71,6 +71,11 @@ def private_reviewed_image_factory(image_factory, accession_factory, user):
 
 
 @pytest.fixture
+def _mock_datacite_create_draft_doi(mocker):
+    mocker.patch("isic.core.services.collection.doi._datacite_create_draft_doi")
+
+
+@pytest.fixture
 def mock_fetch_doi_schema_org_dataset(mocker):
     return mocker.patch(
         "isic.core.tasks._fetch_doi_schema_org_dataset",
