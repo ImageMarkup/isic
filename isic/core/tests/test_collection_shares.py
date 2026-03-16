@@ -1,7 +1,7 @@
 import pytest
 
 from isic.core.permissions import get_visible_objects
-from isic.core.services.collection import collection_share
+from isic.core.services.collection import collection_delete, collection_share
 from isic.core.services.collection.image import collection_add_images
 
 
@@ -53,3 +53,15 @@ def test_collection_shares_beget_image_shares(staff_user, user, private_collecti
 
     assert user.has_perm("core.view_image", new_private_image)
     assert get_visible_objects(user, "core.view_image").count() == 2
+
+
+@pytest.mark.django_db
+def test_collection_deletion_does_not_revoke_image_shares(staff_user, user, private_collection):
+    private_image = private_collection.images.first()
+    collection_share(collection=private_collection, grantor=staff_user, grantee=user)
+    assert user.has_perm("core.view_image", private_image)
+
+    collection_delete(collection=private_collection)
+
+    assert user.has_perm("core.view_image", private_image)
+    assert get_visible_objects(user, "core.view_image").count() == 1
