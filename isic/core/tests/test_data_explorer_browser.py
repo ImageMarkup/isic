@@ -48,11 +48,12 @@ def data_explorer_parquet(settings):
     original_base_url = storage.base_url
     storage.base_url = f"{storage.endpoint_url}/{storage.bucket_name}"
 
-    yield
-
-    storage.base_url = original_base_url
-    storage.delete(key)
-    parquet_path.unlink(missing_ok=True)
+    try:
+        yield
+    finally:
+        storage.base_url = original_base_url
+        storage.delete(key)
+        parquet_path.unlink(missing_ok=True)
 
 
 def _wait_for_ready(page):
@@ -75,9 +76,8 @@ def _run_query(page, query):
 
 
 @pytest.mark.playwright
-@pytest.mark.django_db(transaction=True)
-def test_data_explorer_loads_and_runs_query(page, live_server, data_explorer_parquet):
-    page.goto(f"{live_server.url}{reverse('core/data-explorer')}", timeout=30_000)
+def test_data_explorer_loads_and_runs_query(page, data_explorer_parquet):
+    page.goto(reverse("core/data-explorer"), timeout=30_000)
     _wait_for_ready(page)
 
     expect(page.locator("#data-explorer-main")).to_contain_text("10 images")
@@ -95,9 +95,8 @@ def test_data_explorer_loads_and_runs_query(page, live_server, data_explorer_par
 
 
 @pytest.mark.playwright
-@pytest.mark.django_db(transaction=True)
-def test_data_explorer_shows_error_for_bad_query(page, live_server, data_explorer_parquet):
-    page.goto(f"{live_server.url}{reverse('core/data-explorer')}", timeout=30_000)
+def test_data_explorer_shows_error_for_bad_query(page, data_explorer_parquet):
+    page.goto(reverse("core/data-explorer"), timeout=30_000)
     _wait_for_ready(page)
 
     _run_query(page, "SELECT * FROM nonexistent_table")
@@ -106,9 +105,8 @@ def test_data_explorer_shows_error_for_bad_query(page, live_server, data_explore
 
 
 @pytest.mark.playwright
-@pytest.mark.django_db(transaction=True)
-def test_data_explorer_example_query(page, live_server, data_explorer_parquet):
-    page.goto(f"{live_server.url}{reverse('core/data-explorer')}", timeout=30_000)
+def test_data_explorer_example_query(page, data_explorer_parquet):
+    page.goto(reverse("core/data-explorer"), timeout=30_000)
     _wait_for_ready(page)
 
     _run_query(
@@ -124,11 +122,10 @@ def test_data_explorer_example_query(page, live_server, data_explorer_parquet):
 
 
 @pytest.mark.playwright
-@pytest.mark.django_db(transaction=True)
-def test_data_explorer_query_sharing_via_link(page, live_server, data_explorer_parquet):
+def test_data_explorer_query_sharing_via_link(page, data_explorer_parquet):
     query = "SELECT sex, COUNT(*) AS count FROM metadata GROUP BY sex ORDER BY count DESC"
     page.goto(
-        f"{live_server.url}{reverse('core/data-explorer')}?q={quote(query)}",
+        f"{reverse('core/data-explorer')}?q={quote(query)}",
         timeout=30_000,
     )
     _wait_for_ready(page)
@@ -139,20 +136,18 @@ def test_data_explorer_query_sharing_via_link(page, live_server, data_explorer_p
 
 
 @pytest.mark.playwright
-@pytest.mark.django_db(transaction=True)
-def test_data_explorer_no_parquet_shows_error(page, live_server):
-    page.goto(f"{live_server.url}{reverse('core/data-explorer')}")
+def test_data_explorer_no_parquet_shows_error(page):
+    page.goto(reverse("core/data-explorer"))
 
     expect(page.locator("body")).to_contain_text("Failed to initialize", timeout=30_000)
 
 
 @pytest.mark.playwright
-@pytest.mark.django_db(transaction=True)
 def test_data_explorer_create_collection_focuses_name_input(
-    authenticated_page, live_server, data_explorer_parquet
+    authenticated_page, data_explorer_parquet
 ):
     page = authenticated_page
-    page.goto(f"{live_server.url}{reverse('core/data-explorer')}", timeout=30_000)
+    page.goto(reverse("core/data-explorer"), timeout=30_000)
     _wait_for_ready(page)
 
     _run_query(page, "SELECT isic_id FROM metadata")
