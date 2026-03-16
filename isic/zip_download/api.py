@@ -125,8 +125,8 @@ def zip_download_listing(
     request: NinjaAuthHttpRequest,
 ):
     # use repeatable read to ensure consistent results
-    cursor = connection.cursor()
-    cursor.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+    with connection.cursor() as cursor:
+        cursor.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
 
     token = request.auth["token"]
     user, search = SearchQueryIn.from_token_representation(request.auth)
