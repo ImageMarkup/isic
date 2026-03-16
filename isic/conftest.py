@@ -8,6 +8,7 @@ from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.test.client import Client
+from playwright.sync_api import expect
 import pytest
 from pytest_factoryboy import register
 
@@ -46,7 +47,10 @@ def _disable_direct_pytest_usage():
     # also, allow vscode to invoke pytest directly.
     # TEST_RUN_PIPE is set by the test runner so it works when using debugpy or not.
     if "TOX_ENV_NAME" not in os.environ and not os.environ.get("TEST_RUN_PIPE"):
-        print("Never invoke pytest directly. Use `uv run tox -e test` instead.", file=sys.stderr)  # noqa: T201
+        print(  # noqa: T201
+            "Never invoke pytest directly. Use `uv run tox -e test` instead.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
 
@@ -102,25 +106,67 @@ def staff_client(staff_user):
     return client
 
 
-@pytest.fixture
-def authenticated_page(page, live_server, user):
-    from django.conf import settings as django_settings
+_PLAYWRIGHT_TIMEOUT = 30_000
 
+expect.set_options(timeout=_PLAYWRIGHT_TIMEOUT)
+
+
+def _create_context(new_context, live_server):
+    ctx = new_context(base_url=live_server.url)
+    ctx.set_default_timeout(_PLAYWRIGHT_TIMEOUT)
+    return ctx
+
+
+@pytest.fixture
+def context(new_context, live_server):
+    return _create_context(new_context, live_server)
+
+
+def _authenticated_context(new_context, live_server, user):
+    ctx = _create_context(new_context, live_server)
     client = Client()
     client.force_login(user)
-    session_key = client.cookies[django_settings.SESSION_COOKIE_NAME].value
-
-    page.goto(live_server.url)
-    page.context.add_cookies(
+    session_cookie = client.cookies["sessionid"]
+    ctx.add_cookies(
         [
             {
-                "name": django_settings.SESSION_COOKIE_NAME,
-                "value": session_key,
+                "name": "sessionid",
+                "value": session_cookie.value,
                 "url": live_server.url,
             }
         ]
     )
-    return page
+    return ctx
+
+
+@pytest.fixture
+def authenticated_user(user_factory):
+    return user_factory()
+
+
+@pytest.fixture
+def staff_authenticated_user(user_factory):
+    return user_factory(is_staff=True)
+
+
+@pytest.fixture
+def authenticated_context(new_context, live_server, authenticated_user):
+    return _authenticated_context(new_context, live_server, authenticated_user)
+
+
+@pytest.fixture
+def staff_authenticated_context(new_context, live_server, staff_authenticated_user):
+    return _authenticated_context(new_context, live_server, staff_authenticated_user)
+
+
+@pytest.fixture
+def authenticated_page(authenticated_context):
+    return authenticated_context.new_page()
+
+
+@pytest.fixture
+def staff_authenticated_page(staff_authenticated_context):
+    return staff_authenticated_context.new_page()
 
 
 @pytest.fixture

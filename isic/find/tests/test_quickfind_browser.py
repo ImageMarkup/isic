@@ -3,9 +3,8 @@ import pytest
 
 
 @pytest.mark.playwright
-@pytest.mark.django_db(transaction=True)
-def test_quickfind_focuses_search_input(page, live_server):
-    page.goto(live_server.url)
+def test_quickfind_focuses_search_input(page):
+    page.goto("/")
     quickfind_input = page.locator("#quickfind-input")
 
     page.locator("#quickfind-button").click()
@@ -23,8 +22,7 @@ def test_quickfind_focuses_search_input(page, live_server):
 
 
 @pytest.mark.playwright
-@pytest.mark.django_db(transaction=True)
-def test_quickfind_focus_not_racing_xshow(page, live_server):
+def test_quickfind_focus_not_racing_xshow(page):
     """
     Regression: repeated open/close could leave quickfind unfocused.
 
@@ -34,7 +32,7 @@ def test_quickfind_focus_not_racing_xshow(page, live_server):
     with it and could call focus() on a still-hidden element (a silent no-op).
     This verifies that focus() fires only after the modal is visible.
     """
-    page.goto(live_server.url)
+    page.goto("/")
 
     was_visible_on_focus = page.evaluate("""async () => {
         const input = document.getElementById('quickfind-input');
