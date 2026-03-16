@@ -79,3 +79,16 @@ rules:
     pattern-either:
       - pattern-regex: image\.accession\.thumbnail_256[.\s,\)]
       - pattern-regex: image\.accession\.sponsored_thumbnail_256_blob[.\s,\)]
+
+  - id: require-staff-readonly-admin
+    languages:
+      - python
+    severity: ERROR
+    message: Admin classes must inherit from StaffReadonlyAdmin, not admin.ModelAdmin directly.
+    patterns:
+      - pattern: |
+          class $CLASS(admin.ModelAdmin):
+              ...
+      - pattern-not: |
+          class StaffReadonlyAdmin(admin.ModelAdmin):
+              ...
