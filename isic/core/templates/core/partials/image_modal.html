@@ -7,19 +7,19 @@
 
   {% comment %}TODO: escape key should exist{% endcomment %}
 
-  <div @click.away="open = false" class="h-screen overflow-hidden max-w-max mx-auto p-8 transform transition-all" role="dialog" aria-modal="true" aria-labelledby="modal-headline">
-    <div class="bg-white h-full relative p-8 rounded-lg text-left shadow-xl">
+  <div class="flex items-center justify-center min-h-screen p-4 sm:p-8">
+    <div @click.away="open = false" class="bg-white relative p-4 sm:p-8 rounded-lg text-left shadow-xl max-w-5xl w-full" role="dialog" aria-modal="true" aria-labelledby="modal-headline">
       <template x-if="hovered">
         {% if image.accession.is_cog %}
           <div>
-            <div id="image-{{ image.id }}" class="w-[512px] h-[512px] border border-gray-300"></div>
+            <div id="image-{{ image.id }}" class="w-[512px] h-[512px] border border-gray-300 mx-auto"></div>
             <script type="text/javascript">
               initializeCogViewer(document.getElementById('image-{{ image.id }}'), '{{ image.blob.url|safe }}');
             </script>
           </div>
         {% else %}
         {% comment %}Note the single quotes: https://github.com/alpinejs/alpine/issues/466{% endcomment %}
-          <img :src="'{{ image.blob.url }}'" />
+          <img :src="'{{ image.blob.url }}'" class="max-w-full max-h-[70vh] object-contain mx-auto" />
         {% endif %}
 
       </template>
