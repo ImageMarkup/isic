@@ -20,10 +20,13 @@ def _make_jpeg_bytes(width, height, color="red"):
 def _intercept_image_urls(page, urls):
     for url, jpeg_bytes in urls:
 
-        def _handler(route, *, body=jpeg_bytes):
-            route.fulfill(content_type="image/jpeg", body=body)
+        def _fulfill(body):
+            def _handler(route, *_args):
+                route.fulfill(content_type="image/jpeg", body=body)
 
-        page.route(url, _handler)
+            return _handler
+
+        page.route(url, _fulfill(jpeg_bytes))
 
 
 def _assert_modal_fits_viewport(modal, viewport):
@@ -100,11 +103,8 @@ def test_collection_detail_image_modal_fits_viewport(
     expect(modal).to_be_visible()
 
     modal_img = modal.locator("img")
-    modal_img.wait_for(state="visible")
-    page.wait_for_function(
-        "el => el.naturalWidth > 0 && el.complete",
-        arg=modal_img.element_handle(),
-    )
+    expect(modal_img).to_be_visible()
+    expect(modal_img).to_have_js_property("complete", value=True)
 
     _assert_modal_fits_viewport(modal, viewport)
 
@@ -163,11 +163,8 @@ def test_accession_modal_fits_viewport(
     expect(modal).to_be_visible()
 
     modal_img = modal.locator("img")
-    modal_img.wait_for(state="visible")
-    page.wait_for_function(
-        "el => el.naturalWidth > 0 && el.complete",
-        arg=modal_img.element_handle(),
-    )
+    expect(modal_img).to_be_visible()
+    expect(modal_img).to_have_js_property("complete", value=True)
 
     _assert_modal_fits_viewport(modal, viewport)
 
@@ -243,10 +240,7 @@ def test_study_task_image_modal_fits_viewport(
     expect(modal).to_be_visible()
 
     modal_img = modal.locator("img")
-    modal_img.wait_for(state="visible")
-    page.wait_for_function(
-        "el => el.naturalWidth > 0 && el.complete",
-        arg=modal_img.element_handle(),
-    )
+    expect(modal_img).to_be_visible()
+    expect(modal_img).to_have_js_property("complete", value=True)
 
     _assert_modal_fits_viewport(modal, viewport)

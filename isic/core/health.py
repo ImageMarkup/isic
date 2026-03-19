@@ -185,6 +185,7 @@ def check_iptc_metadata_consistency() -> HealthCheckResult:
 
     for image in jpg_images:
         with field_file_to_local_path(image.blob) as path, pyexiv2.Image(str(path)) as img:
+            # TODO: attributes
             iptc_credit = img.read_iptc().get("Iptc.Application2.Credit", "")
             if iptc_credit != image.accession.attribution:
                 errors.append(f"{image.isic_id}: attribution mismatch")
