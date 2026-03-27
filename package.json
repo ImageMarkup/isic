@@ -53,7 +53,7 @@
     }
   },
   "dependencies": {
-    "django-s3-file-field": "^1.0.1",
+    "django-s3-file-field": "^1.1.0",
     "ol": "^9.2.4"
   }
 }
