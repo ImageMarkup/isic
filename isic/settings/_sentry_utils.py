@@ -44,7 +44,6 @@ def get_sentry_performance_sample_rate(sampling_context: SamplingContext) -> flo
         if any(
             path.startswith(prefix)
             for prefix in (
-                "/api/v2/images",
                 "/api/v2/quickfind",
                 "/api/v2/lesions",
                 "/api/v2/zip-download",
