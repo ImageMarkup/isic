@@ -58,14 +58,16 @@ def test_core_collection_create(client_, visible):
 
 @pytest.mark.django_db
 def test_core_collection_list(client, authenticated_client, staff_client, private_collection):
-    r = client.get(reverse("core/collection-list"))
-    assert r.context["collections"].object_list.count() == 0
+    url = reverse("core/collection-list") + "?exclude_empty=0&exclude_magic=0"
 
-    r = authenticated_client.get(reverse("core/collection-list"))
-    assert r.context["collections"].object_list.count() == 0
+    r = client.get(url)
+    assert list(r.context["page"].object_list) == []
 
-    r = staff_client.get(reverse("core/collection-list"))
-    assert r.context["collections"].object_list == [private_collection]
+    r = authenticated_client.get(url)
+    assert list(r.context["page"].object_list) == []
+
+    r = staff_client.get(url)
+    assert list(r.context["page"].object_list) == [private_collection]
 
 
 @pytest.mark.django_db
@@ -84,15 +86,17 @@ def test_core_collection_detail(client, authenticated_client, staff_client, priv
 def test_core_collection_list_shares(
     user, client, authenticated_client, staff_client, private_collection
 ):
+    url = reverse("core/collection-list") + "?exclude_empty=0&exclude_magic=0"
     private_collection.shares.add(user, through_defaults={"grantor": private_collection.creator})
-    r = client.get(reverse("core/collection-list"))
-    assert r.context["collections"].object_list.count() == 0
 
-    r = authenticated_client.get(reverse("core/collection-list"))
-    assert r.context["collections"].object_list == [private_collection]
+    r = client.get(url)
+    assert list(r.context["page"].object_list) == []
 
-    r = staff_client.get(reverse("core/collection-list"))
-    assert r.context["collections"].object_list == [private_collection]
+    r = authenticated_client.get(url)
+    assert list(r.context["page"].object_list) == [private_collection]
+
+    r = staff_client.get(url)
+    assert list(r.context["page"].object_list) == [private_collection]
 
 
 @pytest.mark.django_db
