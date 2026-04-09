@@ -2,19 +2,16 @@ from collections.abc import Iterable
 from datetime import UTC, datetime
 
 from django.contrib import messages
-from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
-from django.db.models import Count
-from django.db.models.query_utils import Q
+from django.db.models import F
 from django.http import HttpRequest, HttpResponse, StreamingHttpResponse
 from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
 from django.urls.base import reverse
 
-from isic.core.filters import CollectionFilter
 from isic.core.forms.collection import CollectionForm
 from isic.core.models import Collection
 from isic.core.pagination import CursorPagination, qs_with_hardcoded_count
@@ -24,40 +21,6 @@ from isic.core.services.collection import collection_create, collection_update
 from isic.core.utils.csv import EscapingDictWriter
 from isic.core.utils.http import Buffer
 from isic.ingest.models import Contributor
-
-
-def collection_list(request):
-    # TODO: should the image count be access controlled too?
-    collections = get_visible_objects(
-        request.user,
-        "core.view_collection",
-        Collection.objects.select_related("cohort", "cached_counts").order_by("-pinned", "name"),
-    )
-
-    if request.user.is_authenticated:
-        counts = collections.aggregate(
-            pinned=Count("pk", filter=Q(pinned=True)),
-            doi=Count("pk", filter=Q(doi__isnull=False)),
-            shared_with_me=Count("pk", filter=Q(shares=request.user)),
-            mine=Count("pk", filter=Q(creator=request.user)),
-            all_=Count("pk"),
-        )
-    else:
-        counts = collections.aggregate(
-            pinned=Count("pk", filter=Q(pinned=True)),
-            doi=Count("pk", filter=Q(doi__isnull=False)),
-            all_=Count("pk"),
-        )
-
-    filter_ = CollectionFilter(request.GET, queryset=collections, user=request.user)
-    paginator = Paginator(filter_.qs, 25)
-    page = paginator.get_page(request.GET.get("page"))
-
-    return render(
-        request,
-        "core/collection_list.html",
-        {"collections": page, "filter": filter_, "counts": counts},
-    )
 
 
 @login_required
@@ -211,9 +174,14 @@ def collection_detail(request, pk):
     )
 
 
-@staff_member_required
-def collection_table(request: HttpRequest) -> HttpResponse:
-    collections = Collection.objects.select_related("cohort", "cached_counts", "doi").all()
+def collection_list(request: HttpRequest) -> HttpResponse:
+    collections = get_visible_objects(
+        request.user,
+        "core.view_collection",
+        Collection.objects.select_related("cached_counts", "doi").prefetch_related(
+            "doi__related_identifiers", "doi__supplemental_files"
+        ),
+    )
 
     exclude_magic = request.GET.get("exclude_magic", "1") == "1"
     exclude_empty = request.GET.get("exclude_empty", "1") == "1"
@@ -230,18 +198,33 @@ def collection_table(request: HttpRequest) -> HttpResponse:
 
     sort = request.GET.get("sort", "name")
     order = request.GET.get("order", "asc")
-    valid_sorts: set[str] = {"name", "created", "public"}
+    valid_sorts: set[str] = {"name", "created", "doi", "images"}
 
     if sort in valid_sorts:
-        order_field = f"-{sort}" if order == "desc" else sort
-        collections = collections.order_by(order_field)
+        if sort == "doi":
+            sort_expr = (
+                F("doi__id").desc(nulls_last=True)
+                if order == "desc"
+                else F("doi__id").asc(nulls_last=True)
+            )
+            collections = collections.order_by(sort_expr)
+        elif sort == "images":
+            sort_expr = (
+                F("cached_counts__image_count").desc(nulls_last=True)
+                if order == "desc"
+                else F("cached_counts__image_count").asc(nulls_last=True)
+            )
+            collections = collections.order_by(sort_expr)
+        else:
+            order_field = f"-{sort}" if order == "desc" else sort
+            collections = collections.order_by(order_field)
 
     paginator = Paginator(collections, 50)
     page = paginator.get_page(request.GET.get("page"))
 
     return render(
         request,
-        "core/collection_table.html",
+        "core/collection_list.html",
         {
             "page": page,
             "current_sort": sort,
