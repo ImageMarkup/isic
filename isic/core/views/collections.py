@@ -6,7 +6,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
-from django.db.models import Count
+from django.db.models import Count, F
 from django.db.models.query_utils import Q
 from django.http import HttpRequest, HttpResponse, StreamingHttpResponse
 from django.http.response import HttpResponseRedirect
@@ -213,7 +213,11 @@ def collection_detail(request, pk):
 
 @staff_member_required
 def collection_table(request: HttpRequest) -> HttpResponse:
-    collections = Collection.objects.select_related("cohort", "cached_counts", "doi").all()
+    collections = (
+        Collection.objects.select_related("cached_counts", "doi")
+        .prefetch_related("doi__related_identifiers", "doi__supplemental_files")
+        .all()
+    )
 
     exclude_magic = request.GET.get("exclude_magic", "1") == "1"
     exclude_empty = request.GET.get("exclude_empty", "1") == "1"
@@ -230,11 +234,26 @@ def collection_table(request: HttpRequest) -> HttpResponse:
 
     sort = request.GET.get("sort", "name")
     order = request.GET.get("order", "asc")
-    valid_sorts: set[str] = {"name", "created", "public"}
+    valid_sorts: set[str] = {"name", "created", "doi", "images"}
 
     if sort in valid_sorts:
-        order_field = f"-{sort}" if order == "desc" else sort
-        collections = collections.order_by(order_field)
+        if sort == "doi":
+            sort_expr = (
+                F("doi__id").desc(nulls_last=True)
+                if order == "desc"
+                else F("doi__id").asc(nulls_last=True)
+            )
+            collections = collections.order_by(sort_expr)
+        elif sort == "images":
+            sort_expr = (
+                F("cached_counts__image_count").desc(nulls_last=True)
+                if order == "desc"
+                else F("cached_counts__image_count").asc(nulls_last=True)
+            )
+            collections = collections.order_by(sort_expr)
+        else:
+            order_field = f"-{sort}" if order == "desc" else sort
+            collections = collections.order_by(order_field)
 
     paginator = Paginator(collections, 50)
     page = paginator.get_page(request.GET.get("page"))

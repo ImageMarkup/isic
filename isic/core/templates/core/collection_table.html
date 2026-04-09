@@ -3,7 +3,7 @@
 {% load partials %}
 
 {% partialdef sortable-header %}
-  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider {{ extra_class }}">
     {% if current_sort == field %}
       {% if current_order == "asc" %}
         <a href="{% querystring sort=field order='desc' page=None %}" class="flex items-center gap-1 hover:text-gray-900">
@@ -29,7 +29,15 @@
     </div>
   </header>
 
-  <div class="my-4 flex gap-6">
+  <div class="my-4 flex items-center justify-between">
+    {% if current_sort != "name" or current_order != "asc" %}
+      <a href="{% querystring sort=None order=None page=None %}" class="text-sm text-gray-500 hover:text-gray-700">Reset sort</a>
+    {% else %}
+      <span></span>
+    {% endif %}
+  </div>
+
+  <div class="my-4 flex flex-wrap gap-4">
     <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
       <input type="checkbox" id="exclude-magic" {% if exclude_magic %}checked{% endif %} class="rounded border-gray-300">
       Exclude magic collections
@@ -69,54 +77,62 @@
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
-                {% with field="name" label="Name" %}{% partial sortable-header %}{% endwith %}
-                {% with field="public" label="Public" %}{% partial sortable-header %}{% endwith %}
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">DOI</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Images</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lesions</th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patients</th>
-                {% with field="created" label="Created" %}{% partial sortable-header %}{% endwith %}
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                {% with field="created" label="Created" extra_class="hidden sm:table-cell" %}{% partial sortable-header %}{% endwith %}
+                {% with field="name" label="Name" extra_class="" %}{% partial sortable-header %}{% endwith %}
+                {% with field="doi" label="DOI" extra_class="hidden sm:table-cell" %}{% partial sortable-header %}{% endwith %}
+                {% with field="images" label="Images" extra_class="hidden sm:table-cell" %}{% partial sortable-header %}{% endwith %}
               </tr>
             </thead>
             <tbody>
               {% for collection in page %}
                 <tr class="{% cycle 'bg-white' 'bg-gray-50' %}">
+                  <td class="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{ collection.created|date:"Y-m-d" }}
+                  </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     <a href="{{ collection.get_absolute_url }}" class="text-indigo-600 hover:text-indigo-900 flex items-center gap-1">
                       {% if collection.pinned %}<i class="ri-pushpin-2-fill text-gray-400"></i>{% endif %}
                       {{ collection.name }}
+                      {% if not collection.public %}<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Private</span>{% endif %}
                     </a>
+                    {% if collection.description %}
+                      <div class="text-xs text-gray-400 truncate max-w-xs mt-0.5">{{ collection.description }}</div>
+                    {% endif %}
+                    <div class="sm:hidden text-xs text-gray-400 mt-0.5 flex gap-2">
+                      <span>{{ collection.created|date:"Y-m-d" }}</span>
+                      {% if collection.counts.image_count is not None %}
+                        <span>{{ collection.counts.image_count|intcomma }} images</span>
+                      {% endif %}
+                    </div>
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {% if collection.public %}<i class="ri-check-line text-green-600"></i>{% else %}<i class="ri-close-line text-red-600"></i>{% endif %}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td class="hidden sm:table-cell px-6 py-4 text-sm text-gray-500">
                     {% if collection.doi %}
                       <a href="{{ collection.doi.url }}" class="text-indigo-600 hover:text-indigo-900">{{ collection.doi.id }}</a>
+                      {% with supplemental_count=collection.doi.supplemental_files.all|length %}
+                        {% if supplemental_count %}
+                          <div class="text-xs text-gray-400 mt-0.5">{{ supplemental_count }} supplemental file{{ supplemental_count|pluralize }}</div>
+                        {% endif %}
+                      {% endwith %}
+                      {% for ri in collection.doi.related_identifiers.all %}
+                        <div class="mt-0.5">
+                          {% if ri.related_identifier_type == 'DOI' %}
+                            <a href="https://doi.org/{{ ri.related_identifier }}" target="_blank" rel="noopener noreferrer" class="text-xs text-gray-400 hover:text-indigo-600 truncate block max-w-xs">{{ ri.get_relation_type_display }}: {{ ri.related_identifier }}</a>
+                          {% else %}
+                            <a href="{{ ri.related_identifier }}" target="_blank" rel="noopener noreferrer" class="text-xs text-gray-400 hover:text-indigo-600 truncate block max-w-xs">{{ ri.get_relation_type_display }}: {{ ri.related_identifier }}</a>
+                          {% endif %}
+                        </div>
+                      {% endfor %}
                     {% else %}
                       -
                     {% endif %}
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td class="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {% if collection.counts.image_count is not None %}{{ collection.counts.image_count|intcomma }}{% else %}-{% endif %}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {% if collection.counts.lesion_count is not None %}{{ collection.counts.lesion_count|intcomma }}{% else %}-{% endif %}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {% if collection.counts.patient_count is not None %}{{ collection.counts.patient_count|intcomma }}{% else %}-{% endif %}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ collection.created|date:"Y-m-d" }}
-                  </td>
-                  <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                    {{ collection.description|truncatechars:50 }}
                   </td>
                 </tr>
               {% empty %}
                 <tr>
-                  <td colspan="8" class="px-6 py-4 text-sm text-gray-500 text-center">
+                  <td colspan="4" class="px-6 py-4 text-sm text-gray-500 text-center">
                     No collections found.
                   </td>
                 </tr>
