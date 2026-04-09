@@ -129,6 +129,7 @@ def test_data_explorer_query_sharing_via_link(page, data_explorer_parquet):
         timeout=30_000,
     )
     _wait_for_ready(page)
+    _click_run_query(page)
 
     results = page.locator("#query-results")
     expect(results).to_contain_text("male")
