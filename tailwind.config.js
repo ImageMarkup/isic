@@ -8,7 +8,9 @@ module.exports = {
     {
       // Dynamically set by alpine
       pattern:/^grid-cols-.*/
-    }
+    },
+    // Used for responsive column visibility in tables
+    'sm:table-cell',
   ],
   theme: {
     fontFamily: {
