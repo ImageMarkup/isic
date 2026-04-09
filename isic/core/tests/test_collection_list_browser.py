@@ -14,13 +14,13 @@ def _refresh_collection_counts():
 
 
 def _build_url(**params):
-    base = reverse("core/collection-table")
+    base = reverse("core/collection-list")
     qs = "&".join(f"{k}={v}" for k, v in params.items())
     return f"{base}?{qs}"
 
 
 @pytest.mark.playwright
-def test_collection_table_desktop(
+def test_collection_list_desktop(
     staff_authenticated_page,
     collection_factory,
     doi_factory,
@@ -92,9 +92,9 @@ def test_collection_table_desktop(
 
     # Sorting by images descending puts most-images collection first
     page.get_by_role("columnheader", name="Images").get_by_role("link").click()
-    page.wait_for_url("**/collections/table/?*sort=images*")
+    page.wait_for_url("**/collections/?*sort=images*")
     page.get_by_role("columnheader", name="Images").get_by_role("link").click()
-    page.wait_for_url("**/collections/table/?*order=desc*")
+    page.wait_for_url("**/collections/?*order=desc*")
 
     first_name_cell = page.locator("tbody tr").first.locator("td").nth(1)
     expect(first_name_cell).to_contain_text(collection_many_images.name)
@@ -107,7 +107,7 @@ def test_collection_table_desktop(
 
 
 @pytest.mark.playwright
-def test_collection_table_mobile(
+def test_collection_list_mobile(
     new_context,
     live_server,
     staff_authenticated_user,
