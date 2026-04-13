@@ -111,6 +111,8 @@ class Response(TimeStampedModel):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="responses")
     # TODO: investigate limit_choices_to for admin capabilities
     # see: https://code.djangoproject.com/ticket/25306
-    choice = models.ForeignKey(QuestionChoice, on_delete=models.CASCADE, null=True)
+    choice = models.ForeignKey(
+        QuestionChoice, on_delete=models.CASCADE, null=True, related_name="responses"
+    )
     # expect a single key inside named value. TODO: maybe add a constraint for this.
     value = models.JSONField(null=True)
