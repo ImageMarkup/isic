@@ -58,7 +58,7 @@ def test_core_collection_create(client_, visible):
 
 @pytest.mark.django_db
 def test_core_collection_list(client, authenticated_client, staff_client, private_collection):
-    url = reverse("core/collection-list") + "?exclude_empty=0&exclude_magic=0"
+    url = reverse("core/collection-list") + "?exclude_empty=0&magic_filter=all"
 
     r = client.get(url)
     assert list(r.context["page"].object_list) == []
@@ -86,7 +86,7 @@ def test_core_collection_detail(client, authenticated_client, staff_client, priv
 def test_core_collection_list_shares(
     user, client, authenticated_client, staff_client, private_collection
 ):
-    url = reverse("core/collection-list") + "?exclude_empty=0&exclude_magic=0"
+    url = reverse("core/collection-list") + "?exclude_empty=0&magic_filter=all"
     private_collection.shares.add(user, through_defaults={"grantor": private_collection.creator})
 
     r = client.get(url)
