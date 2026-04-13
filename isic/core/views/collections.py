@@ -183,17 +183,21 @@ def collection_list(request: HttpRequest) -> HttpResponse:
         ),
     )
 
-    exclude_magic = request.GET.get("exclude_magic", "1") == "1"
+    magic_filter = request.GET.get("magic_filter", "exclude")
+    pinned_filter = request.GET.get("pinned_filter", "all")
     exclude_empty = request.GET.get("exclude_empty", "1") == "1"
-    exclude_pinned = request.GET.get("exclude_pinned", "0") == "1"
 
-    if exclude_magic:
+    if magic_filter == "only":
+        collections = collections.magic()
+    elif magic_filter == "exclude":
         collections = collections.regular()
 
     if exclude_empty:
         collections = collections.filter(cached_counts__image_count__gt=0)
 
-    if exclude_pinned:
+    if pinned_filter == "only":
+        collections = collections.filter(pinned=True)
+    elif pinned_filter == "exclude":
         collections = collections.filter(pinned=False)
 
     sort = request.GET.get("sort", "name")
@@ -229,8 +233,8 @@ def collection_list(request: HttpRequest) -> HttpResponse:
             "page": page,
             "current_sort": sort,
             "current_order": order,
-            "exclude_magic": exclude_magic,
+            "magic_filter": magic_filter,
+            "pinned_filter": pinned_filter,
             "exclude_empty": exclude_empty,
-            "exclude_pinned": exclude_pinned,
         },
     )
