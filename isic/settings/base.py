@@ -159,6 +159,10 @@ AUTHENTICATION_BACKENDS += [
 
 # Disallowing CORS credentials is all the security necessary.
 # The API is safe to call by anyone, as it has no side effects.
+# Note: CORS_ALLOW_ALL_ORIGINS (which sets Access-Control-Allow-Origin: *)
+# cannot be used with credentials per the CORS spec. Browsers will block any
+# request that attempts credentials: 'include' when the response has a wildcard
+# origin, preventing CSRF attacks even on @csrf_exempt endpoints.
 CORS_ALLOW_ALL_ORIGINS = True
 
 PASSWORD_HASHERS += [
