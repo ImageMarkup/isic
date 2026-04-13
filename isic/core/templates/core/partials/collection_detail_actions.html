@@ -68,6 +68,23 @@
         {% endif %}
         {% if request.user.is_staff %}
             <div class="py-1" role="none">
+                {% if not collection.public %}
+                    {% with label="Pin Collection" title="Collection must be public to be pinned" %}
+                        {% partial disabled-menu-item %}
+                    {% endwith %}
+                {% elif collection.pinned %}
+                    <a href="#" @click.prevent="setPinned(false)"
+                       class="text-yellow-600 hover:bg-gray-100 hover:text-yellow-700 block px-4 py-2 text-sm"
+                       role="menuitem" tabindex="-1">Unpin Collection</a>
+                {% else %}
+                    <a href="#" @click.prevent="setPinned(true)"
+                       class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm"
+                       role="menuitem" tabindex="-1">Pin Collection</a>
+                {% endif %}
+            </div>
+        {% endif %}
+        {% if request.user.is_staff %}
+            <div class="py-1" role="none">
                 {% if collection.draftdoi %}
                     <a href="{% url 'core/draft-doi-edit' collection.draftdoi.slug %}"
                        class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm"

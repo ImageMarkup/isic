@@ -422,6 +422,76 @@ def test_core_api_collection_delete_blocked(
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("client_", "expected_status"),
+    [
+        (lf("client"), 403),
+        (lf("authenticated_client"), 403),
+        (lf("staff_client"), 200),
+    ],
+    ids=["anonymous", "authenticated", "staff"],
+)
+def test_core_api_collection_set_pinned_permissions(client_, expected_status, public_collection):
+    r = client_.post(
+        reverse("api:collection_set_pinned", kwargs={"id": public_collection.pk}),
+        {"pinned": True},
+        content_type="application/json",
+    )
+    assert r.status_code == expected_status
+
+
+@pytest.mark.django_db
+def test_core_api_collection_set_pinned(staff_client, collection_factory):
+    collection = collection_factory(public=True, pinned=False, locked=False)
+
+    r = staff_client.post(
+        reverse("api:collection_set_pinned", kwargs={"id": collection.pk}),
+        {"pinned": True},
+        content_type="application/json",
+    )
+    assert r.status_code == 200
+    collection.refresh_from_db()
+    assert collection.pinned is True
+
+    r = staff_client.post(
+        reverse("api:collection_set_pinned", kwargs={"id": collection.pk}),
+        {"pinned": False},
+        content_type="application/json",
+    )
+    assert r.status_code == 200
+    collection.refresh_from_db()
+    assert collection.pinned is False
+
+
+@pytest.mark.django_db
+def test_core_api_collection_set_pinned_private_collection_rejected(
+    staff_client, private_collection
+):
+    r = staff_client.post(
+        reverse("api:collection_set_pinned", kwargs={"id": private_collection.pk}),
+        {"pinned": True},
+        content_type="application/json",
+    )
+    assert r.status_code == 400
+    private_collection.refresh_from_db()
+    assert private_collection.pinned is False
+
+
+@pytest.mark.django_db
+def test_core_api_collection_set_pinned_ignores_locked(staff_client, collection_factory):
+    collection = collection_factory(public=True, pinned=False, locked=True)
+
+    r = staff_client.post(
+        reverse("api:collection_set_pinned", kwargs={"id": collection.pk}),
+        {"pinned": True},
+        content_type="application/json",
+    )
+    assert r.status_code == 200
+    collection.refresh_from_db()
+    assert collection.pinned is True
+
+
+@pytest.mark.django_db
 def test_core_api_collection_create_from_isic_ids(
     client,
     authenticated_client,
