@@ -17,7 +17,7 @@ from isic.core.models.collection import Collection
 from isic.core.pagination import CursorPagination
 from isic.core.permissions import get_visible_objects
 from isic.core.serializers import SearchQueryIn
-from isic.core.services.collection import collection_create
+from isic.core.services.collection import collection_create, collection_update
 from isic.core.services.collection import collection_delete as collection_delete_service
 from isic.core.services.collection.image import (
     collection_add_images_from_isic_ids,
@@ -286,6 +286,36 @@ def collection_populate_from_search(request, id: int, payload: SearchQueryIn):
         request, messages.INFO, "Adding images to collection, this may take a few minutes."
     )
     return 202, {}
+
+
+class SetPinnedIn(Schema):
+    pinned: bool
+
+    model_config = {"extra": "forbid"}
+
+
+@router.post(
+    "/{id}/set-pinned/",
+    response={200: None, 400: dict, 403: dict},
+    include_in_schema=False,
+)
+def collection_set_pinned(request, id: int, payload: SetPinnedIn):
+    if not request.user.is_staff:
+        return 403, {"error": "You do not have permission to pin or unpin this collection."}
+
+    qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
+    collection = get_object_or_404(qs.distinct(), id=id)
+
+    try:
+        collection_update(collection=collection, ignore_lock=True, pinned=payload.pinned)
+    except ValidationError as e:
+        error = "; ".join(e.messages)
+        messages.add_message(request, messages.ERROR, error)
+        return 400, {"error": error}
+
+    action = "pinned" if payload.pinned else "unpinned"
+    messages.add_message(request, messages.SUCCESS, f"Collection {action}.")
+    return 200, None
 
 
 class IsicIdList(Schema):
