@@ -36,8 +36,8 @@ class StudyTask(TimeStampedModel):
 
     study = models.ForeignKey(Study, on_delete=models.CASCADE, related_name="tasks")
     # TODO: annotators might become M2M in the future
-    annotator = models.ForeignKey(User, on_delete=models.CASCADE)
-    image = models.ForeignKey(Image, on_delete=models.CASCADE)
+    annotator = models.ForeignKey(User, on_delete=models.CASCADE, related_name="study_tasks")
+    image = models.ForeignKey(Image, on_delete=models.CASCADE, related_name="study_tasks")
 
     objects = StudyTaskSet.as_manager()
 

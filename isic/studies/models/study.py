@@ -24,7 +24,7 @@ class Study(TimeStampedModel):
     class Meta(TimeStampedModel.Meta):
         verbose_name_plural = "Studies"
 
-    creator = models.ForeignKey(User, on_delete=models.PROTECT)
+    creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="studies")
     owners = models.ManyToManyField(User, related_name="owned_studies")
     attribution = models.CharField(max_length=200)
 
@@ -41,8 +41,8 @@ class Study(TimeStampedModel):
         help_text="The Collection of images to use in your Study.",
     )
 
-    features = models.ManyToManyField(Feature)
-    questions = models.ManyToManyField(Question, through="StudyQuestion")
+    features = models.ManyToManyField(Feature, related_name="studies")
+    questions = models.ManyToManyField(Question, through="StudyQuestion", related_name="studies")
 
     # public study means that all images in the study must be public
     # and all of the related data to the study is public (responses).

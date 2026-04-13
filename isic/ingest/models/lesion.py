@@ -39,7 +39,7 @@ def get_lesion_count_for_user(user: User | AnonymousUser) -> int:
                 ESQ("term", **{"images.contributor_owner_ids": user.pk}),
             ]
 
-        if user.imageshare_set.exists():
+        if user.image_shares_received.exists():
             should += [
                 ESQ("term", **{"images.shared_to": user.pk}),
             ]
@@ -283,7 +283,7 @@ class LesionPermissions:
 
             # only add the user share requirement if the user has shares, since it will put
             # the user_id into the query (making query caching less effective).
-            if user_obj.imageshare_set.exists():
+            if user_obj.image_shares_received.exists():
                 lesion_visibility_requirements |= Q(user_share_id=user_obj.id)
 
             return qs.filter(

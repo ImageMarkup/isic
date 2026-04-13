@@ -345,7 +345,7 @@ def build_elasticsearch_query(
                 }
             )
 
-        if user.imageshare_set.exists():
+        if user.image_shares_received.exists():
             query_dict["bool"]["should"].append({"terms": {"shared_to": [user.pk]}})
 
         return query_dict

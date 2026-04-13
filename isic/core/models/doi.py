@@ -38,7 +38,7 @@ class AbstractDoi(TimeStampedModel):
     )
     slug = models.SlugField(max_length=150, unique=True)
     collection = models.OneToOneField(Collection, on_delete=models.PROTECT)
-    creator = models.ForeignKey(User, on_delete=models.RESTRICT)
+    creator = models.ForeignKey(User, on_delete=models.RESTRICT, related_name="%(class)ss")
 
     bundle = models.FileField(null=True, blank=True)
     bundle_size = models.PositiveBigIntegerField(null=True, blank=True)

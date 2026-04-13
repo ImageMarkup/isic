@@ -20,7 +20,7 @@ class Feature(TimeStampedModel):
         return self.label
 
     def save(self, **kwargs):
-        if self.pk and self.study_set.filter(annotations__isnull=False).exists():
+        if self.pk and self.studies.filter(annotations__isnull=False).exists():
             raise ValidationError("Can't modify the feature, it has already been marked up.")
 
         return super().save(**kwargs)

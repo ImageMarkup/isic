@@ -84,7 +84,7 @@ class Question(TimeStampedModel):
             raise ValueError(f"Unknown question type: {self.type}")
 
     def save(self, **kwargs):
-        if self.pk and self.study_set.filter(annotations__isnull=False).exists():
+        if self.pk and self.studies.filter(annotations__isnull=False).exists():
             raise ValidationError("Can't modify the question, it has already been answered.")
 
         return super().save(**kwargs)
