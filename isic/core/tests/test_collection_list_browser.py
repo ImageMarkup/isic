@@ -58,7 +58,7 @@ def test_collection_list_desktop(
         related_identifier="https://example.com/paper",
     )
 
-    page.goto(_build_url(exclude_empty=0, exclude_magic=1))
+    page.goto(_build_url(exclude_empty=0, magic_filter="exclude"))
 
     # All four column headers are visible on desktop
     expect(page.get_by_role("columnheader", name="Created")).to_be_visible()
@@ -138,7 +138,7 @@ def test_collection_list_mobile(
     ctx.add_cookies([{"name": "sessionid", "value": session_cookie.value, "url": live_server.url}])
     page = ctx.new_page()
 
-    page.goto(_build_url(exclude_empty=0, exclude_magic=1))
+    page.goto(_build_url(exclude_empty=0, magic_filter="exclude"))
 
     # Name column is visible on mobile
     expect(page.get_by_role("columnheader", name="Name")).to_be_visible()
