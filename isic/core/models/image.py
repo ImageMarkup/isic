@@ -247,8 +247,10 @@ class ImageShare(TimeStampedModel):
         ]
 
     grantor = models.ForeignKey(User, on_delete=models.PROTECT, related_name="shares")
-    image = models.ForeignKey(Image, on_delete=models.CASCADE)
-    grantee = models.ForeignKey(User, on_delete=models.CASCADE)
+    image = models.ForeignKey(Image, on_delete=models.CASCADE, related_name="image_shares")
+    grantee = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="image_shares_received"
+    )
 
 
 class ImagePermissions:
@@ -298,7 +300,7 @@ class ImagePermissions:
                     )
                 )
 
-            if user_obj.imageshare_set.exists():
+            if user_obj.image_shares_received.exists():
                 # this is the worst case scenario where we have to put the specific user into the
                 # query, guaranteeing that they won't share the cache with others.
                 # this is also the only portion that demands a left join, forcing the

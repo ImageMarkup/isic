@@ -38,7 +38,7 @@ class Cohort(CreationSortedTimeStampedModel):
         ]
 
     contributor = models.ForeignKey(Contributor, on_delete=models.PROTECT, related_name="cohorts")
-    creator = models.ForeignKey(User, on_delete=models.PROTECT)
+    creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="cohorts")
     girder_id = models.CharField(blank=True, max_length=24, help_text="The dataset_id from Girder.")
 
     name = models.CharField(

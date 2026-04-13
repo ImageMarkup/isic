@@ -23,14 +23,16 @@ class Segmentation(TimeStampedModel):
         max_length=24,
         validators=[RegexValidator(f"^{MONGO_ID_REGEX}$")],
     )
-    creator = models.ForeignKey(User, on_delete=models.RESTRICT)
-    image = models.ForeignKey(Image, on_delete=models.RESTRICT)
+    creator = models.ForeignKey(User, on_delete=models.RESTRICT, related_name="segmentations")
+    image = models.ForeignKey(Image, on_delete=models.RESTRICT, related_name="segmentations")
     mask = S3FileField(blank=True)
     meta = models.JSONField(default=dict)
 
 
 class SegmentationReview(TimeStampedModel):
-    creator = models.ForeignKey(User, on_delete=models.RESTRICT)
+    creator = models.ForeignKey(
+        User, on_delete=models.RESTRICT, related_name="segmentation_reviews"
+    )
     segmentation = models.ForeignKey(Segmentation, on_delete=models.CASCADE, related_name="reviews")
     approved = models.BooleanField()
     skill = models.CharField(max_length=6, choices=[("novice", "novice"), ("expert", "expert")])

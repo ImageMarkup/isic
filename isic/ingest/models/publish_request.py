@@ -3,7 +3,9 @@ from django.db import models
 
 
 class PublishRequestAccession(models.Model):
-    publish_request = models.ForeignKey("PublishRequest", on_delete=models.PROTECT)
+    publish_request = models.ForeignKey(
+        "PublishRequest", on_delete=models.PROTECT, related_name="publish_request_accessions"
+    )
     accession = models.OneToOneField("Accession", on_delete=models.PROTECT)
 
     def __str__(self) -> str:
@@ -20,7 +22,7 @@ class PublishRequest(models.Model):
     """
 
     created = models.DateTimeField(auto_now_add=True)
-    creator = models.ForeignKey(User, on_delete=models.PROTECT)
+    creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="publish_requests")
     accessions = models.ManyToManyField("Accession", through="PublishRequestAccession")
     # the additional collections to which the images will be added, including the magic collection
     collections = models.ManyToManyField("core.Collection")

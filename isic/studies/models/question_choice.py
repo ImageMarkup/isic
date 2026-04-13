@@ -19,7 +19,7 @@ class QuestionChoice(TimeStampedModel):
         if (
             self.pk
             and Question.objects.filter(
-                pk=self.question_id, study__annotations__isnull=False
+                pk=self.question_id, studies__annotations__isnull=False
             ).exists()
         ):
             raise ValidationError(

@@ -174,9 +174,9 @@ def image_browser(request):
 
     recent_collections = []
     if request.user.is_authenticated:
-        recent_collections_qs = request.user.collection_set.filter(locked=False).order_by(
-            "-created"
-        )[:5]
+        recent_collections_qs = request.user.collections.filter(locked=False).order_by("-created")[
+            :5
+        ]
         recent_collections = list(recent_collections_qs.values("id", "name"))
 
     return render(
