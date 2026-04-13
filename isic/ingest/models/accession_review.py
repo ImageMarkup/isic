@@ -8,7 +8,7 @@ from .accession import Accession
 class AccessionReview(models.Model):
     accession = models.OneToOneField(Accession, on_delete=models.CASCADE, related_name="review")
 
-    creator = models.ForeignKey(User, on_delete=models.DO_NOTHING)
+    creator = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name="accession_reviews")
     reviewed_at = models.DateTimeField(default=timezone.now)
     value = models.BooleanField()
 

@@ -62,7 +62,7 @@ class StudyOut(ModelSchema):
     def resolve_questions(study: Study) -> list[QuestionOut]:
         # Is there a better way with ninja to add fields from the M2M through-table?
         vals = []
-        for study_question in study.studyquestion_set.all():
+        for study_question in study.study_questions.all():
             study_question.question.required = study_question.required
             question_out = QuestionOut.from_orm(study_question.question)
             vals.append(question_out)
@@ -72,7 +72,7 @@ class StudyOut(ModelSchema):
 @study_router.get("/", response=list[StudyOut], include_in_schema=False, auth=is_staff)
 @paginate(CursorPagination)
 def study_list(request: HttpRequest):
-    return Study.objects.prefetch_related("features", "studyquestion_set__question__choices")
+    return Study.objects.prefetch_related("features", "study_questions__question__choices")
 
 
 @study_router.get("/{id}/", response=StudyOut, include_in_schema=False, auth=is_staff)

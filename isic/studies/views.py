@@ -272,8 +272,8 @@ def study_detail(request, pk):
             Prefetch(
                 "questions",
                 queryset=Question.objects.prefetch_related("choices")
-                .filter(studyquestion__study_id=pk)
-                .order_by("studyquestion__order", "prompt"),
+                .filter(study_questions__study_id=pk)
+                .order_by("study_questions__order", "prompt"),
             )
         )
         .prefetch_related("features"),
@@ -369,8 +369,8 @@ def study_task_detail(request, pk):
     )
     questions = (
         study_task.study.questions.prefetch_related("choices")
-        .annotate(required=F("studyquestion__required"))  # required for StudyTaskForm
-        .order_by("studyquestion__order")
+        .annotate(required=F("study_questions__required"))  # required for StudyTaskForm
+        .order_by("study_questions__order")
         .all()
     )
 
@@ -456,8 +456,8 @@ def study_task_detail_preview(request, pk):
 
     questions = (
         study_task.study.questions.prefetch_related("choices")
-        .annotate(required=F("studyquestion__required"))  # required for StudyTaskForm
-        .order_by("studyquestion__order")
+        .annotate(required=F("study_questions__required"))  # required for StudyTaskForm
+        .order_by("study_questions__order")
         .all()
     )
 

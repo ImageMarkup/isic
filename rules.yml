@@ -92,3 +92,15 @@ rules:
       - pattern-not: |
           class StaffReadonlyAdmin(admin.ModelAdmin):
               ...
+
+  - id: django-foreignkey-requires-related-name
+    languages:
+      - python
+    message: ForeignKey must specify related_name parameter
+    severity: ERROR
+    patterns:
+      - pattern-inside: |
+          class $CLASS(...):
+            ...
+      - pattern: django.db.models.ForeignKey($TO, ...)
+      - pattern-not: django.db.models.ForeignKey($TO, ..., related_name=$NAME, ...)

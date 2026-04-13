@@ -13,7 +13,7 @@ from .cohort import Cohort
 
 
 class MetadataFile(CreationSortedTimeStampedModel):
-    creator = models.ForeignKey(User, on_delete=models.CASCADE)
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name="metadata_files")
     cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name="metadata_files")
 
     blob = S3FileField(validators=[FileExtensionValidator(allowed_extensions=["csv"])], unique=True)

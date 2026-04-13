@@ -60,7 +60,7 @@ class Collection(TimeStampedModel):
             GinIndex(OpClass(Upper("name"), name="gin_trgm_ops"), name="collection_name_gin")
         ]
 
-    creator = models.ForeignKey(User, on_delete=models.PROTECT)
+    creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="collections")
 
     images = models.ManyToManyField(Image, related_name="collections", through="CollectionImage")
 
@@ -144,8 +144,10 @@ class Collection(TimeStampedModel):
 
 class CollectionImage(models.Model):
     created = models.DateTimeField(auto_now_add=True, db_index=True)
-    collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
-    image = models.ForeignKey(Image, on_delete=models.CASCADE)
+    collection = models.ForeignKey(
+        Collection, on_delete=models.CASCADE, related_name="collection_images"
+    )
+    image = models.ForeignKey(Image, on_delete=models.CASCADE, related_name="collection_images")
 
     class Meta:
         constraints = [
@@ -175,7 +177,9 @@ class CollectionShare(TimeStampedModel):
     grantor = models.ForeignKey(
         User, on_delete=models.PROTECT, related_name="collection_shares_given"
     )
-    collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
+    collection = models.ForeignKey(
+        Collection, on_delete=models.CASCADE, related_name="collection_shares"
+    )
     grantee = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="collection_shares_received"
     )

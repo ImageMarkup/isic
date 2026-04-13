@@ -25,8 +25,8 @@ class Annotation(TimeStampedModel):
         unique_together = [["study", "task", "image", "annotator"]]
 
     study = models.ForeignKey(Study, on_delete=models.CASCADE, related_name="annotations")
-    image = models.ForeignKey(Image, on_delete=models.PROTECT)
-    annotator = models.ForeignKey(User, on_delete=models.PROTECT)
+    image = models.ForeignKey(Image, on_delete=models.PROTECT, related_name="annotations")
+    annotator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="annotations")
     task = models.OneToOneField(StudyTask, related_name="annotation", on_delete=models.RESTRICT)
 
     # For the ISIC GUI this time is generated on page load.
