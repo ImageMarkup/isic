@@ -96,7 +96,7 @@
                       {% if not collection.public %}<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">Private</span>{% endif %}
                     </a>
                     {% if collection.description %}
-                      <div class="text-xs text-gray-400 truncate max-w-xs mt-0.5">{{ collection.description }}</div>
+                      <div class="text-xs text-gray-400 mt-0.5 max-w-sm line-clamp-3">{{ collection.description }}</div>
                     {% endif %}
                     <div class="sm:hidden text-xs text-gray-400 mt-0.5 flex gap-2">
                       <span>{{ collection.created|date:"Y-m-d" }}</span>
