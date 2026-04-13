@@ -18,7 +18,10 @@
   <div x-data="collectionDetail()">
     <div class="flex justify-between">
       <div class="flex justify-items">
-        <div class="heading-1">{{ collection.name }}</div>
+        <div class="heading-1">
+          {% if collection.pinned %}<i class="ri-pushpin-2-fill text-gray-400"></i>{% endif %}
+          {{ collection.name }}
+        </div>
       </div>
 
       {% include 'core/partials/collection_detail_actions.html' %}
@@ -221,6 +224,22 @@
               _this.errorMessage = error.response.data[0];
             });
           }
+        },
+        setPinned(pinned) {
+          axios.post('/api/v2/collections/{{ collection.pk }}/set-pinned/', { pinned }, {
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': '{{ csrf_token }}'
+            }
+          }).then(() => {
+            window.location.reload();
+          }).catch(function(error) {
+            if (error.response && error.response.data && error.response.data.error) {
+              alert(error.response.data.error);
+            } else {
+              alert('Something went wrong.');
+            }
+          });
         },
         deleteCollection() {
           if (confirm('Are you sure you want to delete this collection? This action cannot be undone.')) {
