@@ -1,6 +1,7 @@
 import itertools
 
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models.query import QuerySet
 
@@ -18,6 +19,7 @@ def study_create(  # noqa: PLR0913
     description: str,
     collection: Collection,
     public: bool,
+    zoomable: bool = False,
 ) -> Study:
     study = Study(
         creator=creator,
@@ -26,6 +28,7 @@ def study_create(  # noqa: PLR0913
         description=description,
         collection=collection,
         public=public,
+        zoomable=zoomable,
     )
     study.full_clean()
 
@@ -38,6 +41,9 @@ def study_create(  # noqa: PLR0913
 
 
 def study_update(*, study: Study, **fields):
+    if "zoomable" in fields and fields["zoomable"] != study.zoomable and study.annotations.exists():
+        raise ValidationError("Zoomable cannot be changed after responses have been recorded.")
+
     for field, value in fields.items():
         setattr(study, field, value)
 
