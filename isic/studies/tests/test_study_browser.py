@@ -30,6 +30,7 @@ def test_study_create_with_official_and_custom_questions(  # noqa: PLR0915
     page.get_by_label("Attribution").fill(study_attribution)
     page.get_by_label("Collection").select_option(str(collection.pk))
     page.get_by_label("Annotators").fill(user.email)
+    page.get_by_label("Zoomable").check()
 
     # -- Official question picker modal --
     page.get_by_text("Add Official Question").click()
@@ -94,6 +95,7 @@ def test_study_create_with_official_and_custom_questions(  # noqa: PLR0915
     assert study.collection == collection
     assert study.creator == user
     assert study.public is False
+    assert study.zoomable is True
 
     # The collection should be locked after study creation
     collection.refresh_from_db()

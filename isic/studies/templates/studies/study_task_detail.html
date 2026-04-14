@@ -1,5 +1,12 @@
 {% extends 'core/base.html' %}
 {% load humanize %}
+{% load static %}
+
+{% block head_extra %}
+  {{ block.super }}
+  <script src="{% static 'core/dist/cog.js' %}"></script>
+  <link rel="stylesheet" href="{% static 'core/dist/ol.css' %}">
+{% endblock %}
 
 {% block content %}
 
@@ -60,7 +67,7 @@
 
         <template x-if="true">
           <div x-show="open">
-            {% include 'core/partials/image_modal.html' with image=study_task.image include_metadata=False %}
+            {% include 'core/partials/image_modal.html' with image=study_task.image include_metadata=False zoomable=study_task.study.zoomable %}
           </div>
         </template>
       </div>
