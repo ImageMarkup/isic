@@ -198,6 +198,7 @@ def test_study_task_image_modal_fits_viewport(
         collection=collection,
         public=False,
         questions=[question],
+        zoomable=True,
     )
 
     task = StudyTask.objects.create(study=study, annotator=authenticated_user, image=image)
@@ -239,8 +240,8 @@ def test_study_task_image_modal_fits_viewport(
     modal = page.get_by_role("dialog")
     expect(modal).to_be_visible()
 
-    modal_img = modal.locator("img")
-    expect(modal_img).to_be_visible()
-    expect(modal_img).to_have_js_property("complete", value=True)
+    # The study task modal shows the OL zoom viewer (not a plain img).
+    viewer = modal.locator(f"#image-{image.pk}")
+    expect(viewer).to_be_visible()
 
     _assert_modal_fits_viewport(modal, viewport)

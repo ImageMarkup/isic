@@ -122,6 +122,7 @@ def study_create_view(request):
             description=base_form.cleaned_data["description"],
             collection=base_form.cleaned_data["collection"],
             public=base_form.cleaned_data["public"],
+            zoomable=base_form.cleaned_data["zoomable"],
         )
 
         for question in official_question_formset.cleaned_data:
@@ -169,7 +170,7 @@ def study_create_view(request):
 def study_edit(request, pk):
     study = get_object_or_404(Study, pk=pk)
     form = StudyEditForm(
-        request.POST or {key: getattr(study, key) for key in ["name", "description"]}
+        request.POST or {key: getattr(study, key) for key in ["name", "description", "zoomable"]}
     )
 
     if request.method == "POST" and form.is_valid():

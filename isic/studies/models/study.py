@@ -57,6 +57,15 @@ class Study(TimeStampedModel):
         ),
     )
 
+    zoomable = models.BooleanField(
+        default=False,
+        help_text=(
+            "Whether annotators can zoom and pan images while completing tasks. "
+            "Enabling zoom may confound inter-rater agreement if experts view "
+            "images at different magnifications."
+        ),
+    )
+
     objects = StudyQuerySet.as_manager()
 
     def __str__(self) -> str:

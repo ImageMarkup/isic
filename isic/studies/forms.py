@@ -101,6 +101,7 @@ class BaseStudyForm(forms.Form):
     attribution = fields["attribution"]
     collection = fields["collection"]
     public = fields["public"]
+    zoomable = fields["zoomable"]
 
     def __init__(self, *args, **kwargs):
         collections = kwargs.pop("collections")
@@ -151,6 +152,7 @@ class StudyEditForm(forms.Form):
 
     name = fields["name"]
     description = fields["description"]
+    zoomable = fields["zoomable"]
 
 
 class StudyAddAnnotatorsForm(forms.Form):

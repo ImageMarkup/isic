@@ -12,14 +12,24 @@
       <template x-if="hovered">
         {% if image.accession.is_cog %}
           <div>
-            <div id="image-{{ image.id }}" class="w-[512px] h-[512px] border border-gray-300 mx-auto"></div>
+            <div id="image-{{ image.id }}" class="w-full max-w-[512px] aspect-square border border-gray-300 mx-auto"></div>
             <script type="text/javascript">
               initializeCogViewer(document.getElementById('image-{{ image.id }}'), '{{ image.blob.url|safe }}');
             </script>
           </div>
         {% else %}
-        {% comment %}Note the single quotes: https://github.com/alpinejs/alpine/issues/466{% endcomment %}
-          <img :src="'{{ image.blob.url }}'" class="max-w-full max-h-[70vh] object-contain mx-auto" />
+          {% if zoomable %}
+            <div>
+              <div id="image-{{ image.id }}" class="w-full max-w-[512px] aspect-square border border-gray-300 mx-auto"></div>
+              <script type="text/javascript">
+                initializeImageViewer(document.getElementById('image-{{ image.id }}'), '{{ image.blob.url|safe }}');
+              </script>
+              <p class="text-center text-sm text-gray-500 mt-2 min-h-[1.25rem]">Scroll to zoom, click and drag to pan</p>
+            </div>
+          {% else %}
+            {% comment %}Note the single quotes: https://github.com/alpinejs/alpine/issues/466{% endcomment %}
+            <img :src="'{{ image.blob.url }}'" class="max-w-full max-h-[70vh] object-contain mx-auto" />
+          {% endif %}
         {% endif %}
 
       </template>
