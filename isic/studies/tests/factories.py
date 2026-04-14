@@ -63,6 +63,7 @@ class StudyFactory(factory.django.DjangoModelFactory):
 
     name = factory.Faker("text", max_nb_chars=100)
     description = factory.Faker("sentences")
+    attribution = factory.Faker("company")
     collection = factory.SubFactory(CollectionFactory)
 
     public = factory.Faker("boolean")

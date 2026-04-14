@@ -2,6 +2,10 @@ import Map from 'ol/Map.js';
 import View from 'ol/View.js';
 import TileLayer from 'ol/layer/WebGLTile.js';
 import GeoTIFF from 'ol/source/GeoTIFF.js';
+import ImageLayer from 'ol/layer/Image.js';
+import ImageStatic from 'ol/source/ImageStatic.js';
+import Projection from 'ol/proj/Projection.js';
+import { getCenter } from 'ol/extent.js';
 
 async function initializeCogViewer(target, url) {
   const source = new GeoTIFF({
@@ -35,4 +39,32 @@ async function initializeCogViewer(target, url) {
   });
 }
 
+async function initializeImageViewer(target, url) {
+  // ImageStatic requires the image extent upfront, and unlike GeoTIFF there is no
+  // embedded metadata OL can read — so we must load the image first to get its dimensions.
+  const img = await new Promise((resolve, reject) => {
+    const i = new Image();
+    i.onload = () => resolve(i);
+    i.onerror = reject;
+    i.src = url;
+  });
+
+  const extent = [0, 0, img.naturalWidth, img.naturalHeight];
+  const projection = new Projection({ code: 'raster', units: 'pixels', extent });
+
+  new Map({
+    target,
+    layers: [new ImageLayer({ source: new ImageStatic({ url, projection, imageExtent: extent }) })],
+    view: new View({
+      projection,
+      center: getCenter(extent),
+      zoom: 1,
+      minZoom: 0.5,
+      maxZoom: 8,
+      constrainOnlyCenter: true,
+    }),
+  });
+}
+
 window.initializeCogViewer = initializeCogViewer;
+window.initializeImageViewer = initializeImageViewer;

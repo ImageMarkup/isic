@@ -244,6 +244,17 @@
               {{ base_form.public.errors }}
             </div>
           </div>
+
+          <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
+            <label for="{{ base_form.zoomable.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
+              {{ base_form.zoomable.label }}
+            </label>
+            <div class="mt-1 mt-0 col-span-2">
+              <input type="checkbox" name="{{ base_form.zoomable.html_name }}" id="{{ base_form.zoomable.html_name }}" {% if base_form.zoomable.value %}checked{% endif %} />
+              <p class="mt-2 text-sm text-gray-500">{{ base_form.zoomable.help_text }}</p>
+              {{ base_form.zoomable.errors }}
+            </div>
+          </div>
         </div>
 
         <div class="mt-6 mt-5 space-y-6 space-y-5 border-t border-gray-200">
