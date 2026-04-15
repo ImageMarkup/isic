@@ -38,7 +38,9 @@ def resolve_image_identifier(view_func):
             else Q(accession__girder_id=image_identifier)
         )
 
-        image = Image.objects.filter(filter_).order_by().first()
+        image = get_visible_objects(
+            request.user, "core.view_image", Image.objects.filter(filter_)
+        ).first()
         if image:
             redirect_url = reverse("core/image-detail", kwargs={"image_identifier": image.isic_id})
             return HttpResponsePermanentRedirect(redirect_url)
