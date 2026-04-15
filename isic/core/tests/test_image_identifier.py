@@ -1,6 +1,8 @@
 from django.urls import reverse
 import pytest
 
+from isic.core.services.image import image_share
+
 
 @pytest.mark.django_db
 def test_resolve_isic_id(client, image_factory):
@@ -20,6 +22,24 @@ def test_resolve_girder_id(client, image_factory):
 @pytest.mark.django_db
 def test_resolve_pk(client, image_factory):
     image = image_factory(public=True)
+    response = client.get(f"/images/{image.pk}/")
+    assert response.status_code == 301
+    assert response.url == reverse("core/image-detail", kwargs={"image_identifier": image.isic_id})
+
+
+@pytest.mark.django_db
+def test_resolve_pk_private_image_unauthenticated(client, image_factory):
+    image = image_factory(public=False)
+    response = client.get(f"/images/{image.pk}/")
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_resolve_pk_private_image_authorized(client, user_factory, staff_user, image_factory):
+    user = user_factory()
+    image = image_factory(public=False)
+    image_share(image=image, grantor=staff_user, grantee=user)
+    client.force_login(user)
     response = client.get(f"/images/{image.pk}/")
     assert response.status_code == 301
     assert response.url == reverse("core/image-detail", kwargs={"image_identifier": image.isic_id})
