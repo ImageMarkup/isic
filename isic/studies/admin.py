@@ -217,7 +217,7 @@ class QuestionAdmin(StaffReadonlyAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.prefetch_related("choices").annotate(
-            num_choices=Count("choices"), used_in=Count("study", distinct=True)
+            num_choices=Count("choices"), used_in=Count("studies", distinct=True)
         )
 
     @admin.display(ordering="num_choices")
