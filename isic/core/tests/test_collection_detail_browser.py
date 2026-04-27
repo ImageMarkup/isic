@@ -2,7 +2,7 @@ from django.urls import reverse
 from playwright.sync_api import expect
 import pytest
 
-from isic.core.services.collection.image import collection_add_images
+from isic.core.services.collection.image import add_images_to_collection
 
 
 @pytest.mark.playwright
@@ -19,7 +19,7 @@ def test_collection_detail_lazy_attribution_and_share_modal(
     collection = collection_factory(public=False, locked=False, creator=staff_user)
     images = [image_factory(public=True) for _ in range(3)]
     for img in images:
-        collection_add_images(collection=collection, image=img)
+        add_images_to_collection(collection=collection, image=img)
 
     share_target = user_factory()
 
@@ -90,7 +90,7 @@ def test_collection_detail_image_removal(
     collection = collection_factory(public=True, locked=False, creator=user)
     images = [image_factory(public=True) for _ in range(3)]
     for img in images:
-        collection_add_images(collection=collection, image=img)
+        add_images_to_collection(collection=collection, image=img)
 
     page.goto(reverse("core/collection-detail", args=[collection.pk]))
 

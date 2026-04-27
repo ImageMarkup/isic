@@ -17,11 +17,10 @@ from isic.core.models.collection import Collection
 from isic.core.pagination import CursorPagination
 from isic.core.permissions import get_visible_objects
 from isic.core.serializers import SearchQueryIn
-from isic.core.services.collection import collection_create, collection_update
-from isic.core.services.collection import collection_delete as collection_delete_service
+from isic.core.services.collection import create_collection, delete_collection, update_collection
 from isic.core.services.collection.image import (
-    collection_add_images_from_isic_ids,
-    collection_remove_images_from_isic_ids,
+    add_collection_images_from_isic_ids,
+    remove_collection_images_from_isic_ids,
 )
 from isic.core.tasks import (
     populate_collection_from_isic_ids_task,
@@ -96,7 +95,7 @@ class CreateCollectionFromIsicIdsOut(Schema):
     auth=is_authenticated,
 )
 def collection_create_from_isic_ids(request, payload: CreateCollectionFromIsicIdsIn):
-    new_collection = collection_create(
+    new_collection = create_collection(
         creator=request.user,
         name=payload.name,
         description=payload.description,
@@ -205,7 +204,7 @@ def collection_delete(request, id: int):
         return 403, {"error": "You do not have permission to delete this collection."}
 
     try:
-        collection_delete_service(collection=collection)
+        delete_collection(collection=collection)
     except ValidationError as e:
         return 400, {"error": e.message}
 
@@ -307,7 +306,7 @@ def collection_set_pinned(request, id: int, payload: SetPinnedIn):
     collection = get_object_or_404(qs.distinct(), id=id)
 
     try:
-        collection_update(collection=collection, ignore_lock=True, pinned=payload.pinned)
+        update_collection(collection=collection, ignore_lock=True, pinned=payload.pinned)
     except ValidationError as e:
         error = "; ".join(e.messages)
         messages.add_message(request, messages.ERROR, error)
@@ -338,7 +337,7 @@ def collection_populate_from_list(request, id, payload: IsicIdList):
     if collection.locked:
         return 409, {"error": "Collection is locked"}
 
-    summary = collection_add_images_from_isic_ids(
+    summary = add_collection_images_from_isic_ids(
         user=request.user,
         collection=collection,
         isic_ids=payload.isic_ids,
@@ -360,7 +359,7 @@ def collection_remove_from_list(request, id, payload: IsicIdList):
     if collection.locked:
         return 409, {"error": "Collection is locked"}
 
-    summary = collection_remove_images_from_isic_ids(
+    summary = remove_collection_images_from_isic_ids(
         user=request.user,
         collection=collection,
         isic_ids=payload.isic_ids,

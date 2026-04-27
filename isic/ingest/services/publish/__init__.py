@@ -18,9 +18,9 @@ import pyexiv2
 from isic.core.models.collection import Collection
 from isic.core.models.image import Image
 from isic.core.models.isic_id import IsicId
-from isic.core.services.collection import collection_create
-from isic.core.services.collection.image import collection_add_images
-from isic.core.services.image import image_create
+from isic.core.services.collection import create_collection
+from isic.core.services.collection.image import add_images_to_collection
+from isic.core.services.image import create_image
 from isic.core.utils.db import lock_table_for_writes
 from isic.core.utils.iterators import throttled_iterator
 from isic.core.views.doi import LICENSE_URIS
@@ -31,7 +31,7 @@ from isic.ingest.models.publish_request import PublishRequest
 logger = logging.getLogger(__name__)
 
 
-def cohort_publish_initialize(
+def initialize_cohort_publish(
     *,
     cohort: Cohort,
     publisher: User,
@@ -47,7 +47,7 @@ def cohort_publish_initialize(
 
     with transaction.atomic():
         if not cohort.collection:
-            cohort.collection = collection_create(
+            cohort.collection = create_collection(
                 creator=publisher,
                 name=f"Publish of {cohort.name}",
                 description="",
@@ -71,7 +71,7 @@ def cohort_publish_initialize(
     return publish_request
 
 
-def cohort_publish(*, publish_request: PublishRequest) -> None:
+def publish_cohort(*, publish_request: PublishRequest) -> None:
     from isic.ingest.tasks import publish_accession_task
 
     additional_collection_ids = list(publish_request.collections.values_list("id", flat=True))
@@ -88,7 +88,7 @@ def cohort_publish(*, publish_request: PublishRequest) -> None:
         )
 
 
-def accession_publish(
+def publish_accession(
     *,
     accession: Accession,
     public: bool,
@@ -108,7 +108,7 @@ def accession_publish(
             accession.attribution = default_attribution
             accession.save(update_fields=["attribution"])
 
-        image_create(
+        create_image(
             creator=publisher,
             accession=accession,
             public=False,
@@ -118,7 +118,7 @@ def accession_publish(
             unembargo_image(image=accession.image)
 
         for collection in Collection.objects.filter(id__in=additional_collection_ids):
-            collection_add_images(
+            add_images_to_collection(
                 collection=collection,
                 image=accession.image,
                 ignore_lock=True,

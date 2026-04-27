@@ -15,10 +15,8 @@ from isic.core.pagination import CursorPagination
 from isic.core.permissions import get_visible_objects
 from isic.ingest.models import Accession, Cohort, Contributor, Lesion, MetadataFile
 from isic.ingest.models.lesion import get_lesion_count_for_user
-from isic.ingest.services.accession import accession_create as accession_create_service
-from isic.ingest.services.accession.review import (
-    accession_review_bulk_create as accession_review_bulk_create_service,
-)
+from isic.ingest.services.accession import create_accession
+from isic.ingest.services.accession.review import bulk_create_accession_reviews
 from isic.ingest.tasks import update_metadata_task
 
 lesion_router = Router()
@@ -115,7 +113,7 @@ def accession_create(request: HttpRequest, payload: AccessionIn):
     # TODO: how to make django-ninja schema aware of S3PlaceholderFile while using str for input?
     assert isinstance(payload.original_blob, S3PlaceholderFile)  # noqa: S101
 
-    return 201, accession_create_service(
+    return 201, create_accession(
         cohort=cohort,
         creator=request.user,
         original_blob=payload.original_blob,
@@ -138,7 +136,7 @@ def accession_review_bulk_create(request: HttpRequest, payload: list[AccessionRe
     if not request.user.is_staff:
         return 403, {"error": "Only staff users may bulk create reviews."}
 
-    accession_review_bulk_create_service(
+    bulk_create_accession_reviews(
         reviewer=request.user,
         accession_ids_values={x.id: x.value for x in payload},
     )

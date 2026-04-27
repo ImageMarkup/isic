@@ -20,7 +20,7 @@ from s3_file_field.widgets import S3FileInput
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.ingest.forms import CohortForm, ContributorForm, SingleAccessionUploadForm
 from isic.ingest.models import Cohort, Contributor, MetadataFile, ZipUpload
-from isic.ingest.services.accession import accession_create
+from isic.ingest.services.accession import create_accession
 from isic.ingest.tasks import extract_zip_task
 
 
@@ -136,7 +136,7 @@ def upload_single_accession(request, cohort_pk):
         if form.is_valid():
             try:
                 with transaction.atomic():
-                    accession = accession_create(
+                    accession = create_accession(
                         creator=request.user,
                         cohort=cohort,
                         original_blob=form.cleaned_data["original_blob"],

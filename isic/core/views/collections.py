@@ -17,20 +17,20 @@ from isic.core.models import Collection
 from isic.core.pagination import CursorPagination, qs_with_hardcoded_count
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.core.services import image_metadata_csv
-from isic.core.services.collection import collection_create, collection_update
+from isic.core.services.collection import create_collection, update_collection
 from isic.core.utils.csv import EscapingDictWriter
 from isic.core.utils.http import Buffer
 from isic.ingest.models import Contributor
 
 
 @login_required
-def collection_create_(request):
+def collection_create(request):
     context = {}
 
     if request.method == "POST":
         context["form"] = CollectionForm(request.POST)
         if context["form"].is_valid():
-            collection = collection_create(
+            collection = create_collection(
                 creator=request.user, **context["form"].cleaned_data, locked=False
             )
             return HttpResponseRedirect(reverse("core/collection-detail", args=[collection.pk]))
@@ -53,7 +53,7 @@ def collection_edit(request, pk):
 
     if request.method == "POST" and form.is_valid():
         try:
-            collection_update(collection, **form.cleaned_data)
+            update_collection(collection, **form.cleaned_data)
         except ValidationError as e:
             messages.add_message(request, messages.ERROR, e.message)
         else:
@@ -95,7 +95,7 @@ def collection_download_metadata(request, pk):
 
 @needs_object_permission("core.view_collection", (Collection, "pk", "pk"))
 @needs_object_permission("core.create_doi", (Collection, "pk", "pk"))
-def collection_create_doi_(request, pk):
+def collection_create_doi(request, pk):
     collection = get_object_or_404(Collection, pk=pk)
 
     context = {

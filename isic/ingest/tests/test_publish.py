@@ -12,11 +12,11 @@ from isic.core.models.collection import Collection
 from isic.core.models.image import Image
 from isic.core.views.doi import LICENSE_URIS
 from isic.ingest.models.accession import AccessionStatus
-from isic.ingest.services.accession import accession_create
+from isic.ingest.services.accession import create_accession
 from isic.ingest.services.publish import (
-    accession_publish,
-    cohort_publish_initialize,
     embed_iptc_metadata,
+    initialize_cohort_publish,
+    publish_accession,
 )
 
 data_dir = pathlib.Path(__file__).parent / "data"
@@ -86,7 +86,7 @@ def test_publish_copies_default_attribution(
     publishable_cohort_for_attributions.save(update_fields=["default_attribution"])
 
     with django_capture_on_commit_callbacks(execute=True):
-        publish_request = cohort_publish_initialize(
+        publish_request = initialize_cohort_publish(
             cohort=publishable_cohort_for_attributions,
             publisher=user,
             public=True,
@@ -155,7 +155,7 @@ def test_unembargo_images(user, cohort_factory, django_capture_on_commit_callbac
     cohort = cohort_factory(creator=user, contributor__creator=user)
     with blob_path.open("rb") as stream:
         blob = InMemoryUploadedFile(stream, None, blob_name, None, blob_path.stat().st_size, None)
-        accession = accession_create(
+        accession = create_accession(
             creator=user,
             cohort=cohort,
             original_blob=blob,
@@ -167,7 +167,7 @@ def test_unembargo_images(user, cohort_factory, django_capture_on_commit_callbac
     accession.save(update_fields=["attribution"])
 
     with django_capture_on_commit_callbacks(execute=True):
-        accession_publish(accession=accession, public=True, publisher=user)
+        publish_accession(accession=accession, public=True, publisher=user)
 
     image = Image.objects.get(accession=accession)
 
@@ -194,7 +194,7 @@ def test_iptc_metadata_embedding(
     cohort = cohort_factory(creator=user, contributor__creator=user)
     with blob_path.open("rb") as stream:
         blob = InMemoryUploadedFile(stream, None, blob_name, None, blob_path.stat().st_size, None)
-        accession = accession_create(
+        accession = create_accession(
             creator=user,
             cohort=cohort,
             original_blob=blob,
@@ -206,7 +206,7 @@ def test_iptc_metadata_embedding(
     accession.save(update_fields=["attribution"])
 
     with django_capture_on_commit_callbacks(execute=True):
-        accession_publish(accession=accession, public=False, publisher=user)
+        publish_accession(accession=accession, public=False, publisher=user)
 
     image = Image.objects.get(accession=accession)
     assert not image.public

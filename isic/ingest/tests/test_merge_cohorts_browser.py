@@ -2,7 +2,7 @@ from django.urls import reverse
 from playwright.sync_api import expect
 import pytest
 
-from isic.core.services.collection.image import collection_add_images
+from isic.core.services.collection.image import add_images_to_collection
 from isic.ingest.models import Cohort
 
 
@@ -21,13 +21,13 @@ def test_merge_cohorts_autocomplete_preview_and_submit(
     cohort_a = cohort_factory(collection=collection_a)
     accession_a = accession_factory(cohort=cohort_a)
     image_a = image_factory(accession=accession_a, public=True)
-    collection_add_images(collection=collection_a, image=image_a)
+    add_images_to_collection(collection=collection_a, image=image_a)
 
     collection_b = collection_factory()
     cohort_b = cohort_factory(collection=collection_b)
     accession_b = accession_factory(cohort=cohort_b)
     image_b = image_factory(accession=accession_b, public=True)
-    collection_add_images(collection=collection_b, image=image_b)
+    add_images_to_collection(collection=collection_b, image=image_b)
 
     page.goto(reverse("ingest/merge-cohorts"))
 

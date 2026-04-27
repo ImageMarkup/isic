@@ -118,7 +118,7 @@ class PublishCohortForm(forms.Form):
         cleaned_data = super().clean()
         assert cleaned_data  # noqa: S101
 
-        # note that this logic is duplicated in cohort_publish_initialize, this is just
+        # note that this logic is duplicated in initialize_cohort_publish, this is just
         # added for easier form validation.
         has_public_additional_collections = Collection.objects.filter(
             pk__in=cleaned_data.get("additional_collections", []), public=True

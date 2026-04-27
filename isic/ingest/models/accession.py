@@ -857,10 +857,10 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
                     # if a new metadata item has been added or an existing has been modified,
                     # reset the review state.
                     from isic.ingest.services.accession.review import (
-                        accession_review_delete,
+                        delete_accession_review,
                     )
 
-                    accession_review_delete(accession=self)
+                    delete_accession_review(accession=self)
 
             if modified:
                 remapped_internal_values = {}
@@ -906,10 +906,10 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
 
                     if reset_review:
                         from isic.ingest.services.accession.review import (
-                            accession_review_delete,
+                            delete_accession_review,
                         )
 
-                        accession_review_delete(accession=self)
+                        delete_accession_review(accession=self)
 
             if modified:
                 self.metadata_versions.create(

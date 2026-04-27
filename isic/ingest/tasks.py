@@ -20,8 +20,8 @@ from isic.ingest.models import (
     ZipUploadStatus,
 )
 from isic.ingest.models.publish_request import PublishRequest
-from isic.ingest.services.accession import bulk_accession_update_metadata
-from isic.ingest.services.publish import accession_publish, cohort_publish
+from isic.ingest.services.accession import update_accession_metadata
+from isic.ingest.services.publish import publish_accession, publish_cohort
 from isic.ingest.utils.metadata import (
     ColumnRowErrors,
     Problem,
@@ -166,7 +166,7 @@ def update_metadata_task(user_pk: int, metadata_file_pk: int):
 
                     yield accession_id, row
 
-    bulk_accession_update_metadata(
+    update_accession_metadata(
         user=user, metadata=id_metadata_mapping(), metadata_file_id=metadata_file.pk
     )
 
@@ -174,7 +174,7 @@ def update_metadata_task(user_pk: int, metadata_file_pk: int):
 @shared_task(soft_time_limit=3600, time_limit=3660)
 def publish_cohort_task(publish_request_pk: int):
     publish_request = PublishRequest.objects.get(pk=publish_request_pk)
-    cohort_publish(publish_request=publish_request)
+    publish_cohort(publish_request=publish_request)
 
 
 # keep in mind when setting the time limit that images can be hundreds of megabytes and
@@ -190,7 +190,7 @@ def publish_accession_task(
 ):
     accession = Accession.objects.select_related("cohort").get(pk=accession_pk)
     publisher = User.objects.get(pk=publisher_pk)
-    accession_publish(
+    publish_accession(
         accession=accession,
         public=public,
         publisher=publisher,

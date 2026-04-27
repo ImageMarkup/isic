@@ -7,7 +7,7 @@ import pandas as pd
 
 from isic.core.models.collection import Collection
 from isic.studies.models import Annotation, Question, Response
-from isic.studies.services import populate_study_tasks, study_create
+from isic.studies.services import create_study, populate_study_tasks
 
 
 @click.command()
@@ -58,7 +58,7 @@ def create_study_from_csv(  # noqa: PLR0912, PLR0913, C901
         click.secho(f"Unable to find collection with id {collection_id}.", err=True, fg="red")
         sys.exit(1)
 
-    study = study_create(
+    study = create_study(
         creator=study_creator,
         owners=[study_creator],
         attribution=study_attribution,

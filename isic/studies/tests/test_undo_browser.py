@@ -2,7 +2,7 @@ from django.urls import reverse
 from playwright.sync_api import expect
 import pytest
 
-from isic.core.services.collection.image import collection_add_images
+from isic.core.services.collection.image import add_images_to_collection
 from isic.studies.models import Annotation, Question, QuestionChoice, StudyTask
 
 
@@ -16,7 +16,7 @@ def test_study_task_undo_after_annotation(
     collection = collection_factory(creator=user)
     images = [image_factory(public=True) for _ in range(2)]
     for img in images:
-        collection_add_images(collection=collection, image=img)
+        add_images_to_collection(collection=collection, image=img)
 
     question = Question.objects.create(
         prompt="Is this benign?", type=Question.QuestionType.SELECT, official=False
