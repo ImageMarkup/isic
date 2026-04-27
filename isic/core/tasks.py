@@ -140,7 +140,7 @@ def sync_elasticsearch_indices_task():
 
 
 @shared_task(soft_time_limit=1800, time_limit=1810)
-def generate_staff_image_list_metadata_csv(user_id: int) -> None:
+def generate_staff_image_list_metadata_csv_task(user_id: int) -> None:
     user = User.objects.get(pk=user_id, is_staff=True)
 
     with tempfile.NamedTemporaryFile(mode="w", delete=False) as f, transaction.atomic():
@@ -257,7 +257,7 @@ def generate_archive_snapshot_task() -> None:
 
 
 @shared_task(soft_time_limit=10, time_limit=15)
-def prune_expired_oauth_tokens():
+def prune_expired_oauth_tokens_task():
     clear_expired_oauth_tokens()
 
 
@@ -268,7 +268,7 @@ def refresh_materialized_view_collection_counts_task():
 
 
 @shared_task(soft_time_limit=180, time_limit=200)
-def regenerate_sponsored_blob(image_id: int):
+def regenerate_sponsored_blob_task(image_id: int):
     image = Image.objects.select_related("accession").get(id=image_id)
 
     accession = image.accession

@@ -33,7 +33,7 @@ def create_accession(
     original_blob_name: str,
     original_blob_size: int,
 ) -> Accession:
-    from isic.ingest.tasks import accession_generate_blob_task
+    from isic.ingest.tasks import generate_accession_blob_task
 
     # TODO: should the user this is acting on behalf of be the same as the creator?
     if not creator.has_perm("ingest.add_accession", cohort):
@@ -58,7 +58,7 @@ def create_accession(
         accession.full_clean(validate_constraints=False)
         accession.save()
         accession.unstructured_metadata.save()
-        accession_generate_blob_task.delay_on_commit(accession.pk)
+        generate_accession_blob_task.delay_on_commit(accession.pk)
 
     return accession
 
@@ -67,7 +67,7 @@ def reprocess_accession(*, accession: Accession) -> None:
     """
     Reprocess an accession by generating a new blob, thumbnail, and (optionally) sponsored blob.
     """  # noqa: D200
-    from isic.ingest.tasks import accession_generate_blob_task
+    from isic.ingest.tasks import generate_accession_blob_task
 
     # since our storage doesn't allow overwriting files, the existing blobs need to be deleted
     # before we reprocess the accession. this means there will be a period of time where the
@@ -88,7 +88,7 @@ def reprocess_accession(*, accession: Accession) -> None:
         accession.sponsored_blob = ""
         accession.sponsored_thumbnail_256_blob = ""
         accession.save(update_fields=["sponsored_blob", "sponsored_thumbnail_256_blob"])
-        accession_generate_blob_task(accession.pk)
+        generate_accession_blob_task(accession.pk)
 
         if hasattr(accession, "image"):
             # the existing accession.image has no blob values, so fresh Image objects
