@@ -13,7 +13,7 @@ from django_extensions.db.models import TimeStampedModel
 from .image import Image
 
 
-class CollectionQuerySet(models.QuerySet):
+class CollectionQuerySet(models.QuerySet["Collection"]):
     def pinned(self):
         return self.filter(pinned=True)
 

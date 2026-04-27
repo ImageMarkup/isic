@@ -112,7 +112,7 @@ class AccessionMetadata(models.Model):
         abstract = True
 
 
-class AccessionQuerySet(models.QuerySet):
+class AccessionQuerySet(models.QuerySet["Accession"]):
     def skipped(self):
         return self.filter(status=AccessionStatus.SKIPPED)
 

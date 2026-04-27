@@ -12,7 +12,7 @@ from .feature import Feature
 from .question import Question
 
 
-class StudyQuerySet(models.QuerySet):
+class StudyQuerySet(models.QuerySet["Study"]):
     def public(self):
         return self.filter(public=True)
 
