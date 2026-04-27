@@ -36,7 +36,7 @@ class Annotation(TimeStampedModel):
     start_time = models.DateTimeField(null=True)
 
     def get_absolute_url(self) -> str:
-        return reverse("annotation-detail", args=[self.pk])
+        return reverse("studies/annotation-detail", args=[self.pk])
 
     @property
     def annotation_duration(self) -> timedelta | None:
