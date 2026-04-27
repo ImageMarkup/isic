@@ -125,7 +125,7 @@ def cohort_merge(request):
 
     return render(
         request,
-        "ingest/merge_cohorts.html",
+        "ingest/cohort_merge.html",
         {"form": form},
     )
 
