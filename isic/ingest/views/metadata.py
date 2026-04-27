@@ -95,7 +95,7 @@ class ApplyMetadataContext(TypedDict):
 
 
 @staff_member_required
-def apply_metadata(request, cohort_pk):
+def metadata_apply(request, cohort_pk):
     cohort: Cohort = get_object_or_404(
         Cohort.objects.prefetch_related(
             Prefetch("metadata_files", queryset=MetadataFile.objects.order_by("-created"))
@@ -126,4 +126,4 @@ def apply_metadata(request, cohort_pk):
                 reverse("ingest/metadata-file-detail", args=[form.cleaned_data["metadata_file"]])
             )
 
-    return render(request, "ingest/apply_metadata.html", ctx)
+    return render(request, "ingest/metadata_apply.html", ctx)

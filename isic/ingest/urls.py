@@ -2,12 +2,12 @@ from django.urls import path
 
 from isic.ingest.views.accession import accession_cog_viewer
 from isic.ingest.views.cohort import cohort_detail, cohort_list, cohort_merge, cohort_publish
-from isic.ingest.views.metadata import apply_metadata, metadata_file_create, metadata_file_detail
+from isic.ingest.views.metadata import metadata_apply, metadata_file_create, metadata_file_detail
 from isic.ingest.views.review import cohort_review, ingest_review
 from isic.ingest.views.upload import (
     cohort_files,
-    select_or_create_cohort,
-    select_or_create_contributor,
+    cohort_select_or_create,
+    contributor_select_or_create,
     upload_cohort_create,
     upload_cohort_edit,
     upload_contributor_create,
@@ -18,7 +18,7 @@ from isic.ingest.views.upload import (
 urlpatterns = [
     path(
         "upload/select-or-create-contributor/",
-        select_or_create_contributor,
+        contributor_select_or_create,
         name="upload/select-or-create-contributor",
     ),
     path(
@@ -28,7 +28,7 @@ urlpatterns = [
     ),
     path(
         "upload/select-or-create-cohort/<int:contributor_pk>/",
-        select_or_create_cohort,
+        cohort_select_or_create,
         name="upload/select-or-create-cohort",
     ),
     path(
@@ -71,7 +71,7 @@ urlpatterns = [
     ),
     path(
         "staff/ingest-review/<int:cohort_pk>/validate-metadata/",
-        apply_metadata,
+        metadata_apply,
         name="ingest/validate-metadata",
     ),
     path(

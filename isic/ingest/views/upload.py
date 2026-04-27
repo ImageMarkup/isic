@@ -32,7 +32,7 @@ class ZipForm(ModelForm):
 
 
 @login_required
-def select_or_create_contributor(request):
+def contributor_select_or_create(request):
     ctx = {"contributors": get_visible_objects(request.user, "ingest.view_contributor")}
     if ctx["contributors"].count() == 0:
         return HttpResponseRedirect(reverse("upload/create-contributor"))
@@ -41,7 +41,7 @@ def select_or_create_contributor(request):
 
 
 @needs_object_permission("ingest.view_contributor", (Contributor, "pk", "contributor_pk"))
-def select_or_create_cohort(request, contributor_pk):
+def cohort_select_or_create(request, contributor_pk):
     contributor = Contributor.objects.get(pk=contributor_pk)
     ctx = {
         "cohorts": contributor.cohorts.order_by("-created"),
