@@ -19,7 +19,7 @@ def test_create_study(
 
     with django_capture_on_commit_callbacks(execute=True):
         authenticated_client.post(
-            reverse("study-create"),
+            reverse("studies/study-create"),
             {
                 "name": "foobar",
                 "description": "-",

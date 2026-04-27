@@ -231,7 +231,7 @@ def test_study_task_image_modal_fits_viewport(
         ],
     )
 
-    page.goto(reverse("study-task-detail", args=[task.pk]))
+    page.goto(reverse("studies/study-task-detail", args=[task.pk]))
 
     # The study task page shows the full image directly (not a thumbnail),
     # click it to open the modal.

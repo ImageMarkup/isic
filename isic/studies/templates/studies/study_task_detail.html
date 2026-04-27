@@ -12,7 +12,7 @@
 
   {% if preview_mode %}
     <ul class="flex bg-yellow-100 border border-yellow-300 my-4 px-4 py-3 rounded-md text-yellow-900 text-sm">
-      <li>You are previewing a task. <a href="{% url 'study-detail' study_task.study.pk %}">Return to Study</a></li>
+      <li>You are previewing a task. <a href="{% url 'studies/study-detail' study_task.study.pk %}">Return to Study</a></li>
     </ul>
   {% endif %}
 
@@ -28,7 +28,7 @@
               },
             }).then(response => {
               if (response.ok) {
-                window.location.href = '{% url "study-task-detail" just_completed_task.id %}';
+                window.location.href = '{% url "studies/study-task-detail" just_completed_task.id %}';
               } else {
                 alert('An error occurred.');
               }

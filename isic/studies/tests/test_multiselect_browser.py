@@ -44,7 +44,7 @@ def test_multiselect_picker_search_select_all_and_submit(
 
     task = StudyTask.objects.create(study=study, annotator=user, image=image)
 
-    page.goto(reverse("study-task-detail", args=[task.pk]))
+    page.goto(reverse("studies/study-task-detail", args=[task.pk]))
 
     expect(page.get_by_text("Select applicable features")).to_be_visible()
 
@@ -91,7 +91,7 @@ def test_multiselect_picker_search_select_all_and_submit(
     page.get_by_role("button", name="Respond and continue").click()
 
     # Should redirect to study detail (only 1 task, so study is complete)
-    page.wait_for_url(f"**{reverse('study-detail', args=[study.pk])}")
+    page.wait_for_url(f"**{reverse('studies/study-detail', args=[study.pk])}")
     expect(page.get_by_text("completed all tasks")).to_be_visible()
 
     # Verify responses in the database
