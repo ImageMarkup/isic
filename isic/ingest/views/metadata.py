@@ -78,7 +78,7 @@ def metadata_file_detail(request, metadata_file_pk: int):
         "metadata_file": metadata_file,
     }
 
-    return render(request, "ingest/metadata_file.html", ctx)
+    return render(request, "ingest/metadata_file_detail.html", ctx)
 
 
 class ApplyMetadataContext(TypedDict):
