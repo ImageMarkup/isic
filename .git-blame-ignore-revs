@@ -12,3 +12,17 @@ b086108f04296e2a23c6943fb81cc5d158923cfd
 6b3959ee3476ffb197c2fc1bf318c32cd20db6e4
 # apply ruff upgrade fixes
 6ea87d33dd55e9164986d8054e22b1a7af1f5b17
+# normalize ingest URL names to module/name prefix convention
+d3c87e52
+# rename StudyTaskSet to StudyTaskQuerySet
+1a32c055
+# add generic type parameters to QuerySet subclasses
+ec2e76d0
+# convert ingest and studies urls.py to explicit from-imports
+fe4073bb
+# rename service functions to verb-noun and unify import style
+fdd2bcfb
+# enforce _task suffix on Celery tasks and fix violations
+4af6387c
+# fix remaining noun-verb ordering in service and view names
+6c2d90e4
