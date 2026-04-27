@@ -28,7 +28,7 @@
     <ul class="divide-y divide-gray-200">
       {% for cohort in cohorts %}
         <li>
-          <a href="{% url 'cohort-detail' cohort.id %}" class="block hover:bg-gray-50">
+          <a href="{% url 'ingest/cohort-detail' cohort.id %}" class="block hover:bg-gray-50">
             <div class="px-4 py-4 sm:px-6 flex justify-between">
               <div class="flex flex-col">
                 <div class="flex">

@@ -220,7 +220,7 @@ def test_apply_metadata_step2(
     )
 
     r = staff_client.post(
-        reverse("validate-metadata", args=[cohort_with_accession.pk]),
+        reverse("ingest/validate-metadata", args=[cohort_with_accession.pk]),
         {"metadata_file": metadatafile.pk},
     )
 
@@ -247,7 +247,7 @@ def test_apply_metadata_step2_invalid(
 
     with django_capture_on_commit_callbacks(execute=True):
         r = staff_client.post(
-            reverse("validate-metadata", args=[cohort_with_accession.pk]),
+            reverse("ingest/validate-metadata", args=[cohort_with_accession.pk]),
             {"metadata_file": metadatafile.pk},
             follow=True,
         )
@@ -285,7 +285,7 @@ def test_apply_metadata_step3_full_cohort(
 
     with django_capture_on_commit_callbacks(execute=True):
         r = staff_client.post(
-            reverse("validate-metadata", args=[cohort_with_accession.pk]),
+            reverse("ingest/validate-metadata", args=[cohort_with_accession.pk]),
             {"metadata_file": metadatafile.pk},
             follow=True,
         )
@@ -303,7 +303,7 @@ def test_apply_metadata_step3_full_cohort(
 
     with django_capture_on_commit_callbacks(execute=True):
         r = staff_client.post(
-            reverse("validate-metadata", args=[cohort_with_accession.pk]),
+            reverse("ingest/validate-metadata", args=[cohort_with_accession.pk]),
             {"metadata_file": disagreeing_metadatafile.pk},
             follow=True,
         )

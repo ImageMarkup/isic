@@ -102,7 +102,7 @@ def upload_cohort_edit(request, cohort_pk):
             form.instance.creator = cohort.creator
             form.instance.contributor = cohort.contributor
             form.save(commit=True)
-            return HttpResponseRedirect(reverse("cohort-detail", args=[form.instance.pk]))
+            return HttpResponseRedirect(reverse("ingest/cohort-detail", args=[form.instance.pk]))
     else:
         form = CohortForm(instance=cohort)
 

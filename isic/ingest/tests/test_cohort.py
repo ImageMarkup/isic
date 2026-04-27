@@ -24,7 +24,7 @@ def test_cohort_delete_with_published_accessions(cohort, accession_factory, imag
 
 @pytest.mark.django_db
 def test_cohort_list_view(staff_client, cohort, user):
-    r = staff_client.get(reverse("cohort-list"))
+    r = staff_client.get(reverse("ingest/cohort-list"))
     assert r.status_code == 200
 
 
@@ -37,7 +37,7 @@ def test_cohort_detail_view_with_published_and_unpublished_accessions(
     image_factory(accession__cohort=cohort, public=True)
     accession_factory(cohort=cohort, ingested=True)
 
-    r = staff_client.get(reverse("cohort-detail", args=[cohort.pk]))
+    r = staff_client.get(reverse("ingest/cohort-detail", args=[cohort.pk]))
     assert r.status_code == 200
     assert len(r.context["accessions"]) == 2
 

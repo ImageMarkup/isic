@@ -154,7 +154,7 @@ def test_accession_modal_fits_viewport(
         ],
     )
 
-    page.goto(reverse("cohort-review", args=[cohort.pk]))
+    page.goto(reverse("ingest/cohort-review", args=[cohort.pk]))
 
     thumb_el = page.locator("img").first
     thumb_el.hover()

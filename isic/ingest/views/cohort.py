@@ -121,7 +121,7 @@ def merge_cohorts(request):
             form.add_error(None, e)
         else:
             messages.success(request, "Cohort merged successfully.")
-            return HttpResponseRedirect(reverse("cohort-detail", args=[cohort.pk]))
+            return HttpResponseRedirect(reverse("ingest/cohort-detail", args=[cohort.pk]))
 
     return render(
         request,
@@ -150,7 +150,7 @@ def publish_cohort(request, pk):
             messages.SUCCESS,
             f"Publishing {intcomma(publish_request.accessions.count())} images. This may take several minutes.",  # noqa: E501
         )
-        return HttpResponseRedirect(reverse("cohort-detail", args=[cohort.pk]))
+        return HttpResponseRedirect(reverse("ingest/cohort-detail", args=[cohort.pk]))
 
     ctx = {
         "form": form,

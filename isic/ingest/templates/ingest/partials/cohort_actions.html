@@ -10,13 +10,13 @@
       <a href="{% url 'upload/edit-cohort' cohort.pk %}" class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-0">Edit Cohort</a>
     </div>
     <div class="py-1" role="none">
-      {% url 'cohort-review' cohort.pk as review_url %}
+      {% url 'ingest/cohort-review' cohort.pk as review_url %}
       <a href="{{ review_url }}" class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-0">Review Cohort</a>
       <a href="{{ review_url }}{% querystring grouped_by_lesion="1" %}" class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-0">Review Cohort by Lesion</a>
     </div>
     <div class="py-1" role="none">
       <a href="{% url 'upload/cohort-files' cohort.pk %}" class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-0">Add additional files</a>
-      <a href="{% url 'validate-metadata' cohort.pk %}" class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-0">Validate & Apply Metadata</a>
+      <a href="{% url 'ingest/validate-metadata' cohort.pk %}" class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-0">Validate & Apply Metadata</a>
     </div>
     <div class="py-1" role="none">
       <a href="{% url 'upload/cohort-publish' cohort.pk %}" class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-0">Publish Cohort</a>
