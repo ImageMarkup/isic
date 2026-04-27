@@ -3,7 +3,7 @@ from django.urls.base import reverse
 import pytest
 
 from isic.core.models.collection import Collection
-from isic.core.services.collection.image import collection_move_images
+from isic.core.services.collection.image import move_collection_images
 
 
 @pytest.fixture
@@ -116,7 +116,7 @@ def test_collection_move_images(collection_factory, image_factory):
     image = image_factory(public=True)
     collection_src.images.add(image)
 
-    collection_move_images(src_collection=collection_src, dest_collection=collection_dest)
+    move_collection_images(src_collection=collection_src, dest_collection=collection_dest)
 
     assert collection_src.images.count() == 0
     assert collection_dest.images.count() == 1
@@ -132,7 +132,7 @@ def test_collection_move_images_locked_collection(collection_factory, image_fact
     collection_src.images.add(image)
 
     with pytest.raises(ValidationError, match="locked collection"):
-        collection_move_images(src_collection=collection_src, dest_collection=collection_dest)
+        move_collection_images(src_collection=collection_src, dest_collection=collection_dest)
 
 
 @pytest.mark.django_db
@@ -145,7 +145,7 @@ def test_collection_move_images_private_to_public(collection_factory, image_fact
     collection_src.images.add(image)
 
     with pytest.raises(ValidationError, match="private images"):
-        collection_move_images(src_collection=collection_src, dest_collection=collection_dest)
+        move_collection_images(src_collection=collection_src, dest_collection=collection_dest)
 
 
 @pytest.mark.django_db
@@ -158,7 +158,7 @@ def test_collection_move_images_already_exist_in_collection(collection_factory, 
     collection_src.images.add(image)
     collection_dest.images.add(image)
 
-    collection_move_images(src_collection=collection_src, dest_collection=collection_dest)
+    move_collection_images(src_collection=collection_src, dest_collection=collection_dest)
 
     assert collection_src.images.count() == 0
     assert collection_dest.images.count() == 1

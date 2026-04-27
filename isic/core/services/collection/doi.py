@@ -23,9 +23,9 @@ from isic.core.models.doi import (
     DraftDoi,
 )
 from isic.core.services.collection import (
-    collection_get_creators_in_attribution_order,
-    collection_lock,
-    collection_update,
+    get_collection_creators_in_attribution_order,
+    lock_collection,
+    update_collection,
 )
 from isic.core.services.snapshot import snapshot_images
 from isic.core.tasks import (
@@ -46,7 +46,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def collection_build_doi(
+def build_collection_doi(
     *,
     collection: Collection,
     doi_id: str,
@@ -89,7 +89,7 @@ def collection_build_doi(
         "doi": doi_id,
         "creators": [
             {"name": creator}
-            for creator in collection_get_creators_in_attribution_order(collection=collection)
+            for creator in get_collection_creators_in_attribution_order(collection=collection)
         ],
         "rightsList": rights,
         "titles": [{"title": collection.name}],
@@ -115,7 +115,7 @@ def collection_build_doi(
     }
 
 
-def collection_check_create_draft_doi_allowed(
+def check_create_draft_doi_allowed(
     *,
     user: User,
     collection: Collection,
@@ -184,7 +184,7 @@ def _datacite_promote_draft_doi_to_findable(doi: dict, doi_id: str):
         raise ValidationError("Something went wrong publishing the DOI.") from e
 
 
-def collection_create_draft_doi(
+def create_collection_draft_doi(
     *,
     user: User,
     collection: Collection,
@@ -192,7 +192,7 @@ def collection_create_draft_doi(
     supplemental_files: Iterable[dict[str, str]] | None = None,
     related_identifiers: Iterable[RelatedIdentifierIn] | None = None,
 ) -> DraftDoi:
-    collection_check_create_draft_doi_allowed(
+    check_create_draft_doi_allowed(
         user=user,
         collection=collection,
         supplemental_files=supplemental_files,
@@ -204,8 +204,8 @@ def collection_create_draft_doi(
         draft_doi.full_clean()
         draft_doi.save()
 
-        collection_update(collection=collection, description=description, ignore_lock=True)
-        collection_lock(collection=collection)
+        update_collection(collection=collection, description=description, ignore_lock=True)
+        lock_collection(collection=collection)
 
         if supplemental_files:
             for supplemental_file in supplemental_files:
@@ -224,7 +224,7 @@ def collection_create_draft_doi(
                     related_identifier=related_identifier.related_identifier,
                 )
 
-        draft_doi_dict = collection_build_doi(
+        draft_doi_dict = build_collection_doi(
             collection=collection,
             doi_id=draft_doi.id,
             is_draft=True,
@@ -240,7 +240,7 @@ def collection_create_draft_doi(
     return draft_doi
 
 
-def collection_create_doi_files(*, doi: AbstractDoi) -> None:
+def create_collection_doi_files(*, doi: AbstractDoi) -> None:
     """
     Create the files associated with the DOI.
 
@@ -276,7 +276,7 @@ def collection_create_doi_files(*, doi: AbstractDoi) -> None:
         Path(metadata_filename).unlink()
 
 
-def draft_doi_publish(*, user: User, draft_doi: DraftDoi) -> Doi:
+def publish_draft_doi(*, user: User, draft_doi: DraftDoi) -> Doi:
     """Publish a draft DOI to become a final, findable DOI."""
     collection = draft_doi.collection
 
@@ -286,7 +286,7 @@ def draft_doi_publish(*, user: User, draft_doi: DraftDoi) -> Doi:
     for image in collection.images.private().select_related("accession").iterator():
         unembargo_image(image=image)
 
-    collection_update(collection=collection, public=True, ignore_lock=True)
+    update_collection(collection=collection, public=True, ignore_lock=True)
 
     with transaction.atomic():
         doi = Doi.objects.create(
@@ -323,7 +323,7 @@ def draft_doi_publish(*, user: User, draft_doi: DraftDoi) -> Doi:
                 related_identifier=draft_related_identifier.related_identifier,
             )
 
-        doi_dict = collection_build_doi(
+        doi_dict = build_collection_doi(
             collection=collection,
             doi_id=doi.id,
             is_draft=False,

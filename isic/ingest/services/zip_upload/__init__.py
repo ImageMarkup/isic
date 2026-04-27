@@ -8,7 +8,7 @@ def zip_upload_purge(*, zip_upload: ZipUpload) -> None:
     """
     Purge a zip_upload object assuming there are no relevant accessions.
 
-    This is really only useful after accession_purge has been called on all relevant accessions.
+    This is really only useful after purge_accession has been called on all relevant accessions.
     """
     if zip_upload.accessions.exists():
         raise ValidationError("Cannot remove a zip_upload with associated accessions.")

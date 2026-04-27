@@ -6,11 +6,11 @@ from django.db import transaction
 from django.db.models.query import QuerySet
 
 from isic.core.models.collection import Collection
-from isic.core.services.collection import collection_lock
+from isic.core.services.collection import lock_collection
 from isic.studies.models import Study, StudyTask
 
 
-def study_create(  # noqa: PLR0913
+def create_study(  # noqa: PLR0913
     *,
     creator: User,
     owners,
@@ -35,12 +35,12 @@ def study_create(  # noqa: PLR0913
     with transaction.atomic():
         study.save()
         study.owners.set(owners)
-        collection_lock(collection=collection)
+        lock_collection(collection=collection)
 
     return study
 
 
-def study_update(*, study: Study, **fields):
+def update_study(*, study: Study, **fields):
     if "zoomable" in fields and fields["zoomable"] != study.zoomable and study.annotations.exists():
         raise ValidationError("Zoomable cannot be changed after responses have been recorded.")
 

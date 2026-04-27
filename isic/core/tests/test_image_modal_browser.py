@@ -6,7 +6,7 @@ from PIL import Image as PILImage
 from playwright.sync_api import expect
 import pytest
 
-from isic.core.services.collection.image import collection_add_images
+from isic.core.services.collection.image import add_images_to_collection
 from isic.studies.models import Question, QuestionChoice, StudyTask
 
 
@@ -77,7 +77,7 @@ def test_collection_detail_image_modal_fits_viewport(
         accession__width=w,
         accession__height=h,
     )
-    collection_add_images(collection=collection, image=image)
+    add_images_to_collection(collection=collection, image=image)
 
     blob_bytes = _make_jpeg_bytes(w, h)
     thumb_bytes = _make_jpeg_bytes(256, 256)
@@ -186,7 +186,7 @@ def test_study_task_image_modal_fits_viewport(
 
     collection = collection_factory(creator=authenticated_user)
     image = image_factory(public=True, accession__width=w, accession__height=h)
-    collection_add_images(collection=collection, image=image)
+    add_images_to_collection(collection=collection, image=image)
 
     question = Question.objects.create(
         prompt="Diagnosis?", type=Question.QuestionType.SELECT, official=False

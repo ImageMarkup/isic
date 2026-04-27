@@ -25,7 +25,7 @@ from isic.ingest.services.publish import unembargo_image
 
 
 # Note: this method isn't used when creating accessions as part of a zip extraction.
-def accession_create(
+def create_accession(
     *,
     creator: User,
     cohort: Cohort,
@@ -63,7 +63,7 @@ def accession_create(
     return accession
 
 
-def accession_reprocess(*, accession: Accession) -> None:
+def reprocess_accession(*, accession: Accession) -> None:
     """
     Reprocess an accession by generating a new blob, thumbnail, and (optionally) sponsored blob.
     """  # noqa: D200
@@ -101,7 +101,7 @@ def accession_reprocess(*, accession: Accession) -> None:
                 unembargo_image(image=Image.objects.get(accession=accession))
 
 
-def accession_purge(*, accession: Accession) -> None:
+def purge_accession(*, accession: Accession) -> None:
     """Purge an unpublished accession and all associated data."""
     if accession.published:
         raise ValidationError("Cannot remove an accession with an image.")
@@ -115,7 +115,7 @@ def accession_purge(*, accession: Accession) -> None:
     accession.delete()
 
 
-def bulk_accession_relicense(
+def relicense_accessions(
     *, accessions: QuerySet[Accession], to_license: str, allow_more_restrictive: bool = False
 ) -> int:
     if to_license not in CopyrightLicense:
@@ -132,7 +132,7 @@ def bulk_accession_relicense(
     return accessions.update(copyright_license=to_license)
 
 
-def bulk_accession_update_metadata(  # noqa: PLR0913
+def update_accession_metadata(  # noqa: PLR0913
     *,
     user: User,
     metadata: Iterable[tuple[int, Mapping[str, Any]]],

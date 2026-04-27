@@ -2,7 +2,7 @@ from django.urls import reverse
 from playwright.sync_api import expect
 import pytest
 
-from isic.core.services.collection.image import collection_add_images
+from isic.core.services.collection.image import add_images_to_collection
 
 
 @pytest.mark.playwright
@@ -45,7 +45,7 @@ def test_image_removal_shows_flash_message(
     collection = collection_factory(public=True, locked=False, creator=user)
     images = [image_factory(public=True) for _ in range(2)]
     for img in images:
-        collection_add_images(collection=collection, image=img)
+        add_images_to_collection(collection=collection, image=img)
 
     page.goto(reverse("core/collection-detail", args=[collection.pk]))
 
@@ -73,7 +73,7 @@ def test_study_creation_shows_flash_message(
     user = authenticated_user
 
     collection = collection_factory(creator=user, locked=False)
-    collection_add_images(collection=collection, image=image_factory(public=True))
+    add_images_to_collection(collection=collection, image=image_factory(public=True))
 
     page.goto(reverse("studies/study-create"))
 

@@ -8,8 +8,8 @@ from django.db.models.query_utils import Q
 
 from isic.core.models.collection import Collection, CollectionShare
 from isic.core.models.doi import Doi, DraftDoi
-from isic.core.services.collection.image import collection_move_images
-from isic.core.services.image import image_share
+from isic.core.services.collection.image import move_collection_images
+from isic.core.services.image import share_image
 from isic.studies.models import Study
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ def _require_unlocked_collection(collection: Collection) -> None:
         raise ValidationError("Can't modify the collection, it's locked.")
 
 
-def collection_create(*, creator: User, name: str, description: str, public: bool, locked: bool):
+def create_collection(*, creator: User, name: str, description: str, public: bool, locked: bool):
     collection = Collection(
         creator=creator,
         name=name,
@@ -34,7 +34,7 @@ def collection_create(*, creator: User, name: str, description: str, public: boo
     return collection
 
 
-def collection_update(collection: Collection, *, ignore_lock: bool = False, **fields):
+def update_collection(collection: Collection, *, ignore_lock: bool = False, **fields):
     if not ignore_lock:
         _require_unlocked_collection(collection)
 
@@ -46,12 +46,12 @@ def collection_update(collection: Collection, *, ignore_lock: bool = False, **fi
     return collection.save()
 
 
-def collection_lock(*, collection: Collection) -> None:
+def lock_collection(*, collection: Collection) -> None:
     if not collection.locked:
-        collection_update(collection=collection, locked=True)
+        update_collection(collection=collection, locked=True)
 
 
-def collection_delete(*, collection: Collection, ignore_lock: bool = False) -> None:
+def delete_collection(*, collection: Collection, ignore_lock: bool = False) -> None:
     if not ignore_lock:
         _require_unlocked_collection(collection)
 
@@ -67,7 +67,7 @@ def collection_delete(*, collection: Collection, ignore_lock: bool = False) -> N
     collection.delete()
 
 
-def collection_get_creators_in_attribution_order(*, collection: Collection) -> list[str]:
+def get_collection_creators_in_attribution_order(*, collection: Collection) -> list[str]:
     """
     Return a list of collection creators in sorted order.
 
@@ -85,7 +85,7 @@ def collection_get_creators_in_attribution_order(*, collection: Collection) -> l
     return sorted(creators, key=lambda x: 1 if x == "Anonymous" else 0)
 
 
-def collection_share(*, collection: Collection, grantor: User, grantee: User) -> None:
+def share_collection(*, collection: Collection, grantor: User, grantee: User) -> None:
     if collection.is_magic:
         raise ValidationError("Magic collections cannot be shared.")
 
@@ -102,16 +102,14 @@ def collection_share(*, collection: Collection, grantor: User, grantee: User) ->
         # images only need to be shared if the collection wasn't already shared, since
         # adding images to a shared collection propagates the share to the images.
         if share_created:
-            image_share(qs=collection.images.all(), grantor=grantor, grantee=grantee)
+            share_image(qs=collection.images.all(), grantor=grantor, grantee=grantee)
 
 
-def collection_merge_magic_collections(
-    *, dest_collection: Collection, src_collection: Collection
-) -> None:
+def merge_magic_collections(*, dest_collection: Collection, src_collection: Collection) -> None:
     """
     Merge one or more magic collections into a magical dest_collection.
 
-    Note that this method should almost always be used with cohort_merge. Merging
+    Note that this method should almost always be used with merge_cohorts. Merging
     collections or cohorts with relationships to the other would put the system in
     an unexpected state otherwise.
     """
@@ -148,9 +146,9 @@ def collection_merge_magic_collections(
                     collection_value,
                 )
 
-        collection_move_images(
+        move_collection_images(
             src_collection=src_collection,
             dest_collection=dest_collection,
             ignore_lock=True,
         )
-        collection_delete(collection=src_collection, ignore_lock=True)
+        delete_collection(collection=src_collection, ignore_lock=True)

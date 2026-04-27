@@ -2,7 +2,7 @@ from django.urls import reverse
 from playwright.sync_api import expect
 import pytest
 
-from isic.core.services.collection.image import collection_add_images
+from isic.core.services.collection.image import add_images_to_collection
 from isic.studies.models import Study
 from isic.studies.tests.factories import QuestionFactory
 
@@ -15,7 +15,7 @@ def test_study_create_with_official_and_custom_questions(  # noqa: PLR0915
 
     collection = collection_factory(creator=user, locked=False)
     for _ in range(3):
-        collection_add_images(collection=collection, image=image_factory(public=True))
+        add_images_to_collection(collection=collection, image=image_factory(public=True))
 
     official_questions = [QuestionFactory.create(official=True) for _ in range(3)]
 

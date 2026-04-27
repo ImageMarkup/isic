@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 import djclick as click
 
 from isic.ingest.models import Accession
-from isic.ingest.services.accession import bulk_accession_update_metadata
+from isic.ingest.services.accession import update_accession_metadata
 
 
 @click.command()
@@ -38,7 +38,7 @@ def apply_published_metadata(user_id, csv_path, message):
 
                     yield accession_id, row
 
-    bulk_accession_update_metadata(
+    update_accession_metadata(
         user=user,
         metadata=rows_by_accession_id(),
         metadata_application_message=message,

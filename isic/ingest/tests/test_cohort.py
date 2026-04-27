@@ -2,14 +2,14 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 import pytest
 
-from isic.core.services.collection import collection_create
+from isic.core.services.collection import create_collection
 from isic.ingest.forms import CohortForm
-from isic.ingest.services.cohort import cohort_delete
+from isic.ingest.services.cohort import delete_cohort
 
 
 @pytest.mark.django_db
 def test_cohort_delete(cohort):
-    cohort_delete(cohort=cohort)
+    delete_cohort(cohort=cohort)
 
 
 @pytest.mark.django_db
@@ -19,7 +19,7 @@ def test_cohort_delete_with_published_accessions(cohort, accession_factory, imag
     accession.image.save()
 
     with pytest.raises(ValidationError):
-        cohort_delete(cohort=cohort)
+        delete_cohort(cohort=cohort)
 
 
 @pytest.mark.django_db
@@ -46,7 +46,7 @@ def test_cohort_detail_view_with_published_and_unpublished_accessions(
 def test_cohort_form_updates_magic_collection_name(cohort_factory, user):
     cohort = cohort_factory(name="foo")
 
-    magic_collection = collection_create(
+    magic_collection = create_collection(
         creator=user,
         name=f"Publish of {cohort.name}",
         description="",
