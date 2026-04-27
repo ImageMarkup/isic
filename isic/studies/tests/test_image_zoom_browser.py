@@ -41,7 +41,7 @@ def test_study_task_image_is_zoomable(
     # the image regardless of whether the Minio URL is reachable from the browser.
     page.route("**/*.jpg", lambda route: route.fulfill(path=str(_TEST_IMAGE)))
 
-    page.goto(reverse("study-task-detail", args=[task.pk]))
+    page.goto(reverse("studies/study-task-detail", args=[task.pk]))
 
     # Click the study image to open the full-screen modal; mouseenter fires first
     # (setting hovered=true), then the click fires (setting open=true).

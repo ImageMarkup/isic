@@ -35,7 +35,7 @@ def test_study_task_undo_after_annotation(
     tasks = [StudyTask.objects.create(study=study, annotator=user, image=img) for img in images]
 
     # Navigate to the first task
-    page.goto(reverse("study-task-detail", args=[tasks[0].pk]))
+    page.goto(reverse("studies/study-task-detail", args=[tasks[0].pk]))
 
     # The form should show the question with radio buttons
     expect(page.get_by_text("Is this benign?")).to_be_visible()
@@ -45,7 +45,7 @@ def test_study_task_undo_after_annotation(
     page.get_by_role("button", name="Respond and continue").click()
 
     # Should redirect to the second task, with an "Undo" toast visible
-    page.wait_for_url(f"**{reverse('study-task-detail', args=[tasks[1].pk])}")
+    page.wait_for_url(f"**{reverse('studies/study-task-detail', args=[tasks[1].pk])}")
     expect(page.get_by_role("link", name="Undo")).to_be_visible()
 
     # Verify the first task's annotation exists
@@ -55,7 +55,7 @@ def test_study_task_undo_after_annotation(
     page.get_by_role("link", name="Undo").click()
 
     # Should redirect back to the first task (annotation deleted, form visible again)
-    page.wait_for_url(f"**{reverse('study-task-detail', args=[tasks[0].pk])}")
+    page.wait_for_url(f"**{reverse('studies/study-task-detail', args=[tasks[0].pk])}")
     expect(page.get_by_text("Is this benign?")).to_be_visible()
     expect(page.get_by_role("button", name="Respond and continue")).to_be_visible()
 

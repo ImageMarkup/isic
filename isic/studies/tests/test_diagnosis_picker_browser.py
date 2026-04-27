@@ -43,7 +43,7 @@ def test_diagnosis_picker_search_expand_select_and_submit(
 
     task = StudyTask.objects.create(study=study, annotator=user, image=image)
 
-    page.goto(reverse("study-task-detail", args=[task.pk]))
+    page.goto(reverse("studies/study-task-detail", args=[task.pk]))
 
     # The picker should be visible with its search input and heading
     expect(page.get_by_role("heading", name="Recent Diagnoses")).to_be_visible()
@@ -106,7 +106,7 @@ def test_diagnosis_picker_search_expand_select_and_submit(
     page.get_by_role("button", name="Respond and continue").click()
 
     # Should redirect to the study detail page (no more tasks)
-    page.wait_for_url(f"**{reverse('study-detail', args=[study.pk])}")
+    page.wait_for_url(f"**{reverse('studies/study-detail', args=[study.pk])}")
 
     # Verify the response was saved in the database
     response = Response.objects.get(annotation__study=study, annotation__annotator=user)

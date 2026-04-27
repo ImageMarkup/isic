@@ -24,7 +24,7 @@ from isic.studies.tests.factories import (
     ],
 )
 def test_study_list_permissions(client_):
-    r = client_.get(reverse("study-list"))
+    r = client_.get(reverse("studies/study-list"))
     assert r.status_code == 200
 
 
@@ -40,7 +40,7 @@ def test_study_list_objects_permissions(client_):
     public_study = StudyFactory.create(public=True)
     private_study = StudyFactory.create(public=False)
 
-    r = client_.get(reverse("study-list"))
+    r = client_.get(reverse("studies/study-list"))
     assert r.status_code == 200
     assert public_study in r.context["studies"]
     assert private_study not in r.context["studies"]
@@ -51,7 +51,7 @@ def test_study_list_objects_permissions_staff(staff_client):
     public_study = StudyFactory.create(public=True)
     private_study = StudyFactory.create(public=False)
 
-    r = staff_client.get(reverse("study-list"))
+    r = staff_client.get(reverse("studies/study-list"))
     assert r.status_code == 200
     assert public_study in r.context["studies"]
     assert private_study in r.context["studies"]
@@ -65,7 +65,7 @@ def test_study_list_objects_permissions_owner(client):
     assert private_study.owners.exists()
     for owner in private_study.owners.all():
         client.force_login(owner)
-        r = client.get(reverse("study-list"))
+        r = client.get(reverse("studies/study-list"))
         assert r.status_code == 200
         assert public_study in r.context["studies"]
         assert private_study in r.context["studies"]
@@ -80,7 +80,7 @@ def test_study_list_objects_permissions_annotator(client):
     StudyTaskFactory.create(study=private_study, annotator=user)
 
     client.force_login(user)
-    r = client.get(reverse("study-list"))
+    r = client.get(reverse("studies/study-list"))
     assert r.status_code == 200
     assert public_study in r.context["studies"]
     assert private_study in r.context["studies"]
@@ -90,10 +90,10 @@ def test_study_list_objects_permissions_annotator(client):
 @pytest.mark.parametrize(
     "view_name",
     [
-        "study-edit",
-        "study-add-annotators",
-        "study-detail",
-        "study-download-responses",
+        "studies/study-edit",
+        "studies/study-add-annotators",
+        "studies/study-detail",
+        "studies/study-download-responses",
     ],
 )
 @pytest.mark.parametrize(
@@ -115,10 +115,10 @@ def test_study_view_permissions(view_name, client_, status):
 @pytest.mark.parametrize(
     "view_name",
     [
-        "study-edit",
-        "study-add-annotators",
-        "study-detail",
-        "study-download-responses",
+        "studies/study-edit",
+        "studies/study-add-annotators",
+        "studies/study-detail",
+        "studies/study-download-responses",
     ],
 )
 def test_study_view_permissions_owner(view_name, client):
@@ -135,10 +135,10 @@ def test_study_view_permissions_owner(view_name, client):
 @pytest.mark.parametrize(
     ("view_name", "status"),
     [
-        ("study-edit", 403),
-        ("study-add-annotators", 403),
-        ("study-detail", 200),
-        ("study-download-responses", 403),
+        ("studies/study-edit", 403),
+        ("studies/study-add-annotators", 403),
+        ("studies/study-detail", 200),
+        ("studies/study-download-responses", 403),
     ],
 )
 def test_study_view_permissions_annotator(view_name, status, client):
@@ -163,7 +163,7 @@ def test_study_view_permissions_annotator(view_name, status, client):
 def test_study_download_permissions_public(client_):
     study = StudyFactory.create(public=True)
 
-    r = client_.get(reverse("study-download-responses", args=[study.pk]))
+    r = client_.get(reverse("studies/study-download-responses", args=[study.pk]))
     assert r.status_code == 200
 
 
@@ -181,7 +181,7 @@ def test_study_task_detail_preview_permissions_public(client_):
     # TODO: Due to the implementation of studies, a StudyTask necessary for images to be known
     StudyTaskFactory.create(study=study)
 
-    r = client_.get(reverse("study-task-detail-preview", args=[study.pk]))
+    r = client_.get(reverse("studies/study-task-detail-preview", args=[study.pk]))
     assert r.status_code == 200
 
 
@@ -199,7 +199,7 @@ def test_study_task_detail_preview_permissions_private(client_, status):
     # TODO: Due to the implementation of studies, a StudyTask necessary for images to be known
     StudyTaskFactory.create(study=study)
 
-    r = client_.get(reverse("study-task-detail-preview", args=[study.pk]))
+    r = client_.get(reverse("studies/study-task-detail-preview", args=[study.pk]))
     assert r.status_code == status
 
 
@@ -212,7 +212,7 @@ def test_study_task_detail_preview_permissions_private_owner(client):
     assert study.owners.exists()
     for owner in study.owners.all():
         client.force_login(owner)
-        r = client.get(reverse("study-task-detail-preview", args=[study.pk]))
+        r = client.get(reverse("studies/study-task-detail-preview", args=[study.pk]))
         assert r.status_code == 200
 
 
@@ -224,7 +224,7 @@ def test_study_task_detail_preview_permissions_private_annotator(client):
     StudyTaskFactory.create(study=study, annotator=user)
 
     client.force_login(user)
-    r = client.get(reverse("study-task-detail-preview", args=[study.pk]))
+    r = client.get(reverse("studies/study-task-detail-preview", args=[study.pk]))
     assert r.status_code == 200
 
 
@@ -240,7 +240,7 @@ def test_study_task_detail_preview_permissions_private_annotator(client):
 def test_study_task_detail_invisible_to_non_annotators(client_, status):
     study_task = StudyTaskFactory.create()
 
-    r = client_.get(reverse("study-task-detail", args=[study_task.pk]))
+    r = client_.get(reverse("studies/study-task-detail", args=[study_task.pk]))
     assert r.status_code == status
 
 
@@ -249,7 +249,7 @@ def test_study_task_detail_visible_to_annotator(client):
     study_task = StudyTaskFactory.create()
     client.force_login(study_task.annotator)
 
-    r = client.get(reverse("study-task-detail", args=[study_task.pk]))
+    r = client.get(reverse("studies/study-task-detail", args=[study_task.pk]))
     assert r.status_code == 200
 
 
@@ -258,7 +258,7 @@ def test_study_task_detail_visible_to_study_owner(client):
     study_task = StudyTaskFactory.create()
     client.force_login(study_task.study.creator)
 
-    r = client.get(reverse("study-task-detail", args=[study_task.pk]))
+    r = client.get(reverse("studies/study-task-detail", args=[study_task.pk]))
     assert r.status_code == 200
 
 
@@ -287,7 +287,7 @@ def test_study_task_detail_shows_private_images_to_annotator():
 def test_study_view_mask_permissions(client_, status):
     markup = MarkupFactory.create()
 
-    r = client_.get(reverse("view-mask", args=[markup.pk]))
+    r = client_.get(reverse("studies/view-mask", args=[markup.pk]))
     assert r.status_code == status
 
 
@@ -298,7 +298,7 @@ def test_study_view_mask_permissions_annotator(client):
 
     # TODO: markup creators can't see their own masks
     client.force_login(markup.annotation.annotator)
-    r = client.get(reverse("view-mask", args=[markup.pk]))
+    r = client.get(reverse("studies/view-mask", args=[markup.pk]))
     assert r.status_code == 302
 
 
@@ -314,7 +314,7 @@ def test_study_view_mask_permissions_annotator(client):
 def test_annotation_detail_permissions(client_, status):
     annotation = AnnotationFactory.create()
 
-    r = client_.get(reverse("annotation-detail", args=[annotation.pk]))
+    r = client_.get(reverse("studies/annotation-detail", args=[annotation.pk]))
     assert r.status_code == status
 
 
@@ -324,7 +324,7 @@ def test_annotation_detail_permissions_annotator(client):
 
     # TODO: annotation creators can't see their own annotations
     client.force_login(annotation.annotator)
-    r = client.get(reverse("annotation-detail", args=[annotation.pk]))
+    r = client.get(reverse("studies/annotation-detail", args=[annotation.pk]))
     assert r.status_code == 302  # TODO: Should be 404
 
 
@@ -341,7 +341,7 @@ def test_study_task_detail_post(client):
     client.force_login(user)
     choice = question.choices.first()
     client.post(
-        reverse("study-task-detail", args=[study_task.pk]),
+        reverse("studies/study-task-detail", args=[study_task.pk]),
         {"start_time": timezone.now(), question.pk: choice.pk},
     )
     assert study_task.annotation

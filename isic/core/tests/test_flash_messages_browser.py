@@ -75,7 +75,7 @@ def test_study_creation_shows_flash_message(
     collection = collection_factory(creator=user, locked=False)
     collection_add_images(collection=collection, image=image_factory(public=True))
 
-    page.goto(reverse("study-create"))
+    page.goto(reverse("studies/study-create"))
 
     page.get_by_label("Name").fill(f"Study {collection.name}")
     page.get_by_label("Description").fill(f"Description for {collection.name}")

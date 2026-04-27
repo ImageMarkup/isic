@@ -19,7 +19,7 @@ def test_study_create_with_official_and_custom_questions(  # noqa: PLR0915
 
     official_questions = [QuestionFactory.create(official=True) for _ in range(3)]
 
-    page.goto(reverse("study-create"))
+    page.goto(reverse("studies/study-create"))
 
     # Fill in the base form
     study_name = f"Study {collection.name}"
@@ -89,7 +89,7 @@ def test_study_create_with_official_and_custom_questions(  # noqa: PLR0915
 
     # Verify the study was created with the correct properties
     study = Study.objects.get(name=study_name)
-    assert page.url.endswith(reverse("study-detail", args=[study.pk]))
+    assert page.url.endswith(reverse("studies/study-detail", args=[study.pk]))
     assert study.description == study_description
     assert study.attribution == study_attribution
     assert study.collection == collection

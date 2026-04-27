@@ -7,7 +7,7 @@ from django.forms.fields import ChoiceField, MultipleChoiceField
 from django.forms.widgets import RadioSelect
 from django_extensions.db.models import TimeStampedModel
 
-from isic.studies.widgets import DiagnosisPicker, MultiselectPicker
+from isic.core.widgets import DiagnosisPicker, MultiselectPicker
 
 
 class Question(TimeStampedModel):

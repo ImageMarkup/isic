@@ -5,7 +5,7 @@
     <ul class="divide-y divide-gray-200">
       {% for study in studies %}
         <li>
-          <a href="{% url 'study-detail' study.id %}" class="block hover:bg-gray-50">
+          <a href="{% url 'studies/study-detail' study.id %}" class="block hover:bg-gray-50">
             <div class="px-4 py-4 sm:px-6 flex justify-between">
               <div class="flex flex-col">
                 <div class="flex">

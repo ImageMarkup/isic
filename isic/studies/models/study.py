@@ -72,7 +72,7 @@ class Study(TimeStampedModel):
         return self.name
 
     def get_absolute_url(self) -> str:
-        return reverse("study-detail", args=[self.pk])
+        return reverse("studies/study-detail", args=[self.pk])
 
     def clean(self):
         if self.public and not self.collection.public:
