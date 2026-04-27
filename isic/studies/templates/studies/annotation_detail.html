@@ -23,7 +23,7 @@
       <tr>
         <td>{{ markup.feature.label }}</td>
         <td>{% if markup.present %}Present{% else %}-{% endif %}</td>
-        <td>{% if markup.present %}<a href="{% url 'view-mask' markup.id %}">View Mask</a>{% else %}-{% endif %}</td>
+        <td>{% if markup.present %}<a href="{% url 'studies/view-mask' markup.id %}">View Mask</a>{% else %}-{% endif %}</td>
       </tr>
     {% endfor %}
   </table>

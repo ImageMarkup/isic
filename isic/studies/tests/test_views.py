@@ -24,7 +24,7 @@ def test_study_responses_csv(staff_client) -> None:
     ResponseFactory.create(annotation__study=study, question=question)
     ResponseFactory.create(annotation__study=study, question=question)
 
-    r = staff_client.get(reverse("study-download-responses", args=[study.pk]))
+    r = staff_client.get(reverse("studies/study-download-responses", args=[study.pk]))
     assert r.status_code == 200
     assert len(r.content.decode().splitlines()) == 3
 
@@ -36,7 +36,7 @@ def test_study_responses_csv_number_question(staff_client) -> None:
     annotation = AnnotationFactory.create(study=study)
     annotation.responses.create(question=question, value=42.5)
 
-    r = staff_client.get(reverse("study-download-responses", args=[study.pk]))
+    r = staff_client.get(reverse("studies/study-download-responses", args=[study.pk]))
     assert r.status_code == 200
     lines = r.content.decode().splitlines()
     assert len(lines) == 2
@@ -65,7 +65,7 @@ def test_study_task_detail_post_number_question(client, input_value, expected_va
     user = study_task.annotator
     client.force_login(user)
     client.post(
-        reverse("study-task-detail", args=[study_task.pk]),
+        reverse("studies/study-task-detail", args=[study_task.pk]),
         {"start_time": timezone.now(), question.pk: input_value},
     )
     assert study_task.annotation
@@ -88,7 +88,7 @@ def test_study_add_annotators(client, django_capture_on_commit_callbacks, image_
     client.force_login(study.creator)
     with django_capture_on_commit_callbacks(execute=True):
         r = client.post(
-            reverse("study-add-annotators", args=[study.pk]),
+            reverse("studies/study-add-annotators", args=[study.pk]),
             {"annotators": new_user.email},
         )
     assert r.status_code == 302
@@ -115,7 +115,7 @@ def test_multiselect_question_response_and_export(staff_client) -> None:
         value={"choices": [choice1.pk, choice3.pk]},
     )
 
-    r = staff_client.get(reverse("study-download-responses", args=[study.pk]))
+    r = staff_client.get(reverse("studies/study-download-responses", args=[study.pk]))
     assert r.status_code == 200
     lines = r.content.decode().splitlines()
     assert len(lines) == 2
@@ -139,7 +139,7 @@ def test_multiselect_question_empty_response(staff_client) -> None:
         value={"choices": []},
     )
 
-    r = staff_client.get(reverse("study-download-responses", args=[study.pk]))
+    r = staff_client.get(reverse("studies/study-download-responses", args=[study.pk]))
     assert r.status_code == 200
     lines = r.content.decode().splitlines()
     assert len(lines) == 2
@@ -155,7 +155,7 @@ def test_study_detail_hides_image_metadata(client):
 
     client.force_login(study_task.annotator)
 
-    r = client.get(reverse("study-detail", args=[study.pk]))
+    r = client.get(reverse("studies/study-detail", args=[study.pk]))
     assert r.status_code == 200
     content = r.content.decode()
 
@@ -190,7 +190,7 @@ def test_study_task_detail_hides_image_metadata(client):
 
     client.force_login(study_task.annotator)
 
-    r = client.get(reverse("study-task-detail", args=[study_task.pk]))
+    r = client.get(reverse("studies/study-task-detail", args=[study_task.pk]))
     assert r.status_code == 200
     content = r.content.decode()
 

@@ -13,7 +13,7 @@
             <p>You have {{ pending_tasks.count|intcomma }} tasks remaining for this study.</p>
           </div>
 
-          <a href="{% url 'study-task-detail' next_task.pk %}">
+          <a href="{% url 'studies/study-task-detail' next_task.pk %}">
             <button type="submit" class="btn btn-primary">
               Begin
             </button>
