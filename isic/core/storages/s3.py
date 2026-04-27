@@ -25,7 +25,7 @@ class CacheableCloudFrontStorage(PreventRenamingMixin, S3Storage, S3UnsignedUrlM
     # possible.
     def url(self, name, parameters=None, expire=None, http_method=None):
         # If expire or http_method is set, defer to the parent implementation. At the moment this is
-        # only done with generate_staff_image_list_metadata_csv.
+        # only done with generate_staff_image_list_metadata_csv_task.
         if expire is not None or http_method is not None:
             return super().url(name, parameters=parameters, expire=expire, http_method=http_method)
 

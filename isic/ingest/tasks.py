@@ -58,13 +58,13 @@ def extract_zip_task(zip_pk: int):
             ):
                 # avoid .delay since we want to avoid putting tens of thousands of elements
                 # into the transaction.on_commit list.
-                accession_generate_blob_task.apply_async(args=[accession_id])
+                generate_accession_blob_task.apply_async(args=[accession_id])
 
         transaction.on_commit(generate_blobs)
 
 
 @shared_task(soft_time_limit=300, time_limit=360)
-def accession_generate_blob_task(accession_pk: int):
+def generate_accession_blob_task(accession_pk: int):
     accession = Accession.objects.get(pk=accession_pk)
 
     try:

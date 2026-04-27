@@ -15,7 +15,7 @@ from isic.core.models import Collection, Image
 from isic.core.pagination import CursorPagination, qs_with_hardcoded_count
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.core.search import get_elasticsearch_client
-from isic.core.tasks import generate_staff_image_list_metadata_csv
+from isic.core.tasks import generate_staff_image_list_metadata_csv_task
 from isic.studies.models import Study
 from isic.types import AuthenticatedHttpRequest
 
@@ -204,7 +204,7 @@ def staff_image_list_export(request: AuthenticatedHttpRequest) -> HttpResponse:
 
 @staff_member_required
 def staff_image_list_metadata_download(request: AuthenticatedHttpRequest):
-    generate_staff_image_list_metadata_csv.delay_on_commit(request.user.id)
+    generate_staff_image_list_metadata_csv_task.delay_on_commit(request.user.id)
 
     messages.add_message(
         request,
