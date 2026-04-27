@@ -10,7 +10,7 @@ from isic.core.models import Image
 from .study import Study
 
 
-class StudyTaskQuerySet(models.QuerySet):
+class StudyTaskQuerySet(models.QuerySet["StudyTask"]):
     def pending(self):
         return self.filter(annotation=None)
 

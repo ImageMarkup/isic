@@ -15,7 +15,7 @@ from .question import Question
 from .question_choice import QuestionChoice
 
 
-class ResponseQuerySet(models.QuerySet):
+class ResponseQuerySet(models.QuerySet["Response"]):
     def for_display(self) -> Generator[dict[str, Any]]:
         choice_text_cache: dict[int, str] = {}
 

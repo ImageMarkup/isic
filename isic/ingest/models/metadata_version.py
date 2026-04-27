@@ -10,7 +10,7 @@ from isic.ingest.utils.json import DecimalAwareJSONEncoder
 from .accession import Accession
 
 
-class MetadataVersionQuerySet(models.QuerySet):
+class MetadataVersionQuerySet(models.QuerySet["MetadataVersion"]):
     def differences(self) -> list:
         versions = list(self.order_by("created"))
         diffs = []
