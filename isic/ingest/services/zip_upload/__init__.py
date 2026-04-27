@@ -4,7 +4,7 @@ from django.db.models import FileField
 from isic.ingest.models.zip_upload import ZipUpload
 
 
-def zip_upload_purge(*, zip_upload: ZipUpload) -> None:
+def purge_zip_upload(*, zip_upload: ZipUpload) -> None:
     """
     Purge a zip_upload object assuming there are no relevant accessions.
 
