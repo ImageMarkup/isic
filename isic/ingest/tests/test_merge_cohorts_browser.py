@@ -29,7 +29,7 @@ def test_merge_cohorts_autocomplete_preview_and_submit(
     image_b = image_factory(accession=accession_b, public=True)
     collection_add_images(collection=collection_b, image=image_b)
 
-    page.goto(reverse("merge-cohorts"))
+    page.goto(reverse("ingest/merge-cohorts"))
 
     expect(page.get_by_text("Merge Cohorts").first).to_be_visible()
 
@@ -61,7 +61,7 @@ def test_merge_cohorts_autocomplete_preview_and_submit(
     page.get_by_role("button", name="Merge Cohorts").click()
 
     # Should redirect to cohort_a detail page with success flash message
-    page.wait_for_url(f"**{reverse('cohort-detail', args=[cohort_a.pk])}")
+    page.wait_for_url(f"**{reverse('ingest/cohort-detail', args=[cohort_a.pk])}")
     expect(page.get_by_text("Cohort merged successfully.")).to_be_visible()
 
     # Verify cohort_b was deleted and its accessions moved to cohort_a

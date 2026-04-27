@@ -14,7 +14,7 @@ def test_review_gallery_reject_toggle_and_submit(
     cohort = cohort_factory()
     accessions = [accession_factory(cohort=cohort, ingested=True) for _ in range(3)]
 
-    page.goto(reverse("cohort-review", args=[cohort.pk]))
+    page.goto(reverse("ingest/cohort-review", args=[cohort.pk]))
 
     # All 3 accessions should be visible with reject buttons
     reject_buttons = page.get_by_role("button", name="Reject")
@@ -57,7 +57,7 @@ def test_review_gallery_accession_modal_and_metadata_tabs(
     cohort = cohort_factory()
     accession = accession_factory(cohort=cohort, ingested=True)
 
-    page.goto(reverse("cohort-review", args=[cohort.pk]))
+    page.goto(reverse("ingest/cohort-review", args=[cohort.pk]))
 
     # Click the thumbnail image to open the modal
     page.locator("img").first.click()

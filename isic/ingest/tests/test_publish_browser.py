@@ -35,7 +35,7 @@ def test_cohort_publish(staff_authenticated_page, publishable_cohort):
     page.on("dialog", lambda dialog: dialog.accept())
     page.get_by_role("button", name="Publish 1 accessions").click()
 
-    page.wait_for_url(f"**{reverse('cohort-detail', args=[cohort.pk])}")
+    page.wait_for_url(f"**{reverse('ingest/cohort-detail', args=[cohort.pk])}")
     expect(page.get_by_text("Publishing 1 image")).to_be_visible()
 
 
@@ -92,5 +92,5 @@ def test_cohort_publish_with_additional_collections(
     page.on("dialog", lambda dialog: dialog.accept())
     page.get_by_role("button", name="Publish 1 accessions").click()
 
-    page.wait_for_url(f"**{reverse('cohort-detail', args=[cohort.pk])}")
+    page.wait_for_url(f"**{reverse('ingest/cohort-detail', args=[cohort.pk])}")
     expect(page.get_by_text("Publishing 1 image")).to_be_visible()

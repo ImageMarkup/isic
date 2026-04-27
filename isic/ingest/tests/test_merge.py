@@ -146,11 +146,11 @@ def test_merge_cohorts_view(full_cohort, staff_client):
     cohort_a, cohort_b = full_cohort(), full_cohort()
 
     r = staff_client.post(
-        reverse("merge-cohorts"),
+        reverse("ingest/merge-cohorts"),
         data={"cohort": cohort_a.pk, "cohort_to_merge": cohort_b.pk},
     )
     assert r.status_code == 302
-    assert r.url == reverse("cohort-detail", args=[cohort_a.pk])
+    assert r.url == reverse("ingest/cohort-detail", args=[cohort_a.pk])
 
 
 @pytest.fixture
