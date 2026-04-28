@@ -16,8 +16,8 @@ from isic.ingest.forms import MergeCohortForm, PublishCohortForm
 from isic.ingest.models import Cohort
 from isic.ingest.models.accession import Accession, AccessionStatus
 from isic.ingest.models.contributor import Contributor
-from isic.ingest.services.cohort import cohort_merge
-from isic.ingest.services.publish import cohort_publish_initialize
+from isic.ingest.services.cohort import merge_cohorts
+from isic.ingest.services.publish import initialize_cohort_publish
 from isic.ingest.views import make_breadcrumbs
 
 
@@ -109,36 +109,36 @@ def cohort_detail(request, pk):
 
 
 @staff_member_required
-def merge_cohorts(request):
+def cohort_merge(request):
     form = MergeCohortForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
         cohort = form.cleaned_data["cohort"]
         cohort_to_merge = form.cleaned_data["cohort_to_merge"]
         try:
-            cohort_merge(dest_cohort=cohort, src_cohort=cohort_to_merge)
+            merge_cohorts(dest_cohort=cohort, src_cohort=cohort_to_merge)
         except ValidationError as e:
             form.add_error(None, e)
         else:
             messages.success(request, "Cohort merged successfully.")
-            return HttpResponseRedirect(reverse("cohort-detail", args=[cohort.pk]))
+            return HttpResponseRedirect(reverse("ingest/cohort-detail", args=[cohort.pk]))
 
     return render(
         request,
-        "ingest/merge_cohorts.html",
+        "ingest/cohort_merge.html",
         {"form": form},
     )
 
 
 @staff_member_required  # TODO: who gets to publish a cohort? anyone who can view it?
 @needs_object_permission("ingest.view_cohort", (Cohort, "pk", "pk"))
-def publish_cohort(request, pk):
+def cohort_publish(request, pk):
     cohort = get_object_or_404(Cohort, pk=pk)
 
     form = PublishCohortForm(request.POST)
 
     if request.method == "POST" and form.is_valid():
-        publish_request = cohort_publish_initialize(
+        publish_request = initialize_cohort_publish(
             cohort=cohort,
             publisher=request.user,
             public=form.cleaned_data["public"],
@@ -150,7 +150,7 @@ def publish_cohort(request, pk):
             messages.SUCCESS,
             f"Publishing {intcomma(publish_request.accessions.count())} images. This may take several minutes.",  # noqa: E501
         )
-        return HttpResponseRedirect(reverse("cohort-detail", args=[cohort.pk]))
+        return HttpResponseRedirect(reverse("ingest/cohort-detail", args=[cohort.pk]))
 
     ctx = {
         "form": form,

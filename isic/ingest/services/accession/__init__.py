@@ -25,7 +25,7 @@ from isic.ingest.services.publish import unembargo_image
 
 
 # Note: this method isn't used when creating accessions as part of a zip extraction.
-def accession_create(
+def create_accession(
     *,
     creator: User,
     cohort: Cohort,
@@ -33,7 +33,7 @@ def accession_create(
     original_blob_name: str,
     original_blob_size: int,
 ) -> Accession:
-    from isic.ingest.tasks import accession_generate_blob_task
+    from isic.ingest.tasks import generate_accession_blob_task
 
     # TODO: should the user this is acting on behalf of be the same as the creator?
     if not creator.has_perm("ingest.add_accession", cohort):
@@ -58,16 +58,16 @@ def accession_create(
         accession.full_clean(validate_constraints=False)
         accession.save()
         accession.unstructured_metadata.save()
-        accession_generate_blob_task.delay_on_commit(accession.pk)
+        generate_accession_blob_task.delay_on_commit(accession.pk)
 
     return accession
 
 
-def accession_reprocess(*, accession: Accession) -> None:
+def reprocess_accession(*, accession: Accession) -> None:
     """
     Reprocess an accession by generating a new blob, thumbnail, and (optionally) sponsored blob.
     """  # noqa: D200
-    from isic.ingest.tasks import accession_generate_blob_task
+    from isic.ingest.tasks import generate_accession_blob_task
 
     # since our storage doesn't allow overwriting files, the existing blobs need to be deleted
     # before we reprocess the accession. this means there will be a period of time where the
@@ -88,7 +88,7 @@ def accession_reprocess(*, accession: Accession) -> None:
         accession.sponsored_blob = ""
         accession.sponsored_thumbnail_256_blob = ""
         accession.save(update_fields=["sponsored_blob", "sponsored_thumbnail_256_blob"])
-        accession_generate_blob_task(accession.pk)
+        generate_accession_blob_task(accession.pk)
 
         if hasattr(accession, "image"):
             # the existing accession.image has no blob values, so fresh Image objects
@@ -101,7 +101,7 @@ def accession_reprocess(*, accession: Accession) -> None:
                 unembargo_image(image=Image.objects.get(accession=accession))
 
 
-def accession_purge(*, accession: Accession) -> None:
+def purge_accession(*, accession: Accession) -> None:
     """Purge an unpublished accession and all associated data."""
     if accession.published:
         raise ValidationError("Cannot remove an accession with an image.")
@@ -115,7 +115,7 @@ def accession_purge(*, accession: Accession) -> None:
     accession.delete()
 
 
-def bulk_accession_relicense(
+def relicense_accessions(
     *, accessions: QuerySet[Accession], to_license: str, allow_more_restrictive: bool = False
 ) -> int:
     if to_license not in CopyrightLicense:
@@ -132,7 +132,7 @@ def bulk_accession_relicense(
     return accessions.update(copyright_license=to_license)
 
 
-def bulk_accession_update_metadata(  # noqa: PLR0913
+def update_accession_metadata(  # noqa: PLR0913
     *,
     user: User,
     metadata: Iterable[tuple[int, Mapping[str, Any]]],

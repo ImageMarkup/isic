@@ -27,10 +27,10 @@ from isic.core.models.image import Image
 from isic.core.search import bulk_add_to_search_index
 from isic.core.serializers import SearchQueryIn
 from isic.core.services import staff_image_metadata_csv
-from isic.core.services.collection import collection_share
+from isic.core.services.collection import share_collection
 from isic.core.services.collection.image import (
-    collection_add_images,
-    collection_add_images_from_isic_ids,
+    add_collection_images_from_isic_ids,
+    add_images_to_collection,
 )
 from isic.core.services.snapshot import snapshot_images
 from isic.core.utils.csv import EscapingDictWriter
@@ -54,7 +54,7 @@ def populate_collection_from_search_task(
         del search_params["collections"]
 
     serializer = SearchQueryIn(**search_params)
-    collection_add_images(collection=collection, qs=serializer.to_queryset(user))
+    add_images_to_collection(collection=collection, qs=serializer.to_queryset(user))
 
 
 @shared_task(soft_time_limit=600, time_limit=610)
@@ -63,7 +63,7 @@ def populate_collection_from_isic_ids_task(
 ) -> None:
     user = User.objects.get(pk=user_pk)
     collection = Collection.objects.get(pk=collection_pk)
-    collection_add_images_from_isic_ids(user=user, collection=collection, isic_ids=isic_ids)
+    add_collection_images_from_isic_ids(user=user, collection=collection, isic_ids=isic_ids)
 
 
 @shared_task(soft_time_limit=1800, time_limit=1810)
@@ -74,10 +74,10 @@ def share_collection_with_users_task(
     grantor = User.objects.get(pk=grantor_pk)
     users = User.objects.filter(pk__in=user_pks)
 
-    # since each instance of collection_share is atomic and idempotent, there's
+    # since each instance of share_collection is atomic and idempotent, there's
     # no need to wrap this in a transaction.
     for user in users:
-        collection_share(collection=collection, grantor=grantor, grantee=user)
+        share_collection(collection=collection, grantor=grantor, grantee=user)
 
     if notify:
         site = Site.objects.get_current()
@@ -140,7 +140,7 @@ def sync_elasticsearch_indices_task():
 
 
 @shared_task(soft_time_limit=1800, time_limit=1810)
-def generate_staff_image_list_metadata_csv(user_id: int) -> None:
+def generate_staff_image_list_metadata_csv_task(user_id: int) -> None:
     user = User.objects.get(pk=user_id, is_staff=True)
 
     with tempfile.NamedTemporaryFile(mode="w", delete=False) as f, transaction.atomic():
@@ -177,12 +177,12 @@ def generate_staff_image_list_metadata_csv(user_id: int) -> None:
 
 @shared_task(soft_time_limit=60 * 60 * 12, time_limit=(60 * 60 * 12) + 60)
 def create_doi_bundle_task(doi_id: str, doi_type: DoiType = "Doi") -> None:
-    from isic.core.services.collection.doi import collection_create_doi_files
+    from isic.core.services.collection.doi import create_collection_doi_files
 
     model_class = apps.get_model("core", doi_type)
     doi = model_class.objects.get(id=doi_id)
 
-    collection_create_doi_files(doi=doi)
+    create_collection_doi_files(doi=doi)
 
 
 def _fetch_doi_schema_org_dataset(doi_id: str) -> dict:
@@ -234,14 +234,14 @@ def fetch_doi_citations_task(doi_id: str, doi_type: DoiType = "Doi") -> None:
 @shared_task(soft_time_limit=60 * 5, time_limit=60 * 5 + 30)
 def publish_draft_doi_task(draft_doi_id: str, user_id: int) -> None:
     """Publish a draft DOI to become a final, findable DOI."""
-    from isic.core.services.collection.doi import draft_doi_publish
+    from isic.core.services.collection.doi import publish_draft_doi
 
     DraftDoi = apps.get_model("core", "DraftDoi")
 
     draft_doi = DraftDoi.objects.get(id=draft_doi_id, is_publishing=True)
     user = User.objects.get(id=user_id)
 
-    draft_doi_publish(user=user, draft_doi=draft_doi)
+    publish_draft_doi(user=user, draft_doi=draft_doi)
 
 
 @shared_task(soft_time_limit=12 * 60 * 60, time_limit=12 * 60 * 60 + 60)
@@ -257,7 +257,7 @@ def generate_archive_snapshot_task() -> None:
 
 
 @shared_task(soft_time_limit=10, time_limit=15)
-def prune_expired_oauth_tokens():
+def prune_expired_oauth_tokens_task():
     clear_expired_oauth_tokens()
 
 
@@ -268,7 +268,7 @@ def refresh_materialized_view_collection_counts_task():
 
 
 @shared_task(soft_time_limit=180, time_limit=200)
-def regenerate_sponsored_blob(image_id: int):
+def regenerate_sponsored_blob_task(image_id: int):
     image = Image.objects.select_related("accession").get(id=image_id)
 
     accession = image.accession

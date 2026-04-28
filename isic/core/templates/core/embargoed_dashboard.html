@@ -37,7 +37,7 @@
                 {% for cohort in cohorts_with_embargoed %}
                   <tr class="{% cycle 'bg-white' 'bg-gray-50' %}">
                     <td class="px-6 py-4 text-sm font-medium text-gray-900">
-                      <a href="{% url 'cohort-detail' pk=cohort.pk %}" class="text-blue-600 hover:text-blue-800">
+                      <a href="{% url 'ingest/cohort-detail' pk=cohort.pk %}" class="text-blue-600 hover:text-blue-800">
                         {{ cohort.name }}
                         <div class="text-xs text-gray-400">{{ cohort.contributor }}</div>
                       </a>

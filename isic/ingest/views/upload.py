@@ -20,7 +20,7 @@ from s3_file_field.widgets import S3FileInput
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.ingest.forms import CohortForm, ContributorForm, SingleAccessionUploadForm
 from isic.ingest.models import Cohort, Contributor, MetadataFile, ZipUpload
-from isic.ingest.services.accession import accession_create
+from isic.ingest.services.accession import create_accession
 from isic.ingest.tasks import extract_zip_task
 
 
@@ -32,7 +32,7 @@ class ZipForm(ModelForm):
 
 
 @login_required
-def select_or_create_contributor(request):
+def contributor_select_or_create(request):
     ctx = {"contributors": get_visible_objects(request.user, "ingest.view_contributor")}
     if ctx["contributors"].count() == 0:
         return HttpResponseRedirect(reverse("upload/create-contributor"))
@@ -41,7 +41,7 @@ def select_or_create_contributor(request):
 
 
 @needs_object_permission("ingest.view_contributor", (Contributor, "pk", "contributor_pk"))
-def select_or_create_cohort(request, contributor_pk):
+def cohort_select_or_create(request, contributor_pk):
     contributor = Contributor.objects.get(pk=contributor_pk)
     ctx = {
         "cohorts": contributor.cohorts.order_by("-created"),
@@ -89,7 +89,7 @@ def upload_cohort_create(request, contributor_pk):
             }
         )
 
-    return render(request, "ingest/cohort_edit_or_create.html", {"form": form, "creating": True})
+    return render(request, "ingest/cohort_create_or_edit.html", {"form": form, "creating": True})
 
 
 @needs_object_permission("ingest.edit_cohort", (Cohort, "pk", "cohort_pk"))
@@ -102,11 +102,11 @@ def upload_cohort_edit(request, cohort_pk):
             form.instance.creator = cohort.creator
             form.instance.contributor = cohort.contributor
             form.save(commit=True)
-            return HttpResponseRedirect(reverse("cohort-detail", args=[form.instance.pk]))
+            return HttpResponseRedirect(reverse("ingest/cohort-detail", args=[form.instance.pk]))
     else:
         form = CohortForm(instance=cohort)
 
-    return render(request, "ingest/cohort_edit_or_create.html", {"form": form, "creating": False})
+    return render(request, "ingest/cohort_create_or_edit.html", {"form": form, "creating": False})
 
 
 @needs_object_permission("ingest.view_cohort", (Cohort, "pk", "pk"))
@@ -136,7 +136,7 @@ def upload_single_accession(request, cohort_pk):
         if form.is_valid():
             try:
                 with transaction.atomic():
-                    accession = accession_create(
+                    accession = create_accession(
                         creator=request.user,
                         cohort=cohort,
                         original_blob=form.cleaned_data["original_blob"],

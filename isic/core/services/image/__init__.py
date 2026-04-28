@@ -8,7 +8,7 @@ from isic.core.models import Image, IsicId
 from isic.ingest.models.accession import Accession
 
 
-def image_create(*, creator: User, accession: Accession, public: bool) -> Image:
+def create_image(*, creator: User, accession: Accession, public: bool) -> Image:
     from isic.core.services.iptc import embed_iptc_metadata_for_image
 
     with transaction.atomic():
@@ -22,7 +22,7 @@ def image_create(*, creator: User, accession: Accession, public: bool) -> Image:
         return image
 
 
-def image_share(
+def share_image(
     *, qs: QuerySet[Image] | None = None, image: Image | None = None, grantor: User, grantee: User
 ) -> None:
     # is not None is necessary because qs could be an empty queryset

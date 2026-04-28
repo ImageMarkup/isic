@@ -7,7 +7,7 @@ from isic.core.tests.factories import ImageFactory
 from isic.factories import UserFactory
 from isic.studies.models import Question, Response
 from isic.studies.models.question_choice import QuestionChoice
-from isic.studies.services import study_update
+from isic.studies.services import update_study
 from isic.studies.tests.factories import (
     AnnotationFactory,
     QuestionFactory,
@@ -168,14 +168,14 @@ def test_study_update_zoomable_blocked_after_response():
     AnnotationFactory.create(study=study)
 
     with pytest.raises(ValidationError, match="Zoomable cannot be changed"):
-        study_update(study=study, zoomable=True)
+        update_study(study=study, zoomable=True)
 
 
 @pytest.mark.django_db
 def test_study_update_zoomable_allowed_before_any_responses():
     study = StudyFactory.create(public=False, zoomable=False)
 
-    study_update(study=study, zoomable=True)
+    update_study(study=study, zoomable=True)
 
     study.refresh_from_db()
     assert study.zoomable is True

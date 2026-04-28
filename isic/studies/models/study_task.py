@@ -10,7 +10,7 @@ from isic.core.models import Image
 from .study import Study
 
 
-class StudyTaskSet(models.QuerySet):
+class StudyTaskQuerySet(models.QuerySet["StudyTask"]):
     def pending(self):
         return self.filter(annotation=None)
 
@@ -39,7 +39,7 @@ class StudyTask(TimeStampedModel):
     annotator = models.ForeignKey(User, on_delete=models.CASCADE, related_name="study_tasks")
     image = models.ForeignKey(Image, on_delete=models.CASCADE, related_name="study_tasks")
 
-    objects = StudyTaskSet.as_manager()
+    objects = StudyTaskQuerySet.as_manager()
 
     @property
     def complete(self) -> bool:

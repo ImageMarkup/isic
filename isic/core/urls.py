@@ -2,8 +2,8 @@ from django.urls import path
 from django.views.generic.base import TemplateView
 
 from isic.core.views.collections import (
-    collection_create_,
-    collection_create_doi_,
+    collection_create,
+    collection_create_doi,
     collection_detail,
     collection_download_metadata,
     collection_edit,
@@ -46,7 +46,7 @@ urlpatterns = [
     ),
     path(
         "collections/create/",
-        collection_create_,
+        collection_create,
         name="core/collection-create",
     ),
     path(
@@ -56,7 +56,7 @@ urlpatterns = [
     ),
     path(
         "collections/<int:pk>/create-doi/",
-        collection_create_doi_,
+        collection_create_doi,
         name="core/collection-create-doi",
     ),
     path(

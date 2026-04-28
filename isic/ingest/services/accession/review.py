@@ -9,7 +9,7 @@ from isic.ingest.models.accession import Accession
 from isic.ingest.models.accession_review import AccessionReview
 
 
-def accession_review_update_or_create(
+def update_or_create_accession_review(
     *, accession: Accession, reviewer: User, reviewed_at: datetime, value: bool
 ) -> AccessionReview:
     if accession.published:
@@ -27,7 +27,7 @@ def accession_review_update_or_create(
     return accession_review
 
 
-def accession_review_bulk_create(*, reviewer: User, accession_ids_values: dict[int, bool]):
+def bulk_create_accession_reviews(*, reviewer: User, accession_ids_values: dict[int, bool]):
     accession_reviews = []
     reviewed_at = timezone.now()
 
@@ -52,6 +52,6 @@ def accession_review_bulk_create(*, reviewer: User, accession_ids_values: dict[i
         AccessionReview.objects.bulk_create(accession_reviews)
 
 
-def accession_review_delete(*, accession: Accession):
+def delete_accession_review(*, accession: Accession):
     if hasattr(accession, "review"):
         accession.review.delete()

@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count
 
-from isic.core.services.collection import collection_merge_magic_collections
+from isic.core.services.collection import merge_magic_collections
 from isic.ingest.models.accession import Accession
 from isic.ingest.models.cohort import Cohort
 from isic.ingest.models.metadata_file import MetadataFile
@@ -14,7 +14,7 @@ from isic.ingest.models.zip_upload import ZipUpload
 logger = logging.getLogger(__name__)
 
 
-def cohort_delete(*, cohort: Cohort) -> None:
+def delete_cohort(*, cohort: Cohort) -> None:
     # This check also guarantees the cohort won't point to a collection.
     if cohort.accessions.published().exists():
         raise ValidationError("Cannot delete a cohort with published images.")
@@ -28,11 +28,11 @@ def cohort_delete(*, cohort: Cohort) -> None:
 # TODO: no doi for special collections
 
 
-def cohort_merge(*, dest_cohort: Cohort, src_cohort: Cohort) -> None:
+def merge_cohorts(*, dest_cohort: Cohort, src_cohort: Cohort) -> None:
     """
     Merge a src_cohort into dest_cohort.
 
-    Note that this method should almost always be used with collection_merge_magic_collections.
+    Note that this method should almost always be used with merge_magic_collections.
     Merging collections or cohorts with relationships to the other would put the system in
     an unexpected state otherwise.
     """
@@ -69,7 +69,7 @@ def cohort_merge(*, dest_cohort: Cohort, src_cohort: Cohort) -> None:
         MetadataFile.objects.filter(cohort=src_cohort).update(cohort=dest_cohort)
 
         if src_cohort.collection and dest_cohort.collection:
-            collection_merge_magic_collections(
+            merge_magic_collections(
                 dest_collection=dest_cohort.collection, src_collection=src_cohort.collection
             )
         elif src_cohort.collection:

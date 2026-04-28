@@ -3,7 +3,7 @@ from itertools import chain
 import djclick as click
 
 from isic.core.models.doi import Doi, DraftDoi
-from isic.core.services.collection.doi import _datacite_session, collection_build_doi
+from isic.core.services.collection.doi import _datacite_session, build_collection_doi
 from isic.core.tasks import fetch_doi_citations_task, fetch_doi_schema_org_dataset_task
 
 
@@ -16,7 +16,7 @@ def update_dois(doi_ids):
     If specific DOI IDs are provided, only those are updated. Otherwise all DOIs are updated.
 
     This is useful after making changes to the metadata provided on DOI creation
-    (see collection_build_doi). After updating the DOIs, the citations and schema.org
+    (see build_collection_doi). After updating the DOIs, the citations and schema.org
     information are re-fetched from DataCite.
     """
     if doi_ids:
@@ -33,7 +33,7 @@ def update_dois(doi_ids):
     with _datacite_session() as session:
         for doi, is_draft in dois:
             doi_type = "DraftDoi" if is_draft else "Doi"
-            new_doi = collection_build_doi(
+            new_doi = build_collection_doi(
                 collection=doi.collection,
                 doi_id=doi.id,
                 is_draft=is_draft,

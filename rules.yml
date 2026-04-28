@@ -93,6 +93,20 @@ rules:
           class StaffReadonlyAdmin(admin.ModelAdmin):
               ...
 
+  - id: require-task-suffix
+    languages:
+      - python
+    severity: ERROR
+    message: Celery task functions must have a _task suffix.
+    patterns:
+      - pattern: |
+          @shared_task(...)
+          def $FUNC(...):
+              ...
+      - metavariable-regex:
+          metavariable: $FUNC
+          regex: ^(?!.*_task$).*
+
   - id: django-foreignkey-requires-related-name
     languages:
       - python

@@ -4,7 +4,7 @@
   <div x-data="{ open: false, hovered: false }" class="pb-4">
     <a class="cursor-pointer">
       {% if accession.is_cog %}
-        <a href="{% url 'accession-cog-viewer' accession.id %}">
+        <a href="{% url 'ingest/accession-cog-viewer' accession.id %}">
           <img src="{{ accession.thumbnail_.url }}" />
         </a>
       {% else %}

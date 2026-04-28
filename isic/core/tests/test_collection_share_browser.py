@@ -2,7 +2,7 @@ from django.urls import reverse
 from playwright.sync_api import expect
 import pytest
 
-from isic.core.services.collection.image import collection_add_images
+from isic.core.services.collection.image import add_images_to_collection
 
 
 @pytest.mark.playwright
@@ -18,7 +18,7 @@ def test_share_collection_with_multiple_users(
 
     collection = collection_factory(public=False, locked=False, creator=staff_user)
     image = image_factory(public=True)
-    collection_add_images(collection=collection, image=image)
+    add_images_to_collection(collection=collection, image=image)
 
     target_a = user_factory()
     target_b = user_factory()

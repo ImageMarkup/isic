@@ -2,7 +2,7 @@ from django.urls import reverse
 from playwright.sync_api import expect
 import pytest
 
-from isic.core.services.collection.image import collection_add_images
+from isic.core.services.collection.image import add_images_to_collection
 
 
 @pytest.mark.playwright
@@ -16,9 +16,9 @@ def test_collection_picker_dropdown_filter_select_and_keyboard(
     # Create images and assign them to specific collections so we can verify
     # that filtering by collection shows only the correct images.
     img_in_second = image_factory(public=True)
-    collection_add_images(collection=collections[1], image=img_in_second)
+    add_images_to_collection(collection=collections[1], image=img_in_second)
     img_in_third = image_factory(public=True)
-    collection_add_images(collection=collections[2], image=img_in_third)
+    add_images_to_collection(collection=collections[2], image=img_in_third)
     img_unaffiliated = image_factory(public=True)
 
     page.goto(reverse("core/image-browser"))
