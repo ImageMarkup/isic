@@ -2,7 +2,7 @@ import functools
 
 import pytest
 
-from isic.ingest.services.accession.review import accession_review_update_or_create
+from isic.ingest.services.accession.review import update_or_create_accession_review
 
 
 @pytest.fixture
@@ -41,7 +41,7 @@ def public_reviewed_image_factory(image_factory, accession_factory, user):
     def inner():
         accession = accession_factory(public=True)
 
-        accession_review_update_or_create(
+        update_or_create_accession_review(
             accession=accession,
             reviewer=user,
             reviewed_at=accession.created,
@@ -58,7 +58,7 @@ def private_reviewed_image_factory(image_factory, accession_factory, user):
     def inner():
         accession = accession_factory(public=False)
 
-        accession_review_update_or_create(
+        update_or_create_accession_review(
             accession=accession,
             reviewer=user,
             reviewed_at=accession.created,

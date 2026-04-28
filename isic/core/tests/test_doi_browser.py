@@ -3,7 +3,7 @@ from django.urls import reverse
 from playwright.sync_api import expect
 import pytest
 
-from isic.core.services.collection.image import collection_add_images
+from isic.core.services.collection.image import add_images_to_collection
 
 
 @pytest.mark.playwright
@@ -19,7 +19,7 @@ def test_doi_creation_form_related_identifiers_and_submit(
 
     collection = collection_factory(public=True, locked=False)
     for _ in range(3):
-        collection_add_images(collection=collection, image=image_factory(public=True))
+        add_images_to_collection(collection=collection, image=image_factory(public=True))
 
     page.goto(reverse("core/collection-create-doi", args=[collection.pk]))
 

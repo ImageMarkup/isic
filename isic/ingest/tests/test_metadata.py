@@ -11,8 +11,8 @@ import pytest
 
 from isic.ingest.models.accession import Accession, Cohort
 from isic.ingest.models.metadata_file import MetadataFile
-from isic.ingest.services.accession import bulk_accession_update_metadata
-from isic.ingest.services.accession.review import accession_review_update_or_create
+from isic.ingest.services.accession import update_accession_metadata
+from isic.ingest.services.accession.review import update_or_create_accession_review
 from isic.ingest.tasks import update_metadata_task
 from isic.ingest.tests.csv_streams import StreamWriter
 from isic.ingest.utils.metadata import (
@@ -220,7 +220,7 @@ def test_apply_metadata_step2(
     )
 
     r = staff_client.post(
-        reverse("validate-metadata", args=[cohort_with_accession.pk]),
+        reverse("ingest/validate-metadata", args=[cohort_with_accession.pk]),
         {"metadata_file": metadatafile.pk},
     )
 
@@ -247,7 +247,7 @@ def test_apply_metadata_step2_invalid(
 
     with django_capture_on_commit_callbacks(execute=True):
         r = staff_client.post(
-            reverse("validate-metadata", args=[cohort_with_accession.pk]),
+            reverse("ingest/validate-metadata", args=[cohort_with_accession.pk]),
             {"metadata_file": metadatafile.pk},
             follow=True,
         )
@@ -285,7 +285,7 @@ def test_apply_metadata_step3_full_cohort(
 
     with django_capture_on_commit_callbacks(execute=True):
         r = staff_client.post(
-            reverse("validate-metadata", args=[cohort_with_accession.pk]),
+            reverse("ingest/validate-metadata", args=[cohort_with_accession.pk]),
             {"metadata_file": metadatafile.pk},
             follow=True,
         )
@@ -303,7 +303,7 @@ def test_apply_metadata_step3_full_cohort(
 
     with django_capture_on_commit_callbacks(execute=True):
         r = staff_client.post(
-            reverse("validate-metadata", args=[cohort_with_accession.pk]),
+            reverse("ingest/validate-metadata", args=[cohort_with_accession.pk]),
             {"metadata_file": disagreeing_metadatafile.pk},
             follow=True,
         )
@@ -483,7 +483,7 @@ def test_accession_remove_unstructured_metadata_idempotent(user, imageless_acces
 def unpublished_accepted_accession(accession_factory, user: User):
     accession = accession_factory()
     accession.update_metadata(user, {"sex": "female"})
-    accession_review_update_or_create(
+    update_or_create_accession_review(
         accession=accession, reviewer=user, reviewed_at=timezone.now(), value=True
     )
     return accession
@@ -533,7 +533,7 @@ def test_bulk_accession_update_metadata_defers_constraints(
     # raise the exclusion constraint. this verifies that the constraints are deferred until commit
     # time so the error isn't raised as long as the end result is valid.
 
-    bulk_accession_update_metadata(
+    update_accession_metadata(
         user=user,
         metadata=[
             (accession_a.id, {"lesion_id": "lesion_bar"}),

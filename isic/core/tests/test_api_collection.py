@@ -3,7 +3,7 @@ import pytest
 from pytest_lazy_fixtures import lf
 
 from isic.core.models.collection import Collection
-from isic.core.services.collection.image import collection_add_images
+from isic.core.services.collection.image import add_images_to_collection
 
 
 @pytest.fixture
@@ -332,7 +332,7 @@ def test_core_api_collection_license_breakdown(
     collection = collection_factory(locked=False, creator=user, public=True)
     for copyright_license in ["CC-0", "CC-BY"]:
         image = image_factory(accession__copyright_license=copyright_license, public=True)
-        collection_add_images(collection=collection, image=image)
+        add_images_to_collection(collection=collection, image=image)
 
     r = staff_client.get(
         reverse("api:collection_license_breakdown", args=[collection.pk]),

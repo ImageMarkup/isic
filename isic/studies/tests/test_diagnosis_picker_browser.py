@@ -2,7 +2,7 @@ from django.urls import reverse
 from playwright.sync_api import expect
 import pytest
 
-from isic.core.services.collection.image import collection_add_images
+from isic.core.services.collection.image import add_images_to_collection
 from isic.studies.models import Question, QuestionChoice, Response, StudyTask
 
 
@@ -15,7 +15,7 @@ def test_diagnosis_picker_search_expand_select_and_submit(
 
     collection = collection_factory(creator=user)
     image = image_factory(public=True)
-    collection_add_images(collection=collection, image=image)
+    add_images_to_collection(collection=collection, image=image)
 
     # Create a diagnosis question with hierarchical choices
     question = Question.objects.create(

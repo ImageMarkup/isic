@@ -27,7 +27,7 @@ from isic.studies.forms import (
     StudyEditForm,
 )
 from isic.studies.models import Question, QuestionChoice, Response, Study, StudyTask
-import isic.studies.services as study_services
+from isic.studies.services import create_study, update_study
 from isic.studies.tasks import populate_study_tasks_task
 
 
@@ -101,7 +101,7 @@ def study_create(request):
         and custom_question_formset.is_valid()
         and official_question_formset.is_valid()
     ):
-        study = study_services.study_create(
+        study = create_study(
             creator=request.user,
             owners=[request.user],
             attribution=base_form.cleaned_data["attribution"],
@@ -162,7 +162,7 @@ def study_edit(request, pk):
 
     if request.method == "POST" and form.is_valid():
         try:
-            study_services.study_update(study=study, **form.cleaned_data)
+            update_study(study=study, **form.cleaned_data)
         except ValidationError as e:
             messages.add_message(request, messages.ERROR, e.message)
         else:

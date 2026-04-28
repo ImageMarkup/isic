@@ -56,7 +56,7 @@ def metadata_file_create(request, cohort_pk):
             form.save(commit=True)
 
             if request.GET.get("ingest_review_redirect"):
-                return HttpResponseRedirect(reverse("validate-metadata", args=[cohort.pk]))
+                return HttpResponseRedirect(reverse("ingest/validate-metadata", args=[cohort.pk]))
 
             return HttpResponseRedirect(reverse("upload/cohort-files", args=[cohort.pk]))
     else:
@@ -78,7 +78,7 @@ def metadata_file_detail(request, metadata_file_pk: int):
         "metadata_file": metadata_file,
     }
 
-    return render(request, "ingest/metadata_file.html", ctx)
+    return render(request, "ingest/metadata_file_detail.html", ctx)
 
 
 class ApplyMetadataContext(TypedDict):
@@ -95,7 +95,7 @@ class ApplyMetadataContext(TypedDict):
 
 
 @staff_member_required
-def apply_metadata(request, cohort_pk):
+def metadata_apply(request, cohort_pk):
     cohort: Cohort = get_object_or_404(
         Cohort.objects.prefetch_related(
             Prefetch("metadata_files", queryset=MetadataFile.objects.order_by("-created"))
@@ -110,7 +110,7 @@ def apply_metadata(request, cohort_pk):
         "cohort": cohort,
         "breadcrumbs": [
             *make_breadcrumbs(cohort),
-            [reverse("validate-metadata", args=[cohort.pk]), "Validate Metadata"],
+            [reverse("ingest/validate-metadata", args=[cohort.pk]), "Validate Metadata"],
         ],
         "form": ValidateMetadataForm(request.user, cohort),
     }
@@ -123,7 +123,7 @@ def apply_metadata(request, cohort_pk):
             )
             validate_metadata_task.delay_on_commit(form.cleaned_data["metadata_file"])
             return HttpResponseRedirect(
-                reverse("metadata-file-detail", args=[form.cleaned_data["metadata_file"]])
+                reverse("ingest/metadata-file-detail", args=[form.cleaned_data["metadata_file"]])
             )
 
-    return render(request, "ingest/apply_metadata.html", ctx)
+    return render(request, "ingest/metadata_apply.html", ctx)

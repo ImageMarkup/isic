@@ -7,7 +7,7 @@ from s3_file_field.widgets import S3PlaceholderFile
 
 from isic.core.models.collection import Collection
 from isic.core.models.doi import DraftDoi, DraftDoiRelatedIdentifier
-from isic.core.services.collection.doi import collection_create_draft_doi
+from isic.core.services.collection.doi import create_collection_draft_doi
 from isic.core.tasks import publish_draft_doi_task
 
 router = Router()
@@ -72,7 +72,7 @@ def doi_create(request, payload: CreateDOIIn):
     if not request.user.has_perm("core.create_doi", collection):
         return 403, {"error": "You do not have permission to create a DOI."}
 
-    draft_doi = collection_create_draft_doi(
+    draft_doi = create_collection_draft_doi(
         user=request.user,
         collection=collection,
         description=payload.description,
@@ -94,7 +94,7 @@ class UpdateDraftDOIIn(Schema):
     include_in_schema=False,
 )
 def doi_update_draft(request, draft_doi_slug: str, payload: UpdateDraftDOIIn):
-    from isic.core.services.collection import collection_update
+    from isic.core.services.collection import update_collection
 
     draft_doi = get_object_or_404(
         DraftDoi.objects.select_related("collection"), slug=draft_doi_slug
@@ -103,7 +103,7 @@ def doi_update_draft(request, draft_doi_slug: str, payload: UpdateDraftDOIIn):
     if not request.user.has_perm("core.create_doi", draft_doi.collection):
         return 403, {"error": "You do not have permission to update this DOI."}
 
-    collection_update(
+    update_collection(
         collection=draft_doi.collection, description=payload.description, ignore_lock=True
     )
 

@@ -4,7 +4,7 @@ from django.urls import reverse
 from playwright.sync_api import expect
 import pytest
 
-from isic.core.services.collection.image import collection_add_images
+from isic.core.services.collection.image import add_images_to_collection
 from isic.studies.models import Question, QuestionChoice, StudyTask
 
 _TEST_IMAGE = pathlib.Path(__file__).parent.parent.parent / "ingest/tests/data/ISIC_0000000.jpg"
@@ -19,7 +19,7 @@ def test_study_task_image_is_zoomable(
 
     collection = collection_factory(creator=user)
     image = image_factory(public=True)
-    collection_add_images(collection=collection, image=image)
+    add_images_to_collection(collection=collection, image=image)
 
     question = Question.objects.create(
         prompt="Is this benign?", type=Question.QuestionType.SELECT, official=False

@@ -5,7 +5,7 @@ import pytest
 
 from isic.core.models.doi import DoiRelatedIdentifier, RelatedIdentifierType, RelationType
 from isic.core.models.supplemental_file import SupplementalFile
-from isic.core.services.collection.image import collection_add_images
+from isic.core.services.collection.image import add_images_to_collection
 
 
 def _refresh_collection_counts():
@@ -37,10 +37,10 @@ def test_collection_list_desktop(
     collection_many_images = collection_factory(public=True, pinned=False, locked=False)
 
     for img in [image_factory(public=True) for _ in range(3)]:
-        collection_add_images(collection=collection_with_doi, image=img)
+        add_images_to_collection(collection=collection_with_doi, image=img)
 
     for img in [image_factory(public=True) for _ in range(7)]:
-        collection_add_images(collection=collection_many_images, image=img)
+        add_images_to_collection(collection=collection_many_images, image=img)
 
     _refresh_collection_counts()
 
@@ -119,7 +119,7 @@ def test_collection_list_mobile(
     collection_private = collection_factory(public=False, pinned=False, locked=False)
 
     for img in [image_factory(public=True) for _ in range(4)]:
-        collection_add_images(collection=collection_public, image=img)
+        add_images_to_collection(collection=collection_public, image=img)
 
     _refresh_collection_counts()
 

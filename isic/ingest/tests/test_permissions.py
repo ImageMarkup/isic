@@ -86,7 +86,7 @@ def test_upload_edit_cohort_permissions(
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("url_name", ["ingest-review", "cohort-list"])
+@pytest.mark.parametrize("url_name", ["ingest/ingest-review", "ingest/cohort-list"])
 def test_staff_page_permissions(url_name, client, authenticated_client, staff_client):
     r = client.get(reverse(url_name))
     assert r.status_code == 302
@@ -99,7 +99,7 @@ def test_staff_page_permissions(url_name, client, authenticated_client, staff_cl
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("url_name", ["upload/cohort-files", "upload/zip", "upload-metadata"])
+@pytest.mark.parametrize("url_name", ["upload/cohort-files", "upload/zip", "upload/metadata"])
 def test_cohort_pages_permissions(
     url_name, client, authenticated_client, staff_client, cohort_factory, user_factory
 ):
@@ -129,8 +129,8 @@ def test_cohort_pages_permissions(
 @pytest.mark.parametrize(
     "url_name",
     [
-        "cohort-detail",
-        "cohort-review",
+        "ingest/cohort-detail",
+        "ingest/cohort-review",
     ],
 )
 def test_cohort_review_permissions(url_name, client, authenticated_client, staff_client, cohort):
@@ -152,32 +152,32 @@ def test_cohort_review_permissions(url_name, client, authenticated_client, staff
 
 @pytest.mark.django_db
 def test_validate_metadata_permissions(client, authenticated_client, staff_client, cohort):
-    r = client.get(reverse("validate-metadata", args=[cohort.pk]))
+    r = client.get(reverse("ingest/validate-metadata", args=[cohort.pk]))
     assert r.status_code == 302
 
     client.force_login(cohort.contributor.creator)
-    r = client.get(reverse("validate-metadata", args=[cohort.pk]))
+    r = client.get(reverse("ingest/validate-metadata", args=[cohort.pk]))
     assert r.status_code == 302
 
-    r = authenticated_client.get(reverse("validate-metadata", args=[cohort.pk]))
+    r = authenticated_client.get(reverse("ingest/validate-metadata", args=[cohort.pk]))
     assert r.status_code == 302
 
-    r = staff_client.get(reverse("validate-metadata", args=[cohort.pk]))
+    r = staff_client.get(reverse("ingest/validate-metadata", args=[cohort.pk]))
     assert r.status_code == 200
 
-    r = staff_client.get(reverse("validate-metadata", args=[cohort.pk]))
+    r = staff_client.get(reverse("ingest/validate-metadata", args=[cohort.pk]))
     assert r.status_code == 200
 
 
 @pytest.mark.django_db
 def test_merge_cohort_permissions(client, authenticated_client, staff_client):
-    r = client.get(reverse("merge-cohorts"))
+    r = client.get(reverse("ingest/merge-cohorts"))
     assert r.status_code == 302
 
-    r = authenticated_client.get(reverse("merge-cohorts"))
+    r = authenticated_client.get(reverse("ingest/merge-cohorts"))
     assert r.status_code == 302
 
-    r = staff_client.get(reverse("merge-cohorts"))
+    r = staff_client.get(reverse("ingest/merge-cohorts"))
     assert r.status_code == 200
 
 

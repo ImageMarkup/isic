@@ -4,13 +4,13 @@ import pytest
 
 from isic.core.models.base import CopyrightLicense
 from isic.core.models.collection import Collection
-from isic.core.services.collection import collection_merge_magic_collections
-from isic.core.services.collection.image import collection_add_images
+from isic.core.services.collection import merge_magic_collections
+from isic.core.services.collection.image import add_images_to_collection
 from isic.core.tests.factories import CollectionFactory, DoiFactory
 from isic.factories import UserFactory
 from isic.ingest.models.cohort import Cohort
-from isic.ingest.services.cohort import cohort_merge
-from isic.ingest.services.contributor import contributor_merge
+from isic.ingest.services.cohort import merge_cohorts
+from isic.ingest.services.contributor import merge_contributors
 from isic.studies.tests.factories import StudyFactory
 
 
@@ -21,7 +21,7 @@ def full_cohort(cohort_factory, accession_factory, image_factory, collection_fac
         cohort = cohort_factory(collection=collection)
         accession = accession_factory(cohort=cohort)
         image = image_factory(accession=accession, public=True)
-        collection_add_images(collection=collection, image=image)
+        add_images_to_collection(collection=collection, image=image)
         return cohort
 
     return _full_cohort
@@ -47,7 +47,7 @@ def test_merge_contributors(contributor_with_cohort):
     contributor_b_cohorts = contributor_b.cohorts.values_list("pk", flat=True)
     contributor_b_owners = contributor_b.owners.values_list("pk", flat=True)
 
-    contributor_merge(dest_contributor=contributor_a, src_contributor=contributor_b)
+    merge_contributors(dest_contributor=contributor_a, src_contributor=contributor_b)
 
     contributor_a.refresh_from_db()
     assert not Cohort.objects.filter(contributor_id=contributor_b_pk).exists()
@@ -67,7 +67,7 @@ def test_merge_cohorts(full_cohort):
     cohort_b_accessions = cohort_b.accessions.values_list("pk", flat=True)
     cohort_b_magic_coll_images = cohort_b.collection.images.values_list("pk", flat=True)
 
-    cohort_merge(dest_cohort=cohort_a, src_cohort=cohort_b)
+    merge_cohorts(dest_cohort=cohort_a, src_cohort=cohort_b)
 
     cohort_a.refresh_from_db()
     assert not Cohort.objects.filter(pk=cohort_b_pk).exists()
@@ -89,7 +89,7 @@ def test_merge_cohorts_missing_magic_collections(full_cohort):
 
     total_cohort_images = set(src_cohort.collection.images.values_list("pk", flat=True))
 
-    cohort_merge(dest_cohort=dest_cohort, src_cohort=src_cohort)
+    merge_cohorts(dest_cohort=dest_cohort, src_cohort=src_cohort)
     dest_cohort.refresh_from_db()
     assert set(dest_cohort.collection.images.values_list("pk", flat=True)) == total_cohort_images
 
@@ -106,7 +106,7 @@ def test_merge_cohorts_conflicting_original_blob_names(full_cohort):
     accession_b.save()
 
     with pytest.raises(ValidationError, match="blob names"):
-        cohort_merge(dest_cohort=cohort_a, src_cohort=cohort_b)
+        merge_cohorts(dest_cohort=cohort_a, src_cohort=cohort_b)
 
 
 @pytest.mark.django_db
@@ -119,7 +119,7 @@ def test_merge_cohorts_with_longitudinal_metadata(full_cohort):
     accession_b.update_metadata(accession_b.creator, {"patient_id": "foo"}, ignore_image_check=True)
 
     with pytest.raises(ValidationError, match="patients"):
-        cohort_merge(dest_cohort=cohort_a, src_cohort=cohort_b)
+        merge_cohorts(dest_cohort=cohort_a, src_cohort=cohort_b)
 
 
 @pytest.mark.django_db
@@ -132,7 +132,7 @@ def test_merge_cohorts_heterogeneous_licenses(full_cohort):
     accession_b.copyright_license = CopyrightLicense.CC_BY
     accession_b.save()
 
-    cohort_merge(dest_cohort=cohort_a, src_cohort=cohort_b)
+    merge_cohorts(dest_cohort=cohort_a, src_cohort=cohort_b)
     cohort_a.refresh_from_db()
     assert cohort_a.accessions.count() == 2
     assert set(cohort_a.accessions.values_list("copyright_license", flat=True)) == {
@@ -146,11 +146,11 @@ def test_merge_cohorts_view(full_cohort, staff_client):
     cohort_a, cohort_b = full_cohort(), full_cohort()
 
     r = staff_client.post(
-        reverse("merge-cohorts"),
+        reverse("ingest/merge-cohorts"),
         data={"cohort": cohort_a.pk, "cohort_to_merge": cohort_b.pk},
     )
     assert r.status_code == 302
-    assert r.url == reverse("cohort-detail", args=[cohort_a.pk])
+    assert r.url == reverse("ingest/cohort-detail", args=[cohort_a.pk])
 
 
 @pytest.fixture
@@ -162,7 +162,7 @@ def full_collection(collection_factory, image_factory, cohort_factory):
         cohort.collection = collection
         cohort.save()
         image = image_factory(public=public)
-        collection_add_images(collection=collection, image=image)
+        add_images_to_collection(collection=collection, image=image)
         return collection
 
     return _full_collection
@@ -175,7 +175,7 @@ def test_merge_collections(full_collection):
     collection_b_pk = collection_b.pk
     collection_b_images = collection_b.images.values_list("pk", flat=True)
 
-    collection_merge_magic_collections(dest_collection=collection_a, src_collection=collection_b)
+    merge_magic_collections(dest_collection=collection_a, src_collection=collection_b)
 
     collection_a.refresh_from_db()
     assert not Collection.objects.filter(pk=collection_b_pk).exists()
@@ -189,9 +189,7 @@ def test_merge_collections_unmergeable_doi():
     dest_collection = CollectionFactory.create()
 
     with pytest.raises(ValidationError, match="DOI"):
-        collection_merge_magic_collections(
-            dest_collection=dest_collection, src_collection=src_collection
-        )
+        merge_magic_collections(dest_collection=dest_collection, src_collection=src_collection)
 
 
 @pytest.mark.django_db
@@ -202,9 +200,7 @@ def test_merge_collections_unmergeable_shares():
     dest_collection = CollectionFactory.create()
 
     with pytest.raises(ValidationError, match="shares"):
-        collection_merge_magic_collections(
-            dest_collection=dest_collection, src_collection=src_collection
-        )
+        merge_magic_collections(dest_collection=dest_collection, src_collection=src_collection)
 
 
 @pytest.mark.django_db
@@ -214,9 +210,7 @@ def test_merge_collections_unmergeable_study():
     dest_collection = CollectionFactory.create()
 
     with pytest.raises(ValidationError, match="studies"):
-        collection_merge_magic_collections(
-            dest_collection=dest_collection, src_collection=src_collection
-        )
+        merge_magic_collections(dest_collection=dest_collection, src_collection=src_collection)
 
 
 @pytest.mark.django_db
@@ -230,6 +224,6 @@ def test_merge_collections_private_images(collection_factory, image_factory, coh
     private_collection.images.add(image_factory(public=False))
 
     with pytest.raises(ValidationError, match="private"):
-        collection_merge_magic_collections(
+        merge_magic_collections(
             dest_collection=public_collection, src_collection=private_collection
         )

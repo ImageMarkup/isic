@@ -1,7 +1,7 @@
 from django.urls import reverse
 import pytest
 
-from isic.core.services.image import image_share
+from isic.core.services.image import share_image
 
 
 @pytest.mark.django_db
@@ -38,7 +38,7 @@ def test_resolve_pk_private_image_unauthenticated(client, image_factory):
 def test_resolve_pk_private_image_authorized(client, user_factory, staff_user, image_factory):
     user = user_factory()
     image = image_factory(public=False)
-    image_share(image=image, grantor=staff_user, grantee=user)
+    share_image(image=image, grantor=staff_user, grantee=user)
     client.force_login(user)
     response = client.get(f"/images/{image.pk}/")
     assert response.status_code == 301

@@ -13,11 +13,11 @@ from isic.core.models.image import Image
 from isic.ingest.models.accession import Accession
 from isic.ingest.models.unstructured_metadata import UnstructuredMetadata
 from isic.ingest.services.accession import (
-    accession_create,
-    accession_reprocess,
-    bulk_accession_relicense,
+    create_accession,
+    relicense_accessions,
+    reprocess_accession,
 )
-from isic.ingest.services.publish import accession_publish
+from isic.ingest.services.publish import publish_accession
 from isic.ingest.utils.zip import Blob
 
 data_dir = pathlib.Path(__file__).parent / "data"
@@ -53,7 +53,7 @@ def test_accession_reprocess(user, cohort_factory, django_capture_on_commit_call
 
     with path.open("rb") as stream:
         original_blob = InMemoryUploadedFile(stream, None, name, None, path.stat().st_size, None)
-        accession = accession_create(
+        accession = create_accession(
             creator=user,
             cohort=cohort,
             original_blob=original_blob,
@@ -67,13 +67,13 @@ def test_accession_reprocess(user, cohort_factory, django_capture_on_commit_call
     accession.save(update_fields=["attribution"])
 
     with django_capture_on_commit_callbacks(execute=True):
-        accession_publish(accession=accession, public=True, publisher=user)
+        publish_accession(accession=accession, public=True, publisher=user)
 
     image = Image.objects.get(accession=accession)
     sponsored_blob_name = image.accession.sponsored_blob.name
     assert image.public
 
-    accession_reprocess(accession=accession)
+    reprocess_accession(accession=accession)
     accession.refresh_from_db()
 
     # verify that the image is still public and has the same blob name
@@ -101,7 +101,7 @@ def test_accession_orients_images(user, cohort):
         assert original_image._exif.get(PIL.ExifTags.Base.Make) == "Canon"
         assert original_image._exif.get(PIL.ExifTags.Base.Orientation) == 6  # 90 degrees clockwise
 
-        accession = accession_create(
+        accession = create_accession(
             creator=user,
             cohort=cohort,
             original_blob=original_blob,
@@ -142,7 +142,7 @@ def test_accession_create_image_types(blob_path, blob_name, mock_as_cog, user, c
             return_value=mock_as_cog,
         )
 
-        accession = accession_create(
+        accession = create_accession(
             creator=user,
             cohort=cohort,
             original_blob=original_blob,
@@ -251,19 +251,19 @@ def test_accession_immutable_after_publish(user, image_factory):
 
 @pytest.mark.django_db
 def test_accession_relicense(cc_by_accession_qs):
-    bulk_accession_relicense(accessions=cc_by_accession_qs, to_license="CC-0")
+    relicense_accessions(accessions=cc_by_accession_qs, to_license="CC-0")
     assert cc_by_accession_qs.first().copyright_license == "CC-0"
 
 
 @pytest.mark.django_db
 def test_accession_relicense_more_restrictive(cc_by_accession_qs):
     with pytest.raises(ValidationError, match="more restrictive"):
-        bulk_accession_relicense(accessions=cc_by_accession_qs, to_license="CC-BY-NC")
+        relicense_accessions(accessions=cc_by_accession_qs, to_license="CC-BY-NC")
 
 
 @pytest.mark.django_db
 def test_accession_relicense_more_restrictive_ignore(cc_by_accession_qs):
-    bulk_accession_relicense(
+    relicense_accessions(
         accessions=cc_by_accession_qs, to_license="CC-BY-NC", allow_more_restrictive=True
     )
 
@@ -278,7 +278,7 @@ def test_accession_relicense_some_accessions_more_restrictive(
     )
     accession.save()
     with pytest.raises(ValidationError, match="more restrictive"):
-        bulk_accession_relicense(
+        relicense_accessions(
             accessions=Accession.objects.filter(
                 id__in=[cc_by_accession_qs.first().id, accession.id]
             ),

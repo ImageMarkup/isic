@@ -8,10 +8,10 @@ from django.db.models.query import QuerySet
 from isic.core.models.collection import Collection, CollectionShare
 from isic.core.models.image import Image
 from isic.core.permissions import get_visible_objects
-from isic.core.services.image import image_share
+from isic.core.services.image import share_image
 
 
-def collection_add_images(
+def add_images_to_collection(
     *,
     collection: Collection,
     qs: QuerySet[Image] | None = None,
@@ -45,11 +45,11 @@ def collection_add_images(
 
         # adding images to a collection that's shared with a user should implicitly share the
         # images with that user.
-        for collection_share in CollectionShare.objects.filter(collection=collection).all():
-            image_share(qs=qs, grantor=collection_share.grantor, grantee=collection_share.grantee)
+        for share_collection in CollectionShare.objects.filter(collection=collection).all():
+            share_image(qs=qs, grantor=share_collection.grantor, grantee=share_collection.grantee)
 
 
-def collection_move_images(
+def move_collection_images(
     *,
     src_collection: Collection,
     dest_collection: Collection,
@@ -82,7 +82,7 @@ def collection_move_images(
         ).exclude(image__in=dest_collection.images.all()).update(collection=dest_collection)
 
 
-def collection_remove_images(
+def remove_images_from_collection(
     *,
     collection: Collection,
     qs: QuerySet[Image] | None = None,
@@ -102,7 +102,7 @@ def collection_remove_images(
     Collection.images.through.objects.filter(collection=collection, image__in=qs).delete()
 
 
-def collection_add_images_from_isic_ids(
+def add_collection_images_from_isic_ids(
     *, user: User, collection: Collection, isic_ids: list[str]
 ) -> dict:
     isic_ids = list(set(isic_ids))
@@ -125,14 +125,14 @@ def collection_add_images_from_isic_ids(
         "succeeded": succeeded,
     }
 
-    collection_add_images(
+    add_images_to_collection(
         collection=collection, qs=Image.objects.filter(isic_id__in=summary["succeeded"])
     )
 
     return summary
 
 
-def collection_remove_images_from_isic_ids(
+def remove_collection_images_from_isic_ids(
     *, user: User, collection: Collection, isic_ids: list[str]
 ) -> dict:
     isic_ids = list(set(isic_ids))
@@ -147,7 +147,7 @@ def collection_remove_images_from_isic_ids(
         "succeeded": [isic_id for isic_id in isic_ids if isic_id in visible_images],
     }
 
-    collection_remove_images(
+    remove_images_from_collection(
         collection=collection, qs=Image.objects.filter(isic_id__in=summary["succeeded"])
     )
 

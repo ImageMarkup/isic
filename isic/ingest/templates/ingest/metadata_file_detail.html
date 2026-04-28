@@ -38,7 +38,7 @@ not for templates rendered with render_to_string.
 
             this.applied = true;
             this.applying = false;
-            window.location.href = '{% url "cohort-detail" cohort.id %}';
+            window.location.href = '{% url "ingest/cohort-detail" cohort.id %}';
           }).catch((err) => {
             this.applying = false;
             console.error(err);

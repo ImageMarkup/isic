@@ -75,7 +75,7 @@ class Cohort(CreationSortedTimeStampedModel):
         return self.name
 
     def get_absolute_url(self):
-        return reverse("cohort-detail", args=[self.id])
+        return reverse("ingest/cohort-detail", args=[self.id])
 
     @property
     def num_lesions(self):
