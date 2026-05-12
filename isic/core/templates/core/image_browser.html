@@ -164,7 +164,7 @@
         {% with description="Display images from male patients that are approximately 20 to 40 years old." query="age_approx:[20 TO 40] AND sex:male" %}
           {% partial example-query %}
         {% endwith %}
-        {% with description="Display images from the anterior, posterior, or lateral torso anatomical site where the diagnosis was confirmed by single image expert consensus." query='anatom_site_general:*torso AND diagnosis_confirm_type:"single image expert consensus"' last=True %}
+        {% with description="Display all melanoma images (invasive, in situ, metastasis, and NOS) regardless of subtype." query='diagnosis_3:Melanoma*' last=True %}
           {% partial example-query %}
         {% endwith %}
       </div>

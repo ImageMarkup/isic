@@ -246,7 +246,7 @@ ORDER BY count DESC`;
   diagnosis_1,
   age_approx,
   sex,
-  anatom_site_general
+  anatom_site_1
 FROM metadata
 WHERE isic_id IN ('ISIC_0000000', 'ISIC_0000001', 'ISIC_0000002')`
           },
@@ -271,7 +271,7 @@ GROUP BY sex`
           {
             name: 'Diagnosis by anatomic site',
             sql: `SELECT
-  anatom_site_general,
+  anatom_site_1,
   diagnosis_1,
   COUNT(*) AS count
 FROM metadata
@@ -310,36 +310,36 @@ ORDER BY fitzpatrick_skin_type`
             name: 'Top 3 diagnoses per anatomic site with demographics',
             sql: `WITH site_diagnosis AS (
   SELECT
-    anatom_site_general,
+    anatom_site_1,
     diagnosis_1,
     COUNT(*) AS count,
     ROUND(AVG(age_approx), 1) AS avg_age,
     ROUND(100.0 * COUNT(*) FILTER (WHERE sex = 'male') / COUNT(*), 1) AS pct_male,
     ROW_NUMBER() OVER (
-      PARTITION BY anatom_site_general
+      PARTITION BY anatom_site_1
       ORDER BY COUNT(*) DESC
     ) AS rank
   FROM metadata
-  WHERE anatom_site_general IS NOT NULL
+  WHERE anatom_site_1 IS NOT NULL
     AND diagnosis_1 IS NOT NULL
   GROUP BY 1, 2
 ),
 site_totals AS (
   SELECT
-    anatom_site_general,
+    anatom_site_1,
     SUM(count) AS total
   FROM site_diagnosis
   GROUP BY 1
 )
 SELECT
-  sd.anatom_site_general AS site,
+  sd.anatom_site_1 AS site,
   sd.diagnosis_1 AS diagnosis,
   sd.count,
   ROUND(100.0 * sd.count / st.total, 1) AS pct_of_site,
   sd.avg_age,
   sd.pct_male
 FROM site_diagnosis sd
-JOIN site_totals st USING (anatom_site_general)
+JOIN site_totals st USING (anatom_site_1)
 WHERE sd.rank <= 3
 ORDER BY st.total DESC, sd.rank`
           }
