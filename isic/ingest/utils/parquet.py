@@ -26,7 +26,6 @@ FIELD_ORDER = [
     "clin_size_long_diam_mm",
     "melanocytic",
     "concomitant_biopsy",
-    "anatom_site_general",
     "anatom_site_special",
     "anatom_site_1",
     "anatom_site_2",

@@ -25,7 +25,7 @@ def _build_test_parquet() -> Path:
             "diagnosis_1": "Malignant" if i % 2 == 0 else "Benign",
             "age_approx": 45 + i,
             "sex": "male" if i % 2 == 0 else "female",
-            "anatom_site_general": "anterior torso",
+            "anatom_site_1": "Trunk",
         }
         for i in range(10)
     ]
