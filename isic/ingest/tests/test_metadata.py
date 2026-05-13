@@ -83,33 +83,6 @@ def csv_stream_diagnosis_sex_disagreeing_lesion_patient() -> codecs.StreamWriter
 
 
 @pytest.fixture
-def csv_stream_benign() -> codecs.StreamWriter:
-    file_stream = StreamWriter(io.BytesIO())
-    writer = csv.DictWriter(
-        file_stream,
-        fieldnames=["filename", "diagnosis", "anatom_site_general"],
-    )
-    writer.writeheader()
-    writer.writerow(
-        {
-            "filename": "filename.jpg",
-            "diagnosis": "Benign",
-            "anatom_site_general": "lower extremity",
-        }
-    )
-    return file_stream
-
-
-@pytest.fixture
-def csv_stream_fingernail() -> codecs.StreamWriter:
-    file_stream = StreamWriter(io.BytesIO())
-    writer = csv.DictWriter(file_stream, fieldnames=["filename", "anatom_site_special"])
-    writer.writeheader()
-    writer.writerow({"filename": "filename.jpg", "anatom_site_special": "fingernail"})
-    return file_stream
-
-
-@pytest.fixture
 def csv_stream_diagnosis_sex_invalid() -> codecs.StreamWriter:
     file_stream = StreamWriter(io.BytesIO())
     writer = csv.DictWriter(file_stream, fieldnames=["filename", "diagnosis", "sex"])

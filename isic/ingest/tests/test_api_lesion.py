@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 from django.urls import reverse
-from isic_metadata.fields import DiagnosisEnum
+from isic_metadata.diagnosis_hierarchical import DiagnosisEnum
 import pytest
 from pytest_lazy_fixtures import lf
 

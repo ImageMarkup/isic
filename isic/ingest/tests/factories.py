@@ -4,7 +4,8 @@ from typing import Any
 
 import factory
 import factory.django
-from isic_metadata.fields import AnatomSiteEnum, DiagnosisEnum
+from isic_metadata.anatom_site_hierarchical import AnatomSiteEnum
+from isic_metadata.diagnosis_hierarchical import DiagnosisEnum
 
 from isic.core.models import CopyrightLicense
 from isic.factories import UserFactory
