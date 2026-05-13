@@ -3,7 +3,6 @@ from django.core.exceptions import ValidationError
 from django.forms.models import ModelForm
 from isic_metadata import FIELD_REGISTRY
 from isic_metadata.fields import (
-    AnatomSiteGeneralEnum,
     DermoscopicTypeEnum,
     DiagnosisConfirmTypeEnum,
     ImageTypeEnum,
@@ -64,7 +63,6 @@ class SingleAccessionUploadForm(forms.Form):
 
     age = forms.IntegerField(min_value=1, max_value=85, required=False)
     sex = forms.ChoiceField(choices=[("male", "male"), ("female", "female")], required=False)
-    anatom_site_general = choice_field_from_enum("anatom_site_general", AnatomSiteGeneralEnum)
     diagnosis_confirm_type = choice_field_from_enum(
         "diagnosis_confirm_type", DiagnosisConfirmTypeEnum
     )

@@ -74,7 +74,6 @@ class AccessionMetadata(models.Model):
     fitzpatrick_skin_type = models.CharField(max_length=255, null=True, blank=True)
     age = models.PositiveSmallIntegerField(null=True, blank=True)
     sex = models.CharField(max_length=6, null=True, blank=True)
-    anatom_site_general = models.CharField(max_length=255, null=True, blank=True)
     anatom_site_special = models.CharField(max_length=255, null=True, blank=True)
     anatom_site_1 = models.CharField(max_length=255, null=True, blank=True)
     anatom_site_2 = models.CharField(max_length=255, null=True, blank=True)
@@ -418,13 +417,6 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
                 name="accession_rounded_age",
             ),
             models.Index(fields=["fitzpatrick_skin_type"]),
-            models.Index(
-                name="accession_anatom_site_general",
-                fields=["anatom_site_general"],
-                condition=Q(
-                    anatom_site_general__in=["palms/soles", "lateral torso", "oral/genital"]
-                ),
-            ),
             models.Index(
                 name="accession_diagnosis_1",
                 fields=["diagnosis_1"],

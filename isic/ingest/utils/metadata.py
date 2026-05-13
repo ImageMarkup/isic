@@ -5,7 +5,7 @@ import itertools
 from typing import Any
 
 from django.forms.models import ModelForm
-from isic_metadata.metadata import IGNORE_RCM_MODEL_CHECKS, MetadataBatch, MetadataRow
+from isic_metadata.metadata import MetadataBatch, MetadataRow
 from pydantic import ValidationError as PydanticValidationError
 from pydantic.main import BaseModel
 from s3_file_field.widgets import S3FileInput
@@ -94,8 +94,7 @@ def _validate_df_consistency(
                     # image_type is necessary for the batch check because RCM can only have
                     # at most one macroscopic image.
                     image_type=row.get("image_type"),
-                    # see the documentation for the IGNORE_RCM_MODEL_CHECKS setting
-                    **{IGNORE_RCM_MODEL_CHECKS: True},
+                    _ignore_rcm_model_checks=True,
                 )
             except PydanticValidationError:
                 # it's possible that even the narrow subset of fields we're trying to validate for
