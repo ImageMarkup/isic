@@ -34,7 +34,7 @@ jobs:
         ports:
           - 9200:9200
       rabbitmq:
-        image: rabbitmq:management-alpine
+        image: rabbitmq:4.2-management-alpine
         options: >-
           --health-cmd "rabbitmq-diagnostics ping"
           --health-start-period 30s
