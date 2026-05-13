@@ -5,6 +5,7 @@ import tempfile
 
 from django.contrib.auth.models import User
 from django.core.files import File
+from django.core.management import call_command
 from django.db import transaction
 import djclick as click
 import requests
@@ -87,6 +88,7 @@ def add_sample_data(n):
             created_images.append(isic_id)
 
     sync_elasticsearch_indices_task()
+    call_command("export-metadata-parquet")
 
     click.secho("\nCreated images:", fg="green", err=True)
     for isic_id in created_images:
