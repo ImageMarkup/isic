@@ -101,7 +101,7 @@ type = [
 test = [
   "factory-boy==3.3.3",
   "hypothesis==6.135.11",
-  "pytest==8.3.5",
+  "pytest==9.0.3",
   "pytest-cov==7.1.0",
   "pytest-django==4.11.1",
   "pytest-factoryboy==2.7.0",
