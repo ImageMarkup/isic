@@ -1496,7 +1496,7 @@ requires-dist = [
     { name = "pyarrow", specifier = "==23.0.1" },
     { name = "pycountry", specifier = "==26.2.16" },
     { name = "pydantic", specifier = "==2.11.1" },
-    { name = "pydantic-to-pyarrow", git = "https://github.com/danlamanna/pydantic-to-pyarrow?rev=support-computed-fields" },
+    { name = "pydantic-to-pyarrow", git = "https://github.com/ImageMarkup/pydantic-to-pyarrow?branch=support-computed-fields" },
     { name = "pyexiv2", specifier = "==2.15.4" },
     { name = "pyparsing", specifier = "==3.2.3" },
     { name = "python-magic", specifier = "==0.4.27" },
@@ -2365,7 +2365,7 @@ wheels = [
 [[package]]
 name = "pydantic-to-pyarrow"
 version = "0.1.6"
-source = { git = "https://github.com/danlamanna/pydantic-to-pyarrow?rev=support-computed-fields#8588ecf12b0e7e3cce8f146e7cd17f7832cc11a8" }
+source = { git = "https://github.com/ImageMarkup/pydantic-to-pyarrow?branch=support-computed-fields#8588ecf12b0e7e3cce8f146e7cd17f7832cc11a8" }
 dependencies = [
     { name = "numpy" },
     { name = "pyarrow" },

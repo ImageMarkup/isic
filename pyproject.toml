@@ -130,7 +130,7 @@ explicit = true
 
 [tool.uv.sources]
 gdal = { index = "large_image" }
-pydantic-to-pyarrow = { git = "https://github.com/danlamanna/pydantic-to-pyarrow", rev = "support-computed-fields" }
+pydantic-to-pyarrow = { git = "https://github.com/ImageMarkup/pydantic-to-pyarrow", branch = "support-computed-fields" }
 
 [tool.ruff]
 line-length = 100
