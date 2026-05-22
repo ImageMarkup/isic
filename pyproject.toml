@@ -114,8 +114,8 @@ test = [
   "pytest-playwright==0.8.0",
 ]
 profile = [
-  "memray==1.17.2",
-  "pyinstrument==5.0.2",
+  "memray==1.19.3",
+  "pyinstrument==5.1.2",
 ]
 
 [tool.hatch.build]
