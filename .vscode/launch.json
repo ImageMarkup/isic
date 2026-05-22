@@ -1,57 +1,138 @@
 {
   "version": "0.2.0",
   "configurations": [
-    // Put Django Server first so it's the default when starting debugging
     {
-      "name": "Python: Django Server",
+      "name": "Django: Server",
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/manage.py",
-      "args": [
-        "runserver_plus",
-        "--print-sql",
-        "0.0.0.0:8000"
-      ],
+      "args": ["runserver_plus", "--print-sql", "localhost:8000"],
       "django": true,
-      "justMyCode": false
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "presentation": {
+        "group": "2-services",
+        "order": 1
+      }
     },
     {
-      "name": "Python: Django Script",
+      "name": "Django: Server (eager Celery)",
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/manage.py",
-      "args": [
-        "${fileBasenameNoExtension}"
-      ],
-      "django": true,
-      "justMyCode": false
-    },
-    {
-      "name": "Python: Debug Celery Tasks",
-      "type": "debugpy",
-      "request": "launch",
-      "program": "${workspaceFolder}/manage.py",
-      "args": [
-        "runserver_plus",
-        "--print-sql",
-        "0.0.0.0:8000"
-      ],
+      "args": ["runserver_plus", "--print-sql", "localhost:8000"],
       "env": {
-        "DJANGO_CELERY_TASK_ALWAYS_EAGER": "true",
+        "DJANGO_CELERY_TASK_ALWAYS_EAGER": "true"
       },
       "django": true,
-      "justMyCode": false
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "presentation": {
+        "group": "3-utilities",
+        "order": 1
+      }
     },
     {
-      "name": "Python: Debug Tests",
+      "name": "Django: Management Command",
       "type": "debugpy",
       "request": "launch",
-      "program": "${file}",
-      "purpose": [
-        "debug-test"
+      "program": "${workspaceFolder}/manage.py",
+      "args": ["${input:managementCommand}"],
+      "django": true,
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "presentation": {
+        "group": "3-utilities",
+        "order": 2
+      }
+    },
+    {
+      "name": "Celery: Worker",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "celery",
+      "args": [
+        "--app",
+        "isic.celery",
+        "worker",
+        "--loglevel",
+        "INFO",
+        "--without-mingle",
+        "--without-heartbeat",
+        "--without-gossip"
       ],
       "console": "integratedTerminal",
-      "justMyCode": false
+      "justMyCode": false,
+      "presentation": {
+        "group": "2-services",
+        "order": 2
+      }
+    },
+    {
+      "name": "Celery: Beat",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "celery",
+      "args": [
+        "--app",
+        "isic.celery",
+        "beat",
+        "--loglevel",
+        "INFO"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "presentation": {
+        "group": "2-services",
+        "order": 3
+      }
+    },
+    {
+      "name": "Pytest: Debug",
+      "type": "debugpy",
+      "request": "launch",
+      "purpose": ["debug-test"],
+      "console": "integratedTerminal",
+      "django": true,
+      "justMyCode": false,
+      "presentation": {
+        "hidden": true
+      }
+    },
+    {
+      "name": "Tailwind: Watch",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start"],
+      "console": "integratedTerminal",
+      "presentation": {
+        "group": "2-services",
+        "order": 4
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Django + Celery + Beat + Tailwind",
+      "configurations": ["Django: Server", "Celery: Worker", "Celery: Beat", "Tailwind: Watch"],
+      "stopAll": true,
+      "presentation": {
+        "group": "1-compound",
+        "order": 1
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "managementCommand",
+      "type": "command",
+      "command": "shellCommand.execute",
+      "args": {
+        "command": "./manage.py help --commands",
+        "description": "Django management command",
+        "allowCustomValues": true
+      }
     }
   ]
 }

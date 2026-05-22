@@ -17,12 +17,10 @@ from resonant_settings.production.email import *
 from resonant_settings.production.https import *
 from resonant_settings.production.s3_storage import *
 
-WSGI_APPLICATION = "isic.wsgi.application"
-
 SECRET_KEY: str = env.str("DJANGO_SECRET_KEY")
 
-# This only needs to be defined in production. Testing will add 'testserver'. In development
-# (specifically when DEBUG is True), 'localhost' and '127.0.0.1' will be added.
+# This only needs to be defined in production. Testing will add "testserver". In development
+# (specifically when DEBUG is True), "localhost" and "127.0.0.1" will be added.
 ALLOWED_HOSTS: list[str] = env.list("DJANGO_ALLOWED_HOSTS", cast=str)
 
 STORAGES.update(
@@ -59,8 +57,8 @@ ISIC_DATACITE_DOI_PREFIX = "10.34970"
 
 ISIC_JS_SENTRY = True
 
-# sentry_sdk is able to directly use environment variables like 'SENTRY_DSN', but prefix them
-# with 'DJANGO_' to avoid conflicts with other Sentry-using services.
+# sentry_sdk is able to directly use environment variables like "SENTRY_DSN", but prefix them
+# with "DJANGO_" to avoid conflicts with other Sentry-using services.
 sentry_sdk.init(
     dsn=env.str("DJANGO_SENTRY_DSN", default=None),
     environment=env.str("DJANGO_SENTRY_ENVIRONMENT", default=None),

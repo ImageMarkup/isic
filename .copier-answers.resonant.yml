@@ -1,4 +1,4 @@
-_commit: v0.43.0
+_commit: v0.51.0
 _src_path: gh:kitware-resonant/cookiecutter-resonant
 core_app_name: core
 include_example_code: false
@@ -6,3 +6,4 @@ project_name: ISIC Archive
 project_slug: isic
 python_package_name: isic
 site_domain: api.isic-archive.com
+use_asgi: false

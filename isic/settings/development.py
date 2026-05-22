@@ -11,12 +11,11 @@ from resonant_settings.development.celery import *
 from resonant_settings.development.debug_toolbar import *
 from resonant_settings.development.minio_storage import *
 
-
 INSTALLED_APPS += [
     "debug_toolbar",
     "django_browser_reload",
 ]
-# Force WhiteNoice to serve static files, even when using 'manage.py runserver_plus'
+# Force WhiteNoise to serve static files, even when using "manage.py runserver_plus"
 staticfiles_index = INSTALLED_APPS.index("django.contrib.staticfiles")
 INSTALLED_APPS.insert(staticfiles_index, "whitenoise.runserver_nostatic")
 
@@ -39,16 +38,17 @@ DEBUG = True
 
 SECRET_KEY = "insecure-secret"
 
-RUNSERVERPLUS_SERVER_ADDRESS_PORT: str | None = env.str(
-    "DJANGO_RUNSERVERPLUS_SERVER_ADDRESS_PORT", default=None
+# This is typically only overridden when running from Docker.
+INTERNAL_IPS = InternalIPS(env.list("DJANGO_INTERNAL_IPS", cast=str, default=["127.0.0.1"]))
+CORS_ALLOWED_ORIGIN_REGEXES = env.list(
+    "DJANGO_CORS_ALLOWED_ORIGIN_REGEXES",
+    cast=str,
+    default=[r"^http://localhost:\d+$", r"^http://127\.0\.0\.1:\d+$"],
 )
 
 # The ISIC ZIP download service will resolve "django" when running from Docker;
 # Otherwise, this can be unset, as the default is ["localhost", "127.0.0.1"]
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "django"]
-
-# This is typically only overridden when running from Docker.
-INTERNAL_IPS = InternalIPS(env.list("DJANGO_INTERNAL_IPS", cast=str, default=["127.0.0.1"]))
 
 STORAGES.update(
     {
@@ -88,6 +88,7 @@ elif ISIC_FAKE_STORAGE == "placeholder":
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
+OAUTH2_PROVIDER["ALLOWED_REDIRECT_URI_SCHEMES"] = ["http", "https"]
 # Expire cache entries immediately to promote better understanding of actual query performance
 CACHES["default"]["TIMEOUT"] = 0
 # cachalot sets its own expiration time, so it needs to be set to 0 as well
@@ -98,6 +99,7 @@ OAUTH2_PROVIDER["ALLOWED_REDIRECT_URI_SCHEMES"] = ["http", "https"]
 OAUTH2_PROVIDER["REQUEST_APPROVAL_PROMPT"] = "force"
 
 SHELL_PLUS_IMPORTS = [
+    "from isic.core import tasks",
     "from django.core.files.storage import storages",
     "from django.core.files.uploadedfile import UploadedFile",
     "from isic.ingest.services.accession import *",

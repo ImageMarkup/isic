@@ -1,0 +1,13 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'github>kitware-resonant/.github:renovate-project.json5',
+  ],
+  packageRules: [
+    {
+      matchPackageNames: ['django-oauth-toolkit'],
+      // v2 removed OOB support: https://github.com/jazzband/django-oauth-toolkit/pull/1124
+      allowedVersions: '<2.0.0',
+    },
+  ],
+}
