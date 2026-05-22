@@ -9,24 +9,13 @@ services:
     ]
     # Log printing is enhanced by a TTY
     tty: true
-    environment:
-      PYTHONDONTWRITEBYTECODE: 1
-      PYTHONUNBUFFERED: 1
-      UV_ENV_FILE: ./dev/.env.docker-compose
-      UV_PROJECT_ENVIRONMENT: /home/vscode/uv-env
-      UV_CACHE_DIR: /home/vscode/uv/cache
-      UV_PYTHON_INSTALL_DIR: /home/vscode/uv/bin
-      UV_LINK_MODE: symlink
-      TOX_WORK_DIR: /home/vscode/tox
-      DJANGO_MINIO_STORAGE_MEDIA_URL: "http://localhost:${MINIO_API_PORT:-9000}/django-storage"
-      DJANGO_ISIC_SPONSORED_MEDIA_URL: "http://localhost:${MINIO_API_PORT:-9000}/django-sponsored"
     working_dir: /home/vscode/isic
     env_file: ./dev/.env.docker-compose
     volumes:
       - .:/home/vscode/isic
-      - uv_cache:/home/vscode/uv
+      - pkg_cache:/home/vscode/pkg-cache
     ports:
-      - "${DJANGO_PORT:-8000}:8000"
+      - 8000:8000
     depends_on:
       postgres:
         condition: service_healthy
@@ -49,25 +38,17 @@ services:
       "--app", "isic.celery",
       "worker",
       "--loglevel", "INFO",
-      "--without-heartbeat"
+      "--without-mingle",
+      "--without-heartbeat",
+      "--without-gossip"
     ]
-    # Docker Compose does not set the TTY width, which causes Celery errors
+    # uv progress doesn't display properly with a Docker TTY
     tty: false
-    environment:
-      PYTHONDONTWRITEBYTECODE: 1
-      PYTHONUNBUFFERED: 1
-      UV_ENV_FILE: ./dev/.env.docker-compose
-      UV_PROJECT_ENVIRONMENT: /home/vscode/uv-env
-      UV_CACHE_DIR: /home/vscode/uv/cache
-      UV_PYTHON_INSTALL_DIR: /home/vscode/uv/bin
-      UV_LINK_MODE: symlink
-      TOX_WORK_DIR: /home/vscode/tox
-      DJANGO_MINIO_STORAGE_MEDIA_URL: "http://localhost:${MINIO_API_PORT:-9000}/django-storage"
-      DJANGO_ISIC_SPONSORED_MEDIA_URL: "http://localhost:${MINIO_API_PORT:-9000}/django-sponsored"
     working_dir: /home/vscode/isic
+    env_file: ./dev/.env.docker-compose
     volumes:
       - .:/home/vscode/isic
-      - uv_cache:/var/cache/uv
+      - pkg_cache:/home/vscode/pkg-cache
     depends_on:
       postgres:
         condition: service_healthy
@@ -92,34 +73,14 @@ services:
       "--loglevel", "INFO"
     ]
     tty: false
-    environment:
-      PYTHONDONTWRITEBYTECODE: 1
-      PYTHONUNBUFFERED: 1
-      UV_ENV_FILE: ./dev/.env.docker-compose
-      UV_PROJECT_ENVIRONMENT: /home/vscode/uv-env
-      UV_CACHE_DIR: /home/vscode/uv/cache
-      UV_PYTHON_INSTALL_DIR: /home/vscode/uv/bin
-      UV_LINK_MODE: symlink
-      TOX_WORK_DIR: /home/vscode/tox
-      DJANGO_MINIO_STORAGE_MEDIA_URL: "http://localhost:${MINIO_API_PORT:-9000}/django-storage"
-      DJANGO_ISIC_SPONSORED_MEDIA_URL: "http://localhost:${MINIO_API_PORT:-9000}/django-sponsored"
     working_dir: /home/vscode/isic
+    env_file: ./dev/.env.docker-compose
     volumes:
       - .:/home/vscode/isic
-      - uv_cache:/var/cache/uv
+      - pkg_cache:/home/vscode/pkg-cache
     depends_on:
       rabbitmq:
         condition: service_healthy
-
-  node:
-    build:
-      context: .
-      dockerfile: ./dev/node.Dockerfile
-    command: ["npm", "run", "start"]
-    tty: true
-    volumes:
-      - .:/opt/django-project
-      - /opt/django-project/node_modules
 
   zipstreamer:
     image: ghcr.io/imagemarkup/isic-zipstreamer:master
@@ -129,4 +90,4 @@ services:
       - "${ZIPSTREAMER_PORT:-4008}:4008"
 
 volumes:
-  uv_cache:
+  pkg_cache:

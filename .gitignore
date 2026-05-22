@@ -4,9 +4,6 @@ isic/core/static/core/dist/
 dev/local-setup.sh
 docker-compose.local.yml
 
-# VSCode settings
-.vscode/settings.json
-
 # Additional Celery Beat files
 celerybeat-schedule*
 

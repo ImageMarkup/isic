@@ -1,26 +1,51 @@
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-RUN mv /root/.local/bin/uv /usr/local/bin/uv
-RUN mv /root/.local/bin/uvx /usr/local/bin/uvx
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
-# Make Python more friendly to running in containers
-ENV PYTHONDONTWRITEBYTECODE=1 \
-  PYTHONUNBUFFERED=1
+# "libmagic1" is present in CI and production, but not in this base image.
+RUN --mount=type=tmpfs,target=/var/lib/apt/lists \
+  apt-get update \
+  && apt-get install --no-install-recommends --yes \
+    libmagic1
 
-# Install system librarires for Python packages.
-RUN apt-get update && \
-    apt-get install --no-install-recommends --yes \
-        libmagic1 \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# Install system dependencies required by Playwright's Chromium.
+RUN --mount=type=tmpfs,target=/var/lib/apt/lists \
+  --mount=type=tmpfs,target=/root/.local \
+  uvx --no-cache playwright install-deps chromium
+
+# Ensure Python output appears immediately in container logs.
+ENV PYTHONUNBUFFERED=1
+
+# Override Node's default of attempting to bind to IPv6 interfaces over IPv4
+ENV NODE_OPTIONS=--dns-result-order=ipv4first
+
+# Put the uv and npm caches in a separate location,
+# where they can persist and be shared across containers.
+# The uv cache and virtual environment are on different volumes, so hardlinks won't work.
+ENV UV_CACHE_DIR=/home/vscode/pkg-cache/uv \
+  UV_PYTHON_INSTALL_DIR=/home/vscode/pkg-cache/uv-python \
+  UV_LINK_MODE=symlink \
+  NPM_CONFIG_CACHE=/home/vscode/pkg-cache/npm
+
+# Put the virtual environment outside the project directory,
+# to improve performance on macOS and prevent accidental usage from the host machine.
+# Activate it, so `uv run` doesn't need to be prefixed.
+ENV UV_PROJECT_ENVIRONMENT=/home/vscode/venv \
+  PATH="/home/vscode/venv/bin:$PATH"
+
+# Put tool scratch files outside the project directory too.
+ENV TOX_WORK_DIR=/home/vscode/tox \
+  RUFF_CACHE_DIR=/home/vscode/.cache/ruff \
+  MYPY_CACHE_DIR=/home/vscode/.cache/mypy
+
+RUN ["chsh", "-s", "/usr/bin/zsh", "vscode"]
 
 USER vscode
 
-# The glob ensures COPY doesn't fail when the file doesn't exist
-COPY dev/local-setup.sh* /tmp/
-RUN if [ -f /tmp/local-setup.sh ]; then bash /tmp/local-setup.sh; fi
+# Pre-create named volume mount points, so the new volume inherits `vscode` user ownership:
+# https://docs.docker.com/engine/storage/volumes/#populate-a-volume-using-a-container
+RUN ["mkdir", "/home/vscode/pkg-cache"]
 
-RUN mkdir /home/vscode/uv
-
-WORKDIR /home/vscode/isic
+# The optional "dev/local-setup.sh" allows user-specific extra setup.
+RUN --mount=type=bind,source=dev,target=/mnt \
+  if [ -f /mnt/local-setup.sh ]; then bash /mnt/local-setup.sh; fi

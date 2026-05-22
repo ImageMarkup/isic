@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from celery.schedules import crontab
 import django_stubs_ext
 from environ import Env
+
 from resonant_settings.allauth import *
 from resonant_settings.celery import *
 from resonant_settings.django import *
@@ -27,6 +28,8 @@ env = Env()
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
 
 ROOT_URLCONF = "isic.urls"
+
+WSGI_APPLICATION = "isic.wsgi.application"
 
 INSTALLED_APPS = [
     # Install local apps first, to ensure any overridden resources are found first
@@ -70,7 +73,6 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    # https://docs.djangoproject.com/en/5.2/ref/middleware/#middleware-ordering
     # CorsMiddleware must be added before other response-generating middleware,
     # so it can potentially add CORS headers to those responses too.
     "corsheaders.middleware.CorsMiddleware",
@@ -90,6 +92,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
+    "django.contrib.sites.middleware.CurrentSiteMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
 ]
@@ -101,7 +104,7 @@ DATABASES = {
     "default": {
         **env.db_url("DJANGO_DATABASE_URL", engine="django.db.backends.postgresql"),
         "CONN_MAX_AGE": timedelta(minutes=10).total_seconds(),
-    }
+    },
 }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -112,10 +115,35 @@ STORAGES: dict[str, dict[str, Any]] = {
     },
 }
 
+STATIC_ROOT = BASE_DIR / "staticfiles"
+# Django staticfiles auto-creates any intermediate directories, but do so here to prevent warnings.
+STATIC_ROOT.mkdir(exist_ok=True)
+
+# Django's docs suggest that STATIC_URL should be a relative path,
+# for convenience serving a site on a subpath.
+STATIC_URL = "static/"
+
+AUTHENTICATION_BACKENDS += [
+    "isic.core.permissions.IsicObjectPermissionsBackend",
+]
+
+PASSWORD_HASHERS += [
+    # Some very old accounts use this hash
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    # PASSWORD_HASHERS are ordered "best" to "worst", appending Girder last means
+    # it will be upgraded on login.
+    "isic.login.hashers.GirderPasswordHasher",
+]
+
+# Make Django and Allauth redirects consistent, but both may be changed.
+LOGIN_REDIRECT_URL = "/"
+ACCOUNT_LOGOUT_REDIRECT_URL = "/"
+ACCOUNT_SIGNUP_FORM_CLASS = "resonant_utils.allauth.FullNameSignupForm"
+
 SOCIALACCOUNT_PROVIDERS: dict[str, dict[str, Any]] = {}
 
-# the presence of "google" inside SOCIALACCOUNT_PROVIDERS causes the GUI to display
-# the sign in with google button. guard it so it only shows if it has credentials.
+# The presence of "google" inside SOCIALACCOUNT_PROVIDERS causes the GUI to display
+# the sign in with google button. Guard it, so it only shows if it has credentials.
 _google_oauth_client_id: str | None = env.str("DJANGO_ISIC_GOOGLE_OAUTH_CLIENT_ID", default=None)
 _google_oauth_client_secret: str | None = env.str(
     "DJANGO_ISIC_GOOGLE_OAUTH_CLIENT_SECRET", default=None
@@ -136,26 +164,8 @@ if _google_oauth_client_id and _google_oauth_client_secret:
         "VERIFIED_EMAIL": True,
     }
 
-
-# automatically connect oauth email addresses to the local account
+# Automatically connect oauth email addresses to the local account.
 SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
-
-STATIC_ROOT = BASE_DIR / "staticfiles"
-# Django staticfiles auto-creates any intermediate directories, but do so here to prevent warnings.
-STATIC_ROOT.mkdir(exist_ok=True)
-
-# Django's docs suggest that STATIC_URL should be a relative path,
-# for convenience serving a site on a subpath.
-STATIC_URL = "static/"
-
-# Make Django and Allauth redirects consistent, but both may be changed.
-LOGIN_REDIRECT_URL = "/"
-ACCOUNT_LOGOUT_REDIRECT_URL = "/"
-ACCOUNT_SIGNUP_FORM_CLASS = "resonant_utils.allauth.FullNameSignupForm"
-
-AUTHENTICATION_BACKENDS += [
-    "isic.core.permissions.IsicObjectPermissionsBackend",
-]
 
 # Disallowing CORS credentials is all the security necessary.
 # The API is safe to call by anyone, as it has no side effects.
@@ -164,14 +174,6 @@ AUTHENTICATION_BACKENDS += [
 # request that attempts credentials: 'include' when the response has a wildcard
 # origin, preventing CSRF attacks even on @csrf_exempt endpoints.
 CORS_ALLOW_ALL_ORIGINS = True
-
-PASSWORD_HASHERS += [
-    # Some very old accounts use this hash
-    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
-    # PASSWORD_HASHERS are ordered "best" to "worst", appending Girder last means
-    # it will be upgraded on login.
-    "isic.login.hashers.GirderPasswordHasher",
-]
 
 CELERY_BEAT_SCHEDULE = {
     "collect-google-analytics-stats": {
