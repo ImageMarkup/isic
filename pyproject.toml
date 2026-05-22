@@ -11,7 +11,7 @@ license-files = ["LICENSE", "NOTICE"]
 classifiers = ["Private :: Do Not Upload"]
 dependencies = [
   # Runtime dependencies, always needed
-  "bcrypt==4.3.0",
+  "bcrypt==5.0.0",
   "celery==5.5.0",
   "deepdiff==8.4.2",
   "django[argon2]==5.2.3",
