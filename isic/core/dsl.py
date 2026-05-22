@@ -250,7 +250,7 @@ OR = Suppress(Keyword("OR"))
 
 # Note that the Lucene DSL treats a single asterisk as a replacement for whether
 # the field exists and has a non null value.
-# https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-wildcard
+# https://www.elastic.co/docs/reference/query-languages/query-dsl/query-dsl-query-string-query#query-string-wildcard
 EXISTS = Literal("*")
 
 # asterisks for wildcard, _ for ISIC ID search, - for license types
