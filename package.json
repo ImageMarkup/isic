@@ -53,8 +53,8 @@
     }
   },
   "dependencies": {
-    "@tailwindcss/line-clamp": "^0.4.4",
-    "django-s3-file-field": "^1.1.0",
-    "ol": "^9.2.4"
+    "@tailwindcss/line-clamp": "0.4.4",
+    "django-s3-file-field": "1.1.0",
+    "ol": "9.2.4"
   }
 }
