@@ -69,7 +69,7 @@ class StudyFactory(factory.django.DjangoModelFactory):
     public = factory.Faker("boolean")
 
     @factory.post_generation
-    def owners(self, create: bool, extracted: Any, **kwargs: Any) -> None:
+    def owners(self, create: bool, extracted: Any, **kwargs: Any) -> None:  # noqa: FBT001
         if not create:
             return
         if extracted is None:
@@ -78,7 +78,7 @@ class StudyFactory(factory.django.DjangoModelFactory):
         self.owners.add(*extracted)
 
     @factory.post_generation
-    def features(self, create: bool, extracted: Any, **kwargs: Any) -> None:
+    def features(self, create: bool, extracted: Any, **kwargs: Any) -> None:  # noqa: FBT001
         if not create:
             return
         if extracted:

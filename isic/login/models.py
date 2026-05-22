@@ -47,7 +47,7 @@ class Profile(models.Model):
 def create_or_save_user_profile(
     sender: type[User],
     instance: User,
-    created: bool,
+    created: bool,  # noqa: FBT001
     **kwargs,
 ):
     if created:
