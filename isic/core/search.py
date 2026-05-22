@@ -3,7 +3,7 @@ from copy import deepcopy
 from functools import lru_cache
 import hashlib
 import logging
-from typing import Any, NotRequired, TypedDict, override
+from typing import Any, override
 
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser, User
@@ -50,7 +50,7 @@ IMAGE_INDEX_MAPPINGS["properties"].update(
     }
 )
 
-# see https://www.elastic.co/docs/reference/elasticsearch/mapping-reference/eager-global-ordinals.
+# see https://www.elastic.co/docs/reference/elasticsearch/mapping-reference/eager-global-ordinals
 # this theoretically improves performance by moving the mapping of internal representations to
 # their keywords to write operations instead of read operations.
 for v in IMAGE_INDEX_MAPPINGS["properties"].values():
@@ -139,14 +139,14 @@ def maybe_create_index(index: str, mappings: Mapping[str, Any]) -> None:
         indices = get_elasticsearch_client().indices.get(index=index)
     except NotFoundError:
         # Need to create
-        get_elasticsearch_client().indices.create(index=index, body={"mappings": mappings})
+        get_elasticsearch_client().indices.create(index=index, mappings=mappings)
     else:
         # "indices" also contains "settings", which are unspecified by us, so only compare
         # "mappings"
         if indices[index]["mappings"] != mappings:
             # Existing fields cannot be mutated.
             # TODO: It's possible to add new fields if none of the existing fields are modified.
-            # https://www.elastic.co/guide/en/elasticsearch/reference/7.14/indices-put-mapping.html
+            # https://www.elastic.co/docs/manage-data/data-store/mapping/update-mappings-examples
             raise Exception(f'Cannot safely update existing index "{index}".')
         # Otherwise, the index is up to date; nothing to be done.
 
@@ -171,7 +171,7 @@ def add_to_search_index(image: Image) -> None:
     get_elasticsearch_client().index(
         index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX,
         id=image.pk,
-        body=image.to_elasticsearch_document(body_only=True),
+        document=image.to_elasticsearch_document(source_only=True),
     )
 
 
@@ -248,47 +248,34 @@ def facets(query: dict | None = None) -> dict:
     This has to perform 2 elasticsearch queries, one for computing the present/absent
     counts for each facet, and another for generating the buckets themselves.
     """
-    counts_body = {
-        "size": 0,
-        "aggs": COUNTS_AGGREGATES,
-    }
-
-    if query:
-        counts_body["query"] = query
-
     counts = get_elasticsearch_client().search(
         index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX,
-        body=counts_body,
+        size=0,
+        aggs=COUNTS_AGGREGATES,
+        query=query,
     )["aggregations"]
 
-    FacetsBody = TypedDict(  # noqa: UP013
-        "FacetsBody", {"size": int, "aggs": dict, "query": NotRequired[dict | None]}
-    )
-    facets_body: FacetsBody = {
-        "size": 0,
-        "aggs": deepcopy(DEFAULT_SEARCH_AGGREGATES),
-    }
+    aggs = deepcopy(DEFAULT_SEARCH_AGGREGATES)
 
     # pass the counts through as metadata in the final aggregation query
-    # https://www.elastic.co/guide/en/elasticsearch/reference/8.10/search-aggregations.html#add-metadata-to-an-agg
-    for field in facets_body["aggs"]:
-        facets_body["aggs"][field]["meta"] = {
+    # https://www.elastic.co/docs/explore-analyze/query-filter/aggregations#add-metadata-to-an-agg
+    for field, agg in aggs.items():
+        agg["meta"] = {
             "missing_count": counts[f"{field}_missing"]["doc_count"],
             "present_count": counts[f"{field}_present"]["value"],
         }
 
-    # for term fields (non-ranges), show all facet values even if this query has no
-    # matching documents.
-    for field in facets_body["aggs"]:
-        if "terms" in facets_body["aggs"][field]:
-            facets_body["aggs"][field]["terms"]["min_doc_count"] = 0
-
-    if query:
-        facets_body["query"] = query
+        # for term fields (non-ranges), show all facet values even if this query has no
+        # matching documents.
+        if "terms" in agg:
+            agg["terms"]["min_doc_count"] = 0
 
     return _prettify_facets(
         get_elasticsearch_client().search(
-            index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX, body=facets_body
+            index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX,
+            size=0,
+            aggs=aggs,
+            query=query,
         )["aggregations"]
     )
 
@@ -329,7 +316,7 @@ def build_elasticsearch_query(
         # the logic below of generalizing the query parameters to avoid user-specific data
         # is identical to the logic in ImagePermissions.view_image_list.
         query_dict["bool"]["should"] = [{"term": {"public": "true"}}]
-        # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html#bool-min-should-match
+        # https://www.elastic.co/docs/reference/query-languages/query-dsl/query-dsl-bool-query#bool-min-should-match
         query_dict["bool"]["minimum_should_match"] = 1
 
         # the logic below of generalizing the query parameters to avoid user-specific data
@@ -351,7 +338,7 @@ def build_elasticsearch_query(
         return query_dict
     else:
         query_dict["bool"]["should"] = [{"term": {"public": "true"}}]
-        # https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-query.html#bool-min-should-match
+        # https://www.elastic.co/docs/reference/query-languages/query-dsl/query-dsl-bool-query#bool-min-should-match
         query_dict["bool"]["minimum_should_match"] = 1
 
         return query_dict

@@ -239,7 +239,7 @@ class Lesion(models.Model):
     def get_absolute_url(self):
         return reverse("core/lesion-detail", kwargs={"identifier": self.id})
 
-    def to_elasticsearch_document(self, *, body_only: bool = False) -> dict | EsLesionDocument:
+    def to_elasticsearch_document(self, *, source_only: bool = False) -> dict | EsLesionDocument:
         document: EsLesionDocument = {"lesion_id": self.pk, "images": []}
 
         for accession in self.accessions.all():
@@ -252,7 +252,7 @@ class Lesion(models.Model):
                 }
             )
 
-        if body_only:
+        if source_only:
             return document
 
         return {"_id": self.pk, "_source": document}

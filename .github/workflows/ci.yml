@@ -26,7 +26,7 @@ jobs:
         ports:
           - 5432:5432
       elasticsearch:
-        image: elasticsearch:7.17.28
+        image: elasticsearch:9.4.1
         env:
           ES_JAVA_OPTS: "-Xms250m -Xmx750m"
           discovery.type: single-node

@@ -164,7 +164,7 @@ class Image(CreationSortedTimeStampedModel):
 
         return image_metadata
 
-    def to_elasticsearch_document(self, *, body_only=False) -> dict:
+    def to_elasticsearch_document(self, *, source_only=False) -> dict:
         # Can only be called on images that were fetched with with_elasticsearch_properties.
         document = {
             "id": self.pk,
@@ -181,7 +181,7 @@ class Image(CreationSortedTimeStampedModel):
 
         document.update(self.metadata)
 
-        if body_only:
+        if source_only:
             return document
 
         # index the document by image.pk so it can be updated later.
