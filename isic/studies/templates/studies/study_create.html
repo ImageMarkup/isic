@@ -177,7 +177,7 @@
               {{ base_form.name.label }}
             </label>
             <div class="mt-1 mt-0 col-span-2">
-              <div class="max-w-lg flex rounded-md shadow-sm">
+              <div class="max-w-lg flex rounded-md shadow-xs">
                 <input {% if base_form.name.field.required %}required{% endif %} type="text" value="{{ base_form.name.value|default:'' }}" name="{{ base_form.name.html_name }}" id="{{ base_form.name.html_name }}" class="flex-1 block w-full focus:ring-primary-500 focus:border-primary-500 min-w-0 rounded-none rounded-r-md text-sm border-gray-300">
               </div>
               <p class="mt-2 text-sm text-gray-500" id="email-description">{{ base_form.name.help_text }}</p>
@@ -190,7 +190,7 @@
               {{ base_form.description.label }}
             </label>
             <div class="mt-1 mt-0 col-span-2">
-              <textarea {% if base_form.description.field.required %}required{% endif %}  id="{{ base_form.description.html_name }}" name="{{ base_form.description.html_name }}" rows="3" class="border max-w-lg outline-none shadow-sm p-4 block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ base_form.description.value|default:'' }}</textarea>
+              <textarea {% if base_form.description.field.required %}required{% endif %}  id="{{ base_form.description.html_name }}" name="{{ base_form.description.html_name }}" rows="3" class="border max-w-lg outline-hidden shadow-xs p-4 block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ base_form.description.value|default:'' }}</textarea>
               <p class="mt-2 text-sm text-gray-500">{{ base_form.description.help_text }}</p>
               {{ base_form.description.errors }}
             </div>
@@ -201,7 +201,7 @@
               {{ base_form.attribution.label }}
             </label>
             <div class="mt-1 mt-0 col-span-2">
-              <textarea id="{{ base_form.attribution.html_name }}" name="{{ base_form.attribution.html_name }}" rows="3" class="border max-w-lg outline-none shadow-sm block p-4 w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ base_form.attribution.value|default:'' }}</textarea>
+              <textarea id="{{ base_form.attribution.html_name }}" name="{{ base_form.attribution.html_name }}" rows="3" class="border max-w-lg outline-hidden shadow-xs block p-4 w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ base_form.attribution.value|default:'' }}</textarea>
               <p class="mt-2 text-sm text-gray-500">Text which will be produced with your Study. Typically an instituion name or a working group.</p>
               {{ base_form.attribution.errors }}
             </div>
@@ -212,7 +212,7 @@
               {{ base_form.collection.label }}
             </label>
             <div class="mt-1 mt-0 col-span-2">
-              <select {% if base_form.annotators.field.required %}required{% endif %} id="{{ base_form.collection.html_name }}" name="{{ base_form.collection.html_name }}"  class="border max-w-lg px-3 py-2 block focus:ring-primary-500 focus:border-primary-500 w-full shadow-sm max-w-xs text-sm border-gray-400 rounded-md">
+              <select {% if base_form.annotators.field.required %}required{% endif %} id="{{ base_form.collection.html_name }}" name="{{ base_form.collection.html_name }}"  class="border max-w-lg px-3 py-2 block focus:ring-primary-500 focus:border-primary-500 w-full shadow-xs max-w-xs text-sm border-gray-400 rounded-md">
                 <option value="">--</option>
                 {% for collection in visible_collections %}
                   <option value="{{ collection.pk }}" {% if base_form.collection.value == collection.pk %}selected="selected"{% endif %}>{{ collection.name }}</option>
@@ -228,7 +228,7 @@
               {{ base_form.annotators.label }}
             </label>
             <div class="mt-1 mt-0 col-span-2">
-              <textarea {% if base_form.annotators.field.required %}required{% endif %}  id="{{ base_form.annotators.html_name }}" name="{{ base_form.annotators.html_name }}" rows="3" class="border max-w-lg outline-none shadow-sm p-4 block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ base_form.annotators.value|default:'' }}</textarea>
+              <textarea {% if base_form.annotators.field.required %}required{% endif %}  id="{{ base_form.annotators.html_name }}" name="{{ base_form.annotators.html_name }}" rows="3" class="border max-w-lg outline-hidden shadow-xs p-4 block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ base_form.annotators.value|default:'' }}</textarea>
               <p class="mt-2 text-sm text-gray-500">A list of email addresses or hash IDs (one per line) of the annotators to collect responses from.</p>
               {{ base_form.annotators.errors }}
             </div>

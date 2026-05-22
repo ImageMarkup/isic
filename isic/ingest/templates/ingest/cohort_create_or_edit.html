@@ -27,7 +27,7 @@
               {{ form.name.label }}
             </label>
             <div class="mt-1 mt-0 col-span-2">
-              <div class="max-w-lg flex rounded-md shadow-sm">
+              <div class="max-w-lg flex rounded-md shadow-xs">
                 <input type="text" value="{{ form.name.value|default:'' }}" name="{{ form.name.html_name }}" id="{{ form.name.html_name }}" class="flex-1 block w-full focus:ring-primary-500 focus:border-primary-500 min-w-0 rounded-none rounded-r-md text-sm border-gray-300">
               </div>
               <p class="mt-2 text-sm text-gray-500" id="email-description">{{ form.name.help_text }}</p>
@@ -40,7 +40,7 @@
               {{ form.description.label }}
             </label>
             <div class="mt-1 mt-0 col-span-2">
-              <textarea id="{{ form.description.html_name }}" name="{{ form.description.html_name }}" rows="3" class="border max-w-lg outline-none shadow-sm p-4 block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ form.description.value|default:'' }}</textarea>
+              <textarea id="{{ form.description.html_name }}" name="{{ form.description.html_name }}" rows="3" class="border max-w-lg outline-hidden shadow-xs p-4 block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ form.description.value|default:'' }}</textarea>
               <p class="mt-2 text-sm text-gray-500">{{ form.description.help_text }}</p>
               {{ form.description.errors }}
             </div>
@@ -51,7 +51,7 @@
               {{ form.default_copyright_license.label }}
             </label>
             <div class="mt-1 mt-0 col-span-2">
-              <select id="{{ form.default_copyright_license.html_name }}" name="{{ form.default_copyright_license.html_name }}"  class="border max-w-lg px-3 py-2 block focus:ring-primary-500 focus:border-primary-500 w-full shadow-sm max-w-xs text-sm border-gray-400 rounded-md">
+              <select id="{{ form.default_copyright_license.html_name }}" name="{{ form.default_copyright_license.html_name }}"  class="border max-w-lg px-3 py-2 block focus:ring-primary-500 focus:border-primary-500 w-full shadow-xs max-w-xs text-sm border-gray-400 rounded-md">
                 <option value="">--</option>
                 <option value="CC-0" {% if form.default_copyright_license.value == "CC-0" %}selected="selected"{% endif %}>CC-0</option>
                 <option value="CC-BY" {% if form.default_copyright_license.value == "CC-BY" %}selected="selected"{% endif %}>CC-BY</option>
@@ -72,7 +72,7 @@
               {{ form.default_attribution.label }}
             </label>
             <div class="mt-1 mt-0 col-span-2">
-              <textarea id="{{ form.default_attribution.html_name }}" name="{{ form.default_attribution.html_name }}" rows="3" class="border max-w-lg outline-none shadow-sm block p-4 w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ form.default_attribution.value|default:'' }}</textarea>
+              <textarea id="{{ form.default_attribution.html_name }}" name="{{ form.default_attribution.html_name }}" rows="3" class="border max-w-lg outline-hidden shadow-xs block p-4 w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ form.default_attribution.value|default:'' }}</textarea>
               <p class="mt-2 text-sm text-gray-500">Text which must be reproduced by users of your images, to comply with Creative Commons Attribution requirements.</p>
               {{ form.default_attribution.errors }}
             </div>

@@ -27,7 +27,7 @@ def test_collection_detail_lazy_attribution_and_share_modal(
 
     # -- Lazy attribution loading --
     attribution_section = page.get_by_text("Attribution").locator("..")
-    attribution_link = attribution_section.get_by_role("link", name="View")
+    attribution_link = attribution_section.get_by_role("button", name="View")
     expect(attribution_link).to_be_visible()
 
     attribution_link.click()
@@ -41,7 +41,7 @@ def test_collection_detail_lazy_attribution_and_share_modal(
 
     # -- Share modal --
     page.get_by_role("button", name="Actions").click()
-    page.get_by_role("menuitem", name="Share").click()
+    page.get_by_role("button", name="Share").click()
 
     modal = page.get_by_role("dialog")
     expect(modal).to_be_visible()

@@ -54,13 +54,13 @@
             </button>
             <select
               id="example-query-select"
-              class="border border-gray-300 rounded px-2 py-1 text-sm font-semibold min-w-0"
+              class="border border-gray-300 rounded-sm px-2 py-1 text-sm font-semibold min-w-0"
               @change="if ($el.value) { setQuery(examples[$el.value].sql); }"
               x-html="'<option value=\'\'>Example queries...</option>' + examples.map((e, i) => `<option value=\'${i}\'>${e.name}</option>`).join('')"
             ></select>
           </div>
         </div>
-        <div id="sql-editor" class="border border-gray-300 rounded overflow-hidden"></div>
+        <div id="sql-editor" class="border border-gray-300 rounded-sm overflow-hidden"></div>
       </div>
 
       <div class="flex flex-wrap items-center gap-2 mb-2">
@@ -148,14 +148,14 @@
       <label class="modal-box">
         <h3 class="font-bold text-lg mb-4">Create Collection</h3>
         <p class="mb-4 text-sm text-gray-600" x-text="'This will create a collection with ' + collectionImageCount.toLocaleString() + ' images from your query results.'"></p>
-        <div class="form-control mb-4">
+        <div class="flex flex-col mb-4">
           <label class="label font-semibold">Collection Name</label>
           <input
             type="text"
             id="collection-name-input"
             x-model="collectionName"
             x-ref="collectionNameInput"
-            class="input input-bordered w-full"
+            class="input w-full"
             placeholder="My collection"
             @keydown.enter="createCollection()"
           >
@@ -572,9 +572,9 @@ ORDER BY st.total DESC, sd.rank`
 
           const rect = event.currentTarget.getBoundingClientRect();
           const popup = document.createElement('div');
-          popup.className = 'bg-white border border-gray-300 rounded shadow-lg';
+          popup.className = 'bg-white border border-gray-300 rounded-sm shadow-lg';
           popup.style.cssText = `position:fixed;z-index:9999;padding:2px;left:${rect.left}px;top:${rect.top}px;transform:translateY(-100%);`;
-          popup.innerHTML = `<img src="${this.thumbnailUrl(isicId)}" width="256" height="256" class="rounded" />`;
+          popup.innerHTML = `<img src="${this.thumbnailUrl(isicId)}" width="256" height="256" class="rounded-sm" />`;
           document.body.appendChild(popup);
           this.activePopup = popup;
         },

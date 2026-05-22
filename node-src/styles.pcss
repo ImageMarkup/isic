@@ -1,6 +1,12 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@plugin "@tailwindcss/forms";
+@plugin "daisyui" {
+  themes: winter;
+}
+@theme {
+  --font-sans: "Nunito", sans-serif;
+}
+@source inline("errorlist");
 
 select#user-selection,
 select#additional-collections-selection {
@@ -41,7 +47,7 @@ select#additional-collections-selection {
   }
 
   #detail-info {
-    @apply bg-blue-50 my-4 p-2 rounded-sm border-gray-200 border;
+    @apply bg-blue-50 my-4 p-2 rounded-xs border-gray-200 border;
 
     h2 {
       @apply text-lg font-bold;
@@ -53,7 +59,7 @@ select#additional-collections-selection {
     @apply text-primary;
 
     &:hover {
-      @apply text-primary-focus;
+      @apply text-primary/80;
     }
   }
 

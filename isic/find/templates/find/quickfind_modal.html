@@ -10,9 +10,9 @@
            x-ref="quickfind"
            @input.debounce.250ms="performFind"
            x-model="findText"
-           placeholder="Search anything.." class="input input-bordered w-full max-w-l">
+           placeholder="Search anything.." class="input w-full max-w-l">
     <label class="label">
-      <span class="label-text-alt" x-show="findText.length < 3">At least 3 characters</span>
+      <span class="text-xs text-base-content/60" x-show="findText.length < 3">At least 3 characters</span>
     </label>
 
     <ul role="list" class="divide-y divide-gray-200">
@@ -20,7 +20,7 @@
         <li class="relative bg-white py-2 px-4 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-600">
           <div class="flex justify-between space-x-3">
             <div class="min-w-0 flex-1">
-              <a :href="result.url" class="block focus:outline-none">
+              <a :href="result.url" class="block focus:outline-hidden">
                 <span class="absolute inset-0" aria-hidden="true"></span>
                 <div class="flex">
                   <i :class="result.icon"></i>
@@ -31,7 +31,7 @@
                 </div>
               </a>
             </div>
-            <p class="flex-shrink-0 whitespace-nowrap text-sm text-gray-500" x-text="result.result_type"></p>
+            <p class="shrink-0 whitespace-nowrap text-sm text-gray-500" x-text="result.result_type"></p>
           </div>
         </li>
       </template>

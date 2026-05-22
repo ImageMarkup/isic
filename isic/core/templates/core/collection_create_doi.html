@@ -8,7 +8,7 @@
   {% if error %}
     <div class="rounded-md bg-red-50 p-4 mb-4">
       <div class="flex items-center">
-        <div class="flex-shrink-0">
+        <div class="shrink-0">
           <i class="ri-information-line text-lg text-red-400" aria-hidden="true"></i>
         </div>
         <div class="ml-3">
@@ -36,7 +36,7 @@
             x-model="description"
             required
             rows="5"
-            class="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+            class="w-full border border-gray-300 rounded-sm px-3 py-2 text-sm"
             placeholder="Describe the collection..."></textarea>
           <p class="text-xs text-gray-600 mt-2">
             Note: This description will be saved to the collection and used in the DOI metadata.
@@ -106,13 +106,13 @@
                     <div class="flex gap-2">
                       <div class="flex-1">
                         <select x-model="identifier.related_identifier_type" required
-                                class="w-full border rounded px-2 py-1 text-sm mb-2">
+                                class="w-full border rounded-sm px-2 py-1 text-sm mb-2">
                           <option value="">Select type</option>
                           <option value="DOI">DOI</option>
                           <option value="URL">URL</option>
                         </select>
                         <input :type="identifier.related_identifier_type === 'URL' ? 'url' : 'text'"
-                               x-model="identifier.related_identifier" required class="w-full border rounded px-2 py-1 text-sm"
+                               x-model="identifier.related_identifier" required class="w-full border rounded-sm px-2 py-1 text-sm"
                                :placeholder="getPlaceholder(identifier.related_identifier_type, relationConfig)"
                                :pattern="identifier.related_identifier_type === 'DOI' ? '^10\\.\\d+/.*$' : null"
                                :title="identifier.related_identifier_type === 'DOI' ? 'Enter a valid DOI format (e.g., ' + relationConfig.doiExample + ')' : null" />

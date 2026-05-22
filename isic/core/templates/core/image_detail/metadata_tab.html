@@ -28,7 +28,7 @@
         <div class="heading-3">Metadata History</div>
         <i class="ri-lock-line ml-1 text-xl"></i>
       </div>
-      <table class="table table-compact w-full">
+      <table class="table table-xs w-full">
         <thead>
           <tr>
             <th>Creator</th>
@@ -38,7 +38,7 @@
         </thead>
         <tbody>
           {% for metadata_version, diff in metadata_versions reversed %}
-            <tr class="hover">
+            <tr class="hover:bg-base-300">
               <td>{{ metadata_version.creator  }}</td>
               <td>{% localtime metadata_version.created  %}</td>
               <td>

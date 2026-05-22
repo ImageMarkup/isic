@@ -1,7 +1,7 @@
 {% load localtime %}
 
 <div x-show="selectedTab == 'studies'">
-  <div class="bg-white shadow overflow-hidden sm:rounded-md">
+  <div class="bg-white shadow-sm overflow-hidden sm:rounded-md">
     <ul class="divide-y divide-gray-200">
       {% for study in studies %}
         <li>
@@ -23,7 +23,7 @@
                 </div>
                 <div class="sm:flex">
                   <p class="flex items-center text-sm text-gray-500">
-                    <i class="ri-team-line flex-shrink-0 mr-1.5 text-sm text-gray-400" aria-hidden="true"></i>
+                    <i class="ri-team-line shrink-0 mr-1.5 text-sm text-gray-400" aria-hidden="true"></i>
                     {{ study.num_responses }} responses, {{ study.num_markups }} markups
                   </p>
 

@@ -92,7 +92,7 @@
     </div>
 
     {% if request.user.is_staff or contributors or show_shares %}
-      <div class="my-4 p-2 rounded-sm bg-gray-100 border border-gray-200">
+      <div class="my-4 p-2 rounded-xs bg-gray-100 border border-gray-200">
         <div class="font-semibold black text-lg">
           Private Attributes (visible only to you)
         </div>
@@ -160,7 +160,7 @@
     {% if image_removal_mode %}
       <div class="alert shadow-lg my-6">
         <div>
-          <i class="ri-information-line stroke-info flex-shrink-0 text-lg"></i>
+          <i class="ri-information-line stroke-info shrink-0 text-lg"></i>
           <span>
             <span x-text="images.size"></span> images pending removal.
           </span>

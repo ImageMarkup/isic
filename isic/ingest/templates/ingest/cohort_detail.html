@@ -15,7 +15,7 @@
   {% include 'ingest/partials/cohort_details.html' %}
 
   {% if show_skipped %}
-    <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
+    <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-sm">
       <div class="flex justify-between items-center mb-2">
         <h3 class="text-lg font-semibold text-yellow-800">Ignored Accessions (Invalid image files)</h3>
         <a href="{% querystring show_skipped=None %}" class="text-blue-500 hover:underline">← Back to normal view</a>

@@ -12,7 +12,7 @@
     {% if existing_annotators %}
       <div>
         <h2 class="text-lg font-medium text-gray-900 mb-4">Current Annotators</h2>
-        <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg max-w-lg">
+        <div class="shadow-sm overflow-hidden border-b border-gray-200 sm:rounded-lg max-w-lg">
           <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
               <tr>
@@ -53,7 +53,7 @@
           Add New Annotators
         </label>
         <div class="mt-1">
-          <textarea id="{{ form.annotators.html_name }}" name="{{ form.annotators.html_name }}" rows="5" class="border outline-none shadow-sm p-4 block w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md" placeholder="user@example.com&#10;ABC12&#10;another@example.com"></textarea>
+          <textarea id="{{ form.annotators.html_name }}" name="{{ form.annotators.html_name }}" rows="5" class="border outline-hidden shadow-xs p-4 block w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md" placeholder="user@example.com&#10;ABC12&#10;another@example.com"></textarea>
           <p class="mt-2 text-sm text-gray-500">{{ form.annotators.help_text }}</p>
           {{ form.annotators.errors }}
         </div>
