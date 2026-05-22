@@ -84,13 +84,13 @@ dev = [
   # The "dev" dependency group is installed by default,
   # so use this to install "development" extras by default too
   "isic[development]",
-  "tox==4.27.0",
-  "tox-uv==1.26.1",
+  "tox==4.54.0",
+  "tox-uv==1.35.2",
 ]
 lint = [
-  "djhtml==3.0.8",
+  "djhtml==3.0.11",
   "ruff==0.9.4",
-  "semgrep==1.79.0"
+  "semgrep==1.163.0"
 ]
 type = [
   "mypy==1.19.1",
