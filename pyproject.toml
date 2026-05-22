@@ -13,7 +13,7 @@ dependencies = [
   # Runtime dependencies, always needed
   "bcrypt==5.0.0",
   "celery==5.5.0",
-  "deepdiff==8.4.2",
+  "deepdiff==9.1.0",
   "django[argon2]==5.2.3",
   "django-allauth[socialaccount]==65.9.0",
   "django-auth-style[allauth,oauth-toolkit]==0.10.0",
