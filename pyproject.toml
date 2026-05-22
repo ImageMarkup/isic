@@ -100,18 +100,18 @@ type = [
 ]
 test = [
   "factory-boy==3.3.3",
-  "hypothesis==6.135.11",
-  "pytest==8.3.5",
+  "hypothesis==6.152.9",
+  "pytest==8.4.2",
   "pytest-cov==7.1.0",
-  "pytest-django==4.11.1",
-  "pytest-factoryboy==2.7.0",
-  "pytest-lazy-fixtures==1.1.4",
-  "pytest-mock==3.14.1",
+  "pytest-django==4.12.0",
+  "pytest-factoryboy==2.8.1",
+  "pytest-lazy-fixtures==1.4.0",
+  "pytest-mock==3.15.1",
   # Enable with "pytest --random-order ..."
-  "pytest-random-order==1.1.1",
+  "pytest-random-order==1.2.0",
   # Enable with "pytest --count=... ..."
   "pytest-repeat==0.9.4",
-  "pytest-playwright==0.7.2",
+  "pytest-playwright==0.8.0",
 ]
 profile = [
   "memray==1.17.2",
