@@ -636,31 +636,34 @@ argon2 = [
 
 [[package]]
 name = "django-allauth"
-version = "65.9.0"
+version = "65.17.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "asgiref" },
     { name = "django" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9d/a3/00aa9d5bb5df4f7464495675074dc11107c08b3eea3462fb3edc059d71e1/django_allauth-65.9.0.tar.gz", hash = "sha256:a06bca9974df44321e94c33bcf770bb6f924d1a44b57defbce4d7ec54a55483e", size = 1710514, upload-time = "2025-06-01T19:21:07.771Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ae/55/5580ab770bae3a885d1ef5a49646c3958c49cf67edfe956703a9bf815371/django_allauth-65.17.0.tar.gz", hash = "sha256:72bea057eaaf2952e4e22cd0195e031ef8e7de2cbac065cf35bd0067ef50a1e7", size = 2237395, upload-time = "2026-05-20T17:43:29.727Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bd/5f/dbe29bb38ffc32c6c17590caa346fba8055876a54109a6f914b5916f5819/django_allauth-65.17.0-py3-none-any.whl", hash = "sha256:ff041190bc6f9b2854aa5d7215a1f64f1fc8eb0907990690daad19144b7d2757", size = 2054996, upload-time = "2026-05-20T17:43:41.601Z" },
+]
 
 [package.optional-dependencies]
 socialaccount = [
+    { name = "oauthlib" },
     { name = "pyjwt", extra = ["crypto"] },
     { name = "requests" },
-    { name = "requests-oauthlib" },
 ]
 
 [[package]]
 name = "django-auth-style"
-version = "0.10.0"
+version = "0.15.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/19/11/3bfe218b0aea51459452964bb9857571c6a25fb296753c2aad5369f3c95c/django_auth_style-0.10.0.tar.gz", hash = "sha256:7b8e0c979fe266c57ba13b206db2b85f5e836c1d8cb4a5bfbc9f993ebe5b8ece", size = 1398603, upload-time = "2025-06-27T19:19:30.458Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/31/39/330be84b5cb5d9b304f54acb04e4b872ac61e778d46f6ab2fca8fd4c75a1/django_auth_style-0.15.0.tar.gz", hash = "sha256:3d07c7670bbc51f6cb90f095d82d7f52ee3d0e3fcd922e59c1e6035f0b94ddb2", size = 43223, upload-time = "2026-03-09T05:10:19.374Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d1/3a/b8f12f4ce7576a70dd97b8231987ae3a987c736ef1a66b44758c8c719d24/django_auth_style-0.10.0-py3-none-any.whl", hash = "sha256:a1f001fc79e8f6f11c02c0e32f29bec347349455cfbd0f94bdb4bf35fe19216e", size = 1404236, upload-time = "2025-06-27T19:19:29.031Z" },
+    { url = "https://files.pythonhosted.org/packages/80/86/764c29dcf0bc3dbb4ef2b213a501b57df55b83a0833a1a3a36b0eb279e41/django_auth_style-0.15.0-py3-none-any.whl", hash = "sha256:705f18a23717af533a087d5c0619b1cb7fbb0f8d80413b2bd0c50fe7e0530609", size = 47725, upload-time = "2026-03-09T05:10:18.369Z" },
 ]
 
 [package.optional-dependencies]
@@ -1496,8 +1499,8 @@ requires-dist = [
     { name = "celery", specifier = "==5.5.0" },
     { name = "deepdiff", specifier = "==9.1.0" },
     { name = "django", extras = ["argon2"], specifier = "==5.2.3" },
-    { name = "django-allauth", extras = ["socialaccount"], specifier = "==65.9.0" },
-    { name = "django-auth-style", extras = ["allauth", "oauth-toolkit"], specifier = "==0.10.0" },
+    { name = "django-allauth", extras = ["socialaccount"], specifier = "==65.17.0" },
+    { name = "django-auth-style", extras = ["allauth", "oauth-toolkit"], specifier = "==0.15.0" },
     { name = "django-browser-reload", marker = "extra == 'development'", specifier = "==1.18.0" },
     { name = "django-cachalot", specifier = "==2.8.0" },
     { name = "django-click", specifier = "==2.4.1" },
@@ -1983,11 +1986,11 @@ wheels = [
 
 [[package]]
 name = "oauthlib"
-version = "3.2.2"
+version = "3.3.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/6d/fa/fbf4001037904031639e6bfbfc02badfc7e12f137a8afa254df6c4c8a670/oauthlib-3.2.2.tar.gz", hash = "sha256:9859c40929662bec5d64f34d01c99e093149682a3f38915dc0655d5a633dd918", size = 177352, upload-time = "2022-10-17T20:04:27.471Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0b/5f/19930f824ffeb0ad4372da4812c50edbd1434f678c90c2733e1188edfc63/oauthlib-3.3.1.tar.gz", hash = "sha256:0f0f8aa759826a193cf66c12ea1af1637f87b9b4622d46e866952bb022e538c9", size = 185918, upload-time = "2025-06-19T22:48:08.269Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7e/80/cab10959dc1faead58dc8384a781dfbf93cb4d33d50988f7a69f1b7c9bbe/oauthlib-3.2.2-py3-none-any.whl", hash = "sha256:8139f29aac13e25d502680e9e19963e83f16838d48a0d71c287fe40e7067fbca", size = 151688, upload-time = "2022-10-17T20:04:24.037Z" },
+    { url = "https://files.pythonhosted.org/packages/be/9c/92789c596b8df838baa98fa71844d84283302f7604ed565dafe5a6b5041a/oauthlib-3.3.1-py3-none-any.whl", hash = "sha256:88119c938d2b8fb88561af5f6ee0eec8cc8d552b7bb1f712743136eb7523b7a1", size = 160065, upload-time = "2025-06-19T22:48:06.508Z" },
 ]
 
 [[package]]
@@ -2955,19 +2958,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/63/70/2bf7780ad2d390a8d301ad0b550f1581eadbd9a20f896afe06353c2a2913/requests-2.32.3.tar.gz", hash = "sha256:55365417734eb18255590a9ff9eb97e9e1da868d4ccd6402399eaf68af20a760", size = 131218, upload-time = "2024-05-29T15:37:49.536Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f9/9b/335f9764261e915ed497fcdeb11df5dfd6f7bf257d4a6a2a686d80da4d54/requests-2.32.3-py3-none-any.whl", hash = "sha256:70761cfe03c773ceb22aa2f671b4757976145175cdfca038c02654d061d6dcc6", size = 64928, upload-time = "2024-05-29T15:37:47.027Z" },
-]
-
-[[package]]
-name = "requests-oauthlib"
-version = "2.0.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "oauthlib" },
-    { name = "requests" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/42/f2/05f29bc3913aea15eb670be136045bf5c5bbf4b99ecb839da9b422bb2c85/requests-oauthlib-2.0.0.tar.gz", hash = "sha256:b3dffaebd884d8cd778494369603a9e7b58d29111bf6b41bdc2dcd87203af4e9", size = 55650, upload-time = "2024-03-22T20:32:29.939Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/3b/5d/63d4ae3b9daea098d5d6f5da83984853c1bbacd5dc826764b249fe119d24/requests_oauthlib-2.0.0-py2.py3-none-any.whl", hash = "sha256:7dd8a5c40426b779b0868c404bdef9768deccf22749cde15852df527e6269b36", size = 24179, upload-time = "2024-03-22T20:32:28.055Z" },
 ]
 
 [[package]]
