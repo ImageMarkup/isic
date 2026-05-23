@@ -178,7 +178,6 @@ ignore = [
   "B911", # batched-without-explicit-strict
   "DJ001", # django-nullable-model-string-field
   "FBT001", # boolean-typed-positional-argument
-  "FURB110", # if-exp-instead-of-or-operator
   "I001", # unsorted-imports
   "I002", # missing-required-import
   "INP001", # implicit-namespace-package

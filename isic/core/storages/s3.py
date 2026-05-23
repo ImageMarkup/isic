@@ -18,7 +18,7 @@ class CacheableCloudFrontStorage(PreventRenamingMixin, S3Storage, S3UnsignedUrlM
     @staticmethod
     def next_expiration_time(now=None):
         # returns a time > 6 days but <= 7.
-        now = now if now else datetime.now(tz=UTC)
+        now = now or datetime.now(tz=UTC)
         return now.replace(second=0, microsecond=0, minute=0, hour=0) + timedelta(days=7)
 
     # This is copied from upstream with minor modifications, subclassing in a cleaner way wasn't
