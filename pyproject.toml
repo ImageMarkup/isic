@@ -12,7 +12,7 @@ classifiers = ["Private :: Do Not Upload"]
 dependencies = [
   # Runtime dependencies, always needed
   "bcrypt==5.0.0",
-  "celery==5.5.0",
+  "celery==5.6.3",
   "deepdiff==9.1.0",
   "django[argon2]==5.2.3",
   "django-allauth[socialaccount]==65.17.0",
@@ -40,7 +40,7 @@ dependencies = [
   "numpy==2.2.4",
   "pandas==2.2.3",
   "Pillow==12.2.0",
-  "psycopg[binary]==3.2.6",
+  "psycopg[binary]==3.3.4",
   "pycountry==26.2.16",
   "pydantic==2.11.1",
   "pyexiv2==2.15.5",
