@@ -188,7 +188,6 @@ ignore = [
   "RET503", # implicit-return
   "RUF043", # pep3120-unnecessary-coding-comment
   "RUF051", # if-key-in-dict-del
-  "RUF059", # unused-unpacked-variable
   "TC002", # typing-only-third-party-import
   "TRY002", # raise-vanilla-class
 ]

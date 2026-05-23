@@ -168,7 +168,7 @@ def collection_with_several_creators(image_factory, collection_factory, cohort_f
 
 @pytest.mark.django_db
 def test_doi_creators_ordered_by_number_images_contributed(collection_with_several_creators, user):
-    collection, cohort_a, cohort_b, cohort_c = collection_with_several_creators
+    collection = collection_with_several_creators[0]
 
     doi = build_collection_doi(collection=collection, doi_id="foo", is_draft=False)
 
@@ -227,7 +227,7 @@ def collection_with_repeated_creators(image_factory, collection_factory, cohort_
 
 @pytest.mark.django_db
 def test_doi_creators_collapse_repeated_creators(collection_with_repeated_creators, user):
-    collection, cohort_a1, cohort_a2, cohort_b = collection_with_repeated_creators
+    collection = collection_with_repeated_creators[0]
 
     doi = build_collection_doi(collection=collection, doi_id="foo", is_draft=False)
 
