@@ -97,11 +97,11 @@ class RelatedIdentifierType(models.TextChoices):
 class AbstractDoiRelatedIdentifier(models.Model):
     relation_type = models.CharField(
         max_length=20,
-        choices=RelationType.choices,
+        choices=RelationType,
     )
     related_identifier_type = models.CharField(
         max_length=10,
-        choices=RelatedIdentifierType.choices,
+        choices=RelatedIdentifierType,
     )
     related_identifier = models.CharField(max_length=500)
 
