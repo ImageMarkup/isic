@@ -65,8 +65,6 @@ def test_api_image_urls_thumbnail_256(client, image_factory, image_file):
 
 @pytest.mark.django_db
 def test_api_image_search_size(client, searchable_images_with_size):
-    image1, image2 = searchable_images_with_size
-
     r = client.get(reverse("api:image_search_size"))
     assert r.status_code == 200
     assert r.json()["size"] == 30  # 10 + 20

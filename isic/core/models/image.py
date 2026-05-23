@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from pathlib import PurePosixPath
+from typing import TYPE_CHECKING
 
 from django.contrib.auth.models import User
 from django.contrib.postgres.aggregates.general import ArrayAgg
@@ -10,7 +11,6 @@ from django.db import models
 from django.db.models.constraints import CheckConstraint
 from django.db.models.expressions import F
 from django.db.models.functions import Upper
-from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
@@ -21,6 +21,9 @@ from isic.core.models.base import CreationSortedTimeStampedModel
 from isic.ingest.models import Accession
 
 from .isic_id import IsicId
+
+if TYPE_CHECKING:
+    from django.db.models.query import QuerySet
 
 
 class ImageQuerySet(models.QuerySet["Image"]):

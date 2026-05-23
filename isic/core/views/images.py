@@ -1,10 +1,10 @@
 import json
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Count
-from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
@@ -18,6 +18,9 @@ from isic.core.search import get_elasticsearch_client
 from isic.core.tasks import generate_staff_image_list_metadata_csv_task
 from isic.studies.models import Study
 from isic.types import AuthenticatedHttpRequest
+
+if TYPE_CHECKING:
+    from django.db.models.query import QuerySet
 
 # Show this many related images e.g. other patient images, other lesion images.
 # Lesions are typically <= 20 images, but patients can be hundreds.

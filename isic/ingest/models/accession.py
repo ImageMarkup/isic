@@ -461,7 +461,7 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
         ComputedMetadataField(
             "age",
             ["age_approx"],
-            lambda age: (None if age is None else {"age_approx": int(round(age / 5.0) * 5)}),
+            lambda age: None if age is None else {"age_approx": int(round(age / 5.0) * 5)},
             "clinical",
             es_mappings={"age_approx": {"type": "integer"}},
             es_aggregates={

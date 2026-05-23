@@ -60,6 +60,7 @@ def populate_study_tasks(*, study: Study, users: QuerySet[User]) -> None:
                 study.collection.images.values_list("id", flat=True),
             ),
             1_000,
+            strict=False,
         ):
             tasks = []
             for user, image in user_image_batch:

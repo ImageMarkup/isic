@@ -134,7 +134,7 @@ class AccessionMeta:
     id: int
     concomitant_biopsy: bool | None
     acquisition_day: int | None
-    diagnosis: Literal["melanoma", "nevus", None]
+    diagnosis: Literal["melanoma", "nevus"] | None
     image_type: str | None
 
 
@@ -306,7 +306,7 @@ def test_lesion_diagnosis(
     lesion_with_diagnosis = Lesion.objects.with_total_info().get(id=lesion.id)
 
     expected_lesion_diagnosis_1 = (
-        expected_lesion_diagnosis.split(":")[0] if expected_lesion_diagnosis else None
+        expected_lesion_diagnosis.split(":", maxsplit=1)[0] if expected_lesion_diagnosis else None
     )
     assert lesion_with_diagnosis.outcome_diagnosis == expected_lesion_diagnosis
     assert lesion_with_diagnosis.outcome_diagnosis_1 == expected_lesion_diagnosis_1

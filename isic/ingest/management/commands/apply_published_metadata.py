@@ -20,7 +20,7 @@ def apply_published_metadata(user_id, csv_path, message):
         with Path(csv_path).open() as f:
             reader = csv.DictReader(f)
 
-            for batch in batched(reader, 5_000):
+            for batch in batched(reader, 5_000, strict=False):
                 click.echo(f"Processing batch of {len(batch)}")
                 accession_id_by_isic_id = dict(
                     Accession.objects.filter(image__isic_id__in=[row["isic_id"] for row in batch])

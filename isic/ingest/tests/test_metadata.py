@@ -2,7 +2,7 @@ import codecs
 import csv
 from decimal import Decimal
 import io
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from django.contrib.auth.models import User
 from django.urls.base import reverse
@@ -19,7 +19,9 @@ from isic.ingest.utils.metadata import (
     validate_csv_format_and_filenames,
     validate_internal_consistency,
 )
-from isic.ingest.views.metadata import ApplyMetadataContext
+
+if TYPE_CHECKING:
+    from isic.ingest.views.metadata import ApplyMetadataContext
 
 
 @pytest.fixture
@@ -224,7 +226,7 @@ def test_apply_metadata_step2_invalid(
             {"metadata_file": metadatafile.pk},
             follow=True,
         )
-    r.context = cast(ApplyMetadataContext, r.context)
+    r.context = cast("ApplyMetadataContext", r.context)
     assert r.status_code == 200, r.status_code
     assert render_to_string.call_args[0][1]["successful"] is False
     assert render_to_string.call_args[0][1]["csv_check"] == []
@@ -280,7 +282,7 @@ def test_apply_metadata_step3_full_cohort(
             {"metadata_file": disagreeing_metadatafile.pk},
             follow=True,
         )
-    r.context = cast(ApplyMetadataContext, r.context)
+    r.context = cast("ApplyMetadataContext", r.context)
     assert render_to_string.call_args[0][1]["successful"] is False
     assert render_to_string.call_args[0][1]["csv_check"] == []
     assert render_to_string.call_args[0][1]["internal_check"]

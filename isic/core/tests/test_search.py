@@ -376,8 +376,6 @@ def test_core_api_image_faceting_structure(searchable_images, client):
 )
 @pytest.mark.django_db
 def test_core_api_image_faceting_query(private_and_public_images_collections, client_):
-    public_coll, private_coll = private_and_public_images_collections
-
     r = client_.get(reverse("api:image_facets"), {"query": "age_approx:10"})
     assert r.status_code == 200, r.json()
     buckets = r.json()["age_approx"]["buckets"]
