@@ -37,7 +37,7 @@ __all__ = [
 def add_or_remove_groups(
     sender: type[User],
     instance: User,
-    created: bool,  # noqa: FBT001
+    created: bool,
     **kwargs,
 ):
     from django.contrib.auth.models import Group

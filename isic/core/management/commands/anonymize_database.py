@@ -459,7 +459,7 @@ def _clear_sensitive_tables(*, dry_run):
     default=1000,
     help="Number of records to process in each batch",
 )
-def anonymize_database(dry_run: bool, batch_size: int):  # noqa: FBT001
+def anonymize_database(dry_run: bool, batch_size: int):
     salt = secrets.token_hex(32)
     faker = Faker()
     faker.seed_instance(int(hashlib.sha256(salt.encode()).hexdigest()[:8], 16))
