@@ -60,9 +60,9 @@ STORAGES.update(
             # (auto-detected from env vars), but we override some distinct options.
             "BACKEND": "isic.core.storages.minio.IsicMinioMediaStorage",
             "OPTIONS": {
-                "bucket_name": cast(str, env.str("DJANGO_ISIC_SPONSORED_BUCKET_NAME")),
+                "bucket_name": cast("str", env.str("DJANGO_ISIC_SPONSORED_BUCKET_NAME")),
                 "base_url": cast(
-                    str | None, env.str("DJANGO_ISIC_SPONSORED_MEDIA_URL", default=None)
+                    "str | None", env.str("DJANGO_ISIC_SPONSORED_MEDIA_URL", default=None)
                 ),
                 # Make a public-readable bucket
                 "auto_create_policy": True,

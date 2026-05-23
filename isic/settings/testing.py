@@ -1,7 +1,9 @@
 import logging
 from secrets import randbelow
-from typing import cast
-from urllib.parse import ParseResult
+from typing import TYPE_CHECKING, cast
+
+if TYPE_CHECKING:
+    from urllib.parse import ParseResult
 
 from minio_storage.policy import Policy
 
@@ -23,7 +25,7 @@ STORAGES["staticfiles"]["BACKEND"] = "whitenoise.storage.CompressedStaticFilesSt
 MINIO_STORAGE_MEDIA_BUCKET_NAME = f"test-django-storage-{randbelow(1_000_000):06d}"
 isic_sponsored_bucket_name = f"test-django-sponsored-{randbelow(1_000_000):06d}"
 isic_sponsored_media_url = cast(
-    ParseResult | None, env.url("DJANGO_ISIC_SPONSORED_MEDIA_URL", default=None)
+    "ParseResult | None", env.url("DJANGO_ISIC_SPONSORED_MEDIA_URL", default=None)
 )
 isic_sponsored_base_url = (
     # Form a URL with the sponsored bucket media URL host information,

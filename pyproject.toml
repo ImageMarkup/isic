@@ -190,7 +190,6 @@ ignore = [
   "RUF051", # if-key-in-dict-del
   "RUF059", # unused-unpacked-variable
   "TC002", # typing-only-third-party-import
-  "TC006", # typing-cast-without-annotation
   "TRY002", # raise-vanilla-class
 ]
 
