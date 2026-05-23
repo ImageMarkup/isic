@@ -183,7 +183,6 @@ ignore = [
   "INP001", # implicit-namespace-package
   "PLC0207", # overridden-special-method
   "PLC0415", # import-outside-top-level
-  "PYI061", # redundant-none-literal
   "RET503", # implicit-return
   "TC002", # typing-only-third-party-import
   "TRY002", # raise-vanilla-class

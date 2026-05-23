@@ -134,7 +134,7 @@ class AccessionMeta:
     id: int
     concomitant_biopsy: bool | None
     acquisition_day: int | None
-    diagnosis: Literal["melanoma", "nevus", None]
+    diagnosis: Literal["melanoma", "nevus"] | None
     image_type: str | None
 
 
