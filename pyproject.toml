@@ -185,7 +185,6 @@ ignore = [
   "PLC0415", # import-outside-top-level
   "PYI061", # redundant-none-literal
   "RET503", # implicit-return
-  "RUF043", # pep3120-unnecessary-coding-comment
   "TC002", # typing-only-third-party-import
   "TRY002", # raise-vanilla-class
 ]
