@@ -175,7 +175,6 @@ ignore = [
 
   # Project-specific
   "A002", # builtin-argument-shadowing
-  "B911", # batched-without-explicit-strict
   "DJ001", # django-nullable-model-string-field
   "FBT001", # boolean-typed-positional-argument
   "I001", # unsorted-imports

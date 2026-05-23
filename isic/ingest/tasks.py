@@ -151,7 +151,7 @@ def update_metadata_task(user_pk: int, metadata_file_pk: int):
         with metadata_file.blob.open("rb") as blob:
             rows = MetadataFile.to_dict_reader(blob)
 
-            for batch in itertools.batched(rows, 1_000):
+            for batch in itertools.batched(rows, 1_000, strict=False):
                 accession_id_by_filename = dict(
                     metadata_file.cohort.accessions.filter(
                         original_blob_name__in=[row["filename"] for row in batch]

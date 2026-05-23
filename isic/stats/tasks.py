@@ -233,6 +233,7 @@ def _process_s3_log_file_task(log_file_bytes: BytesIO):
         for download_logs in itertools.batched(
             filter(lambda r: r["status"] == 200, _cdn_access_log_records(log_file_bytes)),
             BATCH_SIZE,
+            strict=False,
         ):
             # if any request_id has already been processed, it means the entire file has been.
             # this means the task is being executed again, and should avoid processing log files

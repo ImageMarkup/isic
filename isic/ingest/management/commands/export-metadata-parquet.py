@@ -44,7 +44,7 @@ def export_metadata_parquet():
             pq.ParquetWriter(tmp.name, schema, compression="snappy") as writer,
             click.progressbar(length=total, file=sys.stderr) as bar,
         ):
-            for batch in batched(rows, ROW_GROUP_SIZE):
+            for batch in batched(rows, ROW_GROUP_SIZE, strict=False):
                 row_dicts = [row.model_dump(mode="python") for row in batch]
                 table = pa.Table.from_pylist(row_dicts, schema=schema)
                 writer.write_table(table)

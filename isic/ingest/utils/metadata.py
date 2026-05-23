@@ -185,7 +185,7 @@ def validate_archive_consistency(
 
         yielded_filenames: set[str] = set()
 
-        for batch in itertools.batched(rows, 5_000):
+        for batch in itertools.batched(rows, 5_000, strict=False):
             accessions_batch = accessions.filter(
                 original_blob_name__in=[row["filename"] for row in batch]
             )

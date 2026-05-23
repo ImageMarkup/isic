@@ -161,7 +161,7 @@ def update_accession_metadata(  # noqa: PLR0913
             metadata_file_id=metadata_file_id,
         )
 
-        for batch in batched(metadata, 5_000):
+        for batch in batched(metadata, 5_000, strict=False):
             accessions_by_id = (
                 Accession.objects.filter(pk__in=[row[0] for row in batch])
                 .select_related(
