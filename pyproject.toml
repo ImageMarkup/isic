@@ -33,7 +33,7 @@ dependencies = [
   "django-stubs-ext==5.2.9",
   "django-widget-tweaks==1.5.1",
   "gdal==3.11.0",
-  "google-analytics-data==0.18.18",
+  "google-analytics-data==0.22.0",
   "elasticsearch==9.4.0",
   "isic-metadata==5.1.0",
   "jaro-winkler==2.0.3",
