@@ -61,7 +61,7 @@ dependencies = [
   "orjson==3.11.9",
   "django-template-partials==25.3",
   "pgvector==0.4.2",
-  "pyarrow==23.0.1",
+  "pyarrow==24.0.0",
   "pydantic-to-pyarrow==0.1.6",
 ]
 
