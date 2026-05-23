@@ -5,7 +5,7 @@ from typing import Any
 
 from django.db.models.query_utils import Q
 from isic_metadata import FIELD_REGISTRY
-from pyparsing import Keyword, Optional, ParserElement, Word, alphas, infixNotation, nums, opAssoc
+from pyparsing import Keyword, Optional, ParserElement, Word, alphas, infix_notation, nums, OpAssoc
 from pyparsing.common import pyparsing_common
 from pyparsing.core import Literal, OneOrMore, Or, QuotedString, Suppress
 from pyparsing.helpers import one_of
@@ -15,7 +15,7 @@ import sentry_sdk
 from isic.ingest.models.accession import Accession
 
 # the cache size limit is the number of items, not the number of bytes
-ParserElement.enablePackrat(cache_size_limit=2_000)
+ParserElement.enable_packrat(cache_size_limit=2_000)
 
 
 @dataclass(frozen=True)
@@ -355,8 +355,8 @@ def make_parser(  # noqa: C901
     parser = OneOrMore(Or(terms.values())).add_parse_action(conjunctive)
 
     # TODO: ZeroOrMore?
-    return infixNotation(
-        parser, [(AND, 2, opAssoc.LEFT, conjunctive), (OR, 2, opAssoc.LEFT, disjunctive)]
+    return infix_notation(
+        parser, [(AND, 2, OpAssoc.LEFT, conjunctive), (OR, 2, OpAssoc.LEFT, disjunctive)]
     )
 
 
