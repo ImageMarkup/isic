@@ -858,14 +858,15 @@ wheels = [
 
 [[package]]
 name = "django-resonant-settings"
-version = "0.41.0"
+version = "0.51.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "django" },
     { name = "django-environ" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ee/19/4fa035cec41b5c7ceb1348f5aec7692ec6a71b0a1d79cec7746aa2e1926a/django_resonant_settings-0.41.0.tar.gz", hash = "sha256:1324c12d33329a36a198c500695434db57206ac75ee63fa8da35d390831bc8de", size = 17654, upload-time = "2025-10-16T20:11:42.172Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/56/9e/fb3148d870c693f5fcd0201c779615d48458815820ddbcabc84e2697cf60/django_resonant_settings-0.51.0.tar.gz", hash = "sha256:9229b696173bc90a7e681bd2c35495c1623d078b3795bcaca357fcee48f8c2c4", size = 19543, upload-time = "2026-05-19T20:57:46.953Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/38/d3/ac3e2ffd10139f3f209acafc1f8dd7b9d177c1b7b26b71cdd60e2f36020e/django_resonant_settings-0.41.0-py3-none-any.whl", hash = "sha256:10be63da455eaaa67a34b057dabe9f15b380917c945cb8c33f929ad1afde2b47", size = 24123, upload-time = "2025-10-16T20:11:41.112Z" },
+    { url = "https://files.pythonhosted.org/packages/f1/38/3c5710724f8b4011d4eef8e54857b2687dbe3c0170917e4342809cde54ce/django_resonant_settings-0.51.0-py3-none-any.whl", hash = "sha256:37ca78683ee7d811d19a080955ddaa0538289105ab71c04618172fe05ad83f38", size = 26378, upload-time = "2026-05-19T20:57:46.072Z" },
 ]
 
 [package.optional-dependencies]
@@ -878,14 +879,14 @@ celery = [
 
 [[package]]
 name = "django-resonant-utils"
-version = "0.16.0"
+version = "0.19.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9c/44/957ba59dd6d36a63d49dc12c98ac817fd7bc840e858d7b0d48cc997f3b7a/django_resonant_utils-0.16.0.tar.gz", hash = "sha256:0eb954b262732ba5e4b5fea95ee8b5035f8b7d21191a4d05b40c5b51ca060713", size = 12502, upload-time = "2025-07-10T19:31:35.482Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/63/88/fe82b332d7b3223fbb2d259d8ac8300b1d97f78986458601914b36067df6/django_resonant_utils-0.19.0.tar.gz", hash = "sha256:ddf0d2de30c0a85afaaa968fc3ba7b7af6d60253330fb8f7459fff44711f5561", size = 14852, upload-time = "2026-03-05T14:55:53.871Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b9/49/394af41df5f9c73cd3703374364be8ce8581c0b0390761498958410dc648/django_resonant_utils-0.16.0-py3-none-any.whl", hash = "sha256:3f7b8b7e284269cac704122ef823be415eaf777d601d51a46369250294c276c4", size = 14201, upload-time = "2025-07-10T19:31:34.29Z" },
+    { url = "https://files.pythonhosted.org/packages/1b/1b/563cfe8e454a7db44d7904c0b27ae25ee78b017be534d460e3d7415bcc98/django_resonant_utils-0.19.0-py3-none-any.whl", hash = "sha256:bcc58f92b86e8225d4385a8ad67e3454717ab51749bd49ef2a4e2830c3f3dd21", size = 16847, upload-time = "2026-03-05T14:55:54.853Z" },
 ]
 
 [package.optional-dependencies]
@@ -1531,9 +1532,9 @@ requires-dist = [
     { name = "django-ninja", specifier = "==1.4.3" },
     { name = "django-oauth-toolkit", specifier = "==1.7.1" },
     { name = "django-redis", specifier = "==6.0.0" },
-    { name = "django-resonant-settings", extras = ["allauth", "celery"], specifier = "==0.41.0" },
-    { name = "django-resonant-utils", extras = ["allauth", "s3-storage"], specifier = "==0.16.0" },
-    { name = "django-resonant-utils", extras = ["minio-storage"], marker = "extra == 'development'", specifier = "==0.16.0" },
+    { name = "django-resonant-settings", extras = ["allauth", "celery"], specifier = "==0.51.0" },
+    { name = "django-resonant-utils", extras = ["allauth", "s3-storage"], specifier = "==0.19.0" },
+    { name = "django-resonant-utils", extras = ["minio-storage"], marker = "extra == 'development'", specifier = "==0.19.0" },
     { name = "django-s3-file-field", extras = ["minio"], marker = "extra == 'development'", specifier = "==1.1.0" },
     { name = "django-s3-file-field", extras = ["s3"], specifier = "==1.1.0" },
     { name = "django-storages", extras = ["s3"], specifier = "==1.14.6" },
