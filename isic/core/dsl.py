@@ -5,7 +5,7 @@ from typing import Any
 
 from django.db.models.query_utils import Q
 from isic_metadata import FIELD_REGISTRY
-from pyparsing import Keyword, Optional, ParserElement, Word, alphas, infix_notation, nums, OpAssoc
+from pyparsing import Keyword, OpAssoc, Optional, ParserElement, Word, alphas, infix_notation, nums
 from pyparsing.common import pyparsing_common
 from pyparsing.core import Literal, OneOrMore, Or, QuotedString, Suppress
 from pyparsing.helpers import one_of

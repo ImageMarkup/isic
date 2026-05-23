@@ -177,7 +177,6 @@ ignore = [
   "A002", # builtin-argument-shadowing
   "DJ001", # django-nullable-model-string-field
   "FBT001", # boolean-typed-positional-argument
-  "I001", # unsorted-imports
   "I002", # missing-required-import
   "PLC0415", # import-outside-top-level
   "RET503", # implicit-return

@@ -1,6 +1,6 @@
+import logging
 from typing import cast
 
-import logging
 from django_extensions.utils import InternalIPS
 from minio_storage.policy import Policy
 

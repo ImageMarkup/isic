@@ -1,8 +1,7 @@
+import logging
 from typing import cast
 
 from botocore.config import Config
-import logging
-
 import sentry_sdk
 import sentry_sdk.integrations.celery
 import sentry_sdk.integrations.django
