@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from hashlib import sha1
 import json
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from django.contrib.auth.models import AnonymousUser, User
-from django.db.models.query import QuerySet
 from django.shortcuts import get_object_or_404
 from ninja import Schema
 from pydantic import field_validator
@@ -15,6 +14,9 @@ from isic.core.models import Image
 from isic.core.models.collection import Collection
 from isic.core.permissions import get_visible_objects
 from isic.core.search import build_elasticsearch_query
+
+if TYPE_CHECKING:
+    from django.db.models.query import QuerySet
 
 
 class SearchQueryIn(Schema):

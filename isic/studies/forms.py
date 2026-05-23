@@ -1,11 +1,15 @@
+from typing import TYPE_CHECKING
+
 from django import forms
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db.models import Min
-from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 
 from isic.studies.models import Question, Response, Study
+
+if TYPE_CHECKING:
+    from django.db.models.query import QuerySet
 
 
 def parse_user_identifiers(value: str) -> list[int]:

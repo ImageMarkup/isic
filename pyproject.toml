@@ -180,7 +180,6 @@ ignore = [
   "I002", # missing-required-import
   "PLC0415", # import-outside-top-level
   "RET503", # implicit-return
-  "TC002", # typing-only-third-party-import
   "TRY002", # raise-vanilla-class
 ]
 

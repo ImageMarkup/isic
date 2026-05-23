@@ -6,11 +6,9 @@ from typing import TYPE_CHECKING
 from urllib import parse
 
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.db import transaction
-from django.db.models import QuerySet
 from django.urls import reverse
 from django.utils.text import slugify
 from requests.exceptions import HTTPError
@@ -39,6 +37,9 @@ from isic.ingest.services.publish import unembargo_image
 if TYPE_CHECKING:
     from collections.abc import Iterable
     from urllib.parse import ParseResult
+
+    from django.contrib.auth.models import User
+    from django.db.models import QuerySet
 
     from isic.core.api.doi import RelatedIdentifierIn
     from isic.core.models.collection import Collection
