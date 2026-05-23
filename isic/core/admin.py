@@ -114,9 +114,10 @@ class SegmentationAdmin(StaffReadonlyAdmin):
         return intcomma(obj.num_reviews)
 
     @admin.display()
-    def mask_thumbnail(self, obj):
+    def mask_thumbnail(self, obj) -> str:
         if obj.mask:
             return format_html('<img src="{}" width="256" height="256" />', obj.mask.url)
+        return ""
 
 
 @admin.register(GirderDataset)
