@@ -61,7 +61,6 @@ dependencies = [
   "sentry-sdk[celery,django,pure_eval]==2.73.0",
   "gunicorn==26.2.0",
   "orjson==3.13.0",
-  "django-template-partials==25.3",
   "pgvector==0.5.1",
   "pyarrow==24.0.0",
   "pydantic-to-pyarrow==0.1.6",

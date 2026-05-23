@@ -323,7 +323,7 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
     )
     cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name="accessions")
 
-    copyright_license = models.CharField(choices=CopyrightLicense.choices, max_length=255)
+    copyright_license = models.CharField(choices=CopyrightLicense, max_length=255)
     # attribution is initially empty, with cohort.default_attribution being copied over during
     # publish if not otherwise set.
     attribution = models.CharField(max_length=200, blank=True)
@@ -346,7 +346,7 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
     is_cog = models.BooleanField(null=True, blank=True)
 
     status = models.CharField(
-        choices=AccessionStatus.choices, max_length=20, default=AccessionStatus.CREATING
+        choices=AccessionStatus, max_length=20, default=AccessionStatus.CREATING
     )
 
     thumbnail_256 = S3FileField(blank=True)
