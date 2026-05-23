@@ -89,7 +89,7 @@ dev = [
 ]
 lint = [
   "djhtml==3.0.11",
-  "ruff==0.9.4",
+  "ruff==0.15.14",
   "semgrep==1.163.0"
 ]
 type = [
@@ -175,14 +175,23 @@ ignore = [
 
   # Project-specific
   "A002", # builtin-argument-shadowing
-  "A005", # stdlib-module-shadowing
+  "B911", # batched-without-explicit-strict
   "DJ001", # django-nullable-model-string-field
-  "EXE003", # shebang-missing-pythonwhe
+  "FBT001", # boolean-typed-positional-argument
+  "FURB110", # if-exp-instead-of-or-operator
   "I001", # unsorted-imports
   "I002", # missing-required-import
   "INP001", # implicit-namespace-package
+  "PLC0207", # overridden-special-method
+  "PLC0415", # import-outside-top-level
+  "PYI061", # redundant-none-literal
   "RET503", # implicit-return
+  "RUF043", # pep3120-unnecessary-coding-comment
+  "RUF051", # if-key-in-dict-del
+  "RUF059", # unused-unpacked-variable
+  "RUF100", # unused-noqa
   "TC002", # typing-only-third-party-import
+  "TC006", # typing-cast-without-annotation
   "TRY002", # raise-vanilla-class
 ]
 
