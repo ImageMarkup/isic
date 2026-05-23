@@ -91,7 +91,7 @@ lint = [
   "semgrep==1.165.0"
 ]
 type = [
-  "mypy==1.19.1",
+  "mypy==2.0.0",
   "celery-types==0.26.0",
   "django-stubs[compatible-mypy]==6.0.4",
   "pandas-stubs==3.0.3.260530",
