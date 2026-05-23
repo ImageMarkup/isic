@@ -88,7 +88,6 @@ elif ISIC_FAKE_STORAGE == "placeholder":
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-OAUTH2_PROVIDER["ALLOWED_REDIRECT_URI_SCHEMES"] = ["http", "https"]
 # Expire cache entries immediately to promote better understanding of actual query performance
 CACHES["default"]["TIMEOUT"] = 0
 # cachalot sets its own expiration time, so it needs to be set to 0 as well
