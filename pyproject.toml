@@ -179,7 +179,6 @@ ignore = [
   "FBT001", # boolean-typed-positional-argument
   "I001", # unsorted-imports
   "I002", # missing-required-import
-  "INP001", # implicit-namespace-package
   "PLC0415", # import-outside-top-level
   "RET503", # implicit-return
   "TC002", # typing-only-third-party-import
