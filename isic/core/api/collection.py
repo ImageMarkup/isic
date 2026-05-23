@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Annotated, Literal
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
@@ -9,7 +9,6 @@ from jaro import jaro_winkler_metric
 from ninja import Field, ModelSchema, Query, Router, Schema
 from ninja.pagination import paginate
 from pydantic import field_validator
-from pydantic.types import conlist, constr
 
 from isic.auth import is_authenticated
 from isic.core.constants import ISIC_ID_REGEX
@@ -79,7 +78,7 @@ def collection_list(
 class CreateCollectionFromIsicIdsIn(Schema):
     name: str
     description: str = ""
-    isic_ids: conlist(constr(pattern=ISIC_ID_REGEX), min_length=1)  # type: ignore[valid-type]
+    isic_ids: Annotated[list[Annotated[str, Field(pattern=ISIC_ID_REGEX)]], Field(min_length=1)]
 
     model_config = {"extra": "forbid"}
 
@@ -318,7 +317,7 @@ def collection_set_pinned(request, id: int, payload: SetPinnedIn):
 
 
 class IsicIdList(Schema):
-    isic_ids: conlist(constr(pattern=ISIC_ID_REGEX), max_length=500)  # type: ignore[valid-type]
+    isic_ids: Annotated[list[Annotated[str, Field(pattern=ISIC_ID_REGEX)]], Field(max_length=500)]
 
     model_config = {"extra": "forbid"}
 
