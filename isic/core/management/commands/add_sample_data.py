@@ -88,7 +88,7 @@ def add_sample_data(n):
             created_images.append(isic_id)
 
     sync_elasticsearch_indices_task()
-    call_command("export-metadata-parquet")
+    call_command("export_metadata_parquet")
 
     click.secho("\nCreated images:", fg="green", err=True)
     for isic_id in created_images:
