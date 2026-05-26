@@ -145,11 +145,11 @@
 
     <input type="checkbox" id="create-collection-modal" class="modal-toggle" x-ref="createCollectionToggle">
     <label for="create-collection-modal" class="modal cursor-pointer">
-      <label class="modal-box">
+      <form class="modal-box" @submit.prevent="createCollection()">
         <h3 class="font-bold text-lg mb-4">Create Collection</h3>
         <p class="mb-4 text-sm text-gray-600" x-text="'This will create a collection with ' + collectionImageCount.toLocaleString() + ' images from your query results.'"></p>
-        <div class="flex flex-col mb-4">
-          <label class="label font-semibold">Collection Name</label>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend">Collection Name</legend>
           <input
             type="text"
             id="collection-name-input"
@@ -157,24 +157,23 @@
             x-ref="collectionNameInput"
             class="input w-full"
             placeholder="My collection"
-            @keydown.enter="createCollection()"
           >
-        </div>
-        <div x-show="createCollectionError" class="alert alert-error mb-4 text-sm">
+        </fieldset>
+        <div x-show="createCollectionError" class="alert alert-error text-sm">
             <pre class="whitespace-pre-wrap" x-text="createCollectionError"></pre>
         </div>
         <div class="modal-action">
           <label for="create-collection-modal" class="btn btn-ghost">Cancel</label>
           <button
+            type="submit"
             class="btn btn-primary"
             :disabled="!collectionName.trim() || creatingCollection"
-            @click="createCollection()"
           >
             <span x-show="!creatingCollection">Create</span>
             <span x-show="creatingCollection">Creating...</span>
           </button>
         </div>
-      </label>
+      </form>
     </label>
   </div>
 

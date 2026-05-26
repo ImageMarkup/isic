@@ -5,15 +5,15 @@
 {% endcomment %}
 <div class="modal" :class="{'modal-open': quickfindOpen}" x-show="quickfindOpen">
   <div class="absolute top-6 modal-box w-11/12 max-w-5xl" @click.outside="closeQuickfindModal()">
-    <input type="search"
-           id="quickfind-input"
-           x-ref="quickfind"
-           @input.debounce.250ms="performFind"
-           x-model="findText"
-           placeholder="Search anything.." class="input w-full max-w-l">
-    <label class="label">
-      <span class="text-xs text-base-content/60" x-show="findText.length < 3">At least 3 characters</span>
-    </label>
+    <fieldset class="fieldset">
+      <input type="search"
+             id="quickfind-input"
+             x-ref="quickfind"
+             @input.debounce.250ms="performFind"
+             x-model="findText"
+             placeholder="Search anything.." class="input w-full max-w-l">
+      <p class="label" x-show="findText.length < 3">At least 3 characters</p>
+    </fieldset>
 
     <ul role="list" class="divide-y divide-gray-200">
       <template x-for="result in results">
