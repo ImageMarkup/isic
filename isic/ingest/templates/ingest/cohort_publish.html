@@ -123,9 +123,9 @@
         entries: [],
 
         init() {
-          const select = document.getElementById("additional-collections-selection");
-          select.addEventListener("change", () => {
-            this.fetchSharingInfo();
+          // Select2 fires jQuery events, not native DOM events; addEventListener won't work here.
+          $("#additional-collections-selection").on("change", async () => {
+            await this.fetchSharingInfo();
           });
         },
 
