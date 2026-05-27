@@ -13,12 +13,6 @@ def _refresh_collection_counts():
         cursor.execute("REFRESH MATERIALIZED VIEW materialized_collection_counts;")
 
 
-def _build_url(**params):
-    base = reverse("core/collection-list")
-    qs = "&".join(f"{k}={v}" for k, v in params.items())
-    return f"{base}?{qs}"
-
-
 @pytest.mark.playwright
 def test_collection_list_desktop(
     staff_authenticated_page,
@@ -58,7 +52,9 @@ def test_collection_list_desktop(
         related_identifier="https://example.com/paper",
     )
 
-    page.goto(_build_url(exclude_empty=0, magic_filter="exclude"))
+    page.goto(
+        reverse("core/collection-list", query={"exclude_empty": 0, "magic_filter": "exclude"})
+    )
 
     # All four column headers are visible on desktop
     expect(page.get_by_role("columnheader", name="Created")).to_be_visible()
@@ -138,7 +134,9 @@ def test_collection_list_mobile(
     ctx.add_cookies([{"name": "sessionid", "value": session_cookie.value, "url": live_server.url}])
     page = ctx.new_page()
 
-    page.goto(_build_url(exclude_empty=0, magic_filter="exclude"))
+    page.goto(
+        reverse("core/collection-list", query={"exclude_empty": 0, "magic_filter": "exclude"})
+    )
 
     # Name column is visible on mobile
     expect(page.get_by_role("columnheader", name="Name")).to_be_visible()
