@@ -1,7 +1,6 @@
 select#user-selection,
 select#additional-collections-selection {
-  width: 100%;
-  height: 4em;
+  @apply w-full h-16;
 }
 
 #doi-detail {
@@ -59,33 +58,19 @@ select#additional-collections-selection {
 }
 
 .fixed-banner {
+  @apply block font-bold sticky text-center top-0 z-[1000];
   background-color: #f3ff52;
   color: #2e2e2e;
-  display: block;
-  font-weight: bold;
   line-height: 35px;
-  position: sticky;
-  text-align: center;
-  top: 0;
-  z-index: 1000;
 }
 
 /* spinner code, see https://loading.io/css/ */
 .lds-ring {
-  box-sizing: border-box;
-  display: inline-block;
-  position: relative;
-  width: 12px;
-  height: 12px;
+  @apply box-border inline-block relative size-3;
 
   div {
-    box-sizing: border-box;
-    display: block;
-    position: absolute;
-    width: 12px;
-    height: 12px;
+    @apply box-border block absolute size-3 rounded-full;
     border: 1px solid currentColor;
-    border-radius: 50%;
     animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
     border-color: currentColor transparent transparent transparent;
 
@@ -129,112 +114,80 @@ select#additional-collections-selection {
 
 .diagnosis-picker {
   .search-container {
-    margin-bottom: 20px;
+    @apply mb-5;
   }
 
   #search-input {
-    width: 100%;
-    padding: 8px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    @apply w-full p-2 text-base border border-gray-300 rounded;
   }
 
   .tree-toggle {
-    cursor: pointer;
-    width: 20px;
-    display: inline-block;
+    @apply cursor-pointer w-5 inline-block;
   }
 
   .tree {
-    margin: 20px 0 20px;
+    @apply my-5;
 
     & > ul {
       padding-left: 0 !important;
     }
 
     ul {
-      list-style-type: none;
-      padding-left: 20px;
+      @apply list-none pl-5;
     }
 
     li {
-      margin: 0;
-      position: relative;
+      @apply m-0 relative;
     }
   }
 
   .diagnosis {
-    cursor: pointer;
-    padding: 2px 5px;
-    border-radius: 3px;
+    @apply cursor-pointer px-1.5 py-0.5 rounded-sm;
 
     &:hover {
-      background-color: #f0f0f0;
+      @apply bg-gray-100;
     }
   }
 
   .selected {
-    background-color: #e6f3ff;
+    @apply bg-blue-50;
   }
 
   #selection {
-    margin: 20px 0 20px 0;
-    padding: 15px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background-color: #def;
+    @apply my-5 p-4 border border-gray-300 rounded bg-blue-100;
   }
 
   .hidden {
-    display: none;
+    @apply hidden;
   }
 
   .match {
-    background-color: #fff3cd;
+    @apply bg-yellow-100;
   }
 }
 
 .quick-select {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 12px;
+  @apply bg-slate-50 border border-slate-200 rounded-lg p-3;
 
   h3 {
-    margin: 0 0 12px 0;
-    color: #475569;
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    @apply mb-3 mt-0 text-slate-600 text-sm uppercase tracking-wide;
   }
 
   &-list {
-    display: grid;
-    gap: 8px;
+    @apply grid gap-2;
   }
 
   &-item {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-size: 14px;
-    color: #1e293b;
-    cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    position: relative;
+    @apply bg-white border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800
+           cursor-pointer transition-all shadow-xs
+           whitespace-nowrap overflow-hidden text-ellipsis relative;
 
     &:hover {
-      background: #f0f4f8;
+      @apply bg-slate-100;
     }
 
     &.quick-select-selected {
-      background-color: #def;
+      @apply bg-blue-100;
     }
   }
 }
