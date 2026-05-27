@@ -11,7 +11,7 @@
     <li><span class="font-bold">Created by:</span> {{ cohort.creator.first_name }} {{ cohort.creator.last_name }} ({{ cohort.creator }})</li>
     <li><span class="font-bold">Created on:</span> {% localtime cohort.created %}</li>
     {% if cohort.collection %}
-      <li><span class="font-bold">Magic Collection:</span> <a href="{% url 'core/collection-detail' cohort.collection.pk %}" class="text-blue-500 hover:underline">{{ cohort.collection.name }}</a></li>
+      <li><span class="font-bold">Magic Collection:</span> <a href="{% url 'core/collection-detail' cohort.collection.pk %}" class="link link-primary">{{ cohort.collection.name }}</a></li>
     {% endif %}
     <li><span class="font-bold">Number of accessions:</span> {{ counts.accession_count|intcomma }}</li>
     <li><span class="font-bold">Number of lesions:</span> {{ counts.lesion_count|intcomma }}</li>
@@ -22,7 +22,7 @@
     <li><span class="font-bold">Rejected:</span> {{ counts.rejected_count|intcomma }}</li>
     <li><span class="font-bold">Ignored (invalid images):</span>
       {% if counts.skipped_count > 0 %}
-        <a href="{% querystring show_skipped='true' %}" class="text-blue-500 hover:underline">{{ counts.skipped_count|intcomma }}</a>
+        <a href="{% querystring show_skipped='true' %}" class="link link-primary">{{ counts.skipped_count|intcomma }}</a>
       {% else %}
         {{ counts.skipped_count|intcomma }}
       {% endif %}
