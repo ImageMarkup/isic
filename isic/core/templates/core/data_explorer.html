@@ -105,7 +105,7 @@
         <div x-show="showingSubset" class="alert alert-warning mb-2 text-sm py-2">
           <span>Results limited to <span x-text="rows.length"></span> rows. Add a LIMIT clause to your query to control the result size.</span>
         </div>
-        <table id="query-results" class="table table-xs table-zebra w-full">
+        <table id="query-results" class="table table-zebra">
           <thead>
             <tr>
               <template x-for="col in columns" :key="col">
