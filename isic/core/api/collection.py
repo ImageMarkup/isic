@@ -215,13 +215,21 @@ class CollectionShareIn(Schema):
     notify: bool = True
 
 
-@router.post("/{id}/share/", response={202: None, 404: dict, 403: dict}, include_in_schema=False)
+@router.post(
+    "/{id}/share/", response={202: None, 400: dict, 403: dict, 404: dict}, include_in_schema=False
+)
 def collection_share_to_users(request, id: int, payload: CollectionShareIn):
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
     collection = get_object_or_404(qs.distinct(), id=id)
 
     if not request.user.is_staff:
         return 403, {"error": "You do not have permission to share this collection."}
+
+    if collection.is_magic:
+        return 400, {"error": "Magic collections cannot be shared."}
+
+    if any(user_id == request.user.id for user_id in payload.user_ids):
+        return 400, {"error": "Cannot share a collection with yourself."}
 
     share_collection_with_users_task.delay_on_commit(
         collection.id, request.user.id, payload.user_ids, notify=payload.notify
