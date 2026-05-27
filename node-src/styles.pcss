@@ -55,18 +55,13 @@ select#additional-collections-selection {
 
   }
 
-  a {
-    @apply text-primary;
-
-    &:hover {
-      @apply text-primary/80;
+  a:not(.btn) {
+    /* That also aren't directly within a button;
+       see https://stackoverflow.com/q/7084112 for why the descendant combinator can't be used
+    */
+    :not(.btn) > & {
+      @apply link link-accent;
     }
-  }
-
-  a.disabled {
-    pointer-events: none;
-    cursor: default;
-    opacity: 0.5;
   }
 
   .heading-1 {
