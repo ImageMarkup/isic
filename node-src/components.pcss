@@ -1,182 +1,214 @@
-select#user-selection,
-select#additional-collections-selection {
-  @apply w-full h-16;
-}
-
-#doi-detail {
-  h1 {
-    @apply text-3xl font-bold;
+@layer components {
+  select#user-selection,
+  select#additional-collections-selection {
+    @apply w-full h-16;
   }
 
-  h2 {
-    @apply text-lg font-bold;
+  /* DOI detail page */
+
+  #doi-detail {
+    h1 {
+      @apply text-3xl font-bold;
+    }
+
+    h2 {
+      @apply text-lg font-bold;
+    }
+
+    .content-box-heading {
+      @apply mb-2;
+    }
   }
 
-  .content-box-heading {
-    @apply mb-2;
+  #dataset-details,
+  #license-details,
+  #citation-details,
+  #dataset-description,
+  #dataset-files {
+    @apply p-4 rounded-lg border border-gray-200 my-4;
   }
-}
 
-#dataset-details,#license-details,#citation-details,#dataset-description,#dataset-files {
-  @apply p-4 rounded-lg border-gray-200 border my-4;
-}
+  .dataset-detail {
+    @apply flex justify-between text-sm;
 
-.dataset-detail {
-  @apply flex justify-between text-sm;
-
-  &-label {
-    @apply font-bold;
+    &-label {
+      @apply font-bold;
+    }
   }
-}
 
-#detail-info {
-  @apply bg-blue-50 my-4 p-2 rounded-xs border-gray-200 border;
+  /* Shared info box (collection detail, cohort detail, study detail) */
 
-  h2 {
-    @apply text-lg font-bold;
+  #detail-info {
+    @apply bg-blue-50 my-4 p-2 rounded-xs border border-gray-200;
+
+    h2 {
+      @apply text-lg font-bold;
+    }
   }
-}
 
-.heading-1 {
-  @apply text-primary text-4xl;
-}
+  /* Headings */
 
-.heading-2 {
-  @apply text-primary text-3xl;
-}
+  .heading-1 {
+    @apply text-primary text-4xl;
+  }
 
-.heading-3 {
-  @apply text-primary text-2xl;
-}
+  .heading-2 {
+    @apply text-primary text-3xl;
+  }
 
-.heading-4 {
-  @apply text-primary text-xl;
-}
+  .heading-3 {
+    @apply text-primary text-2xl;
+  }
 
-/* spinner code, see https://loading.io/css/ */
-.lds-ring {
-  @apply box-border inline-block relative size-3;
+  .heading-4 {
+    @apply text-primary text-xl;
+  }
 
-  div {
-    @apply box-border block absolute size-3 rounded-full;
-    border: 1px solid currentColor;
-    animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-    border-color: currentColor transparent transparent transparent;
+  /* Spinner — see https://loading.io/css/ */
 
-    &:nth-child(1) { animation-delay: -0.45s; }
-    &:nth-child(2) { animation-delay: -0.3s; }
-    &:nth-child(3) { animation-delay: -0.15s; }
+  .lds-ring {
+    @apply box-border inline-block relative size-3;
+
+    div {
+      @apply box-border block absolute size-3 rounded-full;
+      border: 1px solid currentColor;
+      border-color: currentColor transparent transparent transparent;
+      animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+
+      &:nth-child(1) {
+        animation-delay: -0.45s;
+      }
+
+      &:nth-child(2) {
+        animation-delay: -0.3s;
+      }
+
+      &:nth-child(3) {
+        animation-delay: -0.15s;
+      }
+    }
+  }
+
+  /* Markdown-rendered content (collection description, dataset description) */
+
+  #collection-description,
+  #dataset-description {
+    h1 {
+      @apply text-2xl font-bold;
+    }
+
+    h2 {
+      @apply text-xl font-bold;
+    }
+
+    h3 {
+      @apply text-lg font-bold;
+    }
+
+    ul {
+      @apply list-disc list-inside;
+    }
+
+    ol {
+      @apply list-decimal list-inside;
+    }
+
+    ol, ul, p:not(:last-child) {
+      @apply mb-4;
+    }
+  }
+
+  /* Diagnosis picker widget */
+
+  .diagnosis-picker {
+    .search-container {
+      @apply mb-5;
+    }
+
+    #search-input {
+      @apply w-full p-2 text-base border border-gray-300 rounded;
+    }
+
+    .tree-toggle {
+      @apply cursor-pointer w-5 inline-block;
+    }
+
+    .tree {
+      @apply my-5;
+
+      & > ul {
+        padding-left: 0 !important;
+      }
+
+      ul {
+        @apply list-none pl-5;
+      }
+
+      li {
+        @apply m-0 relative;
+      }
+    }
+
+    .diagnosis {
+      @apply cursor-pointer px-1.5 py-0.5 rounded-sm;
+
+      &:hover {
+        @apply bg-gray-100;
+      }
+    }
+
+    .selected {
+      @apply bg-blue-50;
+    }
+
+    #selection {
+      @apply my-5 p-4 border border-gray-300 rounded bg-blue-100;
+    }
+
+    .hidden {
+      @apply hidden;
+    }
+
+    .match {
+      @apply bg-yellow-100;
+    }
+  }
+
+  /* Quick-select widget (inside diagnosis picker) */
+
+  .quick-select {
+    @apply bg-slate-50 border border-slate-200 rounded-lg p-3;
+
+    h3 {
+      @apply mb-3 mt-0 text-slate-600 text-sm uppercase tracking-wide;
+    }
+
+    &-list {
+      @apply grid gap-2;
+    }
+
+    &-item {
+      @apply bg-white border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800
+             cursor-pointer transition-all shadow-xs
+             whitespace-nowrap overflow-hidden text-ellipsis relative;
+
+      &:hover {
+        @apply bg-slate-100;
+      }
+
+      &.quick-select-selected {
+        @apply bg-blue-100;
+      }
+    }
   }
 }
 
 @keyframes lds-ring {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* collection-description (contains markdown converted html) */
-#collection-description, #dataset-description {
-  h1 {
-    @apply text-2xl font-bold;
+  0% {
+    transform: rotate(0deg);
   }
 
-  h2 {
-    @apply text-xl font-bold;
-  }
-
-  h3 {
-    @apply text-lg font-bold;
-  }
-
-  ul {
-    @apply list-disc list-inside;
-  }
-
-  ol {
-    @apply list-decimal list-inside;
-  }
-
-  ol,ul,p:not(:last-child) {
-    @apply mb-4;
-  }
-}
-
-.diagnosis-picker {
-  .search-container {
-    @apply mb-5;
-  }
-
-  #search-input {
-    @apply w-full p-2 text-base border border-gray-300 rounded;
-  }
-
-  .tree-toggle {
-    @apply cursor-pointer w-5 inline-block;
-  }
-
-  .tree {
-    @apply my-5;
-
-    & > ul {
-      padding-left: 0 !important;
-    }
-
-    ul {
-      @apply list-none pl-5;
-    }
-
-    li {
-      @apply m-0 relative;
-    }
-  }
-
-  .diagnosis {
-    @apply cursor-pointer px-1.5 py-0.5 rounded-sm;
-
-    &:hover {
-      @apply bg-gray-100;
-    }
-  }
-
-  .selected {
-    @apply bg-blue-50;
-  }
-
-  #selection {
-    @apply my-5 p-4 border border-gray-300 rounded bg-blue-100;
-  }
-
-  .hidden {
-    @apply hidden;
-  }
-
-  .match {
-    @apply bg-yellow-100;
-  }
-}
-
-.quick-select {
-  @apply bg-slate-50 border border-slate-200 rounded-lg p-3;
-
-  h3 {
-    @apply mb-3 mt-0 text-slate-600 text-sm uppercase tracking-wide;
-  }
-
-  &-list {
-    @apply grid gap-2;
-  }
-
-  &-item {
-    @apply bg-white border border-slate-200 rounded-md px-3 py-2 text-sm text-slate-800
-           cursor-pointer transition-all shadow-xs
-           whitespace-nowrap overflow-hidden text-ellipsis relative;
-
-    &:hover {
-      @apply bg-slate-100;
-    }
-
-    &.quick-select-selected {
-      @apply bg-blue-100;
-    }
+  100% {
+    transform: rotate(360deg);
   }
 }
