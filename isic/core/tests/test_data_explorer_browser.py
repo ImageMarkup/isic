@@ -1,7 +1,6 @@
 from datetime import UTC, datetime
 from pathlib import Path
 import tempfile
-from urllib.parse import quote
 
 from django.core.files.storage import storages
 from django.urls import reverse
@@ -125,7 +124,7 @@ def test_data_explorer_example_query(page, data_explorer_parquet):
 def test_data_explorer_query_sharing_via_link(page, data_explorer_parquet):
     query = "SELECT sex, COUNT(*) AS count FROM metadata GROUP BY sex ORDER BY count DESC"
     page.goto(
-        f"{reverse('core/data-explorer')}?q={quote(query)}",
+        reverse("core/data-explorer", query={"q": query}),
         timeout=30_000,
     )
     _wait_for_ready(page)
