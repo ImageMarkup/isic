@@ -20,7 +20,7 @@ HASH_ID_REGEX = "^[A-HJ-NP-Z2-9]{5}$"
 HASH_ID_ALPHABET = list(set(string.ascii_uppercase + string.digits) - {"I", "1", "O", "0"})
 
 
-def generate_random_hashid() -> str:
+def _generate_random_hashid() -> str:
     while True:
         hash_id = "".join(secrets.choice(HASH_ID_ALPHABET) for _ in range(5))
         if not Profile.objects.filter(hash_id=hash_id).exists():
@@ -33,6 +33,7 @@ class Profile(models.Model):
     hash_id = models.CharField(
         max_length=5,
         unique=True,
+        default=_generate_random_hashid,
         # A-Z0-9 except for O, 0, 1 and I.
         validators=[RegexValidator(HASH_ID_REGEX)],
     )
@@ -50,4 +51,4 @@ def create_or_save_user_profile(
     **kwargs,
 ):
     if created:
-        Profile.objects.create(user=instance, hash_id=generate_random_hashid())
+        Profile.objects.create(user=instance)
