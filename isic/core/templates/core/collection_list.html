@@ -3,19 +3,19 @@
 {% load partials %}
 
 {% partialdef sortable-header %}
-  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap {{ extra_class }}">
+  <th class="{{ extra_class }}">
     {% if current_sort == field %}
       {% if current_order == "asc" %}
-        <a href="{% querystring sort=field order='desc' page=None %}" class="flex items-center gap-1 hover:text-gray-900">
+        <a href="{% querystring sort=field order='desc' page=None %}" class="link link-secondary flex items-center gap-1">
           {{ label }} <i class="ri-arrow-up-s-line"></i>
         </a>
       {% else %}
-        <a href="{% querystring sort=field order='asc' page=None %}" class="flex items-center gap-1 hover:text-gray-900">
+        <a href="{% querystring sort=field order='asc' page=None %}" class="link link-secondary flex items-center gap-1">
           {{ label }} <i class="ri-arrow-down-s-line"></i>
         </a>
       {% endif %}
     {% else %}
-      <a href="{% querystring sort=field order='asc' page=None %}" class="hover:text-gray-900">
+      <a href="{% querystring sort=field order='asc' page=None %}" class="link link-secondary">
         {{ label }}
       </a>
     {% endif %}
@@ -28,7 +28,7 @@
       <div class="heading-1">Collections ({{ page.paginator.count|intcomma }})</div>
     </div>
     {% if request.user.is_authenticated %}
-      <a href="{% url 'core/collection-create' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-xs text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+      <a href="{% url 'core/collection-create' %}" class="btn btn-primary btn-sm">
         Create Collection
       </a>
     {% endif %}
@@ -84,79 +84,77 @@
   </script>
 
   <div class="overflow-x-auto">
-    <div class="shadow-sm overflow-hidden border-b border-gray-200 sm:rounded-lg">
-      <table class="table-fixed divide-y divide-gray-200">
-        <colgroup>
-          <col class="hidden sm:table-column w-28">
-          <col>
-          <col class="hidden sm:table-column w-64">
-          <col class="hidden sm:table-column w-28">
-        </colgroup>
-        <thead class="bg-gray-50">
+    <table class="table table-zebra table-fixed">
+      <colgroup>
+        <col class="hidden sm:table-column w-28">
+        <col>
+        <col class="hidden sm:table-column w-64">
+        <col class="hidden sm:table-column w-28">
+      </colgroup>
+      <thead>
+        <tr>
+          {% with field="created" label="Created" extra_class="hidden sm:table-cell" %}{% partial sortable-header %}{% endwith %}
+          {% with field="name" label="Name" extra_class="" %}{% partial sortable-header %}{% endwith %}
+          {% with field="doi" label="DOI" extra_class="hidden sm:table-cell" %}{% partial sortable-header %}{% endwith %}
+          {% with field="images" label="Images" extra_class="hidden sm:table-cell" %}{% partial sortable-header %}{% endwith %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for collection in page %}
           <tr>
-            {% with field="created" label="Created" extra_class="hidden sm:table-cell" %}{% partial sortable-header %}{% endwith %}
-            {% with field="name" label="Name" extra_class="" %}{% partial sortable-header %}{% endwith %}
-            {% with field="doi" label="DOI" extra_class="hidden sm:table-cell" %}{% partial sortable-header %}{% endwith %}
-            {% with field="images" label="Images" extra_class="hidden sm:table-cell" %}{% partial sortable-header %}{% endwith %}
-          </tr>
-        </thead>
-        <tbody>
-          {% for collection in page %}
-            <tr class="{% cycle 'bg-white' 'bg-gray-50' %}">
-              <td class="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ collection.created|date:"Y-m-d" }}
-              </td>
-              <td class="px-6 py-4 text-sm font-medium text-gray-900 overflow-hidden">
-                <a href="{{ collection.get_absolute_url }}" class="link link-primary flex items-center gap-1 overflow-hidden">
-                  {% if collection.pinned %}<i class="ri-pushpin-2-fill text-gray-400 shrink-0"></i>{% endif %}
-                  <span class="truncate min-w-0">{{ collection.name }}</span>
-                  {% if not collection.public %}<span class="inline-flex shrink-0 items-center px-1.5 py-0.5 rounded-sm text-xs font-medium bg-yellow-100 text-yellow-800">Private</span>{% endif %}
-                </a>
-                {% if collection.description %}
-                  <div class="text-xs text-gray-400 mt-0.5 line-clamp-3 break-words">{{ collection.description }}</div>
+            <td class="hidden sm:table-cell">
+              {{ collection.created|date:"Y-m-d" }}
+            </td>
+            <td>
+              <div class="flex items-center gap-1 overflow-hidden">
+                <a href="{{ collection.get_absolute_url }}" class="link link-hover link-primary truncate min-w-0">{{ collection.name }}</a>
+                {% if collection.pinned %}<span class="badge badge-info badge-sm">Pinned</span>{% endif %}
+                {% if not collection.public %}<span class="badge badge-warning badge-sm">Private</span>{% endif %}
+              </div>
+              {% if collection.description %}
+                <div class="text-xs text-gray-400 mt-0.5 line-clamp-3 break-words">{{ collection.description }}</div>
+              {% endif %}
+              <div class="sm:hidden text-xs text-gray-400 mt-0.5 flex gap-2">
+                <span>{{ collection.created|date:"Y-m-d" }}</span>
+                {% if collection.counts.image_count is not None %}
+                  <span>{{ collection.counts.image_count|intcomma }} images</span>
                 {% endif %}
-                <div class="sm:hidden text-xs text-gray-400 mt-0.5 flex gap-2">
-                  <span>{{ collection.created|date:"Y-m-d" }}</span>
-                  {% if collection.counts.image_count is not None %}
-                    <span>{{ collection.counts.image_count|intcomma }} images</span>
+              </div>
+            </td>
+            <td class="hidden sm:table-cell">
+              {% if collection.doi %}
+                <a href="{{ collection.doi.external_url }}" target="_blank" rel="noopener noreferrer" class="link link-hover link-primary">{{ collection.doi.id }}</a>
+                {% with supplemental_count=collection.doi.supplemental_files.all|length %}
+                  {% if supplemental_count %}
+                    <div class="text-xs text-gray-400 mt-0.5">{{ supplemental_count }} supplemental file{{ supplemental_count|pluralize }}</div>
                   {% endif %}
-                </div>
-              </td>
-              <td class="hidden sm:table-cell px-6 py-4 text-sm text-gray-500">
-                {% if collection.doi %}
-                  <a href="{{ collection.doi.external_url }}" target="_blank" rel="noopener noreferrer" class="link link-primary">{{ collection.doi.id }}</a>
-                  {% with supplemental_count=collection.doi.supplemental_files.all|length %}
-                    {% if supplemental_count %}
-                      <div class="text-xs text-gray-400 mt-0.5">{{ supplemental_count }} supplemental file{{ supplemental_count|pluralize }}</div>
+                {% endwith %}
+                {% for ri in collection.doi.related_identifiers.all %}
+                  <div class="mt-0.5">
+                    {% if ri.related_identifier_type == 'DOI' %}
+                      <a href="https://doi.org/{{ ri.related_identifier }}" target="_blank" rel="noopener noreferrer" class="link link-hover link-primary text-xs truncate block">{{ ri.get_relation_type_display }}: {{ ri.related_identifier }}</a>
+                    {% else %}
+                      <a href="{{ ri.related_identifier }}" target="_blank" rel="noopener noreferrer" class="link link-hover link-primary text-xs truncate block">{{ ri.get_relation_type_display }}: {{ ri.related_identifier }}</a>
                     {% endif %}
-                  {% endwith %}
-                  {% for ri in collection.doi.related_identifiers.all %}
-                    <div class="mt-0.5">
-                      {% if ri.related_identifier_type == 'DOI' %}
-                        <a href="https://doi.org/{{ ri.related_identifier }}" target="_blank" rel="noopener noreferrer" class="link link-primary text-xs truncate block max-w-xs">{{ ri.get_relation_type_display }}: {{ ri.related_identifier }}</a>
-                      {% else %}
-                        <a href="{{ ri.related_identifier }}" target="_blank" rel="noopener noreferrer" class="link link-primary text-xs truncate block max-w-xs">{{ ri.get_relation_type_display }}: {{ ri.related_identifier }}</a>
-                      {% endif %}
-                    </div>
-                  {% endfor %}
-                {% else %}
-                  -
-                {% endif %}
-              </td>
-              <td class="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {% if collection.counts.image_count is not None %}{{ collection.counts.image_count|intcomma }}{% else %}-{% endif %}
-              </td>
-            </tr>
-          {% empty %}
-            <tr>
-              <td colspan="4" class="px-6 py-4 text-sm text-gray-500 text-center">
-                No collections found.
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+                  </div>
+                {% endfor %}
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td class="hidden sm:table-cell">
+              {% if collection.counts.image_count is not None %}{{ collection.counts.image_count|intcomma }}{% else %}-{% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="4" class="text-center">
+              No collections found.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 
   {% include 'studies/partials/pagination.html' with page_obj=page %}

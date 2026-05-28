@@ -10,21 +10,19 @@
     </div>
 
     {% if existing_annotators %}
-      <div>
-        <h2 class="text-lg font-medium text-gray-900 mb-4">Current Annotators</h2>
-        <div class="shadow-sm overflow-hidden border-b border-gray-200 sm:rounded-lg max-w-lg">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+      <div class="max-w-lg">
+        <div class="heading-3">Current Annotators</div>
+        <div class="overflow-x-auto border border-base-300">
+          <table class="table table-zebra">
+            <thead>
               <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Annotator
-                </th>
+                <th>Annotator</th>
               </tr>
             </thead>
             <tbody>
               {% for annotator in existing_annotators %}
-                <tr class="{% cycle 'bg-white' 'bg-gray-50' %}">
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <tr>
+                  <td>
                     {% with user_slug=annotator.profile.hash_id %}
                       {% if show_real_names %}
                         {{ annotator|user_nicename }} (User {{ user_slug }})
@@ -49,9 +47,7 @@
       {{ form.non_field_errors }}
 
       <div class="max-w-lg">
-        <label for="{{ form.annotators.html_name }}" class="block text-sm font-medium text-gray-700">
-          Add New Annotators
-        </label>
+        <div class="heading-3">Add New Annotators</div>
         <div class="mt-1">
           <textarea id="{{ form.annotators.html_name }}" name="{{ form.annotators.html_name }}" rows="5" class="border outline-hidden shadow-xs p-4 block w-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md" placeholder="user@example.com&#10;ABC12&#10;another@example.com"></textarea>
           <p class="mt-2 text-sm text-gray-500">{{ form.annotators.help_text }}</p>

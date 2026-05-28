@@ -120,7 +120,7 @@
                   <td class="text-xs sm:text-sm font-mono">
                     <template x-if="col === 'isic_id' && row[col]">
                       <span class="inline-flex items-center gap-1.5">
-                        <a :href="'/images/' + row[col] + '/'" class="link link-primary" target="_blank" rel="noopener" x-text="row[col]"></a>
+                        <a :href="'/images/' + row[col] + '/'" class="link link-hover link-primary" target="_blank" rel="noopener" x-text="row[col]"></a>
                         <span
                           class="inline-block"
                           @mouseenter="showThumbnail($event, row[col])"

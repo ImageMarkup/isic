@@ -1,47 +1,35 @@
 {% load display %}
 {% load humanize %}
 
-<div class="flex flex-col">
-  <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-    <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-      <div class="shadow-sm overflow-hidden border-b border-gray-200 sm:rounded-lg">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Annotator
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Progress
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for annotator, counts in annotators %}
-              <tr class="{% cycle 'bg-white' 'bg-gray-50' %}">
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {% with user_slug=annotator.profile.hash_id %}
-                    {% if show_real_names %}
-                      {{ annotator|user_nicename }} (User {{ user_slug }})
-                    {% else %}
-                      User {{ user_slug }}
-                    {% endif %}
+<div class="overflow-x-auto">
+  <table class="table table-zebra">
+    <thead>
+      <tr>
+        <th>Annotator</th>
+        <th>Progress</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for annotator, counts in annotators %}
+        <tr>
+          <td>
+            {% with user_slug=annotator.profile.hash_id %}
+              {% if show_real_names %}
+                {{ annotator|user_nicename }} (User {{ user_slug }})
+              {% else %}
+                User {{ user_slug }}
+              {% endif %}
 
-                    {% if request.user == annotator %}
-                      <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-green-100 text-green-800">
-                        Me
-                      </span>
-                    {% endif %}
-                  {% endwith %}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {{ counts.completed|intcomma }} / {{ counts.total|intcomma }}
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
+              {% if request.user == annotator %}
+                <span class="badge badge-info badge-sm">Me</span>
+              {% endif %}
+            {% endwith %}
+          </td>
+          <td>
+            {{ counts.completed|intcomma }} / {{ counts.total|intcomma }}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
