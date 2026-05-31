@@ -1,115 +1,99 @@
-{% load partials %}
+<button class="btn" popovertarget="collection-detail-actions">
+  Actions
+  <i class="ri-arrow-down-s-line"></i>
+</button>
+<ul class="dropdown dropdown-end menu w-52 overflow-visible rounded-box bg-base-100 shadow-sm"
+    popover id="collection-detail-actions">
+  {% if request.user.is_staff %}
+    {% if collection.is_magic %}
+      <li class="menu-disabled pointer-events-auto *:pointer-events-none" title="Cannot share a magic collection">
+        <span>Share</span>
+      </li>
+    {% elif collection.public %}
+      <li class="menu-disabled pointer-events-auto *:pointer-events-none" title="Cannot share a public collection">
+        <span>Share</span>
+      </li>
+    {% else %}
+      <li>
+        <button @click="$refs.collectionShareModal.showModal()">Share</button>
+      </li>
+    {% endif %}
+    <hr class="my-1 border-base-content/10">
+  {% endif %}
 
-{% partialdef disabled-menu-item %}
-    <span class="text-gray-400 block px-4 py-2 text-sm cursor-not-allowed" role="menuitem"
-          tabindex="-1" title="{{ title }}">{{ label }}</span>
-{% endpartialdef %}
+  {% if request.user.is_staff or request.user == collection.creator %}
+    <li>
+      <a href="{% url 'core/collection-edit' collection.pk %}">Edit Collection</a>
+    </li>
+    {% if not image_removal_mode %}
+      {% if collection.locked %}
+        <li class="menu-disabled pointer-events-auto *:pointer-events-none" title="Cannot remove images from a locked collection">
+          <span>Remove Images</span>
+        </li>
+      {% else %}
+        <li>
+          <a href="{% querystring image_removal_mode='1' %}">Remove Images</a>
+        </li>
+      {% endif %}
+    {% endif %}
+    {% if collection.studies.exists %}
+      <li class="menu-disabled pointer-events-auto *:pointer-events-none" title="Cannot delete a collection with associated studies">
+        <span>Delete Collection</span>
+      </li>
+    {% elif collection.doi %}
+      <li class="menu-disabled pointer-events-auto *:pointer-events-none" title="Cannot delete a collection with a DOI">
+        <span>Delete Collection</span>
+      </li>
+    {% elif collection.draftdoi %}
+      <li class="menu-disabled pointer-events-auto *:pointer-events-none" title="Cannot delete a collection with a draft DOI">
+        <span>Delete Collection</span>
+      </li>
+    {% elif collection.locked %}
+      <li class="menu-disabled pointer-events-auto *:pointer-events-none" title="Cannot delete a locked collection">
+        <span>Delete Collection</span>
+      </li>
+    {% else %}
+      <li>
+        <button @click="deleteCollection()" class="text-error">Delete Collection</button>
+      </li>
+    {% endif %}
+    <hr class="my-1 border-base-content/10">
+  {% endif %}
 
-<div class="relative inline-block text-left" x-data="{open: false}">
-    <div>
-        <button @click.away="open = false" @click="open = !open" type="button"
-                class="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-xs px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-indigo-500"
-                id="menu-button" aria-expanded="true" aria-haspopup="true">
-            Actions
-            <i class="ri-arrow-down-s-line -mr-1 ml-2 text-sm inline-block align-middle" aria-hidden="true"></i>
-        </button>
-    </div>
-    <div x-show="open"
-         class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black/5 divide-y divide-gray-100 focus:outline-hidden"
-         role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
+  {% if request.user.is_staff %}
+    {% if not collection.public %}
+      <li class="menu-disabled pointer-events-auto *:pointer-events-none" title="Collection must be public to be pinned">
+        <span>Pin Collection</span>
+      </li>
+    {% elif collection.pinned %}
+      <li>
+        <button @click="setPinned(false)">Unpin Collection</button>
+      </li>
+    {% else %}
+      <li>
+        <button @click="setPinned(true)">Pin Collection</button>
+      </li>
+    {% endif %}
+    <hr class="my-1 border-base-content/10">
+  {% endif %}
 
-        {% if request.user.is_staff %}
-            <div class="py-1" role="none">
-                <a href="#" @click="$refs.collectionShareModal.showModal()"
-                   class="{% if collection.is_magic or collection.public %}disabled{% endif %} hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem"
-                   tabindex="-1" id="menu-item-0">Share</a>
-            </div>
-        {% endif %}
+  {% if request.user.is_staff %}
+    {% if collection.draftdoi %}
+      <li>
+        <a href="{% url 'core/draft-doi-edit' collection.draftdoi.slug %}">Edit Draft DOI</a>
+      </li>
+    {% elif not collection.doi %}
+      <li>
+        <a href="{% url 'core/collection-create-doi' collection.pk %}">Create Draft DOI</a>
+      </li>
+    {% endif %}
+    <hr class="my-1 border-base-content/10">
+  {% endif %}
 
-        {% if request.user.is_staff or request.user == collection.creator %}
-            <div class="py-1" role="none">
-                <a href="{% url 'core/collection-edit' collection.pk %}"
-                   class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem"
-                   tabindex="-1" id="menu-item-0">Edit Collection</a>
-                {% if not image_removal_mode %}
-                    {% if collection.locked %}
-                        {% with label="Remove Images" title="Cannot remove images from a locked collection" %}
-                            {% partial disabled-menu-item %}
-                        {% endwith %}
-                    {% else %}
-                        <a href="{% querystring image_removal_mode="1" %}"
-                           class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem"
-                           tabindex="-1" id="menu-item-0">Remove Images</a>
-                    {% endif %}
-                {% endif %}
-
-                {% if collection.studies.exists %}
-                    {% with label="Delete Collection" title="Cannot delete a collection with associated studies" %}
-                        {% partial disabled-menu-item %}
-                    {% endwith %}
-                {% elif collection.doi %}
-                    {% with label="Delete Collection" title="Cannot delete a collection with a DOI" %}
-                        {% partial disabled-menu-item %}
-                    {% endwith %}
-                {% elif collection.draftdoi %}
-                    {% with label="Delete Collection" title="Cannot delete a collection with a draft DOI" %}
-                        {% partial disabled-menu-item %}
-                    {% endwith %}
-                {% elif collection.locked %}
-                    {% with label="Delete Collection" title="Cannot delete a locked collection" %}
-                        {% partial disabled-menu-item %}
-                    {% endwith %}
-                {% else %}
-                    <a href="#" @click.prevent="deleteCollection()"
-                       class="text-red-600 hover:bg-gray-100 hover:text-red-700 block px-4 py-2 text-sm" role="menuitem"
-                       tabindex="-1">Delete Collection</a>
-                {% endif %}
-            </div>
-        {% endif %}
-        {% if request.user.is_staff %}
-            <div class="py-1" role="none">
-                {% if not collection.public %}
-                    {% with label="Pin Collection" title="Collection must be public to be pinned" %}
-                        {% partial disabled-menu-item %}
-                    {% endwith %}
-                {% elif collection.pinned %}
-                    <a href="#" @click.prevent="setPinned(false)"
-                       class="text-yellow-600 hover:bg-gray-100 hover:text-yellow-700 block px-4 py-2 text-sm"
-                       role="menuitem" tabindex="-1">Unpin Collection</a>
-                {% else %}
-                    <a href="#" @click.prevent="setPinned(true)"
-                       class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm"
-                       role="menuitem" tabindex="-1">Pin Collection</a>
-                {% endif %}
-            </div>
-        {% endif %}
-        {% if request.user.is_staff %}
-            <div class="py-1" role="none">
-                {% if collection.draftdoi %}
-                    <a href="{% url 'core/draft-doi-edit' collection.draftdoi.slug %}"
-                       class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm"
-                       role="menuitem"
-                       tabindex="-1"
-                       id="menu-item-0"
-                    >Edit Draft DOI</a>
-                {% elif not collection.doi %}
-                    <a href="{% url 'core/collection-create-doi' collection.pk %}"
-                       class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm"
-                       role="menuitem"
-                       tabindex="-1"
-                       id="menu-item-0"
-                    >Create Draft DOI</a>
-                {% endif %}
-            </div>
-        {% endif %}
-        <div class="py-1" role="none">
-            <a @click="downloadAsZip({collections: '{{ collection.id }}'})"
-               class="cursor-pointer hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem"
-               tabindex="-1" id="menu-item-0">Download Collection
-            </a>
-            <a href="{% url 'core/collection-download-metadata' collection.id %}" class="hover:bg-gray-100 hover:text-gray-900 text-gray-700 block px-4 py-2 text-sm" role="menuitem" tabindex="-1" id="menu-item-0">
-                Download Metadata
-            </a>
-        </div>
-    </div>
-</div>
+  <li>
+    <button @click="downloadAsZip({collections: '{{ collection.id }}'})">Download Collection</button>
+  </li>
+  <li>
+    <a href="{% url 'core/collection-download-metadata' collection.id %}">Download Metadata</a>
+  </li>
+</ul>

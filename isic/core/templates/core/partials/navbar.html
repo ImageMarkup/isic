@@ -1,13 +1,12 @@
 <div class="navbar bg-base-100">
   <div class="navbar-start">
-    <div class="dropdown">
-      <label tabindex="0" class="btn btn-ghost lg:hidden">
-        <i class="ri-menu-line text-xl"></i>
-      </label>
-      <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 p-2 shadow-sm bg-base-100 rounded-box w-52">
-        {% include 'core/partials/nav_elements.html' %}
-      </ul>
-    </div>
+    <button class="btn btn-ghost lg:hidden" popovertarget="navbar-mobile-menu">
+      <i class="ri-menu-line text-xl"></i>
+    </button>
+    <ul class="dropdown menu menu-sm w-52 rounded-box bg-base-100 shadow-sm"
+        popover id="navbar-mobile-menu">
+      {% include 'core/partials/nav_elements.html' %}
+    </ul>
     <a class="btn btn-ghost normal-case text-xl" href="{% url 'index' %}">ISIC Archive</a>
   </div>
   <div class="navbar-center hidden lg:flex">
