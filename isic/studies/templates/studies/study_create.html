@@ -102,7 +102,6 @@
       const manager = new FormSetManager('official')
       return {
         search: '',
-        officialQuestionModal: false,
         existingQuestions: JSON.parse(document.getElementById('existing-questions').textContent),
         questions: [],
         get filteredQuestions(){
@@ -267,9 +266,9 @@
               Searchable responses can be compared to other studies and used for meta analyses.
             </p>
 
-            <div class="btn btn-secondary" @click="officialQuestionModal = true" >
+            <button type="button" class="btn btn-secondary" @click="$refs.questionPickerModal.showModal()">
               Add Official Question
-            </div>
+            </button>
           </div>
 
           <div class="mt-6 mt-5 space-y-6 space-y-5">
@@ -288,11 +287,7 @@
             </div>
           </div>
 
-          <template x-if="true">
-            <div x-show="officialQuestionModal">
-              {% include 'studies/partials/question_picker_modal.html' %}
-            </div>
-          </template>
+          {% include 'studies/partials/question_picker_modal.html' %}
         </div>
       </div>
 

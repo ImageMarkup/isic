@@ -1,20 +1,18 @@
 {% load accession %}
 
 <div class="col accession-col" {% if review_mode %}x-data="accession({{ accession.id }});"{% endif %}>
-  <div x-data="{ open: false, hovered: false }" class="pb-4">
+  <div x-data="{ hovered: false }" class="pb-4">
     <a class="cursor-pointer">
       {% if accession.is_cog %}
         <a href="{% url 'ingest/accession-cog-viewer' accession.id %}">
           <img src="{{ accession.thumbnail_.url }}" />
         </a>
       {% else %}
-        <img @mouseenter="hovered = true" @click="open = true" src="{{ accession.thumbnail_.url }}" />
+        <img @mouseenter="hovered = true" @click="$refs.accessionModal.showModal()" src="{{ accession.thumbnail_.url }}" />
       {% endif %}
     </a>
 
-    <div x-cloak x-show="open">
-      {% include 'ingest/partials/accession_modal.html' %}
-    </div>
+    {% include 'ingest/partials/accession_modal.html' %}
   </div>
   <div class="flex justify-around">
     <span>{{ accession.get_diagnosis_display }}</span>

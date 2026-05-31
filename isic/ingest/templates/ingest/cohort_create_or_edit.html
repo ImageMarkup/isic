@@ -57,11 +57,9 @@
                 <option value="CC-BY" {% if form.default_copyright_license.value == "CC-BY" %}selected="selected"{% endif %}>CC-BY</option>
                 <option value="CC-BY-NC" {% if form.default_copyright_license.value == "CC-BY-NC" %}selected="selected"{% endif %}>CC-BY-NC (Not recommended)</option>
               </select>
-              <div x-data="{ open: false }" class="pb-4">
-                <span @click="open = true" class="cursor-pointer my-3 text-xs text-primary-500">help me choose</span>
-                <div x-cloak x-show="open">
-                  {% include 'ingest/partials/help_me_choose_modal.html' %}
-                </div>
+              <div x-data>
+                <button type="button" @click="$refs.licenseHelpModal.showModal()" class="link link-primary text-xs mt-1">help me choose</button>
+                {% include 'ingest/partials/help_me_choose_modal.html' %}
               </div>
               {{ form.default_copyright_license.errors }}
             </div>

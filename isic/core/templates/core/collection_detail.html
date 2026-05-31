@@ -27,11 +27,7 @@
       {% include 'core/partials/collection_detail_actions.html' %}
     </div>
 
-    <template x-if="true">
-      <div x-show="modalOpen">
-        {% include 'core/partials/collection_share_modal.html' %}
-      </div>
-    </template>
+    {% include 'core/partials/collection_share_modal.html' %}
 
     {% partialdef detail-item %}
       <li>
@@ -199,7 +195,6 @@
   <script type="text/javascript">
     function collectionDetail() {
       return {
-        modalOpen: false,
         errorMessage: '',
         shareCollectionWithUsers() {
           let _this = this; // eek

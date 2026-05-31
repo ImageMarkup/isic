@@ -1,10 +1,5 @@
-{% comment %}
-  Always use x-show even though :class should be enough, otherwise the click.outside
-  directive on the inner element won't work because it can't effectively
-  tell if it's visible. This is similar-ish to https://github.com/alpinejs/alpine/discussions/2264
-{% endcomment %}
-<div class="modal" :class="{'modal-open': quickfindOpen}" x-show="quickfindOpen">
-  <div class="absolute top-6 modal-box w-11/12 max-w-5xl" @click.outside="closeQuickfindModal()">
+<dialog x-ref="quickfindModal" class="modal items-start pt-6" @close="findText = ''; results = {}">
+  <div class="modal-box w-11/12 max-w-5xl">
     <fieldset class="fieldset">
       <input type="search"
              id="quickfind-input"
@@ -37,4 +32,5 @@
       </template>
     </ul>
   </div>
-</div>
+  <div class="modal-backdrop" @click="$refs.quickfindModal.close()"></div>
+</dialog>

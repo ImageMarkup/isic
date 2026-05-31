@@ -1,68 +1,60 @@
 {% load accession %}
 
-<div class="fixed z-10 inset-0 overflow-y-auto">
-  <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-    <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
-  </div>
-
-  {% comment %}TODO: escape key should exist{% endcomment %}
-
-  <div class="flex items-center justify-center min-h-screen p-4 sm:p-8">
-    <div @click.away="open = false" class="bg-white relative p-4 sm:p-8 rounded-lg text-left shadow-xl max-w-5xl w-full max-h-[calc(100vh-2rem)] overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="modal-headline">
-      <template x-if="hovered">
-        {% if image.accession.is_cog %}
+<dialog x-ref="imageModal" class="modal">
+  <div class="modal-box max-w-5xl max-h-[calc(100vh-2rem)]">
+    <template x-if="hovered">
+      {% if image.accession.is_cog %}
+        <div>
+          <div id="image-{{ image.id }}" class="w-full max-w-[512px] aspect-square border border-gray-300 mx-auto"></div>
+          <script type="text/javascript">
+            initializeCogViewer(document.getElementById('image-{{ image.id }}'), '{{ image.blob.url|safe }}');
+          </script>
+        </div>
+      {% else %}
+        {% if zoomable %}
           <div>
             <div id="image-{{ image.id }}" class="w-full max-w-[512px] aspect-square border border-gray-300 mx-auto"></div>
             <script type="text/javascript">
-              initializeCogViewer(document.getElementById('image-{{ image.id }}'), '{{ image.blob.url|safe }}');
+              initializeImageViewer(document.getElementById('image-{{ image.id }}'), '{{ image.blob.url|safe }}');
             </script>
+            <p class="text-center text-sm text-gray-500 mt-2 min-h-[1.25rem]">Scroll to zoom, click and drag to pan</p>
           </div>
         {% else %}
-          {% if zoomable %}
-            <div>
-              <div id="image-{{ image.id }}" class="w-full max-w-[512px] aspect-square border border-gray-300 mx-auto"></div>
-              <script type="text/javascript">
-                initializeImageViewer(document.getElementById('image-{{ image.id }}'), '{{ image.blob.url|safe }}');
-              </script>
-              <p class="text-center text-sm text-gray-500 mt-2 min-h-[1.25rem]">Scroll to zoom, click and drag to pan</p>
-            </div>
-          {% else %}
-            {% comment %}Note the single quotes: https://github.com/alpinejs/alpine/issues/466{% endcomment %}
-            <img :src="'{{ image.blob.url }}'" class="max-w-full max-h-[70vh] object-contain mx-auto" />
-          {% endif %}
+          {% comment %}Note the single quotes: https://github.com/alpinejs/alpine/issues/466{% endcomment %}
+          <img :src="'{{ image.blob.url }}'" class="max-w-full max-h-[70vh] object-contain mx-auto" />
         {% endif %}
+      {% endif %}
+    </template>
 
-      </template>
-
-      {% if include_metadata %}
-        <div x-data="{selectedTab: 'Metadata'}">
-          <div class="mt-2">
-            <div class="sm:hidden">
-              <label for="tabs" class="sr-only">Select a tab</label>
-              <select id="tabs" name="tabs" class="block w-full focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md">
-                <option :selected="selectedTab == 'Metadata'">Metadata</option>
-              </select>
-            </div>
-            <div class="hidden sm:block">
-              <nav class="flex space-x-4" aria-label="Tabs">
-                <a href="" @click.prevent="selectedTab = 'Metadata'" class="px-3 py-2 font-medium text-sm rounded-md"
-                   :class="{'bg-indigo-100 text-indigo-700': selectedTab == 'Metadata',
-                           'text-gray-500 hover:text-gray-700': selectedTab != 'Metadata'}">
-                  Metadata
-                </a>
-              </nav>
-            </div>
+    {% if include_metadata %}
+      <div x-data="{selectedTab: 'Metadata'}">
+        <div class="mt-2">
+          <div class="sm:hidden">
+            <label for="tabs" class="sr-only">Select a tab</label>
+            <select id="tabs" name="tabs" class="block w-full focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md">
+              <option :selected="selectedTab == 'Metadata'">Metadata</option>
+            </select>
           </div>
-
-          <div class="my-2 bg-gray-100 p-4">
-            <pre x-show="selectedTab == 'Metadata'">{{ image.metadata|formatted }}</pre>
+          <div class="hidden sm:block">
+            <nav class="flex space-x-4" aria-label="Tabs">
+              <a href="" @click.prevent="selectedTab = 'Metadata'" class="px-3 py-2 font-medium text-sm rounded-md"
+                 :class="{'bg-indigo-100 text-indigo-700': selectedTab == 'Metadata',
+                         'text-gray-500 hover:text-gray-700': selectedTab != 'Metadata'}">
+                Metadata
+              </a>
+            </nav>
           </div>
         </div>
-      {% endif %}
 
-      <button @click="open = false" type="button" class="absolute top-0 right-0 p-2 hover:bg-transparent hover:opacity-75">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-11.414L9.172 7.757 7.757 9.172 10.586 12l-2.829 2.828 1.415 1.415L12 13.414l2.828 2.829 1.415-1.415L13.414 12l2.829-2.828-1.415-1.415L12 10.586z" fill="rgba(80,70,228,1)"/></svg>
-      </button>
+        <div class="my-2 bg-gray-100 p-4">
+          <pre x-show="selectedTab == 'Metadata'">{{ image.metadata|formatted }}</pre>
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="modal-action">
+      <button type="button" class="btn" @click="$refs.imageModal.close()">Close</button>
     </div>
   </div>
-</div>
+  <div class="modal-backdrop" @click="$refs.imageModal.close()"></div>
+</dialog>

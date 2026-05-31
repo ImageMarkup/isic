@@ -18,11 +18,7 @@
       {% include 'core/partials/image_gallery_actions.html' %}
     </div>
 
-    <template x-if="true">
-      <div x-show="modalOpen">
-        {% include 'core/partials/collection_picker_modal.html' %}
-      </div>
-    </template>
+    {% include 'core/partials/collection_picker_modal.html' %}
 
     <div class="my-4 bg-white border border-gray-200 rounded-lg p-4">
       <form method="GET" id="" action="">
@@ -33,7 +29,7 @@
             <label class="block text-xs font-medium text-gray-600 mb-1">Query</label>
             <div class="flex justify-between items-center gap-2">
               {% render_field form.query class+="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-sm focus:outline-hidden focus:ring-1 focus:ring-blue-500 font-mono" placeholder="age_approx:[20 TO 40] AND sex:male" %}
-              <label for="my-modal-4" class="modal-button cursor-pointer text-xs text-blue-600 hover:text-blue-800 whitespace-nowrap">syntax help</label>
+              <a href="#" @click.prevent="$refs.syntaxHelpModal.showModal()" class="link link-primary text-xs whitespace-nowrap">syntax help</a>
             </div>
             {{ form.query.errors }}
           </div>
@@ -153,9 +149,8 @@
     </div>
   {% endpartialdef %}
 
-  <input type="checkbox" id="my-modal-4" class="modal-toggle">
-  <label for="my-modal-4" class="modal cursor-pointer">
-    <label class="modal-box max-w-5xl">
+  <dialog x-ref="syntaxHelpModal" class="modal">
+    <div class="modal-box max-w-5xl">
       <div class="heading-3 mb-2">Example Search Queries</div>
       <div>
         {% with description="Display images diagnosed as melanoma from patients that are approximately 50 years old." query='age_approx:50 AND diagnosis_3:"Melanoma Invasive"' %}
@@ -168,8 +163,12 @@
           {% partial example-query %}
         {% endwith %}
       </div>
-    </label>
-  </label>
+      <div class="modal-action">
+        <button type="button" class="btn" @click="$refs.syntaxHelpModal.close()">Close</button>
+      </div>
+    </div>
+    <div class="modal-backdrop" @click="$refs.syntaxHelpModal.close()"></div>
+  </dialog>
 
   </div>
 {% endblock %}

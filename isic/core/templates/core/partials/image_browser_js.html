@@ -88,7 +88,6 @@
 
   function imageBrowser() {
     return {
-      modalOpen: false,
       open: false,
       selectedCollection:'',
       errorMessage: '',
@@ -96,12 +95,6 @@
         window.addEventListener('collection-selected', (e) => {
           this.selectedCollection = e.detail.id;
           this.addSearchResultsToCollection();
-        });
-        this.$watch('modalOpen', (value) => {
-          if (!value) {
-            this.selectedCollection = '';
-            this.errorMessage = '';
-          }
         });
       },
       addSearchResultsToCollection() {

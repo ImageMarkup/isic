@@ -143,8 +143,7 @@
 
     </div>
 
-    <input type="checkbox" id="create-collection-modal" class="modal-toggle" x-ref="createCollectionToggle">
-    <label for="create-collection-modal" class="modal cursor-pointer">
+    <dialog x-ref="createCollectionModal" class="modal">
       <form class="modal-box" @submit.prevent="createCollection()">
         <h3 class="font-bold text-lg mb-4">Create Collection</h3>
         <p class="mb-4 text-sm text-gray-600" x-text="'This will create a collection with ' + collectionImageCount.toLocaleString() + ' images from your query results.'"></p>
@@ -163,7 +162,7 @@
             <pre class="whitespace-pre-wrap" x-text="createCollectionError"></pre>
         </div>
         <div class="modal-action">
-          <label for="create-collection-modal" class="btn btn-ghost">Cancel</label>
+          <button type="button" class="btn btn-ghost" @click="$refs.createCollectionModal.close()">Cancel</button>
           <button
             type="submit"
             class="btn btn-primary"
@@ -174,7 +173,8 @@
           </button>
         </div>
       </form>
-    </label>
+      <div class="modal-backdrop" @click="$refs.createCollectionModal.close()"></div>
+    </dialog>
   </div>
 
   <script>
@@ -535,7 +535,7 @@ ORDER BY st.total DESC, sd.rank`
           this.createCollectionError = '';
           this.collectionName = '';
           this.collectionImageCount = 0;
-          this.$refs.createCollectionToggle.checked = true;
+          this.$refs.createCollectionModal.showModal();
           this.$nextTick(() => this.$refs.collectionNameInput.focus());
 
           try {
@@ -603,7 +603,7 @@ ORDER BY st.total DESC, sd.rank`
               isic_ids: isicIds,
             });
 
-            this.$refs.createCollectionToggle.checked = false;
+            this.$refs.createCollectionModal.close();
             window.location.href = '/collections/' + data.collection_id + '/';
           } catch (e) {
             if (e.response && e.response.data) {
