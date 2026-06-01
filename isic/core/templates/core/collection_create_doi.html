@@ -6,17 +6,9 @@
     href="{% url 'core/collection-detail' collection.pk %}">back to collection</a></span></div>
 
   {% if error %}
-    <div class="rounded-md bg-red-50 p-4 mb-4">
-      <div class="flex items-center">
-        <div class="shrink-0">
-          <i class="ri-information-line text-lg text-red-400" aria-hidden="true"></i>
-        </div>
-        <div class="ml-3">
-          <div class="mt-2 text-sm text-red-700">
-            <p>{{ error }}</p>
-          </div>
-        </div>
-      </div>
+    <div class="alert alert-error">
+      <i class="ri-error-warning-line text-lg"></i>
+      <span>{{ error }}</span>
     </div>
   {% else %}
     <div class="flex justify-between">

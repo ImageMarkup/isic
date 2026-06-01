@@ -2,17 +2,9 @@
 
 {% block content %}
   {% if collection and collection.locked %}
-    <div class="rounded-md bg-red-50 p-4 mb-4">
-      <div class="flex items-center">
-        <div class="shrink-0">
-          <i class="ri-information-line text-lg text-red-400" aria-hidden="true"></i>
-        </div>
-        <div class="ml-3">
-          <div class="mt-2 text-sm text-red-700">
-            <p>This collection is locked for editing.</p>
-          </div>
-        </div>
-      </div>
+    <div class="alert alert-error">
+      <i class="ri-error-warning-line text-lg"></i>
+      <span>This collection is locked for editing.</span>
     </div>
   {% else %}
     <form class="space-y-8" method="post">

@@ -1,23 +1,15 @@
 {% if unstructured_columns %}
-  <div class="rounded-md bg-yellow-50 p-4 my-4">
-    <div class="flex">
-      <div class="shrink-0">
-        <i class="ri-close-circle-line text-lg text-yellow-400" aria-hidden="true"></i>
+  <div class="alert alert-warning my-4">
+    <i class="ri-information-line text-lg"></i>
+    <div>
+      <div>
+        There are some columns we didn't recognize. This is okay, they'll be added to your images as unstructured data.
       </div>
-      <div class="ml-3">
-        <div class="heading-3" class="text-sm font-medium text-yellow-800">
-          There are some columns we didn't recognize. This is okay, they'll be added to your images as unstructured data.
-        </div>
-        <div class="mt-2 text-sm text-yellow-700">
-          <ul class="list-disc pl-5 space-y-1">
-            {% for col in unstructured_columns %}
-              <li>
-                {{ col }}
-              </li>
-            {% endfor %}
-          </ul>
-        </div>
-      </div>
+      <ul class="list-disc list-inside mt-2">
+        {% for col in unstructured_columns %}
+          <li><code>{{ col }}</code></li>
+        {% endfor %}
+      </ul>
     </div>
   </div>
 {% endif %}
