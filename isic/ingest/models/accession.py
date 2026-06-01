@@ -10,12 +10,13 @@ from typing import Literal, TypeVar
 from uuid import uuid4
 
 from django.contrib.auth.models import User
+from django.contrib.postgres.constraints import ExclusionConstraint
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.core.files.storage import storages
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models, transaction
-from django.db.models import FileField, FloatField, IntegerField, Transform
+from django.db.models import Deferrable, FileField, FloatField, IntegerField, Transform
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.fields import Field
 from django.db.models.functions import Cast, Round
@@ -357,6 +358,26 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
                     diagnosis_confirm_type="histopathology",
                 )
                 | ~Q(concomitant_biopsy=True),
+            ),
+            # identical lesion_id implies identical patient_id
+            ExclusionConstraint(
+                name="accession_lesion_id_patient_id_exclusion",
+                expressions=[
+                    ("lesion_id", "="),
+                    ("patient_id", "<>"),
+                ],
+                condition=Q(lesion_id__isnull=False) & Q(patient_id__isnull=False),
+                deferrable=Deferrable.IMMEDIATE,
+            ),
+            # identical rcm_case_id implies identical lesion_id
+            ExclusionConstraint(
+                name="accession_rcm_case_id_lesion_id_exclusion",
+                expressions=[
+                    ("rcm_case_id", "="),
+                    ("lesion_id", "<>"),
+                ],
+                condition=Q(rcm_case_id__isnull=False) & Q(lesion_id__isnull=False),
+                deferrable=Deferrable.IMMEDIATE,
             ),
             # each RCM case can only have at most one macroscopic image
             UniqueConstraint(

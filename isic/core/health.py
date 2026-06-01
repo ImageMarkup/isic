@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import logging
 
 from django.contrib.auth.models import User
-from django.db.models import Count, Q
+from django.db.models import Q
 import pyexiv2
 from resonant_utils.files import field_file_to_local_path
 
@@ -10,7 +10,6 @@ from isic.core.models.collection import Collection
 from isic.core.models.image import Image
 from isic.core.models.image_embedding import ImageEmbedding
 from isic.core.models.isic_id import IsicId
-from isic.ingest.models.accession import Accession
 from isic.login.models import Profile
 
 logger = logging.getLogger(__name__)
@@ -217,56 +216,6 @@ def check_published_images_have_attribution() -> HealthCheckResult:
     )
 
 
-def check_lesions_have_single_patient() -> HealthCheckResult:
-    # This invariant was previously enforced with an ExclusionConstraint, but those are
-    # unsupported by greenmask (https://github.com/GreenmaskIO/greenmask/issues/451).
-    lesions_with_multiple_patients = (
-        Accession.objects.filter(lesion_id__isnull=False, patient_id__isnull=False)
-        .values("lesion_id")
-        .annotate(num_patients=Count("patient_id", distinct=True))
-        .filter(num_patients__gt=1)
-        .count()
-    )
-
-    passed = lesions_with_multiple_patients == 0
-    message = (
-        "All lesions belong to a single patient"
-        if passed
-        else f"{lesions_with_multiple_patients} lesions belong to multiple patients"
-    )
-
-    return HealthCheckResult(
-        name="lesions_have_single_patient",
-        passed=passed,
-        message=message,
-    )
-
-
-def check_rcm_cases_have_single_lesion() -> HealthCheckResult:
-    # This invariant was previously enforced with an ExclusionConstraint, but those are
-    # unsupported by greenmask (https://github.com/GreenmaskIO/greenmask/issues/451).
-    rcm_cases_with_multiple_lesions = (
-        Accession.objects.filter(rcm_case_id__isnull=False, lesion_id__isnull=False)
-        .values("rcm_case_id")
-        .annotate(num_lesions=Count("lesion_id", distinct=True))
-        .filter(num_lesions__gt=1)
-        .count()
-    )
-
-    passed = rcm_cases_with_multiple_lesions == 0
-    message = (
-        "All RCM cases belong to a single lesion"
-        if passed
-        else f"{rcm_cases_with_multiple_lesions} RCM cases belong to multiple lesions"
-    )
-
-    return HealthCheckResult(
-        name="rcm_cases_have_single_lesion",
-        passed=passed,
-        message=message,
-    )
-
-
 def check_embeddings_only_for_public_images() -> HealthCheckResult:
     embeddings_for_private_images = ImageEmbedding.objects.filter(image__public=False).count()
 
@@ -297,8 +246,6 @@ HEALTH_CHECKS = [
     ("iptc_metadata_consistency", check_iptc_metadata_consistency),
     ("published_images_have_attribution", check_published_images_have_attribution),
     ("embeddings_only_for_public_images", check_embeddings_only_for_public_images),
-    ("lesions_have_single_patient", check_lesions_have_single_patient),
-    ("rcm_cases_have_single_lesion", check_rcm_cases_have_single_lesion),
 ]
 
 
