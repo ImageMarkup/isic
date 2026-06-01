@@ -65,10 +65,10 @@
         {% endwith %}
         <li>
           <span class="font-bold">Attribution:</span>
-          <a x-show="!fetched" href="#" @click.prevent="fetchMetaInformation()">
+          <button x-show="!fetched" class="link link-primary" @click="fetchMetaInformation()">
             View
-            <div x-show="loading" class="lds-ring"><div></div><div></div><div></div><div></div></div>
-          </a>
+            <span x-show="loading" class="loading loading-spinner loading-xs"></span>
+          </button>
           <ul class="list-disc">
             <template x-for="attribution in attributions">
               <li x-show="fetched" class="ml-6">

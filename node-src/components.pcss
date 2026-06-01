@@ -64,30 +64,6 @@
     @apply text-primary text-xl;
   }
 
-  /* Spinner — see https://loading.io/css/ */
-
-  .lds-ring {
-    @apply box-border inline-block relative size-3;
-
-    div {
-      @apply box-border block absolute size-3 rounded-full;
-      border: 1px solid currentColor;
-      border-color: currentColor transparent transparent transparent;
-      animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-
-      &:nth-child(1) {
-        animation-delay: -0.45s;
-      }
-
-      &:nth-child(2) {
-        animation-delay: -0.3s;
-      }
-
-      &:nth-child(3) {
-        animation-delay: -0.15s;
-      }
-    }
-  }
 
   /* Markdown-rendered content (collection description, dataset description) */
 
@@ -203,12 +179,3 @@
   }
 }
 
-@keyframes lds-ring {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
-  }
-}
