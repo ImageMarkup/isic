@@ -108,8 +108,17 @@
             <td>
               <div class="flex items-center gap-1 overflow-hidden">
                 <a href="{{ collection.get_absolute_url }}" class="link link-hover link-primary truncate min-w-0">{{ collection.name }}</a>
-                {% if collection.pinned %}<span class="badge badge-info badge-sm">Pinned</span>{% endif %}
-                {% if not collection.public %}<span class="badge badge-warning badge-sm">Private</span>{% endif %}
+                {% if collection.pinned %}
+                  <span class="badge badge-info badge-sm gap-1">
+                    <i class="ri-pushpin-2-line"></i>
+                    Pinned
+                  </span>
+                {% endif %}
+                {% if not collection.public %}
+                  <span class="badge badge-warning badge-sm">
+                    Private
+                  </span>
+                {% endif %}
               </div>
               {% if collection.description %}
                 <div class="text-xs text-gray-400 mt-0.5 line-clamp-3 break-words">{{ collection.description }}</div>

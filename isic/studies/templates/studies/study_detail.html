@@ -24,12 +24,10 @@
   {% endif %}
 
   <div class="flex justify-between">
-    <div class="flex flex-row">
+    <div class="flex flex-row items-center gap-3">
       <div class="heading-2">{{ study.name }}</div>
       {% if not study.public %}
-        <p class="px-3 py-2 ml-2 text-md leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-          Private
-        </p>
+        <span class="badge badge-warning">Private</span>
       {% endif %}
     </div>
 
