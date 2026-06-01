@@ -1,17 +1,18 @@
 {% load humanize %}
 
-<div class="pagination flex justify-end">
-  <span class="step-links">
+<div class="flex justify-center mt-4">
+  <div class="join">
     {% if page.previous %}
-      <a href="{{ page.previous }}">previous</a>
+      <a href="{{ page.previous }}" class="join-item btn btn-sm">
+        <i class="ri-arrow-left-s-line"></i>
+        <span>Previous</span>
+      </a>
     {% endif %}
-
-    {% if page.previous and page.next %}
-      |
-    {% endif %}
-
     {% if page.next %}
-      <a href="{{ page.next }}">next</a>
+      <a href="{{ page.next }}" class="join-item btn btn-sm">
+        <span>Next</span>
+        <i class="ri-arrow-right-s-line"></i>
+      </a>
     {% endif %}
-  </span>
+  </div>
 </div>
