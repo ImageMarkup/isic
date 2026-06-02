@@ -1,48 +1,46 @@
 {% load localtime %}
 
-<div x-show="selectedTab == 'studies'">
-  <div class="bg-white shadow-sm overflow-hidden sm:rounded-md">
-    <ul class="divide-y divide-gray-200">
-      {% for study in studies %}
-        <li>
-          <a href="{% url 'studies/study-detail' study.id %}" class="block hover:bg-gray-50">
-            <div class="px-4 py-4 sm:px-6 flex justify-between">
-              <div class="flex flex-col">
-                <div class="flex">
-                  <p class="text-sm font-medium text-indigo-600 truncate">
-                    {{ study.name }}
-                    {% if not study.public %}
-                      <p class="px-2 ml-2 text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                        Private
-                      </p>
-                    {% endif %}
-                  </p>
-                </div>
-                <div class="sm:flex">
-                  <p>{{ study.description }}</p>
-                </div>
-                <div class="sm:flex">
-                  <p class="flex items-center text-sm text-gray-500">
-                    <i class="ri-team-line shrink-0 mr-1.5 text-sm text-gray-400" aria-hidden="true"></i>
-                    {{ study.num_responses }} responses, {{ study.num_markups }} markups
-                  </p>
-
-                </div>
+<div class="bg-white shadow-sm overflow-hidden sm:rounded-md">
+  <ul class="divide-y divide-gray-200">
+    {% for study in studies %}
+      <li>
+        <a href="{% url 'studies/study-detail' study.id %}" class="block hover:bg-gray-50">
+          <div class="px-4 py-4 sm:px-6 flex justify-between">
+            <div class="flex flex-col">
+              <div class="flex">
+                <p class="text-sm font-medium text-indigo-600 truncate">
+                  {{ study.name }}
+                  {% if not study.public %}
+                    <p class="px-2 ml-2 text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                      Private
+                    </p>
+                  {% endif %}
+                </p>
               </div>
-              <div class="mt-2 sm:flex sm:justify-between">
-                <div class="mt-2 flex-col items-center text-sm text-gray-500 sm:mt-0">
-                  <p>
-                    Created on {% localtime study.created %}
-                  </p>
-                  <p>
-                    {{ study.attribution }}
-                  </p>
-                </div>
+              <div class="sm:flex">
+                <p>{{ study.description }}</p>
+              </div>
+              <div class="sm:flex">
+                <p class="flex items-center text-sm text-gray-500">
+                  <i class="ri-team-line shrink-0 mr-1.5 text-sm text-gray-400" aria-hidden="true"></i>
+                  {{ study.num_responses }} responses, {{ study.num_markups }} markups
+                </p>
+
               </div>
             </div>
-          </a>
-        </li>
-      {% endfor %}
-    </ul>
-  </div>
+            <div class="mt-2 sm:flex sm:justify-between">
+              <div class="mt-2 flex-col items-center text-sm text-gray-500 sm:mt-0">
+                <p>
+                  Created on {% localtime study.created %}
+                </p>
+                <p>
+                  {{ study.attribution }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
 </div>

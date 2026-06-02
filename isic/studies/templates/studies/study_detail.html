@@ -27,68 +27,37 @@
   </div>
   {% include 'studies/partials/study_details.html' %}
 
-  <div x-data="{selectedTab: 'Images'}">
-    <div class="mt-2">
-      <div class="sm:hidden">
-        <label for="tabs" class="sr-only">Select a tab</label>
-        <select id="tabs" name="tabs" class="block w-full focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md">
-          <option :selected="selectedTab == 'Images'">Images</option>
-          <option :selected="selectedTab == 'Questions'">Questions</option>
-          <option :selected="selectedTab == 'Features'">Features</option>
-          <option :selected="selectedTab == 'Responses'">Responses</option>
-        </select>
-      </div>
-      <div class="hidden sm:block">
-        <nav class="flex space-x-4" aria-label="Tabs">
-          <a href="" @click.prevent="selectedTab = 'Images'" class="px-3 py-2 font-medium text-sm rounded-md"
-             :class="{'bg-indigo-100 text-indigo-700': selectedTab == 'Images',
-                     'text-gray-500 hover:text-gray-700': selectedTab != 'Images'}">
-            Images ({{ num_images|intcomma }})
-          </a>
-          <a href="" @click.prevent="selectedTab = 'Questions'" class="px-3 py-2 font-medium text-sm rounded-md"
-             :class="{'bg-indigo-100 text-indigo-700': selectedTab == 'Questions',
-                     'text-gray-500 hover:text-gray-700': selectedTab != 'Questions'}">
-            Questions ({{ study.questions.count }})
-          </a>
-          <a href="" @click.prevent="selectedTab = 'Features'" class="px-3 py-2 font-medium text-sm rounded-md"
-             :class="{'bg-indigo-100 text-indigo-700': selectedTab == 'Features',
-                     'text-gray-500 hover:text-gray-700': selectedTab != 'Features'}">
-            Features ({{ study.features.count }})
-          </a>
-          <a href="" @click.prevent="selectedTab = 'Annotators'" class="px-3 py-2 font-medium text-sm rounded-md"
-             :class="{'bg-indigo-100 text-indigo-700': selectedTab == 'Annotators',
-                     'text-gray-500 hover:text-gray-700': selectedTab != 'Annotators'}">
-            Annotators ({{ study.num_annotators|intcomma }})
-          </a>
-        </nav>
-      </div>
-    </div>
-
-    <div class="my-2 p-4">
-      <div x-show="selectedTab == 'Images'">
-        {% include 'studies/partials/pagination.html' with page_obj=images %}
-        <div class="mb-4" x-data="thumbnailGrid();">
-          <div class="hidden pb-3 sm:block">
-            <div class="join">
-              <button class="join-item btn btn-outline btn-xs" @click="decrease()">
-                <i class="ri-subtract-line"></i>
-              </button>
-              <span class="join-item btn btn-outline btn-xs pointer-events-none">Columns</span>
-              <button class="join-item btn btn-outline btn-xs" @click="increase()">
-                <i class="ri-add-line"></i>
-              </button>
-            </div>
-          </div>
-          <div class="grid gap-4 grid-cols-2" :class="gridClassNames[numCols]">
-            {% for image in images %}
-              {% include 'studies/partials/study_image.html' %}
-            {% endfor %}
+  <div role="tablist" class="tabs tabs-lift">
+    <input type="radio" name="study_tabs" role="tab" class="tab"
+           aria-label="Images ({{ num_images|intcomma }})" checked />
+    <div role="tabpanel" class="tab-content bg-base-100 border-base-300 p-6">
+      {% include 'studies/partials/pagination.html' with page_obj=images %}
+      <div class="mb-4" x-data="thumbnailGrid();">
+        <div class="hidden pb-3 sm:block">
+          <div class="join">
+            <button class="join-item btn btn-outline btn-xs" @click="decrease()">
+              <i class="ri-subtract-line"></i>
+            </button>
+            <span class="join-item btn btn-outline btn-xs pointer-events-none">Columns</span>
+            <button class="join-item btn btn-outline btn-xs" @click="increase()">
+              <i class="ri-add-line"></i>
+            </button>
           </div>
         </div>
-        {% include 'studies/partials/pagination.html' with page_obj=images %}
-        {% include 'ingest/partials/thumbnail_grid_js.html' %}
+        <div class="grid gap-4 grid-cols-2" :class="gridClassNames[numCols]">
+          {% for image in images %}
+            {% include 'studies/partials/study_image.html' %}
+          {% endfor %}
+        </div>
       </div>
-      <ul x-show="selectedTab == 'Questions'">
+      {% include 'studies/partials/pagination.html' with page_obj=images %}
+      {% include 'ingest/partials/thumbnail_grid_js.html' %}
+    </div>
+
+    <input type="radio" name="study_tabs" role="tab" class="tab"
+           aria-label="Questions ({{ study.questions.count }})" />
+    <div role="tabpanel" class="tab-content bg-base-100 border-base-300 p-6">
+      <ul>
         {% for question in study.questions.all %}
           <li>
             <span class="font-bold">
@@ -98,14 +67,22 @@
           </li>
         {% endfor %}
       </ul>
-      <ul x-show="selectedTab == 'Features'">
+    </div>
+
+    <input type="radio" name="study_tabs" role="tab" class="tab"
+           aria-label="Features ({{ study.features.count }})" />
+    <div role="tabpanel" class="tab-content bg-base-100 border-base-300 p-6">
+      <ul>
         {% for feature in study.features.all %}
           <li>{{ feature.label }}</li>
         {% endfor %}
       </ul>
-      <div x-show="selectedTab == 'Annotators'">
-        {% include 'studies/partials/annotators_progress_table.html' %}
-      </div>
+    </div>
+
+    <input type="radio" name="study_tabs" role="tab" class="tab"
+           aria-label="Annotators ({{ study.num_annotators|intcomma }})" />
+    <div role="tabpanel" class="tab-content bg-base-100 border-base-300 p-6">
+      {% include 'studies/partials/annotators_progress_table.html' %}
     </div>
   </div>
 {% endblock %}

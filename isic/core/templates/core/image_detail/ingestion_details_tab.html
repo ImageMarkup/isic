@@ -1,26 +1,24 @@
 {% load localtime %}
 
-<div x-show="selectedTab == 'ingestion_details'">
-  <div class="my-4">
-    Published {% localtime image.created %}
-  </div>
-  <div class="heading-3">Review</div>
-  <div class="overflow-x-auto">
-    <table class="table">
-      <tbody>
-        <tr>
-          <th>Reviewed</th>
-          <td>{% localtime image.accession.review.reviewed_at %}</td>
-        </tr>
-        <tr>
-          <th>Reviewer</th>
-          <td>{{ image.accession.review.creator }}</td>
-        </tr>
-        <tr>
-          <th>Approved</th>
-          <td>{{ image.accession.review.value|yesno }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+<div class="my-4">
+  Published {% localtime image.created %}
+</div>
+<div class="heading-3">Review</div>
+<div class="overflow-x-auto">
+  <table class="table">
+    <tbody>
+      <tr>
+        <th>Reviewed</th>
+        <td>{% localtime image.accession.review.reviewed_at %}</td>
+      </tr>
+      <tr>
+        <th>Reviewer</th>
+        <td>{{ image.accession.review.creator }}</td>
+      </tr>
+      <tr>
+        <th>Approved</th>
+        <td>{{ image.accession.review.value|yesno }}</td>
+      </tr>
+    </tbody>
+  </table>
 </div>

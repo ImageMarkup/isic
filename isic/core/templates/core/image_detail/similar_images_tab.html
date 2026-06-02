@@ -1,6 +1,5 @@
-<div x-show="selectedTab == 'similar_images'"
-     x-data="similarImagesTab('{{ image.isic_id }}')"
-     @tab-changed.window="if ($event.detail === 'similar_images' && images.length === 0) loadSimilarImages()">
+<div x-data="similarImagesTab('{{ image.isic_id }}')"
+     x-init="loadSimilarImages()">
   <div class="bg-white shadow-sm overflow-hidden sm:rounded-md">
     <div class="mb-4">
       <div x-show="loading" class="text-center py-8">
