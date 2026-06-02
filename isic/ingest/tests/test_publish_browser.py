@@ -88,6 +88,16 @@ def test_cohort_publish_with_additional_collections(
         page.locator(".select2-selection__choice", has_text=extra_collection_b.name)
     ).to_be_visible()
 
+    # Check that sharing notice is visible and lists other_user twice
+    # First for collection B and then for collection A
+    sharing_notice = page.get_by_text("Publishing to these collections will give access to:")
+    expect(sharing_notice).to_be_visible()
+    sharing_entries = sharing_notice.locator("..").locator("ul").locator("li")
+    expect(sharing_entries).to_have_count(2)
+    user_name = f"{other_user.first_name} {other_user.last_name}"
+    expect(sharing_entries.first).to_have_text(f"{user_name} (owner of {extra_collection_b.name})")
+    expect(sharing_entries.last).to_have_text(f"{user_name} (owner of {extra_collection_a.name})")
+
     # Submit with confirmation dialog
     page.on("dialog", lambda dialog: dialog.accept())
     page.get_by_role("button", name="Publish 1 accessions").click()
