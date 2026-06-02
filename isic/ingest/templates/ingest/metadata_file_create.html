@@ -1,13 +1,23 @@
 {% extends 'core/base.html' %}
 
+{% block head_extra %}
+  {{ form.media }}
+{% endblock %}
 
 {% block content %}
-  {{ form.media  }}
-  <form method="post">
+  <form class="flex flex-col max-w-2xl mx-auto space-y-4" method="post">
     {% csrf_token %}
-    {{ form  }}
-    <button type="submit" class="btn btn-primary">
-      Upload
-    </button>
+
+    {{ form.non_field_errors }}
+
+    <div class="heading-1">Upload Metadata</div>
+
+    <fieldset class="fieldset">
+      <label class="fieldset-legend">{{ form.blob.label }}</label>
+      {{ form.blob }}
+      {{ form.blob.errors }}
+    </fieldset>
+
+    <button type="submit" class="btn btn-primary self-end">Upload</button>
   </form>
 {% endblock %}

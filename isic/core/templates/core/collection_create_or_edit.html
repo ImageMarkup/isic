@@ -7,74 +7,46 @@
       <span>This collection is locked for editing.</span>
     </div>
   {% else %}
-    <form class="space-y-8" method="post">
+    <form class="flex flex-col max-w-2xl mx-auto space-y-4" method="post">
       {% csrf_token %}
 
       {{ form.non_field_errors }}
 
-      <div class="space-y-8 space-y-5">
-        <div>
-          <div class="max-w-2xl">
-            {% if not collection %}
-              <div class="heading-1" class="leading-6 text-gray-900">
-                Create a Collection
-              </div>
-              <p class="mt-1 max-w-2xl text-sm text-gray-500">
-                A Collection is a container for a set of images. Collections can be used as the basis for sharing images or creating studies.
-                A Collection can be public or private, and each of the individual images within it can be public or private.
-              </p>
-            {% else %}
-              <div class="heading-1" class="leading-6 text-gray-900">
-                Edit Collection
-              </div>
-            {% endif %}
-          </div>
+      {% if not collection %}
+        <div class="heading-1">Create a Collection</div>
+        <p class="text-sm text-base-content/60">
+          A Collection is a container for a set of images. Collections can be used as the basis for sharing images or creating studies.
+          A Collection can be public or private, and each of the individual images within it can be public or private.
+        </p>
+      {% else %}
+        <div class="heading-1">Edit Collection</div>
+      {% endif %}
 
-          <div class="mt-6 mt-5 space-y-6 space-y-5">
-            <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
-              <label for="{{ form.name.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
-                {{ form.name.label }}
-              </label>
-              <div class="mt-1 mt-0 col-span-2">
-                <div class="max-w-lg flex rounded-md shadow-xs">
-                  <input type="text" value="{{ form.name.value|default:'' }}" name="{{ form.name.html_name }}" id="{{ form.name.html_name }}" class="flex-1 block w-full focus:ring-primary-500 focus:border-primary-500 min-w-0 rounded-none rounded-r-md text-sm border-gray-300">
-                </div>
-                <p class="mt-2 text-sm text-gray-500" id="email-description">{{ form.name.help_text }}</p>
-                {{ form.name.errors }}
-              </div>
-            </div>
+      <fieldset class="fieldset">
+        <label class="fieldset-legend" for="{{ form.name.html_name }}">{{ form.name.label }}</label>
+        <input type="text" value="{{ form.name.value|default_if_none:'' }}" name="{{ form.name.html_name }}" id="{{ form.name.html_name }}" class="input input-bordered w-full">
+        {{ form.name.errors }}
+      </fieldset>
 
-            <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
-              <label for="{{ form.description.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
-                {{ form.description.label }}
-              </label>
-              <div class="mt-1 mt-0 col-span-2">
-                <textarea id="{{ form.description.html_name }}" name="{{ form.description.html_name }}" rows="15" class="border max-w-lg outline-hidden shadow-xs p-4 block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ form.description.value|default:'' }}</textarea>
-                <p class="mt-2 text-sm text-gray-500">{{ form.description.help_text|safe }}</p>
-                {{ form.description.errors }}
-              </div>
-            </div>
+      <fieldset class="fieldset">
+        <label class="fieldset-legend" for="{{ form.description.html_name }}">{{ form.description.label }}</label>
+        <textarea id="{{ form.description.html_name }}" name="{{ form.description.html_name }}" rows="12" class="textarea textarea-bordered w-full">{{ form.description.value|default_if_none:'' }}</textarea>
+        <p class="fieldset-label"><span class="[&_a]:link [&_a]:link-primary">{{ form.description.help_text|safe }}</span></p>
+        {{ form.description.errors }}
+      </fieldset>
 
-            <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
-              <label for="{{ form.public.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
-                {{ form.public.label }}
-              </label>
-              <div class="mt-1 mt-0 col-span-2">
-                <input type="checkbox" name="{{ form.public.html_name }}" {% if form.public.value %}checked{% endif %} />
-                <div>
-                  <span class="my-3 text-xs">A public collection can't contain private images.</span>
-                </div>
-                {{ form.public.errors }}
-              </div>
-            </div>
-          </div>
+      <fieldset class="fieldset">
+        <label class="fieldset-legend flex w-fit items-center gap-2">
+          <input type="checkbox" name="{{ form.public.html_name }}" {% if form.public.value %}checked{% endif %} class="checkbox" />
+          {{ form.public.label }}
+        </label>
+        <p class="fieldset-label">A public collection can't contain private images.</p>
+        {{ form.public.errors }}
+      </fieldset>
 
-          <div class="border-t border-gray-200 py-5">
-            <div class="flex justify-end">
-              <button type="submit" class="btn btn-primary">
-                {% if not collection %}Create Collection{% else %}Save{% endif %}
-              </button>
-            </div>
-          </form>
+      <button type="submit" class="btn btn-primary self-end">
+        {% if not collection %}Create Collection{% else %}Save{% endif %}
+      </button>
+    </form>
   {% endif %}
 {% endblock %}

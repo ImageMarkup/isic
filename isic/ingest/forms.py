@@ -1,3 +1,5 @@
+from enum import StrEnum
+
 from django import forms
 from django.core.exceptions import ValidationError
 from django.forms.models import ModelForm
@@ -13,16 +15,21 @@ from isic.core.models.collection import Collection
 from isic.ingest.models import Cohort, Contributor
 
 
-def choice_field_from_enum(field_name: str, enum) -> forms.ChoiceField:
-    label = None
+def choice_field_from_enum(
+    field_name: str, field_enum: type[StrEnum], *, required: bool = False
+) -> forms.ChoiceField:
+    # Sort choices by their "value", as we don't have labels yet
+    sorted_values = sorted(e.value for e in field_enum)
+    choices = [(value, value) for value in sorted_values]
+    if not required:
+        choices.insert(0, ("", "---------"))
 
-    if hasattr(FIELD_REGISTRY[field_name], "label"):
-        label = FIELD_REGISTRY[field_name].label
-
-    # sort choices by their 'label' even though we don't have labels yet
-    choices = sorted(((i.value, i.value) for i in enum), key=lambda x: x[1])
-
-    return forms.ChoiceField(choices=choices, required=False, label=label)
+    return forms.ChoiceField(
+        choices=choices,
+        required=required,
+        # This is currently always None, but Django will generate a label from the field name
+        label=FIELD_REGISTRY[field_name].label,
+    )
 
 
 class CohortForm(ModelForm):
@@ -55,14 +62,20 @@ class ContributorForm(ModelForm):
             "default_attribution",
         ]
 
-    institution_url = forms.URLField(assume_scheme="http")
+    institution_url = forms.URLField(
+        assume_scheme="http",
+        label=Contributor._meta.get_field("institution_url").verbose_name,
+        help_text=Contributor._meta.get_field("institution_url").help_text,
+    )
 
 
 class SingleAccessionUploadForm(forms.Form):
     original_blob = S3FormFileField(model_field_id="ingest.Accession.original_blob", label="Image")
 
     age = forms.IntegerField(min_value=1, max_value=85, required=False)
-    sex = forms.ChoiceField(choices=[("male", "male"), ("female", "female")], required=False)
+    sex = forms.ChoiceField(
+        choices=[("", "---------"), ("male", "male"), ("female", "female")], required=False
+    )
     diagnosis_confirm_type = choice_field_from_enum(
         "diagnosis_confirm_type", DiagnosisConfirmTypeEnum
     )

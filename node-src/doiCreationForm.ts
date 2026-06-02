@@ -40,7 +40,7 @@ type PartialRelationTypeIdentifier = {
 type RelationTypeIdentifierArray = (RelationTypeIdentifier | PartialRelationTypeIdentifier)[];
 
 
-function DoiCreationForm(initialDescription: string = "") {
+function DoiCreationForm() {
   const csrfToken = JSON.parse(document.getElementById("csrf-token")?.textContent!);
   const s3ffClient = new S3FileFieldClient({
     baseUrl: "/api/v2/s3-upload/",
@@ -99,13 +99,17 @@ function DoiCreationForm(initialDescription: string = "") {
 
 
   return {
-    description: initialDescription,
+    description: "",
     files: [],
     descriptions: [],
     _fieldValues: [],
     numFilesInProgress: 0,
     ...identifiers,
     relationTypes,
+
+    init() {
+      this.description = JSON.parse(document.getElementById("collection-description")!.textContent!);
+    },
 
     removeFile(index: number) {
       this.files.splice(index, 1);

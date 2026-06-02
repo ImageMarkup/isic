@@ -1,104 +1,67 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-  <form class="space-y-8" method="post">
+  <form class="flex flex-col max-w-2xl mx-auto space-y-4" method="post">
     {% csrf_token %}
 
     {{ form.non_field_errors }}
 
-    <div class="space-y-8 space-y-5">
+    <div class="heading-1">Create a Contributor</div>
+    <p class="text-sm text-base-content/60">
+      This is information about the institution contributing to the Archive. A contributor is the institution which will be contributing the images.
+    </p>
+
+    <fieldset class="fieldset">
+      <label class="fieldset-legend" for="{{ form.institution_name.html_name }}">{{ form.institution_name.label }}</label>
+      <input type="text" value="{{ form.institution_name.value|default_if_none:'' }}" name="{{ form.institution_name.html_name }}" id="{{ form.institution_name.html_name }}" class="input input-bordered w-full" required>
+      <p class="fieldset-label"><span class="[&_a]:link [&_a]:link-primary">{{ form.institution_name.help_text|safe }}</span></p>
+      {{ form.institution_name.errors }}
+    </fieldset>
+
+    <fieldset class="fieldset">
+      <label class="fieldset-legend" for="{{ form.institution_url.html_name }}">{{ form.institution_url.label }}</label>
+      <input type="text" value="{{ form.institution_url.value|default_if_none:'' }}" name="{{ form.institution_url.html_name }}" id="{{ form.institution_url.html_name }}" class="input input-bordered w-full">
+      <p class="fieldset-label"><span class="[&_a]:link [&_a]:link-primary">{{ form.institution_url.help_text|safe }}</span></p>
+      {{ form.institution_url.errors }}
+    </fieldset>
+
+    <fieldset class="fieldset">
+      <label class="fieldset-legend" for="{{ form.legal_contact_info.html_name }}">{{ form.legal_contact_info.label }}</label>
+      <textarea id="{{ form.legal_contact_info.html_name }}" name="{{ form.legal_contact_info.html_name }}" rows="3" class="textarea textarea-bordered w-full" required>{{ form.legal_contact_info.value|default_if_none:'' }}</textarea>
+      <p class="fieldset-label"><span class="[&_a]:link [&_a]:link-primary">{{ form.legal_contact_info.help_text|safe }}</span></p>
+      {{ form.legal_contact_info.errors }}
+    </fieldset>
+
+    <div class="bg-base-200 p-6 rounded-md space-y-4">
       <div>
-        <div class="heading-1" class="leading-6 text-gray-900">
-          Create a Contributor
-        </div>
-        <p class="mt-1 max-w-2xl text-sm text-gray-500">
-          This is information about the institution contributing to the Archive. A contributor is the institution which will be contributing the images.
-        </p>
+        <div class="heading-3">Cohort defaults <span class="italic text-sm">Optional</span></div>
+        <p class="text-sm text-base-content/60">If accepted, <strong>these will be public</strong>, and published along with your images.</p>
       </div>
 
-      <div class="mt-6 mt-5 space-y-6">
-        <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
-
-          <label for="{{ form.institution_name.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
-            {{ form.institution_name.label }}
-          </label>
-          <div class="mt-1 mt-0 col-span-2">
-            <div class="max-w-lg flex rounded-md shadow-xs">
-              <input type="text" value="{{ form.institution_name.value|default:'' }}" name="{{ form.institution_name.html_name }}" id="{{ form.institution_name.html_name }}" class="flex-1 block w-full focus:ring-primary-500 focus:border-primary-500 min-w-0 rounded-none rounded-r-md text-sm border-gray-300" required>
-            </div>
-            <p class="mt-2 text-sm text-gray-500" id="{{ form.institution_name.html_name }}-description">{{ form.institution_name.help_text }}</p>
-            {{ form.institution_name.errors }}
-          </div>
+      <fieldset class="fieldset">
+        <label class="fieldset-legend" for="{{ form.default_copyright_license.html_name }}">{{ form.default_copyright_license.label }}</label>
+        <select id="{{ form.default_copyright_license.html_name }}" name="{{ form.default_copyright_license.html_name }}" class="select select-bordered w-full">
+          {% for choice in form.default_copyright_license.field.choices %}
+            <option value="{{ choice.0 }}">{{ choice.1 }}</option>
+          {% endfor %}
+        </select>
+        <div x-data>
+          <button type="button" @click="$refs.licenseHelpModal.showModal()" class="link link-primary text-xs">help me choose</button>
+          {% include 'ingest/partials/help_me_choose_modal.html' %}
         </div>
+        {{ form.default_copyright_license.errors }}
+      </fieldset>
 
-        <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
+      <fieldset class="fieldset">
+        <label class="fieldset-legend" for="{{ form.default_attribution.html_name }}">{{ form.default_attribution.label }}</label>
+        <textarea id="{{ form.default_attribution.html_name }}" name="{{ form.default_attribution.html_name }}" rows="3" class="textarea textarea-bordered w-full">{{ form.default_attribution.value|default_if_none:'' }}</textarea>
+        <p class="fieldset-label"><span class="[&_a]:link [&_a]:link-primary">{{ form.default_attribution.help_text|safe }}</span></p>
+        {{ form.default_attribution.errors }}
+      </fieldset>
+    </div>
 
-          <label for="{{ form.institution_url.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
-            {{ form.institution_url.label }}
-          </label>
-          <div class="mt-1 mt-0 col-span-2">
-            <div class="max-w-lg flex rounded-md shadow-xs">
-              <input type="text" value="{{ form.institution_url.value|default:'' }}" name="{{ form.institution_url.html_name }}" id="{{ form.institution_url.html_name }}" class="flex-1 block w-full focus:ring-primary-500 focus:border-primary-500 min-w-0 rounded-none rounded-r-md text-sm border-gray-300" required>
-            </div>
-            <p class="mt-2 text-sm text-gray-500" id="{{ form.institution_url.html_name }}-description">{{ form.institution_url.help_text }}</p>
-            {{ form.institution_url.errors }}
-          </div>
-        </div>
-
-        <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
-          <label for="{{ form.legal_contact_info.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
-            {{ form.legal_contact_info.label }}
-          </label>
-          <div class="mt-1 mt-0 col-span-2">
-            <textarea id="{{ form.legal_contact_info.html_name }}" name="{{ form.legal_contact_info.html_name }}" rows="3" class="border max-w-lg outline-hidden shadow-xs p-4 block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md" required>{{ form.legal_contact_info.value|default:'' }}</textarea>
-            <p class="mt-2 text-sm text-gray-500">{{ form.legal_contact_info.help_text }}</p>
-            {{ form.legal_contact_info.errors }}
-          </div>
-        </div>
-
-        <div class="bg-gray-50 border border-gray-200 p-6 rounded-md">
-          <div class="heading-3">Cohort defaults <span class="italic text-sm">Optional</span></div>
-          <p>If accepted, <strong>these will be public</strong>, and published along with your images.</p>
-
-          <div class="grid grid-cols-3 border-t border-gray-200 pt-5">
-            <label for="{{ form.default_copyright_license.html_name }}" class="block mb-2 text-sm font-medium text-gray-700">
-              {{ form.default_copyright_license.label }}
-            </label>
-            <div class="mt-1 mt-0 col-span-2">
-              <select id="{{ form.default_copyright_license.html_name }}" name="{{ form.default_copyright_license.html_name }}" class="border max-w-lg px-3 py-2 block focus:ring-primary-500 focus:border-primary-500 w-full shadow-xs max-w-xs text-sm border-gray-400 rounded-md">
-                {% for choice in form.default_copyright_license.field.choices %}
-                  <option value="{{ choice.0 }}">{{ choice.1 }}</option>
-                {% endfor %}
-              </select>
-              <div x-data>
-                <button type="button" @click="$refs.licenseHelpModal.showModal()" class="link link-primary text-xs mt-1">help me choose</button>
-                {% include 'ingest/partials/help_me_choose_modal.html' %}
-              </div>
-
-              {{ form.default_copyright_license.errors }}
-            </div>
-          </div>
-
-          <div class="grid grid-cols-3 border-t border-gray-200 pt-2">
-            <label for="{{ form.default_attribution.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
-              {{ form.default_attribution.label }}
-            </label>
-            <div class="mt-1 mt-0 col-span-2">
-              <textarea id="{{ form.default_attribution.html_name }}" name="{{ form.default_attribution.html_name }}" rows="3" class="border max-w-lg outline-hidden shadow-xs p-4 block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md"></textarea>
-              <p class="mt-2 text-sm text-gray-500">{{ form.default_attribution.help_text }}</div>
-              {{ form.default_attribution.errors  }}
-            </div>
-          </div>
-
-        </div>
-
-        <div class="border-t border-gray-200 py-5">
-          <div class="flex justify-end">
-            <button type="submit" class="btn btn-primary">
-              Create Contributor
-            </button>
-          </div>
-        </div>
-      </div>
-    </form>
+    <button type="submit" class="btn btn-primary self-end">
+      Create Contributor
+    </button>
+  </form>
 {% endblock %}

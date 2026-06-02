@@ -37,7 +37,7 @@
   {% else %}
     There are {{ num_publishable|intcomma }} accessions that can be published.
 
-    <form method="POST" action="" class="card bg-base-100 shadow-sm max-w-lg mx-auto mt-4">
+    <form method="post" action="" class="card bg-base-100 shadow-sm max-w-lg mx-auto mt-4">
       <div class="card-body">
         {{ form.non_field_errors }}
         {{ form.public.errors }}

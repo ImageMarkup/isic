@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@plugin "@tailwindcss/forms";
 @plugin "daisyui" {
   themes: winter;
 }
@@ -10,6 +9,15 @@
 @import "./components.pcss";
 
 @layer base {
+  /* Tailwind v4 Preflight (in @layer base) resets file input and ::file-selector-button
+     styling, stripping the native appearanc, so undo base layer's resets while preserving
+     any unlayered styles from the s3-file-field widget's own CSS. */
+  [data-s3fileinput] {
+    &, &::file-selector-button {
+      all: revert-layer;
+    }
+  }
+
   /* https://alpinejs.dev/directives/cloak */
   [x-cloak] {
     display: none !important;

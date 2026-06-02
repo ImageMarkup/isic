@@ -128,15 +128,17 @@
     }
   </script>
 
-  <form class="space-y-8" method="post" x-data="officialQuestionFormSetComponent()">
+  <form class="flex flex-col max-w-2xl mx-auto space-y-4" method="post" x-data="officialQuestionFormSetComponent()">
     {% csrf_token %}
+
+    {{ base_form.non_field_errors }}
 
     <div class="hidden">
       <div id="custom-empty-form">
         {% comment %}this must mirror the custom_question_formset rendering below{% endcomment %}
         <div class="custom-question-form">
           {{ custom_question_formset.empty_form }}
-          <a href="" @click.prevent="remove">Remove</a>
+          <button type="button" class="btn btn-sm btn-error btn-outline" @click="remove">Remove</button>
         </div>
       </div>
       <div id="custom-management-form">
@@ -147,7 +149,7 @@
         {% comment %}this must mirror the official_question_formset rendering below{% endcomment %}
         <div class="official-question-form mb-4">
           {{ official_question_formset.empty_form }}
-          <a href="" @click.prevent="remove">Remove</a>
+          <button type="button" class="btn btn-sm btn-error btn-outline" @click="remove">Remove</button>
         </div>
       </div>
       <div id="official-management-form">
@@ -155,185 +157,143 @@
       </div>
     </div>
 
-    {{ form.non_field_errors }}
+    <div class="heading-1">Create a Study</div>
+    <p class="text-sm text-base-content/60">
+      A Study is a set of images, questions, and annotators used to collect data. Studies are based
+      off of collections of images, and can be public or private. Responses to the study can be downloaded
+      for research.
+    </p>
 
-    <div class="space-y-8 space-y-5">
-      <div>
-        <div class="max-w-2xl">
-          <div class="heading-2">
-            Create a Study
+    <fieldset class="fieldset">
+      <label class="fieldset-legend" for="{{ base_form.name.html_name }}">{{ base_form.name.label }}</label>
+      <input {% if base_form.name.field.required %}required{% endif %} type="text" value="{{ base_form.name.value|default_if_none:'' }}" name="{{ base_form.name.html_name }}" id="{{ base_form.name.html_name }}" class="input input-bordered w-full">
+      <p class="fieldset-label">{{ base_form.name.help_text }}</p>
+      {{ base_form.name.errors }}
+    </fieldset>
+
+    <fieldset class="fieldset">
+      <label class="fieldset-legend" for="{{ base_form.description.html_name }}">{{ base_form.description.label }}</label>
+      <textarea {% if base_form.description.field.required %}required{% endif %} id="{{ base_form.description.html_name }}" name="{{ base_form.description.html_name }}" rows="3" class="textarea textarea-bordered w-full">{{ base_form.description.value|default_if_none:'' }}</textarea>
+      <p class="fieldset-label">{{ base_form.description.help_text }}</p>
+      {{ base_form.description.errors }}
+    </fieldset>
+
+    <fieldset class="fieldset">
+      <label class="fieldset-legend" for="{{ base_form.attribution.html_name }}">{{ base_form.attribution.label }}</label>
+      <textarea id="{{ base_form.attribution.html_name }}" name="{{ base_form.attribution.html_name }}" rows="3" class="textarea textarea-bordered w-full">{{ base_form.attribution.value|default_if_none:'' }}</textarea>
+      <p class="fieldset-label">Text which will be produced with your Study. Typically an institution name or a working group.</p>
+      {{ base_form.attribution.errors }}
+    </fieldset>
+
+    <fieldset class="fieldset">
+      <label class="fieldset-legend" for="{{ base_form.collection.html_name }}">{{ base_form.collection.label }}</label>
+      <select {% if base_form.annotators.field.required %}required{% endif %} id="{{ base_form.collection.html_name }}" name="{{ base_form.collection.html_name }}" class="select select-bordered w-full">
+        <option value="">--</option>
+        {% for collection in visible_collections %}
+          <option value="{{ collection.pk }}" {% if base_form.collection.value == collection.pk %}selected="selected"{% endif %}>{{ collection.name }}</option>
+        {% endfor %}
+      </select>
+      <p class="fieldset-label">{{ base_form.collection.help_text }}<br/>This collection will be locked once a study is made.</p>
+      {{ base_form.collection.errors }}
+    </fieldset>
+
+    <fieldset class="fieldset">
+      <label class="fieldset-legend" for="{{ base_form.annotators.html_name }}">{{ base_form.annotators.label }}</label>
+      <textarea {% if base_form.annotators.field.required %}required{% endif %} id="{{ base_form.annotators.html_name }}" name="{{ base_form.annotators.html_name }}" rows="3" class="textarea textarea-bordered w-full">{{ base_form.annotators.value|default_if_none:'' }}</textarea>
+      <p class="fieldset-label">A list of email addresses or hash IDs (one per line) of the annotators to collect responses from.</p>
+      {{ base_form.annotators.errors }}
+    </fieldset>
+
+    <fieldset class="fieldset">
+      <label class="fieldset-legend flex w-fit items-center gap-2">
+        <input type="checkbox" name="{{ base_form.public.html_name }}" {% if base_form.public.value %}checked{% endif %} class="checkbox" />
+        {{ base_form.public.label }}
+      </label>
+      <p class="fieldset-label">{{ base_form.public.help_text }}</p>
+      {{ base_form.public.errors }}
+    </fieldset>
+
+    <fieldset class="fieldset">
+      <label class="fieldset-legend flex w-fit items-center gap-2">
+        <input type="checkbox" name="{{ base_form.zoomable.html_name }}" id="{{ base_form.zoomable.html_name }}" {% if base_form.zoomable.value %}checked{% endif %} class="checkbox" />
+        {{ base_form.zoomable.label }}
+      </label>
+      <p class="fieldset-label">{{ base_form.zoomable.help_text }}</p>
+      {{ base_form.zoomable.errors }}
+    </fieldset>
+
+    <div class="divider"></div>
+
+    <div class="space-y-4">
+      <div class="flex justify-between items-center">
+        <div class="heading-3">Official Questions</div>
+        <button type="button" class="btn btn-secondary" @click="$refs.questionPickerModal.showModal()">
+          Add Official Question
+        </button>
+      </div>
+      <p class="text-sm text-base-content/60">
+        Official questions are questions that have been used in other studies. Using official questions
+        is <strong>strongly encouraged</strong> because it allows the results to be searchable within the Archive.
+        Searchable responses can be compared to other studies and used for meta analyses.
+      </p>
+
+      <div id="official-questions">
+        {% for form in official_question_formset %}
+          {% comment %}this must mirror the official-empty-form element{% endcomment %}
+          <div class="official-question-form mb-4">
+            {{ form.non_field_errors }}
+            {{ form.as_p }}
+            <button type="button" class="btn btn-sm btn-error btn-outline" @click="remove">Remove</button>
           </div>
-          <p class="mt-1 max-w-2xl text-sm text-gray-500">
-            A Study is a set of images, questions, and annotators used to collect data. Studies are based
-            off of collections of images, and can be public or private. Responses to the study can be downloaded
-            for research.
-          </p>
-        </div>
-
-        <div class="mt-6 mt-5 space-y-6 space-y-5">
-          <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
-            <label for="{{ base_form.name.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
-              {{ base_form.name.label }}
-            </label>
-            <div class="mt-1 mt-0 col-span-2">
-              <div class="max-w-lg flex rounded-md shadow-xs">
-                <input {% if base_form.name.field.required %}required{% endif %} type="text" value="{{ base_form.name.value|default:'' }}" name="{{ base_form.name.html_name }}" id="{{ base_form.name.html_name }}" class="flex-1 block w-full focus:ring-primary-500 focus:border-primary-500 min-w-0 rounded-none rounded-r-md text-sm border-gray-300">
-              </div>
-              <p class="mt-2 text-sm text-gray-500" id="email-description">{{ base_form.name.help_text }}</p>
-              {{ base_form.name.errors }}
-            </div>
-          </div>
-
-          <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
-            <label for="{{ base_form.description.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
-              {{ base_form.description.label }}
-            </label>
-            <div class="mt-1 mt-0 col-span-2">
-              <textarea {% if base_form.description.field.required %}required{% endif %}  id="{{ base_form.description.html_name }}" name="{{ base_form.description.html_name }}" rows="3" class="border max-w-lg outline-hidden shadow-xs p-4 block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ base_form.description.value|default:'' }}</textarea>
-              <p class="mt-2 text-sm text-gray-500">{{ base_form.description.help_text }}</p>
-              {{ base_form.description.errors }}
-            </div>
-          </div>
-
-          <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
-            <label for="{{ base_form.attribution.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
-              {{ base_form.attribution.label }}
-            </label>
-            <div class="mt-1 mt-0 col-span-2">
-              <textarea id="{{ base_form.attribution.html_name }}" name="{{ base_form.attribution.html_name }}" rows="3" class="border max-w-lg outline-hidden shadow-xs block p-4 w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ base_form.attribution.value|default:'' }}</textarea>
-              <p class="mt-2 text-sm text-gray-500">Text which will be produced with your Study. Typically an instituion name or a working group.</p>
-              {{ base_form.attribution.errors }}
-            </div>
-          </div>
-
-          <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
-            <label for="{{ base_form.collection.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
-              {{ base_form.collection.label }}
-            </label>
-            <div class="mt-1 mt-0 col-span-2">
-              <select {% if base_form.annotators.field.required %}required{% endif %} id="{{ base_form.collection.html_name }}" name="{{ base_form.collection.html_name }}"  class="border max-w-lg px-3 py-2 block focus:ring-primary-500 focus:border-primary-500 w-full shadow-xs max-w-xs text-sm border-gray-400 rounded-md">
-                <option value="">--</option>
-                {% for collection in visible_collections %}
-                  <option value="{{ collection.pk }}" {% if base_form.collection.value == collection.pk %}selected="selected"{% endif %}>{{ collection.name }}</option>
-                {% endfor %}
-              </select>
-              <p class="mt-2 text-sm text-gray-500">{{ base_form.collection.help_text }}<br/>This collection will be locked once a study is made.</p>
-              {{ base_form.collection.errors }}
-            </div>
-          </div>
-
-          <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
-            <label for="{{ base_form.annotators.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
-              {{ base_form.annotators.label }}
-            </label>
-            <div class="mt-1 mt-0 col-span-2">
-              <textarea {% if base_form.annotators.field.required %}required{% endif %}  id="{{ base_form.annotators.html_name }}" name="{{ base_form.annotators.html_name }}" rows="3" class="border max-w-lg outline-hidden shadow-xs p-4 block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ base_form.annotators.value|default:'' }}</textarea>
-              <p class="mt-2 text-sm text-gray-500">A list of email addresses or hash IDs (one per line) of the annotators to collect responses from.</p>
-              {{ base_form.annotators.errors }}
-            </div>
-          </div>
-
-          <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
-            <label for="{{ base_form.public.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
-              {{ base_form.public.label }}
-            </label>
-            <div class="mt-1 mt-0 col-span-2">
-              <input type="checkbox" name="{{ base_form.public.html_name }}" {% if base_form.public.value %}checked{% endif %} />
-              <p class="mt-2 text-sm text-gray-500">{{ base_form.public.help_text }}</p>
-              {{ base_form.public.errors }}
-            </div>
-          </div>
-
-          <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
-            <label for="{{ base_form.zoomable.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
-              {{ base_form.zoomable.label }}
-            </label>
-            <div class="mt-1 mt-0 col-span-2">
-              <input type="checkbox" name="{{ base_form.zoomable.html_name }}" id="{{ base_form.zoomable.html_name }}" {% if base_form.zoomable.value %}checked{% endif %} />
-              <p class="mt-2 text-sm text-gray-500">{{ base_form.zoomable.help_text }}</p>
-              {{ base_form.zoomable.errors }}
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-6 mt-5 space-y-6 space-y-5 border-t border-gray-200">
-          <div class="heading-3">Official Questions</div>
-          <div class="flex justify-between items-start">
-
-            <p class="max-w-2xl text-sm text-gray-500">
-              Official questions are questions that have been used in other studies. Using official questions
-              is <strong>strongly encouraged</strong> because it allows the results to be searchable within the Archive.
-              Searchable responses can be compared to other studies and used for meta analyses.
-            </p>
-
-            <button type="button" class="btn btn-secondary" @click="$refs.questionPickerModal.showModal()">
-              Add Official Question
-            </button>
-          </div>
-
-          <div class="mt-6 mt-5 space-y-6 space-y-5">
-            <div class="grid grid-cols-3 gap-4 items-start pt-5">
-              <div id="official-questions">
-
-                {% for form in official_question_formset %}
-                  {% comment %}this must mirror the official-empty-form element{% endcomment %}
-                  <div class="official-question-form mb-4">
-                    {{ form.non_field_errors }}
-                    {{ form.as_p }}
-                    <a href="" @click.prevent="remove">Remove</a>
-                  </div>
-                {% endfor %}
-              </div>
-            </div>
-          </div>
-
-          {% include 'studies/partials/question_picker_modal.html' %}
-        </div>
+        {% endfor %}
       </div>
 
-      <div class="mt-6 mt-5 space-y-6 space-y-5 border-t border-gray-200" x-data="customQuestionFormSetComponent()">
+      {% include 'studies/partials/question_picker_modal.html' %}
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="space-y-4" x-data="customQuestionFormSetComponent()">
+      <div class="flex justify-between items-center">
         <div class="heading-3">Custom Questions</div>
-        <div class="flex justify-between items-start">
-          <p class="max-w-2xl text-sm text-gray-500">
-            Custom questions are questions that are only used in your Study. Using custom questions
-            is <strong>discouraged</strong> because it the results can't be searched for within the Archive.
-            Further, custom questions can't be compared to other studies.
-          </p>
-
-          <div class="btn btn-secondary" @click="add">
-            Add Custom Question
-          </div>
-        </div>
-
-        <div id="custom-questions">
-          {% for form in custom_question_formset %}
-            {% comment %}this must mirror the custom-empty-form element{% endcomment %}
-            <div class="custom-question-form">
-              {{ form.non_field_errors  }}
-              {{ form.as_p  }}
-              <a href="" @click.prevent="remove">Remove</a>
-            </div>
-          {% endfor %}
+        <div class="btn btn-secondary" @click="add">
+          Add Custom Question
         </div>
       </div>
+      <p class="text-sm text-base-content/60">
+        Custom questions are questions that are only used in your Study. Using custom questions
+        is <strong>discouraged</strong> because it the results can't be searched for within the Archive.
+        Further, custom questions can't be compared to other studies.
+      </p>
 
-      <div class="border-t border-gray-200 py-5">
-        <div class="flex justify-end">
-          <button type="submit" class="btn btn-primary">
-            Create Study
-          </button>
-        </div>
-      </form>
+      <div id="custom-questions">
+        {% for form in custom_question_formset %}
+          {% comment %}this must mirror the custom-empty-form element{% endcomment %}
+          <div class="custom-question-form">
+            {{ form.non_field_errors  }}
+            {{ form.as_p  }}
+            <button type="button" class="btn btn-sm btn-error btn-outline" @click="remove">Remove</button>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
 
-      <script type="text/javascript">
-        document.querySelectorAll(`#custom-questions input[type="text"]`).forEach((function(x) {
-          x.setAttribute('required', true);
-        }));
+    <div class="divider"></div>
 
-        document.querySelectorAll(`#official-questions input[type="text"]`).forEach((function(x) {
-          x.setAttribute('required', true);
-        }));
+    <button type="submit" class="btn btn-primary self-end">
+      Create Study
+    </button>
+  </form>
 
-        displayOfficialQuestions();
-      </script>
+  <script type="text/javascript">
+    document.querySelectorAll(`#custom-questions input[type="text"]`).forEach((function(x) {
+      x.setAttribute('required', true);
+    }));
+
+    document.querySelectorAll(`#official-questions input[type="text"]`).forEach((function(x) {
+      x.setAttribute('required', true);
+    }));
+
+    displayOfficialQuestions();
+  </script>
 {% endblock %}

@@ -1,91 +1,56 @@
 {% extends 'core/base.html' %}
 
 {% block content %}
-  <form class="space-y-8" method="post">
+  <form class="flex flex-col max-w-2xl mx-auto space-y-4" method="post">
     {% csrf_token %}
 
     {{ form.non_field_errors }}
 
-    <div class="space-y-8 space-y-5">
-      <div>
-        <div class="max-w-2xl">
-          {% if creating %}
-            <div class="heading-1">
-              Create a Cohort
-            </div>
-            <p class="mt-1 max-w-2xl text-sm text-gray-500">This is information about your Cohort, a group of images which share common licensing and metadata. An example Cohort might be named 'Longitudinal Melanomas'. Think of the Cohort as a staging area for uploading your data and curating it to be ready for introduction into the ISIC Archive.</p>
-          {% else %}
-            <div class="heading-1">
-              {{ form.instance.name }}
-            </div>
-          {% endif %}
-        </div>
+    {% if creating %}
+      <div class="heading-1">Create a Cohort</div>
+      <p class="text-sm text-base-content/60">This is information about your Cohort, a group of images which share common licensing and metadata. An example Cohort might be named 'Longitudinal Melanomas'. Think of the Cohort as a staging area for uploading your data and curating it to be ready for introduction into the ISIC Archive.</p>
+    {% else %}
+      <div class="heading-1">{{ form.instance.name }}</div>
+    {% endif %}
 
-        <div class="mt-6 mt-5 space-y-6 space-y-5">
-          <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
-            <label for="{{ form.name.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
-              {{ form.name.label }}
-            </label>
-            <div class="mt-1 mt-0 col-span-2">
-              <div class="max-w-lg flex rounded-md shadow-xs">
-                <input type="text" value="{{ form.name.value|default:'' }}" name="{{ form.name.html_name }}" id="{{ form.name.html_name }}" class="flex-1 block w-full focus:ring-primary-500 focus:border-primary-500 min-w-0 rounded-none rounded-r-md text-sm border-gray-300">
-              </div>
-              <p class="mt-2 text-sm text-gray-500" id="email-description">{{ form.name.help_text }}</p>
-              {{ form.name.errors }}
-            </div>
-          </div>
+    <fieldset class="fieldset">
+      <label class="fieldset-legend" for="{{ form.name.html_name }}">{{ form.name.label }}</label>
+      <input type="text" value="{{ form.name.value|default_if_none:'' }}" name="{{ form.name.html_name }}" id="{{ form.name.html_name }}" class="input input-bordered w-full">
+      <p class="fieldset-label"><span class="[&_a]:link [&_a]:link-primary">{{ form.name.help_text|safe }}</span></p>
+      {{ form.name.errors }}
+    </fieldset>
 
-          <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
-            <label for="{{ form.description.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
-              {{ form.description.label }}
-            </label>
-            <div class="mt-1 mt-0 col-span-2">
-              <textarea id="{{ form.description.html_name }}" name="{{ form.description.html_name }}" rows="3" class="border max-w-lg outline-hidden shadow-xs p-4 block w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ form.description.value|default:'' }}</textarea>
-              <p class="mt-2 text-sm text-gray-500">{{ form.description.help_text }}</p>
-              {{ form.description.errors }}
-            </div>
-          </div>
+    <fieldset class="fieldset">
+      <label class="fieldset-legend" for="{{ form.description.html_name }}">{{ form.description.label }}</label>
+      <textarea id="{{ form.description.html_name }}" name="{{ form.description.html_name }}" rows="3" class="textarea textarea-bordered w-full">{{ form.description.value|default_if_none:'' }}</textarea>
+      <p class="fieldset-label"><span class="[&_a]:link [&_a]:link-primary">{{ form.description.help_text|safe }}</span></p>
+      {{ form.description.errors }}
+    </fieldset>
 
-          <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
-            <label for="{{ form.default_copyright_license.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
-              {{ form.default_copyright_license.label }}
-            </label>
-            <div class="mt-1 mt-0 col-span-2">
-              <select id="{{ form.default_copyright_license.html_name }}" name="{{ form.default_copyright_license.html_name }}"  class="border max-w-lg px-3 py-2 block focus:ring-primary-500 focus:border-primary-500 w-full shadow-xs max-w-xs text-sm border-gray-400 rounded-md">
-                <option value="">--</option>
-                <option value="CC-0" {% if form.default_copyright_license.value == "CC-0" %}selected="selected"{% endif %}>CC-0</option>
-                <option value="CC-BY" {% if form.default_copyright_license.value == "CC-BY" %}selected="selected"{% endif %}>CC-BY</option>
-                <option value="CC-BY-NC" {% if form.default_copyright_license.value == "CC-BY-NC" %}selected="selected"{% endif %}>CC-BY-NC (Not recommended)</option>
-              </select>
-              <div x-data>
-                <button type="button" @click="$refs.licenseHelpModal.showModal()" class="link link-primary text-xs mt-1">help me choose</button>
-                {% include 'ingest/partials/help_me_choose_modal.html' %}
-              </div>
-              {{ form.default_copyright_license.errors }}
-            </div>
-          </div>
+    <fieldset class="fieldset">
+      <label class="fieldset-legend" for="{{ form.default_copyright_license.html_name }}">{{ form.default_copyright_license.label }}</label>
+      <select id="{{ form.default_copyright_license.html_name }}" name="{{ form.default_copyright_license.html_name }}" class="select select-bordered w-full">
+        <option value="">--</option>
+        <option value="CC-0" {% if form.default_copyright_license.value == "CC-0" %}selected="selected"{% endif %}>CC-0</option>
+        <option value="CC-BY" {% if form.default_copyright_license.value == "CC-BY" %}selected="selected"{% endif %}>CC-BY</option>
+        <option value="CC-BY-NC" {% if form.default_copyright_license.value == "CC-BY-NC" %}selected="selected"{% endif %}>CC-BY-NC (Not recommended)</option>
+      </select>
+      <div x-data>
+        <button type="button" @click="$refs.licenseHelpModal.showModal()" class="link link-primary text-xs">help me choose</button>
+        {% include 'ingest/partials/help_me_choose_modal.html' %}
+      </div>
+      {{ form.default_copyright_license.errors }}
+    </fieldset>
 
-          <div class="grid grid-cols-3 gap-4 items-start border-t border-gray-200 pt-5">
-            <label for="{{ form.default_attribution.html_name }}" class="block text-sm font-medium text-gray-700 mt-px pt-2">
-              {{ form.default_attribution.label }}
-            </label>
-            <div class="mt-1 mt-0 col-span-2">
-              <textarea id="{{ form.default_attribution.html_name }}" name="{{ form.default_attribution.html_name }}" rows="3" class="border max-w-lg outline-hidden shadow-xs block p-4 w-full focus:ring-2 focus:ring-prinary-500 focus:border-primary-500 text-sm border-gray-400 rounded-md">{{ form.default_attribution.value|default:'' }}</textarea>
-              <p class="mt-2 text-sm text-gray-500">Text which must be reproduced by users of your images, to comply with Creative Commons Attribution requirements.</p>
-              {{ form.default_attribution.errors }}
-            </div>
-          </div>
-        </div>
+    <fieldset class="fieldset">
+      <label class="fieldset-legend" for="{{ form.default_attribution.html_name }}">{{ form.default_attribution.label }}</label>
+      <textarea id="{{ form.default_attribution.html_name }}" name="{{ form.default_attribution.html_name }}" rows="3" class="textarea textarea-bordered w-full">{{ form.default_attribution.value|default_if_none:'' }}</textarea>
+      <p class="fieldset-label">Text which must be reproduced by users of your images, to comply with Creative Commons Attribution requirements.</p>
+      {{ form.default_attribution.errors }}
+    </fieldset>
 
-        <div class="border-t border-gray-200 py-5">
-          <div class="flex justify-end">
-            <button type="submit" class="btn btn-primary">
-              {% if creating %}
-                Create Cohort
-              {% else %}
-                Save
-              {% endif %}
-            </button>
-          </div>
-        </form>
+    <button type="submit" class="btn btn-primary self-end">
+      {% if creating %}Create Cohort{% else %}Save{% endif %}
+    </button>
+  </form>
 {% endblock %}

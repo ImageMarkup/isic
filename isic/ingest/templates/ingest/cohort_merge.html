@@ -6,7 +6,7 @@
 {% endblock %}
 
 {% block content %}
-  <form class="flex flex-col max-w-2xl mx-auto space-y-4" method="POST">
+  <form class="flex flex-col max-w-2xl mx-auto space-y-4" method="post">
     {% csrf_token %}
 
     {{ form.non_field_errors }}
