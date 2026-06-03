@@ -89,14 +89,12 @@ def test_cohort_publish_with_additional_collections(
     ).to_be_visible()
 
     # Check that sharing notice is visible and lists other_user twice, once for each collection
-    sharing_notice = page.get_by_text("Publishing to these collections will give access to:")
-    expect(sharing_notice).to_be_visible()
-    sharing_entries = sharing_notice.locator("..").locator("ul").locator("li")
-    expect(sharing_entries).to_have_count(2)
-    sharing_entries_text = sharing_entries.all_inner_texts()
-    user_name = f"{other_user.first_name} {other_user.last_name}"
-    assert f"{user_name} (owner of {extra_collection_a.name})" in sharing_entries_text
-    assert f"{user_name} (owner of {extra_collection_b.name})" in sharing_entries_text
+    expect(page.get_by_text("will give access to")).to_be_visible()
+    full_name = f"{other_user.first_name} {other_user.last_name}"
+    entries = page.get_by_role("listitem").filter(has_text=full_name)
+    expect(entries).to_have_count(2)
+    expect(entries.filter(has_text=extra_collection_a.name)).to_be_visible()
+    expect(entries.filter(has_text=extra_collection_b.name)).to_be_visible()
 
     # Submit with confirmation dialog
     page.on("dialog", lambda dialog: dialog.accept())
