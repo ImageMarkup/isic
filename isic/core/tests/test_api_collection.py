@@ -234,6 +234,28 @@ def test_core_api_collection_remove_from_list(
 
 
 @pytest.mark.django_db
+def test_core_api_collection_share_self(staff_client, staff_user, private_collection):
+    r = staff_client.post(
+        reverse("api:collection_share_to_users", args=[private_collection.pk]),
+        {"user_ids": [staff_user.pk]},
+        content_type="application/json",
+    )
+    assert r.status_code == 400
+
+
+@pytest.mark.django_db
+def test_core_api_collection_share_magic(staff_client, cohort_factory, collection_factory, user):
+    collection = collection_factory(public=False)
+    cohort_factory(collection=collection)
+    r = staff_client.post(
+        reverse("api:collection_share_to_users", args=[collection.pk]),
+        {"user_ids": [user.pk]},
+        content_type="application/json",
+    )
+    assert r.status_code == 400
+
+
+@pytest.mark.django_db
 def test_core_api_collection_share(
     staff_client,
     private_collection,
