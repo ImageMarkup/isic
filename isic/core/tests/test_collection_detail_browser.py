@@ -96,7 +96,7 @@ def test_collection_detail_image_removal(
 
     # Enter image removal mode via the Actions menu
     page.get_by_role("button", name="Actions").click()
-    page.get_by_role("menuitem", name="Remove Images").click()
+    page.get_by_role("link", name="Remove Images").click()
 
     # The removal mode alert should be visible
     expect(page.get_by_text("images pending removal")).to_be_visible()

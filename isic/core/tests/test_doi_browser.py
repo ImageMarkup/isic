@@ -80,7 +80,7 @@ def test_doi_creation_form_related_identifiers_and_submit(
     page.wait_for_url(f"**{reverse('core/doi-detail', kwargs={'slug': expected_slug})}")
 
     # Verify DOI detail page content
-    expect(page.get_by_role("heading", name="Draft DOI")).to_be_visible()
+    expect(page.get_by_text("Draft DOI", exact=True)).to_be_visible()
     expect(page.get_by_text(collection.name).first).to_be_visible()
 
     # Verify the identifiers appear on the detail page

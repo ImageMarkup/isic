@@ -67,9 +67,9 @@ def test_collection_list_desktop(
     private_badges = page.locator("tbody").get_by_text("Private")
     expect(private_badges).to_have_count(2)
 
-    # Pinned icon shows for pinned collection
+    # Pinned badge shows for pinned collection
     pinned_row = rows.filter(has_text=collection_pinned.name)
-    expect(pinned_row.locator(".ri-pushpin-2-fill")).to_be_visible()
+    expect(pinned_row.get_by_text("Pinned")).to_be_visible()
 
     # DOI info: supplemental file count and related identifier shown
     doi_row = rows.filter(has_text=collection_with_doi.name)

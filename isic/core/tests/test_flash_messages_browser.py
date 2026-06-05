@@ -19,7 +19,7 @@ def test_add_images_to_collection_shows_flash_message(
 
     # Open the "Add results to collection" modal
     page.get_by_role("button", name="Actions").click()
-    page.get_by_role("menuitem", name="Add results to collection").click()
+    page.get_by_role("button", name="Add results to collection").click()
 
     # Accept the confirm dialog when it appears
     page.on("dialog", lambda dialog: dialog.accept())
@@ -51,7 +51,7 @@ def test_image_removal_shows_flash_message(
 
     # Enter removal mode, toggle one image, and remove it
     page.get_by_role("button", name="Actions").click()
-    page.get_by_role("menuitem", name="Remove Images").click()
+    page.get_by_role("link", name="Remove Images").click()
 
     page.get_by_text(images[0].isic_id).locator("..").get_by_role("button", name="Remove").click()
 

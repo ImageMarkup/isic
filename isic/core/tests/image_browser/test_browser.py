@@ -114,7 +114,7 @@ def test_add_to_collection_modal_with_recent_search_and_confirm(
 
     # Open the Actions dropdown and click "Add results to collection"
     page.get_by_role("button", name="Actions").click()
-    page.get_by_role("menuitem", name="Add results to collection").click()
+    page.get_by_role("button", name="Add results to collection").click()
 
     # The modal appears showing the user's recent collection
     modal_heading = page.get_by_role("heading", name="Add to Collection")

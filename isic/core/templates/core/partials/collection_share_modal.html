@@ -26,6 +26,8 @@
 
 <script type="text/javascript">
   $("#user-selection").select2({
+    // Render the dropdown inside the modal so it's not hidden behind the <dialog> backdrop
+    dropdownParent: $("[x-ref='collectionShareModal'] .modal-box"),
     ajax: {
       url: '{% url "api:user_autocomplete" %}',
       data: function (params) {
