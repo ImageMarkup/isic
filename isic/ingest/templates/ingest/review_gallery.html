@@ -36,7 +36,9 @@
     </div>
 
     {% if page_obj %}
-      {% include 'ingest/partials/review_footer.html' %}
+      <div class="flex justify-end mt-2">
+        {% include 'ingest/partials/review_submit_button.html' %}
+      </div>
     {% endif %}
 
   {% endif %}
