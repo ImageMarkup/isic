@@ -38,7 +38,8 @@
               @click="publish"
               :disabled="isPublishing"
               class="btn btn-primary btn-sm">
-              <i :class="isPublishing ? 'ri-loader-line animate-spin' : 'ri-upload-line'"></i>
+              <span x-show="isPublishing" class="loading loading-spinner loading-sm"></span>
+              <i x-show="!isPublishing" class="ri-upload-line"></i>
               <span x-text="buttonText"></span>
             </button>
           </div>

@@ -1,8 +1,9 @@
 {% load static %}
 <div x-data="similarImagesTab('{{ image.isic_id }}')"
      x-init="loadSimilarImages()">
-  <div x-show="loading" class="text-center py-8">
-    <p class="mt-2 text-gray-600">Loading similar images...</p>
+  <div x-show="loading" class="flex flex-col items-center py-8">
+    <span class="loading loading-spinner loading-lg mb-2"></span>
+    <p class="text-gray-600">Loading similar images...</p>
   </div>
 
   <div x-show="error" class="text-center py-8 text-red-600">
