@@ -82,7 +82,7 @@
       {% if collection.description %}
         <div id="collection-description">
           <span class="font-bold">Description:</span>
-          {{ collection.description|markdownify }}
+          <div class="prose max-w-none">{{ collection.description|markdownify }}</div>
         </div>
       {% endif %}
     </div>

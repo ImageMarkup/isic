@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 @plugin "daisyui" {
   themes: winter;
 }
@@ -36,5 +37,12 @@
     li {
       @apply flex bg-red-100 border border-red-300 my-4 px-4 py-3 rounded-md text-red-900 text-sm;
     }
+  }
+}
+
+@layer utilities {
+  /* This selector overrides Daisy's defaults. */
+  :root .prose {
+    --tw-prose-links: var(--color-primary);
   }
 }
