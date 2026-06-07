@@ -7,6 +7,7 @@
 {% block head_extra %}
   {{ block.super }}
   <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.26.0/axios.min.js" integrity="sha512-bPh3uwgU5qEMipS/VOmRqynnMXGGSRv+72H/N260MQeXZIK4PG48401Bsby9Nq5P5fz7hy5UGNmC/W1Z51h2GQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="{% static 'core/js/collection-picker.js' %}"></script>
   <script src="{% static 'core/dist/cog.js' %}"></script>
   <link rel="stylesheet" href="{% static 'core/dist/ol.css' %}">
 {% endblock %}
@@ -34,53 +35,58 @@
             {{ form.query.errors }}
           </div>
 
-          <div x-data="collectionPicker()">
-            <label class="block text-xs font-medium text-gray-600 mb-1">Collections</label>
-            <div class="relative">
+          <fieldset class="fieldset" x-data="collectionPicker()">
+            <legend class="fieldset-legend">Collections</legend>
+            <div class="relative w-full"
+                 x-ref="dropdownWrapper"
+                 @keydown.down.prevent="focusNextItem($event.target)"
+                 @keydown.up.prevent="focusPrevItem($event.target)"
+                 @keydown.escape="closeDropdown()"
+                 @focusout="onFocusout($event)"
+            >
               <input
                 type="text"
                 x-ref="collectionInput"
                 x-model="collectionInput"
-                @click="showDropdown()"
-                @input="filterCollections()"
-                @keydown="handleKeydown($event)"
+                @click="dropdownOpen = true"
+                @input="dropdownOpen = true"
                 placeholder="Type or select collections..."
-                class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-sm bg-white focus:outline-hidden focus:ring-1 focus:ring-blue-500"
+                class="input input-bordered input-sm w-full"
               />
-
-              <div x-show="dropdownOpen" x-cloak class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-y-auto" style="max-height: 16rem;">
-                <div class="py-1">
-                  <template x-for="(collection, index) in filteredCollections" :key="collection.id">
-                    <div
-                      @click="selectCollection(collection)"
-                      :class="{'bg-gray-100': highlightedIndex === index}"
-                      class="px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm flex justify-between items-center"
-                    >
+              <ul
+                x-ref="collectionMenu"
+                x-show="dropdownOpen"
+                x-cloak
+                class="absolute z-10 menu bg-base-100 rounded-box shadow-sm mt-1 w-full max-h-64 overflow-y-auto"
+              >
+                <template x-for="collection in filteredCollections" :key="collection.id">
+                  <li>
+                    <button type="button" @click="selectCollection(collection)">
                       <span x-text="collection.name"></span>
-                    </div>
-                  </template>
-                  <div x-show="filteredCollections.length === 0" class="px-3 py-2 text-sm text-gray-500 text-center">
-                    No collections found
-                  </div>
-                </div>
-              </div>
-
-              <div class="flex flex-wrap gap-1 mt-2" x-show="selectedCollections.size > 0">
-                <template x-for="collectionId in Array.from(selectedCollections)" :key="collectionId">
-                  <span class="inline-flex items-center gap-1 px-2 py-1 mr-1 bg-blue-100 text-blue-700 rounded-sm text-xs">
-                    <span x-text="getCollectionName(collectionId)"></span>
-                    <button @click="removeCollection(collectionId)" type="button" class="hover:bg-blue-200 rounded-sm">
-                      <i class="ri-close-line text-xs"></i>
                     </button>
-                  </span>
+                  </li>
                 </template>
-              </div>
+                <li x-show="filteredCollections.length === 0" class="menu-disabled">
+                  <span>No collections found</span>
+                </li>
+              </ul>
+            </div>
 
-              <template x-for="collectionId in Array.from(selectedCollections)" :key="collectionId">
-                <input type="hidden" name="collections" :value="collectionId" />
+            <div class="flex flex-wrap gap-1 mt-2" x-show="selectedCollections.length > 0">
+              <template x-for="collectionId in selectedCollections" :key="collectionId">
+                <div class="badge badge-soft badge-primary gap-1">
+                  <span x-text="getCollectionName(collectionId)"></span>
+                  <button @click="removeCollection(collectionId)" type="button" class="btn btn-xs btn-circle btn-ghost">
+                    <i class="ri-close-line text-xs"></i>
+                  </button>
+                </div>
               </template>
             </div>
-          </div>
+
+            <template x-for="collectionId in selectedCollections" :key="collectionId">
+              <input type="hidden" name="collections" :value="collectionId" />
+            </template>
+          </fieldset>
         </div>
 
         <div class="mt-3 flex justify-end">
