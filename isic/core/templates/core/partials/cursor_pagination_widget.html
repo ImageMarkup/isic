@@ -1,18 +1,18 @@
 {% load humanize %}
 
-<div class="flex justify-center mt-4">
+<nav aria-label="Pagination">
   <div class="join">
     {% if page.previous %}
-      <a href="{{ page.previous }}" class="join-item btn btn-sm">
+      <a href="{{ page.previous }}" class="join-item btn btn-outline btn-sm">
         <i class="ri-arrow-left-s-line"></i>
         <span>Previous</span>
       </a>
     {% endif %}
     {% if page.next %}
-      <a href="{{ page.next }}" class="join-item btn btn-sm">
+      <a href="{{ page.next }}" class="join-item btn btn-outline btn-sm">
         <span>Next</span>
         <i class="ri-arrow-right-s-line"></i>
       </a>
     {% endif %}
   </div>
-</div>
+</nav>

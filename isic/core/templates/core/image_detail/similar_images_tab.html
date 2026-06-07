@@ -1,73 +1,61 @@
+{% load static %}
 <div x-data="similarImagesTab('{{ image.isic_id }}')"
      x-init="loadSimilarImages()">
-  <div class="bg-white shadow-sm overflow-hidden sm:rounded-md">
-    <div class="mb-4">
-      <div x-show="loading" class="text-center py-8">
-        <p class="mt-2 text-gray-600">Loading similar images...</p>
-      </div>
+  <div x-show="loading" class="text-center py-8">
+    <p class="mt-2 text-gray-600">Loading similar images...</p>
+  </div>
 
-      <div x-show="error" class="text-center py-8 text-red-600">
-        <p x-text="error"></p>
-      </div>
+  <div x-show="error" class="text-center py-8 text-red-600">
+    <p x-text="error"></p>
+  </div>
 
-      <div x-show="!loading && !error && images.length === 0" class="text-center py-8 text-gray-600">
-        <p>No similar images found.</p>
-      </div>
+  <div x-show="!loading && !error && images.length === 0" class="text-center py-8 text-gray-600">
+    <p>No similar images found.</p>
+  </div>
 
-      <div x-show="!loading && !error && images.length > 0" x-data="thumbnailGrid()">
-        <div class="hidden pb-3 sm:block">
-          <div class="join">
-            <button class="join-item btn btn-outline btn-xs" @click="decrease()">
-              <i class="ri-subtract-line"></i>
-            </button>
-            <span class="join-item btn btn-outline btn-xs pointer-events-none">Columns</span>
-            <button class="join-item btn btn-outline btn-xs" @click="increase()">
-              <i class="ri-add-line"></i>
-            </button>
+  <script src="{% static 'core/js/thumbnail_grid.js' %}"></script>
+  <div x-show="!loading && !error && images.length > 0" class="flex flex-col gap-3" x-data="thumbnailGrid()">
+    <div class="hidden sm:flex sm:items-center sm:justify-between">
+      {% include 'core/partials/columns_widget.html' %}
+    </div>
+
+    <div class="grid gap-4 grid-cols-2" :class="gridClassNames[numCols]">
+      <template x-for="image in images" :key="image.isic_id">
+        <div>
+          <div x-data class="pb-4">
+            <a class="cursor-pointer">
+              <img @click="$refs.similarModal.showModal()"
+                   :src="image.files.thumbnail_256.url"
+                   {% comment %}forcibly set the width and height to 256px to account for TBP tiles which can be smaller{% endcomment %}
+                   width="256"
+                   height="256" />
+            </a>
+
+            <dialog x-ref="similarModal" class="modal">
+              <div class="modal-box max-w-4xl">
+                <img :src="image.files.full.url" class="w-full" />
+                <div class="modal-action">
+                  <button type="button" class="btn" @click="$refs.similarModal.close()">Close</button>
+                </div>
+              </div>
+              <div class="modal-backdrop" @click="$refs.similarModal.close()"></div>
+            </dialog>
+          </div>
+
+          <div class="flex">
+            <a :href="`/images/${image.isic_id}/`" x-text="image.isic_id"></a>
+            <a :href="image.files.full.url">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+              </svg>
+            </a>
           </div>
         </div>
+      </template>
+    </div>
 
-        <div class="grid gap-4 grid-cols-2" :class="gridClassNames[numCols]">
-          <template x-for="image in images" :key="image.isic_id">
-            <div>
-              <div x-data class="pb-4">
-                <a class="cursor-pointer">
-                  <img @click="$refs.similarModal.showModal()"
-                       :src="image.files.thumbnail_256.url"
-                       {% comment %}forcibly set the width and height to 256px to account for TBP tiles which can be smaller{% endcomment %}
-                       width="256"
-                       height="256" />
-                </a>
-
-                <dialog x-ref="similarModal" class="modal">
-                  <div class="modal-box max-w-4xl">
-                    <img :src="image.files.full.url" class="w-full" />
-                    <div class="modal-action">
-                      <button type="button" class="btn" @click="$refs.similarModal.close()">Close</button>
-                    </div>
-                  </div>
-                  <div class="modal-backdrop" @click="$refs.similarModal.close()"></div>
-                </dialog>
-              </div>
-
-              <div class="flex">
-                <a :href="`/images/${image.isic_id}/`" x-text="image.isic_id"></a>
-                <a :href="image.files.full.url">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                  </svg>
-                </a>
-              </div>
-            </div>
-          </template>
-        </div>
-
-        {% include 'ingest/partials/thumbnail_grid_js.html' %}
-
-        <div x-show="images.length >= limit" class="mt-4 text-gray-600">
-          <p>Showing first <span x-text="limit"></span> images.</p>
-        </div>
-      </div>
+    <div x-show="images.length >= limit" class="mt-4 text-gray-600">
+      <p>Showing first <span x-text="limit"></span> images.</p>
     </div>
   </div>
 </div>

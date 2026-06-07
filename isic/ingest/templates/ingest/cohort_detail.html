@@ -1,5 +1,6 @@
 {% extends 'core/base.html' %}
 {% load humanize %}
+{% load static %}
 
 {% block head_extra %}
   {{ block.super }}
@@ -26,9 +27,8 @@
       </p>
     </div>
 
-    <div class="flex justify-between">
+    <div>
       Showing {{ accessions.paginator.count|intcomma }} ignored results
-      {% include 'studies/partials/pagination.html' with page_obj=accessions %}
     </div>
 
     <div class="mb-4">
@@ -49,34 +49,30 @@
         </div>
       </div>
     </div>
+    <div class="flex justify-center mt-3">
+      {% include 'core/partials/pagination_widget.html' with page_obj=accessions %}
+    </div>
   {% else %}
-    <div class="flex justify-between">
+    <div>
       Showing {{ accessions.paginator.count|intcomma }} results
-      {% include 'studies/partials/pagination.html' with page_obj=accessions %}
     </div>
 
-    <div class="mb-4" x-data="thumbnailGrid();">
-      <div class="hidden pb-3 sm:block">
-        <div class="join">
-          <button class="join-item btn btn-outline btn-xs" @click="decrease()">
-            <i class="ri-subtract-line"></i>
-          </button>
-          <span class="join-item btn btn-outline btn-xs pointer-events-none">Columns</span>
-          <button class="join-item btn btn-outline btn-xs" @click="increase()">
-            <i class="ri-add-line"></i>
-          </button>
-        </div>
+    <script src="{% static 'core/js/thumbnail_grid.js' %}"></script>
+    <div class="flex flex-col gap-3" x-data="thumbnailGrid()">
+      <div class="hidden sm:flex sm:items-center sm:justify-between">
+        {% include 'core/partials/columns_widget.html' %}
+        {% include 'core/partials/pagination_widget.html' with page_obj=accessions %}
       </div>
       <div class="grid gap-4 grid-cols-2" :class="gridClassNames[numCols]">
         {% for accession in accessions %}
           {% include 'ingest/partials/accession.html' with review_mode=0 include_acquisition_day=0 %}
         {% endfor %}
       </div>
+      <div class="flex justify-center">
+        {% include 'core/partials/pagination_widget.html' with page_obj=accessions %}
+      </div>
     </div>
   {% endif %}
 
-  {% include 'studies/partials/pagination.html' with page_obj=accessions %}
-
-  {% include 'ingest/partials/thumbnail_grid_js.html' %}
 
 {% endblock %}

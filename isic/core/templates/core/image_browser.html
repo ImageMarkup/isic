@@ -120,31 +120,24 @@
         </div>
       </div>
 
-      {% include 'studies/partials/cursor_pagination.html' %}
     </div>
 
-    <div class="mb-4" x-data="thumbnailGrid();">
-      <div class="hidden pb-3 sm:block">
-        <div class="join">
-          <button class="join-item btn btn-outline btn-xs" @click="decrease()">
-            <i class="ri-subtract-line"></i>
-          </button>
-          <span class="join-item btn btn-outline btn-xs pointer-events-none">Columns</span>
-          <button class="join-item btn btn-outline btn-xs" @click="increase()">
-            <i class="ri-add-line"></i>
-          </button>
-        </div>
+    <script src="{% static 'core/js/thumbnail_grid.js' %}"></script>
+    <div class="flex flex-col gap-3" x-data="thumbnailGrid()">
+      <div class="hidden sm:flex sm:items-center sm:justify-between">
+        {% include 'core/partials/columns_widget.html' %}
+        {% include 'core/partials/cursor_pagination_widget.html' %}
       </div>
       <div class="grid gap-4 grid-cols-2" :class="gridClassNames[numCols]">
         {% for image in images %}
           {% include 'core/partials/image.html' %}
         {% endfor %}
       </div>
+      <div class="flex justify-center">
+        {% include 'core/partials/cursor_pagination_widget.html' %}
+      </div>
     </div>
 
-    {% include 'studies/partials/cursor_pagination.html' %}
-
-    {% include 'ingest/partials/thumbnail_grid_js.html' %}
   </div>
 
   {% include 'core/partials/image_browser_js.html' %}

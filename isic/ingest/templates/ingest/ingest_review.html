@@ -22,7 +22,6 @@
       </label>
     </div>
 
-    {% include 'studies/partials/pagination.html' with page_obj=cohorts %}
   </div>
   <div class="bg-white shadow-sm overflow-hidden sm:rounded-md">
     <ul class="divide-y divide-gray-200">
@@ -70,6 +69,10 @@
         </li>
       {% endfor %}
     </ul>
+  </div>
+
+  <div class="flex justify-center mt-3">
+    {% include 'core/partials/pagination_widget.html' with page_obj=cohorts %}
   </div>
 
   <script type="text/javascript">

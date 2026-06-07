@@ -59,5 +59,7 @@
     </ul>
   </div>
 
-  {% include 'studies/partials/pagination.html' with page_obj=studies %}
+  <div class="flex justify-center mt-3">
+    {% include 'core/partials/pagination_widget.html' with page_obj=studies %}
+  </div>
 {% endblock %}

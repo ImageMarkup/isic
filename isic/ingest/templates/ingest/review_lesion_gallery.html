@@ -23,7 +23,7 @@
     <progress class="progress progress-primary w-200 mt-6" value="{{ progress.percentage }}" max="100"></progress>
     {{ progress.num_reviewed|intcomma }} / {{ progress.num_reviewable|intcomma }} ({{ progress.percentage }}%)
 
-    <div class="mb-4">
+    <div>
       {% for lesion_id, accessions in grouped_accessions.items %}
         {{ lesion_id  }}
 
@@ -39,6 +39,5 @@
       {% include 'ingest/partials/review_footer.html' %}
     {% endif %}
 
-    {% include 'ingest/partials/thumbnail_grid_js.html' %}
   {% endif %}
 {% endblock %}

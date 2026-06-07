@@ -1,5 +1,6 @@
 {% extends 'core/base.html' %}
 {% load humanize %}
+{% load static %}
 
 {% block content %}
   {% if pending_tasks and next_task %}
@@ -31,27 +32,21 @@
     <input type="radio" name="study_tabs" role="tab" class="tab"
            aria-label="Images ({{ num_images|intcomma }})" checked />
     <div role="tabpanel" class="tab-content bg-base-100 border-base-300 p-6">
-      {% include 'studies/partials/pagination.html' with page_obj=images %}
-      <div class="mb-4" x-data="thumbnailGrid();">
-        <div class="hidden pb-3 sm:block">
-          <div class="join">
-            <button class="join-item btn btn-outline btn-xs" @click="decrease()">
-              <i class="ri-subtract-line"></i>
-            </button>
-            <span class="join-item btn btn-outline btn-xs pointer-events-none">Columns</span>
-            <button class="join-item btn btn-outline btn-xs" @click="increase()">
-              <i class="ri-add-line"></i>
-            </button>
-          </div>
+      <script src="{% static 'core/js/thumbnail_grid.js' %}"></script>
+      <div class="flex flex-col gap-3" x-data="thumbnailGrid()">
+        <div class="hidden sm:flex sm:items-center sm:justify-between">
+          {% include 'core/partials/columns_widget.html' %}
+          {% include 'core/partials/pagination_widget.html' with page_obj=images %}
         </div>
         <div class="grid gap-4 grid-cols-2" :class="gridClassNames[numCols]">
           {% for image in images %}
             {% include 'studies/partials/study_image.html' %}
           {% endfor %}
         </div>
+        <div class="flex justify-center">
+          {% include 'core/partials/pagination_widget.html' with page_obj=images %}
+        </div>
       </div>
-      {% include 'studies/partials/pagination.html' with page_obj=images %}
-      {% include 'ingest/partials/thumbnail_grid_js.html' %}
     </div>
 
     <input type="radio" name="study_tabs" role="tab" class="tab"
