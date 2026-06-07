@@ -56,6 +56,6 @@
     </ul>
   </div>
 
-  <p class="fieldset-label">{{ field.help_text }}</p>
+  <p class="fieldset-label"><span class="prose">{{ field.help_text|safe }}</span></p>
   {{ field.errors }}
 </fieldset>

@@ -14,21 +14,21 @@
     <fieldset class="fieldset">
       <label class="fieldset-legend" for="{{ form.institution_name.html_name }}">{{ form.institution_name.label }}</label>
       <input type="text" value="{{ form.institution_name.value|default_if_none:'' }}" name="{{ form.institution_name.html_name }}" id="{{ form.institution_name.html_name }}" class="input input-bordered w-full" required>
-      <p class="fieldset-label"><span class="[&_a]:link [&_a]:link-primary">{{ form.institution_name.help_text|safe }}</span></p>
+      <p class="fieldset-label"><span class="prose">{{ form.institution_name.help_text|safe }}</span></p>
       {{ form.institution_name.errors }}
     </fieldset>
 
     <fieldset class="fieldset">
       <label class="fieldset-legend" for="{{ form.institution_url.html_name }}">{{ form.institution_url.label }}</label>
       <input type="text" value="{{ form.institution_url.value|default_if_none:'' }}" name="{{ form.institution_url.html_name }}" id="{{ form.institution_url.html_name }}" class="input input-bordered w-full">
-      <p class="fieldset-label"><span class="[&_a]:link [&_a]:link-primary">{{ form.institution_url.help_text|safe }}</span></p>
+      <p class="fieldset-label"><span class="prose">{{ form.institution_url.help_text|safe }}</span></p>
       {{ form.institution_url.errors }}
     </fieldset>
 
     <fieldset class="fieldset">
       <label class="fieldset-legend" for="{{ form.legal_contact_info.html_name }}">{{ form.legal_contact_info.label }}</label>
       <textarea id="{{ form.legal_contact_info.html_name }}" name="{{ form.legal_contact_info.html_name }}" rows="3" class="textarea textarea-bordered w-full" required>{{ form.legal_contact_info.value|default_if_none:'' }}</textarea>
-      <p class="fieldset-label"><span class="[&_a]:link [&_a]:link-primary">{{ form.legal_contact_info.help_text|safe }}</span></p>
+      <p class="fieldset-label"><span class="prose">{{ form.legal_contact_info.help_text|safe }}</span></p>
       {{ form.legal_contact_info.errors }}
     </fieldset>
 
@@ -55,7 +55,7 @@
       <fieldset class="fieldset">
         <label class="fieldset-legend" for="{{ form.default_attribution.html_name }}">{{ form.default_attribution.label }}</label>
         <textarea id="{{ form.default_attribution.html_name }}" name="{{ form.default_attribution.html_name }}" rows="3" class="textarea textarea-bordered w-full">{{ form.default_attribution.value|default_if_none:'' }}</textarea>
-        <p class="fieldset-label"><span class="[&_a]:link [&_a]:link-primary">{{ form.default_attribution.help_text|safe }}</span></p>
+        <p class="fieldset-label"><span class="prose">{{ form.default_attribution.help_text|safe }}</span></p>
         {{ form.default_attribution.errors }}
       </fieldset>
     </div>

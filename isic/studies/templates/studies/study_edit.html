@@ -11,14 +11,14 @@
     <fieldset class="fieldset">
       <label class="fieldset-legend" for="{{ form.name.html_name }}">{{ form.name.label }}</label>
       <input type="text" value="{{ form.name.value|default_if_none:'' }}" name="{{ form.name.html_name }}" id="{{ form.name.html_name }}" class="input input-bordered w-full">
-      <p class="fieldset-label">{{ form.name.help_text }}</p>
+      <p class="fieldset-label"><span class="prose">{{ form.name.help_text|safe }}</span></p>
       {{ form.name.errors }}
     </fieldset>
 
     <fieldset class="fieldset">
       <label class="fieldset-legend" for="{{ form.description.html_name }}">{{ form.description.label }}</label>
       <textarea id="{{ form.description.html_name }}" name="{{ form.description.html_name }}" rows="3" class="textarea textarea-bordered w-full">{{ form.description.value|default_if_none:'' }}</textarea>
-      <p class="fieldset-label">{{ form.description.help_text }}</p>
+      <p class="fieldset-label"><span class="prose">{{ form.description.help_text|safe }}</span></p>
       {{ form.description.errors }}
     </fieldset>
 
@@ -27,7 +27,7 @@
         <input type="checkbox" name="{{ form.zoomable.html_name }}" id="{{ form.zoomable.html_name }}" {% if form.zoomable.value %}checked{% endif %} class="checkbox" />
         {{ form.zoomable.label }}
       </label>
-      <p class="fieldset-label">{{ form.zoomable.help_text }}</p>
+      <p class="fieldset-label"><span class="prose">{{ form.zoomable.help_text|safe }}</span></p>
       {{ form.zoomable.errors }}
     </fieldset>
 

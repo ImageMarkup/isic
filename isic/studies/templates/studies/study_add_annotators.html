@@ -36,7 +36,7 @@
 
     <fieldset class="fieldset">
       <textarea id="{{ form.annotators.html_name }}" name="{{ form.annotators.html_name }}" rows="5" class="textarea textarea-bordered w-full" placeholder="user@example.com&#10;ABC12&#10;another@example.com"></textarea>
-      <p class="fieldset-label">{{ form.annotators.help_text }}</p>
+      <p class="fieldset-label"><span class="prose">{{ form.annotators.help_text|safe }}</span></p>
       {{ form.annotators.errors }}
     </fieldset>
 

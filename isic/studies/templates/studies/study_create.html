@@ -167,14 +167,14 @@
     <fieldset class="fieldset">
       <label class="fieldset-legend" for="{{ base_form.name.html_name }}">{{ base_form.name.label }}</label>
       <input {% if base_form.name.field.required %}required{% endif %} type="text" value="{{ base_form.name.value|default_if_none:'' }}" name="{{ base_form.name.html_name }}" id="{{ base_form.name.html_name }}" class="input input-bordered w-full">
-      <p class="fieldset-label">{{ base_form.name.help_text }}</p>
+      <p class="fieldset-label"><span class="prose">{{ base_form.name.help_text|safe }}</span></p>
       {{ base_form.name.errors }}
     </fieldset>
 
     <fieldset class="fieldset">
       <label class="fieldset-legend" for="{{ base_form.description.html_name }}">{{ base_form.description.label }}</label>
       <textarea {% if base_form.description.field.required %}required{% endif %} id="{{ base_form.description.html_name }}" name="{{ base_form.description.html_name }}" rows="3" class="textarea textarea-bordered w-full">{{ base_form.description.value|default_if_none:'' }}</textarea>
-      <p class="fieldset-label">{{ base_form.description.help_text }}</p>
+      <p class="fieldset-label"><span class="prose">{{ base_form.description.help_text|safe }}</span></p>
       {{ base_form.description.errors }}
     </fieldset>
 
@@ -193,7 +193,7 @@
           <option value="{{ collection.pk }}" {% if base_form.collection.value == collection.pk %}selected="selected"{% endif %}>{{ collection.name }}</option>
         {% endfor %}
       </select>
-      <p class="fieldset-label">{{ base_form.collection.help_text }}<br/>This collection will be locked once a study is made.</p>
+      <p class="fieldset-label"><span class="prose">{{ base_form.collection.help_text|safe }}</span><br/>This collection will be locked once a study is made.</p>
       {{ base_form.collection.errors }}
     </fieldset>
 
@@ -209,7 +209,7 @@
         <input type="checkbox" name="{{ base_form.public.html_name }}" {% if base_form.public.value %}checked{% endif %} class="checkbox" />
         {{ base_form.public.label }}
       </label>
-      <p class="fieldset-label">{{ base_form.public.help_text }}</p>
+      <p class="fieldset-label"><span class="prose">{{ base_form.public.help_text|safe }}</span></p>
       {{ base_form.public.errors }}
     </fieldset>
 
@@ -218,7 +218,7 @@
         <input type="checkbox" name="{{ base_form.zoomable.html_name }}" id="{{ base_form.zoomable.html_name }}" {% if base_form.zoomable.value %}checked{% endif %} class="checkbox" />
         {{ base_form.zoomable.label }}
       </label>
-      <p class="fieldset-label">{{ base_form.zoomable.help_text }}</p>
+      <p class="fieldset-label"><span class="prose">{{ base_form.zoomable.help_text|safe }}</span></p>
       {{ base_form.zoomable.errors }}
     </fieldset>
 
