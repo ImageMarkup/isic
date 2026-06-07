@@ -144,23 +144,25 @@
     </div>
 
     <dialog x-ref="createCollectionModal" class="modal">
-      <form class="modal-box" @submit.prevent="createCollection()">
-        <h3 class="font-bold text-lg mb-4">Create Collection</h3>
-        <p class="mb-4 text-sm text-gray-600" x-text="'This will create a collection with ' + collectionImageCount.toLocaleString() + ' images from your query results.'"></p>
+      <form class="modal-box space-y-4" @submit.prevent="createCollection()">
+        <h3 class="font-bold text-lg">Create Collection</h3>
+        <div x-show="createCollectionError" class="alert alert-error text-sm">
+          <pre class="whitespace-pre-wrap" x-text="createCollectionError"></pre>
+        </div>
+        <p class="text-sm text-base-content/60">
+          This will create a collection with <span x-text="collectionImageCount.toLocaleString()"></span> images from your query results.
+        </p>
         <fieldset class="fieldset">
-          <legend class="fieldset-legend">Collection Name</legend>
+          <label class="fieldset-legend" for="collection-name-input">Collection Name</label>
           <input
             type="text"
             id="collection-name-input"
             x-model="collectionName"
             x-ref="collectionNameInput"
-            class="input w-full"
-            placeholder="My collection"
+            class="input input-bordered w-full"
+            required
           >
         </fieldset>
-        <div x-show="createCollectionError" class="alert alert-error text-sm">
-            <pre class="whitespace-pre-wrap" x-text="createCollectionError"></pre>
-        </div>
         <div class="modal-action">
           <button type="button" class="btn btn-ghost" @click="$refs.createCollectionModal.close()">Cancel</button>
           <button
