@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-24.04
     services:
       postgres:
-        image: pgvector/pgvector:pg17
+        image: pgvector/pgvector:pg18
         env:
           POSTGRES_DB: django
           POSTGRES_PASSWORD: postgres
@@ -89,3 +89,40 @@ jobs:
           DJANGO_CELERY_BROKER_URL: amqp://localhost:5672/
           DJANGO_MINIO_STORAGE_URL: http://minioAccessKey:minioSecretKey@localhost:9000/django-storage
           DJANGO_CACHE_URL: redis://localhost:6379/0
+      - name: Validate greenmask config against the schema
+        # Catch changes that can no longer legally run against our schema (a
+        # renamed/dropped column, a broken subset condition, etc.) by
+        # validating and dumping against a freshly-migrated database. Any
+        # change to models or migrations can invalidate the greenmask config,
+        # so this runs on every PR. greenmask only exits non-zero on fatal
+        # errors (e.g. a transformer pointed at a column that no longer
+        # exists), not on softer warnings; --dump-only exercises the subset
+        # conditions and transformers as real SQL/dump operations without
+        # Heroku or the restore step.
+        run: |
+          curl -fsSL https://greenmask.io/install.sh | sh -s -- -y -v v0.2.21
+          # The runner's default postgres client is older than the pg18 service
+          # container, and pg_dump aborts on a server version mismatch. The
+          # Ubuntu repos don't carry 18, so add the PGDG repo first.
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update && sudo apt-get install --yes --no-install-recommends postgresql-client-18
+          # The runner image also ships an older postgres server, and Ubuntu's
+          # /usr/bin/pg_dump wrapper resolves to that cluster's version, so put
+          # the real 18 binaries ahead of the wrapper.
+          export PATH="/usr/lib/postgresql/18/bin:$PATH"
+          ./manage.py migrate
+          greenmask --config .greenmask/config.yml validate --warnings
+          dev/greenmask-dump.sh --dump-only
+        env:
+          # Used by .greenmask/config.yml's dump dbname and Django's database.
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+          DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+          DJANGO_SETTINGS_MODULE: isic.settings.testing
+          DJANGO_ISIC_ELASTICSEARCH_URL: http://elastic:elastic@localhost:9200
+          DJANGO_CELERY_BROKER_URL: amqp://localhost:5672/
+          DJANGO_MINIO_STORAGE_URL: http://minioAccessKey:minioSecretKey@localhost:9000/django-storage
+          DJANGO_CACHE_URL: redis://localhost:6379/0
+          # The transformer templates reference env "SALT"; any value works here.
+          SALT: ci-test-salt

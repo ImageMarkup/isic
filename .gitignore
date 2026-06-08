@@ -4,6 +4,8 @@ isic/core/static/core/dist/
 dev/local-setup.sh
 docker-compose.local.yml
 
+.greenmask/dumps/
+
 # Additional Celery Beat files
 celerybeat-schedule*
 
