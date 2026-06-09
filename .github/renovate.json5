@@ -9,5 +9,13 @@
       // v2 removed OOB support: https://github.com/jazzband/django-oauth-toolkit/pull/1124
       allowedVersions: '<2.0.0',
     },
+    {
+      matchPackageNames: ['django-ninja'],
+      groupName: 'django-ninja',
+    },
+    {
+      matchPackageNames: ['mypy'],
+      allowedVersions: '<1.20',
+    },
   ],
 }
