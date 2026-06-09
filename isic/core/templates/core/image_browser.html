@@ -10,6 +10,7 @@
   <script src="{% static 'core/js/collection-picker.js' %}"></script>
   <script src="{% static 'core/dist/cog.js' %}"></script>
   <link rel="stylesheet" href="{% static 'core/dist/ol.css' %}">
+  <script src="{% static 'core/js/thumbnail-grid.js' %}"></script>
 {% endblock %}
 
 {% block content %}
@@ -127,7 +128,6 @@
 
     </div>
 
-    <script src="{% static 'core/js/thumbnail_grid.js' %}"></script>
     <div class="flex flex-col gap-3" x-data="thumbnailGrid()">
       <div class="hidden sm:flex sm:items-center sm:justify-between">
         {% include 'core/partials/columns_widget.html' %}

@@ -2,7 +2,8 @@
 {% load static %}
 
 {% block head_extra %}
-  <script src="{% static 'ingest/cohortAutocomplete.js' %}"></script>
+  {{ block.super }}
+  <script src="{% static 'ingest/cohort-autocomplete.js' %}"></script>
 {% endblock %}
 
 {% block content %}

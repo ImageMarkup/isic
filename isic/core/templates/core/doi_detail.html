@@ -9,6 +9,7 @@
 {% block title %}{{ doi.collection.name }} | {% endblock %}
 
 {% block head_extra %}
+  {{ block.super }}
   {% if doi.schema_org_dataset %}
     <script type="application/ld+json">
       {{ doi.get_schema_org_dataset_json|safe }}

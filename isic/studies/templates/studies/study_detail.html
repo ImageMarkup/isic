@@ -2,6 +2,11 @@
 {% load humanize %}
 {% load static %}
 
+{% block head_extra %}
+  {{ block.super }}
+  <script src="{% static 'core/js/thumbnail-grid.js' %}"></script>
+{% endblock %}
+
 {% block content %}
   {% if pending_tasks and next_task %}
     <div class="alert alert-info mb-4">
@@ -32,7 +37,6 @@
     <input type="radio" name="study_tabs" role="tab" class="tab"
            aria-label="Images ({{ num_images|intcomma }})" checked />
     <div role="tabpanel" class="tab-content bg-base-100 border-base-300 p-6">
-      <script src="{% static 'core/js/thumbnail_grid.js' %}"></script>
       <div class="flex flex-col gap-3" x-data="thumbnailGrid()">
         <div class="hidden sm:flex sm:items-center sm:justify-between">
           {% include 'core/partials/columns_widget.html' %}

@@ -14,7 +14,7 @@
     <p>No similar images found.</p>
   </div>
 
-  <script src="{% static 'core/js/thumbnail_grid.js' %}"></script>
+  <script src="{% static 'core/js/thumbnail-grid.js' %}"></script>
   <div x-show="!loading && !error && images.length > 0" class="flex flex-col gap-3" x-data="thumbnailGrid()">
     <div class="hidden sm:flex sm:items-center sm:justify-between">
       {% include 'core/partials/columns_widget.html' %}

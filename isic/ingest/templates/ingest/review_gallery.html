@@ -4,6 +4,7 @@
 
 {% block head_extra %}
   {{ block.super }}
+  <script src="{% static 'core/js/thumbnail-grid.js' %}"></script>
   {% include 'ingest/partials/review_header.html' %}
 {% endblock %}
 
@@ -20,7 +21,6 @@
     <progress class="progress progress-primary w-200 mt-6" value="{{ progress.percentage }}" max="100"></progress>
     {{ progress.num_reviewed|intcomma }} / {{ progress.num_reviewable|intcomma }} ({{ progress.percentage }}%)
 
-    <script src="{% static 'core/js/thumbnail_grid.js' %}"></script>
     <div>
       sorted by <span class="italic">original filename</span>
     </div>

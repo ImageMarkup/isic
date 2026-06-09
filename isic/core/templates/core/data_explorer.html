@@ -3,6 +3,7 @@
 {% block title %}Data Explorer | {% endblock %}
 
 {% block head_extra %}
+  {{ block.super }}
   <script type="module">
     import * as duckdb from 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.32.0/+esm';
     window.duckdb = duckdb;
