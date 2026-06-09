@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from typing import Any
 
 from ninja.security import HttpBearer, django_auth
 from oauth2_provider.oauth2_backends import get_oauthlib_core
@@ -17,7 +18,7 @@ class OAuth2AuthBearer(HttpBearer):
 
     # This is a reimplementation of the django-oauth-toolkit authentication backend for DRF.
     # See https://github.com/jazzband/django-oauth-toolkit/blob/a4ae1d4716bcabe45d80a787f4064022f11e584f/oauth2_provider/contrib/rest_framework/authentication.py#L8  # noqa: E501
-    def authenticate(self, request, token):
+    def authenticate(self, request, token) -> Any | None:
         oauthlib_core = get_oauthlib_core()
         valid, r = oauthlib_core.verify_request(request, scopes=[])
 
@@ -36,6 +37,8 @@ class OAuth2AuthBearer(HttpBearer):
             return True
         else:
             request.oauth2_error = getattr(r, "oauth2_error", {})
+
+        return None
 
 
 # The lambda _: True is to handle the case where a user doesn't pass any authentication.

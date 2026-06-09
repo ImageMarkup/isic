@@ -23,7 +23,7 @@ class CacheableCloudFrontStorage(PreventRenamingMixin, S3Storage, S3UnsignedUrlM
 
     # This is copied from upstream with minor modifications, subclassing in a cleaner way wasn't
     # possible.
-    def url(self, name, parameters=None, expire=None, http_method=None):
+    def url(self, name, parameters=None, expire=None, http_method=None) -> str:
         # If expire or http_method is set, defer to the parent implementation. At the moment this is
         # only done with generate_staff_image_list_metadata_csv_task.
         if expire is not None or http_method is not None:
@@ -46,6 +46,8 @@ class CacheableCloudFrontStorage(PreventRenamingMixin, S3Storage, S3UnsignedUrlM
                 return self.cloudfront_signer.generate_presigned_url(url, date_less_than=expiration)
 
             return url
+
+        return super().url(name, parameters=parameters, expire=expire, http_method=http_method)
 
 
 class IsicS3StaticStorage(PreventRenamingMixin, S3StaticStorage, S3UnsignedUrlMixin):

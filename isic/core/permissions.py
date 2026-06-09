@@ -52,9 +52,10 @@ for model in django.apps.apps.get_models():
 
 
 class IsicObjectPermissionsBackend(BaseBackend):
-    def has_perm(self, user_obj, perm, obj=None):
+    def has_perm(self, user_obj, perm, obj=None) -> bool:
         if ISIC_PERMS_MAP.get(perm):
             return ISIC_PERMS_MAP[perm](user_obj, obj)
+        return False
 
 
 def get_visible_objects(user, perm, qs=None):
