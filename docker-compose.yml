@@ -2,6 +2,9 @@ services:
   postgres:
     image: pgvector/pgvector:pg18
     shm_size: 128mb
+    # Bumped so the core_imageembedding ivfflat index can build during greenmask
+    # restores.
+    command: ["postgres", "-c", "maintenance_work_mem=512MB"]
     environment:
       POSTGRES_DB: django
       POSTGRES_PASSWORD: postgres

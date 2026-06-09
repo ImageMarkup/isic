@@ -1,0 +1,295 @@
+storage:
+  type: directory
+  directory:
+    path: "./.greenmask/dumps"
+
+restore:
+  pg_restore_options:
+    dbname: "postgresql://postgres:postgres@postgres:5432/django"
+    # Drops & recreates objects before restoring so it's idempotent. DESTRUCTIVE
+    # to the target DB - only point this at a throwaway/scratch database.
+    clean: true
+    if-exists: true
+    no-owner: true
+    no-privileges: true
+  scripts:
+    post-data:
+      # The subset restore changes collection membership, so the
+      # materialized_collection_counts matview must be recomputed from the
+      # restored base tables. Non-CONCURRENTLY since a fresh restore may leave it
+      # unpopulated, which CONCURRENTLY can't refresh.
+      - name: "refresh materialized_collection_counts"
+        when: "after"
+        query: "REFRESH MATERIALIZED VIEW materialized_collection_counts;"
+
+dump:
+  pg_dump_options:
+    dbname: "${DATABASE_URL}"
+    exclude-table-data:
+      - "django_session"
+      - "oauth2_provider_accesstoken"
+      - "oauth2_provider_refreshtoken"
+      - "socialaccount_socialtoken"
+      - "socialaccount_socialaccount"
+
+
+  transformation:
+
+    # ============ USERS ============
+    - schema: "public"
+      name: "auth_user"
+      transformers:
+        - name: "Template"
+          params:
+            column: "username"
+            template: 'user_{{ substr 0 12 (sha256sum (printf "%s:username:%s" (env "SALT") .GetValue)) }}'
+        - name: "Template"
+          params:
+            column: "email"
+            template: 'user{{ substr 0 8 (sha256sum (printf "%s:email:%s" (env "SALT") .GetValue)) }}@example.test'
+        - name: "Template"
+          params:
+            column: "first_name"
+            template: '{{ fakerFirstName }}'
+        - name: "Template"
+          params:
+            column: "last_name"
+            template: '{{ fakerFirstLastName }}'
+        - name: "Replace"
+          params:
+            column: "password"
+            # Replace with the exact output of make_password("password").
+            value: "pbkdf2_sha256$870000$REPLACE_WITH_REAL_HASH..."
+
+    # ============ EMAIL ADDRESSES (allauth) ============
+    - schema: "public"
+      name: "account_emailaddress"
+      transformers:
+        - name: "Template"
+          params:
+            column: "email"
+            template: 'user{{ substr 0 8 (sha256sum (printf "%s:email:%s" (env "SALT") .GetValue)) }}@example.test'
+
+    # ============ PROFILES (hash_id, 5-char, UNIQUE) ============
+    # Encode the row's auto-increment id as 5 base-32 digits over the hash_id
+    # alphabet (A-Z0-9 minus I,O,1,0 -> exactly 32 chars, 32^5 = 2^25 ids). This
+    # is a bijection (unique id -> unique hash_id), so it can't collide the way a
+    # truncated hash does, and stays regex-compliant. Hard ceiling at id < 2^25.
+    - schema: "public"
+      name: "login_profile"
+      transformers:
+        - name: "Template"
+          params:
+            column: "hash_id"
+            template: |-
+              {{- $alpha := "23456789ABCDEFGHJKLMNPQRSTUVWXYZ" -}}
+              {{- $n := .GetColumnValue "id" | int -}}
+              {{- $d0 := int (mod $n 32) -}}
+              {{- $d1 := int (mod (div $n 32) 32) -}}
+              {{- $d2 := int (mod (div $n 1024) 32) -}}
+              {{- $d3 := int (mod (div $n 32768) 32) -}}
+              {{- $d4 := int (mod (div $n 1048576) 32) -}}
+              {{ substr $d4 (int (add $d4 1)) $alpha }}{{ substr $d3 (int (add $d3 1)) $alpha }}{{ substr $d2 (int (add $d2 1)) $alpha }}{{ substr $d1 (int (add $d1 1)) $alpha }}{{ substr $d0 (int (add $d0 1)) $alpha }}
+
+    # ============ CONTRIBUTORS ============
+    - schema: "public"
+      name: "ingest_contributor"
+      transformers:
+        - name: "Template"
+          params:
+            column: "institution_name"
+            template: '{{ fakerWord | title }} {{ fakerWord | title }} Institute'
+        # Real-looking random URL. The column is blank=True (empty string, not
+        # NULL) when unset, so guard with a condition to leave empty values empty.
+        - name: "RandomURL"
+          when: 'record.institution_url != ""'
+          params:
+            column: "institution_url"
+        - name: "Template"
+          params:
+            column: "legal_contact_info"
+            template: '{{ fakerSentence }}'
+        - name: "Template"
+          params:
+            column: "default_attribution"
+            template: '{{ fakerWord | title }} {{ fakerWord | title }} Institute'
+
+    # ============ PRIVATE IDs (Patient / Lesion / RcmCase) ============
+    - schema: "public"
+      name: "ingest_patient"
+      transformers:
+        - name: "Template"
+          params:
+            column: "private_patient_id"
+            template: 'anon_patient_{{ substr 0 12 (sha256sum (printf "%s:patient:%s" (env "SALT") .GetValue)) }}'
+    - schema: "public"
+      name: "ingest_lesion"
+      transformers:
+        - name: "Template"
+          params:
+            column: "private_lesion_id"
+            template: 'anon_lesion_{{ substr 0 12 (sha256sum (printf "%s:lesion:%s" (env "SALT") .GetValue)) }}'
+    - schema: "public"
+      name: "ingest_rcmcase"
+      transformers:
+        - name: "Template"
+          params:
+            column: "private_rcm_case_id"
+            template: 'anon_rcm_case_{{ substr 0 12 (sha256sum (printf "%s:rcm_case:%s" (env "SALT") .GetValue)) }}'
+
+    # ============ ACCESSIONS (preserve file extension) ============
+    - schema: "public"
+      name: "ingest_accession"
+      # Deterministic percentage sample, controlled by ACCESSION_SUBSET_PERCENT.
+      # Greenmask cascades this through FKs to keep referential integrity. Use a
+      # deterministic predicate (NOT random()), which would be re-evaluated per
+      # scan and break parent/child consistency.
+      subset_conds:
+        - "(public.ingest_accession.id % 100) < ${ACCESSION_SUBSET_PERCENT:-5}"
+      transformers:
+        # original_blob_name is the uploader's source filename, which should be
+        # discarded. Hash the name but preserve the file extension so
+        # extension-aware code/UX still behaves. Always populated (editable=False,
+        # set from the blob name); unique per (cohort_id, name).
+        - name: "Template"
+          params:
+            column: "original_blob_name"
+            template: '{{ $v := .GetValue }}{{ if contains "." $v }}anon_image_{{ substr 0 16 (sha256sum (printf "%s:blob:%s" (env "SALT") $v)) }}.{{ last (splitList "." $v) }}{{ else }}anon_image_{{ substr 0 16 (sha256sum (printf "%s:blob:%s" (env "SALT") $v)) }}{{ end }}'
+        # attribution is blank by default (copied from cohort.default_attribution
+        # later), so only fake rows that actually have one.
+        - name: "Template"
+          when: 'record.attribution != ""'
+          params:
+            column: "attribution"
+            template: '{{ fakerWord | title }} {{ fakerWord | title }} Institute'
+
+    # ============ IMAGE EMBEDDINGS (3584-dim halfvec; huge) ============
+    # Embedding -> image -> accession. The accession subset already cascades here
+    # (only embeddings for subsetted accessions survive); this further keeps just
+    # ~10% of those. Sampling on a different id segment ((accession_id / 100) % 10)
+    # so it's an independent 10% slice of the subset regardless of
+    # ACCESSION_SUBSET_PERCENT.
+    - schema: "public"
+      name: "core_imageembedding"
+      subset_conds:
+        - >-
+          public.core_imageembedding.image_id IN (
+            SELECT public.core_image.id FROM public.core_image
+            WHERE ((public.core_image.accession_id / 100) % 10) = 0
+          )
+
+    # ============ PRIVATE COLLECTIONS ============
+    # Only transform private collections; leave public ones' name/description
+    # intact.
+    - schema: "public"
+      name: "core_collection"
+      transformers:
+        - name: "Template"
+          when: '!record.public'
+          params:
+            column: "name"
+            template: '{{ fakerWord | title }} {{ fakerWord | title }} {{ fakerWord | title }} {{ fakerWord | title }} Collection'
+        - name: "Template"
+          when: '!record.public && record.description != ""'
+          params:
+            column: "description"
+            template: '{{ fakerParagraph }}'
+
+    # ============ COHORTS ============
+    - schema: "public"
+      name: "ingest_cohort"
+      transformers:
+        - name: "Template"
+          params:
+            column: "name"
+            template: '{{ fakerWord | title }} {{ fakerWord | title }} Cohort'
+        - name: "Template"
+          params:
+            column: "description"
+            template: '{{ fakerParagraph }}'
+        - name: "Template"
+          params:
+            column: "default_attribution"
+            template: '{{ fakerWord | title }} {{ fakerWord | title }} Institute'
+
+    # ============ STUDIES ============
+    # Only transform private studies; leave public ones'
+    # name/description/attribution intact.
+    - schema: "public"
+      name: "studies_study"
+      transformers:
+        - name: "Template"
+          when: '!record.public'
+          params:
+            column: "name"
+            template: '{{ fakerWord | title }} {{ fakerWord | title }} {{ fakerWord | title }} {{ fakerWord | title }} Study'
+        - name: "Template"
+          when: '!record.public && record.description != ""'
+          params:
+            column: "description"
+            template: '{{ fakerParagraph }}'
+        - name: "Template"
+          when: '!record.public'
+          params:
+            column: "attribution"
+            template: '{{ fakerWord | title }} {{ fakerWord | title }} Institute'
+
+    # ============ UPLOAD BLOB NAMES (ZipUpload, MetadataFile) ============
+    # blob_name is the storage key derived from the uploaded filename, so it can
+    # leak the original (identifying) name. Same scheme as original_blob_name:
+    # salt-hash the name, keep the extension. Always populated (editable=False).
+    - schema: "public"
+      name: "ingest_zipupload"
+      transformers:
+        - name: "Template"
+          params:
+            column: "blob_name"
+            template: '{{ $v := .GetValue }}{{ if contains "." $v }}anon_upload_{{ substr 0 16 (sha256sum (printf "%s:blob_name:%s" (env "SALT") $v)) }}.{{ last (splitList "." $v) }}{{ else }}anon_upload_{{ substr 0 16 (sha256sum (printf "%s:blob_name:%s" (env "SALT") $v)) }}{{ end }}'
+    - schema: "public"
+      name: "ingest_metadatafile"
+      transformers:
+        - name: "Template"
+          params:
+            column: "blob_name"
+            template: '{{ $v := .GetValue }}{{ if contains "." $v }}anon_upload_{{ substr 0 16 (sha256sum (printf "%s:blob_name:%s" (env "SALT") $v)) }}.{{ last (splitList "." $v) }}{{ else }}anon_upload_{{ substr 0 16 (sha256sum (printf "%s:blob_name:%s" (env "SALT") $v)) }}{{ end }}'
+
+    # ============ JSON WIPES ============
+    # ingest_unstructuredmetadata is a OneToOne on accession, so the row must
+    # exist for every dumped accession (code accesses accession.unstructured_
+    # metadata). Keep the rows but Replace value with {} -- greenmask applies the
+    # transform during dump, so the real (possibly sensitive) JSON never leaves
+    # the source DB.
+    - schema: "public"
+      name: "ingest_unstructuredmetadata"
+      transformers:
+        - name: "Replace"
+          params:
+            column: "value"
+            value: "{}"
+    # ingest_metadataversion is a large table that takes a long time to dump. On
+    # top of the accession subset, keep it for only ~10% of the selected
+    # accessions (accession_id % 10 == 0) to keep dumps fast.
+    - schema: "public"
+      name: "ingest_metadataversion"
+      subset_conds:
+        - "(public.ingest_metadataversion.accession_id % 10) = 0"
+      transformers:
+        - name: "Replace"
+          params: { column: "unstructured_metadata", value: "{}" }
+        - name: "Replace"
+          params: { column: "patient", value: "{}" }
+        - name: "Replace"
+          params: { column: "lesion", value: "{}" }
+        - name: "Replace"
+          params: { column: "rcm_case", value: "{}" }
+
+    # ============ OAUTH APPLICATIONS ============
+    # App names aren't sensitive, so keep them as-is; only the credentials need
+    # rotating so the dump can't be used to authenticate against real clients.
+    - schema: "public"
+      name: "core_isicoauthapplication"
+      transformers:
+        - name: "RandomString"
+          params: { column: "client_id", min_length: 40, max_length: 40 }
+        - name: "RandomString"
+          params: { column: "client_secret", min_length: 64, max_length: 64 }
