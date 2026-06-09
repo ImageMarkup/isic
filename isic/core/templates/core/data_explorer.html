@@ -3,6 +3,7 @@
 {% block title %}Data Explorer | {% endblock %}
 
 {% block head_extra %}
+  {{ block.super }}
   <script type="module">
     import * as duckdb from 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.32.0/+esm';
     window.duckdb = duckdb;
@@ -54,13 +55,13 @@
             </button>
             <select
               id="example-query-select"
-              class="border border-gray-300 rounded px-2 py-1 text-sm font-semibold min-w-0"
+              class="border border-gray-300 rounded-sm px-2 py-1 text-sm font-semibold min-w-0"
               @change="if ($el.value) { setQuery(examples[$el.value].sql); }"
               x-html="'<option value=\'\'>Example queries...</option>' + examples.map((e, i) => `<option value=\'${i}\'>${e.name}</option>`).join('')"
             ></select>
           </div>
         </div>
-        <div id="sql-editor" class="border border-gray-300 rounded overflow-hidden"></div>
+        <div id="sql-editor" class="border border-gray-300 rounded-sm overflow-hidden"></div>
       </div>
 
       <div class="flex flex-wrap items-center gap-2 mb-2">
@@ -105,7 +106,7 @@
         <div x-show="showingSubset" class="alert alert-warning mb-2 text-sm py-2">
           <span>Results limited to <span x-text="rows.length"></span> rows. Add a LIMIT clause to your query to control the result size.</span>
         </div>
-        <table id="query-results" class="table table-xs table-zebra w-full">
+        <table id="query-results" class="table table-zebra">
           <thead>
             <tr>
               <template x-for="col in columns" :key="col">
@@ -120,7 +121,7 @@
                   <td class="text-xs sm:text-sm font-mono">
                     <template x-if="col === 'isic_id' && row[col]">
                       <span class="inline-flex items-center gap-1.5">
-                        <a :href="'/images/' + row[col] + '/'" class="link link-primary" target="_blank" rel="noopener" x-text="row[col]"></a>
+                        <a :href="'/images/' + row[col] + '/'" class="link link-hover link-primary" target="_blank" rel="noopener" x-text="row[col]"></a>
                         <span
                           class="inline-block"
                           @mouseenter="showThumbnail($event, row[col])"
@@ -143,39 +144,40 @@
 
     </div>
 
-    <input type="checkbox" id="create-collection-modal" class="modal-toggle" x-ref="createCollectionToggle">
-    <label for="create-collection-modal" class="modal cursor-pointer">
-      <label class="modal-box">
-        <h3 class="font-bold text-lg mb-4">Create Collection</h3>
-        <p class="mb-4 text-sm text-gray-600" x-text="'This will create a collection with ' + collectionImageCount.toLocaleString() + ' images from your query results.'"></p>
-        <div class="form-control mb-4">
-          <label class="label font-semibold">Collection Name</label>
+    <dialog x-ref="createCollectionModal" class="modal">
+      <form class="modal-box space-y-4" @submit.prevent="createCollection()">
+        <h3 class="font-bold text-lg">Create Collection</h3>
+        <div x-show="createCollectionError" class="alert alert-error text-sm">
+          <pre class="whitespace-pre-wrap" x-text="createCollectionError"></pre>
+        </div>
+        <p class="text-sm text-base-content/60">
+          This will create a collection with <span x-text="collectionImageCount.toLocaleString()"></span> images from your query results.
+        </p>
+        <fieldset class="fieldset">
+          <label class="fieldset-legend" for="collection-name-input">Collection Name</label>
           <input
             type="text"
             id="collection-name-input"
             x-model="collectionName"
             x-ref="collectionNameInput"
             class="input input-bordered w-full"
-            placeholder="My collection"
-            @keydown.enter="createCollection()"
+            required
           >
-        </div>
-        <div x-show="createCollectionError" class="alert alert-error mb-4 text-sm">
-            <pre class="whitespace-pre-wrap" x-text="createCollectionError"></pre>
-        </div>
+        </fieldset>
         <div class="modal-action">
-          <label for="create-collection-modal" class="btn btn-ghost">Cancel</label>
+          <button type="button" class="btn btn-ghost" @click="$refs.createCollectionModal.close()">Cancel</button>
           <button
+            type="submit"
             class="btn btn-primary"
             :disabled="!collectionName.trim() || creatingCollection"
-            @click="createCollection()"
           >
             <span x-show="!creatingCollection">Create</span>
             <span x-show="creatingCollection">Creating...</span>
           </button>
         </div>
-      </label>
-    </label>
+      </form>
+      <div class="modal-backdrop" @click="$refs.createCollectionModal.close()"></div>
+    </dialog>
   </div>
 
   <script>
@@ -536,7 +538,7 @@ ORDER BY st.total DESC, sd.rank`
           this.createCollectionError = '';
           this.collectionName = '';
           this.collectionImageCount = 0;
-          this.$refs.createCollectionToggle.checked = true;
+          this.$refs.createCollectionModal.showModal();
           this.$nextTick(() => this.$refs.collectionNameInput.focus());
 
           try {
@@ -572,9 +574,9 @@ ORDER BY st.total DESC, sd.rank`
 
           const rect = event.currentTarget.getBoundingClientRect();
           const popup = document.createElement('div');
-          popup.className = 'bg-white border border-gray-300 rounded shadow-lg';
+          popup.className = 'bg-white border border-gray-300 rounded-sm shadow-lg';
           popup.style.cssText = `position:fixed;z-index:9999;padding:2px;left:${rect.left}px;top:${rect.top}px;transform:translateY(-100%);`;
-          popup.innerHTML = `<img src="${this.thumbnailUrl(isicId)}" width="256" height="256" class="rounded" />`;
+          popup.innerHTML = `<img src="${this.thumbnailUrl(isicId)}" width="256" height="256" class="rounded-sm" />`;
           document.body.appendChild(popup);
           this.activePopup = popup;
         },
@@ -604,7 +606,7 @@ ORDER BY st.total DESC, sd.rank`
               isic_ids: isicIds,
             });
 
-            this.$refs.createCollectionToggle.checked = false;
+            this.$refs.createCollectionModal.close();
             window.location.href = '/collections/' + data.collection_id + '/';
           } catch (e) {
             if (e.response && e.response.data) {

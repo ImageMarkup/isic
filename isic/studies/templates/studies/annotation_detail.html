@@ -9,40 +9,46 @@
   </div>
 
 
-  <div class="heading-4">Markups</div>
-  <table>
-    <thead>
-      <tr>
-        <th>Feature</th>
-        <th>Present</th>
-        <th></th>
-      </tr>
-    </thead>
+  <div class="heading-3">Markups</div>
+  <div class="overflow-x-auto border border-base-300">
+    <table class="table table-zebra">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Present</th>
+          <th>Mask</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for markup in annotation.markups.all %}
+          <tr>
+            <td>{{ markup.feature.label }}</td>
+            <td>{% if markup.present %}Present{% else %}-{% endif %}</td>
+            <td>{% if markup.present %}<a href="{% url 'studies/view-mask' markup.id %}" class="link link-hover link-primary">View Mask</a>{% else %}-{% endif %}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
-    {% for markup in annotation.markups.all %}
-      <tr>
-        <td>{{ markup.feature.label }}</td>
-        <td>{% if markup.present %}Present{% else %}-{% endif %}</td>
-        <td>{% if markup.present %}<a href="{% url 'studies/view-mask' markup.id %}">View Mask</a>{% else %}-{% endif %}</td>
-      </tr>
-    {% endfor %}
-  </table>
-
-  <div class="heading-4">Responses</div>
-  <table>
-    <thead>
-      <tr>
-        <th>Prompt</th>
-        <th>Response</th>
-      </tr>
-    </thead>
-
-    {% for response in annotation.responses.all %}
-      <tr>
-        <td>{{ response.question.prompt }}</td>
-        <td>{{ response.choice.text }}</td>
-      </tr>
-    {% endfor %}
-  </table>
+  <div class="heading-3">Responses</div>
+  <div class="overflow-x-auto border border-base-300">
+    <table class="table table-zebra">
+      <thead>
+        <tr>
+          <th>Prompt</th>
+          <th>Response</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for response in annotation.responses.all %}
+          <tr>
+            <td>{{ response.question.prompt }}</td>
+            <td>{% if response.choice %}{{ response.choice.text }}{% elif response.value %}{{ response.value.value }}{% endif %}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
 {% endblock %}

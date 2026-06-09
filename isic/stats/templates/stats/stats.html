@@ -10,34 +10,25 @@
 {% endblock %}
 
 {% block content %}
-  <div class="heading-1">Archive Statistics</div>
-  <div class="mt-10 pb-12 bg-white sm:pb-16">
-    <div class="relative">
-      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="max-w-4xl mx-auto">
-          {% for stat in stats %}
-            <dl class="rounded-lg bg-white shadow-lg sm:grid sm:grid-cols-3 {% if not forloop.first %}mt-3{% endif %}">
-              {% for label, value in stat %}
-                <div class="flex flex-col border-t border-gray-100 p-6 text-center sm:border-0 sm:border-l">
-                  <dt class="order-2 mt-2 text-lg leading-6 font-medium text-gray-500">
-                    {{ label }}
-                  </dt>
-                  <dd class="order-1 text-5xl font-extrabold text-indigo-600">
-                    {{ value|intcomma }}
-                  </dd>
-                </div>
-              {% endfor %}
-            </dl>
+  <div class="space-y-6">
+    <div class="heading-1">Archive Statistics</div>
+    <div class="space-y-3 max-w-4xl mx-auto">
+      {% for stat in stats %}
+        <div class="stats stats-vertical sm:stats-horizontal sm:grid-cols-3 shadow w-full">
+          {% for label, value in stat %}
+            <div class="stat">
+              <div class="stat-title text-xl text-wrap">{{ label }}</div>
+              <div class="stat-value text-primary text-wrap">{{ value|intcomma }}</div>
+            </div>
           {% endfor %}
         </div>
-      </div>
+      {% endfor %}
     </div>
-  </div>
 
-
-  <div>
-    <div class="heading-2 mb-6">Sessions per Country (Last 30 days)</div>
-    <canvas id="canvas" width="1200" height="400"></canvas>
+    <div>
+      <div class="heading-2 mb-4">Sessions per Country (Last 30 days)</div>
+      <canvas id="canvas" width="1200" height="400"></canvas>
+    </div>
   </div>
 
   {{ 30_day_sessions_per_country|json_script:"country_data" }}

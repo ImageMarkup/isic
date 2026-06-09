@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" integrity="sha256-zaSoHBhwFdle0scfGEFUCwggPN7F+ip9XRglo8IWb4w=" crossorigin="anonymous">
   <script src="{% static 'core/dist/cog.js' %}"></script>
   <link rel="stylesheet" href="{% static 'core/dist/ol.css' %}">
+  <script src="{% static 'core/js/thumbnail-grid.js' %}"></script>
 {% endblock %}
 
 {% block content %}
@@ -27,11 +28,7 @@
       {% include 'core/partials/collection_detail_actions.html' %}
     </div>
 
-    <template x-if="true">
-      <div x-show="modalOpen">
-        {% include 'core/partials/collection_share_modal.html' %}
-      </div>
-    </template>
+    {% include 'core/partials/collection_share_modal.html' %}
 
     {% partialdef detail-item %}
       <li>
@@ -69,10 +66,10 @@
         {% endwith %}
         <li>
           <span class="font-bold">Attribution:</span>
-          <a x-show="!fetched" href="#" @click.prevent="fetchMetaInformation()">
+          <button x-show="!fetched" class="link link-primary" @click="fetchMetaInformation()">
             View
-            <div x-show="loading" class="lds-ring"><div></div><div></div><div></div><div></div></div>
-          </a>
+            <span x-show="loading" class="loading loading-spinner loading-xs"></span>
+          </button>
           <ul class="list-disc">
             <template x-for="attribution in attributions">
               <li x-show="fetched" class="ml-6">
@@ -86,13 +83,13 @@
       {% if collection.description %}
         <div id="collection-description">
           <span class="font-bold">Description:</span>
-          {{ collection.description|markdownify }}
+          <div class="prose max-w-none">{{ collection.description|markdownify }}</div>
         </div>
       {% endif %}
     </div>
 
     {% if request.user.is_staff or contributors or show_shares %}
-      <div class="my-4 p-2 rounded-sm bg-gray-100 border border-gray-200">
+      <div class="my-4 p-2 rounded-xs bg-gray-100 border border-gray-200">
         <div class="font-semibold black text-lg">
           Private Attributes (visible only to you)
         </div>
@@ -155,12 +152,11 @@
   </div>
 
 
-  {% include 'studies/partials/cursor_pagination.html' %}
   <div x-data="collectionEditor({{ collection.pk }})">
     {% if image_removal_mode %}
       <div class="alert shadow-lg my-6">
         <div>
-          <i class="ri-information-line stroke-info flex-shrink-0 text-lg"></i>
+          <i class="ri-information-line stroke-info shrink-0 text-lg"></i>
           <span>
             <span x-text="images.size"></span> images pending removal.
           </span>
@@ -172,11 +168,10 @@
       </div>
     {% endif %}
 
-    <div class="mb-4" x-data="thumbnailGrid();">
-      <div class="hidden pb-3 sm:flex sm:flex-row sm:justify-end">
-        <a class="px-1" href="#" @click="decrease();">fewer columns</a>
-        |
-        <a class="px-1" href="#" @click="increase();">more columns</a>
+    <div class="flex flex-col gap-3" x-data="thumbnailGrid()">
+      <div class="hidden sm:flex sm:items-center sm:justify-between">
+        {% include 'core/partials/columns_widget.html' %}
+        {% include 'core/partials/cursor_pagination_widget.html' %}
       </div>
       <div class="grid gap-4 grid-cols-2" :class="gridClassNames[numCols]">
         {% for image in images %}
@@ -187,11 +182,12 @@
           {% endif %}
         {% endfor %}
       </div>
+      <div class="flex justify-center">
+        {% include 'core/partials/cursor_pagination_widget.html' %}
+      </div>
     </div>
   </div>
-  {% include 'studies/partials/cursor_pagination.html' %}
 
-  {% include 'ingest/partials/thumbnail_grid_js.html' %}
   {% include 'core/partials/edit_collection_js.html' %}
 
   </div>
@@ -199,7 +195,6 @@
   <script type="text/javascript">
     function collectionDetail() {
       return {
-        modalOpen: false,
         errorMessage: '',
         shareCollectionWithUsers() {
           let _this = this; // eek

@@ -34,7 +34,8 @@ def test_merge_cohorts_autocomplete_preview_and_submit(
     expect(page.get_by_text("Merge Cohorts").first).to_be_visible()
 
     # Type in the first autocomplete field to search for cohort_a
-    first_input = page.locator("input[name='autocomplete_cohort']")
+    first_fieldset = page.get_by_role("group").filter(has_text="Cohort to merge into")
+    first_input = first_fieldset.get_by_role("searchbox")
     first_input.press_sequentially(cohort_a.name[:5], delay=50)
 
     # Wait for autocomplete results and select cohort_a
@@ -46,7 +47,10 @@ def test_merge_cohorts_autocomplete_preview_and_submit(
     expect(page.get_by_text(cohort_a.description).first).to_be_visible()
 
     # Type in the second autocomplete field to search for cohort_b
-    second_input = page.locator("input[name='autocomplete_cohort_to_merge']")
+    second_fieldset = page.get_by_role("group").filter(
+        has_text="Cohort to merge", has_not_text="Cohort to merge into"
+    )
+    second_input = second_fieldset.get_by_role("searchbox")
     second_input.press_sequentially(cohort_b.name[:5], delay=50)
 
     # Wait for autocomplete results and select cohort_b

@@ -27,7 +27,7 @@ class Contributor(CreationSortedTimeStampedModel):
         verbose_name="Legal Contact Information",
         help_text=mark_safe(
             "The person or institution responsible for legal inquiries about your data. "
-            "<strong> This is private</strong>, and will not be published along with your images."
+            "<strong>This is private</strong>, and will not be published along with your images."
         ),
     )
     creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="created_contributors")

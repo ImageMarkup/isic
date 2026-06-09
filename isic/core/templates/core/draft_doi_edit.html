@@ -1,41 +1,37 @@
 {% extends 'core/base.html' %}
-{% load static %}
 
 {% block content %}
-  <div class="heading-1 mb-4">Edit Draft DOI for {{ draft_doi.collection.name }}<span class="ml-2 text-base font-semibold"><a
-    href="{% url 'core/doi-detail' draft_doi.slug %}">back to draft DOI</a></span></div>
-
-  <div x-data="DraftDoiEditForm()">
+  <form x-data="DraftDoiEditForm()"
+        class="flex flex-col max-w-2xl mx-auto space-y-4"
+        @submit.prevent="updateDraftDOI('{{ draft_doi.slug }}')">
     {{ draft_doi.collection.description|json_script:"collection-description" }}
-    <div x-init="description = JSON.parse(document.getElementById('collection-description').textContent)"></div>
-    <form @submit.prevent="updateDraftDOI('{{ draft_doi.slug }}')">
-      <div class="mb-6">
-        <label for="description" class="block text-sm font-semibold mb-2">
-          Description
-        </label>
-        <textarea
-          id="description"
-          x-model="description"
-          required
-          rows="10"
-          class="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-          placeholder="Describe the collection..."></textarea>
-        <p class="text-xs text-gray-600 mt-2">
-          Note: This description will be saved to the collection and used in the DOI metadata.
-          Modifying this field will update the collection's description.
-        </p>
-      </div>
+    {# the cut is a hack to let the token (SimpleLazyObject) be serializable by json_script #}
+    {{ csrf_token|cut:""|json_script:"csrf-token" }}
 
-      <div class="flex justify-end gap-3">
-        <a href="{% url 'core/doi-detail' draft_doi.slug %}" class="btn btn-secondary">Cancel</a>
-        <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
-          <span x-text="isSubmitting ? 'Saving...' : 'Save Changes'"></span>
-        </button>
-      </div>
-    </form>
-  </div>
+    <div class="heading-1">Edit Draft DOI for {{ draft_doi.collection.name }}</div>
 
-  {{ csrf_token|cut:""|json_script:"csrf-token" }}
+    <fieldset class="fieldset">
+      <label class="fieldset-legend" for="description">Description</label>
+      <textarea
+        id="description"
+        x-model="description"
+        required
+        rows="10"
+        class="textarea textarea-bordered w-full"
+        placeholder="Describe the collection..."></textarea>
+      <p class="fieldset-label">
+        This description will be saved to the collection and used in the DOI metadata.
+        Modifying this field will update the collection's description.
+      </p>
+    </fieldset>
+
+    <div class="flex justify-end gap-3">
+      <a href="{% url 'core/doi-detail' draft_doi.slug %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
+        <span x-text="isSubmitting ? 'Saving...' : 'Save Changes'"></span>
+      </button>
+    </div>
+  </form>
 
   <script type="text/javascript">
     function DraftDoiEditForm() {
@@ -44,6 +40,10 @@
       return {
         description: "",
         isSubmitting: false,
+
+        init() {
+          this.description = JSON.parse(document.getElementById("collection-description").textContent);
+        },
 
         async updateDraftDOI(slug) {
           this.isSubmitting = true;

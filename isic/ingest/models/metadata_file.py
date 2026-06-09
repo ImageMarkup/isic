@@ -16,7 +16,11 @@ class MetadataFile(CreationSortedTimeStampedModel):
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name="metadata_files")
     cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name="metadata_files")
 
-    blob = S3FileField(validators=[FileExtensionValidator(allowed_extensions=["csv"])], unique=True)
+    blob = S3FileField(
+        verbose_name="CSV file",
+        validators=[FileExtensionValidator(allowed_extensions=["csv"])],
+        unique=True,
+    )
     blob_name = models.CharField(max_length=255, editable=False)
     blob_size = models.PositiveBigIntegerField(editable=False)
 

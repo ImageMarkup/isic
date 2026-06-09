@@ -21,7 +21,7 @@ def test_collection_pin_unpin(
 
     # Pin the collection
     page.get_by_role("button", name="Actions").click()
-    page.get_by_role("menuitem", name="Pin Collection").click()
+    page.get_by_role("button", name="Pin Collection").click()
 
     page.wait_for_url(f"**{reverse('core/collection-detail', args=[collection.pk])}")
 
@@ -30,10 +30,10 @@ def test_collection_pin_unpin(
 
     # Unpin button should now be present
     page.get_by_role("button", name="Actions").click()
-    expect(page.get_by_role("menuitem", name="Unpin Collection")).to_be_visible()
+    expect(page.get_by_role("button", name="Unpin Collection")).to_be_visible()
 
     # Unpin the collection
-    page.get_by_role("menuitem", name="Unpin Collection").click()
+    page.get_by_role("button", name="Unpin Collection").click()
 
     page.wait_for_url(f"**{reverse('core/collection-detail', args=[collection.pk])}")
 
@@ -42,7 +42,7 @@ def test_collection_pin_unpin(
 
     # Pin button should be back
     page.get_by_role("button", name="Actions").click()
-    expect(page.get_by_role("menuitem", name="Pin Collection")).to_be_visible()
+    expect(page.get_by_role("button", name="Pin Collection")).to_be_visible()
 
 
 @pytest.mark.playwright
@@ -60,10 +60,10 @@ def test_collection_pin_disabled_for_private_collection(
 
     page.get_by_role("button", name="Actions").click()
 
-    # The disabled span should be present with the correct title
-    pin_item = page.locator("span", has_text="Pin Collection")
+    # The disabled li should be present with the correct title
+    pin_item = page.get_by_role("listitem").filter(has_text="Pin Collection")
     expect(pin_item).to_be_visible()
     expect(pin_item).to_have_attribute("title", "Collection must be public to be pinned")
 
-    # No clickable link — only the disabled span exists
-    expect(page.locator("a", has_text="Pin Collection")).not_to_be_visible()
+    # No clickable button — only the disabled span exists
+    expect(page.get_by_role("button", name="Pin Collection")).not_to_be_visible()

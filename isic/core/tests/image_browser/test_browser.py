@@ -23,60 +23,54 @@ def test_collection_picker_dropdown_filter_select_and_keyboard(
 
     page.goto(reverse("core/image-browser"))
 
-    picker_input = page.get_by_placeholder("Type or select collections...")
+    picker = page.get_by_role("combobox")
+    first, second, third = collections
 
     # Clicking the input opens the dropdown showing all 3 collections
-    picker_input.click()
+    picker.click()
     for c in collections:
-        expect(page.get_by_text(c.name, exact=True)).to_be_visible()
+        expect(page.get_by_role("option", name=c.name)).to_be_visible()
 
     # Type the first few characters of a collection name to filter
-    first = collections[0]
-    prefix = first.name[:5]
-    picker_input.fill(prefix)
-    expect(page.get_by_text(first.name, exact=True)).to_be_visible()
+    picker.fill(first.name[:5])
+    expect(page.get_by_role("option", name=first.name)).to_be_visible()
 
-    # Click the first collection to select it -- a chip should appear
-    page.get_by_text(first.name, exact=True).click()
-    expect(page.get_by_text(first.name, exact=True)).to_be_visible()
+    # Click the first collection to select it -- a badge should appear
+    page.get_by_role("option", name=first.name).click()
+    expect(page.get_by_role("listitem").filter(has_text=first.name)).to_be_visible()
 
-    # The selected collection is excluded from the dropdown. Reopen and clear to show
-    # only the 2 unselected collections.
-    picker_input.click()
-    picker_input.fill("")
-    for c in collections[1:]:
-        expect(page.get_by_text(c.name, exact=True)).to_be_visible()
+    # The selected collection is excluded from the dropdown, showing only the 2 unselected.
+    for c in [second, third]:
+        expect(page.get_by_role("option", name=c.name)).to_be_visible()
 
-    # Close dropdown so we can interact with the chip area below it
+    # Close dropdown so we can interact with the badge area below it
     page.keyboard.press("Escape")
 
-    # Remove the chip by clicking its X button
-    page.get_by_text(first.name, exact=True).locator("..").get_by_role("button").click()
+    # Remove the badge by clicking its close button
+    page.get_by_role("button", name=f"Remove {first.name}").click()
 
     # Reopen the dropdown -- all 3 collections should appear since nothing is selected
-    picker_input.click()
-    picker_input.fill("")
+    picker.click()
     for c in collections:
-        expect(page.get_by_text(c.name, exact=True)).to_be_visible()
+        expect(page.get_by_role("option", name=c.name)).to_be_visible()
+
+    # Keyboard: ArrowDown twice then Enter selects the second collection
     page.keyboard.press("ArrowDown")
     page.keyboard.press("ArrowDown")
     page.keyboard.press("Enter")
-    second = collections[1]
-    expect(page.get_by_text(second.name, exact=True)).to_be_visible()
+    expect(page.get_by_role("listitem").filter(has_text=second.name)).to_be_visible()
 
     # ArrowDown past the last item clamps to the end -- pressing Enter selects it
-    third = collections[2]
-    picker_input.fill("")
     for _ in range(10):
         page.keyboard.press("ArrowDown")
     page.keyboard.press("Enter")
-    expect(page.get_by_text(third.name, exact=True)).to_be_visible()
+    expect(page.get_by_role("listitem").filter(has_text=third.name)).to_be_visible()
 
     # Escape closes the dropdown -- the non-selected collection should no longer be visible
-    picker_input.click()
-    expect(page.get_by_text(first.name, exact=True)).to_be_visible()
+    picker.click()
+    expect(page.get_by_role("option", name=first.name)).to_be_visible()
     page.keyboard.press("Escape")
-    expect(page.get_by_text(first.name, exact=True)).not_to_be_visible()
+    expect(page.get_by_role("option", name=first.name)).not_to_be_visible()
 
     # Submit the form and verify only images from the selected collections are shown.
     # second and third are selected; first was removed.
@@ -88,16 +82,10 @@ def test_collection_picker_dropdown_filter_select_and_keyboard(
     assert img_in_third.isic_id in page_text
     assert img_unaffiliated.isic_id not in page_text
 
-    # The chips survive the round-trip (picker re-initializes from URL params).
-    # Each chip contains the name and a close button, distinguishing it from dropdown items.
-    second_chip = (
-        page.locator("span").filter(has_text=second.name).filter(has=page.get_by_role("button"))
-    )
-    third_chip = (
-        page.locator("span").filter(has_text=third.name).filter(has=page.get_by_role("button"))
-    )
-    expect(second_chip).to_be_visible()
-    expect(third_chip).to_be_visible()
+    # The badges survive the round-trip (picker re-initializes from URL params).
+    # The dropdown is closed after page load, so the names are only visible as badges.
+    expect(page.get_by_role("listitem").filter(has_text=second.name)).to_be_visible()
+    expect(page.get_by_role("listitem").filter(has_text=third.name)).to_be_visible()
 
 
 @pytest.mark.playwright
@@ -114,7 +102,7 @@ def test_add_to_collection_modal_with_recent_search_and_confirm(
 
     # Open the Actions dropdown and click "Add results to collection"
     page.get_by_role("button", name="Actions").click()
-    page.get_by_role("menuitem", name="Add results to collection").click()
+    page.get_by_role("button", name="Add results to collection").click()
 
     # The modal appears showing the user's recent collection
     modal_heading = page.get_by_role("heading", name="Add to Collection")

@@ -1,0 +1,61 @@
+<fieldset class="fieldset" x-data="autocompleteInput()">
+  <label class="fieldset-legend">{{ field.label }}</label>
+
+  <input
+    type="hidden"
+    name="{{ field.html_name }}"
+    value="{{ field.value|default_if_none:'' }}"
+    x-ref="hiddenInput"
+    x-model="selectedId"
+  />
+  <input
+    type="search"
+    class="input input-bordered w-full"
+    x-model="query"
+    @input.debounce.250ms="fetchSuggestions"
+  />
+
+  <ul x-cloak x-show="loadingSuggestions || suggestions.length" class="list border border-base-300 rounded-box mt-1">
+    <li x-show="loadingSuggestions" class="p-2 flex justify-center">
+      <span class="loading loading-spinner loading-sm"></span>
+    </li>
+    <template x-for="suggestion in suggestions">
+      <li>
+        <a class="list-row py-2 hover:bg-base-200 cursor-pointer" @click="select(suggestion)">
+          <div class="list-col-grow" x-text="suggestion.name"></div>
+        </a>
+      </li>
+    </template>
+  </ul>
+
+  <div x-cloak x-show="loadingSelectedDetail || selectedDetail" class="bg-base-200 rounded-box border border-base-300 p-4 mt-2">
+    <div x-show="loadingSelectedDetail" class="flex justify-center">
+      <span class="loading loading-spinner loading-sm"></span>
+    </div>
+    <ul x-show="selectedDetail" class="space-y-1 text-sm">
+      <li>
+        <span class="font-bold">Name: </span>
+        <span x-text="selectedDetail?.name"></span>
+      </li>
+      <li>
+        <span class="font-bold">Description: </span>
+        <span x-text="selectedDetail?.description"></span>
+      </li>
+      <li>
+        <span class="font-bold">Default Attribution: </span>
+        <span x-text="selectedDetail?.default_attribution"></span>
+      </li>
+      <li>
+        <span class="font-bold">Default License: </span>
+        <span x-text="selectedDetail?.default_copyright_license"></span>
+      </li>
+      <li>
+        <span class="font-bold">Accessions: </span>
+        <span x-text="new Intl.NumberFormat('en-US').format(selectedDetail?.accession_count)"></span>
+      </li>
+    </ul>
+  </div>
+
+  <p class="fieldset-label"><span class="prose">{{ field.help_text|safe }}</span></p>
+  {{ field.errors }}
+</fieldset>

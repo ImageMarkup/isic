@@ -1,75 +1,73 @@
 {% load accession %}
 {% load localtime %}
 
-<div x-show="selectedTab == 'metadata'">
-  <div class="md:flex md:justify-between">
-    <div class="flex-col flex-grow-5 md:mr-6 mb-6">
-      <div class="heading-3">Clinical</div>
-      <div class="overflow-x-auto">
-        {% include 'core/image_detail/metadata_table.html' %}
-      </div>
+<div class="md:flex md:justify-between">
+  <div class="flex-col grow-[0.5] md:mr-6 mb-6">
+    <div class="heading-3">Clinical</div>
+    <div class="overflow-x-auto">
+      {% include 'core/image_detail/metadata_table.html' %}
     </div>
-    {% if unstructured_metadata %}
-      <div class="flex-col">
-        <div class="flex items-center">
-          <div class="heading-3">Unstructured</div>
-
-          <i class="ri-lock-line ml-1 text-xl"></i>
-        </div>
-
-        {% include 'core/image_detail/metadata_table.html' with metadata=unstructured_metadata %}
-      </div>
-    {% endif %}
   </div>
-
-  {% if metadata_versions %}
-    <div class="mt-4">
+  {% if unstructured_metadata %}
+    <div class="flex-col">
       <div class="flex items-center">
-        <div class="heading-3">Metadata History</div>
+        <div class="heading-3">Unstructured</div>
+
         <i class="ri-lock-line ml-1 text-xl"></i>
       </div>
-      <table class="table table-compact w-full">
-        <thead>
-          <tr>
-            <th>Creator</th>
-            <th>Applied</th>
-            <th>Summary</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for metadata_version, diff in metadata_versions reversed %}
-            <tr class="hover">
-              <td>{{ metadata_version.creator  }}</td>
-              <td>{% localtime metadata_version.created  %}</td>
-              <td>
-                {% if forloop.last %}
-                  Initial Version
-                {% else %}
-                  {% for key, value in diff.metadata.added.items %}
-                    <div>Added {{ key }} of {{ value }}.</div>
-                  {% endfor %}
-                  {% for key, value in diff.metadata.removed.items %}
-                    <div>Removed {{ key }} of {{ value }}.</div>
-                  {% endfor %}
-                  {% for key, value in diff.metadata.changed.items %}
-                    <div>Changed {{ key }} from {{ value.old_value }} to {{ value.new_value }}.</div>
-                  {% endfor %}
 
-                  {% for key, value in diff.unstructured_metadata.added.items %}
-                    <div>Added unstructured {{ key }} of {{ value }}.</div>
-                  {% endfor %}
-                  {% for key, value in diff.unstructured_metadata.removed.items %}
-                    <div>Removed unstructured {{ key }} of {{ value }}.</div>
-                  {% endfor %}
-                  {% for key, value in diff.unstructured_metadata.changed.items %}
-                    <div>Changed unstructured {{ key }} from {{ value.old_value }} to {{ value.new_value }}.</div>
-                  {% endfor %}
-                {% endif %}
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      {% include 'core/image_detail/metadata_table.html' with metadata=unstructured_metadata %}
     </div>
   {% endif %}
 </div>
+
+{% if metadata_versions %}
+  <div class="mt-4">
+    <div class="flex items-center">
+      <div class="heading-3">Metadata History</div>
+      <i class="ri-lock-line ml-1 text-xl"></i>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Creator</th>
+          <th>Applied</th>
+          <th>Summary</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for metadata_version, diff in metadata_versions reversed %}
+          <tr class="hover:bg-base-300">
+            <td>{{ metadata_version.creator  }}</td>
+            <td>{% localtime metadata_version.created  %}</td>
+            <td>
+              {% if forloop.last %}
+                Initial Version
+              {% else %}
+                {% for key, value in diff.metadata.added.items %}
+                  <div>Added {{ key }} of {{ value }}.</div>
+                {% endfor %}
+                {% for key, value in diff.metadata.removed.items %}
+                  <div>Removed {{ key }} of {{ value }}.</div>
+                {% endfor %}
+                {% for key, value in diff.metadata.changed.items %}
+                  <div>Changed {{ key }} from {{ value.old_value }} to {{ value.new_value }}.</div>
+                {% endfor %}
+
+                {% for key, value in diff.unstructured_metadata.added.items %}
+                  <div>Added unstructured {{ key }} of {{ value }}.</div>
+                {% endfor %}
+                {% for key, value in diff.unstructured_metadata.removed.items %}
+                  <div>Removed unstructured {{ key }} of {{ value }}.</div>
+                {% endfor %}
+                {% for key, value in diff.unstructured_metadata.changed.items %}
+                  <div>Changed unstructured {{ key }} from {{ value.old_value }} to {{ value.new_value }}.</div>
+                {% endfor %}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}

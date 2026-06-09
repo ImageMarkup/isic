@@ -7,88 +7,82 @@
 {% block title %}{{ image.isic_id }} | {% endblock %}
 
 {% block content %}
-  <div x-data="{selectedTab: 'metadata'}">
-    <div class="pb-5 border-b border-gray-200 sm:pb-0">
-      <div class="text-lg leading-6 font-medium text-gray-900 flex-col">
-        <div class="flex">
-          <div class="heading-1">{{image.isic_id}}</div>
+  <div class="space-y-4">
+    <div class="flex items-center gap-3">
+      <div class="heading-1">{{image.isic_id}}</div>
 
-          {% if image.public %}
-            <p class="px-3 py-2 ml-2 text-md leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-              Public
-            </p>
-          {% else %}
-            <p class="px-3 py-2 ml-2 text-md leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-              Private
-            </p>
-          {% endif %}
-        </div>
+      {% if image.public %}
+        <span class="badge badge-success">Public</span>
+      {% else %}
+        <span class="badge badge-warning">Private</span>
+      {% endif %}
+    </div>
+
+    <div class="md:flex justify-between">
+      <div class="flex justify-center">
+        {% if image.accession.is_cog %}
+          <div id="image" class="w-[512px] h-[512px] border border-gray-300"></div>
+          <script src="{% static 'core/dist/cog.js' %}"></script>
+          <link rel="stylesheet" href="{% static 'core/dist/ol.css' %}">
+          <script type="text/javascript">
+            initializeCogViewer(document.getElementById('image'), '{{ image.blob.url|safe }}');
+          </script>
+          <span class="text-sm">Scroll to zoom, click and drag to pan</span>
+        {% else %}
+          <a href="{{ image.blob.url }}">
+            <img src="{{ image.blob.url }}"
+                 class="object-cover sm:max-w-md max-h-96 lg:max-w-xl border border-black" />
+          </a>
+        {% endif %}
       </div>
 
-      <div class="md:flex justify-between pt-4">
-        <div class="flex justify-center">
-          {% if image.accession.is_cog %}
-            <div id="image" class="w-[512px] h-[512px] border border-gray-300"></div>
-            <script src="{% static 'core/dist/cog.js' %}"></script>
-            <link rel="stylesheet" href="{% static 'core/dist/ol.css' %}">
-            <script type="text/javascript">
-              initializeCogViewer(document.getElementById('image'), '{{ image.blob.url|safe }}');
-            </script>
-            <span class="text-sm">Scroll to zoom, click and drag to pan</span>
-          {% else %}
-            <a href="{{ image.blob.url }}">
-              <img src="{{ image.blob.url }}"
-                   class="object-cover sm:max-w-md max-h-96 lg:max-w-xl border border-black" />
-            </a>
-          {% endif %}
-        </div>
+      {% include 'core/image_detail/right_panel.html' %}
+    </div>
 
-        {% include 'core/image_detail/right_panel.html' %}
+    <div role="tablist" class="tabs tabs-lift">
+      <input type="radio" name="image_tabs" role="tab" class="tab"
+             aria-label="{{ sections.metadata }}" checked />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 p-6">
+        {% include 'core/image_detail/metadata_tab.html' %}
       </div>
 
-      <div x-data="{selectedTab: 'metadata'}">
-        <div class="mt-2">
-          <div class="sm:hidden">
-            <label for="tabs" class="sr-only">Select a tab</label>
-            <select x-model="selectedTab" @change="$dispatch('tab-changed', selectedTab)" id="tabs" name="tabs" class="block w-full focus:ring-indigo-500 focus:border-indigo-500 border-gray-300 rounded-md">
-
-              {% for k,v in sections.items %}
-                <option value="{{ k }}">{{ v }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="hidden sm:block">
-            <nav class="flex space-x-4" aria-label="Tabs">
-              {% for k,v in sections.items %}
-                <a href="" @click.prevent="selectedTab = '{{ k }}'; $dispatch('tab-changed', '{{ k }}')" class="px-3 py-2 font-medium text-sm rounded-md"
-                   :class="{'bg-indigo-100 text-indigo-700': selectedTab == '{{ k }}',
-                           'text-gray-500 hover:text-gray-700': selectedTab != '{{ k }}'}">
-                  {{ v }}
-                </a>
-              {% endfor %}
-            </nav>
-          </div>
-        </div>
-
-        <div class="my-2 p-4">
-          {% include 'core/image_detail/metadata_tab.html' %}
-          {% include 'core/image_detail/studies_tab.html' %}
-
-          {% if 'similar_images' in sections %}
-            {% include 'core/image_detail/similar_images_tab.html' %}
-          {% endif %}
-
-          {% if 'patient_images' in sections %}
-            {% include 'core/image_detail/images_tab.html' with images=other_patient_images images_count=other_patient_images_count section_name='patient_images' lazy=1 %}
-          {% endif %}
-
-          {% if 'lesion_images' in sections %}
-            {% include 'core/image_detail/images_tab.html' with images=other_lesion_images images_count=other_lesion_images_count section_name='lesion_images' lazy=1 %}
-          {% endif %}
-
-          {% if 'ingestion_details' in sections %}
-            {% include 'core/image_detail/ingestion_details_tab.html' %}
-          {% endif %}
-        </div>
+      <input type="radio" name="image_tabs" role="tab" class="tab"
+             aria-label="{{ sections.studies }}" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 p-6">
+        {% include 'core/image_detail/studies_tab.html' %}
       </div>
+
+      {% if 'similar_images' in sections %}
+        <input type="radio" name="image_tabs" role="tab" class="tab"
+               aria-label="{{ sections.similar_images }}" />
+        <div role="tabpanel" class="tab-content bg-base-100 border-base-300 p-6">
+          {% include 'core/image_detail/similar_images_tab.html' %}
+        </div>
+      {% endif %}
+
+      {% if 'patient_images' in sections %}
+        <input type="radio" name="image_tabs" role="tab" class="tab"
+               aria-label="{{ sections.patient_images }}" />
+        <div role="tabpanel" class="tab-content bg-base-100 border-base-300 p-6">
+          {% include 'core/image_detail/images_tab.html' with images=other_patient_images images_count=other_patient_images_count section_name='patient_images' lazy=1 %}
+        </div>
+      {% endif %}
+
+      {% if 'lesion_images' in sections %}
+        <input type="radio" name="image_tabs" role="tab" class="tab"
+               aria-label="{{ sections.lesion_images }}" />
+        <div role="tabpanel" class="tab-content bg-base-100 border-base-300 p-6">
+          {% include 'core/image_detail/images_tab.html' with images=other_lesion_images images_count=other_lesion_images_count section_name='lesion_images' lazy=1 %}
+        </div>
+      {% endif %}
+
+      {% if 'ingestion_details' in sections %}
+        <input type="radio" name="image_tabs" role="tab" class="tab"
+               aria-label="{{ sections.ingestion_details }}" />
+        <div role="tabpanel" class="tab-content bg-base-100 border-base-300 p-6">
+          {% include 'core/image_detail/ingestion_details_tab.html' %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
 {% endblock %}

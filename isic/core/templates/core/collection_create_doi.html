@@ -2,21 +2,13 @@
 {% load static %}
 
 {% block content %}
-  <div class="heading-1 mb-4">Create a Draft DOI for {{ collection.name }}<span class="ml-2 text-base font-semibold"><a
-    href="{% url 'core/collection-detail' collection.pk %}">back to collection</a></span></div>
+  <div class="heading-1">Create a Draft DOI for {{ collection.name }}</div>
+  <a href="{% url 'core/collection-detail' collection.pk %}" class="link link-primary text-sm block mb-4">&larr; back to collection</a>
 
   {% if error %}
-    <div class="rounded-md bg-red-50 p-4 mb-4">
-      <div class="flex items-center">
-        <div class="flex-shrink-0">
-          <i class="ri-information-line text-lg text-red-400" aria-hidden="true"></i>
-        </div>
-        <div class="ml-3">
-          <div class="mt-2 text-sm text-red-700">
-            <p>{{ error }}</p>
-          </div>
-        </div>
-      </div>
+    <div class="alert alert-error">
+      <i class="ri-error-warning-line text-lg"></i>
+      <span>{{ error }}</span>
     </div>
   {% else %}
     <div class="flex justify-between">
@@ -26,68 +18,61 @@
     <div x-data="DoiCreationForm()">
       {{ collection.description|json_script:"collection-description" }}
       <div x-init="description = JSON.parse(document.getElementById('collection-description').textContent)"></div>
-      <form @submit.prevent="createDOI({{ collection.id }})">
-        <div class="mb-6">
-          <label for="description" class="block text-sm font-semibold mb-2">
-            Description
-          </label>
+      <form @submit.prevent="createDOI({{ collection.id }})" class="flex flex-col space-y-6">
+        <fieldset class="fieldset">
+          <label class="fieldset-legend" for="description">Description</label>
           <textarea
             id="description"
             x-model="description"
             required
             rows="5"
-            class="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+            class="textarea textarea-bordered w-full"
             placeholder="Describe the collection..."></textarea>
-          <p class="text-xs text-gray-600 mt-2">
+          <p class="fieldset-label">
             Note: This description will be saved to the collection and used in the DOI metadata.
             Modifying this field will update the collection's description.
           </p>
-        </div>
+        </fieldset>
 
-        <div class="text-center">
-          <div class="w-full">
         {# the cut is a hack to let the token (SimpleLazyObject) be serializable by json_script #}
-            {{ csrf_token|cut:""|json_script:"csrf-token" }}
+        {{ csrf_token|cut:""|json_script:"csrf-token" }}
+        <input type="file" id="file-input" class="hidden" @change="handleFileUpload" />
 
-            <input type="file" id="file-input" class="hidden" @change="handleFileUpload" />
+        <table class="table" x-show="files.length > 0" x-cloak>
+          <thead>
+            <tr>
+              <th>File Name</th>
+              <th>Size</th>
+              <th>Description</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="(file, index) in files" :key="file.name">
+              <tr>
+                <td x-text="file.name"></td>
+                <td x-text="formatBytes(file.size)"></td>
+                <td><textarea x-model="descriptions[index]" required placeholder="Description"
+                              class="textarea textarea-bordered w-full"></textarea></td>
+                <td><button type="button" @click="removeFile(index)" :disabled="numFilesInProgress > 0"
+                            class="btn btn-danger">Remove</button></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
 
-            <table class="table w-full my-6" x-show="files.length > 0" x-cloak>
-              <thead>
-                <tr>
-                  <th>File Name</th>
-                  <th>Size</th>
-                  <th>Description</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                <template x-for="(file, index) in files" :key="file.name">
-                  <tr>
-                    <td x-text="file.name"></td>
-                    <td x-text="formatBytes(file.size)"></td>
-                    <td><textarea x-model="descriptions[index]" required placeholder="Description"
-                                  class="w-full"></textarea></td>
-                    <td><button type="button" @click="removeFile(index)" :disabled="numFilesInProgress > 0"
-                                class="btn btn-danger">Remove</button></td>
-                  </tr>
-                </template>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="my-6">
+        <div>
           <h3 class="text-lg font-semibold mb-4">Related Identifiers</h3>
-          <p class="text-sm text-gray-600 mb-6">Add references to related publications or supplemental materials
+          <p class="text-sm text-base-content/60 mb-6">Add references to related publications or supplemental materials
             that complement this dataset.</p>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <template x-for="relationConfig in relationTypes" :key="relationConfig.type">
-              <div class="border border-gray-200 rounded-lg p-4">
+              <div class="border border-base-200 rounded-lg p-4">
                 <div class="flex items-center justify-between mb-3">
                   <h4 class="font-semibold text-base flex items-center">
                     <span x-text="relationConfig.title"></span>
-                    <a :href="relationConfig.helpUrl" target="_blank" class="ml-2 text-gray-400 hover:text-gray-700">
+                    <a :href="relationConfig.helpUrl" target="_blank" class="ml-2 text-base-content/40 hover:text-base-content">
                       <i class="ri-question-line inline h-4 w-4 align-text-bottom"
                          :title="'Help: ' + relationConfig.type"></i>
                     </a>
@@ -96,7 +81,7 @@
                           x-text="relationConfig.buttonText"
                           :disabled="relationConfig.unique === true && getIdentifiersArray(relationConfig.type).length > 0"></button>
                 </div>
-                <div class="text-sm text-gray-600 mb-4">
+                <div class="text-sm text-base-content/60 mb-4">
                   <p class="mb-2" x-html="relationConfig.description"></p>
                   <p class="text-xs"><strong>Examples:</strong> <span x-text="relationConfig.examples"></span></p>
                 </div>
@@ -106,13 +91,13 @@
                     <div class="flex gap-2">
                       <div class="flex-1">
                         <select x-model="identifier.related_identifier_type" required
-                                class="w-full border rounded px-2 py-1 text-sm mb-2">
+                                class="select select-bordered select-sm w-full mb-2">
                           <option value="">Select type</option>
                           <option value="DOI">DOI</option>
                           <option value="URL">URL</option>
                         </select>
                         <input :type="identifier.related_identifier_type === 'URL' ? 'url' : 'text'"
-                               x-model="identifier.related_identifier" required class="w-full border rounded px-2 py-1 text-sm"
+                               x-model="identifier.related_identifier" required class="input input-bordered input-sm w-full"
                                :placeholder="getPlaceholder(identifier.related_identifier_type, relationConfig)"
                                :pattern="identifier.related_identifier_type === 'DOI' ? '^10\\.\\d+/.*$' : null"
                                :title="identifier.related_identifier_type === 'DOI' ? 'Enter a valid DOI format (e.g., ' + relationConfig.doiExample + ')' : null" />
@@ -121,7 +106,7 @@
                               class="btn btn-sm btn-danger mt-6">×</button>
                     </div>
                   </template>
-                  <div x-show="getIdentifiersArray(relationConfig.type).length === 0" class="text-sm text-gray-400 italic"
+                  <div x-show="getIdentifiersArray(relationConfig.type).length === 0" class="text-sm text-base-content/40 italic"
                        x-text="relationConfig.emptyMessage"></div>
                 </div>
               </div>
@@ -129,7 +114,7 @@
           </div>
         </div>
 
-        <button type="submit" class="btn btn-primary float-right" :disabled="numFilesInProgress > 0">
+        <button type="submit" class="btn btn-primary self-end" :disabled="numFilesInProgress > 0">
           Create Draft DOI
         </button>
       </form>

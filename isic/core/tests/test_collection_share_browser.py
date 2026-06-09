@@ -31,7 +31,7 @@ def test_share_collection_with_multiple_users(
 
     # Open the share modal
     page.get_by_role("button", name="Actions").click()
-    page.get_by_role("menuitem", name="Share").click()
+    page.get_by_role("button", name="Share").click()
 
     modal = page.get_by_role("dialog")
     expect(modal).to_be_visible()

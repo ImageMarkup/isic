@@ -75,11 +75,11 @@ def test_study_create_with_official_and_custom_questions(  # noqa: PLR0915
     # Add a second custom question and then remove it
     page.get_by_text("Add Custom Question").click()
     custom_section = page.get_by_text("Add Custom Question").locator("xpath=../..")
-    remove_links = custom_section.get_by_role("link", name="Remove")
-    expect(remove_links).to_have_count(2)
+    remove_buttons = custom_section.get_by_role("button", name="Remove")
+    expect(remove_buttons).to_have_count(2)
 
-    remove_links.nth(1).click()
-    expect(custom_section.get_by_role("link", name="Remove")).to_have_count(1)
+    remove_buttons.nth(1).click()
+    expect(custom_section.get_by_role("button", name="Remove")).to_have_count(1)
 
     # Submit the form
     page.get_by_role("button", name="Create Study").click()

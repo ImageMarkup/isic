@@ -3,12 +3,12 @@
 {% load humanize %}
 
 {% block content %}
-  <div class="heading-3">
-    {{ user.first_name }} {{ user.last_name }} ({{ user.profile.hash_id }})
-  </div>
+  <div class="space-y-4">
+    <div class="heading-3">
+      {{ user.first_name }} {{ user.last_name }} ({{ user.profile.hash_id }})
+    </div>
 
-  <div class="overflow-x-auto my-4">
-    <table class="table table-compact w-full">
+    <table class="table table-zebra">
       <thead>
         <tr>
           <th>ID</th>
@@ -32,22 +32,12 @@
         </tr>
       </tbody>
     </table>
-  </div>
 
-  <div class="my-4" x-data="{activeTab: 'collections'}">
-    {% for section, qs in sections.items %}
-      <a class="text-white" @click.prevent="activeTab = '{{ section }}'">
-        <button class="btn gap-2 my-2 mx-2"
-                :class="activeTab == '{{section}}' ? 'btn-primary' : 'btn-secondary'">
-          {{ section }}
-          <div class="badge badge-accent">{{ qs.count|intcomma }}</div>
-        </button>
-      </a>
-    {% endfor %}
-
-    <div x-show="activeTab == 'collections'">
-      <div class="overflow-x-auto my-4">
-        <table class="table table-compact w-full">
+    <div role="tablist" class="tabs tabs-lift">
+      <input type="radio" name="user_tabs" role="tab" class="tab"
+             aria-label="collections ({{ sections.collections.count|intcomma }})" checked />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 overflow-x-auto p-6">
+        <table class="table table-zebra">
           <thead>
             <tr>
               <th>ID</th>
@@ -72,11 +62,11 @@
           </tbody>
         </table>
       </div>
-    </div>
 
-    <div x-show="activeTab == 'contributors'">
-      <div class="overflow-x-auto my-4">
-        <table class="table table-compact w-full">
+      <input type="radio" name="user_tabs" role="tab" class="tab"
+             aria-label="contributors ({{ sections.contributors.count|intcomma }})" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 overflow-x-auto p-6">
+        <table class="table table-zebra">
           <thead>
             <tr>
               <th>ID</th>
@@ -101,11 +91,11 @@
           </tbody>
         </table>
       </div>
-    </div>
 
-    <div x-show="activeTab == 'zip_uploads'">
-      <div class="overflow-x-auto my-4">
-        <table class="table table-compact w-full">
+      <input type="radio" name="user_tabs" role="tab" class="tab"
+             aria-label="zip_uploads ({{ sections.zip_uploads.count|intcomma }})" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 overflow-x-auto p-6">
+        <table class="table table-zebra">
           <thead>
             <tr>
               <th>ID</th>
@@ -132,11 +122,11 @@
           </tbody>
         </table>
       </div>
-    </div>
 
-    <div x-show="activeTab == 'single_shot_accessions'">
-      <div class="overflow-x-auto my-4">
-        <table class="table table-compact w-full">
+      <input type="radio" name="user_tabs" role="tab" class="tab"
+             aria-label="single_shot_accessions ({{ sections.single_shot_accessions.count|intcomma }})" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 overflow-x-auto p-6">
+        <table class="table table-zebra">
           <thead>
             <tr>
               <th>ID</th>
@@ -163,11 +153,11 @@
           </tbody>
         </table>
       </div>
-    </div>
 
-    <div x-show="activeTab == 'accession_reviews'">
-      <div class="overflow-x-auto my-4">
-        <table class="table table-compact w-full">
+      <input type="radio" name="user_tabs" role="tab" class="tab"
+             aria-label="accession_reviews ({{ sections.accession_reviews.count|intcomma }})" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 overflow-x-auto p-6">
+        <table class="table table-zebra">
           <thead>
             <tr>
               <th>ID</th>
@@ -189,11 +179,11 @@
           </tbody>
         </table>
       </div>
-    </div>
 
-    <div x-show="activeTab == 'metadata_files'">
-      <div class="overflow-x-auto my-4">
-        <table class="table table-compact w-full">
+      <input type="radio" name="user_tabs" role="tab" class="tab"
+             aria-label="metadata_files ({{ sections.metadata_files.count|intcomma }})" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 overflow-x-auto p-6">
+        <table class="table table-zebra">
           <thead>
             <tr>
               <th>ID</th>
@@ -218,11 +208,11 @@
           </tbody>
         </table>
       </div>
-    </div>
 
-    <div x-show="activeTab == 'studies'">
-      <div class="overflow-x-auto my-4">
-        <table class="table table-compact w-full">
+      <input type="radio" name="user_tabs" role="tab" class="tab"
+             aria-label="studies ({{ sections.studies.count|intcomma }})" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 overflow-x-auto p-6">
+        <table class="table table-zebra">
           <thead>
             <tr>
               <th>ID</th>
@@ -245,11 +235,11 @@
           </tbody>
         </table>
       </div>
-    </div>
 
-    <div x-show="activeTab == 'study_tasks'">
-      <div class="overflow-x-auto my-4">
-        <table class="table table-compact w-full">
+      <input type="radio" name="user_tabs" role="tab" class="tab"
+             aria-label="study_tasks ({{ sections.study_tasks.count|intcomma }})" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 overflow-x-auto p-6">
+        <table class="table table-zebra">
           <thead>
             <tr>
               <th>ID</th>
@@ -270,11 +260,11 @@
           </tbody>
         </table>
       </div>
-    </div>
 
-    <div x-show="activeTab == 'annotations'">
-      <div class="overflow-x-auto my-4">
-        <table class="table table-compact w-full">
+      <input type="radio" name="user_tabs" role="tab" class="tab"
+             aria-label="annotations ({{ sections.annotations.count|intcomma }})" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 overflow-x-auto p-6">
+        <table class="table table-zebra">
           <thead>
             <tr>
               <th>ID</th>
@@ -297,11 +287,11 @@
           </tbody>
         </table>
       </div>
-    </div>
 
-    <div x-show="activeTab == 'segmentations'">
-      <div class="overflow-x-auto my-4">
-        <table class="table table-compact w-full">
+      <input type="radio" name="user_tabs" role="tab" class="tab"
+             aria-label="segmentations ({{ sections.segmentations.count|intcomma }})" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 overflow-x-auto p-6">
+        <table class="table table-zebra">
           <thead>
             <tr>
               <th>ID</th>
@@ -324,11 +314,11 @@
           </tbody>
         </table>
       </div>
-    </div>
 
-    <div x-show="activeTab == 'segmentation_reviews'">
-      <div class="overflow-x-auto my-4">
-        <table class="table table-compact w-full">
+      <input type="radio" name="user_tabs" role="tab" class="tab"
+             aria-label="segmentation_reviews ({{ sections.segmentation_reviews.count|intcomma }})" />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 overflow-x-auto p-6">
+        <table class="table table-zebra">
           <thead>
             <tr>
               <th>ID</th>

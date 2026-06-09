@@ -59,17 +59,13 @@
 
   <div class="flex mt-2">
     <div class="w-2/3 mr-8">
-      <div x-data="{ open: false, hovered: false }">
+      <div x-data="{ hovered: false }">
         <a class="cursor-pointer">
-          <img class="max-w-full h-auto" @mouseenter="hovered = true" @click="open = true" src="{{ study_task.image.blob.url }}" />
+          <img class="max-w-full h-auto" @mouseenter="hovered = true" @click="$refs.imageModal.showModal()" src="{{ study_task.image.blob.url }}" />
         </a>
         <span class="text-sm">Click on the image to view it in full screen</span>
 
-        <template x-if="true">
-          <div x-show="open">
-            {% include 'core/partials/image_modal.html' with image=study_task.image include_metadata=False zoomable=study_task.study.zoomable %}
-          </div>
-        </template>
+        {% include 'core/partials/image_modal.html' with image=study_task.image include_metadata=False zoomable=study_task.study.zoomable %}
       </div>
     </div>
 

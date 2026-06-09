@@ -1,8 +1,10 @@
 {% extends 'core/base.html' %}
 {% load humanize %}
+{% load static %}
 
 {% block head_extra %}
   {{ block.super }}
+  <script src="{% static 'core/js/thumbnail-grid.js' %}"></script>
   {% include 'ingest/partials/review_header.html' %}
 {% endblock %}
 
@@ -19,15 +21,12 @@
     <progress class="progress progress-primary w-200 mt-6" value="{{ progress.percentage }}" max="100"></progress>
     {{ progress.num_reviewed|intcomma }} / {{ progress.num_reviewable|intcomma }} ({{ progress.percentage }}%)
 
-    <div class="mb-4" x-data="thumbnailGrid();">
-      <div class="flex flex-row justify-between pb-3">
-        <div>
-          sorted by <span class="italic">original filename</span>
-        </div>
-        <div class="hidden sm:flex sm:flex-row sm:justify-end">
-          <a class="px-1" href="#" @click="decrease();">fewer columns</a> |
-          <a class="px-1" href="#" @click="increase();">more columns</a>
-        </div>
+    <div>
+      sorted by <span class="italic">original filename</span>
+    </div>
+    <div class="flex flex-col gap-3" x-data="thumbnailGrid()">
+      <div class="hidden sm:flex sm:items-center sm:justify-between">
+        {% include 'core/partials/columns_widget.html' %}
       </div>
       <div class="grid gap-4 grid-cols-2" :class="gridClassNames[numCols]">
         {% for accession in page_obj %}
@@ -37,9 +36,10 @@
     </div>
 
     {% if page_obj %}
-      {% include 'ingest/partials/review_footer.html' %}
+      <div class="flex justify-end mt-2">
+        {% include 'ingest/partials/review_submit_button.html' %}
+      </div>
     {% endif %}
 
-    {% include 'ingest/partials/thumbnail_grid_js.html' %}
   {% endif %}
 {% endblock %}

@@ -11,7 +11,7 @@
 
 
     <div class="mt-4 overflow-x-auto">
-        <table class="table table-compact table-zebra w-full">
+        <table class="table table-zebra">
             <thead>
                 <tr>
                     <th>Contributor</th>
@@ -28,7 +28,7 @@
                     <tr>
                         <td>{% if row.display_contributor %}{{ row.contributor.institution_name }}{% endif %}</td>
                         <td>{% if row.display_attribution %}{{ row.cohort.default_attribution }}{% endif %}</td>
-                        <td><a href="{% url 'ingest/cohort-detail' row.cohort.id %}">{{ row.cohort.name }}</a></td>
+                        <td><a href="{% url 'ingest/cohort-detail' row.cohort.id %}" class="link link-hover link-primary">{{ row.cohort.name }}</a></td>
                         <td>{{ row.cohort.default_copyright_license }}</td>
                         <td>{{ row.accession_count|intcomma }}</td>
                         <td>{{ row.lesion_count|intcomma }}</td>

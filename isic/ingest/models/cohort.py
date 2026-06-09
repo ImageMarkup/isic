@@ -51,9 +51,9 @@ class Cohort(CreationSortedTimeStampedModel):
     )
     description = models.TextField(
         help_text=mark_safe(
-            "The description of your Cohort."
+            "The description of your Cohort. "
             "<strong>This is private</strong>, and will not be published along "
-            "with your images.<br />"
+            "with your images. "
             'Supports <a href="https://www.markdownguide.org/cheat-sheet/">markdown</a>.'
         )
     )

@@ -1,0 +1,25 @@
+{% load humanize %}
+
+<nav aria-label="Pagination">
+  <div class="join">
+    {% if page_obj.has_previous %}
+      <a href="{% querystring page=1 %}" class="join-item btn btn-outline btn-sm" aria-label="First">
+        <i class="ri-skip-back-mini-line"></i>
+      </a>
+      <a href="{% querystring page=page_obj.previous_page_number %}" class="join-item btn btn-outline btn-sm" aria-label="Previous">
+        <i class="ri-arrow-left-s-line"></i>
+      </a>
+    {% endif %}
+    <span class="join-item btn btn-outline btn-sm pointer-events-none">
+      Page {{ page_obj.number|intcomma }} of {{ page_obj.paginator.num_pages|intcomma }}
+    </span>
+    {% if page_obj.has_next %}
+      <a href="{% querystring page=page_obj.next_page_number %}" class="join-item btn btn-outline btn-sm" aria-label="Next">
+        <i class="ri-arrow-right-s-line"></i>
+      </a>
+      <a href="{% querystring page=page_obj.paginator.num_pages %}" class="join-item btn btn-outline btn-sm" aria-label="Last">
+        <i class="ri-skip-forward-mini-line"></i>
+      </a>
+    {% endif %}
+  </div>
+</nav>

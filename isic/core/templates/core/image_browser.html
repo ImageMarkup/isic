@@ -7,8 +7,10 @@
 {% block head_extra %}
   {{ block.super }}
   <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.26.0/axios.min.js" integrity="sha512-bPh3uwgU5qEMipS/VOmRqynnMXGGSRv+72H/N260MQeXZIK4PG48401Bsby9Nq5P5fz7hy5UGNmC/W1Z51h2GQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="{% static 'core/js/collection-picker.js' %}"></script>
   <script src="{% static 'core/dist/cog.js' %}"></script>
   <link rel="stylesheet" href="{% static 'core/dist/ol.css' %}">
+  <script src="{% static 'core/js/thumbnail-grid.js' %}"></script>
 {% endblock %}
 
 {% block content %}
@@ -18,11 +20,7 @@
       {% include 'core/partials/image_gallery_actions.html' %}
     </div>
 
-    <template x-if="true">
-      <div x-show="modalOpen">
-        {% include 'core/partials/collection_picker_modal.html' %}
-      </div>
-    </template>
+    {% include 'core/partials/collection_picker_modal.html' %}
 
     <div class="my-4 bg-white border border-gray-200 rounded-lg p-4">
       <form method="GET" id="" action="">
@@ -32,67 +30,74 @@
           <div class="col-span-2">
             <label class="block text-xs font-medium text-gray-600 mb-1">Query</label>
             <div class="flex justify-between items-center gap-2">
-              {% render_field form.query class+="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono" placeholder="age_approx:[20 TO 40] AND sex:male" %}
-              <label for="my-modal-4" class="modal-button cursor-pointer text-xs text-blue-600 hover:text-blue-800 whitespace-nowrap">syntax help</label>
+              {% render_field form.query class+="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-sm focus:outline-hidden focus:ring-1 focus:ring-blue-500 font-mono" placeholder="age_approx:[20 TO 40] AND sex:male" %}
+              <a href="#" @click.prevent="$refs.syntaxHelpModal.showModal()" class="link link-primary text-xs whitespace-nowrap">syntax help</a>
             </div>
             {{ form.query.errors }}
           </div>
 
-          <div x-data="collectionPicker()">
-            <label class="block text-xs font-medium text-gray-600 mb-1">Collections</label>
-            <div class="relative">
+          <fieldset class="fieldset" x-data="collectionPicker()">
+            <legend class="fieldset-legend">Collections</legend>
+            <div class="relative w-full"
+                 x-ref="dropdownWrapper"
+                 @keydown.down.prevent="focusNextItem($event.target)"
+                 @keydown.up.prevent="focusPrevItem($event.target)"
+                 @keydown.escape="closeDropdown()"
+                 @focusout="onFocusout($event)"
+            >
               <input
                 type="text"
+                role="combobox"
+                aria-autocomplete="list"
+                :aria-expanded="dropdownOpen"
                 x-ref="collectionInput"
                 x-model="collectionInput"
-                @click="showDropdown()"
-                @input="filterCollections()"
-                @keydown="handleKeydown($event)"
+                @click="dropdownOpen = true"
+                @input="dropdownOpen = true"
                 placeholder="Type or select collections..."
-                class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                class="input input-bordered input-sm w-full"
               />
-
-              <div x-show="dropdownOpen" x-cloak class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-y-auto" style="max-height: 16rem;">
-                <div class="py-1">
-                  <template x-for="(collection, index) in filteredCollections" :key="collection.id">
-                    <div
-                      @click="selectCollection(collection)"
-                      :class="{'bg-gray-100': highlightedIndex === index}"
-                      class="px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm flex justify-between items-center"
-                    >
+              <ul
+                x-ref="collectionMenu"
+                x-show="dropdownOpen"
+                x-cloak
+                role="listbox"
+                class="absolute z-10 menu bg-base-100 rounded-box shadow-sm mt-1 w-full max-h-64 overflow-y-auto"
+              >
+                <template x-for="collection in filteredCollections" :key="collection.id">
+                  <li>
+                    <button type="button" role="option" @click="selectCollection(collection)">
                       <span x-text="collection.name"></span>
-                    </div>
-                  </template>
-                  <div x-show="filteredCollections.length === 0" class="px-3 py-2 text-sm text-gray-500 text-center">
-                    No collections found
-                  </div>
-                </div>
-              </div>
-
-              <div class="flex flex-wrap gap-1 mt-2" x-show="selectedCollections.size > 0">
-                <template x-for="collectionId in Array.from(selectedCollections)" :key="collectionId">
-                  <span class="inline-flex items-center gap-1 px-2 py-1 mr-1 bg-blue-100 text-blue-700 rounded text-xs">
-                    <span x-text="getCollectionName(collectionId)"></span>
-                    <button @click="removeCollection(collectionId)" type="button" class="hover:bg-blue-200 rounded">
-                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                      </svg>
                     </button>
-                  </span>
+                  </li>
                 </template>
-              </div>
+                <li x-show="filteredCollections.length === 0" class="menu-disabled">
+                  <span>No collections found</span>
+                </li>
+              </ul>
+            </div>
 
-              <template x-for="collectionId in Array.from(selectedCollections)" :key="collectionId">
-                <input type="hidden" name="collections" :value="collectionId" />
+            <div class="flex flex-wrap gap-1 mt-2" role="list" x-show="selectedCollections.length > 0">
+              <template x-for="collectionId in selectedCollections" :key="collectionId">
+                <div class="badge badge-soft badge-primary gap-1" role="listitem">
+                  <span x-text="getCollectionName(collectionId)"></span>
+                  <button @click="removeCollection(collectionId)" type="button" class="btn btn-xs btn-circle btn-ghost" :aria-label="'Remove ' + getCollectionName(collectionId)">
+                    <i class="ri-close-line text-xs"></i>
+                  </button>
+                </div>
               </template>
             </div>
-          </div>
+
+            <template x-for="collectionId in selectedCollections" :key="collectionId">
+              <input type="hidden" name="collections" :value="collectionId" />
+            </template>
+          </fieldset>
         </div>
 
         <div class="mt-3 flex justify-end">
           <div class="flex gap-2">
             <a href="{% url 'core/image-browser' %}" class="px-3 py-1 text-xs text-gray-600 hover:text-gray-800">Clear</a>
-            <button type="submit" class="px-4 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">Search</button>
+            <button type="submit" class="px-4 py-1 bg-blue-600 text-white text-sm rounded-sm hover:bg-blue-700">Search</button>
           </div>
         </div>
       </form>
@@ -108,15 +113,16 @@
         Download with CLI
         <div class="dropdown">
           <label tabindex="0" class="btn btn-circle btn-ghost btn-xs text-info">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="w-4 h-4 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <i class="ri-information-line text-base"></i>
           </label>
           <div tabindex="0" class="card dropdown-content w-96 bg-base-100 shadow-xl">
             <div class="card-body">
               <div class="heading-3 card-title">View these images via the ISIC CLI (pip install isic-cli)</div>
               <div class="flex flex-row">
-                <input type="text" disabled class="input input-bordered w-full max-w-xs" :value="isicCliDownloadCommand()">
-                <button @click="copyIsicCliDownloadCommand()" class="btn btn-square btn-sm inline"><svg class="w-5 h-5 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M 16 3 C 14.742188 3 13.847656 3.890625 13.40625 5 L 6 5 L 6 28 L 26 28 L 26 5 L 18.59375 5 C 18.152344 3.890625 17.257813 3 16 3 Z M 16 5 C 16.554688 5 17 5.445313 17 6 L 17 7 L 20 7 L 20 9 L 12 9 L 12 7 L 15 7 L 15 6 C 15 5.445313 15.445313 5 16 5 Z M 8 7 L 10 7 L 10 11 L 22 11 L 22 7 L 24 7 L 24 26 L 8 26 Z"></path></svg></button>
-
+                <input type="text" disabled class="input w-full max-w-xs" :value="isicCliDownloadCommand()">
+                <button @click="copyIsicCliDownloadCommand()" class="btn btn-square btn-sm inline">
+                  <i class="ri-clipboard-line text-lg"></i>
+                </button>
               </div>
               <span>Learn more about the <a href="https://github.com/ImageMarkup/isic-cli">ISIC CLI</a></span>
             </div>
@@ -124,24 +130,23 @@
         </div>
       </div>
 
-      {% include 'studies/partials/cursor_pagination.html' %}
     </div>
 
-    <div class="mb-4" x-data="thumbnailGrid();">
-      <div class="flex flex-row justify-end pb-3 hidden sm:block">
-        <a class="px-1" href="#" @click="decrease();">fewer columns</a> |
-        <a class="px-1" href="#" @click="increase();">more columns</a>
+    <div class="flex flex-col gap-3" x-data="thumbnailGrid()">
+      <div class="hidden sm:flex sm:items-center sm:justify-between">
+        {% include 'core/partials/columns_widget.html' %}
+        {% include 'core/partials/cursor_pagination_widget.html' %}
       </div>
       <div class="grid gap-4 grid-cols-2" :class="gridClassNames[numCols]">
         {% for image in images %}
           {% include 'core/partials/image.html' %}
         {% endfor %}
       </div>
+      <div class="flex justify-center">
+        {% include 'core/partials/cursor_pagination_widget.html' %}
+      </div>
     </div>
 
-    {% include 'studies/partials/cursor_pagination.html' %}
-
-    {% include 'ingest/partials/thumbnail_grid_js.html' %}
   </div>
 
   {% include 'core/partials/image_browser_js.html' %}
@@ -153,9 +158,8 @@
     </div>
   {% endpartialdef %}
 
-  <input type="checkbox" id="my-modal-4" class="modal-toggle">
-  <label for="my-modal-4" class="modal cursor-pointer">
-    <label class="modal-box max-w-5xl">
+  <dialog x-ref="syntaxHelpModal" class="modal">
+    <div class="modal-box max-w-5xl">
       <div class="heading-3 mb-2">Example Search Queries</div>
       <div>
         {% with description="Display images diagnosed as melanoma from patients that are approximately 50 years old." query='age_approx:50 AND diagnosis_3:"Melanoma Invasive"' %}
@@ -168,8 +172,12 @@
           {% partial example-query %}
         {% endwith %}
       </div>
-    </label>
-  </label>
+      <div class="modal-action">
+        <button type="button" class="btn" @click="$refs.syntaxHelpModal.close()">Close</button>
+      </div>
+    </div>
+    <div class="modal-backdrop" @click="$refs.syntaxHelpModal.close()"></div>
+  </dialog>
 
   </div>
 {% endblock %}

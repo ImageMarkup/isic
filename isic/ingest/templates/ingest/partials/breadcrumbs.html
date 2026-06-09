@@ -1,21 +1,12 @@
-<nav class="flex" aria-label="Breadcrumb">
-  <ol class="flex items-center space-x-4">
+<div class="breadcrumbs text-sm">
+  <ul>
     <li>
-      <div>
-        <a href="{% url 'index' %}" class="text-gray-400 hover:text-gray-500">
-          <i class="ri-home-2-fill flex-shrink-0 text-xl" aria-hidden="true"></i>
-          <span class="sr-only">Home</span>
-        </a>
-      </div>
+      <a href="{% url 'index' %}">
+        <i class="ri-home-2-fill text-xl" aria-hidden="true"></i>
+      </a>
     </li>
-
     {% for breadcrumb in breadcrumbs %}
-      <li>
-        <div class="flex items-center">
-          <i class="ri-arrow-right-s-line flex-shrink-0 text-gray-400" aria-hidden="true"></i>
-          <a href="{{ breadcrumb.0 }}" class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700">{{ breadcrumb.1 }}</a>
-        </div>
-      </li>
+      <li><a href="{{ breadcrumb.0 }}">{{ breadcrumb.1 }}</a></li>
     {% endfor %}
-  </ol>
-</nav>
+  </ul>
+</div>
