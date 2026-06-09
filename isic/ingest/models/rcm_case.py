@@ -6,7 +6,7 @@ from django.db.models.constraints import UniqueConstraint
 
 def _default_id():
     while True:
-        rcm_case_id = f"{secrets.randbelow(9999999):07}"
+        rcm_case_id = f"IRCM_{secrets.randbelow(9999999):07}"
         # This has a race condition, so the actual creation should be retried or wrapped
         # in a select for update on the rcm_case table
         if not RcmCase.objects.filter(id=rcm_case_id).exists():
@@ -17,7 +17,7 @@ class RcmCase(models.Model):
     id = models.CharField(
         primary_key=True,
         default=_default_id,
-        max_length=7,
+        max_length=12,
     )
     cohort = models.ForeignKey("Cohort", on_delete=models.CASCADE, related_name="rcm_cases")
     private_rcm_case_id = models.CharField(max_length=255)
