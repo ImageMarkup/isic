@@ -46,7 +46,6 @@ dependencies = [
   "pyexiv2==2.15.5",
   "pyparsing==3.3.2",
   "python-magic==0.4.27",
-  "redis==7.4.1",
   "requests==2.34.2",
   "requests-toolbelt==1.0.0",
   "rich==15.0.0",
