@@ -10,6 +10,7 @@
   <script src="{% static 'core/js/collection-picker.js' %}"></script>
   <script src="{% static 'core/dist/cog.js' %}"></script>
   <link rel="stylesheet" href="{% static 'core/dist/ol.css' %}">
+  <script src="{% static 'core/js/isic-cli.js' %}"></script>
   <script src="{% static 'core/js/thumbnail-grid.js' %}"></script>
 {% endblock %}
 
@@ -22,120 +23,125 @@
 
     {% include 'core/partials/collection_picker_modal.html' %}
 
-    <div class="my-4 bg-white border border-gray-200 rounded-lg p-4">
-      <form method="GET" id="" action="">
-        {{ form.non_field_errors }}
+    <form method="GET" class="card card-border card-body border-base-300 my-4 p-4">
+      {{ form.non_field_errors }}
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div class="col-span-2">
-            <label class="block text-xs font-medium text-gray-600 mb-1">Query</label>
-            <div class="flex justify-between items-center gap-2">
-              {% render_field form.query class+="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-sm focus:outline-hidden focus:ring-1 focus:ring-blue-500 font-mono" placeholder="age_approx:[20 TO 40] AND sex:male" %}
-              <a href="#" @click.prevent="$refs.syntaxHelpModal.showModal()" class="link link-primary text-xs whitespace-nowrap">syntax help</a>
-            </div>
-            {{ form.query.errors }}
-          </div>
+      <div class="flex flex-col gap-4 sm:flex-row">
+        <fieldset class="fieldset flex-2">
+          <legend class="fieldset-legend">
+            Query
+            <button type="button" @click="$refs.syntaxHelpModal.showModal()" class="link link-primary text-xs">syntax help</button>
+          </legend>
+          {% render_field form.query class+="input input-bordered input-sm w-full font-mono" %}
+          {{ form.query.errors }}
+        </fieldset>
 
-          <fieldset class="fieldset" x-data="collectionPicker()">
-            <legend class="fieldset-legend">Collections</legend>
-            <div class="relative w-full"
-                 x-ref="dropdownWrapper"
-                 @keydown.down.prevent="focusNextItem($event.target)"
-                 @keydown.up.prevent="focusPrevItem($event.target)"
-                 @keydown.escape="closeDropdown()"
-                 @focusout="onFocusout($event)"
+        <fieldset class="fieldset flex-1" x-data="collectionPicker()">
+          <legend class="fieldset-legend">Collections</legend>
+          <div class="relative w-full"
+               x-ref="dropdownWrapper"
+               @keydown.down.prevent="focusNextItem($event.target)"
+               @keydown.up.prevent="focusPrevItem($event.target)"
+               @keydown.escape="closeDropdown()"
+               @focusout="onFocusout($event)"
+          >
+            <input
+              type="text"
+              role="combobox"
+              aria-autocomplete="list"
+              :aria-expanded="dropdownOpen"
+              x-ref="collectionInput"
+              x-model="collectionInput"
+              @click="dropdownOpen = true"
+              @input="dropdownOpen = true"
+              placeholder="Type or select collections..."
+              class="input input-bordered input-sm w-full"
+            />
+            <ul
+              x-ref="collectionMenu"
+              x-show="dropdownOpen"
+              x-cloak
+              role="listbox"
+              class="menu bg-base-100 rounded-box shadow-sm absolute z-10 mt-1 w-full max-h-64 overflow-y-auto"
             >
-              <input
-                type="text"
-                role="combobox"
-                aria-autocomplete="list"
-                :aria-expanded="dropdownOpen"
-                x-ref="collectionInput"
-                x-model="collectionInput"
-                @click="dropdownOpen = true"
-                @input="dropdownOpen = true"
-                placeholder="Type or select collections..."
-                class="input input-bordered input-sm w-full"
-              />
-              <ul
-                x-ref="collectionMenu"
-                x-show="dropdownOpen"
-                x-cloak
-                role="listbox"
-                class="absolute z-10 menu bg-base-100 rounded-box shadow-sm mt-1 w-full max-h-64 overflow-y-auto"
-              >
-                <template x-for="collection in filteredCollections" :key="collection.id">
-                  <li>
-                    <button type="button" role="option" @click="selectCollection(collection)">
-                      <span x-text="collection.name"></span>
-                    </button>
-                  </li>
-                </template>
-                <li x-show="filteredCollections.length === 0" class="menu-disabled">
-                  <span>No collections found</span>
-                </li>
-              </ul>
-            </div>
-
-            <div class="flex flex-wrap gap-1 mt-2" role="list" x-show="selectedCollections.length > 0">
-              <template x-for="collectionId in selectedCollections" :key="collectionId">
-                <div class="badge badge-soft badge-primary gap-1" role="listitem">
-                  <span x-text="getCollectionName(collectionId)"></span>
-                  <button @click="removeCollection(collectionId)" type="button" class="btn btn-xs btn-circle btn-ghost" :aria-label="'Remove ' + getCollectionName(collectionId)">
-                    <i class="ri-close-line text-xs"></i>
+              <template x-for="collection in filteredCollections" :key="collection.id">
+                <li>
+                  <button type="button" role="option" @click="selectCollection(collection)">
+                    <span x-text="collection.name"></span>
                   </button>
-                </div>
+                </li>
               </template>
-            </div>
-
-            <template x-for="collectionId in selectedCollections" :key="collectionId">
-              <input type="hidden" name="collections" :value="collectionId" />
-            </template>
-          </fieldset>
-        </div>
-
-        <div class="mt-3 flex justify-end">
-          <div class="flex gap-2">
-            <a href="{% url 'core/image-browser' %}" class="px-3 py-1 text-xs text-gray-600 hover:text-gray-800">Clear</a>
-            <button type="submit" class="px-4 py-1 bg-blue-600 text-white text-sm rounded-sm hover:bg-blue-700">Search</button>
+              <li x-show="filteredCollections.length === 0" class="menu-disabled">
+                <span>No collections found</span>
+              </li>
+            </ul>
           </div>
-        </div>
-      </form>
-    </div>
 
-
-    <div class="flex justify-between">
-      <div>
-        <div>
-          Showing {{ total_images|intcomma }} results
-        </div>
-
-        Download with CLI
-        <div class="dropdown">
-          <label tabindex="0" class="btn btn-circle btn-ghost btn-xs text-info">
-            <i class="ri-information-line text-base"></i>
-          </label>
-          <div tabindex="0" class="card dropdown-content w-96 bg-base-100 shadow-xl">
-            <div class="card-body">
-              <div class="heading-3 card-title">View these images via the ISIC CLI (pip install isic-cli)</div>
-              <div class="flex flex-row">
-                <input type="text" disabled class="input w-full max-w-xs" :value="isicCliDownloadCommand()">
-                <button @click="copyIsicCliDownloadCommand()" class="btn btn-square btn-sm inline">
-                  <i class="ri-clipboard-line text-lg"></i>
+          <div class="flex flex-wrap mt-2 gap-1" role="list" x-show="selectedCollections.length > 0">
+            <template x-for="collectionId in selectedCollections" :key="collectionId">
+              <div class="badge badge-soft badge-primary gap-1" role="listitem">
+                <span x-text="getCollectionName(collectionId)"></span>
+                <button @click="removeCollection(collectionId)" type="button" class="btn btn-xs btn-circle btn-ghost" :aria-label="'Remove ' + getCollectionName(collectionId)">
+                  <i class="ri-close-line text-xs"></i>
                 </button>
               </div>
-              <span>Learn more about the <a href="https://github.com/ImageMarkup/isic-cli">ISIC CLI</a></span>
+            </template>
+          </div>
+
+          <template x-for="collectionId in selectedCollections" :key="collectionId">
+            <input type="hidden" name="collections" :value="collectionId" />
+          </template>
+        </fieldset>
+      </div>
+
+      <div class="card-actions justify-end">
+        <a href="{% url 'core/image-browser' %}" class="btn btn-soft btn-secondary btn-sm">Clear</a>
+        <button type="submit" class="btn btn-primary btn-sm">Search</button>
+      </div>
+    </form>
+
+    <div class="flex flex-col gap-3" x-data="thumbnailGrid()">
+      <div class="flex items-center justify-between">
+        <div class="hidden sm:flex items-center gap-3">
+          {% include 'core/partials/columns_widget.html' %}
+          <div x-data="isicCli()">
+            <button class="btn btn-outline btn-xs gap-1" popovertarget="cli-download-info">
+              <i class="ri-terminal-line"></i>
+              CLI download
+            </button>
+            <div class="card card-sm card-border dropdown rounded-box bg-base-100 shadow-sm w-96"
+                 popover id="cli-download-info">
+              <div class="card-body">
+                <h3 class="card-title">View these images via the ISIC CLI</h3>
+                <div class="flex items-center gap-1 rounded bg-base-200 p-2">
+                  <code class="flex-1 select-all font-mono text-sm">pip install isic-cli</code>
+                  <button class="btn btn-ghost btn-square btn-xs" @click="copyInstallCommand()">
+                    <i class="ri-clipboard-line"></i>
+                  </button>
+                </div>
+                <div class="flex items-center gap-1 rounded bg-base-200 p-2">
+                  <code class="flex-1 select-all font-mono text-sm" x-text="downloadCommand"></code>
+                  <button class="btn btn-ghost btn-square btn-xs" @click="copyDownloadCommand()">
+                    <i class="ri-clipboard-line"></i>
+                  </button>
+                </div>
+                <p>
+                  Learn more about the
+                  <a href="https://github.com/ImageMarkup/isic-cli" target="_blank" rel="noopener noreferrer" class="link link-primary">
+                    ISIC CLI
+                    <i class="ri-external-link-line"></i>
+                  </a>
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-    </div>
-
-    <div class="flex flex-col gap-3" x-data="thumbnailGrid()">
-      <div class="hidden sm:flex sm:items-center sm:justify-between">
-        {% include 'core/partials/columns_widget.html' %}
-        {% include 'core/partials/cursor_pagination_widget.html' %}
+        <div class="flex items-center gap-3">
+          <span class="text-sm text-base-content/60">{{ total_images|intcomma }} results</span>
+          <div class="hidden sm:block">
+            {% include 'core/partials/cursor_pagination_widget.html' %}
+          </div>
+        </div>
       </div>
       <div class="grid gap-4 grid-cols-2" :class="gridClassNames[numCols]">
         {% for image in images %}

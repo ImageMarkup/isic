@@ -10,7 +10,7 @@ class ImageSearchForm(forms.Form):
     query = forms.CharField(
         required=False,
         widget=forms.SearchInput(
-            attrs={"placeholder": 'diagnosis_3:"Melanoma Invasive" OR diagnosis_3:Nevus'}
+            attrs={"placeholder": 'sex:female AND diagnosis_3:"Melanoma Invasive"'}
         ),
     )
 
