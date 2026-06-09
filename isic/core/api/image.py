@@ -1,7 +1,9 @@
 from typing import Any
 
 from django.conf import settings
+from django.contrib import messages
 from django.core.cache import cache
+from django.db.models import Max
 from django.http.request import HttpRequest
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
@@ -212,3 +214,31 @@ def image_similar(
     similar_qs = image.similar_images().select_related("accession__cohort")
     similar_qs = get_visible_objects(request.user, "core.view_image", similar_qs)
     return similar_qs[:limit]
+
+
+class SetPinned(Schema):
+    pinned: bool
+
+    model_config = {"extra": "forbid"}
+
+
+@router.post(
+    "/{id}/set-pinned/",
+    response={200: None, 400: dict, 403: dict},
+    include_in_schema=False,
+)
+def image_set_pinned(request, id: int, payload: SetPinned):
+    if not request.user.is_staff:
+        return 403, {"error": "You do not have permission to pin or unpin this image."}
+
+    qs = get_visible_objects(request.user, "core.view_image", Image.objects.all())
+    image = get_object_or_404(qs.distinct(), id=id)
+    if payload.pinned:
+        last_pin = Image.objects.aggregate(Max("pinned")).get("pinned__max") or 0
+        image.pinned = last_pin + 1
+    else:
+        image.pinned = None
+    image.save()
+    action = "pinned" if payload.pinned else "unpinned"
+    messages.add_message(request, messages.SUCCESS, f"Image {action}.")
+    return 200, None

@@ -8,13 +8,18 @@
 
 {% block content %}
   <div class="space-y-4">
-    <div class="flex items-center gap-3">
-      <div class="heading-1">{{image.isic_id}}</div>
+    <div class="flex justify-between w-full">
+      <div class="flex items-center gap-3">
+        <div class="heading-1">{{image.isic_id}}</div>
 
-      {% if image.public %}
-        <span class="badge badge-success">Public</span>
-      {% else %}
-        <span class="badge badge-warning">Private</span>
+        {% if image.public %}
+          <span class="badge badge-success">Public</span>
+        {% else %}
+          <span class="badge badge-warning">Private</span>
+        {% endif %}
+      </div>
+      {% if request.user.is_staff %}
+        {% include 'core/image_detail/actions_menu.html' %}
       {% endif %}
     </div>
 
