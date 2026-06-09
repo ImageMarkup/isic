@@ -84,8 +84,7 @@
   "onCreateCommand": {
     "python": ["uv", "python", "install", "--default"],
     "venv": ["uv", "sync", "--all-extras", "--all-groups"],
-    "npm": ["npm", "install"],
-    "greenmask": "curl -fsSL https://greenmask.io/install.sh | sh -s -- -y -v v0.2.21"
+    "npm": ["npm", "install"]
   },
   // Ensure it is re-synced on restarts.
   "updateContentCommand": {
