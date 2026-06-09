@@ -3,7 +3,7 @@ from typing import Any
 from django.conf import settings
 from django.contrib import messages
 from django.core.cache import cache
-from django.db.models import Max
+from django.db.models import Max, Q
 from django.http.request import HttpRequest
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
@@ -85,10 +85,85 @@ class ImageOut(ModelSchema):
         return metadata
 
 
+class PinnedFirstPagination(CursorPagination):
+    # Subclass of CursorPagination with custom behavior to allow ordering by multiple fields
+    # If query contains "pin_sort=true", return pinned images first, then sort by created.
+    #
+    # NOTE: Django Ninja has its own CursorPagination implementation upstream
+    # (https://github.com/vitalik/django-ninja/pull/1657), but it only derives the cursor
+    # position and the seek (__gt/__lt) filter from the FIRST ordering field -- any
+    # additional ordering fields affect ORDER BY only, not the keyset comparison. That
+    # makes it incorrect for paging across more than one field (e.g. "-pinned", "created"):
+    # rows tied on the first field aren't disambiguated by the rest. _apply_ordering and
+    # _get_position_from_instance are overridden below to build the position and the
+    # predicate from *all* ordering fields.
+
+    def _apply_ordering(self, queryset, cursor, order):
+        """
+        Filter ``queryset`` down to the rows that fall *after* the cursor position.
+
+        This is the multi-field generalization of the keyset/seek predicate. The
+        cursor encodes one value per ordering field (joined by "|"), and we need the
+        SQL equivalent of a lexicographic tuple comparison against that position.
+        For ordering ``(-pinned, created, id)`` (pinned descending, the rest
+        ascending) paging forward, "after" the cursor row
+        ``(pinned=P, created=C, id=I)`` means::
+
+            pinned < P
+            OR (pinned = P AND created > C)
+            OR (pinned = P AND created = C AND id > I)
+
+        It's expanded by hand into this OR-of-ANDs rather than using a SQL row-value
+        constructor (``(pinned, created, id) > (P, C, I)``) because row-value
+        comparison can't express per-field ascending/descending directions, which
+        keyset pagination requires (here ``pinned`` descends while ``created`` and
+        ``id`` ascend).
+
+        Each ordering field contributes one OR term: a strict comparison on that
+        field (``__gt``/``__lt``, flipped for descending fields and for reverse
+        cursor across an ordering change) raises ``ValueError``.
+        """
+        if cursor.position is not None:
+            position_values = cursor.position.split("|")
+            if len(position_values) != len(order):
+                # The cursor was built for a different ordering than this request
+                # (e.g. pin_sort was toggled).
+                raise ValueError("Cursor position does not match the current ordering.")
+
+            field_names = [field.lstrip("-") for field in order]
+            q_obj = Q()
+            for i, field in enumerate(order):
+                is_reversed = field.startswith("-")
+                comparison = "__gt" if cursor.reverse == is_reversed else "__lt"
+                # Strict comparison on field i AND equality on every field before it.
+                field_condition = Q(**{f"{field_names[i]}{comparison}": position_values[i]})
+                for j in range(i):
+                    field_condition &= Q(**{field_names[j]: position_values[j]})
+
+                q_obj |= field_condition
+            queryset = queryset.filter(q_obj)
+        return queryset
+
+    def _get_position_from_instance(self, instance, ordering):
+        values = []
+        for field in ordering:
+            fname = field.lstrip("-")
+            attr = instance[fname] if isinstance(instance, dict) else getattr(instance, fname)
+            values.append(str(attr))
+        return "|".join(values)
+
+    def paginate_queryset(self, queryset, pagination, request, **params):
+        if request.GET.get("pin_sort"):
+            queryset.query.order_by = ["pinned", "created"]
+        else:
+            queryset.query.order_by = ["created"]
+        return super().paginate_queryset(queryset, pagination, request, **params)
+
+
 @router.get(
     "/", response=list[ImageOut], summary="Return a list of images.", include_in_schema=True
 )
-@paginate(CursorPagination, ordering=Image._meta.ordering)
+@paginate(PinnedFirstPagination)
 def image_list(request: HttpRequest):
     qs = get_visible_objects(request.user, "core.view_image", default_qs)
 
@@ -110,7 +185,7 @@ def image_list(request: HttpRequest):
     description=render_to_string("core/swagger_image_search_description.html"),
     include_in_schema=True,
 )
-@paginate(CursorPagination, ordering=Image._meta.ordering)
+@paginate(PinnedFirstPagination)
 def image_search(request: HttpRequest, search: SearchQueryIn = Query(...)):
     try:
         qs = search.to_queryset(user=request.user, qs=default_qs)
