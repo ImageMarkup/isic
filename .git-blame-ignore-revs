@@ -26,3 +26,5 @@ a6d44f367da3cd2c6bee428c69d3ce156058dd7c
 17838acc51c4f0bd24c6a336ce971519b38a816f
 # fix remaining noun-verb ordering in service and view names
 90af2cb60c1972284e9afcfb3d38282b4150ef02
+# Format all HTML indents with 2 spaces
+c63f19905599a912800335c1457894d35d297e6a
