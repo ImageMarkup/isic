@@ -100,38 +100,48 @@
       </div>
     </form>
 
-    <div>
-      <div>Showing {{ total_images|intcomma }} results</div>
-      <div class="inline-flex items-center gap-1" x-data="isicCli()">
-        Download with CLI
-        <button class="btn btn-ghost btn-circle btn-xs text-info" popovertarget="cli-download-info">
-          <i class="ri-information-line text-base"></i>
-        </button>
-        <div class="card card-sm card-border dropdown rounded-box bg-base-100 shadow-sm w-96"
-             popover id="cli-download-info">
-          <div class="card-body">
-            <h3 class="card-title">View these images via the ISIC CLI</h3>
-            <div class="flex items-center gap-1 rounded bg-base-200 p-2">
-              <code class="flex-1 select-all font-mono text-sm">pip install isic-cli</code>
-              <button class="btn btn-ghost btn-square btn-xs" @click="copyInstallCommand()">
-                <i class="ri-clipboard-line"></i>
-              </button>
-            </div>
-            <div class="flex items-center gap-1 rounded bg-base-200 p-2">
-              <code class="flex-1 select-all font-mono text-sm" x-text="downloadCommand"></code>
-              <button class="btn btn-ghost btn-square btn-xs" @click="copyDownloadCommand()">
-                <i class="ri-clipboard-line"></i>
-              </button>
+    <div class="flex flex-col gap-3" x-data="thumbnailGrid()">
+      <div class="flex items-center justify-between">
+        <div class="hidden sm:flex items-center gap-3">
+          {% include 'core/partials/columns_widget.html' %}
+          <div x-data="isicCli()">
+            <button class="btn btn-outline btn-xs gap-1" popovertarget="cli-download-info">
+              <i class="ri-terminal-line"></i>
+              CLI download
+            </button>
+            <div class="card card-sm card-border dropdown rounded-box bg-base-100 shadow-sm w-96"
+                 popover id="cli-download-info">
+              <div class="card-body">
+                <h3 class="card-title">View these images via the ISIC CLI</h3>
+                <div class="flex items-center gap-1 rounded bg-base-200 p-2">
+                  <code class="flex-1 select-all font-mono text-sm">pip install isic-cli</code>
+                  <button class="btn btn-ghost btn-square btn-xs" @click="copyInstallCommand()">
+                    <i class="ri-clipboard-line"></i>
+                  </button>
+                </div>
+                <div class="flex items-center gap-1 rounded bg-base-200 p-2">
+                  <code class="flex-1 select-all font-mono text-sm" x-text="downloadCommand"></code>
+                  <button class="btn btn-ghost btn-square btn-xs" @click="copyDownloadCommand()">
+                    <i class="ri-clipboard-line"></i>
+                  </button>
+                </div>
+                <p>
+                  Learn more about the
+                  <a href="https://github.com/ImageMarkup/isic-cli" target="_blank" rel="noopener noreferrer" class="link link-primary">
+                    ISIC CLI
+                    <i class="ri-external-link-line"></i>
+                  </a>
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-
-    <div class="flex flex-col gap-3" x-data="thumbnailGrid()">
-      <div class="hidden sm:flex sm:items-center sm:justify-between">
-        {% include 'core/partials/columns_widget.html' %}
-        {% include 'core/partials/cursor_pagination_widget.html' %}
+        <div class="flex items-center gap-3">
+          <span class="text-sm text-base-content/60">{{ total_images|intcomma }} results</span>
+          <div class="hidden sm:block">
+            {% include 'core/partials/cursor_pagination_widget.html' %}
+          </div>
+        </div>
       </div>
       <div class="grid gap-4 grid-cols-2" :class="gridClassNames[numCols]">
         {% for image in images %}
