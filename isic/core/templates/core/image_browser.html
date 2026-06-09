@@ -10,6 +10,7 @@
   <script src="{% static 'core/js/collection-picker.js' %}"></script>
   <script src="{% static 'core/dist/cog.js' %}"></script>
   <link rel="stylesheet" href="{% static 'core/dist/ol.css' %}">
+  <script src="{% static 'core/js/isic-cli.js' %}"></script>
   <script src="{% static 'core/js/thumbnail-grid.js' %}"></script>
 {% endblock %}
 
@@ -99,32 +100,32 @@
       </div>
     </form>
 
-    <div class="flex justify-between">
-      <div>
-        <div>
-          Showing {{ total_images|intcomma }} results
-        </div>
-
+    <div>
+      <div>Showing {{ total_images|intcomma }} results</div>
+      <div class="inline-flex items-center gap-1" x-data="isicCli()">
         Download with CLI
-        <div class="dropdown">
-          <label tabindex="0" class="btn btn-circle btn-ghost btn-xs text-info">
-            <i class="ri-information-line text-base"></i>
-          </label>
-          <div tabindex="0" class="card dropdown-content w-96 bg-base-100 shadow-xl">
-            <div class="card-body">
-              <div class="heading-3 card-title">View these images via the ISIC CLI (pip install isic-cli)</div>
-              <div class="flex flex-row">
-                <input type="text" disabled class="input w-full max-w-xs" :value="isicCliDownloadCommand()">
-                <button @click="copyIsicCliDownloadCommand()" class="btn btn-square btn-sm inline">
-                  <i class="ri-clipboard-line text-lg"></i>
-                </button>
-              </div>
-              <span>Learn more about the <a href="https://github.com/ImageMarkup/isic-cli">ISIC CLI</a></span>
+        <button class="btn btn-ghost btn-circle btn-xs text-info" popovertarget="cli-download-info">
+          <i class="ri-information-line text-base"></i>
+        </button>
+        <div class="card card-sm card-border dropdown rounded-box bg-base-100 shadow-sm w-96"
+             popover id="cli-download-info">
+          <div class="card-body">
+            <h3 class="card-title">View these images via the ISIC CLI</h3>
+            <div class="flex items-center gap-1 rounded bg-base-200 p-2">
+              <code class="flex-1 select-all font-mono text-sm">pip install isic-cli</code>
+              <button class="btn btn-ghost btn-square btn-xs" @click="copyInstallCommand()">
+                <i class="ri-clipboard-line"></i>
+              </button>
+            </div>
+            <div class="flex items-center gap-1 rounded bg-base-200 p-2">
+              <code class="flex-1 select-all font-mono text-sm" x-text="downloadCommand"></code>
+              <button class="btn btn-ghost btn-square btn-xs" @click="copyDownloadCommand()">
+                <i class="ri-clipboard-line"></i>
+              </button>
             </div>
           </div>
         </div>
       </div>
-
     </div>
 
     <div class="flex flex-col gap-3" x-data="thumbnailGrid()">
