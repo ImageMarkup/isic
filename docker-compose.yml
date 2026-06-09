@@ -17,7 +17,7 @@ services:
       - postgres:/var/lib/postgresql
 
   elasticsearch:
-    image: elasticsearch:9.4.1
+    image: elasticsearch:9.4.2
     environment:
       ES_JAVA_OPTS: "-Xms250m -Xmx750m"
       discovery.type: single-node
