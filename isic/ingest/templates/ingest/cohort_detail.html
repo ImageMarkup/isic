@@ -32,44 +32,28 @@
       Showing {{ accessions.paginator.count|intcomma }} ignored results
     </div>
 
-    <div class="overflow-x-auto">
-      <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-        <table class="w-full table-fixed divide-y divide-gray-200">
-          <colgroup>
-            <col class="hidden sm:table-column" style="width: 15%">
-            <col class="hidden sm:table-column" style="width: 85%">
-          </colgroup>
-          <thead class="bg-gray-50">
-            <tr>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                Created
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                Original Filename
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for accession in accessions %}
-              <tr class="{% cycle 'bg-white' 'bg-gray-50' %}">
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {{ accession.created|date:"Y-m-d" }}
-                </td>
-                <td class="px-6 py-4 text-sm font-medium text-gray-700 overflow-hidden">
-                  <span class="truncate min-w-0">{{ accession.original_blob_name }}</span>
-                </td>
-              </tr>
-            {% empty %}
-              <tr>
-                <td colspan="4" class="px-6 py-4 text-sm text-gray-500 text-center">
-                  No ignored accessions found.
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <table class="table table-zebra">
+      <thead>
+        <tr>
+          <th>Created</th>
+          <th>Original Filename</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for accession in accessions %}
+          <tr>
+            <td>{{ accession.created|date:"Y-m-d" }}</td>
+            <td>{{ accession.original_blob_name }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="2" class="text-center">
+              No ignored accessions found.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
     <div class="flex justify-center mt-3">
       {% include 'core/partials/pagination_widget.html' with page_obj=accessions %}
     </div>
