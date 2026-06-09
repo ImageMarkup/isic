@@ -47,6 +47,9 @@
             >
               <input
                 type="text"
+                role="combobox"
+                aria-autocomplete="list"
+                :aria-expanded="dropdownOpen"
                 x-ref="collectionInput"
                 x-model="collectionInput"
                 @click="dropdownOpen = true"
@@ -58,11 +61,12 @@
                 x-ref="collectionMenu"
                 x-show="dropdownOpen"
                 x-cloak
+                role="listbox"
                 class="absolute z-10 menu bg-base-100 rounded-box shadow-sm mt-1 w-full max-h-64 overflow-y-auto"
               >
                 <template x-for="collection in filteredCollections" :key="collection.id">
                   <li>
-                    <button type="button" @click="selectCollection(collection)">
+                    <button type="button" role="option" @click="selectCollection(collection)">
                       <span x-text="collection.name"></span>
                     </button>
                   </li>
@@ -73,11 +77,11 @@
               </ul>
             </div>
 
-            <div class="flex flex-wrap gap-1 mt-2" x-show="selectedCollections.length > 0">
+            <div class="flex flex-wrap gap-1 mt-2" role="list" x-show="selectedCollections.length > 0">
               <template x-for="collectionId in selectedCollections" :key="collectionId">
-                <div class="badge badge-soft badge-primary gap-1">
+                <div class="badge badge-soft badge-primary gap-1" role="listitem">
                   <span x-text="getCollectionName(collectionId)"></span>
-                  <button @click="removeCollection(collectionId)" type="button" class="btn btn-xs btn-circle btn-ghost">
+                  <button @click="removeCollection(collectionId)" type="button" class="btn btn-xs btn-circle btn-ghost" :aria-label="'Remove ' + getCollectionName(collectionId)">
                     <i class="ri-close-line text-xs"></i>
                   </button>
                 </div>
