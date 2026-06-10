@@ -36,7 +36,7 @@ def metadata_files_from_csv(user_id, csv_path, isic_id_column):
     columns_to_drop = {"isic_id", "filename", isic_id_column}
 
     cohort_files = defaultdict(list)
-    cohort_columns = defaultdict(set)
+    cohort_columns: defaultdict[int, set[str]] = defaultdict(set)
 
     with Path(csv_path).open() as f:
         reader = csv.DictReader(f)

@@ -38,8 +38,9 @@ def test_collect_google_analytics_task(mocker, settings):
     collect_google_analytics_metrics_task()
 
     assert GaMetrics.objects.count() == 1
-    assert GaMetrics.objects.first().num_sessions == 10
-    assert GaMetrics.objects.first().sessions_per_country == [
+    ga_metrics = GaMetrics.objects.get()
+    assert ga_metrics.num_sessions == 10
+    assert ga_metrics.sessions_per_country == [
         {
             "country_name": "United States",
             "country_numeric": "840",

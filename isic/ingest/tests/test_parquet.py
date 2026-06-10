@@ -6,6 +6,7 @@ import pyarrow.parquet as pq
 from pydantic_to_pyarrow import get_pyarrow_schema
 import pytest
 
+from isic.core.models.base import CopyrightLicense
 from isic.ingest.utils.parquet import (
     EXCLUDED_FIELDS,
     FIELD_ORDER,
@@ -38,7 +39,7 @@ def test_parquet_metadata_row_roundtrip_through_parquet():
     row = ParquetMetadataRow(
         isic_id="ISIC_0000001",
         attribution="Test Attribution",
-        copyright_license="CC-0",
+        copyright_license=CopyrightLicense("CC-0"),
         sex="male",
         age_approx=50,
         clin_size_long_diam_mm=Decimal("3.14"),
@@ -79,7 +80,7 @@ def test_parquet_metadata_row_from_image(image_factory, accession_factory):
     row = ParquetMetadataRow(
         isic_id=image.isic_id,
         attribution=image.accession.attribution,
-        copyright_license=image.accession.copyright_license,
+        copyright_license=CopyrightLicense(image.accession.copyright_license),
         **image.metadata,
     )
 

@@ -11,6 +11,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from isic.core.models import Image
+from isic.core.models.base import CopyrightLicense
 from isic.ingest.utils.parquet import (
     ROW_GROUP_SIZE,
     ParquetMetadataRow,
@@ -30,7 +31,7 @@ def export_metadata_parquet():
         ParquetMetadataRow(
             isic_id=image.isic_id,
             attribution=image.accession.attribution,
-            copyright_license=image.accession.copyright_license,
+            copyright_license=CopyrightLicense(image.accession.copyright_license),
             **image.metadata,
         )
         for image in qs.iterator()

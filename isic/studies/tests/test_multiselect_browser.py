@@ -97,6 +97,7 @@ def test_multiselect_picker_search_select_all_and_submit(
     # Verify responses in the database
     annotation = Annotation.objects.get(task=task)
     response = annotation.responses.get(question=question)
+    assert response.value is not None
     selected_pks = response.value["choices"]
     selected_texts = set(
         QuestionChoice.objects.filter(pk__in=selected_pks).values_list("text", flat=True)

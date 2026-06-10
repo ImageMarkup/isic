@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from copy import deepcopy
 from dataclasses import dataclass
 import io
@@ -6,7 +6,7 @@ import logging
 from mimetypes import guess_type
 from pathlib import Path, PurePosixPath
 import tempfile
-from typing import Literal, TypeVar
+from typing import Any, Literal, TypeVar
 from uuid import uuid4
 
 from django.contrib.auth.models import User
@@ -773,7 +773,7 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
             raise ValidationError("Can't modify the accession as it's already been published.")
 
     def update_metadata(  # noqa: C901
-        self, user: User, csv_row: dict, *, ignore_image_check=False, reset_review=True
+        self, user: User, csv_row: Mapping[str, Any], *, ignore_image_check=False, reset_review=True
     ) -> bool:
         """
         Apply metadata to an accession from a row in a CSV.
@@ -855,7 +855,7 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
                     delete_accession_review(accession=self)
 
             if modified:
-                remapped_internal_values = {}
+                remapped_internal_values: dict[str, Any] = {}
                 for field in self.remapped_internal_fields:
                     remapped_internal_values.setdefault(field.relation_name, {})
 

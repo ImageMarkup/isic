@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from typing import Any
 
 from django.contrib.auth.models import User
 from django.db import models
@@ -62,7 +63,7 @@ class MetadataVersion(models.Model):
                 ignore_order=True,
                 verbose_level=2,
             )
-            formatted_result = {
+            formatted_result: dict[str, dict[str, Any]] = {
                 "added": {},
                 "removed": {},
                 "changed": {},

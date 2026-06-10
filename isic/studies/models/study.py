@@ -1,7 +1,10 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
@@ -10,6 +13,11 @@ from isic.core.models.collection import Collection
 
 from .feature import Feature
 from .question import Question
+
+if TYPE_CHECKING:
+    from django.db.models.query import QuerySet
+
+    from .study_question import StudyQuestion
 
 
 class StudyQuerySet(models.QuerySet["Study"]):
@@ -42,7 +50,9 @@ class Study(TimeStampedModel):
     )
 
     features = models.ManyToManyField(Feature, related_name="studies")
-    questions = models.ManyToManyField(Question, through="StudyQuestion", related_name="studies")
+    questions: models.ManyToManyField[Question, StudyQuestion] = models.ManyToManyField(
+        Question, through="StudyQuestion", related_name="studies"
+    )
 
     # public study means that all images in the study must be public
     # and all of the related data to the study is public (responses).

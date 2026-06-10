@@ -98,8 +98,10 @@ def test_accession_orients_images(user, cohort):
 
         original_image = PIL.Image.open(original_blob)
 
-        assert original_image._exif.get(PIL.ExifTags.Base.Make) == "Canon"
-        assert original_image._exif.get(PIL.ExifTags.Base.Orientation) == 6  # 90 degrees clockwise
+        assert original_image.getexif().get(PIL.ExifTags.Base.Make) == "Canon"
+        assert (
+            original_image.getexif().get(PIL.ExifTags.Base.Orientation) == 6
+        )  # 90 degrees clockwise
 
         accession = create_accession(
             creator=user,
@@ -113,7 +115,7 @@ def test_accession_orients_images(user, cohort):
         processed_image = PIL.Image.open(accession.blob)
 
         # assert that all exif data is stripped but the orientation is applied
-        assert processed_image._exif is None
+        assert len(processed_image.getexif()) == 0
         assert processed_image.height == original_image.width
         assert processed_image.width == original_image.height
 

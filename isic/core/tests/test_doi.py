@@ -261,9 +261,11 @@ def test_doi_files(
     doi.refresh_from_db()
 
     assert doi.bundle is not None
+    assert doi.bundle_size is not None
     assert doi.bundle_size > 0
 
     assert doi.metadata is not None
+    assert doi.metadata_size is not None
     assert doi.metadata_size > 0
 
     with tempfile.TemporaryDirectory() as temp_dir, zipfile.ZipFile(doi.bundle) as zf:
@@ -322,7 +324,7 @@ def test_api_doi_creation(
 
     draft_doi = DraftDoi.objects.get(collection=public_collection_with_public_images)
     assert draft_doi.supplemental_files.count() == 1
-    assert draft_doi.supplemental_files.first().description == "test supplemental file"
+    assert draft_doi.supplemental_files.get().description == "test supplemental file"
 
     assert draft_doi.related_identifiers.count() == 2
 
@@ -368,7 +370,7 @@ def test_doi_bundle_includes_supplemental_files(
 
     assert doi.bundle is not None
     assert doi.supplemental_files.count() == 1
-    supplemental_file = doi.supplemental_files.first()
+    supplemental_file = doi.supplemental_files.get()
 
     with tempfile.TemporaryDirectory() as temp_dir, zipfile.ZipFile(doi.bundle) as zf:
         zf.extractall(temp_dir)
@@ -553,7 +555,7 @@ def test_draft_doi_complete_lifecycle(  # noqa: PLR0915
     assert draft_doi.collection == collection
 
     assert draft_doi.supplemental_files.count() == 1
-    supplemental_file = draft_doi.supplemental_files.first()
+    supplemental_file = draft_doi.supplemental_files.get()
     assert supplemental_file.description == "Test supplemental file"
     assert storages["default"].exists(supplemental_file.blob.name)
 
@@ -611,7 +613,7 @@ def test_draft_doi_complete_lifecycle(  # noqa: PLR0915
     }
 
     assert final_doi.supplemental_files.count() == 1
-    final_supplemental_file = final_doi.supplemental_files.first()
+    final_supplemental_file = final_doi.supplemental_files.get()
     assert final_supplemental_file.description == "Test supplemental file"
 
     assert storages["sponsored"].exists(final_supplemental_file.blob.name)
@@ -627,8 +629,10 @@ def test_draft_doi_complete_lifecycle(  # noqa: PLR0915
     assert mock_datacite_promote_draft_doi_to_findable.call_count == 1
 
     assert final_doi.bundle is not None
+    assert final_doi.bundle_size is not None
     assert final_doi.bundle_size > 0
     assert final_doi.metadata is not None
+    assert final_doi.metadata_size is not None
     assert final_doi.metadata_size > 0
 
 

@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.contrib.auth.models import User
 from django.contrib.postgres.indexes import GinIndex, OpClass
 from django.core.exceptions import ValidationError
@@ -5,12 +9,14 @@ from django.db import models
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.expressions import F
 from django.db.models.functions import Upper
-from django.db.models.query import QuerySet
 from django.db.models.query_utils import Q
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
 
 from .image import Image
+
+if TYPE_CHECKING:
+    from django.db.models.query import QuerySet
 
 
 class CollectionQuerySet(models.QuerySet["Collection"]):
@@ -62,7 +68,9 @@ class Collection(TimeStampedModel):
 
     creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="collections")
 
-    images = models.ManyToManyField(Image, related_name="collections", through="CollectionImage")
+    images: models.ManyToManyField[Image, CollectionImage] = models.ManyToManyField(
+        Image, related_name="collections", through="CollectionImage"
+    )
 
     # unique per user. names of pinned collections can't be used.
     name = models.CharField(max_length=200)
@@ -73,7 +81,7 @@ class Collection(TimeStampedModel):
 
     public = models.BooleanField(default=False)
 
-    shares = models.ManyToManyField(
+    shares: models.ManyToManyField[User, CollectionShare] = models.ManyToManyField(
         User,
         through="CollectionShare",
         through_fields=("collection", "grantee"),
@@ -135,11 +143,11 @@ class Collection(TimeStampedModel):
             }
         return self.cached_counts
 
-    def full_clean(self, exclude=None, validate_unique=True):  # noqa: FBT002
-        if self.pk and self.public and self.images.private().exists():  # type: ignore[attr-defined]
+    def full_clean(self, *args, **kwargs):
+        if self.pk and self.public and self.images.private().exists():
             raise ValidationError("Can't make collection public, it contains private images.")
 
-        return super().full_clean(exclude=exclude, validate_unique=validate_unique)
+        return super().full_clean(*args, **kwargs)
 
 
 class CollectionImage(models.Model):

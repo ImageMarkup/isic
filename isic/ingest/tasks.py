@@ -58,7 +58,7 @@ def extract_zip_task(zip_pk: int):
             ):
                 # avoid .delay since we want to avoid putting tens of thousands of elements
                 # into the transaction.on_commit list.
-                generate_accession_blob_task.apply_async(args=[accession_id])
+                generate_accession_blob_task.apply_async(args=(accession_id,))
 
         transaction.on_commit(generate_blobs)
 

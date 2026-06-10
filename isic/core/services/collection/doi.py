@@ -35,7 +35,7 @@ from isic.core.views.doi import LICENSE_TITLES, LICENSE_URIS
 from isic.ingest.services.publish import unembargo_image
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Sequence
     from urllib.parse import ParseResult
 
     from django.contrib.auth.models import User
@@ -120,8 +120,8 @@ def check_create_draft_doi_allowed(
     *,
     user: User,
     collection: Collection,
-    supplemental_files: Iterable[dict[str, str]] | None = None,
-    related_identifiers: Iterable[RelatedIdentifierIn] | None = None,
+    supplemental_files: Sequence[dict[str, str]] | None = None,
+    related_identifiers: Sequence[RelatedIdentifierIn] | None = None,
 ) -> None:
     if not user.has_perm("core.create_doi", collection):
         raise ValidationError("You don't have permissions to do that.")
@@ -190,8 +190,8 @@ def create_collection_draft_doi(
     user: User,
     collection: Collection,
     description: str,
-    supplemental_files: Iterable[dict[str, str]] | None = None,
-    related_identifiers: Iterable[RelatedIdentifierIn] | None = None,
+    supplemental_files: Sequence[dict[str, str]] | None = None,
+    related_identifiers: Sequence[RelatedIdentifierIn] | None = None,
 ) -> DraftDoi:
     check_create_draft_doi_allowed(
         user=user,

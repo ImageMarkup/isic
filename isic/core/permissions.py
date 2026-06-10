@@ -1,4 +1,5 @@
 from functools import wraps
+from typing import Any
 from urllib.parse import urlparse
 
 import django.apps
@@ -27,7 +28,7 @@ class SessionAuthStaffUser(SessionAuth):
 class UserPermissions:
     model = User
     perms = ["view_staff"]
-    filters = {}
+    filters: dict[str, Any] = {}
 
     @staticmethod
     def view_staff(user_obj, _=None):

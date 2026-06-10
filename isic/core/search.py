@@ -24,7 +24,7 @@ from isic.ingest.models.lesion import Lesion
 
 logger = logging.getLogger(__name__)
 
-IMAGE_INDEX_MAPPINGS = {"properties": {}}
+IMAGE_INDEX_MAPPINGS: dict[str, Any] = {"properties": {}}
 DEFAULT_SEARCH_AGGREGATES = {}
 COUNTS_AGGREGATES = {}
 
@@ -170,7 +170,7 @@ def add_to_search_index(image: Image) -> None:
     image = Image.objects.with_elasticsearch_properties().get(pk=image.pk)
     get_elasticsearch_client().index(
         index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX,
-        id=image.pk,
+        id=str(image.pk),
         document=image.to_elasticsearch_document(source_only=True),
     )
 

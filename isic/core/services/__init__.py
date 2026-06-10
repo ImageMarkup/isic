@@ -55,7 +55,7 @@ def staff_image_metadata_csv(*, qs: QuerySet[Image]) -> Generator[list[str] | di
         .distinct()
     )
 
-    remapped_keys = reduce(
+    remapped_keys: list[str] = reduce(
         operator.iadd,
         [
             [field.internal_id_name, field.csv_field_name]
