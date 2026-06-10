@@ -66,15 +66,19 @@ def _replace_query_param(url: str, key: str, val: str):
 class CursorPagination(PaginationBase):
     class Input(Schema):
         limit: int | None = Field(None, description="Number of results to return per page.")
-        cursor: str | None = Field(
-            None, description="The pagination cursor value.", validate_default=True
+        cursor: Cursor = Field(
+            default_factory=Cursor,
+            description="The pagination cursor value.",
+            json_schema_extra={"default": None},
         )
 
-        @field_validator("cursor")
+        @field_validator("cursor", mode="before", json_schema_input_type=str | None)
         @classmethod
-        def decode_cursor(cls, encoded_cursor: str | None) -> Cursor:
+        def decode_cursor(cls, encoded_cursor: Any) -> Cursor:
             if encoded_cursor is None:
                 return Cursor()
+            if not isinstance(encoded_cursor, str):
+                raise ValueError("Invalid cursor.")  # noqa: TRY004
 
             try:
                 querystring = b64decode(encoded_cursor).decode()
