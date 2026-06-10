@@ -16,7 +16,7 @@ from isic.core.permissions import get_visible_objects
 from isic.core.search import build_elasticsearch_query
 
 if TYPE_CHECKING:
-    from django.db.models.query import QuerySet
+    from isic.core.models.image import ImageQuerySet
 
 
 class SearchQueryIn(Schema):
@@ -72,12 +72,12 @@ class SearchQueryIn(Schema):
         return user, cls(query=token["query"], collections=token["collections"])
 
     def to_queryset(
-        self, user: User | AnonymousUser, qs: QuerySet[Image] | None = None
-    ) -> QuerySet[Image]:
+        self, user: User | AnonymousUser, qs: ImageQuerySet | None = None
+    ) -> ImageQuerySet:
         qs = qs if qs is not None else Image.objects.all()
 
         if self.query:
-            qs = qs.from_search_query(self.query)  # type: ignore[attr-defined]
+            qs = qs.from_search_query(self.query)
 
         if self.collections:
             qs = qs.filter(  # type: ignore[union-attr]
