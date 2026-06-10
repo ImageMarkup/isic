@@ -39,10 +39,10 @@ class ImageQuerySet(models.QuerySet["Image"]):
         return self.filter(parse_query(django_parser, query) or Q())
 
 
-class ImageManager(models.Manager["Image"]):
-    def get_queryset(self) -> ImageQuerySet:
-        return ImageQuerySet(self.model, using=self._db)
+_BaseImageManager = models.Manager.from_queryset(ImageQuerySet)
 
+
+class ImageManager(_BaseImageManager):
     def with_elasticsearch_properties(self):
         return self.select_related("accession__cohort").annotate(
             coll_pks=ArrayAgg("collections", distinct=True, default=[]),
@@ -62,12 +62,6 @@ class ImageManager(models.Manager["Image"]):
 
     def has_embedding(self):
         return self.filter(embedding_relation__isnull=False)
-
-    def public(self):
-        return self.filter(public=True)
-
-    def private(self):
-        return self.filter(public=False)
 
 
 class Image(CreationSortedTimeStampedModel):
