@@ -80,7 +80,7 @@ class SearchQueryIn(Schema):
             qs = qs.from_search_query(self.query)  # type: ignore[attr-defined]
 
         if self.collections:
-            qs = qs.filter(  # type: ignore[union-attr]
+            qs = qs.filter(
                 collections__in=get_visible_objects(
                     user,
                     "core.view_collection",

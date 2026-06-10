@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from celery import Task
     from sentry_sdk._types import SamplingContext
 
 
@@ -20,18 +21,16 @@ def get_sentry_performance_sample_rate(sampling_context: SamplingContext) -> flo
     )
     from isic.studies.tasks import populate_study_tasks_task
 
-    infrequent_tasks = {
-        task.name
-        for task in [
-            extract_zip_task,
-            validate_metadata_task,
-            update_metadata_task,
-            publish_cohort_task,
-            populate_collection_from_isic_ids_task,
-            populate_collection_from_search_task,
-            populate_study_tasks_task,
-        ]
+    infrequent_tasks: set[Task[Any, Any]] = {
+        extract_zip_task,
+        validate_metadata_task,
+        update_metadata_task,
+        publish_cohort_task,
+        populate_collection_from_isic_ids_task,
+        populate_collection_from_search_task,
+        populate_study_tasks_task,
     }
+    infrequent_task_names = {task.name for task in infrequent_tasks}
 
     if "wsgi_environ" in sampling_context:
         path: str = sampling_context["wsgi_environ"]["PATH_INFO"]
@@ -51,7 +50,7 @@ def get_sentry_performance_sample_rate(sampling_context: SamplingContext) -> flo
         ):
             return 0.20
     elif "celery_job" in sampling_context:
-        if sampling_context["celery_job"]["task"] in infrequent_tasks:
+        if sampling_context["celery_job"]["task"] in infrequent_task_names:
             return 1.0
 
     return 0.05

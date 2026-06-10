@@ -279,7 +279,7 @@ def collection_populate_from_search(request, id: int, payload: SearchQueryIn):
     if collection.locked:
         return 409, {"error": "Collection is locked"}
 
-    if collection.public and payload.to_queryset(request.user).private().exists():  # type: ignore[attr-defined]
+    if collection.public and payload.to_queryset(request.user).private().exists():
         return 409, {"error": "Collection is public and cannot contain private images."}
 
     # Pass data instead of validated_data because the celery task is going to revalidate.

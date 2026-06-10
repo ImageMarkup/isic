@@ -41,7 +41,7 @@ def _clamp(val: int, min_: int, max_: int) -> int:
     return max(min_, min(val, max_))
 
 
-def _reverse_order(order: tuple):
+def _reverse_order(order: Sequence[str]):
     """
     Reverse the ordering specification for a Django ORM query.
 
@@ -83,8 +83,8 @@ class CursorPagination(PaginationBase):
                 offset = int(tokens.get("o", ["0"])[0])
                 offset = _clamp(offset, 0, CursorPagination._offset_cutoff)
 
-                reverse = tokens.get("r", ["0"])[0]
-                reverse = bool(int(reverse))
+                reverse_str = tokens.get("r", ["0"])[0]
+                reverse = bool(int(reverse_str))
 
                 position = tokens.get("p", [None])[0]
             except (TypeError, ValueError) as e:
@@ -117,7 +117,7 @@ class CursorPagination(PaginationBase):
         if not queryset.query.order_by:
             queryset = queryset.order_by(*self.ordering)
 
-        order = queryset.query.order_by
+        order: tuple[str, ...] = queryset.query.order_by
 
         total_count = (
             # let the queryset define a custom_count attribute in the event that computing
@@ -227,11 +227,11 @@ class CursorPagination(PaginationBase):
         base_url: str,
         page: list,
         cursor: Cursor,
-        order: tuple,
+        order: Sequence[str],
         has_previous: bool,
         limit: int,
-        next_position: str,
-        previous_position: str,
+        next_position: str | None,
+        previous_position: str | None,
     ) -> str:
         if page and cursor.reverse and cursor.offset:
             # If we're reversing direction and we have an offset cursor
@@ -287,12 +287,12 @@ class CursorPagination(PaginationBase):
         base_url: str,
         page: list,
         cursor: Cursor,
-        order: tuple,
+        order: Sequence[str],
         has_next: bool,
         limit: int,
-        next_position: str,
-        previous_position: str,
-    ):
+        next_position: str | None,
+        previous_position: str | None,
+    ) -> str:
         if page and not cursor.reverse and cursor.offset:
             # If we're reversing direction and we have an offset cursor
             # then we cannot use the first position we find as a marker.

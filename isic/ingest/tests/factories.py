@@ -38,13 +38,13 @@ class ContributorFactory(factory.django.DjangoModelFactory):
     creator = factory.SubFactory(UserFactory)
 
     @factory.post_generation
-    def owners(self, create: bool, extracted: Any, **kwargs: Any) -> None:
+    def owners(obj: Contributor, create: bool, extracted: Any, **kwargs: Any) -> None:  # noqa: ARG004
         if not create:
             return
         if extracted is None:
             # The creator is the default owner.
-            extracted = [self.creator]
-        self.owners.add(*extracted)
+            extracted = [obj.creator]
+        obj.owners.add(*extracted)
 
 
 class CohortFactory(factory.django.DjangoModelFactory):
@@ -163,7 +163,7 @@ class AccessionFactory(factory.django.DjangoModelFactory):
     # https://github.com/pytest-dev/pytest-factoryboy/issues/67
 
     @factory.post_generation
-    def short_diagnosis(self, create: bool, extracted: Any, **kwargs: Any) -> None:
+    def short_diagnosis(obj: Accession, create: bool, extracted: Any, **kwargs: Any) -> None:
         if extracted is None:
             # Normal flow, no short_diagnosis provided.
             return
@@ -178,13 +178,13 @@ class AccessionFactory(factory.django.DjangoModelFactory):
             raise ValueError("Unknown additional arguments to short_diagnosis: {kwargs}")
 
         for key, value in DiagnosisEnum.as_dict(diagnosis).items():
-            setattr(self, key, value)
+            setattr(obj, key, value)
 
         if create:
-            self.save()
+            obj.save()
 
     @factory.post_generation
-    def short_anatom_site(self, create: bool, extracted: Any, **kwargs: Any) -> None:
+    def short_anatom_site(obj: Accession, create: bool, extracted: Any, **kwargs: Any) -> None:  # noqa: ARG004
         if extracted is None:
             return
 
@@ -196,10 +196,10 @@ class AccessionFactory(factory.django.DjangoModelFactory):
             raise ValueError(f"Unknown short_anatom_site: {extracted}")
 
         for key, value in AnatomSiteEnum.as_dict(anatom_site).items():
-            setattr(self, key, value)
+            setattr(obj, key, value)
 
         if create:
-            self.save()
+            obj.save()
 
 
 class AccessionReviewFactory(factory.django.DjangoModelFactory):

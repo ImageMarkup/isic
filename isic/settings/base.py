@@ -295,7 +295,7 @@ ISIC_ZIP_DOWNLOAD_SERVICE_URL: ParseResult | None = env.url(
 
 ISIC_CDN_LOG_BUCKET: str | None = env.str("DJANGO_ISIC_CDN_LOG_BUCKET", default=None)
 
-TEMPLATES[0]["OPTIONS"]["context_processors"] += [  # type: ignore[index]
+TEMPLATES[0]["OPTIONS"]["context_processors"] += [
     "isic.core.context_processors.js_sentry",
     "isic.core.context_processors.citation_styles",
 ]

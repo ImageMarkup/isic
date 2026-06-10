@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.query import QuerySet
@@ -19,7 +21,7 @@ class StudyTaskQuerySet(models.QuerySet["StudyTask"]):
 
     def just_completed(self):
         return self.filter(
-            annotation__created__gte=timezone.now() - timezone.timedelta(seconds=60)
+            annotation__created__gte=timezone.now() - timedelta(seconds=60)
         ).order_by("annotation__created")
 
     def random_next(self):

@@ -64,7 +64,7 @@ def move_collection_images(
     if not ignore_lock and (src_collection.locked or dest_collection.locked):
         raise ValidationError("Can't move images to/from a locked collection.")
 
-    if dest_collection.public and src_collection.images.private().exists():  # type: ignore[attr-defined]
+    if dest_collection.public and src_collection.images.private().exists():
         raise ValidationError("Can't move private images to a public collection.")
 
     with transaction.atomic():

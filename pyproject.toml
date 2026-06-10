@@ -223,6 +223,9 @@ required-imports = ["from __future__ import annotations"]
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder", "resonant-settings"]
 sections = {"resonant-settings" = ["resonant_settings"] }
 
+[tool.ruff.lint.pep8-naming]
+staticmethod-decorators = ["factory.post_generation"]
+
 [tool.ruff.lint.pydocstyle]
 convention = "pep257"
 

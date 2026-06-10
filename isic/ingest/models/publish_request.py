@@ -1,5 +1,12 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.contrib.auth.models import User
 from django.db import models
+
+if TYPE_CHECKING:
+    from .accession import Accession
 
 
 class PublishRequestAccession(models.Model):
@@ -23,7 +30,9 @@ class PublishRequest(models.Model):
 
     created = models.DateTimeField(auto_now_add=True)
     creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="publish_requests")
-    accessions = models.ManyToManyField("Accession", through="PublishRequestAccession")
+    accessions: models.ManyToManyField[Accession, PublishRequestAccession] = models.ManyToManyField(
+        "Accession", through="PublishRequestAccession"
+    )
     # the additional collections to which the images will be added, including the magic collection
     collections = models.ManyToManyField("core.Collection")
     public = models.BooleanField(default=False)

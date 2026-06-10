@@ -5,6 +5,7 @@ fake data, clears sensitive tables (sessions, OAuth tokens), and wipes unstructu
 metadata. All users are given the password "password".
 """
 
+from collections.abc import Callable
 import hashlib
 import logging
 import random
@@ -16,6 +17,7 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.contrib.sessions.models import Session
 from django.db import connection, transaction
+from django.db.models import Model, QuerySet
 import djclick as click
 from faker import Faker
 from oauth2_provider.models import AccessToken, RefreshToken
@@ -124,17 +126,27 @@ def anonymize_hash_id(salt: str, hash_id: str, *, seen: set) -> str:
     raise RuntimeError(f"Failed to generate unique hash_id after 100 attempts: {hash_id}")
 
 
-def _batch_anonymize(queryset, fields, transform, *, label, dry_run, batch_size):  # noqa: PLR0913
+def _batch_anonymize[M: Model](  # noqa: PLR0913
+    queryset: QuerySet[M],
+    fields: list[str],
+    transform: Callable[[M], None],
+    *,
+    label: str,
+    dry_run: bool,
+    batch_size: int,
+) -> int:
     model_class = queryset.model
     total = queryset.count()
-    objects_to_update = []
+    objects_to_update: list[M] = []
 
     if dry_run:
         label = f"[DRY RUN] {label}"
 
     def _flush():
         if objects_to_update and not dry_run:
-            model_class.objects.bulk_update(objects_to_update, fields, batch_size=batch_size)
+            model_class._default_manager.bulk_update(
+                objects_to_update, fields, batch_size=batch_size
+            )
 
     with click.progressbar(
         queryset.iterator(), length=total, label=label, show_eta=True, show_percent=True
@@ -154,8 +166,8 @@ def _batch_anonymize(queryset, fields, transform, *, label, dry_run, batch_size)
 
 def _anonymize_users(faker, salt, *, dry_run, batch_size):
     password_hash = make_password("password")
-    names_cache = {}
-    emails_cache = {}
+    names_cache: dict[str, str] = {}
+    emails_cache: dict[str, str] = {}
 
     def transform(user):
         user.username = anonymize_username(salt, user.username)
@@ -244,7 +256,7 @@ def _anonymize_private_ids(salt, *, dry_run, batch_size):
 
     counts = {}
     for model_class, field_name, id_type in models_to_process:
-        cache = {}
+        cache: dict[str, str] = {}
 
         def transform(obj, _field=field_name, _type=id_type, _cache=cache):
             current_value = getattr(obj, _field)

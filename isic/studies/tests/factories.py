@@ -69,30 +69,30 @@ class StudyFactory(factory.django.DjangoModelFactory):
     public = factory.Faker("boolean")
 
     @factory.post_generation
-    def owners(self, create: bool, extracted: Any, **kwargs: Any) -> None:
+    def owners(obj: Study, create: bool, extracted: Any, **kwargs: Any) -> None:  # noqa: ARG004
         if not create:
             return
         if extracted is None:
             # The creator is the default owner.
-            extracted = [self.creator]
-        self.owners.add(*extracted)
+            extracted = [obj.creator]
+        obj.owners.add(*extracted)
 
     @factory.post_generation
-    def features(self, create: bool, extracted: Any, **kwargs: Any) -> None:
+    def features(obj: Study, create: bool, extracted: Any, **kwargs: Any) -> None:  # noqa: ARG004
         if not create:
             return
         if extracted:
             # A list of features were passed in, use them
-            self.features.add(*extracted)
+            obj.features.add(*extracted)
 
     @factory.post_generation
-    def questions(self, create, extracted, *, required: bool = False, **kwargs):
+    def questions(obj: Study, create, extracted, *, required: bool = False, **kwargs: Any) -> None:  # noqa: ARG004
         if not create:
             return
         if extracted:
             # A list of questions were passed in, use them
             # TODO: the required status should be settable per question
-            self.questions.add(*extracted, through_defaults={"required": required})
+            obj.questions.add(*extracted, through_defaults={"required": required})
 
 
 class StudyTaskFactory(factory.django.DjangoModelFactory):

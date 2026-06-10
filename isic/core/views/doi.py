@@ -31,6 +31,7 @@ LICENSE_URIS = {
 
 # @cache_page(timeout=60 * 60 * 24 * 7, key_prefix="doi_detail")
 def doi_detail(request, slug):
+    doi: Doi | DraftDoi
     try:
         doi = Doi.objects.select_related("collection").get(slug=slug)
     except Doi.DoesNotExist:

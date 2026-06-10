@@ -1,5 +1,6 @@
 from collections.abc import Iterable
 from datetime import UTC, datetime
+from typing import Any
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -98,7 +99,7 @@ def collection_download_metadata(request, pk):
 def collection_create_doi(request, pk):
     collection = get_object_or_404(Collection, pk=pk)
 
-    context = {
+    context: dict[str, Any] = {
         "collection": collection,
         "error": None,
     }

@@ -183,7 +183,7 @@ def es_query(s, loc, toks):
 
 
 def es_query_and(s, loc, toks):
-    ret = {"bool": {"filter": []}}
+    ret: dict[str, Any] = {"bool": {"filter": []}}
     if isinstance(toks, ParseResults):
         # Explicit ANDs come in as parse results
         q_objects = toks.asList()
@@ -204,7 +204,7 @@ def es_query_and(s, loc, toks):
 
 
 def es_query_or(s, loc, toks):
-    ret = {"bool": {"should": []}}
+    ret: dict[str, Any] = {"bool": {"should": []}}
     for tok in toks[0]:
         ret["bool"]["should"].append(tok)
     toks[0] = ret

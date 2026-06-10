@@ -32,7 +32,7 @@ ColumnRowErrors = dict[tuple[str, str], list[int]]
 
 def validate_csv_format_and_filenames(rows: csv.DictReader, cohort: Cohort) -> list[Problem]:
     problems = []
-    filenames = Counter()
+    filenames: Counter[str] = Counter()
 
     if not rows.fieldnames or "filename" not in rows.fieldnames:
         problems.append(Problem(message="Unable to find a filename column in CSV."))
