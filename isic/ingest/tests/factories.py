@@ -38,7 +38,7 @@ class ContributorFactory(factory.django.DjangoModelFactory):
     creator = factory.SubFactory(UserFactory)
 
     @factory.post_generation
-    def owners(self, create: bool, extracted: Any, **kwargs: Any) -> None:
+    def owners(self, create: bool, extracted: Any, **kwargs: Any) -> None:  # noqa: FBT001
         if not create:
             return
         if extracted is None:
@@ -163,7 +163,7 @@ class AccessionFactory(factory.django.DjangoModelFactory):
     # https://github.com/pytest-dev/pytest-factoryboy/issues/67
 
     @factory.post_generation
-    def short_diagnosis(self, create: bool, extracted: Any, **kwargs: Any) -> None:
+    def short_diagnosis(self, create: bool, extracted: Any, **kwargs: Any) -> None:  # noqa: FBT001
         if extracted is None:
             # Normal flow, no short_diagnosis provided.
             return
@@ -184,7 +184,7 @@ class AccessionFactory(factory.django.DjangoModelFactory):
             self.save()
 
     @factory.post_generation
-    def short_anatom_site(self, create: bool, extracted: Any, **kwargs: Any) -> None:
+    def short_anatom_site(self, create: bool, extracted: Any, **kwargs: Any) -> None:  # noqa: FBT001
         if extracted is None:
             return
 

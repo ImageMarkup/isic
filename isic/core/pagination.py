@@ -228,7 +228,7 @@ class CursorPagination(PaginationBase):
         page: list,
         cursor: Cursor,
         order: tuple,
-        has_previous: bool,
+        has_previous: bool,  # noqa: FBT001
         limit: int,
         next_position: str,
         previous_position: str,
@@ -288,7 +288,7 @@ class CursorPagination(PaginationBase):
         page: list,
         cursor: Cursor,
         order: tuple,
-        has_next: bool,
+        has_next: bool,  # noqa: FBT001
         limit: int,
         next_position: str,
         previous_position: str,

@@ -62,7 +62,7 @@ class CollectionOut(ModelSchema):
 )
 @paginate(CursorPagination)
 def collection_list(
-    request, pinned: bool | None = None, sort: Literal["name", "created"] | None = None
+    request, *, pinned: bool | None = None, sort: Literal["name", "created"] | None = None
 ) -> list[CollectionOut]:
     queryset = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
 
