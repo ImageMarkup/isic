@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("core", "0001_initial"),
-        ("ingest", "0001_initial"),
+        ("ingest", "0001_initial_squashed_0032_alter_metadataversion_created_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
