@@ -196,7 +196,7 @@
     function collectionDetail() {
       return {
         errorMessage: '',
-        shareCollectionWithUsers() {
+        async shareCollectionWithUsers() {
           let _this = this; // eek
 
           if ($('#user-selection').val().length === 0) {
@@ -205,52 +205,51 @@
           }
 
           if (confirm('Are you sure you want to grant additional access to this collection?')) {
-            axios.post('{% url "api:collection_share_to_users" collection.pk %}', {
-              user_ids: $('#user-selection').val().map(function(n) { return parseInt(n) }),
-              notify: document.getElementById('notify-users').checked
-            }, {
+            try {
+              const resp = await axios.post('{% url "api:collection_share_to_users" collection.pk %}', {
+                user_ids: $('#user-selection').val().map(function(n) { return parseInt(n) }),
+                notify: document.getElementById('notify-users').checked
+              }, {
+                headers: {
+                  'Content-Type': 'application/json',
+                  'X-CSRFToken': '{{ csrf_token }}'
+                }
+              });
+              window.location.reload();
+            } catch (error) {
+              _this.errorMessage = error.response.data[0];
+              alert('Something went wrong, try again.');
+              throw error;
+            }
+          }
+        },
+        async setPinned(pinned) {
+          try {
+            const resp = await axios.post('/api/v2/collections/{{ collection.pk }}/set-pinned/', { pinned }, {
               headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': '{{ csrf_token }}'
               }
-            }).then((resp) => {
-              window.location.reload();
-            }).catch(function(error) {
-              _this.errorMessage = error.response.data[0];
             });
+            window.location.reload();
+          } catch (error) {
+            alert('Something went wrong, try again.');
+            throw error;
           }
         },
-        setPinned(pinned) {
-          axios.post('/api/v2/collections/{{ collection.pk }}/set-pinned/', { pinned }, {
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRFToken': '{{ csrf_token }}'
-            }
-          }).then(() => {
-            window.location.reload();
-          }).catch(function(error) {
-            if (error.response && error.response.data && error.response.data.error) {
-              alert(error.response.data.error);
-            } else {
-              alert('Something went wrong.');
-            }
-          });
-        },
-        deleteCollection() {
+        async deleteCollection() {
           if (confirm('Are you sure you want to delete this collection? This action cannot be undone.')) {
-            axios.delete('/api/v2/collections/{{ collection.pk }}/', {
-              headers: {
-                'X-CSRFToken': '{{ csrf_token }}'
-              }
-            }).then((resp) => {
+            try {
+              const resp = await axios.delete('/api/v2/collections/{{ collection.pk }}/', {
+                headers: {
+                  'X-CSRFToken': '{{ csrf_token }}'
+                }
+              });
               window.location.href = '{% url "core/collection-list" %}';
-            }).catch(function(error) {
-              if (error.response && error.response.data && error.response.data.error) {
-                alert(error.response.data.error);
-              } else {
-                alert('Something went wrong.');
-              }
-            });
+            } catch (error) {
+              alert('Something went wrong, try again.');
+              throw error;
+            }
           }
         },
       };
@@ -261,14 +260,18 @@
         attributions: [],
         fetched: false,
         loading: false,
-        fetchMetaInformation() {
+        async fetchMetaInformation() {
           const _this = this;
           this.loading = true;
-          axios.get('{% url "api:collection_attribution_information" collection.pk %}').then((resp) => {
+          try {
+            const resp = await axios.get('{% url "api:collection_attribution_information" collection.pk %}');
             _this.attributions = resp.data;
             _this.loading = false;
             _this.fetched = true;
-          });
+          } catch (error) {
+            alert('Something went wrong, try again.');
+            throw error;
+          }
         }
       }
     }
