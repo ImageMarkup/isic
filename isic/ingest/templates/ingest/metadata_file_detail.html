@@ -21,29 +21,28 @@ not for templates rendered with render_to_string.
       return {
         applying: false,
         applied: false,
-        apply() {
+        async apply() {
           this.applying = true;
-
-          fetch(`/api/v2/metadata-files/{{ metadata_file.id }}/update_metadata/`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({})
-          }).then((resp) => {
+          try {
+            const resp = await fetch(`/api/v2/metadata-files/{{ metadata_file.id }}/update_metadata/`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+              },
+              body: JSON.stringify({})
+            });
             if (!resp.ok) {
               throw new Error('Something went wrong.');
             }
-
             this.applied = true;
             this.applying = false;
             window.location.href = '{% url "ingest/cohort-detail" cohort.id %}';
-          }).catch((err) => {
+          } catch (error) {
             this.applying = false;
-            console.error(err);
-            alert('Something went wrong.');
-          });
+            alert('Something went wrong, try again.');
+            throw error;
+          }
         }
       }
     }

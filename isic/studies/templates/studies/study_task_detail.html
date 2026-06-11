@@ -20,22 +20,19 @@
     <script type="text/javascript">
       function undoStudyTask() {
         return {
-          undo: function() {
-            fetch('{% url "api:study_task_undo" just_completed_task.id %}', {
-              method: 'POST',
-              headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-              },
-            }).then(response => {
-              if (response.ok) {
-                window.location.href = '{% url "studies/study-task-detail" just_completed_task.id %}';
-              } else {
-                alert('An error occurred.');
-              }
-            }).catch(error => {
-              console.error('Error:', error);
-              alert('An error occurred.');
-            });
+          undo: async function() {
+            try {
+              const resp = await fetch('{% url "api:study_task_undo" just_completed_task.id %}', {
+                method: 'POST',
+                headers: {
+                  'X-CSRFToken': '{{ csrf_token }}',
+                },
+              });
+              window.location.href = '{% url "studies/study-task-detail" just_completed_task.id %}';
+            } catch (error) {
+              alert('Something went wrong, try again.');
+              throw error;
+            }
           }
         }
       }

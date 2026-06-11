@@ -34,56 +34,62 @@
   {{ 30_day_sessions_per_country|json_script:"country_data" }}
 
   <script type="text/javascript">
-    const country_values = JSON.parse(document.getElementById("country_data").textContent);
-
-    fetch('https://unpkg.com/world-atlas/countries-110m.json').then((r) => r.json()).then((data) => {
-      const countries = ChartGeo.topojson.feature(data, data.objects.countries).features;
-
-      const chart = new Chart(document.getElementById("canvas").getContext("2d"), {
-        type: 'choropleth',
-        data: {
-          labels: countries.map((d) => d.properties.name),
-          datasets: [{
-            label: 'Countries',
-            data: countries.map((d) => {
-              const country = country_values.filter(x => x.country_numeric === d.id)[0];
-              if (country === undefined) {
-                return {feature: d, value: 0};
-              } else {
-                return {feature: d, value: Math.log(country.sessions)};
-              }
-            }),
-          }]
-        },
-        options: {
-          showOutline: true,
-          showGraticule: false,
-          plugins: {
-            tooltip: {
-              callbacks: {
-                label(item) {
-                  if (item.raw.value === 0) {
-                    return `${item.chart.data.labels[item.dataIndex]}: 0`;
-                  } else {
-                    return `${item.chart.data.labels[item.dataIndex]}: ${Math.ceil(Math.exp(item.raw.value))}`;
-                  }
+    async function initChart() {
+      const country_values = JSON.parse(document.getElementById("country_data").textContent);
+      try {
+        const resp = await fetch('https://unpkg.com/world-atlas/countries-110m.json');
+        const data = await resp.json();
+        const countries = ChartGeo.topojson.feature(data, data.objects.countries).features;
+        const chart = new Chart(document.getElementById("canvas").getContext("2d"), {
+          type: 'choropleth',
+          data: {
+            labels: countries.map((d) => d.properties.name),
+            datasets: [{
+              label: 'Countries',
+              data: countries.map((d) => {
+                const country = country_values.filter(x => x.country_numeric === d.id)[0];
+                if (country === undefined) {
+                  return {feature: d, value: 0};
+                } else {
+                  return {feature: d, value: Math.log(country.sessions)};
+                }
+              }),
+            }]
+          },
+          options: {
+            showOutline: true,
+            showGraticule: false,
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  label(item) {
+                    if (item.raw.value === 0) {
+                      return `${item.chart.data.labels[item.dataIndex]}: 0`;
+                    } else {
+                      return `${item.chart.data.labels[item.dataIndex]}: ${Math.ceil(Math.exp(item.raw.value))}`;
+                    }
+                  },
                 },
               },
+              legend: {
+                display: false
+              },
             },
-            legend: {
-              display: false
-            },
-          },
-          scales: {
-            xy: {
-              projection: 'equalEarth'
-            },
-            color: {
-              display:false,
-            },
+            scales: {
+              xy: {
+                projection: 'equalEarth'
+              },
+              color: {
+                display:false,
+              },
+            }
           }
-        }
-      });
-    });
+        });
+      } catch (error) {
+        alert('Something went wrong, try again.');
+        throw error;
+      }
+    }
+    initChart();
   </script>
 {% endblock %}
