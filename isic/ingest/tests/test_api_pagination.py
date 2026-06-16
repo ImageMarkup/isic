@@ -1,3 +1,4 @@
+from base64 import b64encode
 from urllib.parse import urlparse
 
 from django.urls import reverse
@@ -39,3 +40,25 @@ def test_pagination(image_factory, staff_client):
     assert len(resp.json()["results"]) == 1
     assert resp.json()["results"][0]["isic_id"] == images[0].isic_id
     assert resp.json()["previous"] is None
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "cursor",
+    [
+        # not decodable as a cursor
+        "not-a-cursor",
+        # structurally valid, but the position is a truncated datetime
+        b64encode(b"r=1&p=2020-03-29+19%3A35%3A52.").decode(),
+    ],
+    ids=["undecodable", "invalid_position"],
+)
+def test_pagination_invalid_cursor(image_factory, staff_client, cursor):
+    image_factory()
+
+    resp = staff_client.get(reverse("api:image_list"), data={"cursor": cursor})
+
+    assert resp.status_code == 422, resp.json()
+    error = resp.json()["detail"][0]
+    assert error["loc"] == ["query", "cursor"]
+    assert error["msg"] == "Value error, Invalid cursor."

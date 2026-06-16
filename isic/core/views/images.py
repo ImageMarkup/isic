@@ -4,11 +4,14 @@ from typing import TYPE_CHECKING
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
+from django.core.exceptions import BadRequest
 from django.db.models import Count
 from django.db.models.query_utils import Q
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
+from ninja.errors import ValidationError as NinjaValidationError
+import pydantic
 
 from isic.core.api.image import PinnedFirstPagination
 from isic.core.forms.search import ImageSearchForm
@@ -173,11 +176,15 @@ def image_browser(request):
             qs = qs_with_hardcoded_count(qs, order_by, es_count)
 
     paginator = PinnedFirstPagination()
-    cursor_input = PinnedFirstPagination.Input(
-        limit=request.GET.get("limit", 30), cursor=request.GET.get("cursor")
-    )
-
-    page = paginator.paginate_queryset(qs, pagination=cursor_input, request=request, pin_sort=True)
+    try:
+        cursor_input = PinnedFirstPagination.Input(
+            limit=request.GET.get("limit", 30), cursor=request.GET.get("cursor")
+        )
+        page = paginator.paginate_queryset(
+            qs, pagination=cursor_input, request=request, pin_sort=True
+        )
+    except (pydantic.ValidationError, NinjaValidationError) as e:
+        raise BadRequest("Invalid pagination parameters.") from e
 
     recent_collections = []
     if request.user.is_authenticated:
