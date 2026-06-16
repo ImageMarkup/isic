@@ -1,5 +1,6 @@
 from collections.abc import Iterable
 from datetime import UTC, datetime
+from itertools import batched
 from typing import Any
 
 from django.contrib import messages
@@ -76,17 +77,22 @@ def collection_download_metadata(request, pk):
         collection.images.all(),
     )
 
-    def csv_rows(buffer: Buffer) -> Iterable[bytes]:
+    def csv_rows() -> Iterable[bytes]:
         collection_metadata = image_metadata_csv(qs=qs)
-        writer = EscapingDictWriter(buffer, next(collection_metadata))
+        writer = EscapingDictWriter(Buffer(), next(collection_metadata))
         yield writer.writeheader()
 
-        for metadata_row in collection_metadata:
-            assert isinstance(metadata_row, dict)  # noqa: S101
-            yield writer.writerow(metadata_row)
+        # yield rows in batches, since responding with many small chunks incurs per-chunk
+        # overhead in the WSGI write path and socket writes.
+        for metadata_rows in batched(collection_metadata, 256, strict=False):
+            chunk: list[bytes] = []
+            for metadata_row in metadata_rows:
+                assert isinstance(metadata_row, dict)  # noqa: S101
+                chunk.append(writer.writerow(metadata_row))
+            yield b"".join(chunk)
 
     current_time = datetime.now(tz=UTC).strftime("%Y-%m-%d")
-    response = StreamingHttpResponse(csv_rows(Buffer()), content_type="text/csv")
+    response = StreamingHttpResponse(csv_rows(), content_type="text/csv")
     response["Content-Disposition"] = (
         f'attachment; filename="{slugify(collection.name)}_metadata_{current_time}.csv"'
     )
