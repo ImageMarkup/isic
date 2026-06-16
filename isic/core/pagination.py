@@ -4,9 +4,11 @@ from dataclasses import dataclass
 from typing import Any
 from urllib import parse
 
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
 from ninja import Field, Schema
+from ninja.errors import ValidationError as NinjaValidationError
 from ninja.pagination import PaginationBase
 from pydantic import field_validator
 
@@ -145,10 +147,21 @@ class CursorPagination(PaginationBase):
             is_reversed = order[0].startswith("-")
             order_attr = order[0].lstrip("-")
 
+            # The cursor "position" is user-controlled, so part of validation is ensuring it's
+            # parseable as the type of the ordering field (e.g. it's not a mangled datetime string).
+            try:
+                position = queryset.model._meta.get_field(order_attr).to_python(cursor.position)
+            except DjangoValidationError as e:
+                # match the message format of pydantic's rendering of a ValueError, which is
+                # how a cursor that fails to decode is reported
+                raise NinjaValidationError(
+                    [{"loc": ["query", "cursor"], "msg": "Value error, Invalid cursor."}]
+                ) from e
+
             if cursor.reverse != is_reversed:
-                queryset = queryset.filter(**{f"{order_attr}__lt": cursor.position})
+                queryset = queryset.filter(**{f"{order_attr}__lt": position})
             else:
-                queryset = queryset.filter(**{f"{order_attr}__gt": cursor.position})
+                queryset = queryset.filter(**{f"{order_attr}__gt": position})
 
         # If we have an offset cursor then offset the entire page by that amount.
         # We also always fetch an extra item in order to determine if there is a

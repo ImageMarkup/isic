@@ -1,3 +1,5 @@
+from base64 import b64encode
+
 from django.core.exceptions import ValidationError
 from django.urls.base import reverse
 import pytest
@@ -42,6 +44,27 @@ def test_collection_form_markdown(authenticated_client, user):
     r = authenticated_client.get(reverse("core/collection-detail", args=[collection.id]))
     assert r.status_code == 200
     assert "<h1>this-is-an-h1</h1>" in r.content.decode("utf-8")
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "cursor",
+    [
+        # not decodable as a cursor
+        "not-a-cursor",
+        # structurally valid, but the position is a truncated datetime
+        b64encode(b"r=1&p=2020-03-29+19%3A35%3A52.").decode(),
+    ],
+    ids=["undecodable", "invalid_position"],
+)
+def test_collection_detail_invalid_cursor(authenticated_client, collection_factory, user, cursor):
+    collection = collection_factory(creator=user)
+
+    r = authenticated_client.get(
+        reverse("core/collection-detail", args=[collection.id]), {"cursor": cursor}
+    )
+
+    assert r.status_code == 400
 
 
 @pytest.mark.skip("Unimplemented")
