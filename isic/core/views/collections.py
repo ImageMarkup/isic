@@ -1,4 +1,4 @@
-from collections.abc import Iterable
+from collections.abc import Generator
 from datetime import UTC, datetime
 from itertools import batched
 from typing import Any
@@ -21,7 +21,7 @@ from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.core.services import image_metadata_csv
 from isic.core.services.collection import create_collection, update_collection
 from isic.core.utils.csv import EscapingDictWriter
-from isic.core.utils.http import Buffer
+from isic.core.utils.http import Echo
 from isic.ingest.models import Contributor
 
 
@@ -77,9 +77,9 @@ def collection_download_metadata(request, pk):
         collection.images.all(),
     )
 
-    def csv_rows() -> Iterable[bytes]:
+    def csv_rows() -> Generator[bytes]:
         collection_metadata = image_metadata_csv(qs=qs)
-        writer = EscapingDictWriter(Buffer(), next(collection_metadata))
+        writer = EscapingDictWriter(Echo(), next(collection_metadata))
         yield writer.writeheader()
 
         # yield rows in batches, since responding with many small chunks incurs per-chunk
