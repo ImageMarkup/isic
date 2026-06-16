@@ -12,4 +12,4 @@ def test_question_modify_referenced() -> None:
     question.prompt += " (modified)"
 
     with pytest.raises(ValidationError, match="it has already been answered"):
-        question.save(update_fields=["prompt"])
+        question.full_clean()

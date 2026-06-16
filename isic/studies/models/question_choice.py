@@ -15,7 +15,8 @@ class QuestionChoice(TimeStampedModel):
     def __str__(self) -> str:
         return self.text
 
-    def save(self, **kwargs):
+    def clean(self) -> None:
+        super().clean()
         if (
             self.pk
             and Question.objects.filter(
@@ -25,5 +26,3 @@ class QuestionChoice(TimeStampedModel):
             raise ValidationError(
                 "Can't modify the choice, the question has already been answered."
             )
-
-        return super().save(**kwargs)

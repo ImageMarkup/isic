@@ -10,6 +10,7 @@ def test_question_choice_modify() -> None:
 
     question_choice.text += " (modified)"
 
+    question_choice.full_clean()
     question_choice.save(update_fields=["text"])
 
 
@@ -21,4 +22,4 @@ def test_question_choice_modify_referenced() -> None:
     question_choice.text += " (modified)"
 
     with pytest.raises(ValidationError, match="the question has already been answered"):
-        question_choice.save(update_fields=["text"])
+        question_choice.full_clean()
