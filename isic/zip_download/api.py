@@ -169,14 +169,13 @@ def zip_download_metadata_file(request: NinjaAuthHttpRequest):
     user, search = SearchQueryIn.from_token_representation(request.auth)
     qs = search.to_queryset(user, Image.objects.select_related("accession__cohort").distinct())
 
-    metadata_file = image_metadata_csv(qs=qs)
+    fieldnames, metadata_rows = image_metadata_csv(qs=qs)
 
     def write_response() -> Generator[bytes]:
-        writer = EscapingDictWriter(Echo(), next(metadata_file))
+        writer = EscapingDictWriter(Echo(), fieldnames)
         yield writer.writeheader()
 
-        for metadata_row in metadata_file:
-            assert isinstance(metadata_row, dict)  # noqa: S101
+        for metadata_row in metadata_rows:
             yield writer.writerow(metadata_row)
 
     return StreamingHttpResponse(write_response(), content_type="text/csv")

@@ -140,11 +140,11 @@ def staff_image_metadata_csv(*, qs: QuerySet[Image]) -> Generator[list[str] | di
         yield value
 
 
-def image_metadata_csv(*, qs: QuerySet[Image]) -> Generator[list[str] | dict[str, Any]]:
+def image_metadata_csv(*, qs: QuerySet[Image]) -> tuple[list[str], Generator[dict[str, Any]]]:
     """
-    Generate a CSV of image metadata for non-staff users.
+    Generate the fieldnames and rows of a CSV of image metadata for non-staff users.
 
-    The first value yielded is the header row, and subsequent values are the rows of the CSV.
+    The fieldnames are computed eagerly, and the rows are a generator.
     """
     initial_headers = ["isic_id", "attribution", "copyright_license"]
 
@@ -175,32 +175,36 @@ def image_metadata_csv(*, qs: QuerySet[Image]) -> Generator[list[str] | dict[str
         used_metadata_keys.remove(computed_field.input_field_name)
         used_metadata_keys += computed_field.output_field_names
 
-    yield initial_headers + sorted(used_metadata_keys)
+    fieldnames = initial_headers + sorted(used_metadata_keys)
 
-    # Note this uses .values because populating django ORM objects is very slow, and doing this
-    # on large querysets can add ~5s per 100k images to the request time. Only the columns in
-    # use are selected, and they're aliased to their CSV names in the query so that no per-row
-    # key renaming is needed.
-    for image in (
-        qs.order_by("isic_id")
-        .values(
-            "isic_id",
-            attribution=F("accession__attribution"),
-            copyright_license=F("accession__copyright_license"),
-            **{
-                key: F(f"accession__{key}") for key in used_metadata_columns + used_remapped_columns
-            },
-        )
-        .iterator()
-    ):
-        # Strip the TypedDict, since we're about to change some fields
-        row = cast("dict[str, Any]", image)
+    def rows() -> Generator[dict[str, Any]]:
+        # Note this uses .values because populating django ORM objects is very slow, and doing
+        # this on large querysets can add ~5s per 100k images to the request time. Only the
+        # columns in use are selected, and they're aliased to their CSV names in the query so
+        # that no per-row key renaming is needed.
+        for image in (
+            qs.order_by("isic_id")
+            .values(
+                "isic_id",
+                attribution=F("accession__attribution"),
+                copyright_license=F("accession__copyright_license"),
+                **{
+                    key: F(f"accession__{key}")
+                    for key in used_metadata_columns + used_remapped_columns
+                },
+            )
+            .iterator()
+        ):
+            # Strip the TypedDict, since we're about to change some fields
+            row = cast("dict[str, Any]", image)
 
-        for computed_field in used_computed_fields:
-            input_value = row.pop(computed_field.input_field_name)
-            if input_value:
-                computed_values = computed_field.transformer(input_value)
-                if computed_values:
-                    row.update(computed_values)
+            for computed_field in used_computed_fields:
+                input_value = row.pop(computed_field.input_field_name)
+                if input_value:
+                    computed_values = computed_field.transformer(input_value)
+                    if computed_values:
+                        row.update(computed_values)
 
-        yield row
+            yield row
+
+    return fieldnames, rows()

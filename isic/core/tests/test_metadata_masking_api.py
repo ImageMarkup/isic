@@ -36,7 +36,7 @@ def test_image_masks_unsafe_metadata(image_with_maskable_metadata):
 
 @pytest.mark.django_db
 def test_image_csv_headers_exposes_safe_metadata(image_with_maskable_metadata):
-    headers = next(image_metadata_csv(qs=Image.objects.all()))
+    headers, _ = image_metadata_csv(qs=Image.objects.all())
     assert "age" not in headers
     assert "age_approx" in headers
     assert "lesion_id" in headers
@@ -45,10 +45,8 @@ def test_image_csv_headers_exposes_safe_metadata(image_with_maskable_metadata):
 
 @pytest.mark.django_db
 def test_image_csv_rows_exposes_safe_metadata(image_with_maskable_metadata):
-    rows = image_metadata_csv(qs=Image.objects.all())
-    next(rows)
+    _, rows = image_metadata_csv(qs=Image.objects.all())
     for row in rows:
-        assert isinstance(row, dict)
         assert "age" not in row
         assert "age_approx" in row
         assert "lesion_id" in row

@@ -80,18 +80,14 @@ def collection_download_metadata(request, pk):
     )
 
     def csv_rows() -> Generator[bytes]:
-        collection_metadata = image_metadata_csv(qs=qs)
-        writer = EscapingDictWriter(Echo(), next(collection_metadata))
+        fieldnames, metadata_rows = image_metadata_csv(qs=qs)
+        writer = EscapingDictWriter(Echo(), fieldnames)
         yield writer.writeheader()
 
         # yield rows in batches, since responding with many small chunks incurs per-chunk
         # overhead in the WSGI write path and socket writes.
-        for metadata_rows in batched(collection_metadata, 256, strict=False):
-            chunk: list[bytes] = []
-            for metadata_row in metadata_rows:
-                assert isinstance(metadata_row, dict)  # noqa: S101
-                chunk.append(writer.writerow(metadata_row))
-            yield b"".join(chunk)
+        for metadata_batch in batched(metadata_rows, 256, strict=False):
+            yield b"".join(writer.writerow(metadata_row) for metadata_row in metadata_batch)
 
     current_time = datetime.now(tz=UTC).strftime("%Y-%m-%d")
     response = StreamingHttpResponse(csv_rows(), content_type="text/csv")

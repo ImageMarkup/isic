@@ -32,11 +32,10 @@ def snapshot_images(
 
             # the metadata csv could be large enough that it needs to be written to disk first
             with tempfile.NamedTemporaryFile("w", delete=False) as metadata_file:
-                collection_metadata = image_metadata_csv(qs=qs)
-                writer = EscapingDictWriter(metadata_file, fieldnames=next(collection_metadata))
+                fieldnames, collection_metadata = image_metadata_csv(qs=qs)
+                writer = EscapingDictWriter(metadata_file, fieldnames=fieldnames)
                 writer.writeheader()
                 for row in collection_metadata:
-                    assert isinstance(row, dict)  # noqa: S101
                     writer.writerow(row)
                 metadata_file.flush()
 

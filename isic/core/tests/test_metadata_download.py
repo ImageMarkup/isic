@@ -30,8 +30,7 @@ def image_with_metadata(image):
 
 @pytest.mark.django_db
 def test_image_metadata_csv_rows_correct(image_with_metadata):
-    rows = image_metadata_csv(qs=Image.objects.filter(pk=image_with_metadata.pk))
-    next(rows)
+    _, rows = image_metadata_csv(qs=Image.objects.filter(pk=image_with_metadata.pk))
     row = next(rows)
     assert row == {
         "age_approx": image_with_metadata.accession.age_approx,
