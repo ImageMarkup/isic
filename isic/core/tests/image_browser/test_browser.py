@@ -2,6 +2,7 @@ from django.urls import reverse
 from playwright.sync_api import expect
 import pytest
 
+from isic.core.models.collection import Collection
 from isic.core.services.collection.image import add_images_to_collection
 
 
@@ -9,9 +10,12 @@ from isic.core.services.collection.image import add_images_to_collection
 def test_collection_picker_dropdown_filter_select_and_keyboard(
     page, collection_factory, image_factory
 ):
-    collections = [collection_factory(public=True, pinned=True) for _ in range(3)]
-    # The picker sorts alphabetically by name
-    collections.sort(key=lambda c: c.name)
+    for _ in range(3):
+        collection_factory(public=True, pinned=True)
+
+    # Read the collections back in the picker's display order. The dropdown
+    # renders them in the server's order (Postgres `ORDER BY name`).
+    collections = list(Collection.objects.pinned().order_by("name"))
 
     # Create images and assign them to specific collections so we can verify
     # that filtering by collection shows only the correct images.
