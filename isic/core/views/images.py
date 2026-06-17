@@ -130,7 +130,7 @@ def image_detail(request, isic_id):
         "studies": f"Studies ({studies.count()})",
     }
 
-    if image.has_embedding:
+    if image.has_embedding and request.user.is_authenticated:
         ctx["sections"]["similar_images"] = "Similar Images"
 
     if ctx["other_patient_images_count"]:

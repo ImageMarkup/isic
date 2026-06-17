@@ -83,7 +83,7 @@ def test_api_image_search_size(client, searchable_images_with_size):
 
 
 @pytest.mark.django_db
-def test_api_image_similar_images(client, image_factory, image_embedding_factory):
+def test_api_image_similar_images(authenticated_client, image_factory, image_embedding_factory):
     image_with_embedding = image_embedding_factory(image__public=True).image
     other_image = image_embedding_factory(image__public=True).image
 
@@ -97,7 +97,7 @@ def test_api_image_similar_images(client, image_factory, image_embedding_factory
         cursor.execute("SET enable_indexscan = off")
 
     url = reverse("api:image_similar", kwargs={"isic_id": image_with_embedding.isic_id})
-    r = client.get(url)
+    r = authenticated_client.get(url)
     assert r.status_code == 200
     results = r.json()
     assert len(results) == 1
@@ -106,10 +106,19 @@ def test_api_image_similar_images(client, image_factory, image_embedding_factory
 
 
 @pytest.mark.django_db
-def test_api_image_similar_images_without_embedding(client, image_factory):
+def test_api_image_similar_images_requires_login(client, image_embedding_factory):
+    image_with_embedding = image_embedding_factory(image__public=True).image
+
+    url = reverse("api:image_similar", kwargs={"isic_id": image_with_embedding.isic_id})
+    r = client.get(url)
+    assert r.status_code == 401
+
+
+@pytest.mark.django_db
+def test_api_image_similar_images_without_embedding(authenticated_client, image_factory):
     image_without_embedding = image_factory(public=True)
 
     url = reverse("api:image_similar", kwargs={"isic_id": image_without_embedding.isic_id})
-    r = client.get(url)
+    r = authenticated_client.get(url)
     assert r.status_code == 200
     assert r.json() == []

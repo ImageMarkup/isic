@@ -11,11 +11,13 @@ from ninja.pagination import paginate
 from pyparsing.exceptions import ParseException
 from sentry_sdk import set_tag
 
+from isic.auth import is_authenticated
 from isic.core.models import Image
 from isic.core.pagination import CursorPagination, qs_with_hardcoded_count
 from isic.core.permissions import get_visible_objects
 from isic.core.search import facets, get_elasticsearch_client
 from isic.core.serializers import SearchQueryIn
+from isic.types import AuthenticatedHttpRequest
 
 router = Router()
 
@@ -196,9 +198,10 @@ class SimilarImageOut(ImageOut):
     response=list[SimilarImageOut],
     summary="Find images similar to the specified image.",
     include_in_schema=True,
+    auth=is_authenticated,
 )
 def image_similar(
-    request: HttpRequest, isic_id: str, limit: int = Query(10, le=50)
+    request: AuthenticatedHttpRequest, isic_id: str, limit: int = Query(10, le=50)
 ) -> list[SimilarImageOut]:
     qs = get_visible_objects(request.user, "core.view_image", default_qs)
     image = get_object_or_404(qs, isic_id=isic_id)
