@@ -78,7 +78,7 @@ def test_collection_picker_dropdown_filter_select_and_keyboard(
 
     # Submit the form and verify only images from the selected collections are shown.
     # second and third are selected; first was removed.
-    page.get_by_role("button", name="Search").click()
+    page.get_by_role("button", name="Search", exact=True).click()
     page.wait_for_load_state("networkidle")
 
     page_text = page.text_content("body")
