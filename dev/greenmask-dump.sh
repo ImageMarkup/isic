@@ -70,6 +70,12 @@ if [[ "$DUMP_ONLY" -eq 1 ]]; then
   exit 0
 fi
 
+# Give greenmask a new database instead of leaning on pg_restore's
+# --clean (config.yml's `clean: true`) to make the restore idempotent. --clean
+# drops objects one at a time in dependency order and can't DROP ... CASCADE, so
+# it chokes whenever a referenced table sorts before its referencing table.
+./manage.py reset_db --close-sessions --noinput
+
 # Filter out greenmask's expected-but-noisy phased-restoration warnings without
 # swallowing greenmask's exit code (process substitution, not a pipe, so
 # pipefail can't mask a real greenmask failure).

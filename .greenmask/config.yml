@@ -6,10 +6,6 @@ storage:
 restore:
   pg_restore_options:
     dbname: "postgresql://postgres:postgres@postgres:5432/django"
-    # Drops & recreates objects before restoring so it's idempotent. DESTRUCTIVE
-    # to the target DB - only point this at a throwaway/scratch database.
-    clean: true
-    if-exists: true
     no-owner: true
     no-privileges: true
   scripts:
