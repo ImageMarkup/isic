@@ -57,7 +57,13 @@ readonly LOG_LEVEL=info
 # exists before dumping.
 mkdir -p ./.greenmask/dumps
 
-if [[ "$REUSE_EXISTING_DUMP" -eq 0 ]]; then
+if [[ "$REUSE_EXISTING_DUMP" -eq 1 ]]; then
+  # Check for at least one dump file in ./.greenmask/dumps
+  if ! ls ./.greenmask/dumps/*.sql.pgz >/dev/null 2>&1; then
+    echo "No existing dump found to reuse. Please run without -r/--reuse-existing-dump first." >&2
+    exit 1
+  fi
+else
   if [[ -z "${DATABASE_URL:-}" ]]; then
     DATABASE_URL=$(heroku pg:credentials:url --name "$HEROKU_PG_CREDENTIAL" |
       grep -Eo 'postgres://[^[:space:]]+')
