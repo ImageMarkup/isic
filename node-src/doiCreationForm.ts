@@ -171,7 +171,7 @@ function DoiCreationForm() {
       this.descriptions.push("");
 
       this.numFilesInProgress++;
-      const fieldValue = await s3ffClient.uploadFile(file, "core.SupplementalFile.blob");
+      const fieldValue = await s3ffClient.uploadFile(file, "core.DraftSupplementalFile.blob");
       this._fieldValues.push(fieldValue);
       this.numFilesInProgress--;
     },
