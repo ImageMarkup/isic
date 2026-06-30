@@ -853,6 +853,18 @@ wheels = [
 ]
 
 [[package]]
+name = "django-guardian"
+version = "3.3.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/88/89/0b0b268b158cd9155c1b49ebd1429a186228af359c84ab6fd74ecea572e4/django_guardian-3.3.2.tar.gz", hash = "sha256:f8edcf1576eb15d1593e23955693723ef351a7340667f9159e7bec786559c1ab", size = 110499, upload-time = "2026-06-08T12:02:39.643Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2a/80/5d3793ee277968dcc0c7e8a7752c9dc51d0fec632d9ab12229fa89172846/django_guardian-3.3.2-py3-none-any.whl", hash = "sha256:d5245d6be77a6c632f5b0c739221a44e6469dfa4925c75653ea49cec388e6765", size = 146962, upload-time = "2026-06-08T12:02:38.21Z" },
+]
+
+[[package]]
 name = "django-json-widget"
 version = "2.1.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1607,6 +1619,7 @@ dependencies = [
     { name = "django-environ" },
     { name = "django-extensions" },
     { name = "django-filter" },
+    { name = "django-guardian" },
     { name = "django-json-widget" },
     { name = "django-markdownify" },
     { name = "django-ninja" },
@@ -1715,6 +1728,7 @@ requires-dist = [
     { name = "django-environ", specifier = "==0.14.0" },
     { name = "django-extensions", specifier = "==4.1" },
     { name = "django-filter", specifier = "==25.2" },
+    { name = "django-guardian", specifier = ">=3.3.2" },
     { name = "django-json-widget", specifier = "==2.1.1" },
     { name = "django-markdownify", specifier = "==0.9.7" },
     { name = "django-minio-storage", marker = "extra == 'development'", specifier = "==0.5.9" },

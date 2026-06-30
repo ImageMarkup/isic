@@ -23,6 +23,7 @@ dependencies = [
   "django-environ==0.14.0",
   "django-extensions==4.1",
   "django-filter==25.2",
+  "django-guardian>=3.3.2",
   "django-json-widget==2.1.1",
   "django-markdownify==0.9.7",
   "django-ninja==1.4.5",

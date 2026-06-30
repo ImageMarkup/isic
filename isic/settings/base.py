@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_extensions",
     "django_filters",
+    "guardian",
     "markdownify",
     # Install "ninja" to force Swagger to be served locally, so it can be overridden
     "ninja",
@@ -126,6 +127,7 @@ STATIC_URL = "static/"
 
 AUTHENTICATION_BACKENDS += [
     "isic.core.permissions.IsicObjectPermissionsBackend",
+    "guardian.backends.ObjectPermissionBackend",
 ]
 
 PASSWORD_HASHERS += [
