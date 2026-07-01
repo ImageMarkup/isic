@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: pgvector/pgvector:0.8.3-pg18
+    image: pgvector/pgvector:0.8.4-pg18
     shm_size: 128mb
     # Bumped so the core_imageembedding ivfflat index can build during greenmask
     # restores.
@@ -17,7 +17,7 @@ services:
       - postgres:/var/lib/postgresql
 
   elasticsearch:
-    image: elasticsearch:9.4.2
+    image: elasticsearch:9.4.3
     environment:
       ES_JAVA_OPTS: "-Xms250m -Xmx750m"
       discovery.type: single-node
