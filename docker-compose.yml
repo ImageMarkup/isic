@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: pgvector/pgvector:pg18
+    image: pgvector/pgvector:0.8.3-pg18
     shm_size: 128mb
     # Bumped so the core_imageembedding ivfflat index can build during greenmask
     # restores.
