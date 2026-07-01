@@ -1,9 +1,10 @@
 services:
   postgres:
-    image: pgvector/pgvector:0.8.3-pg18
+    image: pgvector/pgvector:0.8.4-pg18
     shm_size: 128mb
-    # Bumped so the core_imageembedding ivfflat index can build during greenmask
-    # restores.
+    # The imageembedding IVFFlat index (lists=1000, dimensions=3584) requires
+    # ~350 MB to rebuild. This happens during test TRUNCATE, greenmask restores,
+    # and any bulk reindex. The default maintenance_work_mem (64 MB) is too low.
     command: ["postgres", "-c", "maintenance_work_mem=512MB"]
     environment:
       POSTGRES_DB: django
