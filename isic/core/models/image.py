@@ -67,6 +67,7 @@ class ImageManager(_BaseImageManager):
 class Image(CreationSortedTimeStampedModel):
     class Meta(CreationSortedTimeStampedModel.Meta):
         ordering = ["created"]
+        permissions = (("view_image_metadata", "View Image Metadata"),)
 
         constraints = [
             CheckConstraint(
