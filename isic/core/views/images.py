@@ -10,9 +10,10 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
+from isic.core.api.image import PinnedFirstPagination
 from isic.core.forms.search import ImageSearchForm
 from isic.core.models import Collection, Image
-from isic.core.pagination import CursorPagination, qs_with_hardcoded_count
+from isic.core.pagination import qs_with_hardcoded_count
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.core.search import get_elasticsearch_client
 from isic.core.tasks import generate_staff_image_list_metadata_csv_task
@@ -158,7 +159,7 @@ def image_browser(request):
         collections=collections,
     )
     qs: QuerySet[Image] = Image.objects.none()
-    order_by = ("pinned", "created")
+    order_by = ("-pinned", "created")
 
     if search_form.is_valid():
         qs = search_form.results
@@ -171,12 +172,12 @@ def image_browser(request):
             )["count"]
             qs = qs_with_hardcoded_count(qs, order_by, es_count)
 
-    paginator = CursorPagination(ordering=order_by)
-    cursor_input = CursorPagination.Input(
+    paginator = PinnedFirstPagination()
+    cursor_input = PinnedFirstPagination.Input(
         limit=request.GET.get("limit", 30), cursor=request.GET.get("cursor")
     )
 
-    page = paginator.paginate_queryset(qs, pagination=cursor_input, request=request)
+    page = paginator.paginate_queryset(qs, pagination=cursor_input, request=request, pin_sort=True)
 
     recent_collections = []
     if request.user.is_authenticated:

@@ -27,7 +27,7 @@ def test_core_api_image_set_pinned_permissions(client_, expected_status, image_f
     if expected_status == 200:
         assert image.pinned == 1
     else:
-        assert image.pinned is None
+        assert image.pinned == 0
 
 
 @pytest.mark.django_db
@@ -40,7 +40,7 @@ def test_core_api_image_set_pinned_private_image_rejected(staff_client, image_fa
     )
     assert r.status_code == 400
     image.refresh_from_db()
-    assert image.pinned is None
+    assert image.pinned == 0
 
 
 @pytest.mark.django_db
