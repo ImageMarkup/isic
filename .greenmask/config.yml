@@ -3,6 +3,37 @@ storage:
   directory:
     path: "./.greenmask/dumps"
 
+validate:
+  # Warnings reviewed and accepted, keyed by the stable hash greenmask assigns
+  # each one. CI runs `greenmask validate --strict`, which fails on any warning
+  # not listed here, so a schema/config change that surfaces a *new* warning
+  # still breaks the build; only these known-safe cases are muted. Get the hash
+  # for a new warning from `greenmask validate --warnings`.
+  resolved_warnings:
+    # "column is involved into Unique constraint": greenmask can't prove a
+    # Template/RandomString output is collision-free, but each of these is a
+    # salted hash, a random string, or (hash_id) a documented id->value
+    # bijection, so a collision isn't a real concern for a dump.
+    - "0a31134d140a59257fe091d81bd24104"  # auth_user.username
+    - "ffb75cf087526d0cd955cde3728891d3"  # account_emailaddress.email
+    - "7249cb7657a52990e66239a322436fec"  # core_collection.name
+    - "54012c1be013616c1e2a8390ca0ae40a"  # core_isicoauthapplication.client_id
+    - "66feed7bc1165d4b3fae360cf71de7ae"  # ingest_accession.original_blob_name
+    - "75fae161df5718319c5ca32ea96f0ab5"  # ingest_rcmcase.private_rcm_case_id
+    - "78a9aa3bf731d2d2bc3b38be48ff0ace"  # ingest_patient.private_patient_id
+    - "d07adfc9703aa9e74d70a80f8ee810ef"  # ingest_lesion.private_lesion_id
+    - "5332871852b79c027b147766489a58fd"  # login_profile.hash_id
+    - "d7f018cfb8bdf6841722925f5312e726"  # studies_study.name
+    # "transformer may produce NULL values but column has NOT NULL constraint":
+    # Replace writes a non-NULL constant and the source columns are themselves
+    # NOT NULL, so no NULL can actually be produced.
+    - "e4db28d8757453cb2ec8f15636c1e67a"  # auth_user.password
+    - "ff6d1ac22892bb29a9d6b4f93ae8fb2a"  # ingest_unstructuredmetadata.value
+    - "cb07bdbf126df919deb2ec94041c173f"  # ingest_metadataversion.unstructured_metadata
+    - "0a5d8cbf6d9073760d3066bae066f886"  # ingest_metadataversion.patient
+    - "5e9c24f20af8dd0522fbf7000ca85d1b"  # ingest_metadataversion.lesion
+    - "cb9783660c39db681b7a75d730b7533f"  # ingest_metadataversion.rcm_case
+
 restore:
   pg_restore_options:
     dbname: "postgresql://postgres:postgres@postgres:5432/django"
