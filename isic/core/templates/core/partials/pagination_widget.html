@@ -10,7 +10,7 @@
         <i class="ri-arrow-left-s-line"></i>
       </a>
     {% endif %}
-    <span class="join-item btn btn-outline btn-sm pointer-events-none">
+    <span class="join-item btn btn-outline btn-sm" aria-disabled="true">
       Page {{ page_obj.number|intcomma }} of {{ page_obj.paginator.num_pages|intcomma }}
     </span>
     {% if page_obj.has_next %}
