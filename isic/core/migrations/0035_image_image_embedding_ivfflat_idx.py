@@ -13,11 +13,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL(
-            sql="SET maintenance_work_mem = '1GB';",
-            reverse_sql="SET maintenance_work_mem = DEFAULT;",
-            elidable=True,
-        ),
         migrations.AddIndex(
             model_name="image",
             index=pgvector.django.indexes.IvfflatIndex(
