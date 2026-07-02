@@ -141,14 +141,7 @@ class CursorPagination(PaginationBase):
         if cursor.reverse:
             queryset = queryset.order_by(*_reverse_order(order))
 
-        if cursor.position is not None:
-            is_reversed = order[0].startswith("-")
-            order_attr = order[0].lstrip("-")
-
-            if cursor.reverse != is_reversed:
-                queryset = queryset.filter(**{f"{order_attr}__lt": cursor.position})
-            else:
-                queryset = queryset.filter(**{f"{order_attr}__gt": cursor.position})
+        queryset = self._apply_ordering(queryset, cursor, order)
 
         # If we have an offset cursor then offset the entire page by that amount.
         # We also always fetch an extra item in order to determine if there is a
@@ -345,6 +338,17 @@ class CursorPagination(PaginationBase):
 
         cursor = Cursor(offset=offset, reverse=True, position=position)
         return self._encode_cursor(cursor, base_url)
+
+    def _apply_ordering(self, queryset, cursor, order):
+        if cursor.position is not None:
+            is_reversed = order[0].startswith("-")
+            order_attr = order[0].lstrip("-")
+
+            if cursor.reverse != is_reversed:
+                queryset = queryset.filter(**{f"{order_attr}__lt": cursor.position})
+            else:
+                queryset = queryset.filter(**{f"{order_attr}__gt": cursor.position})
+        return queryset
 
     def _get_position_from_instance(self, instance, ordering):
         field_name = ordering[0].lstrip("-")

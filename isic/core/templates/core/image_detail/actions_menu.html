@@ -1,0 +1,41 @@
+<button class="btn" popovertarget="image-detail-actions">
+  Actions
+  <i class="ri-arrow-down-s-line"></i>
+</button>
+<ul class="dropdown dropdown-end menu w-max overflow-visible rounded-box bg-base-100 shadow-sm"
+    popover id="image-detail-actions" x-data=imageActions()>
+
+  {% if request.user.is_staff %}
+    {% if image.pinned %}
+      <li>
+        <button @click="setPinned(false)">Unpin Image</button>
+      </li>
+    {% else %}
+      <li>
+        <button @click="setPinned(true)">Pin Image</button>
+      </li>
+    {% endif %}
+  {% endif %}
+</ul>
+
+<script type="text/javascript">
+  function imageActions() {
+    return {
+      errorMessage: '',
+      async setPinned(pinned) {
+        try {
+          const resp = await axios.post('/api/v2/images/{{ image.pk }}/set-pinned/', { pinned }, {
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': '{{ csrf_token }}'
+            }
+          })
+          window.location.reload();
+        } catch (error) {
+          alert('Something went wrong, try again.');
+          throw error;
+        }
+      }
+    }
+  }
+</script>

@@ -158,6 +158,7 @@ def image_browser(request):
         collections=collections,
     )
     qs: QuerySet[Image] = Image.objects.none()
+    order_by = ("pinned", "created")
 
     if search_form.is_valid():
         qs = search_form.results
@@ -168,9 +169,9 @@ def image_browser(request):
                 index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX,
                 body={"query": es_query},
             )["count"]
-            qs = qs_with_hardcoded_count(qs, ("created",), es_count)
+            qs = qs_with_hardcoded_count(qs, order_by, es_count)
 
-    paginator = CursorPagination(ordering=("created",))
+    paginator = CursorPagination(ordering=order_by)
     cursor_input = CursorPagination.Input(
         limit=request.GET.get("limit", 30), cursor=request.GET.get("cursor")
     )
