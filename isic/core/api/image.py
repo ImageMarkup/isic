@@ -309,6 +309,8 @@ def image_set_pinned(request, id: int, payload: SetPinned):
     qs = get_visible_objects(request.user, "core.view_image", Image.objects.all())
     image = get_object_or_404(qs.distinct(), id=id)
     if payload.pinned:
+        if not image.public:
+            return 400, {"error": "Cannot pin a private image."}
         last_pin = Image.objects.aggregate(Max("pinned")).get("pinned__max") or 0
         image.pinned = last_pin + 1
     else:

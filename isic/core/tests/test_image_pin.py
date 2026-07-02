@@ -31,6 +31,19 @@ def test_core_api_image_set_pinned_permissions(client_, expected_status, image_f
 
 
 @pytest.mark.django_db
+def test_core_api_image_set_pinned_private_image_rejected(staff_client, image_factory):
+    image = image_factory(public=False)
+    r = staff_client.post(
+        reverse("api:image_set_pinned", kwargs={"id": image.pk}),
+        {"pinned": True},
+        content_type="application/json",
+    )
+    assert r.status_code == 400
+    image.refresh_from_db()
+    assert image.pinned is None
+
+
+@pytest.mark.django_db
 def test_core_api_image_sort_by_pinned(image_factory, authenticated_client):
     image_1 = image_factory(public=True)
     image_2 = image_factory(public=True, pinned=1)
@@ -49,7 +62,7 @@ def test_core_api_image_sort_by_pinned(image_factory, authenticated_client):
 @pytest.mark.playwright
 def test_image_pin_unpin(image_factory, staff_authenticated_page):
     page = staff_authenticated_page
-    image_id = image_factory().isic_id
+    image_id = image_factory(public=True).isic_id
     page.goto(reverse("core/image-detail", args=[image_id]))
 
     # Pin the image
@@ -70,3 +83,15 @@ def test_image_pin_unpin(image_factory, staff_authenticated_page):
     # Pin button should be back
     page.get_by_role("button", name="Actions").click()
     expect(page.get_by_role("button", name="Pin image")).to_be_visible()
+
+
+@pytest.mark.playwright
+def test_image_pin_disabled_when_private(image_factory, staff_authenticated_page):
+    page = staff_authenticated_page
+    image_id = image_factory(public=False).isic_id
+    page.goto(reverse("core/image-detail", args=[image_id]))
+
+    page.get_by_role("button", name="Actions").click()
+    pin_button = page.get_by_role("button", name="Pin image")
+    expect(pin_button).to_be_disabled()
+    expect(pin_button).to_have_accessible_description("Only public images can be pinned")

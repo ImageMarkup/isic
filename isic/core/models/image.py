@@ -68,6 +68,13 @@ class Image(CreationSortedTimeStampedModel):
     class Meta(CreationSortedTimeStampedModel.Meta):
         ordering = ["created"]
 
+        constraints = [
+            CheckConstraint(
+                name="image_pinned_implies_public",
+                condition=Q(pinned__isnull=True) | Q(public=True),
+            ),
+        ]
+
         indexes = [
             # icontains uses Upper(name) for searching
             GinIndex(OpClass(Upper("isic"), name="gin_trgm_ops"), name="isic_name_gin"),
