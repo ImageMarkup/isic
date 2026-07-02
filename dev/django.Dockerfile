@@ -13,8 +13,11 @@ RUN --mount=type=tmpfs,target=/var/lib/apt/lists \
   --mount=type=tmpfs,target=/root/.local \
   uvx --no-cache playwright install-deps chromium
 
-# Install greenmask for database dumps/restores.
-RUN curl -fsSL https://greenmask.io/install.sh | sh -s -- -y -v v0.2.22 -b /usr/local/bin
+# Install greenmask for database dumps/restores. Pull the binary straight from
+# the GitHub release rather than the greenmask.io install script, which
+# rate-limits automated clients (HTTP 429).
+RUN curl -fsSL https://github.com/GreenmaskIO/greenmask/releases/download/v0.2.22/greenmask-linux-amd64.tar.gz \
+  | tar xz -C /usr/local/bin greenmask
 ENV GREENMASK_CONFIG=/home/vscode/isic/.greenmask/config.yml
 
 # Ensure Python output appears immediately in container logs.
