@@ -100,7 +100,7 @@ jobs:
         # conditions and transformers as real SQL/dump operations without
         # Heroku or the restore step.
         run: |
-          curl -fsSL https://greenmask.io/install.sh | sh -s -- -y -v v0.2.21
+          curl -fsSL https://greenmask.io/install.sh | sh -s -- -y -v v0.2.22
           # The runner's default postgres client is older than the pg18 service
           # container, and pg_dump aborts on a server version mismatch. The
           # Ubuntu repos don't carry 18, so add the PGDG repo first.
@@ -113,9 +113,10 @@ jobs:
           # the real 18 binaries ahead of the wrapper.
           export PATH="/usr/lib/postgresql/18/bin:$PATH"
           ./manage.py migrate
-          greenmask --config .greenmask/config.yml validate --warnings
+          greenmask validate --warnings --strict
           dev/greenmask-dump.sh --dump-only
         env:
+          GREENMASK_CONFIG: .greenmask/config.yml
           # Used by .greenmask/config.yml's dump dbname and Django's database.
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
           DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
