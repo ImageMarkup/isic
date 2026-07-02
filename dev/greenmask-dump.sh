@@ -69,7 +69,7 @@ else
       grep -Eo 'postgres://[^[:space:]]+')
     export DATABASE_URL
   fi
-  greenmask --config .greenmask/config.yml dump --jobs 2 --pgzip --log-level "$LOG_LEVEL"
+  greenmask dump --jobs 2 --pgzip --log-level "$LOG_LEVEL"
 fi
 
 if [[ "$DUMP_ONLY" -eq 1 ]]; then
@@ -87,5 +87,5 @@ fi
 # pipefail can't mask a real greenmask failure).
 readonly NOISE='could not find where to insert IF EXISTS|using neutralized TOC for phased restoration'
 
-greenmask --config .greenmask/config.yml --log-level "$LOG_LEVEL" restore latest --pgzip \
+greenmask --log-level "$LOG_LEVEL" restore latest --pgzip \
   2> >(grep -v -E "$NOISE" >&2)
