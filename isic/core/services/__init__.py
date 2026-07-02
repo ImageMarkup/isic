@@ -1,9 +1,9 @@
 from collections.abc import Generator
 from functools import reduce
 import operator
-from typing import Any
+from typing import Any, cast
 
-from django.db.models import Func
+from django.db.models import F, Func
 from django.db.models.aggregates import Count
 from django.db.models.query import QuerySet
 
@@ -140,58 +140,71 @@ def staff_image_metadata_csv(*, qs: QuerySet[Image]) -> Generator[list[str] | di
         yield value
 
 
-def image_metadata_csv(
-    *, qs: QuerySet[Image]
-) -> Generator[list[str] | dict[str, str | bool | float]]:
+def image_metadata_csv(*, qs: QuerySet[Image]) -> tuple[list[str], Generator[dict[str, Any]]]:
     """
-    Generate a CSV of image metadata for non-staff users.
+    Generate the fieldnames and rows of a CSV of image metadata for non-staff users.
 
-    The first value yielded is the header row, and subsequent values are the rows of the CSV.
+    The fieldnames are computed eagerly, and the rows are a generator.
     """
-    headers = ["isic_id", "attribution", "copyright_license"]
+    initial_headers = ["isic_id", "attribution", "copyright_license"]
 
     accession_qs = Accession.objects.filter(image__in=qs)
 
     # depending on which queryset is passed in, the set of headers is different.
     # get the superset of headers for this particular queryset.
     counts = accession_qs.aggregate(**{k: Count(k) for k in Accession.metadata_keys()})
-    used_metadata_keys = [k for k, v in counts.items() if v > 0]
+    used_metadata_columns = [k for k, v in counts.items() if v > 0]
 
-    for field in Accession.remapped_internal_fields:
-        if accession_qs.exclude(**{field.relation_name: None}).exists():
-            used_metadata_keys.append(field.csv_field_name)  # noqa: PERF401
+    # A remapped field's csv_field_name (e.g. lesion_id) is also the name of the FK column on
+    # Accession. Further, since these remapped fields all use natural PKs, we can read the values
+    # directly off the accession without a join.
+    used_remapped_columns = [
+        field.csv_field_name
+        for field in Accession.remapped_internal_fields
+        if accession_qs.exclude(**{field.relation_name: None}).exists()
+    ]
 
-    for computed_field in Accession.computed_fields:
-        if computed_field.input_field_name in used_metadata_keys:
-            used_metadata_keys.remove(computed_field.input_field_name)
-            used_metadata_keys += computed_field.output_field_names
+    used_computed_fields = [
+        computed_field
+        for computed_field in Accession.computed_fields
+        if computed_field.input_field_name in used_metadata_columns
+    ]
 
-    fieldnames = headers + sorted(used_metadata_keys)
-    yield fieldnames
+    used_metadata_keys = used_metadata_columns + used_remapped_columns
+    for computed_field in used_computed_fields:
+        used_metadata_keys.remove(computed_field.input_field_name)
+        used_metadata_keys += computed_field.output_field_names
 
-    # Note this uses .values because populating django ORM objects is very slow, and doing this
-    # on large querysets can add ~5s per 100k images to the request time.
-    for image in (
-        qs.order_by("isic_id")
-        .values(
-            "isic_id",
-            "accession__attribution",
-            "accession__copyright_license",
-            *[f"accession__{key}" for key in Accession.metadata_keys()],
-            *[f"accession__{field.csv_field_name}" for field in Accession.remapped_internal_fields],
-        )
-        .iterator()
-    ):
-        image = {k.replace("accession__", ""): v for k, v in image.items()}  # noqa: PLW2901
+    fieldnames = initial_headers + sorted(used_metadata_keys)
 
-        image["attribution"] = image.pop("attribution")
+    def rows() -> Generator[dict[str, Any]]:
+        # Note this uses .values because populating django ORM objects is very slow, and doing
+        # this on large querysets can add ~5s per 100k images to the request time. Only the
+        # columns in use are selected, and they're aliased to their CSV names in the query so
+        # that no per-row key renaming is needed.
+        for image in (
+            qs.order_by("isic_id")
+            .values(
+                "isic_id",
+                attribution=F("accession__attribution"),
+                copyright_license=F("accession__copyright_license"),
+                **{
+                    key: F(f"accession__{key}")
+                    for key in used_metadata_columns + used_remapped_columns
+                },
+            )
+            .iterator()
+        ):
+            # Strip the TypedDict, since we're about to change some fields
+            row = cast("dict[str, Any]", image)
 
-        for computed_field in Accession.computed_fields:
-            if image[computed_field.input_field_name]:
-                computed_fields = computed_field.transformer(image[computed_field.input_field_name])
-                if computed_fields:
-                    image.update(computed_fields)
+            for computed_field in used_computed_fields:
+                input_value = row.pop(computed_field.input_field_name)
+                if input_value:
+                    computed_values = computed_field.transformer(input_value)
+                    if computed_values:
+                        row.update(computed_values)
 
-                del image[computed_field.input_field_name]
+            yield row
 
-        yield {k: v for k, v in image.items() if k in fieldnames}
+    return fieldnames, rows()
