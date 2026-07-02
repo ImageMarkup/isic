@@ -10,10 +10,21 @@
       <li>
         <button @click="setPinned(false)">Unpin Image</button>
       </li>
-    {% else %}
+    {% elif image.public %}
       <li>
         <button @click="setPinned(true)">Pin Image</button>
       </li>
+    {% else %}
+      {% with pin_disabled_reason="Only public images can be pinned" %}
+        <li>
+          <span class="tooltip tooltip-left w-full" data-tip="{{ pin_disabled_reason }}">
+            <button class="w-full text-left" disabled aria-describedby="pin-disabled-reason">
+              Pin Image
+            </button>
+          </span>
+          <span id="pin-disabled-reason" class="sr-only">{{ pin_disabled_reason }}</span>
+        </li>
+      {% endwith %}
     {% endif %}
   {% endif %}
 </ul>
