@@ -4,7 +4,7 @@ from typing import Any
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError
+from django.core.exceptions import BadRequest, ValidationError
 from django.core.paginator import Paginator
 from django.db.models import F
 from django.http import HttpRequest, HttpResponse, StreamingHttpResponse
@@ -12,6 +12,8 @@ from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
 from django.urls.base import reverse
+from ninja.errors import ValidationError as NinjaValidationError
+import pydantic
 
 from isic.core.forms.collection import CollectionForm
 from isic.core.models import Collection
@@ -136,16 +138,18 @@ def collection_detail(request, pk):
         collection.images.select_related("accession").order_by("created").distinct(),
     )
 
-    paginator = CursorPagination(ordering=("created",))
-    cursor_input = CursorPagination.Input(
-        limit=request.GET.get("limit", 30), cursor=request.GET.get("cursor")
-    )
-
     # prevent the paginator from doing a slow count.
     if hasattr(collection, "cached_counts"):
         images = qs_with_hardcoded_count(images, ("created",), collection.cached_counts.image_count)
 
-    page = paginator.paginate_queryset(images, pagination=cursor_input, request=request)
+    paginator = CursorPagination(ordering=("created",))
+    try:
+        cursor_input = CursorPagination.Input(
+            limit=request.GET.get("limit", 30), cursor=request.GET.get("cursor")
+        )
+        page = paginator.paginate_queryset(images, pagination=cursor_input, request=request)
+    except (pydantic.ValidationError, NinjaValidationError) as e:
+        raise BadRequest("Invalid pagination parameters.") from e
 
     contributors = get_visible_objects(
         request.user,
