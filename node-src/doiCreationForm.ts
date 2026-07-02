@@ -100,9 +100,9 @@ function DoiCreationForm() {
 
   return {
     description: "",
-    files: [],
-    descriptions: [],
-    _fieldValues: [],
+    files: [] as File[],
+    descriptions: [] as string[],
+    _fieldValues: [] as string[],
     numFilesInProgress: 0,
     ...identifiers,
     relationTypes,
@@ -187,7 +187,7 @@ function DoiCreationForm() {
           collection_id: collectionId,
           description: this.description,
           supplemental_files: this._fieldValues.map((fieldValue, index) => ({
-            blob: fieldValue.value,
+            blob: fieldValue,
             description: this.descriptions[index],
           })),
           // flatmap
