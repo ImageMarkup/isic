@@ -153,8 +153,8 @@ class PinnedFirstPagination(CursorPagination):
         return "|".join(values)
 
     def paginate_queryset(self, queryset, pagination, request, **params):
-        if request.GET.get("pin_sort"):
-            queryset = queryset.order_by("pinned", "created")
+        if request.GET.get("pin_sort") or params.get("pin_sort"):
+            queryset = queryset.order_by("-pinned", "created")
         else:
             queryset = queryset.order_by("created")
         return super().paginate_queryset(queryset, pagination, request, **params)
@@ -314,7 +314,7 @@ def image_set_pinned(request, id: int, payload: SetPinned):
         last_pin = Image.objects.aggregate(Max("pinned")).get("pinned__max") or 0
         image.pinned = last_pin + 1
     else:
-        image.pinned = None
+        image.pinned = 0
     image.save()
     action = "pinned" if payload.pinned else "unpinned"
     messages.add_message(request, messages.SUCCESS, f"Image {action}.")

@@ -71,7 +71,7 @@ class Image(CreationSortedTimeStampedModel):
         constraints = [
             CheckConstraint(
                 name="image_pinned_implies_public",
-                condition=Q(pinned__isnull=True) | Q(public=True),
+                condition=Q(pinned=0) | Q(public=True),
             ),
         ]
 
@@ -79,7 +79,7 @@ class Image(CreationSortedTimeStampedModel):
             # icontains uses Upper(name) for searching
             GinIndex(OpClass(Upper("isic"), name="gin_trgm_ops"), name="isic_name_gin"),
             # Used when sorting images by pinned state and then by created timestamp
-            models.Index(fields=["pinned", "created"], name="pinned_created_index"),
+            models.Index(fields=["-pinned", "created"], name="pinned_created_index"),
         ]
 
     accession = models.OneToOneField(
@@ -99,7 +99,7 @@ class Image(CreationSortedTimeStampedModel):
     # index is used because public is filtered in every permissions check
     public = models.BooleanField(default=False, db_index=True)
 
-    pinned = models.PositiveSmallIntegerField(null=True, blank=True, default=None, unique=True)
+    pinned = models.PositiveSmallIntegerField(default=0)
 
     shares: models.ManyToManyField[User, ImageShare] = models.ManyToManyField(
         User, through="ImageShare", through_fields=("image", "grantee")
