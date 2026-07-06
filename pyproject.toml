@@ -39,7 +39,7 @@ dependencies = [
   "jaro-winkler==2.0.3",
   "numpy==2.5.0",
   "pandas==3.0.3",
-  "Pillow==12.2.0",
+  "Pillow==12.3.0",
   "psycopg[binary]==3.3.4",
   "pycountry==26.2.16",
   "pydantic==2.13.4",
@@ -55,7 +55,7 @@ dependencies = [
   # Production-only
   "django-s3-file-field[s3]==1.1.0",
   "django-storages[s3]==1.14.6",
-  "sentry-sdk[celery,django,pure_eval]==2.63.0",
+  "sentry-sdk[celery,django,pure_eval]==2.64.0",
   "gunicorn==26.0.0",
   "orjson==3.11.9",
   "django-template-partials==25.3",
