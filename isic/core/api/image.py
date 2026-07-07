@@ -15,7 +15,7 @@ from sentry_sdk import set_tag
 
 from isic.auth import is_authenticated
 from isic.core.models import Image
-from isic.core.pagination import CursorPagination, qs_with_hardcoded_count
+from isic.core.pagination import Cursor, CursorPagination, qs_with_hardcoded_count
 from isic.core.permissions import get_visible_objects
 from isic.core.search import facets, get_elasticsearch_client
 from isic.core.serializers import SearchQueryIn
@@ -127,8 +127,11 @@ class PinnedFirstPagination(CursorPagination):
             position_values = cursor.position.split("|")
             if len(position_values) != len(order):
                 # The cursor was built for a different ordering than this request
-                # (e.g. pin_sort was toggled).
-                raise ValueError("Cursor position does not match the current ordering.")
+                # (e.g. pin_sort was toggled, or a link predates the introduction of
+                # multi-field ordering). paginate_queryset resets such cursors before
+                # reaching this point; guard here too so a mismatch degrades to an
+                # unfiltered (first page) query rather than a 500.
+                return queryset
 
             field_names = [field.lstrip("-") for field in order]
             q_obj = Q()
@@ -157,6 +160,17 @@ class PinnedFirstPagination(CursorPagination):
             queryset = queryset.order_by("-pinned", "created")
         else:
             queryset = queryset.order_by("created")
+
+        # A cursor encodes one position value per ordering field. If it was built for a
+        # different ordering -- e.g. a bookmarked/crawled link created before pin_sort
+        # added a second ordering field -- the value counts won't match. Discard the
+        # stale cursor and start from the first page instead of raising a 500.
+        cursor = pagination.cursor
+        if cursor.position is not None and len(cursor.position.split("|")) != len(
+            queryset.query.order_by
+        ):
+            pagination.cursor = Cursor()
+
         return super().paginate_queryset(queryset, pagination, request, **params)
 
 
