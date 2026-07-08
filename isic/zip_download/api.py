@@ -27,7 +27,7 @@ from isic.core.models import CopyrightLicense, Image
 from isic.core.serializers import SearchQueryIn
 from isic.core.services import image_metadata_csv
 from isic.core.utils.csv import EscapingDictWriter
-from isic.core.utils.http import Buffer
+from isic.core.utils.http import Echo
 from isic.types import NinjaAuthHttpRequest
 
 if TYPE_CHECKING:
@@ -148,7 +148,7 @@ def zip_download_listing(
     )
     files = _zip_file_listing_generator(qs, token)
 
-    def write_response(buffer: Buffer) -> Iterable[bytes]:
+    def write_response() -> Generator[bytes]:
         yield f'{{"suggestedFilename": "{suggested_filename}", "files": ['.encode()
 
         has_preceding_element = False
@@ -161,7 +161,7 @@ def zip_download_listing(
 
         yield b"]}"
 
-    return StreamingHttpResponse(write_response(Buffer()), content_type="application/json")
+    return StreamingHttpResponse(write_response(), content_type="application/json")
 
 
 @zip_router.get("/metadata-file/", include_in_schema=False, auth=ZipDownloadTokenAuth())
@@ -169,17 +169,16 @@ def zip_download_metadata_file(request: NinjaAuthHttpRequest):
     user, search = SearchQueryIn.from_token_representation(request.auth)
     qs = search.to_queryset(user, Image.objects.select_related("accession__cohort").distinct())
 
-    metadata_file = image_metadata_csv(qs=qs)
+    fieldnames, metadata_rows = image_metadata_csv(qs=qs)
 
-    def write_response(buffer: Buffer) -> Iterable[bytes]:
-        writer = EscapingDictWriter(buffer, next(metadata_file))
+    def write_response() -> Generator[bytes]:
+        writer = EscapingDictWriter(Echo(), fieldnames)
         yield writer.writeheader()
 
-        for metadata_row in metadata_file:
-            assert isinstance(metadata_row, dict)  # noqa: S101
+        for metadata_row in metadata_rows:
             yield writer.writerow(metadata_row)
 
-    return StreamingHttpResponse(write_response(Buffer()), content_type="text/csv")
+    return StreamingHttpResponse(write_response(), content_type="text/csv")
 
 
 @zip_router.get("/attribution-file/", include_in_schema=False, auth=ZipDownloadTokenAuth())

@@ -1,5 +1,6 @@
-from collections.abc import Iterable
+from collections.abc import Generator
 from datetime import UTC, datetime
+from itertools import batched
 from typing import Any
 
 from django.contrib import messages
@@ -22,7 +23,7 @@ from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.core.services import image_metadata_csv
 from isic.core.services.collection import create_collection, update_collection
 from isic.core.utils.csv import EscapingDictWriter
-from isic.core.utils.http import Buffer
+from isic.core.utils.http import Echo
 from isic.ingest.models import Contributor
 
 
@@ -78,17 +79,18 @@ def collection_download_metadata(request, pk):
         collection.images.all(),
     )
 
-    def csv_rows(buffer: Buffer) -> Iterable[bytes]:
-        collection_metadata = image_metadata_csv(qs=qs)
-        writer = EscapingDictWriter(buffer, next(collection_metadata))
+    def csv_rows() -> Generator[bytes]:
+        fieldnames, metadata_rows = image_metadata_csv(qs=qs)
+        writer = EscapingDictWriter(Echo(), fieldnames)
         yield writer.writeheader()
 
-        for metadata_row in collection_metadata:
-            assert isinstance(metadata_row, dict)  # noqa: S101
-            yield writer.writerow(metadata_row)
+        # yield rows in batches, since responding with many small chunks incurs per-chunk
+        # overhead in the WSGI write path and socket writes.
+        for metadata_batch in batched(metadata_rows, 256, strict=False):
+            yield b"".join(writer.writerow(metadata_row) for metadata_row in metadata_batch)
 
     current_time = datetime.now(tz=UTC).strftime("%Y-%m-%d")
-    response = StreamingHttpResponse(csv_rows(Buffer()), content_type="text/csv")
+    response = StreamingHttpResponse(csv_rows(), content_type="text/csv")
     response["Content-Disposition"] = (
         f'attachment; filename="{slugify(collection.name)}_metadata_{current_time}.csv"'
     )
