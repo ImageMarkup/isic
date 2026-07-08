@@ -2,7 +2,7 @@ from django.urls import reverse
 import pytest
 from pytest_lazy_fixtures import lf
 
-from isic.core.models.collection import Collection
+from isic.core.models.collection import Collection, CollectionTag
 from isic.core.services.collection.image import add_images_to_collection
 
 
@@ -554,3 +554,160 @@ def test_core_api_collection_create_from_isic_ids(
         img1.isic_id,
         img2.isic_id,
     }
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("client_", "expected_status"),
+    [
+        (lf("client"), 403),
+        (lf("authenticated_client"), 403),
+        (lf("staff_client"), 200),
+    ],
+    ids=["anonymous", "authenticated", "staff"],
+)
+def test_core_api_collection_set_tags(client_, expected_status, public_collection):
+    new_tags = ["test", "mytag"]
+    CollectionTag.objects.bulk_create([CollectionTag(tag=t) for t in new_tags])
+    r = client_.post(
+        reverse("api:collection_set_tags", kwargs={"id": public_collection.pk}),
+        {"tags": new_tags},
+        content_type="application/json",
+    )
+    assert r.status_code == expected_status
+    if expected_status == 200:
+        assert [str(t) for t in public_collection.tags.all()] == new_tags
+    else:
+        assert public_collection.tags.count() == 0
+
+
+@pytest.mark.django_db
+def test_core_api_set_nonexistent_tag(staff_client, public_collection):
+    new_tags = ["test", "mytag"]
+    r = staff_client.post(
+        reverse("api:collection_set_tags", kwargs={"id": public_collection.pk}),
+        {"tags": new_tags},
+        content_type="application/json",
+    )
+    assert r.status_code == 400
+    assert r.json().get("error") == "CollectionTag matching query does not exist."
+
+
+@pytest.mark.django_db
+def test_core_api_get_collection_tags(client):
+    new_tags = ["test", "mytag"]
+    CollectionTag.objects.bulk_create([CollectionTag(tag=t) for t in new_tags])
+    r = client.get(reverse("api:get_collection_tags"), content_type="application/json")
+    assert r.json() == new_tags
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("client_", "expected_status"),
+    [
+        (lf("client"), 403),
+        (lf("authenticated_client"), 403),
+        (lf("staff_client"), 201),
+    ],
+    ids=["anonymous", "authenticated", "staff"],
+)
+def test_core_api_create_collection_tag(client_, expected_status):
+    tag = "mytag"
+    r = client_.post(
+        reverse("api:create_collection_tag"),
+        {"tag": tag},
+        content_type="application/json",
+    )
+    assert r.status_code == expected_status
+    if expected_status == 201:
+        assert CollectionTag.objects.filter(tag=tag).count() == 1
+
+
+@pytest.mark.django_db
+def test_core_api_create_existing_tag(staff_client):
+    tag = "mytag"
+    CollectionTag.objects.create(tag=tag)
+    r = staff_client.post(
+        reverse("api:create_collection_tag"),
+        {"tag": tag},
+        content_type="application/json",
+    )
+    assert r.status_code == 400
+    assert r.json()["error"] == "Tag already exists."
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("client_", "expected_status"),
+    [
+        (lf("client"), 403),
+        (lf("authenticated_client"), 403),
+        (lf("staff_client"), 200),
+    ],
+    ids=["anonymous", "authenticated", "staff"],
+)
+def test_core_api_update_collection_tag(client_, expected_status):
+    tag = CollectionTag.objects.create(tag="test")
+    new_tag = "mytag"
+    r = client_.patch(
+        reverse("api:update_collection_tag", kwargs={"id": tag.id}),
+        {"tag": new_tag},
+        content_type="application/json",
+    )
+    assert r.status_code == expected_status
+    if expected_status == 200:
+        tag.refresh_from_db()
+        assert tag.tag == new_tag
+
+
+@pytest.mark.django_db
+def test_core_api_update_nonexistent_collection_tag(staff_client):
+    r = staff_client.patch(
+        reverse("api:update_collection_tag", kwargs={"id": 0}),
+        {"tag": "test"},
+        content_type="application/json",
+    )
+    assert r.status_code == 404
+
+
+@pytest.mark.django_db
+def test_core_api_update_tag_with_conflict(staff_client):
+    tag_1 = CollectionTag.objects.create(tag="mytag_1")
+    tag_2 = CollectionTag.objects.create(tag="mytag_2")
+    r = staff_client.patch(
+        reverse("api:update_collection_tag", kwargs={"id": tag_1.id}),
+        {"tag": tag_2.tag},
+        content_type="application/json",
+    )
+    assert r.status_code == 400
+    assert r.json()["error"] == "Tag already exists."
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("client_", "expected_status"),
+    [
+        (lf("client"), 403),
+        (lf("authenticated_client"), 403),
+        (lf("staff_client"), 204),
+    ],
+    ids=["anonymous", "authenticated", "staff"],
+)
+def test_core_api_delete_collection_tag(client_, expected_status):
+    tag = CollectionTag.objects.create(tag="test")
+    r = client_.delete(
+        reverse("api:delete_collection_tag", kwargs={"id": tag.id}),
+        content_type="application/json",
+    )
+    assert r.status_code == expected_status
+    if expected_status == 204:
+        assert CollectionTag.objects.filter(tag=tag.tag).count() == 0
+
+
+@pytest.mark.django_db
+def test_core_api_delete_nonexistent_collection_tag(staff_client):
+    r = staff_client.delete(
+        reverse("api:delete_collection_tag", kwargs={"id": 0}),
+        content_type="application/json",
+    )
+    assert r.status_code == 404

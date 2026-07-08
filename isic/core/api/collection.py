@@ -2,6 +2,7 @@ from typing import Annotated, Literal
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError, transaction
 from django.db.models import Count
 from django.http.response import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -12,7 +13,7 @@ from pydantic import field_validator
 
 from isic.auth import is_authenticated
 from isic.core.constants import ISIC_ID_REGEX
-from isic.core.models.collection import Collection
+from isic.core.models.collection import Collection, CollectionTag
 from isic.core.pagination import CursorPagination
 from isic.core.permissions import get_visible_objects
 from isic.core.serializers import SearchQueryIn
@@ -48,7 +49,7 @@ class AutocompleteQueryIn(Schema):
 class CollectionOut(ModelSchema):
     class Meta:
         model = Collection
-        fields = ["id", "name", "description", "public", "pinned", "locked"]
+        fields = ["id", "name", "description", "tags", "public", "pinned", "locked"]
 
     doi: str | None = Field(None, alias="doi.id")
     doi_url: str | None = Field(None, alias="doi.external_url")
@@ -292,6 +293,94 @@ def collection_populate_from_search(request, id: int, payload: SearchQueryIn):
         request, messages.INFO, "Adding images to collection, this may take a few minutes."
     )
     return 202, {}
+
+
+class SetTags(Schema):
+    tags: list[str]
+
+    model_config = {"extra": "forbid"}
+
+
+class TagSchema(Schema):
+    tag: str
+
+    model_config = {"extra": "forbid"}
+
+
+@router.post(
+    "/{id}/set-tags/",
+    response={200: None, 400: dict, 403: dict},
+    include_in_schema=False,
+)
+def collection_set_tags(request, id: int, payload: SetTags):
+    if not request.user.is_staff:
+        return 403, {"error": "You do not have permission to set tags on this collection."}
+
+    qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
+    collection = get_object_or_404(qs.distinct(), id=id)
+
+    with transaction.atomic():
+        for t in payload.tags:
+            try:
+                tag = CollectionTag.objects.get(tag=t)
+                collection.tags.add(tag)
+            except CollectionTag.DoesNotExist as e:
+                messages.add_message(request, messages.ERROR, str(e))
+                return 400, {"error": str(e)}
+        collection.save()
+
+    messages.add_message(request, messages.SUCCESS, "Collection Tags updated.")
+    return 200, None
+
+
+@router.get("/tags", response=list[str], include_in_schema=False)
+def get_collection_tags(request):
+    return [t.tag for t in CollectionTag.objects.all()]
+
+
+@router.post(
+    "/tags",
+    response={201: None, 400: dict, 403: dict},
+    include_in_schema=False,
+)
+def create_collection_tag(request, payload: TagSchema):
+    if not request.user.is_staff:
+        return 403, {"error": "You do not have permission to create collection tags."}
+    try:
+        CollectionTag.objects.create(tag=payload.tag)
+    except IntegrityError:
+        return 400, {"error": "Tag already exists."}
+    return 201, {"message": "Collection Tag created successfully."}
+
+
+@router.patch(
+    "/tags/{id}/",
+    response={200: dict, 400: dict, 403: dict, 404: dict},
+    include_in_schema=False,
+)
+def update_collection_tag(request, id: int, payload: TagSchema):
+    if not request.user.is_staff:
+        return 403, {"error": "You do not have permission to edit this collection tag."}
+    tag = get_object_or_404(CollectionTag.objects.all(), id=id)
+    try:
+        tag.tag = payload.tag
+        tag.save()
+    except IntegrityError:
+        return 400, {"error": "Tag already exists."}
+    return 200, {"message": "Collection Tag updated successfully."}
+
+
+@router.delete(
+    "/tags/{id}/",
+    response={204: None, 400: dict, 403: dict},
+    include_in_schema=False,
+)
+def delete_collection_tag(request, id: int):
+    if not request.user.is_staff:
+        return 403, {"error": "You do not have permission to delete this collection tag."}
+    tag = get_object_or_404(CollectionTag.objects.all(), id=id)
+    tag.delete()
+    return 204, {"message": "Collection Tag deleted successfully."}
 
 
 class SetPinnedIn(Schema):
