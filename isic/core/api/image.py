@@ -178,10 +178,13 @@ class PinnedFirstPagination(CursorPagination):
         return "|".join(values)
 
     def paginate_queryset(self, queryset, pagination, request, **params):
-        if request.GET.get("pin_sort") or params.get("pin_sort"):
-            queryset = queryset.order_by("-pinned", "created")
-        else:
-            queryset = queryset.order_by("created")
+        if pagination.cursor.position is None:
+            # New cursor, apply ordering according to pin_sort param
+            if request.GET.get("pin_sort") or params.get("pin_sort"):
+                self.ordering = ("-pinned", "created")
+            else:
+                self.ordering = ("created",)
+        queryset = queryset.order_by(*self.ordering)
         return super().paginate_queryset(queryset, pagination, request, **params)
 
 

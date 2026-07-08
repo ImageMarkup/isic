@@ -59,6 +59,36 @@ def test_core_api_image_sort_by_pinned(image_factory, authenticated_client):
     assert ordered_ids == [image_2.isic_id, image_1.isic_id]
 
 
+@pytest.mark.parametrize("pin_sort", [True, False])
+@pytest.mark.django_db
+def test_images_pagination_prevent_switch_ordering(image_factory, authenticated_client, pin_sort):
+    images = [image_factory(public=True, pinned=(i % 2 == 0)) for i in range(10)]
+    if pin_sort:
+        expected_ids = [images[i].isic_id for i in [0, 2, 4, 6, 8, 1, 3, 5, 7, 9]]
+    else:
+        expected_ids = [image.isic_id for image in images]
+
+    # Apply pin sort to first request
+    query = {"limit": 5}
+    if pin_sort:
+        query["pin_sort"] = True
+    r = authenticated_client.get(reverse("api:image_list"), data=query).json()
+    result_ids = [image.get("isic_id") for image in r.get("results")]
+    assert result_ids == expected_ids[0:5]
+
+    # Switch pin sort on next request
+    next_url = r.get("next")
+    if pin_sort:
+        next_url = next_url.replace("&pin_sort=True", "")
+    else:
+        next_url += "&pin_sort=True"
+
+    # pin sort switch should be ignored, continue with initial ordering
+    r = authenticated_client.get(next_url).json()
+    result_ids = [image.get("isic_id") for image in r.get("results")]
+    assert result_ids == expected_ids[5:10]
+
+
 @pytest.mark.playwright
 def test_image_pin_unpin(image_factory, staff_authenticated_page):
     page = staff_authenticated_page
