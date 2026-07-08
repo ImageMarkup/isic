@@ -26,3 +26,28 @@ class MultiselectPicker(forms.CheckboxSelectMultiple):
         context["widget_value_id"] = f"multiselect-value-{name}"
         context["choice_list_id"] = f"multiselect-choices-{name}"
         return context
+
+
+class ComboboxWidget(forms.Select):
+    template_name = "core/widgets/combobox.html"
+
+    def __init__(self, queryset, lookup_field="name", attrs=None):
+        super().__init__(attrs)
+        self.queryset = queryset
+        self.lookup_field = lookup_field
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        context["widget"]["queryset_options"] = self.queryset.values_list("id", self.lookup_field)
+        context["widget"]["value"] = value
+        return context
+
+    # https://docs.djangoproject.com/en/6.0/ref/forms/widgets/#django.forms.Widget.value_from_datadict
+    def value_from_datadict(self, data, files, name):
+        value = dict(data).get(name)
+        # Translate between ManyRelatedManager and select element value
+        if isinstance(value, list):
+            return self.queryset.filter(id__in=[int(v) for v in value if v.isdigit()])
+        if value is None:
+            return None
+        return value.all()

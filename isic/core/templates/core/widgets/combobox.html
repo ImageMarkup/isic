@@ -1,0 +1,57 @@
+<div id="{{ widget.name }}-container" class="combobox-container w-full relative">
+  <div id="{{ widget.name }}-selected" class="absolute flex flex-wrap z-20 py-2 px-3 gap-2" style="pointer-events: none"></div>
+  <input
+    id="{{ widget.name }}-input"
+    type="{{ widget.type }}"
+    name="{{ widget.name }}"
+    class="input input-bordered w-full"
+    oninput="filterOptions(event, '{{ widget.name }}')"
+    tabindex="0"
+  >
+  <select
+    id="{{ widget.name }}-select"
+    name="{{ widget.name }}"
+    multiple
+    class="combobox-select select absolute w-full shadow-sm z-20 overflow-auto"
+    style="max-height: 300px"
+    tabindex="-1"
+    oninput="selectionUpdated('{{ widget.name }}')"
+    {% include "django/forms/widgets/attrs.html" %}
+  >
+    {% for id, label in widget.queryset_options %}
+      <option
+        value="{{ id }}"
+        title="{{ label }}"
+        {% if id in widget.value %}selected{% endif %}
+      >
+        {{ label }}
+      </option>
+    {% endfor %}
+  </select>
+</div>
+
+<script>
+  // let initial value render before calling selectionUpdated
+  setTimeout(() => selectionUpdated('{{ widget.name }}'), 0)
+</script>
+
+<style>
+  .combobox-select .hidden {
+    display: none;
+  }
+  .combobox-select {
+    display: none;
+  }
+  .combobox-container:focus-within .combobox-select {
+    display: block;
+  }
+  .selection-chip {
+    padding-right: 25px;
+    position: relative;
+  }
+  .selection-chip::after {
+    content: 'X';
+    position: absolute;
+    right: 8px;
+  }
+</style>

@@ -49,12 +49,15 @@ def collection_create(request):
 def collection_edit(request, pk):
     collection = get_object_or_404(Collection, pk=pk)
     form = CollectionForm(
-        request.POST or {key: getattr(collection, key) for key in ["name", "description", "public"]}
+        request.POST
+        or {key: getattr(collection, key) for key in ["name", "description", "public", "tags"]}
     )
 
     if request.method == "POST" and form.is_valid():
         try:
-            update_collection(collection, **form.cleaned_data)
+            cleaned_data = form.cleaned_data
+            collection.tags.set(cleaned_data.pop("tags"))
+            update_collection(collection, **cleaned_data)
         except ValidationError as e:
             messages.add_message(request, messages.ERROR, e.message)
         else:

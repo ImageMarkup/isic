@@ -1,4 +1,9 @@
 {% extends 'core/base.html' %}
+{% load static %}
+
+{% block head_extra %}
+  <script src="{% static 'core/js/combobox.js' %}"></script>
+{% endblock %}
 
 {% block content %}
   {% if collection and collection.locked %}
@@ -26,6 +31,12 @@
         <label class="fieldset-legend" for="{{ form.name.html_name }}">{{ form.name.label }}</label>
         <input type="text" value="{{ form.name.value|default_if_none:'' }}" name="{{ form.name.html_name }}" id="{{ form.name.html_name }}" class="input input-bordered w-full">
         {{ form.name.errors }}
+      </fieldset>
+
+      <fieldset class="fieldset">
+        <label class="fieldset-legend" for="{{ form.tags.name }}-select">{{ form.tags.label }}</label>
+        {{ form.tags }}
+        {{ form.tags.errors }}
       </fieldset>
 
       <fieldset class="fieldset">
