@@ -8,7 +8,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.constraints import CheckConstraint, UniqueConstraint
 from django.db.models.expressions import F
-from django.db.models.functions import Upper
+from django.db.models.functions import Lower, Upper
 from django.db.models.query_utils import Q
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
@@ -35,6 +35,16 @@ class CollectionQuerySet(models.QuerySet["Collection"]):
     def regular(self):
         # regular means not magic
         return self.filter(cohort=None)
+
+
+class CollectionTag(models.Model):
+    tag = models.CharField(max_length=255)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(Lower("tag"), name="unique_lowercase_tag")]
+
+    def __str__(self):
+        return self.tag
 
 
 class Collection(TimeStampedModel):
@@ -67,6 +77,8 @@ class Collection(TimeStampedModel):
         ]
 
     creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="collections")
+
+    tags = models.ManyToManyField(CollectionTag, related_name="collections")
 
     images: models.ManyToManyField[Image, CollectionImage] = models.ManyToManyField(
         Image, related_name="collections", through="CollectionImage"
