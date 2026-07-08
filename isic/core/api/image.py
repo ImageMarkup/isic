@@ -3,12 +3,14 @@ from typing import Any
 from django.conf import settings
 from django.contrib import messages
 from django.core.cache import cache
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Max, Q
 from django.http.request import HttpRequest
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from isic_metadata import FIELD_REGISTRY
 from ninja import Field, ModelSchema, Query, Router, Schema
+from ninja.errors import ValidationError as NinjaValidationError
 from ninja.pagination import paginate
 from pyparsing.exceptions import ParseException
 from sentry_sdk import set_tag
@@ -121,28 +123,51 @@ class PinnedFirstPagination(CursorPagination):
 
         Each ordering field contributes one OR term: a strict comparison on that
         field (``__gt``/``__lt``, flipped for descending fields and for reverse
-        cursor across an ordering change) raises ``ValueError``.
+        cursor across an ordering change) AND equality on every field before it.
+
+        The cursor position is user-controlled, so it's fully validated here: a
+        position that doesn't match the current ordering, or a value that isn't
+        parseable as its ordering field's type, raises ``NinjaValidationError`` so
+        the caller can surface it as a 400/422 rather than a 500.
         """
         if cursor.position is not None:
             position_values = cursor.position.split("|")
             if len(position_values) != len(order):
                 # The cursor was built for a different ordering than this request
                 # (e.g. pin_sort was toggled).
-                raise ValueError("Cursor position does not match the current ordering.")
+                raise self._invalid_cursor()
 
             field_names = [field.lstrip("-") for field in order]
+
+            # Coerce each position value to the type of its ordering field (e.g. reject a
+            # mangled datetime string) before it reaches the database.
+            positions = []
+            for field_name, value in zip(field_names, position_values, strict=True):
+                try:
+                    positions.append(queryset.model._meta.get_field(field_name).to_python(value))
+                except DjangoValidationError as e:
+                    raise self._invalid_cursor() from e
+
             q_obj = Q()
             for i, field in enumerate(order):
                 is_reversed = field.startswith("-")
                 comparison = "__gt" if cursor.reverse == is_reversed else "__lt"
                 # Strict comparison on field i AND equality on every field before it.
-                field_condition = Q(**{f"{field_names[i]}{comparison}": position_values[i]})
+                field_condition = Q(**{f"{field_names[i]}{comparison}": positions[i]})
                 for j in range(i):
-                    field_condition &= Q(**{field_names[j]: position_values[j]})
+                    field_condition &= Q(**{field_names[j]: positions[j]})
 
                 q_obj |= field_condition
             queryset = queryset.filter(q_obj)
         return queryset
+
+    @staticmethod
+    def _invalid_cursor() -> NinjaValidationError:
+        # match the message format of pydantic's rendering of a ValueError, which is
+        # how a cursor that fails to decode is reported
+        return NinjaValidationError(
+            [{"loc": ["query", "cursor"], "msg": "Value error, Invalid cursor."}]
+        )
 
     def _get_position_from_instance(self, instance, ordering):
         values = []

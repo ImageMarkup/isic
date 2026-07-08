@@ -1,3 +1,5 @@
+from base64 import b64encode
+
 from django.urls.base import reverse
 import pytest
 
@@ -21,6 +23,26 @@ def test_view(public_image, client):
     r = client.get(reverse("core/image-browser"))
     assert r.context["total_images"] == 1
     assert public_image in r.context["images"]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "cursor",
+    [
+        # not decodable as a cursor
+        "not-a-cursor",
+        # structurally valid, but the position carries a single value while the browser orders
+        # by ("-pinned", "created"), so it fails the position/ordering arity check
+        b64encode(b"r=1&p=2020-03-29+19%3A35%3A52.").decode(),
+        # structurally valid, right number of position values, but the "created" value is a
+        # truncated datetime that can't be parsed for its field
+        b64encode(b"r=1&p=1|2020-03-29+19%3A35%3A52.").decode(),
+    ],
+    ids=["undecodable", "wrong_arity", "invalid_position"],
+)
+def test_view_invalid_cursor(client, cursor):
+    r = client.get(reverse("core/image-browser"), {"cursor": cursor})
+    assert r.status_code == 400
 
 
 @pytest.mark.django_db
