@@ -26,3 +26,50 @@ class MultiselectPicker(forms.CheckboxSelectMultiple):
         context["widget_value_id"] = f"multiselect-value-{name}"
         context["choice_list_id"] = f"multiselect-choices-{name}"
         return context
+
+
+class ComboboxWidget(forms.Select):
+    template_name = "core/widgets/combobox.html"
+
+    def __init__(  # noqa: PLR0913
+        self,
+        queryset,
+        lookup_field="name",
+        option_type="option",
+        edit=False,  # noqa: FBT002
+        info_text=None,
+        attrs=None,
+    ):
+        super().__init__(attrs)
+        self.queryset = queryset
+        self.lookup_field = lookup_field
+        self.option_type = option_type
+        self.edit = edit
+        self.info_text = info_text
+        if self.info_text is None:
+            self.info_text = {
+                "create": "Create a new option.",
+                "edit": "Edit this option.",
+                "delete": "Delete this option.",
+            }
+
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        context["widget"]["queryset_options"] = self.queryset.order_by(
+            self.lookup_field
+        ).values_list("id", self.lookup_field)
+        context["widget"]["value"] = value
+        context["widget"]["option_type"] = self.option_type
+        context["widget"]["edit"] = self.edit
+        context["widget"]["info_text"] = self.info_text
+        return context
+
+    # https://docs.djangoproject.com/en/6.0/ref/forms/widgets/#django.forms.Widget.value_from_datadict
+    def value_from_datadict(self, data, files, name):
+        value = dict(data).get(name)
+        # Translate between ManyRelatedManager and select element value
+        if isinstance(value, list):
+            return self.queryset.filter(**{(self.lookup_field + "__in"): value})
+        if value is None:
+            return None
+        return value.all()
