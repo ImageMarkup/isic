@@ -1,13 +1,27 @@
 function filterOptions(event, widgetName) {
-  $(`#${widgetName}-select`).find("option").each((i, item) => {
+  const selectInput = $(`#${widgetName}-select`);
+  selectInput.find("option").each((i, item) => {
     if (item.title.toLocaleLowerCase().includes(
       event.target.value.toLocaleLowerCase()
     )) {
-      item.classList.remove('hidden');
+      item.classList.remove("hidden");
     } else {
-      item.classList.add('hidden');
+      item.classList.add("hidden");
     }
-  })
+  });
+  optionMatchesUpdated(widgetName);
+}
+
+function optionMatchesUpdated(widgetName) {
+  const selectInput = $(`#${widgetName}-select`);
+  const matchesFound = selectInput.find("option").not(".hidden").length > 0;
+  selectInput.find("#no-matches-found").each((i, item) => {
+    if (matchesFound) {
+      item.classList.add("hidden");
+    } else {
+      item.classList.remove("hidden");
+    }
+  });
 }
 
 function selectionUpdated(widgetName) {
@@ -18,10 +32,10 @@ function selectionUpdated(widgetName) {
   selectInput.find("option:selected").each((i, item) => {
     const chip = $("<div>", {
       text: item.title,
-      'class': 'selection-chip px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100',
+      "class": "selection-chip px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100",
       css: {
-        'pointer-events': 'all',
-        'white-space': 'nowrap',
+        "pointer-events": "all",
+        "white-space": "nowrap",
       },
       mousedown: (event) => {
         event.preventDefault();
@@ -31,7 +45,7 @@ function selectionUpdated(widgetName) {
     });
     selectedContainer.append(chip);
   });
-  const cursor = {top: undefined, left: undefined, bottom: undefined};
+  const cursor = { top: undefined, left: undefined, bottom: undefined };
   const lastChip = selectedContainer.children().last();
   if (lastChip.length) {
     cursor.top = lastChip.position().top;
@@ -50,4 +64,37 @@ function selectionUpdated(widgetName) {
   selectInput.css({
     "top": cursor.bottom ? (cursor.bottom + 4) + "px" : "",
   });
+}
+
+function submitOptionModal(action, option) {
+  let promise = undefined;
+  if (action == "delete") {
+    promise = axiosSession.delete(
+      `/api/v2/collections/tags/${option.id}/`
+    )
+  } else {
+    const newValue = $("#new-option-input").val();
+    if (action == 'edit') {
+      promise = axiosSession.patch(
+        `/api/v2/collections/tags/${option.id}/`,
+        { tag: newValue },
+      )
+    } else if (action == 'create') {
+      promise = axiosSession.post(
+        `/api/v2/collections/tags`,
+        { tag: newValue },
+      )
+    }
+  }
+  if (promise) {
+    promise.then((data) => {
+      window.location.reload();
+    }).catch((error) => {
+      const errorMessage = $("<div>", {
+        text: error.response.data.error,
+        "class": "bg-red-100 px-4 py-2 rounded"
+      });
+      $("#optionModalErrors").append(errorMessage);
+    });
+  }
 }

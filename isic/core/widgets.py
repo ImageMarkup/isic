@@ -31,15 +31,27 @@ class MultiselectPicker(forms.CheckboxSelectMultiple):
 class ComboboxWidget(forms.Select):
     template_name = "core/widgets/combobox.html"
 
-    def __init__(self, queryset, lookup_field="name", attrs=None):
+    def __init__(
+        self, queryset, lookup_field="name", option_type="option", info_text=None, attrs=None
+    ):
         super().__init__(attrs)
         self.queryset = queryset
         self.lookup_field = lookup_field
+        self.option_type = option_type
+        self.info_text = info_text
+        if self.info_text is None:
+            self.info_text = {
+                "create": "Create a new option.",
+                "edit": "Edit this option.",
+                "delete": "Delete this option.",
+            }
 
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
         context["widget"]["queryset_options"] = self.queryset.values_list("id", self.lookup_field)
         context["widget"]["value"] = value
+        context["widget"]["option_type"] = self.option_type
+        context["widget"]["info_text"] = self.info_text
         return context
 
     # https://docs.djangoproject.com/en/6.0/ref/forms/widgets/#django.forms.Widget.value_from_datadict

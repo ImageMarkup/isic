@@ -20,6 +20,21 @@ class CollectionForm(forms.Form):
         widget=ComboboxWidget(
             queryset=CollectionTag.objects.all(),
             lookup_field="tag",
+            option_type="tag",
+            info_text={
+                "create": (
+                    "Create a unique, informative, and succinct tag. "
+                    "Others may use this tag on other Collections."
+                ),
+                "edit": (
+                    "Are you sure you want to modify the name of this tag? "
+                    "This tag will be changed for all Collections using it."
+                ),
+                "delete": (
+                    "Are you sure you want to permanently delete this tag? "
+                    "This tag will be removed from all Collections using it."
+                ),
+            },
             attrs={"placeholder": "Select Tags"},
         ),
     )
