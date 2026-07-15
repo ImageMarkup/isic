@@ -33,6 +33,7 @@
         {% if id in widget.value %}selected{% endif %}
       >
         <div class="flex-1">{{ label }}</div>
+        {% if widget.edit %}
         <div>
           <i
             class="ri-pencil-line text-lg"
@@ -45,17 +46,22 @@
             @click="showModal = true; modalAction = 'delete'; modalOption = {id: {{ id }}, label: '{{ label }}'};"
           ></i>
         </div>
+        {% endif %}
       </option>
     {% endfor %}
     <div
       id="no-matches-found"
       class="hidden w-full text-gray-500"
       style="text-align: center"
-      @click="showModal = true; modalAction = 'create'; modalOption = undefined;"
+      {% if widget.edit %}@click="showModal = true; modalAction = 'create'; modalOption = undefined;"{% endif %}
     >
-      No matches found. Click here to create a new option.
+      No matches found.
+      {% if widget.edit %}
+      Click here to create a new option.
+      {% endif %}
     </div>
   </select>
+  {% if widget.edit %}
   <dialog
     x-ref="optionDialog"
     x-effect="showModal ? $refs.optionDialog.showModal() : $refs.optionDialog.close()"
@@ -88,6 +94,7 @@
     </div>
     <div class="modal-backdrop" @click="showModal = false"></div>
   </dialog>
+  {% endif %}
 </div>
 
 <script>

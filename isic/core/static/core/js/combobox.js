@@ -40,6 +40,7 @@ function selectionUpdated(widgetName) {
       mousedown: (event) => {
         event.preventDefault();
         selectInput.val(selectInput.val().filter((v) => v !== item.value));
+        selectInput.get(0).dispatchEvent(new Event("change"))
         selectionUpdated(widgetName);
       }
     });
@@ -48,13 +49,13 @@ function selectionUpdated(widgetName) {
   const cursor = { top: undefined, left: undefined, bottom: undefined };
   const lastChip = selectedContainer.children().last();
   if (lastChip.length) {
-    cursor.top = lastChip.position().top;
+    cursor.top = lastChip.position().top - 8;
     cursor.left = lastChip.position().left + lastChip.width() + 40;
     if (cursor.left > searchInput.outerWidth() - 40) {
       cursor.left = 0;
       cursor.top += 24;
     }
-    cursor.bottom = cursor.top + lastChip.height() + 8;
+    cursor.bottom = cursor.top + lastChip.height() + 20;
   }
   searchInput.css({
     "padding-top": cursor.top ? cursor.top + "px" : "",

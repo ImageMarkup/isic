@@ -2,6 +2,12 @@
 {% load humanize %}
 {% load partials %}
 
+{% load static %}
+
+{% block head_extra %}
+  <script src="{% static 'core/js/combobox.js' %}"></script>
+{% endblock %}
+
 {% partialdef sortable-header %}
   <th class="{{ extra_class }}">
     {% if current_sort == field %}
@@ -63,12 +69,20 @@
       <input type="checkbox" id="include-empty" {% if not exclude_empty %}checked{% endif %} class="rounded-sm border-gray-300">
       Include empty
     </label>
+    <div class="flex flex-1 items-center gap-2 text-sm text-gray-700">
+      <label for="magic-filter">Tags:</label>
+      {{ tags_widget }}
+    </div>
   </div>
 
   <script>
     function updateParam(param, value) {
       const url = new URL(window.location.href);
-      url.searchParams.set(param, value);
+      if (value !== undefined) {
+        url.searchParams.set(param, value);
+      } else {
+        url.searchParams.delete(param);
+      }
       url.searchParams.delete('page');
       window.location.href = url.href;
     }
@@ -80,6 +94,14 @@
     });
     document.getElementById('include-empty').addEventListener('change', function() {
       updateParam('exclude_empty', this.checked ? '0' : '1');
+    });
+    document.getElementById('tags-select').addEventListener('change', function() {
+      const selected = $(this).find('option:selected').map((i, item) => item.title).get();
+      if (selected.length) {
+        updateParam('tags', selected.join(','));
+      } else {
+        updateParam('tags', undefined);
+      }
     });
   </script>
 
@@ -119,6 +141,11 @@
                     Private
                   </span>
                 {% endif %}
+              </div>
+              <div class="flex flex-wrap gap-1 py-2">
+                {% for tag in collection.tags.all %}
+                  <div class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-200">{{ tag }}</div>
+                {% endfor %}
               </div>
               {% if collection.description %}
                 <div class="text-xs text-gray-400 mt-0.5 line-clamp-3 break-words">{{ collection.description }}</div>

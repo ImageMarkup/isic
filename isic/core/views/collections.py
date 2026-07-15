@@ -14,13 +14,14 @@ from django.template.defaultfilters import slugify
 from django.urls.base import reverse
 
 from isic.core.forms.collection import CollectionForm
-from isic.core.models import Collection
+from isic.core.models import Collection, CollectionTag
 from isic.core.pagination import CursorPagination, qs_with_hardcoded_count
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.core.services import image_metadata_csv
 from isic.core.services.collection import create_collection, update_collection
 from isic.core.utils.csv import EscapingDictWriter
 from isic.core.utils.http import Buffer
+from isic.core.widgets import ComboboxWidget
 from isic.ingest.models import Contributor
 
 
@@ -187,6 +188,7 @@ def collection_list(request: HttpRequest) -> HttpResponse:
         ),
     )
 
+    tags_filter = request.GET.get("tags")
     magic_filter = request.GET.get("magic_filter", "exclude")
     pinned_filter = request.GET.get("pinned_filter", "all")
     exclude_empty = request.GET.get("exclude_empty", "1") == "1"
@@ -196,6 +198,8 @@ def collection_list(request: HttpRequest) -> HttpResponse:
     elif magic_filter == "exclude":
         collections = collections.regular()
 
+    if tags_filter:
+        collections = collections.filter(tags__tag__in=tags_filter.split(","))
     if exclude_empty:
         collections = collections.filter(cached_counts__image_count__gt=0)
 
@@ -230,6 +234,16 @@ def collection_list(request: HttpRequest) -> HttpResponse:
     paginator = Paginator(collections, 50)
     page = paginator.get_page(request.GET.get("page"))
 
+    tags_widget = ComboboxWidget(
+        queryset=CollectionTag.objects.all(),
+        lookup_field="tag",
+        option_type="tag",
+    ).render(
+        "tags",
+        [t.id for t in CollectionTag.objects.filter(tag__in=tags_filter.split(','))]
+        if tags_filter is not None else None,
+    )
+
     return render(
         request,
         "core/collection_list.html",
@@ -237,6 +251,7 @@ def collection_list(request: HttpRequest) -> HttpResponse:
             "page": page,
             "current_sort": sort,
             "current_order": order,
+            "tags_widget": tags_widget,
             "magic_filter": magic_filter,
             "pinned_filter": pinned_filter,
             "exclude_empty": exclude_empty,

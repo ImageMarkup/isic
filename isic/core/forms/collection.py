@@ -21,6 +21,7 @@ class CollectionForm(forms.Form):
             queryset=CollectionTag.objects.all(),
             lookup_field="tag",
             option_type="tag",
+            edit=True,
             info_text={
                 "create": (
                     "Create a unique, informative, and succinct tag. "
@@ -35,6 +36,5 @@ class CollectionForm(forms.Form):
                     "This tag will be removed from all Collections using it."
                 ),
             },
-            attrs={"placeholder": "Select Tags"},
         ),
     )

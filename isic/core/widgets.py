@@ -31,13 +31,20 @@ class MultiselectPicker(forms.CheckboxSelectMultiple):
 class ComboboxWidget(forms.Select):
     template_name = "core/widgets/combobox.html"
 
-    def __init__(
-        self, queryset, lookup_field="name", option_type="option", info_text=None, attrs=None
+    def __init__(  # noqa: PLR0913
+        self,
+        queryset,
+        lookup_field="name",
+        option_type="option",
+        edit=False,  # noqa: FBT002
+        info_text=None,
+        attrs=None,
     ):
         super().__init__(attrs)
         self.queryset = queryset
         self.lookup_field = lookup_field
         self.option_type = option_type
+        self.edit = edit
         self.info_text = info_text
         if self.info_text is None:
             self.info_text = {
@@ -51,6 +58,7 @@ class ComboboxWidget(forms.Select):
         context["widget"]["queryset_options"] = self.queryset.values_list("id", self.lookup_field)
         context["widget"]["value"] = value
         context["widget"]["option_type"] = self.option_type
+        context["widget"]["edit"] = self.edit
         context["widget"]["info_text"] = self.info_text
         return context
 
