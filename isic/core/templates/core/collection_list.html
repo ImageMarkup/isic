@@ -96,7 +96,7 @@
       updateParam('exclude_empty', this.checked ? '0' : '1');
     });
     document.getElementById('tags-select').addEventListener('change', function() {
-      const selected = $(this).find('option:selected').map((i, item) => item.title).get();
+      const selected = $(this).find('.option.selected').map((i, item) => item.title).get();
       if (selected.length) {
         updateParam('tags', selected.join(','));
       } else {

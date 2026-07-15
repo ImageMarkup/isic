@@ -240,8 +240,9 @@ def collection_list(request: HttpRequest) -> HttpResponse:
         option_type="tag",
     ).render(
         "tags",
-        [t.id for t in CollectionTag.objects.filter(tag__in=tags_filter.split(','))]
-        if tags_filter is not None else None,
+        [t.id for t in CollectionTag.objects.filter(tag__in=tags_filter.split(","))]
+        if tags_filter is not None
+        else None,
     )
 
     return render(

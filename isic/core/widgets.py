@@ -55,7 +55,9 @@ class ComboboxWidget(forms.Select):
 
     def get_context(self, name, value, attrs):
         context = super().get_context(name, value, attrs)
-        context["widget"]["queryset_options"] = self.queryset.values_list("id", self.lookup_field)
+        context["widget"]["queryset_options"] = self.queryset.order_by(
+            self.lookup_field
+        ).values_list("id", self.lookup_field)
         context["widget"]["value"] = value
         context["widget"]["option_type"] = self.option_type
         context["widget"]["edit"] = self.edit
@@ -67,7 +69,7 @@ class ComboboxWidget(forms.Select):
         value = dict(data).get(name)
         # Translate between ManyRelatedManager and select element value
         if isinstance(value, list):
-            return self.queryset.filter(id__in=[int(v) for v in value if v.isdigit()])
+            return self.queryset.filter(**{(self.lookup_field + "__in"): value})
         if value is None:
             return None
         return value.all()

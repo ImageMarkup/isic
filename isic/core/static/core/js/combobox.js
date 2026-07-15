@@ -1,6 +1,6 @@
 function filterOptions(event, widgetName) {
   const selectInput = $(`#${widgetName}-select`);
-  selectInput.find("option").each((i, item) => {
+  selectInput.find(".option").each((i, item) => {
     if (item.title.toLocaleLowerCase().includes(
       event.target.value.toLocaleLowerCase()
     )) {
@@ -14,7 +14,7 @@ function filterOptions(event, widgetName) {
 
 function optionMatchesUpdated(widgetName) {
   const selectInput = $(`#${widgetName}-select`);
-  const matchesFound = selectInput.find("option").not(".hidden").length > 0;
+  const matchesFound = selectInput.find(".option").not(".hidden").length > 0;
   selectInput.find("#no-matches-found").each((i, item) => {
     if (matchesFound) {
       item.classList.add("hidden");
@@ -24,12 +24,25 @@ function optionMatchesUpdated(widgetName) {
   });
 }
 
+function toggleOption(option, widgetName) {
+  $(option).toggleClass("selected");
+  $(option).parent().get(0).dispatchEvent(new Event("change"));
+  selectionUpdated(widgetName)
+}
+
 function selectionUpdated(widgetName) {
   const selectedContainer = $(`#${widgetName}-selected`);
   const searchInput = $(`#${widgetName}-input`);
   const selectInput = $(`#${widgetName}-select`);
+  const hiddenSelectInput = $(`#${widgetName}-select-hidden`);
+
+  // Hidden Select Input is what Django Form references for value, update it
+  const selectedLabels = selectInput.find(".option.selected").map((i, item) => item.title).get();
+  hiddenSelectInput.val(selectedLabels);
+
+  // Update chips shown in input box
   selectedContainer.empty();
-  selectInput.find("option:selected").each((i, item) => {
+  selectInput.find(".option.selected").each((i, item) => {
     const chip = $("<div>", {
       text: item.title,
       "class": "selection-chip px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100",
@@ -39,13 +52,15 @@ function selectionUpdated(widgetName) {
       },
       mousedown: (event) => {
         event.preventDefault();
-        selectInput.val(selectInput.val().filter((v) => v !== item.value));
+        $(item).removeClass("selected");
         selectInput.get(0).dispatchEvent(new Event("change"))
         selectionUpdated(widgetName);
       }
     });
     selectedContainer.append(chip);
   });
+
+  // Update sizing of input box according to chip placement
   const cursor = { top: undefined, left: undefined, bottom: undefined };
   const lastChip = selectedContainer.children().last();
   if (lastChip.length) {
@@ -75,12 +90,12 @@ function submitOptionModal(action, option) {
     )
   } else {
     const newValue = $("#new-option-input").val();
-    if (action == 'edit') {
+    if (action == "edit") {
       promise = axiosSession.patch(
         `/api/v2/collections/tags/${option.id}/`,
         { tag: newValue },
       )
-    } else if (action == 'create') {
+    } else if (action == "create") {
       promise = axiosSession.post(
         `/api/v2/collections/tags`,
         { tag: newValue },

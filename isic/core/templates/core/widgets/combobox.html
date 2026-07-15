@@ -1,6 +1,7 @@
 <div
   id="{{ widget.name }}-container"
   x-data="{ showModal: false, modalAction: undefined, modalOption: undefined }"
+  @keydown.window.enter.prevent="showModal ? submitOptionModal(modalAction, modalOption) : null"
   class="combobox-container w-full relative"
 >
   <div
@@ -16,9 +17,8 @@
     oninput="filterOptions(event, '{{ widget.name }}')"
     tabindex="0"
   >
-  <select
+  <div
     id="{{ widget.name }}-select"
-    name="{{ widget.name }}"
     multiple
     class="combobox-select select absolute w-full shadow-sm z-20 overflow-auto"
     style="max-height: 300px"
@@ -27,27 +27,30 @@
     {% include "django/forms/widgets/attrs.html" %}
   >
     {% for id, label in widget.queryset_options %}
-      <option
-        value="{{ id }}"
+      <div
         title="{{ label }}"
-        {% if id in widget.value %}selected{% endif %}
+        class="flex items-center py-1 option {% if id in widget.value %}selected{% endif %}"
+        onclick="toggleOption(this, '{{ widget.name }}')"
       >
+        <div style="width: 20px">
+          <i class="selected-check ri-check-line text-lg"></i>
+        </div>
         <div class="flex-1">{{ label }}</div>
         {% if widget.edit %}
-        <div>
-          <i
-            class="ri-pencil-line text-lg"
-            title="Edit {{ widget.option_type }}"
-            @click="showModal = true; modalAction = 'edit'; modalOption = {id: {{ id }}, label: '{{ label }}'};"
-          ></i>
-          <i
-            class="ri-delete-bin-line text-lg"
-            title="Delete {{ widget.option_type }}"
-            @click="showModal = true; modalAction = 'delete'; modalOption = {id: {{ id }}, label: '{{ label }}'};"
-          ></i>
-        </div>
+          <div onclick="event.stopPropagation()">
+            <i
+              class="ri-pencil-line text-lg"
+              title="Edit {{ widget.option_type }}"
+              @click="showModal = true; modalAction = 'edit'; modalOption = {id: {{ id }}, label: '{{ label }}'};"
+            ></i>
+            <i
+              class="ri-delete-bin-line text-lg"
+              title="Delete {{ widget.option_type }}"
+              @click="showModal = true; modalAction = 'delete'; modalOption = {id: {{ id }}, label: '{{ label }}'};"
+            ></i>
+          </div>
         {% endif %}
-      </option>
+      </div>
     {% endfor %}
     <div
       id="no-matches-found"
@@ -57,43 +60,48 @@
     >
       No matches found.
       {% if widget.edit %}
-      Click here to create a new option.
+        Click here to create a new option.
       {% endif %}
     </div>
-  </select>
-  {% if widget.edit %}
-  <dialog
-    x-ref="optionDialog"
-    x-effect="showModal ? $refs.optionDialog.showModal() : $refs.optionDialog.close()"
-    class="modal"
-  >
-    <div class="modal-box max-w-lg max-h-[600px] flex flex-col">
-      <div class="flex items-center justify-between border-b border-gray-200 pb-4 shrink-0">
-        <h2 class="text-xl font-semibold text-gray-900" style="text-transform: capitalize">
-          <span x-text="modalAction"></span>
-          {{ widget.option_type }}
-          <span x-text="modalOption?.label"></span>
-        </h2>
-      </div>
-
-      {% for action, text in widget.info_text.items %}
-        <p x-show="'{{ action }}' == modalAction" class="py-3">{{ text }}</p>
+    <select multiple id="{{ widget.name }}-select-hidden" name="{{ widget.name }}" class="hidden">
+      {% for id, label in widget.queryset_options %}
+        <option value="{{ label }}"></option>
       {% endfor %}
+    </select>
+  </div>
+  {% if widget.edit %}
+    <dialog
+      x-ref="optionDialog"
+      x-effect="showModal ? $refs.optionDialog.showModal() : $refs.optionDialog.close()"
+      class="modal"
+    >
+      <div class="modal-box max-w-lg max-h-[600px] flex flex-col">
+        <div class="flex items-center justify-between border-b border-gray-200 pb-4 shrink-0">
+          <h2 class="text-xl font-semibold text-gray-900" style="text-transform: capitalize">
+            <span x-text="modalAction"></span>
+            {{ widget.option_type }}
+            <span x-text="modalOption?.label"></span>
+          </h2>
+        </div>
 
-      <fieldset x-show="['create', 'edit'].includes(modalAction)" class="fieldset">
-        <label class="fieldset-legend" for="new-option" style="text-transform: capitalize">{{ widget.option_type }}</label>
-        <input type="text" :placeholder="modalOption?.label" name="new-option" id="new-option-input" class="input input-bordered w-full">
-      </fieldset>
+        {% for action, text in widget.info_text.items %}
+          <p x-show="'{{ action }}' == modalAction" class="py-3">{{ text }}</p>
+        {% endfor %}
 
-      <div id="optionModalErrors"></div>
+        <fieldset x-show="['create', 'edit'].includes(modalAction)" class="fieldset">
+          <label class="fieldset-legend" for="new-option" style="text-transform: capitalize">{{ widget.option_type }}</label>
+          <input type="text" :placeholder="modalOption?.label" name="new-option" id="new-option-input" class="input input-bordered w-full">
+        </fieldset>
 
-      <div class="modal-action">
-        <button type="submit" :class="modalAction == 'delete' ? 'btn btn-error text-white' : 'btn'" @click="submitOptionModal(modalAction, modalOption)">Confirm</button>
-        <button type="button" class="btn" @click="showModal = false">Close</button>
+        <div id="optionModalErrors"></div>
+
+        <div class="modal-action">
+          <button type="button" :class="modalAction == 'delete' ? 'btn btn-error text-white' : 'btn'" @click="submitOptionModal(modalAction, modalOption)">Confirm</button>
+          <button type="button" class="btn" @click="showModal = false">Close</button>
+        </div>
       </div>
-    </div>
-    <div class="modal-backdrop" @click="showModal = false"></div>
-  </dialog>
+      <div class="modal-backdrop" @click="showModal = false"></div>
+    </dialog>
   {% endif %}
 </div>
 
@@ -102,7 +110,7 @@
   setTimeout(() => {
     selectionUpdated('{{ widget.name }}');
     optionMatchesUpdated('{{ widget.name }}')
-  }, 0)
+  }, 2)
 </script>
 
 <style>
@@ -113,6 +121,12 @@
     display: none;
   }
   .combobox-container:focus-within .combobox-select {
+    display: block;
+  }
+  .combobox-select .selected-check {
+    display: none;
+  }
+  .combobox-select .option.selected .selected-check {
     display: block;
   }
   .selection-chip {
