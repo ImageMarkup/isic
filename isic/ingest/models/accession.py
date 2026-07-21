@@ -270,7 +270,7 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
     is_cog = models.BooleanField(null=True, blank=True)
 
     status = models.CharField(
-        choices=AccessionStatus.choices, max_length=20, default=AccessionStatus.CREATING
+        choices=AccessionStatus, max_length=20, default=AccessionStatus.CREATING
     )
 
     thumbnail_256 = S3FileField(blank=True)

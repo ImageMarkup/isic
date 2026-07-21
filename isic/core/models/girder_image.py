@@ -33,7 +33,7 @@ class GirderDataset(models.Model):
 
 class GirderImage(models.Model):
     status = models.CharField(
-        choices=GirderImageStatus.choices,
+        choices=GirderImageStatus,
         default=GirderImageStatus.UNKNOWN,
         max_length=30,
     )
