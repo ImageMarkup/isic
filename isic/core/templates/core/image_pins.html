@@ -1,0 +1,57 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+  {% if request.user.is_staff %}
+    <script>
+      function imagePins() {
+        return {
+          pinOrder: undefined,
+          init() {
+            this.orderUpdated();
+          },
+          orderUpdated(itemId, position) {
+            this.pinOrder = $('#image-grid').children().map(
+              (i, item) => $(item).attr('x-sort:item').replaceAll("'", "")
+            ).get();
+          },
+          async submitPinOrder() {
+            try {
+              const resp = await axios.post(
+                `/api/v2/images/pins/reorder/`,
+                {"order": this.pinOrder},
+                {
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                  }
+                },
+              );
+              window.location.reload();
+            } catch (error) {
+              alert('Something went wrong, try again.');
+              throw error;
+            }
+          }
+        }
+      }
+    </script>
+
+    <div x-data="imagePins()">
+      <div class="flex justify-between items-center mb-2">
+        <div>Drag to reorder pinned images, then submit changes by clicking "Save".</div>
+        <button type="submit" class="btn btn-primary" @click="submitPinOrder">
+          Save
+        </button>
+      </div>
+      <div
+        id="image-grid"
+        x-sort="orderUpdated()"
+        class="grid gap-4 grid-cols-8"
+      >
+        {% for image in pinned %}
+          {% include 'core/partials/image.html' %}
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}

@@ -225,3 +225,12 @@ def staff_image_list_metadata_download(request: AuthenticatedHttpRequest):
     )
 
     return HttpResponseRedirect(reverse("core/image-list-export"))
+
+
+@staff_member_required
+def staff_image_pins(request: AuthenticatedHttpRequest) -> HttpResponse:
+    return render(
+        request,
+        "core/image_pins.html",
+        {"pinned": Image.objects.filter(pinned__gte=1).order_by("-pinned")},
+    )

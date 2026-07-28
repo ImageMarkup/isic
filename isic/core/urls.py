@@ -17,6 +17,7 @@ from isic.core.views.images import (
     image_detail,
     staff_image_list_export,
     staff_image_list_metadata_download,
+    staff_image_pins,
 )
 from isic.core.views.lesion import lesion_detail
 from isic.core.views.users import staff_list, user_detail
@@ -80,6 +81,7 @@ urlpatterns = [
         name="core/user-detail",
     ),
     path("staff/image-list/", staff_image_list_export, name="core/image-list-export"),
+    path("staff/image-pins/", staff_image_pins, name="core/image-pins"),
     path(
         "staff/image-list/metadata-download/",
         staff_image_list_metadata_download,

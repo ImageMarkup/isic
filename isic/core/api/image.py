@@ -371,4 +371,5 @@ def image_pins_reorder(request: HttpRequest, payload: PinOrder):
             # pins are 1-indexed; 0 is unpinned
             image.pinned = i + 1
             image.save()
+    messages.add_message(request, messages.SUCCESS, "Reordered pinned images.")
     return 200, None
