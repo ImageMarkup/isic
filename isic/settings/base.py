@@ -34,6 +34,7 @@ WSGI_APPLICATION = "isic.wsgi.application"
 INSTALLED_APPS = [
     # Install local apps first, to ensure any overridden resources are found first
     "isic.core.apps.CoreConfig",
+    "isic.engagement.apps.EngagementConfig",
     "isic.find.apps.FindConfig",
     "isic.ingest.apps.IngestConfig",
     "isic.login.apps.LoginConfig",
@@ -253,6 +254,11 @@ OAUTH2_PROVIDER.update(
     }
 )
 OAUTH2_PROVIDER_APPLICATION_MODEL = "core.IsicOAuthApplication"
+
+# The client_id of the engagement platform's IsicOAuthApplication.
+ISIC_ENGAGEMENT_OAUTH_CLIENT_ID: str | None = env.str(
+    "DJANGO_ISIC_ENGAGEMENT_OAUTH_CLIENT_ID", default=None
+)
 
 ISIC_ELASTICSEARCH_URL: ParseResult = env.url("DJANGO_ISIC_ELASTICSEARCH_URL")
 ISIC_ELASTICSEARCH_IMAGES_INDEX = "isic"

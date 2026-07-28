@@ -26,6 +26,7 @@ from isic.core.tests.factories import (
     ImageFactory,
     IsicIdFactory,
 )
+from isic.engagement.tests.factories import EngagementProfileFactory
 from isic.ingest.tests.factories import (
     AccessionFactory,
     AccessionReviewFactory,
@@ -207,3 +208,6 @@ register(DraftDoiFactory)
 
 # studies factories
 register(StudyFactory)
+
+# engagement factories
+register(EngagementProfileFactory)
