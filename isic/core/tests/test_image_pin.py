@@ -8,7 +8,7 @@ from pytest_lazy_fixtures import lf
 @pytest.mark.parametrize(
     ("client_", "expected_status"),
     [
-        (lf("client"), 403),
+        (lf("client"), 401),
         (lf("authenticated_client"), 403),
         (lf("staff_client"), 200),
     ],
@@ -95,3 +95,46 @@ def test_image_pin_disabled_when_private(image_factory, staff_authenticated_page
     pin_button = page.get_by_role("button", name="Pin image")
     expect(pin_button).to_be_disabled()
     expect(pin_button).to_have_accessible_description("Only public images can be pinned")
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("client_", "expected_status"),
+    [
+        (lf("client"), 401),
+        (lf("authenticated_client"), 403),
+        (lf("staff_client"), 200),
+    ],
+    ids=["anonymous", "authenticated", "staff"],
+)
+def test_core_api_image_reorder_pins(client_, expected_status, image_factory):
+    images = [
+        image_factory(public=True),
+        image_factory(public=True, pinned=1),
+        image_factory(public=True, pinned=2),
+    ]
+    expected_order = [
+        images[2].isic_id,
+        images[1].isic_id,
+        images[0].isic_id,
+    ]
+
+    r = client_.get(reverse("api:image_list"), data={"pin_sort": True})
+    assert [image.get("isic_id") for image in r.json().get("results")] == expected_order
+
+    r = client_.post(
+        reverse("api:image_pins_reorder"),
+        {"order": [images[1].isic_id, images[2].isic_id]},
+        content_type="application/json",
+    )
+    assert r.status_code == expected_status
+
+    if expected_status == 200:
+        expected_order = [
+            images[1].isic_id,
+            images[2].isic_id,
+            images[0].isic_id,
+        ]
+
+    r = client_.get(reverse("api:image_list"), data={"pin_sort": True})
+    assert [image.get("isic_id") for image in r.json().get("results")] == expected_order
