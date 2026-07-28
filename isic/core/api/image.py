@@ -364,6 +364,9 @@ def image_pins_reorder(request: HttpRequest, payload: PinOrder):
     if not request.user.is_staff:
         return 403, {"error": "You do not have permission to reorder image pins."}
 
+    if Image.objects.filter(isic_id__in=payload.order).count() != len(payload.order):
+        return 400, {"error": "Invalid ISIC ID list."}
+
     with transaction.atomic():
         # pins are sorted in descending order, so reverse ordered list
         for i, isic_id in enumerate(reversed(payload.order)):

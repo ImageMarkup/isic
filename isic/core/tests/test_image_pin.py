@@ -138,3 +138,13 @@ def test_core_api_image_reorder_pins(client_, expected_status, image_factory):
 
     r = client_.get(reverse("api:image_list"), data={"pin_sort": True})
     assert [image.get("isic_id") for image in r.json().get("results")] == expected_order
+
+
+@pytest.mark.django_db
+def test_core_api_image_reorder_pins_invalid_id(staff_client):
+    r = staff_client.post(
+        reverse("api:image_pins_reorder"),
+        {"order": ["foo"]},
+        content_type="application/json",
+    )
+    assert r.status_code == 400
