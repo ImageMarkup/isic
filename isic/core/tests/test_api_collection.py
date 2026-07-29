@@ -642,53 +642,6 @@ def test_core_api_create_existing_tag(staff_client):
     [
         (lf("client"), 403),
         (lf("authenticated_client"), 403),
-        (lf("staff_client"), 200),
-    ],
-    ids=["anonymous", "authenticated", "staff"],
-)
-def test_core_api_update_collection_tag(client_, expected_status):
-    tag = CollectionTag.objects.create(tag="test")
-    new_tag = "mytag"
-    r = client_.patch(
-        reverse("api:update_collection_tag", kwargs={"id": tag.id}),
-        {"tag": new_tag},
-        content_type="application/json",
-    )
-    assert r.status_code == expected_status
-    if expected_status == 200:
-        tag.refresh_from_db()
-        assert tag.tag == new_tag
-
-
-@pytest.mark.django_db
-def test_core_api_update_nonexistent_collection_tag(staff_client):
-    r = staff_client.patch(
-        reverse("api:update_collection_tag", kwargs={"id": 0}),
-        {"tag": "test"},
-        content_type="application/json",
-    )
-    assert r.status_code == 404
-
-
-@pytest.mark.django_db
-def test_core_api_update_tag_with_conflict(staff_client):
-    tag_1 = CollectionTag.objects.create(tag="mytag_1")
-    tag_2 = CollectionTag.objects.create(tag="mytag_2")
-    r = staff_client.patch(
-        reverse("api:update_collection_tag", kwargs={"id": tag_1.id}),
-        {"tag": tag_2.tag},
-        content_type="application/json",
-    )
-    assert r.status_code == 400
-    assert r.json()["error"] == "Tag already exists."
-
-
-@pytest.mark.django_db
-@pytest.mark.parametrize(
-    ("client_", "expected_status"),
-    [
-        (lf("client"), 403),
-        (lf("authenticated_client"), 403),
         (lf("staff_client"), 204),
     ],
     ids=["anonymous", "authenticated", "staff"],
@@ -696,7 +649,7 @@ def test_core_api_update_tag_with_conflict(staff_client):
 def test_core_api_delete_collection_tag(client_, expected_status):
     tag = CollectionTag.objects.create(tag="test")
     r = client_.delete(
-        reverse("api:delete_collection_tag", kwargs={"id": tag.id}),
+        reverse("api:delete_collection_tag", kwargs={"tag": "test"}),
         content_type="application/json",
     )
     assert r.status_code == expected_status
@@ -707,7 +660,7 @@ def test_core_api_delete_collection_tag(client_, expected_status):
 @pytest.mark.django_db
 def test_core_api_delete_nonexistent_collection_tag(staff_client):
     r = staff_client.delete(
-        reverse("api:delete_collection_tag", kwargs={"id": 0}),
+        reverse("api:delete_collection_tag", kwargs={"tag": "foo"}),
         content_type="application/json",
     )
     assert r.status_code == 404

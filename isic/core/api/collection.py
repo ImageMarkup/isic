@@ -350,37 +350,22 @@ def create_collection_tag(request, payload: TagSchema):
         CollectionTag.objects.create(tag=payload.tag)
     except IntegrityError:
         return 400, {"error": "Tag already exists."}
-    return 201, {"message": "Collection Tag created successfully."}
-
-
-@router.patch(
-    "/tags/{id}/",
-    response={200: dict, 400: dict, 403: dict, 404: dict},
-    include_in_schema=False,
-)
-def update_collection_tag(request, id: int, payload: TagSchema):
-    if not request.user.is_staff:
-        return 403, {"error": "You do not have permission to edit this collection tag."}
-    tag = get_object_or_404(CollectionTag.objects.all(), id=id)
-    try:
-        tag.tag = payload.tag
-        tag.save()
-    except IntegrityError:
-        return 400, {"error": "Tag already exists."}
-    return 200, {"message": "Collection Tag updated successfully."}
+    messages.add_message(request, messages.SUCCESS, "Collection Tag created successfully.")
+    return 201, None
 
 
 @router.delete(
-    "/tags/{id}/",
-    response={204: None, 400: dict, 403: dict},
+    "/tags/{tag}/",
+    response={204: None, 400: None, 403: dict},
     include_in_schema=False,
 )
-def delete_collection_tag(request, id: int):
+def delete_collection_tag(request, tag: str):
     if not request.user.is_staff:
         return 403, {"error": "You do not have permission to delete this collection tag."}
-    tag = get_object_or_404(CollectionTag.objects.all(), id=id)
-    tag.delete()
-    return 204, {"message": "Collection Tag deleted successfully."}
+    collection_tag = get_object_or_404(CollectionTag.objects.all(), tag=tag)
+    collection_tag.delete()
+    messages.add_message(request, messages.SUCCESS, "Collection Tag deleted successfully.")
+    return 204, None
 
 
 class SetPinnedIn(Schema):
