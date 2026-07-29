@@ -1,141 +1,80 @@
-<div
-  id="{{ widget.name }}-container"
-  x-data="{ showModal: false, modalAction: undefined, modalOption: undefined }"
-  @keydown.window.enter.prevent="showModal ? submitOptionModal(modalAction, modalOption) : null"
-  class="combobox-container w-full relative"
->
-  <div
-    id="{{ widget.name }}-selected"
-    class="absolute flex flex-wrap z-20 py-2 px-3 gap-2"
-    style="pointer-events: none"
-  ></div>
-  <input
-    id="{{ widget.name }}-input"
-    type="{{ widget.type }}"
-    name="{{ widget.name }}"
-    class="input input-bordered w-full"
-    oninput="filterOptions(event, '{{ widget.name }}')"
-    tabindex="0"
-  >
-  <div
-    id="{{ widget.name }}-select"
-    multiple
-    class="combobox-select select absolute w-full shadow-sm z-20 overflow-auto"
-    style="max-height: 300px"
-    tabindex="-1"
-    oninput="selectionUpdated('{{ widget.name }}')"
-    {% include "django/forms/widgets/attrs.html" %}
-  >
-    {% for id, label in widget.queryset_options %}
-      <div
-        title="{{ label }}"
-        class="flex items-center py-1 option {% if id in widget.value %}selected{% endif %}"
-        onclick="toggleOption(this, '{{ widget.name }}')"
-      >
-        <div style="width: 20px">
-          <i class="selected-check ri-check-line text-lg"></i>
-        </div>
-        <div class="flex-1">{{ label }}</div>
-        {% if widget.edit %}
-          <div onclick="event.stopPropagation()">
-            <i
-              class="ri-pencil-line text-lg"
-              title="Edit {{ widget.option_type }}"
-              @click="showModal = true; modalAction = 'edit'; modalOption = {id: {{ id }}, label: '{{ label }}'};"
-            ></i>
-            <i
-              class="ri-delete-bin-line text-lg"
-              title="Delete {{ widget.option_type }}"
-              @click="showModal = true; modalAction = 'delete'; modalOption = {id: {{ id }}, label: '{{ label }}'};"
-            ></i>
-          </div>
-        {% endif %}
-      </div>
-    {% endfor %}
-    <div
-      id="no-matches-found"
-      class="hidden w-full text-gray-500"
-      style="text-align: center"
-      {% if widget.edit %}@click="showModal = true; modalAction = 'create'; modalOption = undefined;"{% endif %}
-    >
-      No matches found.
-      {% if widget.edit %}
-        Click here to create a new option.
-      {% endif %}
-    </div>
-    <select multiple id="{{ widget.name }}-select-hidden" name="{{ widget.name }}" class="hidden">
-      {% for id, label in widget.queryset_options %}
-        <option value="{{ label }}"></option>
-      {% endfor %}
-    </select>
-  </div>
-  {% if widget.edit %}
-    <dialog
-      x-ref="optionDialog"
-      x-effect="showModal ? $refs.optionDialog.showModal() : $refs.optionDialog.close()"
-      class="modal"
-    >
-      <div class="modal-box max-w-lg max-h-[600px] flex flex-col">
-        <div class="flex items-center justify-between border-b border-gray-200 pb-4 shrink-0">
-          <h2 class="text-xl font-semibold text-gray-900" style="text-transform: capitalize">
-            <span x-text="modalAction"></span>
-            {{ widget.option_type }}
-            <span x-text="modalOption?.label"></span>
-          </h2>
-        </div>
-
-        {% for action, text in widget.info_text.items %}
-          <p x-show="'{{ action }}' == modalAction" class="py-3">{{ text }}</p>
-        {% endfor %}
-
-        <fieldset x-show="['create', 'edit'].includes(modalAction)" class="fieldset">
-          <label class="fieldset-legend" for="new-option" style="text-transform: capitalize">{{ widget.option_type }}</label>
-          <input type="text" :placeholder="modalOption?.label" name="new-option" id="new-option-input" class="input input-bordered w-full">
-        </fieldset>
-
-        <div id="optionModalErrors"></div>
-
-        <div class="modal-action">
-          <button type="button" :class="modalAction == 'delete' ? 'btn btn-error text-white' : 'btn'" @click="submitOptionModal(modalAction, modalOption)">Confirm</button>
-          <button type="button" class="btn" @click="showModal = false">Close</button>
-        </div>
-      </div>
-      <div class="modal-backdrop" @click="showModal = false"></div>
-    </dialog>
-  {% endif %}
-</div>
+<div id="{{ widget.name }}-messages"></div>
+<input id="{{ widget.name }}-select" class="w-full" />
+<select multiple id="{{ widget.name }}-select-hidden" name="{{ widget.name }}" class="hidden">
+  {% for label in widget.queryset_options %}
+    <option value="{{ label }}"></option>
+  {% endfor %}
+</select>
 
 <script>
-  // let initial selection value render before initializing widget
-  setTimeout(() => {
-    selectionUpdated('{{ widget.name }}');
-    optionMatchesUpdated('{{ widget.name }}')
-  }, 2)
-</script>
+  const items = JSON.parse('{{ widget.value | safe }}');
+  const options = JSON.parse('{{ widget.options_json | safe }}');
+  const editMode = '{{ widget.edit }}' === 'True';
+  const widgetId = '#{{ widget.name }}-select';
+  const hiddenSelectId = '#{{ widget.name }}-select-hidden';
 
-<style>
-  .combobox-select .hidden {
-    display: none;
+  const onChange = (value) => {
+    const selected = value.length ? value.split(',') : [];
+    $(hiddenSelectId).val(selected);
   }
-  .combobox-select {
-    display: none;
+
+  const onOptionAdd = (value) => {
+    $(hiddenSelectId).append($('<option>', {value}));
+    axiosSession.post(
+      '/api/v2/collections/tags',
+      { tag: value },
+    ).catch((error) => {
+      $("#{{ widget.name }}-messages").text(error.response.data.error);
+    })
   }
-  .combobox-container:focus-within .combobox-select {
-    display: block;
+
+  const renderOption = (data, escape) => {
+    const el = $('<div>', {'class': 'flex justify-between'});
+    el.append($('<div>', { text: escape(data.text)}));
+    if (editMode) {
+      const deleteIcon = $('<i>', {'class': 'ri-delete-bin-line text-lg'});
+      const cancelButton = $('<button>', {'class': 'btn btn-xs btn-ghost hidden', text: 'Cancel', type: 'button'});
+      const confirmButton = $('<button>', {'class': 'btn btn-xs btn-error hidden', text: 'Delete', type: 'button'});
+      deleteIcon.on('click', (e) => {
+        e.stopPropagation();
+        deleteIcon.addClass('hidden');
+        cancelButton.removeClass('hidden');
+        confirmButton.removeClass('hidden');
+      });
+      cancelButton.on('click', (e) => {
+        e.stopPropagation();
+        deleteIcon.removeClass('hidden');
+        cancelButton.addClass('hidden');
+        confirmButton.addClass('hidden');
+      });
+      confirmButton.on('click', (e) => {
+        e.stopPropagation();
+        axiosSession.delete(
+          `/api/v2/collections/tags/${data.text}/`
+        ).then((data) => {
+          window.location.reload();
+        }).catch((error) => {
+          $("#{{ widget.name }}-messages").text(error.response.data.error);
+        });
+      });
+      const deleteContainer = $('<div>', {'class': 'flex'}).append([deleteIcon, confirmButton, cancelButton]);
+      el.append(deleteContainer);
+    }
+    return el;
   }
-  .combobox-select .selected-check {
-    display: none;
-  }
-  .combobox-select .option.selected .selected-check {
-    display: block;
-  }
-  .selection-chip {
-    padding-right: 25px;
-    position: relative;
-  }
-  .selection-chip::after {
-    content: 'X';
-    position: absolute;
-    right: 8px;
-  }
-</style>
+
+  const tom = new TomSelect(widgetId, {
+    items,
+    options: options.map((v) => ({value: v, text: v})),
+    create: editMode,
+    placeholder: 'Select {{ widget.option_type }}s',
+    plugins: ['remove_button', 'clear_button'],
+    itemClass: 'item rounded-full',
+    onChange,
+    onOptionAdd,
+    render: {option: renderOption},
+  });
+
+  // trigger onChange to update hidden select
+  tom.setValue(tom.getValue().split(','));
+</script>

@@ -1,9 +1,4 @@
 {% extends 'core/base.html' %}
-{% load static %}
-
-{% block head_extra %}
-  <script src="{% static 'core/js/combobox.js' %}"></script>
-{% endblock %}
 
 {% block content %}
   {% if collection and collection.locked %}

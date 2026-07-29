@@ -2,12 +2,6 @@
 {% load humanize %}
 {% load partials %}
 
-{% load static %}
-
-{% block head_extra %}
-  <script src="{% static 'core/js/combobox.js' %}"></script>
-{% endblock %}
-
 {% partialdef sortable-header %}
   <th class="{{ extra_class }}">
     {% if current_sort == field %}
@@ -96,9 +90,8 @@
       updateParam('exclude_empty', this.checked ? '0' : '1');
     });
     document.getElementById('tags-select').addEventListener('change', function() {
-      const selected = $(this).find('.option.selected').map((i, item) => item.title).get();
-      if (selected.length) {
-        updateParam('tags', selected.join(','));
+      if(this.value.length) {
+        updateParam('tags', this.value);
       } else {
         updateParam('tags', undefined);
       }

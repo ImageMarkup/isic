@@ -190,11 +190,13 @@ def collection_list(request: HttpRequest) -> HttpResponse:
         request.user,
         "core.view_collection",
         Collection.objects.select_related("cached_counts", "doi").prefetch_related(
-            "doi__related_identifiers", "doi__supplemental_files"
+            "doi__related_identifiers",
+            "doi__supplemental_files",
+            "tags",
         ),
     )
 
-    tags_filter = request.GET.get("tags")
+    tags_filter = request.GET.get("tags", "")
     magic_filter = request.GET.get("magic_filter", "exclude")
     pinned_filter = request.GET.get("pinned_filter", "all")
     exclude_empty = request.GET.get("exclude_empty", "1") == "1"
@@ -237,19 +239,14 @@ def collection_list(request: HttpRequest) -> HttpResponse:
             order_field = f"-{sort}" if order == "desc" else sort
             collections = collections.order_by(order_field)
 
-    paginator = Paginator(collections, 50)
+    paginator = Paginator(collections.distinct(), 50)
     page = paginator.get_page(request.GET.get("page"))
 
     tags_widget = ComboboxWidget(
         queryset=CollectionTag.objects.all(),
         lookup_field="tag",
         option_type="tag",
-    ).render(
-        "tags",
-        [t.id for t in CollectionTag.objects.filter(tag__in=tags_filter.split(","))]
-        if tags_filter is not None
-        else None,
-    )
+    ).render("tags", tags_filter.split(","))
 
     return render(
         request,
