@@ -19,6 +19,12 @@ def delete_cohort(*, cohort: Cohort) -> None:
     if cohort.accessions.published().exists():
         raise ValidationError("Cannot delete a cohort with published images.")
 
+    # engagement profiles PROTECT their default cohort
+    if cohort.engagement_profiles.exists():
+        raise ValidationError(
+            "Cannot delete a cohort that engagement users have set as their default."
+        )
+
     with transaction.atomic():
         # metadata versions are set to RESTRICT on delete, so we need to delete them first
         MetadataVersion.objects.filter(accession__in=cohort.accessions.all()).delete()
@@ -75,6 +81,13 @@ def merge_cohorts(*, dest_cohort: Cohort, src_cohort: Cohort) -> None:
         elif src_cohort.collection:
             dest_cohort.collection = src_cohort.collection
         # no point in repointing the src collection to the dest collection since it's going away
+
+        # repointing across contributors would leave a profile with a mismatched contributor/cohort
+        # pair, so null the default instead.
+        same_contributor = src_cohort.contributor_id == dest_cohort.contributor_id
+        src_cohort.engagement_profiles.update(
+            default_cohort=dest_cohort if same_contributor else None
+        )
 
         src_cohort.delete()
         # dest_cohort has to be saved after the delete to avoid a unique constraint violation
