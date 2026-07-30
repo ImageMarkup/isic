@@ -37,9 +37,9 @@ def merge_cohorts(*, dest_cohort: Cohort, src_cohort: Cohort) -> None:
     an unexpected state otherwise.
     """
     overlapping_blob_names = (
-        Cohort.objects.filter(id__in=[dest_cohort.id, src_cohort.id])
-        .values("accessions__original_blob_name")
-        .annotate(c=Count("id"))
+        Accession.objects.filter(cohort__in=[dest_cohort, src_cohort])
+        .values("original_blob_name")
+        .annotate(c=Count("cohort", distinct=True))
         .filter(c__gt=1)
     )
 
