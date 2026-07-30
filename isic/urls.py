@@ -16,6 +16,7 @@ from isic.core.api.image import ImageSearchParseError
 from isic.core.api.image import router as image_router
 from isic.core.api.user import router as user_router
 from isic.core.sitemaps import sitemaps
+from isic.engagement.api import router as engagement_router
 from isic.find.api import autocomplete_router
 from isic.find.api import router as quickfind_router
 from isic.ingest.api import (
@@ -46,6 +47,7 @@ api.add_router("/cohorts/", cohort_router, tags=["cohorts"])
 api.add_router("/collections/", collection_router, tags=["collections"])
 api.add_router("/contributors/", contributor_router, tags=["contributors"])
 api.add_router("/doi/", doi_router, tags=["doi"])
+api.add_router("/engagement/", engagement_router, tags=["engagement"])
 api.add_router("/images/", image_router, tags=["images"])
 api.add_router("/lesions/", lesion_router, tags=["lesions"])
 api.add_router("/metadata-files/", metadata_file_router, tags=["metadata-files"])
