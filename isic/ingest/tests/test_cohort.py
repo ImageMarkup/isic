@@ -23,6 +23,14 @@ def test_cohort_delete_with_published_accessions(cohort, accession_factory, imag
 
 
 @pytest.mark.django_db
+def test_cohort_delete_with_engagement_profile(cohort, engagement_profile_factory):
+    engagement_profile_factory(default_contributor=cohort.contributor, default_cohort=cohort)
+
+    with pytest.raises(ValidationError, match="users have set as their default"):
+        delete_cohort(cohort=cohort)
+
+
+@pytest.mark.django_db
 def test_cohort_list_view(staff_client, cohort, user):
     r = staff_client.get(reverse("ingest/cohort-list"))
     assert r.status_code == 200

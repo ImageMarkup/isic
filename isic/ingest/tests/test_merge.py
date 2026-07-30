@@ -56,6 +56,24 @@ def test_merge_contributors(contributor_with_cohort):
 
 
 @pytest.mark.django_db
+def test_merge_contributors_repoints_engagement_profiles(
+    contributor_factory, cohort_factory, engagement_profile_factory
+):
+    dest_contributor, src_contributor = contributor_factory(), contributor_factory()
+    cohort = cohort_factory(contributor=src_contributor)
+    profile = engagement_profile_factory(default_contributor=src_contributor, default_cohort=cohort)
+
+    merge_contributors(dest_contributor=dest_contributor, src_contributor=src_contributor)
+
+    profile.refresh_from_db()
+    cohort.refresh_from_db()
+    # the cohort moves to dest_contributor too, so the profile's pair stays consistent.
+    assert profile.default_contributor == dest_contributor
+    assert profile.default_cohort == cohort
+    assert cohort.contributor == dest_contributor
+
+
+@pytest.mark.django_db
 def test_merge_cohorts(full_cohort):
     cohort_a, cohort_b = full_cohort(), full_cohort()
 
@@ -110,6 +128,15 @@ def test_merge_cohorts_conflicting_original_blob_names(full_cohort):
 
 
 @pytest.mark.django_db
+def test_merge_cohorts_without_accessions(cohort_factory):
+    dest_cohort, src_cohort = cohort_factory(), cohort_factory()
+
+    merge_cohorts(dest_cohort=dest_cohort, src_cohort=src_cohort)
+
+    assert not Cohort.objects.filter(pk=src_cohort.pk).exists()
+
+
+@pytest.mark.django_db
 def test_merge_cohorts_with_longitudinal_metadata(full_cohort):
     cohort_a, cohort_b = full_cohort(), full_cohort()
 
@@ -142,6 +169,39 @@ def test_merge_cohorts_heterogeneous_licenses(full_cohort):
 
 
 @pytest.mark.django_db
+def test_merge_cohorts_repoints_engagement_profiles(
+    contributor, cohort_factory, engagement_profile_factory
+):
+    dest_cohort = cohort_factory(contributor=contributor)
+    src_cohort = cohort_factory(contributor=contributor)
+    profile = engagement_profile_factory(default_contributor=contributor, default_cohort=src_cohort)
+
+    merge_cohorts(dest_cohort=dest_cohort, src_cohort=src_cohort)
+
+    profile.refresh_from_db()
+    assert profile.default_cohort == dest_cohort
+
+
+@pytest.mark.django_db
+def test_merge_cohorts_clears_engagement_profiles_across_contributors(
+    full_cohort, engagement_profile_factory
+):
+    # repointing here would leave the profile pointing at a cohort under a contributor it
+    # isn't associated with, so the default is cleared instead.
+    dest_cohort, src_cohort = full_cohort(), full_cohort()
+    assert dest_cohort.contributor != src_cohort.contributor
+    profile = engagement_profile_factory(
+        default_contributor=src_cohort.contributor, default_cohort=src_cohort
+    )
+
+    merge_cohorts(dest_cohort=dest_cohort, src_cohort=src_cohort)
+
+    profile.refresh_from_db()
+    assert profile.default_cohort is None
+    assert profile.default_contributor == src_cohort.contributor
+
+
+@pytest.mark.django_db
 def test_merge_cohorts_view(full_cohort, staff_client):
     cohort_a, cohort_b = full_cohort(), full_cohort()
 
@@ -151,6 +211,23 @@ def test_merge_cohorts_view(full_cohort, staff_client):
     )
     assert r.status_code == 302
     assert r.url == reverse("ingest/cohort-detail", args=[cohort_a.pk])
+
+
+@pytest.mark.django_db
+def test_merge_cohorts_view_with_engagement_profile(
+    full_cohort, engagement_profile_factory, staff_client
+):
+    dest_cohort, src_cohort = full_cohort(), full_cohort()
+    engagement_profile_factory(
+        default_contributor=src_cohort.contributor, default_cohort=src_cohort
+    )
+
+    r = staff_client.post(
+        reverse("ingest/merge-cohorts"),
+        data={"cohort": dest_cohort.pk, "cohort_to_merge": src_cohort.pk},
+    )
+    assert r.status_code == 302
+    assert r.url == reverse("ingest/cohort-detail", args=[dest_cohort.pk])
 
 
 @pytest.fixture

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import logging
 
 from django.contrib.auth.models import User
-from django.db.models import Q
+from django.db.models import F, Q
 import pyexiv2
 from resonant_utils.files import field_file_to_local_path
 
@@ -10,6 +10,7 @@ from isic.core.models.collection import Collection
 from isic.core.models.image import Image
 from isic.core.models.image_embedding import ImageEmbedding
 from isic.core.models.isic_id import IsicId
+from isic.engagement.models import EngagementProfile
 from isic.login.models import Profile
 
 logger = logging.getLogger(__name__)
@@ -233,6 +234,30 @@ def check_embeddings_only_for_public_images() -> HealthCheckResult:
     )
 
 
+def check_engagement_profile_defaults_consistent() -> HealthCheckResult:
+    inconsistent_profiles = (
+        EngagementProfile.objects.filter(
+            default_contributor__isnull=False, default_cohort__isnull=False
+        )
+        .exclude(default_cohort__contributor=F("default_contributor"))
+        .count()
+    )
+
+    passed = inconsistent_profiles == 0
+    message = (
+        "All engagement profile defaults are consistent"
+        if passed
+        else f"{inconsistent_profiles} engagement profiles have a default cohort belonging to "
+        "a different contributor"
+    )
+
+    return HealthCheckResult(
+        name="engagement_profile_defaults_consistent",
+        passed=passed,
+        message=message,
+    )
+
+
 HEALTH_CHECKS = [
     ("public_images_have_sponsored_blob", check_public_images_have_sponsored_blob),
     ("non_public_images_have_non_sponsored_blob", check_non_public_images_have_non_sponsored_blob),
@@ -246,6 +271,7 @@ HEALTH_CHECKS = [
     ("iptc_metadata_consistency", check_iptc_metadata_consistency),
     ("published_images_have_attribution", check_published_images_have_attribution),
     ("embeddings_only_for_public_images", check_embeddings_only_for_public_images),
+    ("engagement_profile_defaults_consistent", check_engagement_profile_defaults_consistent),
 ]
 
 
