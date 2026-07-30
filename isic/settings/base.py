@@ -68,7 +68,6 @@ INSTALLED_APPS = [
     "oauth2_provider",
     "resonant_utils",
     "s3_file_field",
-    "template_partials",
     "widget_tweaks",
 ]
 
@@ -106,7 +105,6 @@ DATABASES = {
         "CONN_MAX_AGE": timedelta(minutes=10).total_seconds(),
     },
 }
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 STORAGES: dict[str, dict[str, Any]] = {
     # Inject the "default" storage in particular run configurations

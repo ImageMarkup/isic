@@ -55,9 +55,9 @@ class ZipUpload(CreationSortedTimeStampedModel):
     blob_size = models.PositiveBigIntegerField(editable=False)
 
     status = models.CharField(
-        choices=ZipUploadStatus.choices, max_length=20, default=ZipUploadStatus.CREATED
+        choices=ZipUploadStatus, max_length=20, default=ZipUploadStatus.CREATED
     )
-    fail_reason = models.CharField(choices=ZipUploadFailReason.choices, max_length=10, blank=True)
+    fail_reason = models.CharField(choices=ZipUploadFailReason, max_length=10, blank=True)
 
     def __str__(self) -> str:
         return self.blob_name

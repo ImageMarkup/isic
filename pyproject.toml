@@ -14,7 +14,7 @@ dependencies = [
   "bcrypt==5.0.0",
   "celery==5.6.3",
   "deepdiff==9.1.0",
-  "django[argon2]==5.2.15",
+  "django[argon2]==6.0.5",
   "django-allauth[socialaccount]==65.18.0",
   "django-auth-style[allauth,oauth-toolkit]==0.15.0",
   "django-cachalot==2.9.0",
@@ -30,7 +30,7 @@ dependencies = [
   "django-redis==7.0.0",
   "django-resonant-settings[allauth,celery]==0.51.1",
   "django-resonant-utils[allauth,s3_storage]==0.19.0",
-  "django-stubs-ext==5.2.9",
+  "django-stubs-ext==6.0.4",
   "django-widget-tweaks==1.5.1",
   "gdal==3.11.0",
   "google-analytics-data==0.23.0",
@@ -58,7 +58,6 @@ dependencies = [
   "sentry-sdk[celery,django,pure_eval]==2.64.0",
   "gunicorn==26.0.0",
   "orjson==3.11.9",
-  "django-template-partials==25.3",
   "pgvector==0.4.2",
   "pyarrow==24.0.0",
   "pydantic-to-pyarrow==0.1.6",
@@ -92,9 +91,9 @@ lint = [
   "semgrep==1.168.0"
 ]
 type = [
-  "mypy==1.19.1",
+  "mypy==2.0.0",
   "celery-types==0.26.0",
-  "django-stubs[compatible-mypy]==5.2.9",
+  "django-stubs[compatible-mypy]==6.0.4",
   "pandas-stubs==3.0.3.260530",
 ]
 test = [
