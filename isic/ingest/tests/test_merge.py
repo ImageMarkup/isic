@@ -56,6 +56,24 @@ def test_merge_contributors(contributor_with_cohort):
 
 
 @pytest.mark.django_db
+def test_merge_contributors_repoints_engagement_profiles(
+    contributor_factory, cohort_factory, engagement_profile_factory
+):
+    dest_contributor, src_contributor = contributor_factory(), contributor_factory()
+    cohort = cohort_factory(contributor=src_contributor)
+    profile = engagement_profile_factory(default_contributor=src_contributor, default_cohort=cohort)
+
+    merge_contributors(dest_contributor=dest_contributor, src_contributor=src_contributor)
+
+    profile.refresh_from_db()
+    cohort.refresh_from_db()
+    # the cohort moves to dest_contributor too, so the profile's pair stays consistent.
+    assert profile.default_contributor == dest_contributor
+    assert profile.default_cohort == cohort
+    assert cohort.contributor == dest_contributor
+
+
+@pytest.mark.django_db
 def test_merge_cohorts(full_cohort):
     cohort_a, cohort_b = full_cohort(), full_cohort()
 
