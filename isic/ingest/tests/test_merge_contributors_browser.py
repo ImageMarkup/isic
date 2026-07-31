@@ -1,0 +1,102 @@
+from django.urls import reverse
+from playwright.sync_api import expect
+import pytest
+
+from isic.ingest.models import Contributor
+
+
+@pytest.fixture
+def contributor_with_cohorts(contributor_factory, cohort_factory, user_factory):
+    def _contributor_with_cohorts(num_cohorts: int = 1):
+        user = user_factory()
+        contributor = contributor_factory(creator=user, owners=[user])
+        for _ in range(num_cohorts):
+            cohort_factory(contributor=contributor, creator=user)
+        return contributor
+
+    return _contributor_with_cohorts
+
+
+@pytest.mark.playwright
+def test_merge_contributors_autocomplete_preview_and_submit(
+    staff_authenticated_page, contributor_with_cohorts
+):
+    page = staff_authenticated_page
+
+    contributor_a = contributor_with_cohorts(num_cohorts=2)
+    contributor_b = contributor_with_cohorts()
+    contributor_b_cohorts = set(contributor_b.cohorts.values_list("pk", flat=True))
+
+    page.goto(reverse("ingest/merge-contributors"))
+
+    expect(page.get_by_text("Merge Contributors").first).to_be_visible()
+
+    # Type in the first autocomplete field to search for contributor_a
+    first_fieldset = page.get_by_role("group").filter(has_text="Contributor to merge into")
+    first_input = first_fieldset.get_by_role("searchbox")
+    first_input.press_sequentially(contributor_a.institution_name[:5], delay=50)
+
+    # Wait for autocomplete results and select contributor_a. The lookup is scoped to the
+    # fieldset since the other field's preview panel also renders the institution name.
+    first_result = first_fieldset.get_by_text(contributor_a.institution_name, exact=True).first
+    expect(first_result).to_be_visible()
+    first_result.click()
+
+    # Preview should show contributor details, including each of its cohorts
+    expect(first_fieldset.get_by_text(contributor_a.institution_url).first).to_be_visible()
+    for cohort in contributor_a.cohorts.all():
+        expect(first_fieldset.get_by_text(cohort.name).first).to_be_visible()
+
+    # Type in the second autocomplete field to search for contributor_b
+    second_fieldset = page.get_by_role("group").filter(
+        has_text="Contributor to merge", has_not_text="Contributor to merge into"
+    )
+    second_input = second_fieldset.get_by_role("searchbox")
+    second_input.press_sequentially(contributor_b.institution_name[:5], delay=50)
+
+    # Wait for autocomplete results and select contributor_b
+    second_result = second_fieldset.get_by_text(contributor_b.institution_name, exact=True).first
+    expect(second_result).to_be_visible()
+    second_result.click()
+
+    # Preview should show contributor_b details
+    expect(page.get_by_text(contributor_b.institution_url).first).to_be_visible()
+
+    # Submit the merge
+    page.get_by_role("button", name="Merge Contributors").click()
+
+    # Should redirect to the cohort list page with a success flash message
+    page.wait_for_url(f"**{reverse('ingest/cohort-list')}")
+    expect(page.get_by_text("Contributor merged successfully.")).to_be_visible()
+
+    # Verify contributor_b was deleted and its cohorts moved to contributor_a
+    assert not Contributor.objects.filter(pk=contributor_b.pk).exists()
+    assert contributor_b_cohorts <= set(contributor_a.cohorts.values_list("pk", flat=True))
+
+
+@pytest.mark.playwright
+def test_merge_contributors_same_contributor_rejected(
+    staff_authenticated_page, contributor_with_cohorts
+):
+    page = staff_authenticated_page
+
+    contributor = contributor_with_cohorts()
+
+    page.goto(reverse("ingest/merge-contributors"))
+
+    for fieldset_filter in [
+        {"has_text": "Contributor to merge into"},
+        {"has_text": "Contributor to merge", "has_not_text": "Contributor to merge into"},
+    ]:
+        fieldset = page.get_by_role("group").filter(**fieldset_filter)
+        fieldset.get_by_role("searchbox").press_sequentially(
+            contributor.institution_name[:5], delay=50
+        )
+        result = fieldset.get_by_text(contributor.institution_name, exact=True).first
+        expect(result).to_be_visible()
+        result.click()
+
+    page.get_by_role("button", name="Merge Contributors").click()
+
+    expect(page.get_by_text("The two contributors must be different.")).to_be_visible()
+    assert Contributor.objects.filter(pk=contributor.pk).exists()

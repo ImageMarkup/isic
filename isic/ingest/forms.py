@@ -111,6 +111,35 @@ class MergeCohortForm(forms.Form):
         return cleaned_data
 
 
+class MergeContributorForm(forms.Form):
+    contributor = forms.ModelChoiceField(
+        widget=forms.HiddenInput(),
+        queryset=Contributor.objects.all(),
+        required=True,
+        label="Contributor to merge into",
+        help_text="The selected contributor will be the one that remains after the merge.",
+    )
+    contributor_to_merge = forms.ModelChoiceField(
+        widget=forms.HiddenInput(),
+        queryset=Contributor.objects.all(),
+        required=True,
+        label="Contributor to merge",
+        help_text="The selected contributor will be deleted after the merge. Its cohorts and "
+        "owners will be transferred to the contributor it's merged into.",
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        cleaned_data = cleaned_data if cleaned_data is not None else {}
+        contributor = cleaned_data.get("contributor")
+        contributor_to_merge = cleaned_data.get("contributor_to_merge")
+
+        if contributor and contributor_to_merge and contributor == contributor_to_merge:
+            raise forms.ValidationError("The two contributors must be different.")
+
+        return cleaned_data
+
+
 class PublishCohortForm(forms.Form):
     public = forms.BooleanField(
         label="Public",

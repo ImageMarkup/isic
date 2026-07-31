@@ -3,7 +3,7 @@
 
 {% block head_extra %}
   {{ block.super }}
-  <script src="{% static 'ingest/cohort-autocomplete.js' %}"></script>
+  <script src="{% static 'ingest/autocomplete.js' %}"></script>
 {% endblock %}
 
 {% block content %}
@@ -14,8 +14,10 @@
 
     <div class="heading-1">Merge Cohorts</div>
 
-    {% include 'ingest/partials/cohort_autocomplete_field.html' with field=form.cohort %}
-    {% include 'ingest/partials/cohort_autocomplete_field.html' with field=form.cohort_to_merge %}
+    {% url 'api:cohort_autocomplete' as cohort_suggest_url %}
+    {% url 'api:cohort_list' as cohort_api_url %}
+    {% include 'ingest/partials/autocomplete_field.html' with field=form.cohort suggest_url=cohort_suggest_url detail_url=cohort_api_url detail_template='ingest/partials/cohort_autocomplete_detail.html' %}
+    {% include 'ingest/partials/autocomplete_field.html' with field=form.cohort_to_merge suggest_url=cohort_suggest_url detail_url=cohort_api_url detail_template='ingest/partials/cohort_autocomplete_detail.html' %}
 
     <button type="submit" class="btn btn-primary self-end">Merge Cohorts</button>
   </form>

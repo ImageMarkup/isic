@@ -1,0 +1,45 @@
+<ul x-show="selectedDetail" class="space-y-1 text-sm">
+  <li>
+    <span class="font-bold">Institution Name: </span>
+    <span x-text="selectedDetail?.institution_name"></span>
+  </li>
+  <li>
+    <span class="font-bold">Institution URL: </span>
+    <span x-text="selectedDetail?.institution_url"></span>
+  </li>
+  <li>
+    <span class="font-bold">Default Attribution: </span>
+    <span x-text="selectedDetail?.default_attribution"></span>
+  </li>
+  <li>
+    <span class="font-bold">Default License: </span>
+    <span x-text="selectedDetail?.default_copyright_license"></span>
+  </li>
+  <li>
+    <span class="font-bold">Cohorts: </span>
+    <span x-text="new Intl.NumberFormat('en-US').format(selectedDetail?.cohort_count)"></span>
+    <!-- a handful of contributors have >20 cohorts, so cap the height and scroll the rest. -->
+    <ul x-show="selectedDetail?.cohorts?.length"
+        aria-label="Cohorts"
+        class="mt-1 max-h-48 overflow-y-auto rounded-box border border-base-300 bg-base-100 divide-y divide-base-300">
+      {# the cohorts are rendered client side, so reverse a placeholder pk and swap in the real one #}
+      {% url 'ingest/cohort-detail' 0 as cohort_detail_url %}
+      <template x-for="cohort in selectedDetail?.cohorts ?? []" :key="cohort.id">
+        <li class="flex justify-between gap-4 px-2 py-1">
+          <!-- open in a new tab so that following a cohort doesn't discard the selected contributors -->
+          <a class="link link-hover link-primary truncate"
+             target="_blank"
+             rel="noopener"
+             :href="'{{ cohort_detail_url }}'.replace('/0/', `/${cohort.id}/`)"
+             :title="cohort.name"
+             x-text="cohort.name"></a>
+          <span class="shrink-0" x-text="new Intl.NumberFormat('en-US').format(cohort.accession_count)"></span>
+        </li>
+      </template>
+    </ul>
+  </li>
+  <li>
+    <span class="font-bold">Accessions: </span>
+    <span x-text="new Intl.NumberFormat('en-US').format(selectedDetail?.accession_count)"></span>
+  </li>
+</ul>

@@ -9,6 +9,7 @@ from isic.core.services.collection.image import add_images_to_collection
 from isic.core.tests.factories import CollectionFactory, DoiFactory
 from isic.factories import UserFactory
 from isic.ingest.models.cohort import Cohort
+from isic.ingest.models.contributor import Contributor
 from isic.ingest.services.cohort import merge_cohorts
 from isic.ingest.services.contributor import merge_contributors
 from isic.studies.tests.factories import StudyFactory
@@ -71,6 +72,32 @@ def test_merge_contributors_repoints_engagement_profiles(
     assert profile.default_contributor == dest_contributor
     assert profile.default_cohort == cohort
     assert cohort.contributor == dest_contributor
+
+
+@pytest.mark.django_db
+def test_merge_contributors_view(contributor_with_cohort, staff_client):
+    contributor_a, contributor_b = contributor_with_cohort(), contributor_with_cohort()
+
+    r = staff_client.post(
+        reverse("ingest/merge-contributors"),
+        data={"contributor": contributor_a.pk, "contributor_to_merge": contributor_b.pk},
+    )
+    assert r.status_code == 302
+    assert r.url == reverse("ingest/cohort-list")
+    assert not Contributor.objects.filter(pk=contributor_b.pk).exists()
+
+
+@pytest.mark.django_db
+def test_merge_contributors_view_identical_contributors(contributor_with_cohort, staff_client):
+    contributor = contributor_with_cohort()
+
+    r = staff_client.post(
+        reverse("ingest/merge-contributors"),
+        data={"contributor": contributor.pk, "contributor_to_merge": contributor.pk},
+    )
+    assert r.status_code == 200
+    assert "The two contributors must be different." in r.content.decode()
+    assert Contributor.objects.filter(pk=contributor.pk).exists()
 
 
 @pytest.mark.django_db

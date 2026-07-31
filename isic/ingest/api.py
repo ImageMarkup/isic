@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from django.db import transaction
+from django.db.models import Prefetch
 from django.db.models.aggregates import Count
 from django.http.request import HttpRequest
 from django.shortcuts import get_object_or_404
@@ -211,6 +212,32 @@ class ContributorOut(ModelSchema):
         ]
 
 
+class ContributorAutocompleteOut(ModelSchema):
+    class Meta:
+        model = Contributor
+        fields = ["id", "institution_name"]
+
+
+class ContributorCohortOut(Schema):
+    id: int
+    name: str
+    accession_count: int
+
+
+class ContributorDetailOut(ContributorOut):
+    cohorts: list[ContributorCohortOut]
+    cohort_count: int
+    accession_count: int
+
+    @staticmethod
+    def resolve_cohort_count(obj: Contributor) -> int:
+        return obj.cohorts.count()
+
+    @staticmethod
+    def resolve_accession_count(obj: Contributor) -> int:
+        return sum(cohort.accession_count for cohort in obj.cohorts.all())  # type: ignore[attr-defined]
+
+
 @contributor_router.get(
     "/",
     response=list[ContributorOut],
@@ -228,12 +255,19 @@ def contributor_list(request: HttpRequest):
 
 @contributor_router.get(
     "/{id}/",
-    response=ContributorOut,
+    response=ContributorDetailOut,
     summary="Retrieve a single contributor by ID.",
     include_in_schema=False,
 )
 def contributor_detail(request: HttpRequest, id: int):
-    qs = get_visible_objects(request.user, "ingest.view_contributor", Contributor.objects.all())
+    qs = get_visible_objects(
+        request.user,
+        "ingest.view_contributor",
+        Contributor.objects.prefetch_related(
+            "owners",
+            Prefetch("cohorts", queryset=default_cohort_qs.order_by("-accession_count", "name")),
+        ),
+    )
     return get_object_or_404(qs, id=id)
 
 
