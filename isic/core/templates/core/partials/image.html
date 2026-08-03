@@ -1,6 +1,6 @@
 {% load accession %}
 
-<div>
+<div x-sort:item="'{{image.isic_id}}'">
   <div x-data="{ hovered: false }" class="pb-4">
     {% block thumb %}
       {% include 'core/partials/image_thumb.html' %}

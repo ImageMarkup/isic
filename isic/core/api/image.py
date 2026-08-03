@@ -4,7 +4,8 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db.models import Max, Q
+from django.db import transaction
+from django.db.models import Case, Max, Q, Value, When
 from django.http.request import HttpRequest
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
@@ -326,6 +327,7 @@ class SetPinned(Schema):
     "/{id}/set-pinned/",
     response={200: None, 400: dict, 403: dict},
     include_in_schema=False,
+    auth=is_authenticated,
 )
 def image_set_pinned(request, id: int, payload: SetPinned):
     if not request.user.is_staff:
@@ -343,4 +345,39 @@ def image_set_pinned(request, id: int, payload: SetPinned):
     image.save()
     action = "pinned" if payload.pinned else "unpinned"
     messages.add_message(request, messages.SUCCESS, f"Image {action}.")
+    return 200, None
+
+
+class PinOrder(Schema):
+    order: list[str]
+
+    model_config = {"extra": "forbid"}
+
+
+@router.post(
+    "/pins/reorder/",
+    response={200: None, 400: dict, 403: dict},
+    include_in_schema=False,
+    auth=is_authenticated,
+)
+def image_pins_reorder(request: HttpRequest, payload: PinOrder):
+    if not request.user.is_staff:
+        return 403, {"error": "You do not have permission to reorder image pins."}
+
+    with transaction.atomic():
+        result = Image.objects.filter(public=True, isic_id__in=payload.order).update(
+            pinned=Case(
+                *[
+                    # pins are sorted in descending order, so reverse ordered list.
+                    # pins are 1-indexed; 0 is unpinned.
+                    When(isic_id=isic_id, then=Value(i))
+                    for i, isic_id in enumerate(reversed(payload.order), start=1)
+                ]
+            )
+        )
+        if result != len(payload.order):
+            transaction.set_rollback(True)
+            return 400, {"error": "Invalid ISIC ID list."}
+
+    messages.add_message(request, messages.SUCCESS, "Reordered pinned images.")
     return 200, None
