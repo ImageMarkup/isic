@@ -18,6 +18,7 @@ from isic.ingest.models import Accession, Cohort, Contributor, Lesion, MetadataF
 from isic.ingest.models.lesion import get_lesion_count_for_user
 from isic.ingest.services.accession import create_accession
 from isic.ingest.services.accession.review import bulk_create_accession_reviews
+from isic.ingest.services.contributor import compute_contributor_merge_impact
 from isic.ingest.tasks import update_metadata_task
 
 lesion_router = Router()
@@ -262,6 +263,45 @@ def contributor_list(request: HttpRequest):
         request.user,
         "ingest.view_contributor",
         Contributor.objects.prefetch_related("owners"),
+    )
+
+
+class MergeImpactUserOut(Schema):
+    id: int
+    name: str
+    email: str
+    has_engagement_profile: bool
+
+
+class MergeImpactContributorOut(Schema):
+    id: int
+    institution_name: str
+    accession_count: int
+    published_image_count: int
+
+
+class ContributorMergeImpactOut(Schema):
+    dest_contributor: MergeImpactContributorOut
+    src_contributor: MergeImpactContributorOut
+    users_gaining_access_to_dest: list[MergeImpactUserOut]
+    users_gaining_access_to_src: list[MergeImpactUserOut]
+    engagement_profiles_repointed: list[MergeImpactUserOut]
+
+
+@contributor_router.get(
+    "/merge-impact/",
+    response={200: ContributorMergeImpactOut, 400: dict},
+    summary="Describe the access impact of merging two contributors.",
+    include_in_schema=False,
+    auth=is_staff,
+)
+def contributor_merge_impact(request: HttpRequest, dest_contributor: int, src_contributor: int):
+    if dest_contributor == src_contributor:
+        return 400, {"error": "The two contributors must be different."}
+
+    return 200, compute_contributor_merge_impact(
+        dest_contributor=get_object_or_404(Contributor, id=dest_contributor),
+        src_contributor=get_object_or_404(Contributor, id=src_contributor),
     )
 
 

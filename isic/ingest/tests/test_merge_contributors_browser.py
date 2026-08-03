@@ -75,6 +75,72 @@ def test_merge_contributors_autocomplete_preview_and_submit(
 
 
 @pytest.mark.playwright
+def test_merge_contributors_shows_access_impact(
+    staff_authenticated_page,
+    contributor_with_cohorts,
+    accession_factory,
+    image_factory,
+    user_factory,
+    engagement_profile_factory,
+):
+    page = staff_authenticated_page
+
+    dest_contributor = contributor_with_cohorts()
+    src_contributor = contributor_with_cohorts()
+
+    # an owner of both contributors already sees everything, so they gain nothing from the merge
+    shared_owner = user_factory()
+    dest_contributor.owners.add(shared_owner)
+    src_contributor.owners.add(shared_owner)
+    dest_only_owner, src_only_owner = user_factory(), user_factory()
+    dest_contributor.owners.add(dest_only_owner)
+    src_contributor.owners.add(src_only_owner)
+
+    dest_cohort = dest_contributor.cohorts.first()
+    image_factory(accession=accession_factory(cohort=dest_cohort))
+    accession_factory(cohort=dest_cohort)
+
+    engagement_profile_factory(user=src_only_owner, default_contributor=src_contributor)
+    engagement_profile_factory(default_contributor=src_contributor)
+
+    page.goto(reverse("ingest/merge-contributors"))
+
+    for fieldset_filter, contributor in [
+        ({"has_text": "Contributor to merge into"}, dest_contributor),
+        (
+            {"has_text": "Contributor to merge", "has_not_text": "Contributor to merge into"},
+            src_contributor,
+        ),
+    ]:
+        fieldset = page.get_by_role("group").filter(**fieldset_filter)
+        fieldset.get_by_role("searchbox").press_sequentially(
+            contributor.institution_name[:5], delay=50
+        )
+        result = fieldset.get_by_text(contributor.institution_name, exact=True).first
+        expect(result).to_be_visible()
+        result.click()
+
+    impact = page.get_by_role("alert")
+    expect(impact.get_by_text("Access impact of this merge")).to_be_visible()
+
+    # both directions are described, and the owner of both contributors is left out of them
+    expect(impact.get_by_text(src_only_owner.email)).to_be_visible()
+    expect(impact.get_by_text(dest_only_owner.email)).to_be_visible()
+    expect(impact.get_by_text(shared_owner.email)).not_to_be_visible()
+
+    expect(impact.get_by_text("engagement user")).to_be_visible()
+    expect(impact.get_by_text("will also have access to every future upload")).to_be_visible()
+    expect(impact.get_by_text("Their default will be repointed to")).to_be_visible()
+
+    # clearing a contributor leaves nothing to describe
+    second_fieldset = page.get_by_role("group").filter(
+        has_text="Contributor to merge", has_not_text="Contributor to merge into"
+    )
+    second_fieldset.get_by_role("searchbox").fill("")
+    expect(impact).not_to_be_visible()
+
+
+@pytest.mark.playwright
 def test_merge_contributors_same_contributor_rejected(
     staff_authenticated_page, contributor_with_cohorts
 ):
