@@ -171,6 +171,9 @@ def test_image_pins_reorder_drag(staff_authenticated_page, image_factory):
     items = page.locator("#image-grid > div")
     expect(items).to_have_count(2)
 
+    save_button = page.get_by_role("button", name="Save")
+    expect(save_button).to_be_disabled()
+
     # drag the first image onto the second. sortable tracks intermediate mouse
     # moves, so a single jump to the target isn't enough to register the swap.
     target = items.nth(1).bounding_box()
@@ -179,7 +182,8 @@ def test_image_pins_reorder_drag(staff_authenticated_page, image_factory):
     page.mouse.move(target["x"] + target["width"] / 2, target["y"] + target["height"] / 2, steps=10)
     page.mouse.up()
 
-    page.get_by_role("button", name="Save").click()
+    expect(save_button).to_be_enabled()
+    save_button.click()
 
     # saving reloads the page, so the new order and the message come from the server
     expect(page.get_by_text("Reordered pinned images.")).to_be_visible()

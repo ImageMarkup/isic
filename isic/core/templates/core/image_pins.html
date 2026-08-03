@@ -4,9 +4,14 @@
   <script>
     function imagePins() {
       return {
-        pinOrder: undefined,
+        pinOrder: [],
+        initialPinOrder: [],
         init() {
           this.orderUpdated();
+          this.initialPinOrder = this.pinOrder;
+        },
+        get orderChanged() {
+          return this.pinOrder.join() !== this.initialPinOrder.join();
         },
         orderUpdated() {
           this.pinOrder = [...document.getElementById('image-grid').children].map(
@@ -38,7 +43,7 @@
   <div x-data="imagePins()">
     <div class="flex justify-between items-center mb-2">
       <div>Drag to reorder pinned images, then submit changes by clicking "Save".</div>
-      <button type="submit" class="btn btn-primary" @click="submitPinOrder">
+      <button type="submit" class="btn btn-primary" :disabled="!orderChanged" @click="submitPinOrder">
         Save
       </button>
     </div>
