@@ -232,5 +232,9 @@ def staff_image_pins(request: AuthenticatedHttpRequest) -> HttpResponse:
     return render(
         request,
         "core/image_pins.html",
-        {"pinned": Image.objects.filter(pinned__gte=1).order_by("-pinned")},
+        {
+            "pinned": Image.objects.filter(pinned__gte=1)
+            .select_related("accession")
+            .order_by("-pinned")
+        },
     )
