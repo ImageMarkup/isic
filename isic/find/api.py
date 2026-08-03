@@ -12,11 +12,13 @@ from isic.core.api.collection import CollectionOut
 from isic.core.models import Collection
 from isic.core.permissions import get_visible_objects
 from isic.find.find import quickfind_execute
-from isic.ingest.api import CohortOut
-from isic.ingest.models import Cohort
+from isic.ingest.api import CohortOut, ContributorAutocompleteOut
+from isic.ingest.models import Cohort, Contributor
 
 router = Router()
 autocomplete_router = Router()
+
+AUTOCOMPLETE_LIMIT = 20
 
 
 class QueryIn(Schema):
@@ -54,6 +56,17 @@ def cohort_autocomplete(request: HttpRequest, query=Query(..., min_length=3)):
         "ingest.view_cohort",
         Cohort.objects.filter(name__icontains=query).annotate(accession_count=Count("accessions")),
     )
+
+
+@autocomplete_router.get(
+    "/contributor/", response=list[ContributorAutocompleteOut], include_in_schema=False
+)
+def contributor_autocomplete(request: HttpRequest, query=Query(..., min_length=3)):
+    return get_visible_objects(
+        request.user,
+        "ingest.view_contributor",
+        Contributor.objects.filter(institution_name__icontains=query).order_by("institution_name"),
+    )[:AUTOCOMPLETE_LIMIT]
 
 
 @autocomplete_router.get("/collection/", response=list[CollectionOut], include_in_schema=False)
