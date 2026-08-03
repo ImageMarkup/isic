@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
-from django.db.models import Max, Q
+from django.db.models import Case, Max, Q, Value, When
 from django.http.request import HttpRequest
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
@@ -364,15 +364,20 @@ def image_pins_reorder(request: HttpRequest, payload: PinOrder):
     if not request.user.is_staff:
         return 403, {"error": "You do not have permission to reorder image pins."}
 
-    if Image.objects.filter(isic_id__in=payload.order).count() != len(payload.order):
-        return 400, {"error": "Invalid ISIC ID list."}
-
     with transaction.atomic():
-        # pins are sorted in descending order, so reverse ordered list
-        for i, isic_id in enumerate(reversed(payload.order)):
-            image = Image.objects.get(isic_id=isic_id)
-            # pins are 1-indexed; 0 is unpinned
-            image.pinned = i + 1
-            image.save()
+        result = Image.objects.filter(public=True, isic_id__in=payload.order).update(
+            pinned=Case(
+                *[
+                    # pins are sorted in descending order, so reverse ordered list.
+                    # pins are 1-indexed; 0 is unpinned.
+                    When(isic_id=isic_id, then=Value(i))
+                    for i, isic_id in enumerate(reversed(payload.order), start=1)
+                ]
+            )
+        )
+        if result != len(payload.order):
+            transaction.set_rollback(True)
+            return 400, {"error": "Invalid ISIC ID list."}
+
     messages.add_message(request, messages.SUCCESS, "Reordered pinned images.")
     return 200, None
