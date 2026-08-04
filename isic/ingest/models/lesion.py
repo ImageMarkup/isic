@@ -293,10 +293,7 @@ class LesionPermissions:
                 # is still visible because bool_and(null, true) = true.
                 # coalesce it so that bool_and always has non-null values to work with.
                 .alias(user_share_id=Coalesce(F("accessions__image__shares"), -1))
-                .annotate(
-                    # note that these requirements are copied from ImagePermissions.view_image_list
-                    visible=BoolAnd(lesion_visibility_requirements)
-                )
+                .annotate(visible=BoolAnd(lesion_visibility_requirements))
                 .filter(visible=True)
                 .values("id")
             )

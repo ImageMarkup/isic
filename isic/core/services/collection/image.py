@@ -4,10 +4,10 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models.query import QuerySet
+from guardian.shortcuts import get_objects_for_user
 
 from isic.core.models.collection import Collection, CollectionShare
 from isic.core.models.image import Image
-from isic.core.permissions import get_visible_objects
 from isic.core.services.image import share_image
 
 
@@ -106,7 +106,7 @@ def add_collection_images_from_isic_ids(
     *, user: User, collection: Collection, isic_ids: list[str]
 ) -> dict:
     isic_ids = list(set(isic_ids))
-    visible_images = get_visible_objects(
+    visible_images = get_objects_for_user(
         user, "core.view_image", Image.objects.filter(isic_id__in=isic_ids)
     ).in_bulk(field_name="isic_id")
 
@@ -136,7 +136,7 @@ def remove_collection_images_from_isic_ids(
     *, user: User, collection: Collection, isic_ids: list[str]
 ) -> dict:
     isic_ids = list(set(isic_ids))
-    visible_images = get_visible_objects(
+    visible_images = get_objects_for_user(
         user, "core.view_image", Image.objects.filter(isic_id__in=isic_ids)
     ).in_bulk(field_name="isic_id")
 

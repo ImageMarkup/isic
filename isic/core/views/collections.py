@@ -13,6 +13,7 @@ from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
 from django.urls.base import reverse
+from guardian.shortcuts import get_objects_for_user
 from ninja.errors import ValidationError as NinjaValidationError
 import pydantic
 
@@ -73,7 +74,7 @@ def collection_edit(request, pk):
 @needs_object_permission("core.view_collection", (Collection, "pk", "pk"))
 def collection_download_metadata(request, pk):
     collection = get_object_or_404(Collection, pk=pk)
-    qs = get_visible_objects(
+    qs = get_objects_for_user(
         request.user,
         "core.view_image",
         collection.images.all(),
@@ -134,7 +135,7 @@ def collection_detail(request, pk):
     )
 
     # TODO: if they can see the collection they can see the images?
-    images = get_visible_objects(
+    images = get_objects_for_user(
         request.user,
         "core.view_image",
         collection.images.select_related("accession").order_by("created").distinct(),

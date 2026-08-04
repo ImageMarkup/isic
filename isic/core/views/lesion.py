@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
+from guardian.shortcuts import get_objects_for_user
 
 from isic.core.models.image import Image
 from isic.core.permissions import get_visible_objects
@@ -24,7 +25,7 @@ def lesion_detail(request, identifier):
     lesion = get_object_or_404(qs, pk=identifier)
 
     images = (
-        get_visible_objects(
+        get_objects_for_user(
             request.user,
             "core.view_image",
             Image.objects.filter(accession__lesion=lesion),

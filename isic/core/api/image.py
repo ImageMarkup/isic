@@ -9,6 +9,7 @@ from django.db.models import Case, Max, Q, Value, When
 from django.http.request import HttpRequest
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
+from guardian.shortcuts import get_objects_for_user
 from isic_metadata import FIELD_REGISTRY
 from ninja import Field, ModelSchema, Query, Router, Schema
 from ninja.errors import ValidationError as NinjaValidationError
@@ -19,7 +20,6 @@ from sentry_sdk import set_tag
 from isic.auth import allow_any, is_authenticated, is_staff
 from isic.core.models import Image
 from isic.core.pagination import CursorPagination, qs_with_hardcoded_count
-from isic.core.permissions import get_visible_objects
 from isic.core.search import facets, get_elasticsearch_client
 from isic.core.serializers import SearchQueryIn
 from isic.types import AuthenticatedHttpRequest
@@ -195,7 +195,7 @@ class PinnedFirstPagination(CursorPagination):
 )
 @paginate(PinnedFirstPagination)
 def image_list(request: HttpRequest):
-    qs = get_visible_objects(request.user, "core.view_image", default_qs)
+    qs = get_objects_for_user(request.user, "core.view_image", default_qs)
 
     if settings.ISIC_USE_ELASTICSEARCH_COUNTS:
         es_query = SearchQueryIn().to_es_query(request.user)
@@ -295,7 +295,7 @@ def image_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):
     auth=allow_any,
 )
 def image_detail(request: HttpRequest, isic_id: str):
-    qs = get_visible_objects(request.user, "core.view_image", default_qs)
+    qs = get_objects_for_user(request.user, "core.view_image", default_qs)
     return get_object_or_404(qs, isic_id=isic_id)
 
 
@@ -313,14 +313,14 @@ class SimilarImageOut(ImageOut):
 def image_similar(
     request: AuthenticatedHttpRequest, isic_id: str, limit: int = Query(10, le=50)
 ) -> list[SimilarImageOut]:
-    qs = get_visible_objects(request.user, "core.view_image", default_qs)
+    qs = get_objects_for_user(request.user, "core.view_image", default_qs)
     image = get_object_or_404(qs, isic_id=isic_id)
 
     if not image.has_embedding:
         return []
 
     similar_qs = image.similar_images().select_related("accession__cohort")
-    similar_qs = get_visible_objects(request.user, "core.view_image", similar_qs)
+    similar_qs = get_objects_for_user(request.user, "core.view_image", similar_qs)
     return similar_qs[:limit]
 
 
@@ -337,7 +337,7 @@ class SetPinned(Schema):
     auth=is_staff,
 )
 def image_set_pinned(request, id: int, payload: SetPinned):
-    qs = get_visible_objects(request.user, "core.view_image", Image.objects.all())
+    qs = get_objects_for_user(request.user, "core.view_image", default_qs)
     image = get_object_or_404(qs.distinct(), id=id)
     if payload.pinned:
         if not image.public:

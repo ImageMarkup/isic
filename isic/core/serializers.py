@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, cast
 
 from django.contrib.auth.models import AnonymousUser, User
 from django.shortcuts import get_object_or_404
+from guardian.shortcuts import get_objects_for_user
 from ninja import Schema
 from pydantic import field_validator
 
@@ -87,8 +88,7 @@ class SearchQueryIn(Schema):
                     Collection.objects.filter(pk__in=self.collections),
                 )
             )
-
-        return get_visible_objects(user, "core.view_image", qs).distinct()
+        return get_objects_for_user(user, "core.view_image", qs).distinct()
 
     def to_es_query(self, user: User | AnonymousUser) -> dict:
         es_query: dict | None = None

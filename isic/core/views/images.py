@@ -10,6 +10,7 @@ from django.db.models.query_utils import Q
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
+from guardian.shortcuts import get_objects_for_user
 from ninja.errors import ValidationError as NinjaValidationError
 import pydantic
 
@@ -45,7 +46,7 @@ def resolve_image_identifier(view_func):
             else Q(accession__girder_id=image_identifier)
         )
 
-        image = get_visible_objects(
+        image = get_objects_for_user(
             request.user, "core.view_image", Image.objects.filter(filter_)
         ).first()
         if image:
@@ -91,13 +92,13 @@ def image_detail(request, isic_id):
         .distinct()
     )
 
-    other_patient_images = get_visible_objects(
+    other_patient_images = get_objects_for_user(
         request.user,
         "core.view_image",
         image.same_patient_images().select_related("accession"),
     )
 
-    other_lesion_images = get_visible_objects(
+    other_lesion_images = get_objects_for_user(
         request.user,
         "core.view_image",
         image.same_lesion_images().select_related("accession"),

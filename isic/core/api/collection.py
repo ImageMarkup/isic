@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Count
 from django.http.response import JsonResponse
 from django.shortcuts import get_object_or_404
+from guardian.shortcuts import get_objects_for_user
 from jaro import jaro_winkler_metric
 from ninja import Field, ModelSchema, Query, Router, Schema
 from ninja.pagination import paginate
@@ -254,7 +255,7 @@ def collection_share_to_users(request, id: int, payload: CollectionShareIn):
 def collection_attribution_information(request, id: int) -> list[dict[str, int]]:
     qs = get_visible_objects(request.user, "core.view_collection")
     collection = get_object_or_404(qs.distinct(), id=id)
-    images = get_visible_objects(request.user, "core.view_image", collection.images.distinct())
+    images = get_objects_for_user(request.user, "core.view_image", collection.images.distinct())
     counts = (
         Accession.objects.filter(image__in=images)
         .values("copyright_license", "attribution")

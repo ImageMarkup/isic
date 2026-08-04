@@ -1,3 +1,4 @@
+from guardian.shortcuts import get_objects_for_user
 import pytest
 
 from isic.core.permissions import get_visible_objects
@@ -18,12 +19,12 @@ def test_collection_shares(staff_user, user, private_collection):
     private_image = private_collection.images.first()
 
     assert not user.has_perm("core.view_image", private_image)
-    assert get_visible_objects(user, "core.view_image").count() == 0
+    assert get_objects_for_user(user, "core.view_image").count() == 0
     assert not user.has_perm("core.view_collection", private_collection)
     assert get_visible_objects(user, "core.view_collection").count() == 0
     share_collection(collection=private_collection, grantor=staff_user, grantee=user)
     assert user.has_perm("core.view_image", private_image)
-    assert get_visible_objects(user, "core.view_image").count() == 1
+    assert get_objects_for_user(user, "core.view_image").count() == 1
     assert user.has_perm("core.view_collection", private_collection)
     assert get_visible_objects(user, "core.view_collection").count() == 1
 
@@ -45,14 +46,14 @@ def test_collection_shares_beget_image_shares(staff_user, user, private_collecti
     private_image = private_collection.images.first()
     share_collection(collection=private_collection, grantor=staff_user, grantee=user)
     assert user.has_perm("core.view_image", private_image)
-    assert get_visible_objects(user, "core.view_image").count() == 1
+    assert get_objects_for_user(user, "core.view_image").count() == 1
 
     # adding a new private image to the collection should enable it to be visible to the user
     new_private_image = image_factory(public=False)
     add_images_to_collection(collection=private_collection, image=new_private_image)
 
     assert user.has_perm("core.view_image", new_private_image)
-    assert get_visible_objects(user, "core.view_image").count() == 2
+    assert get_objects_for_user(user, "core.view_image").count() == 2
 
 
 @pytest.mark.django_db
@@ -64,4 +65,4 @@ def test_collection_deletion_does_not_revoke_image_shares(staff_user, user, priv
     delete_collection(collection=private_collection)
 
     assert user.has_perm("core.view_image", private_image)
-    assert get_visible_objects(user, "core.view_image").count() == 1
+    assert get_objects_for_user(user, "core.view_image").count() == 1

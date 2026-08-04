@@ -309,18 +309,15 @@ def build_elasticsearch_query(
         query_dict["bool"].setdefault("filter", [])
         query_dict["bool"]["filter"].append({"terms": {"collections": visible_collection_pks}})
 
-    # Note: permissions here must be also modified in ImagePermissions.view_image_list
     if user.is_staff:
         return query_dict
     elif user.is_authenticated:
-        # the logic below of generalizing the query parameters to avoid user-specific data
-        # is identical to the logic in ImagePermissions.view_image_list.
+        # the logic below generalizes the query parameters to avoid user-specific data
         query_dict["bool"]["should"] = [{"term": {"public": "true"}}]
         # https://www.elastic.co/docs/reference/query-languages/query-dsl/query-dsl-bool-query#bool-min-should-match
         query_dict["bool"]["minimum_should_match"] = 1
 
-        # the logic below of generalizing the query parameters to avoid user-specific data
-        # is identical to the logic in ImagePermissions.view_image_list.
+        # the logic below generalizes the query parameters to avoid user-specific data
         if user.owned_contributors.exists():
             query_dict["bool"]["should"].append(
                 {
