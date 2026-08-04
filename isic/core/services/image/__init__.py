@@ -3,6 +3,7 @@ import itertools
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import QuerySet
+from guardian.shortcuts import assign_perm
 
 from isic.core.models import Image, IsicId
 from isic.ingest.models.accession import Accession
@@ -50,3 +51,6 @@ def share_image(
                 ],
                 ignore_conflicts=True,
             )
+            # Bulk creation does not trigger post_save signal,
+            # so manually assign guardian permissions
+            assign_perm("view_image", grantee, qs)
