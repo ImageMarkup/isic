@@ -1,0 +1,18 @@
+{% csrf_token %}
+
+{{ form.non_field_errors }}
+
+<div class="{{ fields_class|default:'flex flex-col space-y-4' }}">
+  <fieldset class="fieldset">
+    <label class="fieldset-legend" for="{{ form.domain.id_for_label }}">{{ form.domain.label }}</label>
+    {{ form.domain }}
+    <p class="fieldset-label"><span class="prose">{{ form.domain.help_text|safe }}</span></p>
+    {{ form.domain.errors }}
+  </fieldset>
+
+  {% url 'api:contributor_autocomplete' as contributor_suggest_url %}
+  {% url 'api:contributor_list' as contributor_api_url %}
+  {% include 'ingest/partials/autocomplete_field.html' with field=form.contributor suggest_url=contributor_suggest_url detail_url=contributor_api_url label_key='institution_name' detail_template='ingest/partials/contributor_autocomplete_detail.html' %}
+</div>
+
+<button type="submit" class="btn btn-primary btn-sm self-end">{{ submit_label }}</button>

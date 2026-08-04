@@ -26,7 +26,10 @@ from isic.core.tests.factories import (
     ImageFactory,
     IsicIdFactory,
 )
-from isic.engagement.tests.factories import EngagementProfileFactory
+from isic.engagement.tests.factories import (
+    EmailDomainContributorFactory,
+    EngagementProfileFactory,
+)
 from isic.ingest.tests.factories import (
     AccessionFactory,
     AccessionReviewFactory,
@@ -211,3 +214,4 @@ register(StudyFactory)
 
 # engagement factories
 register(EngagementProfileFactory)
+register(EmailDomainContributorFactory)
