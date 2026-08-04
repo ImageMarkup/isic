@@ -11,6 +11,14 @@
         <li><a href="{% url 'core/image-pins' %}">Reorder Pinned Images</a></li>
         <li><a href="{% url 'core/image-list-export' %}">Image List</a></li>
         <li><a href="{% url 'core/staff-list' %}">Users</a></li>
+        <li>
+          <details>
+            <summary>Engagement</summary>
+            <ul class="w-max z-20">
+              <li><a href="{% url 'engagement/user-list' %}">Users</a></li>
+            </ul>
+          </details>
+        </li>
         <li><a target="blank" href="{% url 'admin:index' %}">Django Admin <i class="ri-external-link-line"></i></a></li>
       </ul>
     </details>

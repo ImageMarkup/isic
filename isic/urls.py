@@ -90,6 +90,7 @@ urlpatterns = [
     # Core app
     path("", RedirectView.as_view(url=reverse_lazy("core/image-browser")), name="index"),
     path("", include("isic.core.urls")),
+    path("", include("isic.engagement.urls")),
     path("", include("isic.ingest.urls")),
     path("", include("isic.stats.urls")),
     path("", include("isic.studies.urls")),
