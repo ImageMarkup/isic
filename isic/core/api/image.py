@@ -16,7 +16,7 @@ from ninja.pagination import paginate
 from pyparsing.exceptions import ParseException
 from sentry_sdk import set_tag
 
-from isic.auth import is_authenticated
+from isic.auth import allow_any, is_authenticated, is_staff
 from isic.core.models import Image
 from isic.core.pagination import CursorPagination, qs_with_hardcoded_count
 from isic.core.permissions import get_visible_objects
@@ -187,7 +187,11 @@ class PinnedFirstPagination(CursorPagination):
 
 
 @router.get(
-    "/", response=list[ImageOut], summary="Return a list of images.", include_in_schema=True
+    "/",
+    response=list[ImageOut],
+    summary="Return a list of images.",
+    include_in_schema=True,
+    auth=allow_any,
 )
 @paginate(PinnedFirstPagination)
 def image_list(request: HttpRequest):
@@ -210,6 +214,7 @@ def image_list(request: HttpRequest):
     summary="Search images with a key:value query string.",
     description=render_to_string("core/swagger_image_search_description.html"),
     include_in_schema=True,
+    auth=allow_any,
 )
 @paginate(PinnedFirstPagination)
 def image_search(request: HttpRequest, search: SearchQueryIn = Query(...)):
@@ -239,6 +244,7 @@ def image_search(request: HttpRequest, search: SearchQueryIn = Query(...)):
     response={200: dict, 400: dict},
     summary="Get total size of images matching a search query.",
     include_in_schema=False,
+    auth=allow_any,
 )
 def image_search_size(request: HttpRequest, search: SearchQueryIn = Query(...)):
     try:
@@ -261,7 +267,7 @@ def image_search_size(request: HttpRequest, search: SearchQueryIn = Query(...)):
     return {"size": int(total_size)}
 
 
-@router.get("/facets/", response=dict, include_in_schema=False)
+@router.get("/facets/", response=dict, include_in_schema=False, auth=allow_any)
 def image_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):
     cache_key = f"image_facets:{search.to_cache_key(request.user)}"
     cached_facets = cache.get(cache_key)
@@ -286,6 +292,7 @@ def image_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):
     response=ImageOut,
     summary="Retrieve a single image by ISIC ID.",
     include_in_schema=True,
+    auth=allow_any,
 )
 def image_detail(request: HttpRequest, isic_id: str):
     qs = get_visible_objects(request.user, "core.view_image", default_qs)
@@ -325,14 +332,11 @@ class SetPinned(Schema):
 
 @router.post(
     "/{id}/set-pinned/",
-    response={200: None, 400: dict, 403: dict},
+    response={200: None, 400: dict},
     include_in_schema=False,
-    auth=is_authenticated,
+    auth=is_staff,
 )
 def image_set_pinned(request, id: int, payload: SetPinned):
-    if not request.user.is_staff:
-        return 403, {"error": "You do not have permission to pin or unpin this image."}
-
     qs = get_visible_objects(request.user, "core.view_image", Image.objects.all())
     image = get_object_or_404(qs.distinct(), id=id)
     if payload.pinned:
@@ -356,14 +360,11 @@ class PinOrder(Schema):
 
 @router.post(
     "/pins/reorder/",
-    response={200: None, 400: dict, 403: dict},
+    response={200: None, 400: dict},
     include_in_schema=False,
-    auth=is_authenticated,
+    auth=is_staff,
 )
 def image_pins_reorder(request: HttpRequest, payload: PinOrder):
-    if not request.user.is_staff:
-        return 403, {"error": "You do not have permission to reorder image pins."}
-
     with transaction.atomic():
         result = Image.objects.filter(public=True, isic_id__in=payload.order).update(
             pinned=Case(

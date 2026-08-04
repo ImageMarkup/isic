@@ -10,7 +10,7 @@ from ninja import Field, ModelSchema, Query, Router, Schema
 from ninja.pagination import paginate
 from pydantic import field_validator
 
-from isic.auth import is_authenticated
+from isic.auth import allow_any, is_authenticated, is_staff
 from isic.core.constants import ISIC_ID_REGEX
 from isic.core.models.collection import Collection
 from isic.core.pagination import CursorPagination
@@ -59,6 +59,7 @@ class CollectionOut(ModelSchema):
     response=list[CollectionOut],
     summary="Return a list of collections.",
     include_in_schema=True,
+    auth=allow_any,
 )
 @paginate(CursorPagination)
 def collection_list(
@@ -122,6 +123,7 @@ def collection_create_from_isic_ids(request, payload: CreateCollectionFromIsicId
     response=list[CollectionOut],
     summary="Find relevant collections by auto completing by name.",
     include_in_schema=False,
+    auth=allow_any,
 )
 def collection_autocomplete(
     request, payload: AutocompleteQueryIn = Query(...)
@@ -150,11 +152,8 @@ def collection_autocomplete(
     return collections[:20]
 
 
-@router.get("/sharing-info/", response={200: list, 403: dict}, include_in_schema=False)
+@router.get("/sharing-info/", response={200: list}, include_in_schema=False, auth=is_staff)
 def collection_sharing_info(request, collection_ids: list[int] = Query(...)):
-    if not request.user.is_staff:
-        return 403, {"error": "You do not have permission to view sharing info."}
-
     collections = (
         Collection.objects.filter(id__in=collection_ids)
         .select_related("creator")
@@ -184,6 +183,7 @@ def collection_sharing_info(request, collection_ids: list[int] = Query(...)):
     response=CollectionOut,
     summary="Retrieve a single collection by ID.",
     include_in_schema=True,
+    auth=allow_any,
 )
 def collection_detail(request, id: int) -> CollectionOut:
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
@@ -194,6 +194,7 @@ def collection_detail(request, id: int) -> CollectionOut:
     "/{id}/",
     response={204: None, 400: dict, 403: dict},
     include_in_schema=False,
+    auth=is_authenticated,
 )
 def collection_delete(request, id: int):
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
@@ -216,14 +217,14 @@ class CollectionShareIn(Schema):
 
 
 @router.post(
-    "/{id}/share/", response={202: None, 400: dict, 403: dict, 404: dict}, include_in_schema=False
+    "/{id}/share/",
+    response={202: None, 400: dict, 404: dict},
+    include_in_schema=False,
+    auth=is_staff,
 )
 def collection_share_to_users(request, id: int, payload: CollectionShareIn):
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
     collection = get_object_or_404(qs.distinct(), id=id)
-
-    if not request.user.is_staff:
-        return 403, {"error": "You do not have permission to share this collection."}
 
     if collection.is_magic:
         return 400, {"error": "Magic collections cannot be shared."}
@@ -248,6 +249,7 @@ def collection_share_to_users(request, id: int, payload: CollectionShareIn):
     "/{id}/attribution/",
     summary="Retrieve attribution information of the specified collection.",
     include_in_schema=False,
+    auth=allow_any,
 )
 def collection_attribution_information(request, id: int) -> list[dict[str, int]]:
     qs = get_visible_objects(request.user, "core.view_collection")
@@ -268,6 +270,7 @@ def collection_attribution_information(request, id: int) -> list[dict[str, int]]
     "/{id}/populate-from-search/",
     response={202: None, 403: dict, 409: dict},
     include_in_schema=False,
+    auth=is_authenticated,
 )
 def collection_populate_from_search(request, id: int, payload: SearchQueryIn):
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
@@ -302,13 +305,11 @@ class SetPinnedIn(Schema):
 
 @router.post(
     "/{id}/set-pinned/",
-    response={200: None, 400: dict, 403: dict},
+    response={200: None, 400: dict},
     include_in_schema=False,
+    auth=is_staff,
 )
 def collection_set_pinned(request, id: int, payload: SetPinnedIn):
-    if not request.user.is_staff:
-        return 403, {"error": "You do not have permission to pin or unpin this collection."}
-
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
     collection = get_object_or_404(qs.distinct(), id=id)
 
@@ -332,7 +333,10 @@ class IsicIdList(Schema):
 
 # TODO: refactor *-from-list methods
 @router.post(
-    "/{id}/populate-from-list/", response={200: None, 403: dict, 409: dict}, include_in_schema=False
+    "/{id}/populate-from-list/",
+    response={200: None, 403: dict, 409: dict},
+    include_in_schema=False,
+    auth=is_authenticated,
 )
 def collection_populate_from_list(request, id, payload: IsicIdList):
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
@@ -354,7 +358,10 @@ def collection_populate_from_list(request, id, payload: IsicIdList):
 
 
 @router.post(
-    "/{id}/remove-from-list/", response={200: None, 403: dict, 409: dict}, include_in_schema=False
+    "/{id}/remove-from-list/",
+    response={200: None, 403: dict, 409: dict},
+    include_in_schema=False,
+    auth=is_authenticated,
 )
 def collection_remove_from_list(request, id, payload: IsicIdList):
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())

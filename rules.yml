@@ -14,6 +14,21 @@ rules:
           metavariable: $OPERATION
           regex: ^(get|post|delete|put|patch)$
 
+  - id: require-auth-on-route
+    languages:
+      - python
+    severity: ERROR
+    message: Found a route that doesn't explicitly set auth.
+    patterns:
+      - pattern-inside: |
+          $ROUTER = ninja.Router(...)
+          ...
+      - pattern: $ROUTER.$OPERATION(...)
+      - pattern-not: $ROUTER.$OPERATION(..., auth=..., ...)
+      - metavariable-regex:
+          metavariable: $OPERATION
+          regex: ^(get|post|delete|put|patch)$
+
   - id: require-delay-on-commit
     languages:
       - python

@@ -660,7 +660,7 @@ def test_draft_doi_edit_view_permissions(
 @pytest.mark.parametrize(
     ("client_", "expected_status"),
     [
-        (lf("client"), 403),
+        (lf("client"), 401),
         (lf("authenticated_client"), 403),
         (lf("staff_client"), 200),
     ],

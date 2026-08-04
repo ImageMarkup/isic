@@ -23,6 +23,7 @@ from ninja.errors import AuthenticationError
 from ninja.security import APIKeyQuery
 import orjson
 
+from isic.auth import allow_any
 from isic.core.models import CopyrightLicense, Image
 from isic.core.serializers import SearchQueryIn
 from isic.core.services import image_metadata_csv
@@ -64,7 +65,7 @@ class ZipDownloadTokenAuth(APIKeyQuery):
 
 
 @csrf_exempt
-@zip_router.post("/url/", response=str, include_in_schema=False)
+@zip_router.post("/url/", response=str, include_in_schema=False, auth=allow_any)
 def zip_download_url(request: HttpRequest, payload: SearchQueryIn):
     url: ParseResult | None = settings.ISIC_ZIP_DOWNLOAD_SERVICE_URL
     if url is None:
@@ -189,7 +190,7 @@ def zip_download_attribution_file(request: NinjaAuthHttpRequest):
     return HttpResponse("\n\n".join(attributions), content_type="text/plain")
 
 
-@zip_router.get("/license-file/{license_type}/", include_in_schema=False)
+@zip_router.get("/license-file/{license_type}/", include_in_schema=False, auth=allow_any)
 def zip_download_license_file(request: HttpRequest, license_type: str):
     if license_type not in CopyrightLicense.values:
         raise Http404

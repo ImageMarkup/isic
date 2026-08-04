@@ -11,7 +11,7 @@ from isic.ingest.tests.factories import data_dir
     ("client_", "expected_status"),
     [
         (lf("client"), 401),
-        (lf("authenticated_client"), 403),
+        (lf("authenticated_client"), 401),
         (lf("staff_client"), 200),
     ],
     ids=["anonymous", "authenticated", "staff"],
@@ -104,7 +104,7 @@ def test_image_pin_disabled_when_private(image_factory, staff_authenticated_page
     ("client_", "expected_status"),
     [
         (lf("client"), 401),
-        (lf("authenticated_client"), 403),
+        (lf("authenticated_client"), 401),
         (lf("staff_client"), 200),
     ],
     ids=["anonymous", "authenticated", "staff"],

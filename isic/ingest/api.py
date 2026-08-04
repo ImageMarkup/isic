@@ -10,7 +10,7 @@ from ninja.pagination import paginate
 from pydantic import field_validator
 from s3_file_field.widgets import S3PlaceholderFile
 
-from isic.auth import is_authenticated, is_staff
+from isic.auth import allow_any, is_authenticated, is_staff
 from isic.core.api.image import ImageOut
 from isic.core.pagination import CursorPagination
 from isic.core.permissions import get_visible_objects
@@ -41,7 +41,11 @@ class LesionOut(ModelSchema):
 
 
 @lesion_router.get(
-    "/{id}/", response=LesionOut, summary="Retrieve a single lesion by ID.", include_in_schema=True
+    "/{id}/",
+    response=LesionOut,
+    summary="Retrieve a single lesion by ID.",
+    include_in_schema=True,
+    auth=allow_any,
 )
 def lesion_detail(request: HttpRequest, id: str):
     qs = get_visible_objects(
@@ -59,6 +63,7 @@ def lesion_detail(request: HttpRequest, id: str):
     response=list[LesionOut],
     summary="Return a list of lesions with diagnoses.",
     include_in_schema=True,
+    auth=allow_any,
 )
 @paginate(CursorPagination)
 def lesion_list(request: HttpRequest):
@@ -104,6 +109,7 @@ class AccessionOut(ModelSchema):
     response={201: AccessionOut, 403: dict, 400: dict},
     summary="Create an Accession.",
     include_in_schema=False,
+    auth=is_authenticated,
 )
 def accession_create(request: HttpRequest, payload: AccessionIn):
     cohort = get_object_or_404(Cohort, pk=payload.cohort)
@@ -131,12 +137,9 @@ class AccessionReview(Schema):
 
 
 @accession_router.post(
-    "/create-review-bulk/", response={403: dict, 201: dict}, include_in_schema=False
+    "/create-review-bulk/", response={201: dict}, include_in_schema=False, auth=is_staff
 )
 def accession_review_bulk_create(request: HttpRequest, payload: list[AccessionReview]):
-    if not request.user.is_staff:
-        return 403, {"error": "Only staff users may bulk create reviews."}
-
     bulk_create_accession_reviews(
         reviewer=request.user,
         accession_ids_values={x.id: x.value for x in payload},
@@ -166,7 +169,11 @@ class CohortOut(ModelSchema):
 
 
 @cohort_router.get(
-    "/", response=list[CohortOut], summary="Return a list of cohorts.", include_in_schema=False
+    "/",
+    response=list[CohortOut],
+    summary="Return a list of cohorts.",
+    include_in_schema=False,
+    auth=is_authenticated,
 )
 @paginate(CursorPagination)
 def cohort_list(request: HttpRequest):
@@ -174,7 +181,11 @@ def cohort_list(request: HttpRequest):
 
 
 @cohort_router.get(
-    "/{id}/", response=CohortOut, summary="Retrieve a single cohort by ID.", include_in_schema=False
+    "/{id}/",
+    response=CohortOut,
+    summary="Retrieve a single cohort by ID.",
+    include_in_schema=False,
+    auth=is_authenticated,
 )
 def cohort_detail(request: HttpRequest, id: int):
     qs = get_visible_objects(request.user, "ingest.view_cohort", default_cohort_qs)
@@ -243,6 +254,7 @@ class ContributorDetailOut(ContributorOut):
     response=list[ContributorOut],
     summary="Return a list of contributors.",
     include_in_schema=False,
+    auth=is_authenticated,
 )
 @paginate(CursorPagination)
 def contributor_list(request: HttpRequest):
@@ -258,6 +270,7 @@ def contributor_list(request: HttpRequest):
     response=ContributorDetailOut,
     summary="Retrieve a single contributor by ID.",
     include_in_schema=False,
+    auth=is_authenticated,
 )
 def contributor_detail(request: HttpRequest, id: int):
     qs = get_visible_objects(

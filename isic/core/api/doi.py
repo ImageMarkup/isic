@@ -5,6 +5,7 @@ from ninja import Router, Schema
 from pydantic import field_validator
 from s3_file_field.widgets import S3PlaceholderFile
 
+from isic.auth import is_authenticated
 from isic.core.models.collection import Collection
 from isic.core.models.doi import DraftDoi, DraftDoiRelatedIdentifier
 from isic.core.services.collection.doi import create_collection_draft_doi
@@ -65,6 +66,7 @@ class CreateDOIIn(Schema):
     response={201: dict, 403: dict, 409: dict},
     summary="Create a draft DOI for a collection.",
     include_in_schema=False,
+    auth=is_authenticated,
 )
 def doi_create(request, payload: CreateDOIIn):
     collection = get_object_or_404(Collection, pk=payload.collection_id)
@@ -92,6 +94,7 @@ class UpdateDraftDOIIn(Schema):
     response={200: dict, 403: dict, 404: dict},
     summary="Update a draft DOI.",
     include_in_schema=False,
+    auth=is_authenticated,
 )
 def doi_update_draft(request, draft_doi_slug: str, payload: UpdateDraftDOIIn):
     from isic.core.services.collection import update_collection
@@ -115,6 +118,7 @@ def doi_update_draft(request, draft_doi_slug: str, payload: UpdateDraftDOIIn):
     response={200: dict, 403: dict, 404: dict, 409: dict},
     summary="Publish a draft DOI to make it findable.",
     include_in_schema=False,
+    auth=is_authenticated,
 )
 def doi_publish_draft(request, draft_doi_slug: str):
     with transaction.atomic():

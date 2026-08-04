@@ -8,6 +8,7 @@ from jaro import jaro_winkler_metric
 from ninja import ModelSchema, Query, Router, Schema
 from pydantic import field_validator
 
+from isic.auth import allow_any, is_authenticated, is_staff
 from isic.core.api.collection import CollectionOut
 from isic.core.models import Collection
 from isic.core.permissions import get_visible_objects
@@ -44,12 +45,14 @@ class QueryIn(Schema):
         return v
 
 
-@router.get("/", include_in_schema=False)
+@router.get("/", include_in_schema=False, auth=allow_any)
 def quickfind(request, payload: QueryIn = Query(...)):
     return JsonResponse(quickfind_execute(payload.query, request.user), safe=False)
 
 
-@autocomplete_router.get("/cohort/", response=list[CohortOut], include_in_schema=False)
+@autocomplete_router.get(
+    "/cohort/", response=list[CohortOut], include_in_schema=False, auth=is_authenticated
+)
 def cohort_autocomplete(request: HttpRequest, query=Query(..., min_length=3)):
     return get_visible_objects(
         request.user,
@@ -59,7 +62,10 @@ def cohort_autocomplete(request: HttpRequest, query=Query(..., min_length=3)):
 
 
 @autocomplete_router.get(
-    "/contributor/", response=list[ContributorAutocompleteOut], include_in_schema=False
+    "/contributor/",
+    response=list[ContributorAutocompleteOut],
+    include_in_schema=False,
+    auth=is_authenticated,
 )
 def contributor_autocomplete(request: HttpRequest, query=Query(..., min_length=3)):
     return get_visible_objects(
@@ -69,7 +75,9 @@ def contributor_autocomplete(request: HttpRequest, query=Query(..., min_length=3
     )[:AUTOCOMPLETE_LIMIT]
 
 
-@autocomplete_router.get("/collection/", response=list[CollectionOut], include_in_schema=False)
+@autocomplete_router.get(
+    "/collection/", response=list[CollectionOut], include_in_schema=False, auth=allow_any
+)
 def find_collection_autocomplete(request: HttpRequest, query=Query(..., min_length=3)):
     # exclude magic collections
     qs = get_visible_objects(
@@ -87,11 +95,8 @@ class UserOut(ModelSchema):
         fields = ["id", "email", "first_name", "last_name"]
 
 
-@autocomplete_router.get("/user/", response=list[UserOut], include_in_schema=False)
+@autocomplete_router.get("/user/", response=list[UserOut], include_in_schema=False, auth=is_staff)
 def user_autocomplete(request: HttpRequest, query=Query(..., min_length=3)):
-    if not request.user.is_staff:
-        return 403, {"error": "Only staff users may search for users."}
-
     qs = User.objects.filter(is_active=True, email__icontains=query).order_by("email")
     distance = partial(jaro_winkler_metric, query.upper())
     return sorted(qs, key=lambda user: distance(user.email.upper()), reverse=True)[:10]
