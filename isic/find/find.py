@@ -2,6 +2,7 @@ from functools import partial
 
 from django.contrib.auth.models import User
 from django.db.models.query_utils import Q
+from guardian.shortcuts import get_objects_for_user
 from jaro import jaro_winkler_metric
 
 from isic.core.models.collection import Collection
@@ -94,7 +95,10 @@ def quickfind_execute(query: str, user: User) -> list[dict]:
             # Regular users can only search images/studies/collections.
             continue
 
-        if search["permission"]:
+        if search["permission"] == "core.view_image":
+            qs = get_objects_for_user(user, search["permission"], search["filter"])
+            items = list(qs)
+        elif search["permission"]:
             qs = get_visible_objects(user, search["permission"], search["filter"])
             items = list(qs)
         else:
