@@ -5,6 +5,7 @@ import pytest
 from pytest_lazy_fixtures import lf
 
 from isic.core.dsl import es_parser, parse_query
+from isic.core.models.image import ImageShare
 from isic.core.search import (
     add_to_search_index,
     build_elasticsearch_query,
@@ -227,7 +228,9 @@ def test_core_api_image_search_images_as_guest(searchable_images, client):
 
 @pytest.mark.django_db
 def test_core_api_image_search_contributed(private_searchable_image, authenticated_client, user):
-    private_searchable_image.accession.cohort.contributor.owners.add(user)
+    contributor = private_searchable_image.accession.cohort.contributor
+    contributor.owners.add(user)
+    contributor.save()
     add_to_search_index(private_searchable_image)
     get_elasticsearch_client().indices.refresh(index="_all")
 
@@ -240,7 +243,11 @@ def test_core_api_image_search_contributed(private_searchable_image, authenticat
 def test_core_api_image_search_shares(
     private_searchable_image, authenticated_client, user, staff_user
 ):
-    private_searchable_image.shares.add(user, through_defaults={"grantor": staff_user})
+    ImageShare.objects.create(
+        grantor=staff_user,
+        grantee=user,
+        image=private_searchable_image,
+    )
     private_searchable_image.save()
     add_to_search_index(private_searchable_image)
     get_elasticsearch_client().indices.refresh(index="_all")

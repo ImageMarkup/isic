@@ -1,6 +1,8 @@
 from django.urls import reverse
 import pytest
 
+from isic.core.models.image import ImageShare
+
 
 @pytest.fixture
 def images(image_factory):
@@ -32,7 +34,9 @@ def test_core_api_image_list_private(private_image, authenticated_client):
 
 @pytest.mark.django_db
 def test_core_api_image_list_contributed(private_image, authenticated_client, user):
-    private_image.accession.cohort.contributor.owners.add(user)
+    contributor = private_image.accession.cohort.contributor
+    contributor.owners.add(user)
+    contributor.save()
 
     r = authenticated_client.get(reverse("api:image_list"))
     assert r.status_code == 200, r.json()
@@ -41,8 +45,11 @@ def test_core_api_image_list_contributed(private_image, authenticated_client, us
 
 @pytest.mark.django_db
 def test_core_api_image_list_shares(private_image, authenticated_client, user, staff_user):
-    private_image.shares.add(user, through_defaults={"grantor": staff_user})
-    private_image.save()
+    ImageShare.objects.create(
+        grantor=staff_user,
+        grantee=user,
+        image=private_image,
+    )
 
     r = authenticated_client.get(reverse("api:image_list"))
     assert r.status_code == 200, r.json()
@@ -52,9 +59,14 @@ def test_core_api_image_list_shares(private_image, authenticated_client, user, s
 # Can be removed once https://github.com/ImageMarkup/tracker/issues/77 is resolved
 @pytest.mark.django_db
 def test_core_api_image_list_no_duplicates(private_image, authenticated_client, user, staff_user):
-    private_image.accession.cohort.contributor.owners.add(user)
-    private_image.shares.add(user, through_defaults={"grantor": staff_user})
-    private_image.save()
+    contributor = private_image.accession.cohort.contributor
+    contributor.owners.add(user)
+    contributor.save()
+    ImageShare.objects.create(
+        grantor=staff_user,
+        grantee=user,
+        image=private_image,
+    )
 
     r = authenticated_client.get(reverse("api:image_list"))
     assert r.status_code == 200, r.json()

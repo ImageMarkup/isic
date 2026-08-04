@@ -99,7 +99,9 @@ def test_zip_download_listing_urls(authenticated_client, image_factory, user):
     private_image = image_factory(public=False)
     public_image = image_factory(public=True)
     # give the current user access to the private image so it's included in the zip listing
-    private_image.accession.cohort.contributor.owners.add(user)
+    contributor = private_image.accession.cohort.contributor
+    contributor.owners.add(user)
+    contributor.save()
 
     r = authenticated_client.post(
         reverse("api:zip_download_url"),

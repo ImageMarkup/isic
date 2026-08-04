@@ -3,6 +3,7 @@ import pytest
 from pytest_lazy_fixtures import lf
 
 from isic.core.models.collection import Collection
+from isic.core.models.image import ImageShare
 from isic.core.services.collection.image import add_images_to_collection
 
 
@@ -168,8 +169,10 @@ def test_core_api_collection_populate_from_list(
     private_image_shared = image_factory(accession__sex="female", public=False)
     private_image_unshared = image_factory(accession__sex="female", public=False)
 
-    private_image_shared.shares.add(
-        user, through_defaults={"grantor": private_image_shared.accession.creator}
+    ImageShare.objects.create(
+        grantor=private_image_shared.accession.creator,
+        grantee=user,
+        image=private_image_shared,
     )
 
     r = authenticated_client.post(
@@ -203,8 +206,10 @@ def test_core_api_collection_remove_from_list(
     private_image_shared = image_factory(accession__sex="female", public=False)
     private_image_unshared = image_factory(accession__sex="female", public=False)
 
-    private_image_shared.shares.add(
-        user, through_defaults={"grantor": private_image_shared.accession.creator}
+    ImageShare.objects.create(
+        grantor=private_image_shared.accession.creator,
+        grantee=user,
+        image=private_image_shared,
     )
 
     collection.images.add(public_image, private_image_shared, private_image_unshared)
