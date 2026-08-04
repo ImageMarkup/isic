@@ -97,4 +97,4 @@ def test_api_collection_share_to_users(authenticated_client, collection):
         {"user_ids": []},
         content_type="application/json",
     )
-    assert r.status_code == 403, r.json()
+    assert r.status_code == 401, r.json()

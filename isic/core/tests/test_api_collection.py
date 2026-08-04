@@ -306,8 +306,8 @@ def test_core_api_collection_share_no_notify(
 @pytest.mark.parametrize(
     ("client_", "expected_status"),
     [
-        (lf("client"), 403),
-        (lf("authenticated_client"), 403),
+        (lf("client"), 401),
+        (lf("authenticated_client"), 401),
         (lf("staff_client"), 200),
     ],
     ids=["anonymous", "authenticated", "staff"],
@@ -392,7 +392,7 @@ def other_user_client(user_factory):
         (lf("authenticated_client"), 204),
         (lf("staff_client"), 204),
         (lf("other_user_client"), 403),
-        (lf("client"), 403),
+        (lf("client"), 401),
     ],
     ids=["creator", "staff", "other-user", "anonymous"],
 )
@@ -447,8 +447,8 @@ def test_core_api_collection_delete_blocked(
 @pytest.mark.parametrize(
     ("client_", "expected_status"),
     [
-        (lf("client"), 403),
-        (lf("authenticated_client"), 403),
+        (lf("client"), 401),
+        (lf("authenticated_client"), 401),
         (lf("staff_client"), 200),
     ],
     ids=["anonymous", "authenticated", "staff"],
