@@ -1,0 +1,80 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block content %}
+  <header class="border-b border-gray-100 flex items-center justify-between py-2 pb-4">
+    <div class="flex-col">
+      <div class="heading-1">Engagement Users</div>
+      <div class="text-sm text-gray-600 mt-2">
+        Every user who has authenticated through the engagement platform. Their default contributor
+        and cohort determine where their uploads flow into the Archive.
+      </div>
+      <div class="text-sm text-gray-600 mt-2">
+        Total: {{ profiles|length|intcomma }} users
+      </div>
+    </div>
+  </header>
+
+  {% if profiles %}
+    <div class="overflow-x-auto">
+      <table class="table table-zebra">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Created</th>
+            <th>Last Login</th>
+            <th>Default Contributor</th>
+            <th>Default Cohort</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for profile in profiles %}
+            <tr>
+              <td>
+                <a href="{% url 'core/user-detail' pk=profile.user.pk %}" class="link link-hover link-primary">
+                  {{ profile.user.first_name }} {{ profile.user.last_name }}
+                </a>
+                <div class="text-gray-400">{{ profile.user.email }}</div>
+              </td>
+              <td>
+                <div>{{ profile.created|date:"M j, Y" }}</div>
+                <div class="text-gray-400">{{ profile.created|timesince }} ago</div>
+              </td>
+              <td>
+                {% if profile.user.last_login %}
+                  <div>{{ profile.user.last_login|date:"M j, Y" }}</div>
+                  <div class="text-gray-400">{{ profile.user.last_login|timesince }} ago</div>
+                {% else %}
+                  <span class="text-gray-400">&mdash;</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if profile.default_contributor %}
+                  {{ profile.default_contributor.institution_name }}
+                {% else %}
+                  <span class="text-gray-400">&mdash;</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if profile.default_cohort %}
+                  <a href="{% url 'ingest/cohort-detail' pk=profile.default_cohort.pk %}" class="link link-hover link-primary">
+                    {{ profile.default_cohort.name }}
+                  </a>
+                {% else %}
+                  <span class="text-gray-400">&mdash;</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="text-center py-12">
+      <div class="text-gray-500">
+        <h3 class="text-lg font-medium text-gray-900 mb-2">No engagement users yet</h3>
+        <p>Users appear here once they authenticate through the engagement platform.</p>
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}
