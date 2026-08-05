@@ -4,7 +4,44 @@ from guardian.shortcuts import get_objects_for_user
 from guardian.utils import get_anonymous_user
 import pytest
 
+from isic.core.guardian_permissions import initialize_guardian_permissions
 from isic.core.models.image import ImageShare
+
+
+@pytest.mark.django_db
+def test_initialize_guardian_permissions(suppress_post_save_signals, image_factory, user_factory):
+    # To test that permissions are applied correctly to existing objects,
+    # disable post_save signals for this test, then create objects
+    public_image = image_factory(public=True)
+    private_image = image_factory(public=False)
+    contributor_image = image_factory(public=False)
+    contributor_owner = user_factory(is_staff=False)
+    contributor = contributor_image.accession.cohort.contributor
+    contrib_group = f"contributor_{contributor.id}"
+    contributor.owners.add(contributor_owner)
+    nonstaff_user = user_factory(is_staff=False)
+    staff_user = user_factory(is_staff=True)
+    ImageShare.objects.create(grantor=staff_user, grantee=nonstaff_user, image=private_image)
+
+    # Check that no permissions are applied prior to initialization
+    for user in [contributor_owner, nonstaff_user, staff_user]:
+        assert user.groups.count() == 0
+        qs = get_objects_for_user(user, "core.view_image")
+        assert qs.count() == 0
+
+    initialize_guardian_permissions()
+
+    assert {group.name for group in contributor_owner.groups.all()} == {"Public", contrib_group}
+    contrib_qs = get_objects_for_user(contributor_owner, "core.view_image")
+    assert set(contrib_qs) == {public_image, contributor_image}
+
+    assert {group.name for group in nonstaff_user.groups.all()} == {"Public"}
+    nonstaff_qs = get_objects_for_user(nonstaff_user, "core.view_image")
+    assert set(nonstaff_qs) == {public_image, private_image}
+
+    assert {group.name for group in staff_user.groups.all()} == {"Public", "ISIC Staff"}
+    staff_qs = get_objects_for_user(staff_user, "core.view_image")
+    assert set(staff_qs) == {public_image, private_image, contributor_image}
 
 
 @pytest.mark.django_db

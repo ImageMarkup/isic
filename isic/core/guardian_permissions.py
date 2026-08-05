@@ -14,7 +14,19 @@ def get_contributor_group_name(contributor):
     return f"contributor_{contributor.id}"
 
 
-def assign_image_perms():
+def initialize_guardian_permissions():
+    # User groups
+    public_group, _ = Group.objects.get_or_create(name=PUBLIC_GROUP_NAME)
+    public_group.user_set.add(*User.objects.all())
+    staff_group, _ = Group.objects.get_or_create(name=STAFF_GROUP_NAME)
+    staff_group.user_set.add(*User.objects.filter(is_staff=True))
+    for contributor in Contributor.objects.all():
+        contributor_group, _ = Group.objects.get_or_create(
+            name=get_contributor_group_name(contributor)
+        )
+        contributor_group.user_set.add(*contributor.owners.all())
+
+    # Images
     all_images = Image.objects.all()
     public_images = Image.objects.filter(public=True)
     staff_group = Group.objects.get(name=STAFF_GROUP_NAME)
@@ -43,7 +55,7 @@ def user_save_assign_groups(sender, instance, created, **kwargs):
         instance.groups.add(staff_group)
 
     for contributor in instance.owned_contributors.all():
-        contributor_group, _  = Group.objects.get_or_create(
+        contributor_group, _ = Group.objects.get_or_create(
             name=get_contributor_group_name(contributor)
         )
         instance.groups.add(contributor_group)

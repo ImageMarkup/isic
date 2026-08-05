@@ -1,7 +1,17 @@
 import functools
 
+from django.contrib.auth.models import User
+from django.db.models.signals import post_save
 import pytest
 
+from isic.core.guardian_permissions import (
+    contributor_save_assign_perms,
+    image_save_assign_perms,
+    image_share_save_assign_perms,
+    user_save_assign_groups,
+)
+from isic.core.models.image import Image, ImageShare
+from isic.ingest.models.contributor import Contributor
 from isic.ingest.services.accession.review import update_or_create_accession_review
 
 
@@ -89,3 +99,18 @@ def mock_fetch_doi_citations(mocker):
         "isic.core.tasks._fetch_doi_citations",
         return_value={"apa": "fake citation", "chicago": "fake citation"},
     )
+
+
+@pytest.fixture
+def suppress_post_save_signals():
+    signals_and_senders = [
+        (user_save_assign_groups, User),
+        (image_save_assign_perms, Image),
+        (image_share_save_assign_perms, ImageShare),
+        (contributor_save_assign_perms, Contributor),
+    ]
+    for signal, sender in signals_and_senders:
+        post_save.disconnect(signal, sender=sender)
+    yield
+    for signal, sender in signals_and_senders:
+        post_save.connect(signal, sender=sender)
