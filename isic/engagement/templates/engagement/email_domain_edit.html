@@ -1,0 +1,15 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block head_extra %}
+  {{ block.super }}
+  <script src="{% static 'ingest/autocomplete.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+  <form class="flex flex-col max-w-2xl mx-auto space-y-4" method="post">
+    <div class="heading-1">{{ form.instance.domain }}</div>
+
+    {% include 'engagement/partials/email_domain_form.html' with submit_label='Save' %}
+  </form>
+{% endblock %}

@@ -1,7 +1,7 @@
 // Alpine component backing the autocomplete form fields, e.g. the merge cohorts/contributors
 // pages. suggestUrl returns a list of matches for a query, detailUrl returns a single object
 // (by id) to preview, and labelKey names the field that's displayed for a match.
-function autocompleteInput({ suggestUrl, detailUrl, labelKey = 'name' }) {
+function autocompleteInput({ suggestUrl, detailUrl, labelKey = 'name', required = false }) {
   return {
     selectedId: '',
     selectedDetail: null,
@@ -9,6 +9,13 @@ function autocompleteInput({ suggestUrl, detailUrl, labelKey = 'name' }) {
     query: '',
     suggestions: [],
     loadingSuggestions: false,
+
+    // the selection lives in a hidden input, which the browser bars from constraint validation,
+    // so the visible search box carries the requirement instead. typing without picking a
+    // suggestion clears selectedId, which is what makes this stricter than a plain `required`.
+    get validationMessage() {
+      return required && !this.selectedId ? 'Select one of the suggested options.' : '';
+    },
 
     async init() {
       this.selectedId = this.$refs.hiddenInput.defaultValue;

@@ -1,11 +1,13 @@
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models.constraints import CheckConstraint
 from django.db.models.query_utils import Q
 from django.dispatch import receiver
 from oauth2_provider.signals import app_authorized
 
+from isic.core.models.base import CreationSortedTimeStampedModel
 from isic.ingest.models import Cohort, Contributor
 
 
@@ -45,6 +47,49 @@ class EngagementProfile(models.Model):
 
     def __str__(self) -> str:
         return self.user.username
+
+
+# the hyphen must stay escaped. the form hands this to the browser as an HTML5 pattern, which
+# is compiled as a regex with the "v" flag, and an unescaped trailing "-" in a character class
+# is a syntax error there. browsers skip pattern validation silently when it doesn't compile,
+# so unescaping it disables client side validation without any visible sign.
+_DOMAIN_LABEL = r"[a-zA-Z0-9]([a-zA-Z0-9\-]*[a-zA-Z0-9])?"
+# either case is accepted because domains are only lowercased during cleaning, after the
+# validator has already run.
+EMAIL_DOMAIN_PATTERN = rf"{_DOMAIN_LABEL}(\.{_DOMAIN_LABEL})+"
+
+EMAIL_DOMAIN_ERROR = "Enter a valid domain, e.g. mskcc.org."
+
+
+def normalize_email_domain(domain: str) -> str:
+    """Normalize a domain, tolerating surrounding whitespace and mixed case."""
+    return domain.strip().lower()
+
+
+class EmailDomainContributor(CreationSortedTimeStampedModel):
+    """Maps an email domain to the contributor its users most likely belong to."""
+
+    class Meta(CreationSortedTimeStampedModel.Meta):
+        ordering = ["domain"]
+
+    domain = models.CharField(
+        max_length=255,
+        unique=True,
+        validators=[RegexValidator(regex=rf"^{EMAIL_DOMAIN_PATTERN}$", message=EMAIL_DOMAIN_ERROR)],
+        help_text="The email domain, e.g. mskcc.org.",
+    )
+    contributor = models.ForeignKey(
+        Contributor, on_delete=models.PROTECT, related_name="email_domains"
+    )
+
+    def clean(self) -> None:
+        # normalizing here rather than in the form means every writer gets it, and it runs
+        # before validate_unique, so a differently cased duplicate is a friendly form error.
+        super().clean()
+        self.domain = normalize_email_domain(self.domain)
+
+    def __str__(self) -> str:
+        return self.domain
 
 
 @receiver(app_authorized)

@@ -1,0 +1,57 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block head_extra %}
+  {{ block.super }}
+  <script src="{% static 'ingest/autocomplete.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+  <header class="border-b border-gray-100 flex items-center justify-between py-2 pb-4">
+    <div class="flex-col">
+      <div class="heading-1">Email Domains ({{ email_domains|length|intcomma }})</div>
+      <p class="text-sm text-base-content/60">Users signing in with one of these email domains will auto-suggest their default contributor.</p>
+    </div>
+  </header>
+
+  <form class="flex flex-col max-w-4xl space-y-2 my-4" method="post">
+    {% include 'engagement/partials/email_domain_form.html' with submit_label='Add Email Domain' fields_class='grid grid-cols-1 md:grid-cols-2 gap-4 items-start' %}
+  </form>
+
+  {% if email_domains %}
+    <div class="overflow-x-auto">
+      <table class="table table-zebra">
+        <thead>
+          <tr>
+            <th>Domain</th>
+            <th>Contributor</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for email_domain in email_domains %}
+            <tr>
+              <td>{{ email_domain.domain }}</td>
+              <td>{{ email_domain.contributor.institution_name }}</td>
+              <td class="flex items-center gap-2 justify-end">
+                <a class="link link-primary" href="{% url 'engagement/email-domain-edit' email_domain.pk %}">Edit</a>
+                <form method="post" action="{% url 'engagement/email-domain-delete' email_domain.pk %}">
+                  {% csrf_token %}
+                  <button onclick="return confirm('Delete {{ email_domain.domain }}?')" type="submit" class="btn btn-ghost btn-xs text-error">Delete</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="text-center py-12">
+      <div class="text-gray-500">
+        <h3 class="text-lg font-medium text-gray-900 mb-2">No registered email domains</h3>
+        <p>Add a domain above to auto-suggest a default contributor for users signing in with it.</p>
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}

@@ -75,6 +75,19 @@ def test_merge_contributors_repoints_engagement_profiles(
 
 
 @pytest.mark.django_db
+def test_merge_contributors_reassigns_email_domains(
+    contributor_factory, email_domain_contributor_factory
+):
+    dest_contributor, src_contributor = contributor_factory(), contributor_factory()
+    email_domain = email_domain_contributor_factory(contributor=src_contributor)
+
+    merge_contributors(dest_contributor=dest_contributor, src_contributor=src_contributor)
+
+    email_domain.refresh_from_db()
+    assert email_domain.contributor == dest_contributor
+
+
+@pytest.mark.django_db
 def test_merge_contributors_view(contributor_with_cohort, staff_client):
     contributor_a, contributor_b = contributor_with_cohort(), contributor_with_cohort()
 

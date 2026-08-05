@@ -1,4 +1,4 @@
-<fieldset class="fieldset" x-data="autocompleteInput({suggestUrl: '{{ suggest_url }}', detailUrl: '{{ detail_url }}', labelKey: '{{ label_key|default:"name" }}'})">
+<fieldset class="fieldset" x-data="autocompleteInput({suggestUrl: '{{ suggest_url }}', detailUrl: '{{ detail_url }}', labelKey: '{{ label_key|default:"name" }}', required: {{ field.field.required|yesno:"true,false" }}})">
   <label class="fieldset-legend">{{ field.label }}</label>
 
   <input
@@ -12,6 +12,7 @@
     type="search"
     class="input input-bordered w-full"
     x-model="query"
+    x-effect="$el.setCustomValidity(validationMessage)"
     @input.debounce.250ms="fetchSuggestions"
   />
 
