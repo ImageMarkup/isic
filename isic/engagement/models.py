@@ -27,10 +27,14 @@ class EngagementProfile(models.Model):
     # deriving it would also mean a user needs a cohort before they have a contributor, which
     # pushes towards a single catch-all "engagement platform" cohort.
     default_contributor = models.ForeignKey(
-        Contributor, on_delete=models.PROTECT, null=True, related_name="engagement_profiles"
+        Contributor,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="engagement_profiles",
     )
     default_cohort = models.ForeignKey(
-        Cohort, on_delete=models.PROTECT, null=True, related_name="engagement_profiles"
+        Cohort, on_delete=models.PROTECT, null=True, blank=True, related_name="engagement_profiles"
     )
 
     class Meta:

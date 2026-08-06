@@ -1,0 +1,92 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block head_extra %}
+  {{ block.super }}
+  <script src="{% static 'ingest/autocomplete.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+  <div class="max-w-2xl mx-auto space-y-4">
+    <header class="border-b border-gray-100 py-2 pb-4">
+      <div class="heading-1">Assign Engagement Defaults</div>
+      <p class="text-sm text-base-content/60">
+        Set the contributor and cohort this user's uploads will be attributed to.
+      </p>
+    </header>
+
+    <div class="rounded-box border border-base-300 bg-base-200 p-4 flex justify-between gap-4">
+      <div>
+        <div class="font-bold">
+          {{ engagement_profile.user.first_name }} {{ engagement_profile.user.last_name }}
+        </div>
+        <div class="text-sm text-base-content/60">{{ engagement_profile.user.email }}</div>
+      </div>
+      {% if email_domain %}
+        <div class="text-right text-sm">
+          <div class="text-base-content/60">Email domain</div>
+          <div class="font-mono">{{ email_domain }}</div>
+        </div>
+      {% endif %}
+    </div>
+
+    {% if suggested_contributor %}
+      <div class="alert alert-info text-sm">
+        <i class="ri-information-line text-lg"></i>
+        <div>
+          {# any of the user's verified addresses can produce the match, not just the primary one #}
+          <div class="font-bold">Suggested from a verified email domain</div>
+          {% if suggested_cohort %}
+            <div>
+              Contributor <strong>{{ suggested_contributor.institution_name }}</strong> and its only
+              cohort <strong>{{ suggested_cohort.name }}</strong>, prefilled below.
+            </div>
+          {% elif initial_cohorts %}
+            <div>
+              Contributor <strong>{{ suggested_contributor.institution_name }}</strong>, prefilled
+              below. It has several cohorts, so pick the right one.
+            </div>
+          {% else %}
+            <div>
+              Contributor <strong>{{ suggested_contributor.institution_name }}</strong>, prefilled
+              below. It has no cohorts yet, so assign the contributor alone for now.
+            </div>
+          {% endif %}
+          <div class="mt-1">Change it if it isn't right.</div>
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="alert alert-warning text-sm">
+      <i class="ri-alarm-warning-line text-lg"></i>
+      <div>
+        Assigning this user makes them an <strong>owner</strong> of the contributor, granting access
+        to all existing and unpublished images in that contributor's cohorts. Only proceed if
+        they're authorized for this institution's data.
+      </div>
+    </div>
+
+    {% comment %}
+      Radio driven tabs, matching the study/user/image detail pages. The server picks the open tab
+      by checking one of the radios, so a submission that fails validation comes back to the tab it
+      was made from without any client side state.
+    {% endcomment %}
+    <div role="tablist" class="tabs tabs-lift">
+      <input type="radio" name="assign_tabs" role="tab" class="tab" aria-label="Select existing"
+             {% if mode == 'select_existing' %}checked{% endif %} />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 p-6">
+        <form method="post" class="flex flex-col space-y-2">
+          {% include 'engagement/partials/assign_existing_form.html' with form=existing_form %}
+        </form>
+      </div>
+
+      <input type="radio" name="assign_tabs" role="tab" class="tab" aria-label="Create new"
+             {% if mode == 'create_new' %}checked{% endif %} />
+      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 p-6">
+        <form method="post" class="flex flex-col space-y-2">
+          {% include 'engagement/partials/assign_create_form.html' with form=create_form %}
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}

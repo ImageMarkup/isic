@@ -4,48 +4,58 @@
 {% block content %}
   <header class="border-b border-gray-100 flex items-center justify-between py-2 pb-4">
     <div class="flex-col">
-      <div class="heading-1">Engagement Users</div>
-      <div class="text-sm text-gray-600 mt-2">
-        Every user who has authenticated through the engagement platform. Their default contributor
-        and cohort determine where their uploads flow into the Archive.
-      </div>
-      <div class="text-sm text-gray-600 mt-2">
-        Total: {{ profiles|length|intcomma }} users
-      </div>
+      <div class="heading-1">Engagement Users ({{ page.paginator.count|intcomma }})</div>
+      <p class="text-sm text-base-content/60">
+        Every user who has authenticated through the engagement platform. Assign each one a default
+        contributor and cohort so their uploads can flow into the Archive.
+      </p>
     </div>
   </header>
 
-  {% if profiles %}
+  <div class="my-4 flex justify-end">
+    <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+      <input
+        type="checkbox"
+        class="checkbox checkbox-sm"
+        {% if only_unassigned %}checked{% endif %}
+        onchange="window.location.href = this.checked ? '{% querystring only_unassigned=1 page=None %}' : '{% querystring only_unassigned=0 page=None %}'"
+      >
+      Only show users needing assignment
+    </label>
+  </div>
+
+  {% if page.object_list %}
     <div class="overflow-x-auto">
       <table class="table table-zebra">
         <thead>
           <tr>
             <th>User</th>
-            <th>Created</th>
-            <th>Last Login</th>
+            <th>Status</th>
             <th>Default Contributor</th>
             <th>Default Cohort</th>
+            <th>Last Login</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
-          {% for profile in profiles %}
+          {% for profile, suggested_contributor in rows %}
             <tr>
               <td>
                 <a href="{% url 'core/user-detail' pk=profile.user.pk %}" class="link link-hover link-primary">
                   {{ profile.user.first_name }} {{ profile.user.last_name }}
                 </a>
                 <div class="text-gray-400">{{ profile.user.email }}</div>
+                <div class="text-gray-400">joined {{ profile.created|timesince }} ago</div>
               </td>
               <td>
-                <div>{{ profile.created|date:"M j, Y" }}</div>
-                <div class="text-gray-400">{{ profile.created|timesince }} ago</div>
-              </td>
-              <td>
-                {% if profile.user.last_login %}
-                  <div>{{ profile.user.last_login|date:"M j, Y" }}</div>
-                  <div class="text-gray-400">{{ profile.user.last_login|timesince }} ago</div>
+                {% if profile.default_cohort %}
+                  <span class="badge badge-success badge-sm">Assigned</span>
+                {% elif profile.default_contributor %}
+                  <span class="badge badge-warning badge-sm">Needs cohort</span>
+                {% elif suggested_contributor %}
+                  <span class="badge badge-info badge-sm">Suggestion ready</span>
                 {% else %}
-                  <span class="text-gray-400">&mdash;</span>
+                  <span class="badge badge-warning badge-sm">Needs assignment</span>
                 {% endif %}
               </td>
               <td>
@@ -64,16 +74,38 @@
                   <span class="text-gray-400">&mdash;</span>
                 {% endif %}
               </td>
+              <td>
+                {% if profile.user.last_login %}
+                  <div>{{ profile.user.last_login|date:"M j, Y" }}</div>
+                  <div class="text-gray-400">{{ profile.user.last_login|timesince }} ago</div>
+                {% else %}
+                  <span class="text-gray-400">&mdash;</span>
+                {% endif %}
+              </td>
+              <td class="text-right">
+                <a href="{% url 'engagement/user-assign' pk=profile.pk %}" class="btn btn-sm">
+                  {% if profile.default_cohort %}Reassign{% else %}Assign{% endif %}
+                </a>
+              </td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
+
+    <div class="flex justify-center mt-3">
+      {% include 'core/partials/pagination_widget.html' with page_obj=page %}
+    </div>
   {% else %}
     <div class="text-center py-12">
       <div class="text-gray-500">
-        <h3 class="text-lg font-medium text-gray-900 mb-2">No engagement users yet</h3>
-        <p>Users appear here once they authenticate through the engagement platform.</p>
+        {% if only_unassigned %}
+          <h3 class="text-lg font-medium text-gray-900 mb-2">No engagement users need assignment</h3>
+          <p>Every engagement user has both a default contributor and cohort. Uncheck the filter above to see them.</p>
+        {% else %}
+          <h3 class="text-lg font-medium text-gray-900 mb-2">No engagement users yet</h3>
+          <p>Users appear here once they authenticate through the engagement platform.</p>
+        {% endif %}
       </div>
     </div>
   {% endif %}

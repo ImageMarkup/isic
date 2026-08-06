@@ -15,7 +15,7 @@ class EngagementProfileFactory(factory.django.DjangoModelFactory):
     default_cohort = None
 
     class Params:
-        # A profile that has been through the provenance form, with a contributor/cohort
+        # A profile that has been through the engagement defaults form, with a contributor/cohort
         # pair that is internally consistent.
         provisioned = factory.Trait(
             default_cohort=factory.SubFactory(CohortFactory),

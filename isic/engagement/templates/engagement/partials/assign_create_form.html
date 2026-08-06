@@ -1,0 +1,84 @@
+{% load partials %}
+
+{% partialdef field-block %}
+  <fieldset class="fieldset">
+    <label class="fieldset-legend" for="{{ field.id_for_label }}">
+      {{ field.label }}
+      {% if field.field.required %}<span class="text-error">*</span>{% endif %}
+      {% if field.name in form.public_fields %}<span class="badge badge-success badge-xs">Public</span>{% endif %}
+    </label>
+    {{ field }}
+    <p class="fieldset-label"><span class="prose">{{ field.help_text|safe }}</span></p>
+    {{ field.errors }}
+  </fieldset>
+{% endpartialdef %}
+
+{% csrf_token %}
+
+{{ form.non_field_errors }}
+
+<div class="text-xs font-semibold uppercase tracking-wide text-base-content/60">Institution</div>
+{% with field=form.institution_name %}{% partial field-block %}{% endwith %}
+{% with field=form.legal_contact_info %}{% partial field-block %}{% endwith %}
+{% with field=form.default_attribution %}{% partial field-block %}{% endwith %}
+
+<div class="text-xs font-semibold uppercase tracking-wide text-base-content/60 pt-2">Cohort</div>
+{% with field=form.cohort_name %}{% partial field-block %}{% endwith %}
+{% with field=form.cohort_description %}{% partial field-block %}{% endwith %}
+
+<fieldset class="fieldset">
+  <label class="fieldset-legend" for="{{ form.cohort_default_copyright_license.id_for_label }}">
+    {{ form.cohort_default_copyright_license.label }}
+    <span class="text-error">*</span>
+    <span class="badge badge-success badge-xs">Public</span>
+  </label>
+  {{ form.cohort_default_copyright_license }}
+  <div x-data>
+    <button type="button" @click="$refs.licenseHelpModal.showModal()" class="link link-primary text-xs">help me choose</button>
+    {% include 'ingest/partials/help_me_choose_modal.html' %}
+  </div>
+  {{ form.cohort_default_copyright_license.errors }}
+</fieldset>
+
+<div class="alert alert-warning text-sm">
+  <i class="ri-error-warning-line text-lg"></i>
+  <div>
+    This creates a <strong>new contributor</strong> and a <strong>new cohort</strong>, it doesn't
+    reuse anything existing. Check the "Select existing" tab first if this institution may already
+    be in the Archive.
+  </div>
+</div>
+
+<div x-data="{ institutionName: '', cohortName: '' }" class="self-end">
+  {% comment %}
+    The real submit lives inside the modal so the create can't happen without the confirmation
+    being dismissed. reportValidity runs the form's own constraints first, because a field left
+    blank behind an open modal is inert and the browser can't focus it to show the message. The
+    names are copied into Alpine state on open rather than read in x-text, which would evaluate
+    once at init against empty inputs and never update.
+  {% endcomment %}
+  {# kept on one line because djhtml reindents a wrapped @click and mangles the braces #}
+  <button type="button" class="btn btn-primary btn-sm" @click="institutionName = $el.form.institution_name.value; cohortName = $el.form.cohort_name.value; if ($el.form.reportValidity()) $refs.confirmCreateModal.showModal()">
+    Create and assign
+  </button>
+
+  <dialog x-ref="confirmCreateModal" class="modal">
+    <div class="modal-box">
+      <div class="heading-4">Create a new contributor and cohort?</div>
+      <p class="py-4 text-sm">
+        Contributor <strong x-text="institutionName"></strong> and cohort
+        <strong x-text="cohortName"></strong> will both be created, and this user will be made an
+        owner of the new contributor.
+      </p>
+      <div class="modal-action">
+        <button type="button" class="btn btn-sm" @click="$refs.confirmCreateModal.close()">
+          Cancel
+        </button>
+        <button type="submit" name="action" value="create_new" class="btn btn-primary btn-sm">
+          Yes, create both
+        </button>
+      </div>
+    </div>
+    <div class="modal-backdrop" @click="$refs.confirmCreateModal.close()"></div>
+  </dialog>
+</div>

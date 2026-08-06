@@ -5,7 +5,7 @@ from isic.engagement.views.email_domain import (
     email_domain_edit,
     email_domain_list,
 )
-from isic.engagement.views.user import engagement_user_list
+from isic.engagement.views.user import engagement_user_assign, engagement_user_list
 
 urlpatterns = [
     # Staff pages
@@ -25,4 +25,9 @@ urlpatterns = [
         name="engagement/email-domain-delete",
     ),
     path("staff/engagement/users/", engagement_user_list, name="engagement/user-list"),
+    path(
+        "staff/engagement/users/<int:pk>/assign/",
+        engagement_user_assign,
+        name="engagement/user-assign",
+    ),
 ]
