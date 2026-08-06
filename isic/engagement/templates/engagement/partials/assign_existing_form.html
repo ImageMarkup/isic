@@ -1,0 +1,13 @@
+{% csrf_token %}
+
+{{ form.non_field_errors }}
+
+{% url 'api:contributor_autocomplete' as contributor_suggest_url %}
+{% url 'api:contributor_list' as contributor_api_url %}
+{% include 'ingest/partials/autocomplete_field.html' with field=form.contributor suggest_url=contributor_suggest_url detail_url=contributor_api_url label_key='institution_name' detail_template='ingest/partials/contributor_autocomplete_detail.html' %}
+
+{% include 'engagement/partials/cohort_select_field.html' with field=form.cohort %}
+
+<button type="submit" name="action" value="select_existing" class="btn btn-primary btn-sm self-end">
+  Save assignment
+</button>

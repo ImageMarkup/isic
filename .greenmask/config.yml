@@ -24,6 +24,7 @@ validate:
     - "d07adfc9703aa9e74d70a80f8ee810ef"  # ingest_lesion.private_lesion_id
     - "5332871852b79c027b147766489a58fd"  # login_profile.hash_id
     - "d7f018cfb8bdf6841722925f5312e726"  # studies_study.name
+    - "c3a91674ddb132e2940842f3516df5a0"  # engagement_emaildomaincontributor.domain
     # "transformer may produce NULL values but column has NOT NULL constraint":
     # Replace writes a non-NULL constant and the source columns are themselves
     # NOT NULL, so no NULL can actually be produced.
@@ -140,6 +141,17 @@ dump:
           params:
             column: "default_attribution"
             template: '{{ fakerWord | title }} {{ fakerWord | title }} Institute'
+
+    # ============ ENGAGEMENT EMAIL DOMAINS ============
+    # A real mail domain names the institution ingest_contributor anonymizes, so
+    # hash it the same way as account_emailaddress.email.
+    - schema: "public"
+      name: "engagement_emaildomaincontributor"
+      transformers:
+        - name: "Template"
+          params:
+            column: "domain"
+            template: 'institution{{ substr 0 12 (sha256sum (printf "%s:email_domain:%s" (env "SALT") .GetValue)) }}.test'
 
     # ============ PRIVATE IDs (Patient / Lesion / RcmCase) ============
     - schema: "public"

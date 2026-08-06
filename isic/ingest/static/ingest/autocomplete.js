@@ -18,6 +18,10 @@ function autocompleteInput({ suggestUrl, detailUrl, labelKey = 'name', required 
     },
 
     async init() {
+      this.$watch('selectedDetail', (selection) =>
+        this.$dispatch('autocomplete-selected', { selection }),
+      );
+
       this.selectedId = this.$refs.hiddenInput.defaultValue;
       if (this.selectedId) {
         await this.populateDetail();
