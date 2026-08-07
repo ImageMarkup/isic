@@ -3,7 +3,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from .base import CopyrightLicense, CreationSortedTimeStampedModel, IsicOAuthApplication
-from .collection import Collection
+from .collection import Collection, CollectionTag
 from .collection_count import CollectionCount
 from .doi import Doi
 from .girder_image import GirderDataset, GirderImage
@@ -17,6 +17,7 @@ from .supplemental_file import SupplementalFile
 __all__ = [
     "Collection",
     "CollectionCount",
+    "CollectionTag",
     "CopyrightLicense",
     "CreationSortedTimeStampedModel",
     "Doi",

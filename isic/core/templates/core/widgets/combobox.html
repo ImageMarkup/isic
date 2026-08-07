@@ -1,0 +1,80 @@
+<div id="{{ widget.name }}-messages"></div>
+<input id="{{ widget.name }}-select" class="w-full" />
+<select multiple id="{{ widget.name }}-select-hidden" name="{{ widget.name }}" class="hidden">
+  {% for label in widget.queryset_options %}
+    <option value="{{ label }}"></option>
+  {% endfor %}
+</select>
+
+<script>
+  const items = JSON.parse('{{ widget.value | safe }}');
+  const options = JSON.parse('{{ widget.options_json | safe }}');
+  const editMode = '{{ widget.edit }}' === 'True';
+  const widgetId = '#{{ widget.name }}-select';
+  const hiddenSelectId = '#{{ widget.name }}-select-hidden';
+
+  const onChange = (value) => {
+    const selected = value.length ? value.split(',') : [];
+    $(hiddenSelectId).val(selected);
+  }
+
+  const onOptionAdd = (value) => {
+    $(hiddenSelectId).append($('<option>', {value}));
+    axiosSession.post(
+      '/api/v2/collections/tags',
+      { tag: value },
+    ).catch((error) => {
+      $("#{{ widget.name }}-messages").text(error.response.data.error);
+    })
+  }
+
+  const renderOption = (data, escape) => {
+    const el = $('<div>', {'class': 'flex justify-between'});
+    el.append($('<div>', { text: escape(data.text)}));
+    if (editMode) {
+      const deleteIcon = $('<i>', {'class': 'ri-delete-bin-line text-lg'});
+      const cancelButton = $('<button>', {'class': 'btn btn-xs btn-ghost hidden', text: 'Cancel', type: 'button'});
+      const confirmButton = $('<button>', {'class': 'btn btn-xs btn-error hidden', text: 'Delete', type: 'button'});
+      deleteIcon.on('click', (e) => {
+        e.stopPropagation();
+        deleteIcon.addClass('hidden');
+        cancelButton.removeClass('hidden');
+        confirmButton.removeClass('hidden');
+      });
+      cancelButton.on('click', (e) => {
+        e.stopPropagation();
+        deleteIcon.removeClass('hidden');
+        cancelButton.addClass('hidden');
+        confirmButton.addClass('hidden');
+      });
+      confirmButton.on('click', (e) => {
+        e.stopPropagation();
+        axiosSession.delete(
+          `/api/v2/collections/tags/${data.text}/`
+        ).then((data) => {
+          window.location.reload();
+        }).catch((error) => {
+          $("#{{ widget.name }}-messages").text(error.response.data.error);
+        });
+      });
+      const deleteContainer = $('<div>', {'class': 'flex'}).append([deleteIcon, confirmButton, cancelButton]);
+      el.append(deleteContainer);
+    }
+    return el;
+  }
+
+  const tom = new TomSelect(widgetId, {
+    items,
+    options: options.map((v) => ({value: v, text: v})),
+    create: editMode,
+    placeholder: 'Select {{ widget.option_type }}s',
+    plugins: ['remove_button', 'clear_button'],
+    itemClass: 'item rounded-full',
+    onChange,
+    onOptionAdd,
+    render: {option: renderOption},
+  });
+
+  // trigger onChange to update hidden select
+  tom.setValue(tom.getValue().split(','));
+</script>

@@ -17,13 +17,14 @@ from ninja.errors import ValidationError as NinjaValidationError
 import pydantic
 
 from isic.core.forms.collection import CollectionForm
-from isic.core.models import Collection
+from isic.core.models import Collection, CollectionTag
 from isic.core.pagination import CursorPagination, qs_with_hardcoded_count
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.core.services import image_metadata_csv
 from isic.core.services.collection import create_collection, update_collection
 from isic.core.utils.csv import EscapingDictWriter
 from isic.core.utils.http import Echo
+from isic.core.widgets import ComboboxWidget
 from isic.ingest.models import Contributor
 
 
@@ -52,12 +53,15 @@ def collection_create(request):
 def collection_edit(request, pk):
     collection = get_object_or_404(Collection, pk=pk)
     form = CollectionForm(
-        request.POST or {key: getattr(collection, key) for key in ["name", "description", "public"]}
+        request.POST
+        or {key: getattr(collection, key) for key in ["name", "description", "public", "tags"]}
     )
 
     if request.method == "POST" and form.is_valid():
         try:
-            update_collection(collection, **form.cleaned_data)
+            cleaned_data = form.cleaned_data
+            collection.tags.set(cleaned_data.pop("tags"))
+            update_collection(collection, **cleaned_data)
         except ValidationError as e:
             messages.add_message(request, messages.ERROR, e.message)
         else:
@@ -186,10 +190,13 @@ def collection_list(request: HttpRequest) -> HttpResponse:
         request.user,
         "core.view_collection",
         Collection.objects.select_related("cached_counts", "doi").prefetch_related(
-            "doi__related_identifiers", "doi__supplemental_files"
+            "doi__related_identifiers",
+            "doi__supplemental_files",
+            "tags",
         ),
     )
 
+    tags_filter = request.GET.get("tags", "")
     magic_filter = request.GET.get("magic_filter", "exclude")
     pinned_filter = request.GET.get("pinned_filter", "all")
     exclude_empty = request.GET.get("exclude_empty", "1") == "1"
@@ -199,6 +206,8 @@ def collection_list(request: HttpRequest) -> HttpResponse:
     elif magic_filter == "exclude":
         collections = collections.regular()
 
+    if tags_filter:
+        collections = collections.filter(tags__tag__in=tags_filter.split(","))
     if exclude_empty:
         collections = collections.filter(cached_counts__image_count__gt=0)
 
@@ -230,8 +239,14 @@ def collection_list(request: HttpRequest) -> HttpResponse:
             order_field = f"-{sort}" if order == "desc" else sort
             collections = collections.order_by(order_field)
 
-    paginator = Paginator(collections, 50)
+    paginator = Paginator(collections.distinct(), 50)
     page = paginator.get_page(request.GET.get("page"))
+
+    tags_widget = ComboboxWidget(
+        queryset=CollectionTag.objects.all(),
+        lookup_field="tag",
+        option_type="tag",
+    ).render("tags", tags_filter.split(","))
 
     return render(
         request,
@@ -240,6 +255,7 @@ def collection_list(request: HttpRequest) -> HttpResponse:
             "page": page,
             "current_sort": sort,
             "current_order": order,
+            "tags_widget": tags_widget,
             "magic_filter": magic_filter,
             "pinned_filter": pinned_filter,
             "exclude_empty": exclude_empty,

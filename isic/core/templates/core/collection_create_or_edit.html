@@ -29,6 +29,12 @@
       </fieldset>
 
       <fieldset class="fieldset">
+        <label class="fieldset-legend" for="{{ form.tags.name }}-select">{{ form.tags.label }}</label>
+        {{ form.tags }}
+        {{ form.tags.errors }}
+      </fieldset>
+
+      <fieldset class="fieldset">
         <label class="fieldset-legend" for="{{ form.description.html_name }}">{{ form.description.label }}</label>
         <textarea id="{{ form.description.html_name }}" name="{{ form.description.html_name }}" rows="12" class="textarea textarea-bordered w-full">{{ form.description.value|default_if_none:'' }}</textarea>
         <p class="fieldset-label"><span class="prose">{{ form.description.help_text|safe }}</span></p>
