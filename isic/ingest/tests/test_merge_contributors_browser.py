@@ -222,10 +222,12 @@ def test_merge_contributors_stale_impact_not_shown_after_selection_change(
     impact = page.get_by_role("alert")
     expect(impact.get_by_text("Access impact of this merge")).to_be_visible()
 
-    # The impact should only show owner_c (from contributor_c), not owner_b
+    # The impact should reflect the final (contributor_a, contributor_c) selection: owner_c gains
+    # access to contributor_a's data and owner_a gains access to contributor_c's data. owner_b,
+    # from the superseded contributor_b request, must not appear anywhere.
     expect(impact.get_by_text(owner_c.email)).to_be_visible()
+    expect(impact.get_by_text(owner_a.email)).to_be_visible()
     expect(impact.get_by_text(owner_b.email)).not_to_be_visible()
-    expect(impact.get_by_text(owner_a.email)).not_to_be_visible()
 
 
 @pytest.mark.playwright
