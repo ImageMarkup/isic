@@ -6,6 +6,7 @@ function contributorMergeImpact({ impactUrl, destField, srcField }) {
     selections: {},
     impact: null,
     loading: false,
+    requestCounter: 0,
 
     onAutocompleteSelection({ name, id }) {
       if (name !== destField && name !== srcField) return;
@@ -24,13 +25,22 @@ function contributorMergeImpact({ impactUrl, destField, srcField }) {
         return;
       }
 
+      // Clear impact immediately and track this request
+      this.impact = null;
       this.loading = true;
+      const thisRequest = ++this.requestCounter;
       const params = new URLSearchParams({ dest_contributor: dest, src_contributor: src });
       try {
         const response = await fetch(`${impactUrl}?${params}`);
-        this.impact = response.ok ? await response.json() : null;
+        // Only update impact if this is still the most recent request
+        if (thisRequest === this.requestCounter) {
+          this.impact = response.ok ? await response.json() : null;
+        }
       } finally {
-        this.loading = false;
+        // Only clear loading if this is still the most recent request
+        if (thisRequest === this.requestCounter) {
+          this.loading = false;
+        }
       }
     },
 
