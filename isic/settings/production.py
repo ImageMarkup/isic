@@ -80,3 +80,7 @@ sentry_sdk.init(
     traces_sampler=get_sentry_performance_sample_rate,
     profiles_sampler=get_sentry_performance_sample_rate,
 )
+sentry_sdk.integrations.logging.ignore_logger("django.security.DisallowedHost")
+# Node-status and retry chatter from the Elasticsearch transport;
+# real Elasticsearch failures still raise exceptions.
+sentry_sdk.integrations.logging.ignore_logger("elastic_transport.transport")
