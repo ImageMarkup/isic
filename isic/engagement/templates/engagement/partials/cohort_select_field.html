@@ -1,0 +1,26 @@
+{% comment %}
+  A contributor only ever has a handful of cohorts, so this is a plain select rather than an
+  autocomplete. The options are seeded server side for the contributor the page opens with, and
+  swapped client side from the detail payload the contributor autocomplete already fetches.
+{% endcomment %}
+{{ initial_cohorts|json_script:"initial-cohorts" }}
+
+<fieldset class="fieldset"
+          x-data="{ cohorts: JSON.parse(document.getElementById('initial-cohorts').textContent), selectedId: '{{ field.value|default_if_none:'' }}' }"
+          @autocomplete-selected.window="cohorts = $event.detail.selection?.cohorts ?? []; if (!cohorts.some((cohort) => String(cohort.id) === selectedId)) selectedId = ''">
+  <label class="fieldset-legend" for="{{ field.id_for_label }}">{{ field.label }}</label>
+
+  {% comment %}
+    x-model can't be used here: it binds before x-for has created the options, so a preselected
+    cohort finds no matching option and gets silently reset to empty.
+  {% endcomment %}
+  <select id="{{ field.id_for_label }}" name="{{ field.html_name }}" class="select select-bordered w-full" @change="selectedId = $event.target.value">
+    <option value="" :selected="!selectedId" x-text="cohorts.length ? 'No cohort' : 'No cohorts for this contributor'"></option>
+    <template x-for="cohort in cohorts" :key="cohort.id">
+      <option :value="cohort.id" :selected="String(cohort.id) === selectedId" x-text="cohort.name"></option>
+    </template>
+  </select>
+
+  <p class="fieldset-label"><span class="prose">{{ field.help_text|safe }}</span></p>
+  {{ field.errors }}
+</fieldset>

@@ -35,6 +35,9 @@ class Annotation(TimeStampedModel):
     # all annotations created by this app submit a start_time.
     start_time = models.DateTimeField(null=True)
 
+    def __str__(self) -> str:
+        return f"{self.image} by {self.annotator} in {self.study}"
+
     def get_absolute_url(self) -> str:
         return reverse("studies/annotation-detail", args=[self.pk])
 

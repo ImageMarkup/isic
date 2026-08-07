@@ -1,0 +1,93 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Staff Tools | {% endblock %}
+
+{% block head_extra %}
+  {{ block.super }}
+  <script type="text/javascript">
+    function staffTools() {
+      return {
+        query: '',
+        matches(text) {
+          const query = this.query.trim().toLowerCase();
+          return query === '' || text.includes(query);
+        },
+        matchesAny(el) {
+          return [...el.querySelectorAll('[data-search]')].some((card) => this.matches(card.dataset.search));
+        },
+      };
+    }
+  </script>
+{% endblock %}
+
+{% block content %}
+  <div x-data="staffTools()">
+    <header class="border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4 py-2 pb-4">
+      <div class="flex-col">
+        <div class="heading-1">Staff Tools</div>
+      </div>
+      <div class="flex items-center gap-2 w-full md:w-auto">
+        <label class="input input-bordered flex items-center gap-2 grow md:grow-0 md:w-80">
+          <i class="ri-search-line text-base-content/50"></i>
+          <input x-model="query" type="search" class="grow" placeholder="Filter tools">
+        </label>
+        <a class="btn btn-outline" target="_blank" href="{% url 'admin:index' %}">
+          <i class="ri-terminal-box-line"></i>
+          Django Admin
+          <i class="ri-external-link-line text-xs"></i>
+        </a>
+      </div>
+    </header>
+
+    <section class="mt-8" x-show="matchesAny($el)">
+      <div class="flex-col mb-4">
+        <h2 class="heading-2">Ingest</h2>
+        <p class="text-sm text-base-content/60">Move contributor data through review and into the published archive.</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {% include 'core/partials/staff_tool_card.html' with name="Ingest Review" icon="ri-inbox-line" url="ingest/ingest-review" keywords="accession cohort accept reject queue" description="Accept or reject accessions in cohorts awaiting review." %}
+        {% include 'core/partials/staff_tool_card.html' with name="Cohort List" icon="ri-list-check-2" url="ingest/cohort-list" keywords="contributor attribution counts" description="Every contributor and cohort, with accession counts." %}
+        {% include 'core/partials/staff_tool_card.html' with name="Merge Cohorts" icon="ri-git-merge-line" url="ingest/merge-cohorts" keywords="duplicate combine destructive" description="Fold one cohort into another. Not reversible." %}
+        {% include 'core/partials/staff_tool_card.html' with name="Merge Contributors" icon="ri-git-merge-line" url="ingest/merge-contributors" keywords="duplicate combine institution destructive" description="Fold one contributor into another. Not reversible." %}
+      </div>
+    </section>
+
+    <section class="mt-8" x-show="matchesAny($el)">
+      <div class="flex-col mb-4">
+        <h2 class="heading-2">Archive Content</h2>
+        <p class="text-sm text-base-content/60">Curate what the public sees and pull bulk data out of the archive.</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {% include 'core/partials/staff_tool_card.html' with name="Embargoed Images" icon="ri-eye-off-line" url="core/embargoed-dashboard" keywords="private unpublished public" description="Cohorts holding unpublished images, oldest first." %}
+        {% include 'core/partials/staff_tool_card.html' with name="Reorder Pinned Images" icon="ri-pushpin-line" url="core/image-pins" keywords="featured gallery sort homepage" description="Drag to set the order of images pinned in the browser." %}
+        {% include 'core/partials/staff_tool_card.html' with name="Image List Export" icon="ri-file-download-line" url="core/image-list-export" keywords="csv metadata download bulk" description="Email yourself a CSV of every image's metadata." %}
+      </div>
+    </section>
+
+    <section class="mt-8" x-show="matchesAny($el)">
+      <div class="flex-col mb-4">
+        <h2 class="heading-2">Engagement</h2>
+        <p class="text-sm text-base-content/60">The engagement platform's integration with the archive.</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {% include 'core/partials/staff_tool_card.html' with name="Engagement Users" icon="ri-team-line" url="engagement/user-list" keywords="oauth profile assign contributor" description="Platform users and the contributor each is assigned to." %}
+        {% include 'core/partials/staff_tool_card.html' with name="Email Domains" icon="ri-at-line" url="engagement/email-domain-list" keywords="autosuggest institution engagement" description="Map email domains to suggested default contributors." %}
+      </div>
+    </section>
+
+    <section class="mt-8" x-show="matchesAny($el)">
+      <div class="flex-col mb-4">
+        <h2 class="heading-2">Users</h2>
+        <p class="text-sm text-base-content/60">Accounts and staff membership.</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {% include 'core/partials/staff_tool_card.html' with name="Staff Users" icon="ri-shield-user-line" url="core/staff-list" keywords="permissions admin accounts" description="Everyone with staff access, plus the total user count." %}
+      </div>
+    </section>
+
+    <div class="text-center py-12" x-show="!matchesAny($root)" x-cloak>
+      <h3 class="text-lg font-medium mb-2">No tools match &ldquo;<span x-text="query"></span>&rdquo;</h3>
+      <p class="text-base-content/60">Try a different term, or browse the groups above.</p>
+    </div>
+  </div>
+{% endblock %}

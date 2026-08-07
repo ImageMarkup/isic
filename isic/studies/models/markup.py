@@ -16,3 +16,6 @@ class Markup(TimeStampedModel):
     feature = models.ForeignKey(Feature, on_delete=models.PROTECT, related_name="markups")
     mask = S3FileField(upload_to=generate_upload_to)
     present = models.BooleanField()
+
+    def __str__(self) -> str:
+        return f"{self.feature} ({'present' if self.present else 'absent'})"

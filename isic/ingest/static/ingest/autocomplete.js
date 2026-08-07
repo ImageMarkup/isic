@@ -28,6 +28,10 @@ function autocompleteInput({
       // notifySelection can run after the clicked suggestion has been removed from the DOM, and
       // events dispatched from a detached element never bubble, so hold onto the root element.
       this.rootEl = this.$el;
+      this.$watch('selectedDetail', (selection) =>
+        this.$dispatch('autocomplete-selected', { selection }),
+      );
+
       this.selectedId = this.$refs.hiddenInput.defaultValue;
       if (this.selectedId) {
         await this.populateDetail();

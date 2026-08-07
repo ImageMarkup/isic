@@ -4,10 +4,7 @@ from pytest_lazy_fixtures import lf
 
 from isic.engagement.forms import EmailDomainContributorForm
 from isic.engagement.models import EMAIL_DOMAIN_ERROR, EmailDomainContributor
-from isic.engagement.services.email_domain import (
-    suggest_contributor_for_email,
-    suggest_contributor_for_user,
-)
+from isic.engagement.services.email_domain import suggest_contributor_for_users
 
 
 @pytest.mark.django_db
@@ -127,25 +124,13 @@ def test_email_domain_delete(staff_client, email_domain_contributor):
 
 
 @pytest.mark.django_db
-def test_suggest_contributor_for_email(email_domain_contributor):
-    domain = email_domain_contributor.domain
-    contributor = email_domain_contributor.contributor
-
-    assert suggest_contributor_for_email(f"someone@{domain}") == contributor
-    assert suggest_contributor_for_email(f"Someone+Tagged@{domain.upper()}") == contributor
-    assert suggest_contributor_for_email(f"someone@other-{domain}") is None
-    assert suggest_contributor_for_email("") is None
-    assert suggest_contributor_for_email("someone@") is None
-    # a bare domain isn't an email address
-    assert suggest_contributor_for_email(domain) is None
-
-
-@pytest.mark.django_db
-def test_suggest_contributor_for_user(
-    user, email_address_factory, email_domain_contributor_factory
+def test_suggest_contributor_for_users(
+    user, user_factory, email_address_factory, email_domain_contributor_factory
 ):
-    # the address the user was created with maps to nothing
-    assert suggest_contributor_for_user(user) is None
+    other_user = user_factory()
+
+    # the addresses the users were created with map to nothing
+    assert suggest_contributor_for_users([user, other_user]) == {}
 
     unverified_match = email_domain_contributor_factory()
     email_address_factory(
@@ -155,7 +140,7 @@ def test_suggest_contributor_for_user(
         primary=False,
     )
     # unverified addresses are self-asserted, so they don't produce a suggestion
-    assert suggest_contributor_for_user(user) is None
+    assert suggest_contributor_for_users([user]) == {}
 
     secondary_match = email_domain_contributor_factory()
     email_address_factory(
@@ -165,9 +150,22 @@ def test_suggest_contributor_for_user(
         primary=False,
     )
     # every verified address is considered, not just the primary one
-    assert suggest_contributor_for_user(user) == secondary_match.contributor
+    assert suggest_contributor_for_users([user]) == {user.pk: secondary_match.contributor}
 
     primary_match = email_domain_contributor_factory()
     user.emailaddress_set.filter(primary=True).update(email=f"someone@{primary_match.domain}")
     # the primary address wins when several addresses map to different contributors
-    assert suggest_contributor_for_user(user) == primary_match.contributor
+    assert suggest_contributor_for_users([user]) == {user.pk: primary_match.contributor}
+
+    other_match = email_domain_contributor_factory()
+    email_address_factory(
+        user=other_user,
+        email=f"Someone+Tagged@{other_match.domain.upper()}",
+        verified=True,
+        primary=False,
+    )
+    # domains are matched case insensitively, and every user is resolved in one pass
+    assert suggest_contributor_for_users([user, other_user]) == {
+        user.pk: primary_match.contributor,
+        other_user.pk: other_match.contributor,
+    }

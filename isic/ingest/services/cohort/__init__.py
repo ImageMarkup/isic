@@ -1,5 +1,6 @@
 import logging
 
+from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count
@@ -7,11 +8,36 @@ from django.db.models import Count
 from isic.core.services.collection import merge_magic_collections
 from isic.ingest.models.accession import Accession
 from isic.ingest.models.cohort import Cohort
+from isic.ingest.models.contributor import Contributor
 from isic.ingest.models.metadata_file import MetadataFile
 from isic.ingest.models.metadata_version import MetadataVersion
 from isic.ingest.models.zip_upload import ZipUpload
 
 logger = logging.getLogger(__name__)
+
+
+def create_cohort(  # noqa: PLR0913
+    *,
+    creator: User,
+    contributor: Contributor,
+    name: str,
+    description: str,
+    default_copyright_license: str,
+    default_attribution: str,
+) -> Cohort:
+    with transaction.atomic():
+        cohort = Cohort(
+            creator=creator,
+            contributor=contributor,
+            name=name,
+            description=description,
+            default_copyright_license=default_copyright_license,
+            default_attribution=default_attribution,
+        )
+        # the magic collection is only minted at publish time, and the field isn't blank=True
+        cohort.full_clean(exclude=["collection"])
+        cohort.save()
+        return cohort
 
 
 def delete_cohort(*, cohort: Cohort) -> None:
