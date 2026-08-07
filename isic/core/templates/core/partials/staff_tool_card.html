@@ -1,0 +1,21 @@
+{% comment %}
+Requires name, description, icon, and url (a url name). keywords and external are optional.
+{% endcomment %}
+<a href="{% url url %}"
+   {% if external %}target="_blank"{% endif %}
+   data-search="{{ name|lower }} {{ description|lower }} {{ keywords }}"
+   x-show="matches($el.dataset.search)"
+   class="card card-compact bg-base-100 border border-base-300 hover:border-primary hover:shadow-md transition">
+  <div class="card-body">
+    <div class="flex items-start gap-3">
+      <i class="{{ icon }} text-2xl text-primary shrink-0"></i>
+      <div class="flex-col">
+        <div class="font-semibold">
+          {{ name }}
+          {% if external %}<i class="ri-external-link-line text-xs text-base-content/50"></i>{% endif %}
+        </div>
+        <p class="text-sm text-base-content/70 mt-1">{{ description }}</p>
+      </div>
+    </div>
+  </div>
+</a>
