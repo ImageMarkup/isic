@@ -43,6 +43,9 @@ class StudyTask(TimeStampedModel):
 
     objects = StudyTaskQuerySet.as_manager()
 
+    def __str__(self) -> str:
+        return f"{self.image} for {self.annotator} in {self.study}"
+
     @property
     def complete(self) -> bool:
         return hasattr(self, "annotation")

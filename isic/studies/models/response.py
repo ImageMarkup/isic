@@ -116,3 +116,6 @@ class Response(TimeStampedModel):
     )
     # expect a single key inside named value. TODO: maybe add a constraint for this.
     value = models.JSONField(null=True)
+
+    def __str__(self) -> str:
+        return f"{self.question}: {self.choice or self.value}"
