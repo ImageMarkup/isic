@@ -1,11 +1,11 @@
 from datetime import timedelta
 
 from django.test import RequestFactory
-from django.urls import path
 from django.utils import timezone
 from ninja import NinjaAPI
 from oauth2_provider.models import get_access_token_model, get_application_model
 import pytest
+from resonant_utils.ninja import TestClient
 
 from isic import auth
 from isic.core.models.base import IsicOAuthApplication
@@ -59,11 +59,8 @@ def test_redirect_uri_allowed(user, uri, allowed_uris, allowed):
 
 
 @pytest.fixture
-def test_oauth_api_endpoints(request):
-    # this is pretty gross, but DOT requires a "more" real request object be created, meaning the
-    # ninja test client can't be used since it mocks it. using the django test client means we have
-    # to add real routes and then remove them.
-    api = NinjaAPI(urls_namespace=request.function.__name__, auth=auth.allow_any)
+def api_client(request):
+    api = NinjaAPI(urls_namespace=request.node.name, auth=auth.allow_any)
 
     @api.get("/allow-any")
     def allow_any_view(request):
@@ -77,16 +74,9 @@ def test_oauth_api_endpoints(request):
     def is_staff_view(request):
         return {}
 
-    urlpattern = path("test-oauth/", api.urls)
+    yield TestClient(api)
 
-    from isic.urls import urlpatterns
-
-    urlpatterns.append(urlpattern)
-
-    yield
-
-    urlpatterns.remove(urlpattern)
-    NinjaAPI._registry.remove(request.function.__name__)
+    NinjaAPI._registry.remove(request.node.name)
 
 
 def get_bearer_token(user, oauth_token_factory):
@@ -95,89 +85,72 @@ def get_bearer_token(user, oauth_token_factory):
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("test_oauth_api_endpoints")
-def test_allow_any_with_no_auth(client):
-    response = client.get("/test-oauth/allow-any")
+def test_allow_any_with_no_auth(api_client):
+    response = api_client.get("/allow-any")
     assert response.status_code == 200
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("test_oauth_api_endpoints")
-def test_allow_any_with_session_auth(client, user):
-    client.force_login(user)
-    response = client.get("/test-oauth/allow-any")
+def test_allow_any_with_session_auth(api_client, user):
+    response = api_client.get("/allow-any", user=user)
     assert response.status_code == 200
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("test_oauth_api_endpoints")
-def test_allow_any_with_bearer_token(client, user, oauth_token_factory):
+def test_allow_any_with_bearer_token(api_client, user, oauth_token_factory):
     token = get_bearer_token(user, oauth_token_factory)
-    response = client.get("/test-oauth/allow-any", headers={"Authorization": f"Bearer {token}"})
+    response = api_client.get("/allow-any", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("test_oauth_api_endpoints")
-def test_is_authenticated_with_no_auth(client):
-    response = client.get("/test-oauth/is-authenticated")
+def test_is_authenticated_with_no_auth(api_client):
+    response = api_client.get("/is-authenticated")
     assert response.status_code == 401
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("test_oauth_api_endpoints")
-def test_is_authenticated_with_session_auth(client, user):
-    client.force_login(user)
-    response = client.get("/test-oauth/is-authenticated")
+def test_is_authenticated_with_session_auth(api_client, user):
+    response = api_client.get("/is-authenticated", user=user)
     assert response.status_code == 200
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("test_oauth_api_endpoints")
-def test_is_authenticated_with_bearer_token(client, user, oauth_token_factory):
+def test_is_authenticated_with_bearer_token(api_client, user, oauth_token_factory):
     token = get_bearer_token(user, oauth_token_factory)
-    response = client.get(
-        "/test-oauth/is-authenticated", headers={"Authorization": f"Bearer {token}"}
-    )
+    response = api_client.get("/is-authenticated", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("test_oauth_api_endpoints")
-def test_is_staff_with_no_auth(client):
-    response = client.get("/test-oauth/is-staff")
+def test_is_staff_with_no_auth(api_client):
+    response = api_client.get("/is-staff")
     assert response.status_code == 401
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("test_oauth_api_endpoints")
-def test_is_staff_with_session_auth(client, staff_user):
-    client.force_login(staff_user)
-    response = client.get("/test-oauth/is-staff")
+def test_is_staff_with_session_auth(api_client, staff_user):
+    response = api_client.get("/is-staff", user=staff_user)
     assert response.status_code == 200
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("test_oauth_api_endpoints")
-def test_is_staff_with_bearer_token(client, staff_user, oauth_token_factory):
+def test_is_staff_with_bearer_token(api_client, staff_user, oauth_token_factory):
     token = get_bearer_token(staff_user, oauth_token_factory)
-    response = client.get("/test-oauth/is-staff", headers={"Authorization": f"Bearer {token}"})
+    response = api_client.get("/is-staff", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("test_oauth_api_endpoints")
-def test_is_staff_with_nonstaff_user_session(client, nonstaff_user):
-    client.force_login(nonstaff_user)
-    response = client.get("/test-oauth/is-staff")
+def test_is_staff_with_nonstaff_user_session(api_client, nonstaff_user):
+    response = api_client.get("/is-staff", user=nonstaff_user)
     assert response.status_code == 401
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures("test_oauth_api_endpoints")
-def test_is_staff_with_nonstaff_bearer_token(client, nonstaff_user, oauth_token_factory):
+def test_is_staff_with_nonstaff_bearer_token(api_client, nonstaff_user, oauth_token_factory):
     token = get_bearer_token(nonstaff_user, oauth_token_factory)
-    response = client.get("/test-oauth/is-staff", headers={"Authorization": f"Bearer {token}"})
+    response = api_client.get("/is-staff", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 401
 
 
