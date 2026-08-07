@@ -1,29 +1,7 @@
 <li><a target="blank" href="https://www.isic-archive.com/">ISIC Home <i class="ri-external-link-line"></i></a></li>
 <li><a target="blank" href="https://gallery.isic-archive.com/">Gallery <i class="ri-external-link-line"></i></a></li>
 {% if request.user.is_staff %}
-  <li>
-    <details>
-      <summary>Staff</summary>
-      <ul class="w-max z-20">
-        <li><a href="{% url 'ingest/ingest-review' %}">Ingest Review</a></li>
-        <li><a href="{% url 'ingest/cohort-list' %}">Cohort List</a></li>
-        <li><a href="{% url 'core/embargoed-dashboard' %}">Embargoed Images</a></li>
-        <li><a href="{% url 'core/image-pins' %}">Reorder Pinned Images</a></li>
-        <li><a href="{% url 'core/image-list-export' %}">Image List</a></li>
-        <li><a href="{% url 'core/staff-list' %}">Users</a></li>
-        <li>
-          <details>
-            <summary>Engagement</summary>
-            <ul class="w-max z-20">
-              <li><a href="{% url 'engagement/user-list' %}">Users</a></li>
-              <li><a href="{% url 'engagement/email-domain-list' %}">Email Domains</a></li>
-            </ul>
-          </details>
-        </li>
-        <li><a target="blank" href="{% url 'admin:index' %}">Django Admin <i class="ri-external-link-line"></i></a></li>
-      </ul>
-    </details>
-  </li>
+  <li><a href="{% url 'core/staff-tools' %}">Staff</a></li>
 {% endif %}
 <li><a href="{% url 'upload/select-or-create-contributor' %}">Upload</a></li>
 <li><a href="{% url 'core/image-browser' %}">Images</a></li>

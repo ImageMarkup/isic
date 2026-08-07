@@ -20,6 +20,7 @@ from isic.core.views.images import (
     staff_image_pins,
 )
 from isic.core.views.lesion import lesion_detail
+from isic.core.views.staff_tools import staff_tools
 from isic.core.views.users import staff_list, user_detail
 
 urlpatterns = [
@@ -27,6 +28,7 @@ urlpatterns = [
         "robots.txt",
         TemplateView.as_view(template_name="core/robots.txt", content_type="text/plain"),
     ),
+    path("staff/", staff_tools, name="core/staff-tools"),
     path("staff/users/", staff_list, name="core/staff-list"),
     path("data-explorer/", data_explorer, name="core/data-explorer"),
     path("staff/embargoed-dashboard/", embargoed_dashboard, name="core/embargoed-dashboard"),
