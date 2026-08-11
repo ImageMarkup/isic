@@ -12,7 +12,7 @@ import pytest
 from isic.ingest.utils.parquet import build_parquet_schema
 
 
-def _build_test_parquet() -> Path:
+def _build_test_parquet() -> tuple[Path, list[str]]:
     schema = build_parquet_schema(
         parquet_metadata={"snapshot_timestamp": datetime.now(tz=UTC).isoformat()}
     )
@@ -32,12 +32,13 @@ def _build_test_parquet() -> Path:
     tmp = tempfile.NamedTemporaryFile(suffix=".parquet", delete=False)  # noqa: SIM115
     pq.write_table(table, tmp.name, compression="snappy")
     tmp.close()
-    return Path(tmp.name)
+    return Path(tmp.name), [row["isic_id"] for row in rows]
 
 
 @pytest.fixture
 def data_explorer_parquet(settings):
-    parquet_path = _build_test_parquet()
+    """Load a parquet snapshot into storage, yielding the ISIC IDs it contains."""
+    parquet_path, isic_ids = _build_test_parquet()
 
     storage = storages["sponsored"]
     key = settings.ISIC_DATA_EXPLORER_PARQUET_KEY
@@ -48,7 +49,7 @@ def data_explorer_parquet(settings):
     storage.base_url = f"{storage.endpoint_url}/{storage.bucket_name}"
 
     try:
-        yield
+        yield isic_ids
     finally:
         storage.base_url = original_base_url
         storage.delete(key)
@@ -142,22 +143,98 @@ def test_data_explorer_no_parquet_shows_error(page):
     expect(page.locator("body")).to_contain_text("Failed to initialize", timeout=30_000)
 
 
+def _open_collection_modal(page):
+    _run_query(page, "SELECT isic_id FROM metadata")
+    expect(page.locator("#query-results")).to_contain_text("ISIC_", timeout=30_000)
+
+    add_btn = page.locator("#add-to-collection-btn")
+    expect(add_btn).to_be_enabled(timeout=30_000)
+    add_btn.click()
+
+
 @pytest.mark.playwright
-def test_data_explorer_create_collection_focuses_name_input(
+def test_data_explorer_collection_modal_focuses_active_tab_input(
     authenticated_page, data_explorer_parquet
 ):
     page = authenticated_page
     page.goto(reverse("core/data-explorer"), timeout=30_000)
     _wait_for_ready(page)
 
-    _run_query(page, "SELECT isic_id FROM metadata")
-    results = page.locator("#query-results")
-    expect(results).to_contain_text("ISIC_", timeout=30_000)
-
-    create_btn = page.locator("#create-collection-btn")
-    expect(create_btn).to_be_enabled(timeout=30_000)
-    create_btn.click()
+    _open_collection_modal(page)
 
     name_input = page.locator("#collection-name-input")
+    search_input = page.locator("#collection-search-input")
+
     expect(name_input).to_be_visible()
     expect(name_input).to_be_focused()
+
+    page.get_by_role("tab", name="Existing Collection").click()
+    expect(search_input).to_be_visible()
+    expect(search_input).to_be_focused()
+
+    page.get_by_role("tab", name="New Collection").click()
+    expect(name_input).to_be_focused()
+
+    # reopening resets to the new collection tab and focuses its input again
+    page.get_by_role("tab", name="Existing Collection").click()
+    expect(search_input).to_be_focused()
+    page.keyboard.press("Escape")
+
+    _open_collection_modal(page)
+    expect(name_input).to_be_focused()
+
+
+@pytest.mark.playwright
+def test_data_explorer_add_results_to_existing_collection(
+    authenticated_page,
+    authenticated_user,
+    data_explorer_parquet,
+    collection_factory,
+    image_factory,
+):
+    page = authenticated_page
+    isic_ids = data_explorer_parquet
+    collection = collection_factory(creator=authenticated_user, public=False, locked=False)
+    for isic_id in isic_ids:
+        image_factory(public=True, isic__id=isic_id)
+
+    page.goto(reverse("core/data-explorer"), timeout=30_000)
+    _wait_for_ready(page)
+
+    _open_collection_modal(page)
+
+    page.get_by_role("tab", name="Existing Collection").click()
+
+    # the collection is listed as a recent collection before any search happens
+    page.get_by_role("button", name=collection.name).click()
+    page.locator("#add-to-existing-collection-btn").click()
+
+    page.wait_for_url(f"**{reverse('core/collection-detail', args=[collection.pk])}")
+    expect(page.get_by_text(f"Adding {len(isic_ids)} images")).to_be_visible()
+    assert set(collection.images.values_list("isic_id", flat=True)) == set(isic_ids)
+
+
+@pytest.mark.playwright
+def test_data_explorer_search_finds_existing_collection(
+    authenticated_page,
+    authenticated_user,
+    data_explorer_parquet,
+    collection_factory,
+):
+    page = authenticated_page
+    # more collections than the recent list holds, so the target is only reachable by searching
+    collections = [
+        collection_factory(creator=authenticated_user, public=False, locked=False) for _ in range(6)
+    ]
+    target = collections[0]
+
+    page.goto(reverse("core/data-explorer"), timeout=30_000)
+    _wait_for_ready(page)
+
+    _open_collection_modal(page)
+
+    page.get_by_role("tab", name="Existing Collection").click()
+    expect(page.get_by_role("button", name=target.name)).not_to_be_visible()
+
+    page.locator("#collection-search-input").fill(target.name)
+    expect(page.get_by_role("button", name=target.name)).to_be_visible(timeout=10_000)

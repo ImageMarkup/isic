@@ -76,10 +76,13 @@ def collection_list(
     return queryset
 
 
+IsicIds = Annotated[list[Annotated[str, Field(pattern=ISIC_ID_REGEX)]], Field(min_length=1)]
+
+
 class CreateCollectionFromIsicIdsIn(Schema):
     name: str
     description: str = ""
-    isic_ids: Annotated[list[Annotated[str, Field(pattern=ISIC_ID_REGEX)]], Field(min_length=1)]
+    isic_ids: IsicIds
 
     model_config = {"extra": "forbid"}
 
@@ -294,6 +297,41 @@ def collection_populate_from_search(request, id: int, payload: SearchQueryIn):
     messages.add_message(
         request, messages.INFO, "Adding images to collection, this may take a few minutes."
     )
+    return 202, {}
+
+
+class PopulateCollectionFromIsicIdsIn(Schema):
+    isic_ids: IsicIds
+
+    model_config = {"extra": "forbid"}
+
+
+@router.post(
+    "/{id}/populate-from-isic-ids/",
+    response={202: None, 403: dict, 409: dict},
+    include_in_schema=False,
+    auth=is_authenticated,
+)
+def collection_populate_from_isic_ids(request, id: int, payload: PopulateCollectionFromIsicIdsIn):
+    qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
+    collection = get_object_or_404(qs.distinct(), id=id)
+
+    if not request.user.has_perm("core.add_images", collection):
+        return 403, {"error": "You do not have permission to add images to this collection."}
+
+    if collection.locked:
+        return 409, {"error": "Collection is locked"}
+
+    populate_collection_from_isic_ids_task.delay_on_commit(
+        collection.pk, request.user.pk, payload.isic_ids
+    )
+
+    messages.add_message(
+        request,
+        messages.INFO,
+        f"Adding {len(payload.isic_ids)} images to '{collection.name}', this may take a few minutes.",  # noqa: E501
+    )
+
     return 202, {}
 
 
