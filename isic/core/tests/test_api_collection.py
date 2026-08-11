@@ -144,6 +144,7 @@ def test_core_api_collection_populate_from_search(
     [
         ("api:collection_populate_from_search", {"query": "sex:male"}),
         ("api:collection_populate_from_list", {"isic_ids": ["ISIC_0000000"]}),
+        ("api:collection_populate_from_isic_ids", {"isic_ids": ["ISIC_0000000"]}),
         ("api:collection_remove_from_list", {"isic_ids": ["ISIC_0000000"]}),
     ],
 )
@@ -554,3 +555,52 @@ def test_core_api_collection_create_from_isic_ids(
         img1.isic_id,
         img2.isic_id,
     }
+
+
+@pytest.mark.django_db
+def test_core_api_collection_populate_from_isic_ids(
+    client,
+    authenticated_client,
+    collection_factory,
+    image_factory,
+    user,
+    django_capture_on_commit_callbacks,
+):
+    collection = collection_factory(locked=False, creator=user, public=False)
+    other_users_public_collection = collection_factory(locked=False, public=True)
+    other_users_private_collection = collection_factory(locked=False, public=False)
+    visible_image = image_factory(public=True)
+    invisible_image = image_factory(public=False)
+
+    url = reverse("api:collection_populate_from_isic_ids", kwargs={"id": collection.pk})
+    payload = {"isic_ids": [visible_image.isic_id, invisible_image.isic_id]}
+
+    r = client.post(url, payload, content_type="application/json")
+    assert r.status_code == 401, r.json()
+
+    r = authenticated_client.post(
+        reverse(
+            "api:collection_populate_from_isic_ids",
+            kwargs={"id": other_users_private_collection.pk},
+        ),
+        payload,
+        content_type="application/json",
+    )
+    assert r.status_code == 404, r.json()
+
+    r = authenticated_client.post(
+        reverse(
+            "api:collection_populate_from_isic_ids",
+            kwargs={"id": other_users_public_collection.pk},
+        ),
+        payload,
+        content_type="application/json",
+    )
+    assert r.status_code == 403, r.json()
+
+    with django_capture_on_commit_callbacks(execute=True):
+        r = authenticated_client.post(url, payload, content_type="application/json")
+
+    assert r.status_code == 202, r.json()
+    # the image the user can't see is silently skipped
+    assert set(collection.images.values_list("isic_id", flat=True)) == {visible_image.isic_id}

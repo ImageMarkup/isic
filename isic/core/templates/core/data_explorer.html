@@ -82,15 +82,15 @@
           >
             <span x-text="copyLabel">Copy Link</span>
           </button>
-          <div :class="{'tooltip': !canCreateCollection}" :data-tip="createCollectionTooltip">
+          <div :class="{'tooltip': !canAddToCollection}" :data-tip="addToCollectionTooltip">
             <button
-              id="create-collection-btn"
-              @click="showCreateCollectionModal()"
-              :disabled="!canCreateCollection || running || creatingCollection"
+              id="add-to-collection-btn"
+              @click="showCollectionModal()"
+              :disabled="!canAddToCollection || running || savingCollection"
               class="btn btn-ghost btn-sm"
             >
-              <span x-show="!creatingCollection">Create Collection</span>
-              <span x-show="creatingCollection">Creating...</span>
+              <span x-show="!savingCollection">Add to Collection</span>
+              <span x-show="savingCollection">Adding...</span>
             </button>
           </div>
         </div>
@@ -144,41 +144,120 @@
 
     </div>
 
-    <dialog x-ref="createCollectionModal" class="modal">
-      <form class="modal-box space-y-4" @submit.prevent="createCollection()">
-        <h3 class="font-bold text-lg">Create Collection</h3>
-        <div x-show="createCollectionError" class="alert alert-error text-sm">
-          <pre class="whitespace-pre-wrap" x-text="createCollectionError"></pre>
-        </div>
-        <p class="text-sm text-base-content/60">
-          This will create a collection with <span x-text="collectionImageCount.toLocaleString()"></span> images from your query results.
-        </p>
-        <fieldset class="fieldset">
-          <label class="fieldset-legend" for="collection-name-input">Collection Name</label>
+    <dialog x-ref="collectionModal" class="modal">
+      <div class="modal-box space-y-4">
+        <h3 class="font-bold text-lg">Add to Collection</h3>
+
+        <div role="tablist" class="tabs tabs-box">
           <input
-            type="text"
-            id="collection-name-input"
-            x-model="collectionName"
-            x-ref="collectionNameInput"
-            class="input input-bordered w-full"
-            required
+            type="radio"
+            name="collection_mode"
+            role="tab"
+            class="tab"
+            aria-label="New Collection"
+            value="new"
+            x-model="collectionMode"
+            @change="focusCollectionInput()"
           >
-        </fieldset>
-        <div class="modal-action">
-          <button type="button" class="btn btn-ghost" @click="$refs.createCollectionModal.close()">Cancel</button>
-          <button
-            type="submit"
-            class="btn btn-primary"
-            :disabled="!collectionName.trim() || creatingCollection"
+          <input
+            type="radio"
+            name="collection_mode"
+            role="tab"
+            class="tab"
+            aria-label="Existing Collection"
+            value="existing"
+            x-model="collectionMode"
+            @change="focusCollectionInput()"
           >
-            <span x-show="!creatingCollection">Create</span>
-            <span x-show="creatingCollection">Creating...</span>
-          </button>
         </div>
-      </form>
-      <div class="modal-backdrop" @click="$refs.createCollectionModal.close()"></div>
+
+        <div x-show="collectionError" class="alert alert-error text-sm">
+          <pre id="collection-error" class="whitespace-pre-wrap" x-text="collectionError"></pre>
+        </div>
+
+        <p class="text-sm text-base-content/60">
+          <span x-text="collectionImageCount.toLocaleString()"></span> images from your query results will be added.
+        </p>
+
+        <form x-show="collectionMode === 'new'" class="space-y-4" @submit.prevent="createCollection()">
+          <fieldset class="fieldset">
+            <label class="fieldset-legend" for="collection-name-input">Collection Name</label>
+            <input
+              type="text"
+              id="collection-name-input"
+              x-model="collectionName"
+              x-ref="collectionNameInput"
+              class="input input-bordered w-full"
+              required
+            >
+          </fieldset>
+          <div class="modal-action">
+            <button type="button" class="btn btn-ghost" @click="$refs.collectionModal.close()">Cancel</button>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              :disabled="!collectionName.trim() || savingCollection"
+            >
+              <span x-show="!savingCollection">Create</span>
+              <span x-show="savingCollection">Creating...</span>
+            </button>
+          </div>
+        </form>
+
+        <div x-show="collectionMode === 'existing'" class="space-y-4">
+          <fieldset class="fieldset">
+            <label class="fieldset-legend" for="collection-search-input">Search Your Collections</label>
+            <input
+              type="text"
+              id="collection-search-input"
+              x-model="collectionQuery"
+              x-ref="collectionSearchInput"
+              @input.debounce.300ms="searchCollections()"
+              placeholder="Type to search..."
+              class="input input-bordered w-full"
+            >
+          </fieldset>
+
+          <div x-show="visibleCollections.length > 0">
+            <div class="text-sm text-base-content/60 mb-2" x-text="hasCollectionQuery ? 'Results' : 'Recent collections'"></div>
+            <div id="collection-results" class="max-h-48 overflow-y-auto border border-base-300 rounded-sm">
+              <template x-for="collection in visibleCollections" :key="collection.id">
+                <button
+                  type="button"
+                  @click="selectedCollection = collection"
+                  :class="{'bg-base-200 font-semibold': selectedCollection && selectedCollection.id === collection.id}"
+                  class="w-full px-4 py-2 text-left text-sm hover:bg-base-200 border-b border-base-200 last:border-b-0"
+                  x-text="collection.name"
+                ></button>
+              </template>
+            </div>
+          </div>
+
+          <p x-show="visibleCollections.length === 0 && !collectionSearchPending" class="text-sm text-base-content/60">
+            <span x-show="hasCollectionQuery">No collections found.</span>
+            <span x-show="!hasCollectionQuery">Search for one of your unlocked collections by name.</span>
+          </p>
+
+          <div class="modal-action">
+            <button type="button" class="btn btn-ghost" @click="$refs.collectionModal.close()">Cancel</button>
+            <button
+              type="button"
+              id="add-to-existing-collection-btn"
+              class="btn btn-primary"
+              :disabled="!selectedCollection || savingCollection"
+              @click="addToExistingCollection()"
+            >
+              <span x-show="!savingCollection">Add</span>
+              <span x-show="savingCollection">Adding...</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-backdrop" @click="$refs.collectionModal.close()"></div>
     </dialog>
   </div>
+
+  {{ recent_collections|json_script:"recent-collections" }}
 
   <script>
     const PARQUET_URL = '{{ parquet_url|escapejs }}';
@@ -236,10 +315,16 @@ ORDER BY count DESC`;
         elapsed: '',
         copyLabel: 'Copy Link',
         lastQueryText: '',
-        creatingCollection: false,
+        savingCollection: false,
+        collectionMode: 'new',
         collectionName: '',
         collectionImageCount: 0,
-        createCollectionError: '',
+        collectionError: '',
+        collectionQuery: '',
+        collectionResults: [],
+        collectionSearchPending: false,
+        recentCollections: [],
+        selectedCollection: null,
         examples: [
           {
             name: 'Look up images by ISIC ID',
@@ -355,18 +440,26 @@ ORDER BY st.total DESC, sd.rank`
           return this.columns.includes(ISIC_ID_COL);
         },
 
-        get canCreateCollection() {
+        get canAddToCollection() {
           return IS_AUTHENTICATED && this.hasIsicId;
         },
 
-        get createCollectionTooltip() {
+        get addToCollectionTooltip() {
           if (!IS_AUTHENTICATED) {
-            return 'Log in to create collections';
+            return 'Log in to add results to a collection';
           }
           if (!this.hasIsicId) {
             return 'Query must include an isic_id column';
           }
           return undefined;
+        },
+
+        get hasCollectionQuery() {
+          return this.collectionQuery.trim().length >= 3;
+        },
+
+        get visibleCollections() {
+          return this.hasCollectionQuery ? this.collectionResults : this.recentCollections;
         },
 
         getQuery() {
@@ -417,6 +510,7 @@ ORDER BY st.total DESC, sd.rank`
 
         init() {
           this.initEditor();
+          this.recentCollections = JSON.parse(document.getElementById('recent-collections').textContent);
 
           const initDuckDB = async () => {
             try {
@@ -534,12 +628,16 @@ ORDER BY st.total DESC, sd.rank`
           }
         },
 
-        async showCreateCollectionModal() {
-          this.createCollectionError = '';
+        async showCollectionModal() {
+          this.collectionError = '';
+          this.collectionMode = 'new';
           this.collectionName = '';
           this.collectionImageCount = 0;
-          this.$refs.createCollectionModal.showModal();
-          this.$nextTick(() => this.$refs.collectionNameInput.focus());
+          this.collectionQuery = '';
+          this.collectionResults = [];
+          this.selectedCollection = null;
+          this.$refs.collectionModal.showModal();
+          this.focusCollectionInput();
 
           try {
             if (!this.showingSubset) {
@@ -552,7 +650,35 @@ ORDER BY st.total DESC, sd.rank`
               this.collectionImageCount = Number(countResult.toArray()[0].n);
             }
           } catch (e) {
-            this.createCollectionError = 'Failed to count images: ' + e.message;
+            this.collectionError = 'Failed to count images: ' + e.message;
+          }
+        },
+
+        focusCollectionInput() {
+          this.$nextTick(() => {
+            const input = this.collectionMode === 'new'
+              ? this.$refs.collectionNameInput
+              : this.$refs.collectionSearchInput;
+            input.focus();
+          });
+        },
+
+        async searchCollections() {
+          if (!this.hasCollectionQuery) {
+            this.collectionResults = [];
+            return;
+          }
+
+          this.collectionSearchPending = true;
+          try {
+            const {data} = await axiosSession.get("{% url 'api:collection_autocomplete' %}", {
+              params: {query: this.collectionQuery.trim()},
+            });
+            this.collectionResults = data.map(c => ({id: c.id, name: c.name}));
+          } catch (e) {
+            this.collectionError = this.errorMessage(e);
+          } finally {
+            this.collectionSearchPending = false;
           }
         },
 
@@ -581,14 +707,29 @@ ORDER BY st.total DESC, sd.rank`
           this.activePopup = popup;
         },
 
-        async createCollection() {
-          if (!this.collectionName.trim() || this.creatingCollection)
-          {
-            return;
-          }
+        errorMessage(e) {
+          const errData = e.response && e.response.data;
 
-          this.creatingCollection = true;
-          this.createCollectionError = '';
+          if (!errData) {
+            return e.message;
+          }
+          if (typeof errData === 'string') {
+            return errData;
+          }
+          if (errData.error) {
+            return errData.error;
+          }
+          if (errData.detail) {
+            return typeof errData.detail === 'string'
+              ? errData.detail
+              : JSON.stringify(errData.detail);
+          }
+          return JSON.stringify(errData);
+        },
+
+        async submitCollection(submit) {
+          this.savingCollection = true;
+          this.collectionError = '';
 
           try {
             const idsResult = await this.conn.query(
@@ -597,35 +738,48 @@ ORDER BY st.total DESC, sd.rank`
             const isicIds = idsResult.toArray().map(r => r[ISIC_ID_COL]);
 
             if (isicIds.length === 0) {
-              this.createCollectionError = 'No images found in query results.';
+              this.collectionError = 'No images found in query results.';
               return;
             }
 
+            const collectionId = await submit(isicIds);
+
+            this.$refs.collectionModal.close();
+            window.location.href = '/collections/' + collectionId + '/';
+          } catch (e) {
+            this.collectionError = this.errorMessage(e);
+          } finally {
+            this.savingCollection = false;
+          }
+        },
+
+        async createCollection() {
+          if (!this.collectionName.trim() || this.savingCollection) {
+            return;
+          }
+
+          await this.submitCollection(async (isicIds) => {
             const {data} = await axiosSession.post('/api/v2/collections/create-from-isic-ids/', {
               name: this.collectionName.trim(),
               isic_ids: isicIds,
             });
+            return data.collection_id;
+          });
+        },
 
-            this.$refs.createCollectionModal.close();
-            window.location.href = '/collections/' + data.collection_id + '/';
-          } catch (e) {
-            if (e.response && e.response.data) {
-              const errData = e.response.data;
-              if (typeof errData === 'string') {
-                this.createCollectionError = errData;
-              } else if (errData.detail) {
-                this.createCollectionError = typeof errData.detail === 'string'
-                  ? errData.detail
-                  : JSON.stringify(errData.detail);
-              } else {
-                this.createCollectionError = JSON.stringify(errData);
-              }
-            } else {
-              this.createCollectionError = e.message;
-            }
-          } finally {
-            this.creatingCollection = false;
+        async addToExistingCollection() {
+          if (!this.selectedCollection || this.savingCollection) {
+            return;
           }
+
+          await this.submitCollection(async (isicIds) => {
+            const collectionId = this.selectedCollection.id;
+            await axiosSession.post(
+              `/api/v2/collections/${collectionId}/populate-from-isic-ids/`,
+              {isic_ids: isicIds},
+            );
+            return collectionId;
+          });
         }
       }
     }
