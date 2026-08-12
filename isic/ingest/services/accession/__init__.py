@@ -55,6 +55,7 @@ def create_accession(
             original_blob_size=original_blob_size,
         )
         accession.unstructured_metadata = UnstructuredMetadata(accession=accession)
+        # TODO(django 6): https://github.com/django/django/pull/19535
         accession.full_clean(validate_constraints=False)
         accession.save()
         accession.unstructured_metadata.save()
