@@ -359,6 +359,11 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
                 )
                 | ~Q(concomitant_biopsy=True),
             ),
+            # TODO(django 6): these two conditions reference foreign keys by attname, which
+            # django can't resolve during python-side constraint validation. that makes
+            # full_clean(validate_constraints=True) raise FieldError on every accession, so
+            # callers pass validate_constraints=False. fixed by
+            # https://github.com/django/django/pull/19535, released in django 6.
             # identical lesion_id implies identical patient_id
             ExclusionConstraint(
                 name="accession_lesion_id_patient_id_exclusion",

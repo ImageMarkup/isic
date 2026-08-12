@@ -179,6 +179,7 @@ def test_accession_without_zip_upload(user, jpg_blob, cohort):
     accession.copyright_license = cohort.default_copyright_license
     accession.attribution = cohort.default_attribution
     accession.unstructured_metadata = UnstructuredMetadata(accession=accession)
+    # TODO(django 6): https://github.com/django/django/pull/19535
     accession.full_clean(validate_constraints=False)
     accession.save()
 
@@ -238,6 +239,7 @@ def test_accession_upload_invalid_cohort(
 def test_accession_mutable_before_publish(user, accession_factory):
     accession = accession_factory()
     accession.update_metadata(user, {"foo": "bar"})
+    # TODO(django 6): https://github.com/django/django/pull/19535
     accession.full_clean(validate_constraints=False)
     accession.save()
 

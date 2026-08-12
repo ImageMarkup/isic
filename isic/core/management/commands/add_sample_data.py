@@ -74,6 +74,7 @@ def add_sample_data(n):
                             original_blob_size=image_size,
                         )
                         accession.unstructured_metadata = UnstructuredMetadata(accession=accession)
+                        # TODO(django 6): https://github.com/django/django/pull/19535
                         accession.full_clean(validate_constraints=False)
                         accession.save()
                         accession.unstructured_metadata.save()

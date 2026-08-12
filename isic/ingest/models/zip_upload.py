@@ -121,6 +121,7 @@ class ZipUpload(CreationSortedTimeStampedModel):
                         accession.cohort = self.cohort
                         accession.copyright_license = accession.cohort.default_copyright_license
                         accession.unstructured_metadata = UnstructuredMetadata(accession=accession)
+                        # TODO(django 6): https://github.com/django/django/pull/19535
                         accession.full_clean(validate_constraints=False)
                         self.accessions.add(accession, bulk=False)
                         accession.unstructured_metadata.save()
