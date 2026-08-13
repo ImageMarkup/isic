@@ -14,6 +14,9 @@ from resonant_settings.development.minio_storage import *
 
 SECRET_KEY = "insecure-secret"
 
+# Django reCAPTCHA falls back to Google's test keys, which accept any response
+SILENCED_SYSTEM_CHECKS = ["django_recaptcha.recaptcha_test_key_error"]
+
 # Use a fast, insecure hasher to speed up tests
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",

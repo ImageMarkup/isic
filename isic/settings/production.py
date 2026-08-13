@@ -22,6 +22,9 @@ SECRET_KEY: str = env.str("DJANGO_SECRET_KEY")
 # (specifically when DEBUG is True), "localhost" and "127.0.0.1" will be added.
 ALLOWED_HOSTS: list[str] = env.list("DJANGO_ALLOWED_HOSTS", cast=str)
 
+RECAPTCHA_PUBLIC_KEY: str = env.str("DJANGO_RECAPTCHA_PUBLIC_KEY")
+RECAPTCHA_PRIVATE_KEY: str = env.str("DJANGO_RECAPTCHA_PRIVATE_KEY")
+
 STORAGES.update(
     {
         "default": {
