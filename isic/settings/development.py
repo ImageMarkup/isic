@@ -38,6 +38,9 @@ DEBUG = True
 
 SECRET_KEY = "insecure-secret"
 
+# Django reCAPTCHA falls back to Google's test keys, which accept any response
+SILENCED_SYSTEM_CHECKS = ["django_recaptcha.recaptcha_test_key_error"]
+
 # This is typically only overridden when running from Docker.
 INTERNAL_IPS = InternalIPS(env.list("DJANGO_INTERNAL_IPS", cast=str, default=["127.0.0.1"]))
 CORS_ALLOWED_ORIGIN_REGEXES = env.list(

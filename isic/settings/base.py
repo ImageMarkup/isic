@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_extensions",
     "django_filters",
+    "django_recaptcha",
     "markdownify",
     # Install "ninja" to force Swagger to be served locally, so it can be overridden
     "ninja",
@@ -139,12 +140,7 @@ PASSWORD_HASHERS += [
 # Make Django and Allauth redirects consistent, but both may be changed.
 LOGIN_REDIRECT_URL = "/"
 ACCOUNT_LOGOUT_REDIRECT_URL = "/"
-ACCOUNT_SIGNUP_FORM_CLASS = "resonant_utils.allauth.FullNameSignupForm"
-
-# Signups are closed while an automated signup campaign is abusing the confirmation
-# emails. An amount of 0 rejects every POST to the signup view; this dict is merged
-# into allauth's defaults, so the other rate limits are unaffected.
-ACCOUNT_RATE_LIMITS = {"signup": "0/m/ip"}
+ACCOUNT_SIGNUP_FORM_CLASS = "isic.login.forms.CaptchaSignupForm"
 
 SOCIALACCOUNT_PROVIDERS: dict[str, dict[str, Any]] = {}
 

@@ -1,0 +1,33 @@
+{% comment %}
+  Overrides django-auth-style, which builds every input from widget metadata instead of
+  calling the widget. reCAPTCHA widgets declare an input type of "hidden", so they would
+  otherwise render as an empty hidden input, with no challenge and no script.
+{% endcomment %}
+{% load allauth %}
+{% for bound_field in attrs.form %}
+  {% if bound_field.field.widget.recaptcha_response_name %}
+    {% comment %}
+      The reCAPTCHA iframe has a fixed width. django-auth-style ships a prebuilt stylesheet
+      that never scanned this template, so centering has to be an inline style.
+    {% endcomment %}
+    <fieldset class="fieldset" style="justify-items: center">
+      {{ bound_field }}
+      {% if bound_field.errors %}
+        <ul class="errorlist text-error">
+          {% for error in bound_field.errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </fieldset>
+  {% else %}
+    {% element field unlabeled=attrs.unlabeled name=bound_field.name type=bound_field.field.widget.input_type required=bound_field.field.required value=bound_field.value id=bound_field.auto_id errors=bound_field.errors placeholder=bound_field.field.widget.attrs.placeholder tabindex=bound_field.field.widget.attrs.tabindex|default:None autocomplete=bound_field.field.widget.attrs.autocomplete style=bound_field.field.widget.attrs.style choices=bound_field.field.choices %}
+      {% slot label %}
+        {{ bound_field.label }}
+      {% endslot %}
+      {% slot help_text %}
+        {{ bound_field.field.help_text }}
+      {% endslot %}
+    {% endelement %}
+  {% endif %}
+{% endfor %}

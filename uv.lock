@@ -917,6 +917,18 @@ wheels = [
 ]
 
 [[package]]
+name = "django-recaptcha"
+version = "4.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/bd/a2/480cd2df8031c30afe0d67b0a5e6299ced20f2e65135a3c160c4031d7052/django_recaptcha-4.1.0.tar.gz", hash = "sha256:73097b958733f65b729d4e4630c51fc2bf147aca6f026017d18898dfc25cb4c5", size = 28676, upload-time = "2025-03-28T13:52:26.589Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8b/e7/0765f98e4953e26573512284995648c439b0eb252877b655683d28c90be2/django_recaptcha-4.1.0-py3-none-any.whl", hash = "sha256:463aa65967e973de466b28ce8e8b6abb2faffb1ce0c7faa1bf0e5b041e0497cb", size = 39473, upload-time = "2025-03-28T13:52:24.92Z" },
+]
+
+[[package]]
 name = "django-redis"
 version = "7.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1611,6 +1623,7 @@ dependencies = [
     { name = "django-markdownify" },
     { name = "django-ninja" },
     { name = "django-oauth-toolkit" },
+    { name = "django-recaptcha" },
     { name = "django-redis" },
     { name = "django-resonant-settings", extra = ["allauth", "celery"] },
     { name = "django-resonant-utils", extra = ["allauth", "s3-storage"] },
@@ -1720,6 +1733,7 @@ requires-dist = [
     { name = "django-minio-storage", marker = "extra == 'development'", specifier = "==0.5.9" },
     { name = "django-ninja", specifier = "==1.4.5" },
     { name = "django-oauth-toolkit", specifier = "==1.7.1" },
+    { name = "django-recaptcha", specifier = "==4.1.0" },
     { name = "django-redis", specifier = "==7.0.0" },
     { name = "django-resonant-settings", extras = ["allauth", "celery"], specifier = "==0.51.1" },
     { name = "django-resonant-utils", extras = ["allauth", "s3-storage"], specifier = "==0.19.0" },
