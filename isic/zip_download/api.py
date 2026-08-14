@@ -1,6 +1,7 @@
 from collections import Counter
 from collections.abc import Generator, Iterable
 from datetime import timedelta
+from itertools import batched
 import json
 import logging
 from pathlib import PurePosixPath
@@ -36,6 +37,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 zip_router = Router()
+
+ZIP_LISTING_BATCH_SIZE = 256
 
 
 # this is directly mirrored in isic-cli
@@ -120,6 +123,26 @@ def _zip_file_listing_generator(qs: QuerySet[Image], token: str) -> Generator[di
     )
 
 
+def _write_file_listing(
+    suggested_filename: str, files: Iterable[dict[str, str]]
+) -> Generator[bytes]:
+    yield b'{"suggestedFilename": ' + orjson.dumps(suggested_filename) + b', "files": ['
+
+    has_preceding_element = False
+    # yield entries in batches, since responding with many small chunks incurs per-chunk
+    # overhead in the WSGI write path and socket writes.
+    for file_batch in batched(files, ZIP_LISTING_BATCH_SIZE, strict=False):
+        chunk: list[bytes] = []
+        for file in file_batch:
+            if has_preceding_element:
+                chunk.append(b",")
+            has_preceding_element = True
+            chunk.append(orjson.dumps({"url": file["url"], "zipPath": file["zipPath"]}))
+        yield b"".join(chunk)
+
+    yield b"]}"
+
+
 @zip_router.get("/file-listing/", include_in_schema=False, auth=ZipDownloadTokenAuth())
 @transaction.atomic
 def zip_download_listing(
@@ -149,20 +172,9 @@ def zip_download_listing(
     )
     files = _zip_file_listing_generator(qs, token)
 
-    def write_response() -> Generator[bytes]:
-        yield f'{{"suggestedFilename": "{suggested_filename}", "files": ['.encode()
-
-        has_preceding_element = False
-        for file in files:
-            if has_preceding_element:
-                yield b","
-            has_preceding_element = True
-            # orjson yields a 7-10x performance improvement over json.dumps
-            yield orjson.dumps({"url": file["url"], "zipPath": file["zipPath"]})
-
-        yield b"]}"
-
-    return StreamingHttpResponse(write_response(), content_type="application/json")
+    return StreamingHttpResponse(
+        _write_file_listing(suggested_filename, files), content_type="application/json"
+    )
 
 
 @zip_router.get("/metadata-file/", include_in_schema=False, auth=ZipDownloadTokenAuth())
