@@ -261,6 +261,13 @@ ISIC_ENGAGEMENT_OAUTH_CLIENT_ID: str | None = env.str(
     "DJANGO_ISIC_ENGAGEMENT_OAUTH_CLIENT_ID", default=None
 )
 
+# The client_id of the engagement platform's service IsicOAuthApplication, which authenticates
+# with the client credentials grant. Its tokens have no user, so endpoints meant for the
+# platform itself, rather than for one of its users, authorize this application instead.
+ISIC_ENGAGEMENT_SERVICE_OAUTH_CLIENT_ID: str | None = env.str(
+    "DJANGO_ISIC_ENGAGEMENT_SERVICE_OAUTH_CLIENT_ID", default=None
+)
+
 ISIC_ELASTICSEARCH_URL: ParseResult = env.url("DJANGO_ISIC_ELASTICSEARCH_URL")
 ISIC_ELASTICSEARCH_IMAGES_INDEX = "isic"
 ISIC_ELASTICSEARCH_LESIONS_INDEX = "isic-lesions"
