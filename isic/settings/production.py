@@ -7,6 +7,7 @@ import sentry_sdk.integrations.celery
 import sentry_sdk.integrations.django
 import sentry_sdk.integrations.logging
 import sentry_sdk.integrations.pure_eval
+from sentry_sdk.scrubber import DEFAULT_DENYLIST, EventScrubber
 
 from ._sentry_utils import get_sentry_performance_sample_rate
 from .base import *
@@ -80,6 +81,9 @@ sentry_sdk.init(
     attach_stacktrace=True,
     # Submit request User info from Django
     send_default_pii=True,
+    # The denylist matches keys exactly, so "secret" in the default list doesn't cover the
+    # client_secret that OAuth clients post to the token endpoint.
+    event_scrubber=EventScrubber(denylist=[*DEFAULT_DENYLIST, "client_secret"]),
     traces_sampler=get_sentry_performance_sample_rate,
     profiles_sampler=get_sentry_performance_sample_rate,
 )
