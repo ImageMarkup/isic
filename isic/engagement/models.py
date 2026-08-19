@@ -8,7 +8,7 @@ from django.dispatch import receiver
 from oauth2_provider.signals import app_authorized
 
 from isic.core.models.base import CreationSortedTimeStampedModel
-from isic.ingest.models import Cohort, Contributor
+from isic.ingest.models import Accession, Cohort, Contributor
 
 
 class EngagementProfile(models.Model):
@@ -51,6 +51,20 @@ class EngagementProfile(models.Model):
 
     def __str__(self) -> str:
         return self.user.username
+
+
+class EngagementAccession(models.Model):
+    """Marks an accession as having originated from the engagement platform."""
+
+    accession = models.OneToOneField(Accession, on_delete=models.CASCADE, related_name="engagement")
+    external_id = models.CharField(
+        max_length=255,
+        unique=True,
+        help_text="The engagement platform's own identifier for this image.",
+    )
+
+    def __str__(self) -> str:
+        return self.external_id
 
 
 # the hyphen must stay escaped. the form hands this to the browser as an HTML5 pattern, which

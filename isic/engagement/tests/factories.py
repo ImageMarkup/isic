@@ -1,9 +1,9 @@
 import factory
 import factory.django
 
-from isic.engagement.models import EmailDomainContributor, EngagementProfile
+from isic.engagement.models import EmailDomainContributor, EngagementAccession, EngagementProfile
 from isic.factories import UserFactory
-from isic.ingest.tests.factories import CohortFactory, ContributorFactory
+from isic.ingest.tests.factories import AccessionFactory, CohortFactory, ContributorFactory
 
 
 class EngagementProfileFactory(factory.django.DjangoModelFactory):
@@ -21,6 +21,14 @@ class EngagementProfileFactory(factory.django.DjangoModelFactory):
             default_cohort=factory.SubFactory(CohortFactory),
             default_contributor=factory.SelfAttribute("default_cohort.contributor"),
         )
+
+
+class EngagementAccessionFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = EngagementAccession
+
+    accession = factory.SubFactory(AccessionFactory)
+    external_id = factory.Sequence(lambda n: f"engagement-image-{n}")
 
 
 class EmailDomainContributorFactory(factory.django.DjangoModelFactory):

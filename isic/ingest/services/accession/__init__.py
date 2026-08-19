@@ -25,14 +25,16 @@ from isic.ingest.services.publish import unembargo_image
 
 
 # Note: this method isn't used when creating accessions as part of a zip extraction.
-def create_accession(
+def create_accession(  # noqa: PLR0913
     *,
     creator: User,
     cohort: Cohort,
     original_blob: File | str,
     original_blob_name: str,
     original_blob_size: int,
+    engagement_external_id: str | None = None,
 ) -> Accession:
+    from isic.engagement.models import EngagementAccession, EngagementProfile
     from isic.ingest.tasks import generate_accession_blob_task
 
     # TODO: should the user this is acting on behalf of be the same as the creator?
@@ -41,6 +43,9 @@ def create_accession(
 
     if cohort.accessions.filter(original_blob_name=original_blob_name).exists():
         raise ValidationError("An accession with this name already exists.")
+
+    if engagement_external_id and not EngagementProfile.objects.filter(user=creator).exists():
+        raise ValidationError("Only engagement platform users can set an engagement external id.")
 
     if isinstance(original_blob, S3PlaceholderFile):
         original_blob = original_blob.name
@@ -59,6 +64,14 @@ def create_accession(
         accession.full_clean(validate_constraints=False)
         accession.save()
         accession.unstructured_metadata.save()
+
+        if engagement_external_id:
+            engagement_accession = EngagementAccession(
+                accession=accession, external_id=engagement_external_id
+            )
+            engagement_accession.full_clean()
+            engagement_accession.save()
+
         generate_accession_blob_task.delay_on_commit(accession.pk)
 
     return accession
