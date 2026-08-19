@@ -2,6 +2,7 @@ isic/core/static/core/dist/
 
 # Local dev customizations
 dev/local-setup.sh
+dev/local-post-restore.sh
 docker-compose.local.yml
 
 .greenmask/dumps/

@@ -37,7 +37,7 @@ validate:
 
 restore:
   pg_restore_options:
-    dbname: "postgresql://postgres:postgres@postgres:5432/django"
+    dbname: "${DJANGO_DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/django}"
     no-owner: true
     no-privileges: true
   scripts:
