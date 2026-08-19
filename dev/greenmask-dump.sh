@@ -88,3 +88,8 @@ readonly NOISE='could not find where to insert IF EXISTS|using neutralized TOC f
 
 greenmask --log-level "$LOG_LEVEL" restore latest --pgzip \
   2> >(grep -v -E "$NOISE" >&2)
+
+readonly POST_RESTORE_SCRIPT=dev/local-post-restore.sh
+if [[ -f "$POST_RESTORE_SCRIPT" ]]; then
+  bash "$POST_RESTORE_SCRIPT"
+fi
