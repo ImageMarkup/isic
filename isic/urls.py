@@ -63,7 +63,9 @@ api.add_router("/zip-download/", zip_router, tags=["zip-downloads"])
 def handle_django_validation_error(request, exc: ValidationError):
     return api.create_response(
         request,
-        {"message": exc.message},
+        # messages rather than message, since a ValidationError raised by full_clean carries a
+        # dict of per field errors and has no .message at all.
+        {"message": "; ".join(exc.messages)},
         status=400,
     )
 

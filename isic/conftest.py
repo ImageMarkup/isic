@@ -28,8 +28,10 @@ from isic.core.tests.factories import (
 )
 from isic.engagement.tests.factories import (
     EmailDomainContributorFactory,
+    EngagementAccessionFactory,
     EngagementProfileFactory,
 )
+from isic.ingest.models.accession import AccessionState, AccessionStatus
 from isic.ingest.tests.factories import (
     AccessionFactory,
     AccessionReviewFactory,
@@ -104,6 +106,24 @@ def staff_user(user_factory):
 
 
 @pytest.fixture
+def accessions_by_state(cohort, accession_factory, accession_review_factory, image_factory):
+    """One accession in every state, all within a single cohort."""
+    return {
+        AccessionState.PROCESSING: accession_factory(cohort=cohort),
+        AccessionState.SKIPPED: accession_factory(cohort=cohort, status=AccessionStatus.SKIPPED),
+        AccessionState.FAILED: accession_factory(cohort=cohort, status=AccessionStatus.FAILED),
+        AccessionState.AWAITING_REVIEW: accession_factory(cohort=cohort, ingested=True),
+        AccessionState.ACCEPTED: accession_review_factory(
+            accession__cohort=cohort, accession__ingested=True, value=True
+        ).accession,
+        AccessionState.REJECTED: accession_review_factory(
+            accession__cohort=cohort, accession__ingested=True, value=False
+        ).accession,
+        AccessionState.PUBLISHED: image_factory(public=True, accession__cohort=cohort).accession,
+    }
+
+
+@pytest.fixture
 def staff_client(staff_user):
     client = Client()
     client.force_login(staff_user)
@@ -174,13 +194,28 @@ def staff_authenticated_page(staff_authenticated_context):
 
 
 @pytest.fixture
-def s3ff_random_field_value(s3ff_field_value_factory):
+def s3ff_random_field_value_factory(s3ff_field_value_factory):
     # this is largely taken from upstream: https://github.com/kitware-resonant/django-s3-file-field/blob/73be92f74f2047d3a8f132c935008ac6234e3d15/s3_file_field/fixtures.py#L16
     # the difference is we need to run it ourselves because we forbid get_alternative_name.
-    key = default_storage.save(f"test_key_{secrets.token_hex(16)}", ContentFile(b"test content"))
-    with default_storage.open(key) as file_object:
-        yield s3ff_field_value_factory(file_object)
-    default_storage.delete(key)
+    keys = []
+
+    def f():
+        key = default_storage.save(
+            f"test_key_{secrets.token_hex(16)}", ContentFile(b"test content")
+        )
+        keys.append(key)
+        with default_storage.open(key) as file_object:
+            return s3ff_field_value_factory(file_object)
+
+    yield f
+
+    for key in keys:
+        default_storage.delete(key)
+
+
+@pytest.fixture
+def s3ff_random_field_value(s3ff_random_field_value_factory):
+    return s3ff_random_field_value_factory()
 
 
 # To make pytest-factoryboy fixture creation work properly, all factories must be registered at
@@ -214,4 +249,5 @@ register(StudyFactory)
 
 # engagement factories
 register(EngagementProfileFactory)
+register(EngagementAccessionFactory)
 register(EmailDomainContributorFactory)

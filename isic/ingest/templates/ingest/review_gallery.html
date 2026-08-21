@@ -13,7 +13,7 @@
     {% include 'ingest/partials/breadcrumbs.html' %}
   </div>
 
-  {% if not cohort.accessions.unreviewed.exists %}
+  {% if not progress.num_unreviewed %}
     <div>
       No accessions left to review!
     </div>

@@ -25,6 +25,7 @@ validate:
     - "5332871852b79c027b147766489a58fd"  # login_profile.hash_id
     - "d7f018cfb8bdf6841722925f5312e726"  # studies_study.name
     - "c3a91674ddb132e2940842f3516df5a0"  # engagement_emaildomaincontributor.domain
+    - "90af211ec186bc86e4c6c96416c0f595"  # engagement_engagementaccession.external_id
     # "transformer may produce NULL values but column has NOT NULL constraint":
     # Replace writes a non-NULL constant and the source columns are themselves
     # NOT NULL, so no NULL can actually be produced.
@@ -152,6 +153,17 @@ dump:
           params:
             column: "domain"
             template: 'institution{{ substr 0 12 (sha256sum (printf "%s:email_domain:%s" (env "SALT") .GetValue)) }}.test'
+
+    # ============ ENGAGEMENT ACCESSIONS ============
+    # The engagement platform's own identifier for an image, which is opaque to us and
+    # shouldn't leave production. Hashed rather than randomized to stay unique.
+    - schema: "public"
+      name: "engagement_engagementaccession"
+      transformers:
+        - name: "Template"
+          params:
+            column: "external_id"
+            template: 'anon_engagement_{{ substr 0 16 (sha256sum (printf "%s:engagement_external_id:%s" (env "SALT") .GetValue)) }}'
 
     # ============ PRIVATE IDs (Patient / Lesion / RcmCase) ============
     - schema: "public"

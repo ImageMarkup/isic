@@ -1,12 +1,14 @@
 from pathlib import Path
+from typing import Any
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Prefetch
 from django.db.models.aggregates import Count
 from django.http.request import HttpRequest
 from django.shortcuts import get_object_or_404
 from ninja import Field, ModelSchema, Router, Schema
 from ninja.pagination import paginate
+from pydantic import ValidationError as PydanticValidationError
 from pydantic import field_validator
 from s3_file_field.widgets import S3PlaceholderFile
 
@@ -86,6 +88,8 @@ accession_router = Router()
 class AccessionIn(Schema):
     cohort: int
     original_blob: str = Field(..., description="S3 file field value.")
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    engagement_external_id: str | None = None
 
     model_config = {"extra": "forbid"}
 
@@ -104,6 +108,16 @@ class AccessionOut(ModelSchema):
         fields = ["id"]
 
 
+def _metadata_errors(exc: PydanticValidationError) -> dict:
+    return {
+        "message": "Invalid metadata.",
+        "errors": [
+            {"field": str(error["loc"][0]) if error["loc"] else "", "message": error["msg"]}
+            for error in exc.errors()
+        ],
+    }
+
+
 @accession_router.post(
     "/",
     response={201: AccessionOut, 403: dict, 400: dict},
@@ -120,13 +134,28 @@ def accession_create(request: HttpRequest, payload: AccessionIn):
     # TODO: how to make django-ninja schema aware of S3PlaceholderFile while using str for input?
     assert isinstance(payload.original_blob, S3PlaceholderFile)  # noqa: S101
 
-    return 201, create_accession(
-        cohort=cohort,
-        creator=request.user,
-        original_blob=payload.original_blob,
-        original_blob_name=Path(payload.original_blob.name).name,
-        original_blob_size=payload.original_blob.size,
-    )
+    try:
+        with transaction.atomic():
+            accession = create_accession(
+                cohort=cohort,
+                creator=request.user,
+                original_blob=payload.original_blob,
+                original_blob_name=Path(payload.original_blob.name).name,
+                original_blob_size=payload.original_blob.size,
+                engagement_external_id=payload.engagement_external_id,
+            )
+
+            if payload.metadata:
+                accession.update_metadata(request.user, payload.metadata)
+    except PydanticValidationError as e:
+        return 400, _metadata_errors(e)
+    except IntegrityError:
+        # cohort wide invariants like "a lesion belongs to one patient" are only enforced by the
+        # database here, since a single accession can't be checked against rows it doesn't know
+        # about the way a metadata CSV can.
+        return 400, {"message": "Metadata conflicts with existing cohort data."}
+
+    return 201, accession
 
 
 class AccessionReview(Schema):

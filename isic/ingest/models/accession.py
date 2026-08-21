@@ -1,6 +1,7 @@
 from collections.abc import Callable, Mapping
 from copy import deepcopy
 from dataclasses import dataclass
+from enum import StrEnum
 import io
 import logging
 from mimetypes import guess_type
@@ -125,6 +126,9 @@ class AccessionQuerySet(models.QuerySet["Accession"]):
     def uningested(self):
         return self.filter(Q(status=AccessionStatus.FAILED) | Q(status=AccessionStatus.SKIPPED))
 
+    def failed(self):
+        return self.filter(status=AccessionStatus.FAILED)
+
     def ingested(self):
         return self.filter(status=AccessionStatus.SUCCEEDED)
 
@@ -160,6 +164,20 @@ class AccessionQuerySet(models.QuerySet["Accession"]):
 
     def rejected(self):
         return self.reviewable().filter(review__value=False)
+
+    def from_engagement_platform(self):
+        return self.filter(engagement__isnull=False)
+
+    def with_state(self, state: "AccessionState"):
+        return self.filter(_STATE_FILTERS[state])
+
+    def in_flight(self):
+        """Return every accession except the ones in a terminal state."""
+        terminal = Q()
+        for state in _TERMINAL_STATES:
+            terminal |= _STATE_FILTERS[state]
+
+        return self.exclude(terminal)
 
 
 @dataclass(frozen=True)
@@ -218,6 +236,64 @@ class AccessionStatus(models.TextChoices):
     SKIPPED = "skipped", "Skipped"
     FAILED = "failed", "Failed"
     SUCCEEDED = "succeeded", "Succeeded"
+
+
+class AccessionState(StrEnum):
+    """
+    The lifecycle of an accession as an uploader sees it.
+
+    status only covers blob processing. This collapses processing, review, and publish into the
+    single value someone tracking their upload actually wants.
+
+    This exists for the engagement platform, which polls its uploads until they publish and has
+    no way to see the review and publish rows that status leaves out.
+    """
+
+    PROCESSING = "processing"
+    SKIPPED = "skipped"
+    FAILED = "failed"
+    AWAITING_REVIEW = "awaiting_review"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+    PUBLISHED = "published"
+
+    @property
+    def terminal(self) -> bool:
+        """Whether an accession in this state is done moving."""
+        return self in _TERMINAL_STATES
+
+
+# rejected is deliberately absent: staff can re-review, and any later metadata change deletes the
+# review and sends the accession back to awaiting_review. this is a tuple rather than a set so
+# that iterating it, which in_flight() does, builds the same query every time.
+_TERMINAL_STATES = (AccessionState.SKIPPED, AccessionState.FAILED, AccessionState.PUBLISHED)
+
+_UNPUBLISHED = Q(image__isnull=True)
+_REVIEWABLE = Q(status=AccessionStatus.SUCCEEDED) & _UNPUBLISHED
+
+# these are Q objects rather than queryset methods so that they can be combined, which in_flight()
+# does. the unpublished half is redundant for the first three, since only ingested accessions are
+# publishable, but nothing at the database level enforces that and these have to partition the
+# queryset the same way Accession.state partitions instances.
+_STATE_FILTERS: dict[AccessionState, Q] = {
+    AccessionState.PROCESSING: ~Q(
+        status__in=[AccessionStatus.SUCCEEDED, AccessionStatus.FAILED, AccessionStatus.SKIPPED]
+    )
+    & _UNPUBLISHED,
+    AccessionState.SKIPPED: Q(status=AccessionStatus.SKIPPED) & _UNPUBLISHED,
+    AccessionState.FAILED: Q(status=AccessionStatus.FAILED) & _UNPUBLISHED,
+    AccessionState.AWAITING_REVIEW: _REVIEWABLE & Q(review__isnull=True),
+    AccessionState.ACCEPTED: _REVIEWABLE & Q(review__value=True),
+    AccessionState.REJECTED: _REVIEWABLE & Q(review__value=False),
+    AccessionState.PUBLISHED: Q(image__isnull=False),
+}
+
+_UNINGESTED_STATES = {
+    AccessionStatus.CREATING: AccessionState.PROCESSING,
+    AccessionStatus.CREATED: AccessionState.PROCESSING,
+    AccessionStatus.SKIPPED: AccessionState.SKIPPED,
+    AccessionStatus.FAILED: AccessionState.FAILED,
+}
 
 
 @dataclass
@@ -492,6 +568,20 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
     @property
     def unreviewed(self):
         return not self.reviewed
+
+    @property
+    def state(self) -> AccessionState:
+        # publishing is terminal and leaves the review behind, so it has to be checked first.
+        if self.published:
+            return AccessionState.PUBLISHED
+
+        if self.status != AccessionStatus.SUCCEEDED:
+            return _UNINGESTED_STATES[AccessionStatus(self.status)]
+
+        if self.unreviewed:
+            return AccessionState.AWAITING_REVIEW
+
+        return AccessionState.ACCEPTED if self.review.value else AccessionState.REJECTED
 
     @property
     def blob_(self):

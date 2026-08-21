@@ -1,0 +1,110 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block content %}
+  <header class="border-b border-gray-100 flex items-center justify-between py-2 pb-4">
+    <div class="flex-col">
+      <div class="heading-1">Engagement Accessions ({{ page.paginator.count|intcomma }})</div>
+      <p class="text-sm text-base-content/60">
+        Every accession uploaded through the engagement platform, newest first.
+      </p>
+    </div>
+    <a href="{% url 'engagement/accession-review' %}" class="btn btn-primary btn-sm">Review</a>
+  </header>
+
+  <div class="my-4 flex justify-end">
+    <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+      <input
+        type="checkbox"
+        class="checkbox checkbox-sm"
+        {% if only_in_flight %}checked{% endif %}
+        onchange="window.location.href = this.checked ? '{% querystring only_in_flight=1 page=None %}' : '{% querystring only_in_flight=0 page=None %}'"
+      >
+      Only show in-flight accessions
+    </label>
+  </div>
+
+  {% if page.object_list %}
+    <div class="overflow-x-auto">
+      <table class="table table-zebra">
+        <thead>
+          <tr>
+            <th>External ID</th>
+            <th>State</th>
+            <th>Cohort</th>
+            <th>Uploader</th>
+            <th>ISIC ID</th>
+            <th>Uploaded</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for accession in page %}
+            <tr>
+              <td>
+                <div class="font-mono text-sm">{{ accession.engagement.external_id }}</div>
+                <div class="text-gray-400">{{ accession.original_blob_name }}</div>
+              </td>
+              <td>
+                {% if accession.state == 'published' %}
+                  <span class="badge badge-success badge-sm">Published</span>
+                {% elif accession.state == 'accepted' %}
+                  <span class="badge badge-info badge-sm">Accepted</span>
+                {% elif accession.state == 'rejected' %}
+                  <span class="badge badge-error badge-sm">Rejected</span>
+                {% elif accession.state == 'failed' %}
+                  <span class="badge badge-error badge-sm">Failed</span>
+                {% elif accession.state == 'skipped' %}
+                  <span class="badge badge-ghost badge-sm">Skipped</span>
+                {% elif accession.state == 'processing' %}
+                  <span class="badge badge-ghost badge-sm">Processing</span>
+                {% else %}
+                  <span class="badge badge-warning badge-sm">Awaiting review</span>
+                {% endif %}
+              </td>
+              <td>
+                <a href="{% url 'ingest/cohort-detail' pk=accession.cohort.pk %}" class="link link-hover link-primary">
+                  {{ accession.cohort.name }}
+                </a>
+                <div class="text-gray-400">{{ accession.cohort.contributor.institution_name }}</div>
+              </td>
+              <td>
+                <a href="{% url 'core/user-detail' pk=accession.creator.pk %}" class="link link-hover link-primary">
+                  {{ accession.creator.email }}
+                </a>
+              </td>
+              <td>
+                {% if accession.image %}
+                  <a href="{% url 'core/image-detail' image_identifier=accession.image.isic_id %}" class="link link-hover link-primary">
+                    {{ accession.image.isic_id }}
+                  </a>
+                {% else %}
+                  <span class="text-gray-400">&mdash;</span>
+                {% endif %}
+              </td>
+              <td>
+                <div>{{ accession.created|date:"M j, Y" }}</div>
+                <div class="text-gray-400">{{ accession.created|timesince }} ago</div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="flex justify-center mt-3">
+      {% include 'core/partials/pagination_widget.html' with page_obj=page %}
+    </div>
+  {% else %}
+    <div class="text-center py-12">
+      <div class="text-gray-500">
+        {% if only_in_flight %}
+          <h3 class="text-lg font-medium text-gray-900 mb-2">No accessions are in flight</h3>
+          <p>Every engagement platform accession has published or stopped. Uncheck the filter above to see them.</p>
+        {% else %}
+          <h3 class="text-lg font-medium text-gray-900 mb-2">No engagement accessions yet</h3>
+          <p>Accessions appear here once the engagement platform uploads them.</p>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}
