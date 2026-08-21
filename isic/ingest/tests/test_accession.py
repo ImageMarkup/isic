@@ -10,7 +10,7 @@ import pytest
 from resonant_utils.files import field_file_to_local_path
 
 from isic.core.models.image import Image
-from isic.ingest.models.accession import Accession
+from isic.ingest.models.accession import Accession, AccessionState
 from isic.ingest.models.unstructured_metadata import UnstructuredMetadata
 from isic.ingest.services.accession import (
     create_accession,
@@ -288,3 +288,15 @@ def test_accession_relicense_some_accessions_more_restrictive(
             ),
             to_license="CC-BY",
         )
+
+
+@pytest.mark.django_db
+def test_accession_in_flight_states_agree(accessions_by_state):
+    """in_flight() is every state that isn't terminal, so it has to match the state property."""
+    assert Accession.objects.in_flight().count() == sum(
+        1 for state in AccessionState if not state.terminal
+    )
+
+    for state, accession in accessions_by_state.items():
+        assert accession.state == state
+        assert Accession.objects.in_flight().filter(pk=accession.pk).exists() is not state.terminal

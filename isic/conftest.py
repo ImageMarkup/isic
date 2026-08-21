@@ -31,6 +31,7 @@ from isic.engagement.tests.factories import (
     EngagementAccessionFactory,
     EngagementProfileFactory,
 )
+from isic.ingest.models.accession import AccessionState, AccessionStatus
 from isic.ingest.tests.factories import (
     AccessionFactory,
     AccessionReviewFactory,
@@ -102,6 +103,24 @@ def nonstaff_user(user_factory):
 @pytest.fixture
 def staff_user(user_factory):
     return user_factory(is_staff=True)
+
+
+@pytest.fixture
+def accessions_by_state(cohort, accession_factory, accession_review_factory, image_factory):
+    """One accession in every state, all within a single cohort."""
+    return {
+        AccessionState.PROCESSING: accession_factory(cohort=cohort),
+        AccessionState.SKIPPED: accession_factory(cohort=cohort, status=AccessionStatus.SKIPPED),
+        AccessionState.FAILED: accession_factory(cohort=cohort, status=AccessionStatus.FAILED),
+        AccessionState.AWAITING_REVIEW: accession_factory(cohort=cohort, ingested=True),
+        AccessionState.ACCEPTED: accession_review_factory(
+            accession__cohort=cohort, accession__ingested=True, value=True
+        ).accession,
+        AccessionState.REJECTED: accession_review_factory(
+            accession__cohort=cohort, accession__ingested=True, value=False
+        ).accession,
+        AccessionState.PUBLISHED: image_factory(public=True, accession__cohort=cohort).accession,
+    }
 
 
 @pytest.fixture

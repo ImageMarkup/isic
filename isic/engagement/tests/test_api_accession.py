@@ -2,7 +2,7 @@ from django.urls import reverse
 import pytest
 from pytest_lazy_fixtures import lf
 
-from isic.ingest.models.accession import AccessionState, AccessionStatus
+from isic.ingest.models.accession import AccessionState
 
 
 def post_list(client, filters: dict | None = None, **kwargs):
@@ -19,41 +19,15 @@ def service_headers(engagement_service_app, client_credentials_token):
     return {"Authorization": f"Bearer {client_credentials_token(engagement_service_app)}"}
 
 
-@pytest.fixture
-def accessions_by_state(
-    cohort_factory,
-    accession_factory,
-    accession_review_factory,
-    image_factory,
-    engagement_accession_factory,
-):
-    cohort = cohort_factory()
-
-    accessions = {
-        AccessionState.PROCESSING: accession_factory(cohort=cohort),
-        AccessionState.SKIPPED: accession_factory(cohort=cohort, status=AccessionStatus.SKIPPED),
-        AccessionState.FAILED: accession_factory(cohort=cohort, status=AccessionStatus.FAILED),
-        AccessionState.AWAITING_REVIEW: accession_factory(cohort=cohort, ingested=True),
-        AccessionState.ACCEPTED: accession_review_factory(
-            accession__cohort=cohort, accession__ingested=True, value=True
-        ).accession,
-        AccessionState.REJECTED: accession_review_factory(
-            accession__cohort=cohort, accession__ingested=True, value=False
-        ).accession,
-        AccessionState.PUBLISHED: image_factory(public=True, accession__cohort=cohort).accession,
-    }
-
-    for accession in accessions.values():
-        engagement_accession_factory(accession=accession)
-
-    return cohort, accessions
-
-
 @pytest.mark.django_db
 def test_api_engagement_accession_list_states(
-    client, service_headers, accessions_by_state, accession, django_assert_max_num_queries
+    client,
+    service_headers,
+    engagement_accessions_by_state,
+    accession,
+    django_assert_max_num_queries,
 ):
-    _, accessions = accessions_by_state
+    accessions = engagement_accessions_by_state
 
     # the state of each result comes from its image and review rows, so without select_related
     # this would grow by two queries per accession.
@@ -103,7 +77,7 @@ def test_api_engagement_accession_list_states(
     [lf("authenticated_client"), lf("staff_client"), lf("client")],
     ids=["user", "staff", "guest"],
 )
-@pytest.mark.usefixtures("accessions_by_state")
+@pytest.mark.usefixtures("engagement_accessions_by_state")
 def test_api_engagement_accession_requires_service_account(client_, engagement_accession):
     """These are for the engagement platform itself, so a user session isn't enough."""
     assert post_list(client_).status_code == 401

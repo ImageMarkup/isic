@@ -11,6 +11,15 @@ REDIRECT_URI = "http://localhost"
 
 
 @pytest.fixture
+def engagement_accessions_by_state(accessions_by_state, engagement_accession_factory):
+    """One engagement platform accession in every state, all within a single cohort."""
+    for accession in accessions_by_state.values():
+        engagement_accession_factory(accession=accession)
+
+    return accessions_by_state
+
+
+@pytest.fixture
 def oauth_app_factory(user_factory):
     def f(name: str, grant_type: str | None = None):
         application_model = get_application_model()

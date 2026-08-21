@@ -1,5 +1,6 @@
 from django.urls import path
 
+from isic.engagement.views.accession import engagement_accession_list
 from isic.engagement.views.email_domain import (
     email_domain_delete,
     email_domain_edit,
@@ -23,6 +24,11 @@ urlpatterns = [
         "staff/engagement/email-domains/<int:pk>/delete/",
         email_domain_delete,
         name="engagement/email-domain-delete",
+    ),
+    path(
+        "staff/engagement/accessions/",
+        engagement_accession_list,
+        name="engagement/accession-list",
     ),
     path("staff/engagement/users/", engagement_user_list, name="engagement/user-list"),
     path(

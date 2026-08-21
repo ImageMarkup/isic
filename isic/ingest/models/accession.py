@@ -169,7 +169,15 @@ class AccessionQuerySet(models.QuerySet["Accession"]):
         return self.filter(engagement__isnull=False)
 
     def with_state(self, state: "AccessionState"):
-        return _STATE_QUERYSETS[state](self)
+        return self.filter(_STATE_FILTERS[state])
+
+    def in_flight(self):
+        """Return every accession except the ones in a terminal state."""
+        terminal = Q()
+        for state in _TERMINAL_STATES:
+            terminal |= _STATE_FILTERS[state]
+
+        return self.exclude(terminal)
 
 
 @dataclass(frozen=True)
@@ -249,18 +257,35 @@ class AccessionState(StrEnum):
     REJECTED = "rejected"
     PUBLISHED = "published"
 
+    @property
+    def terminal(self) -> bool:
+        """Whether an accession in this state is done moving."""
+        return self in _TERMINAL_STATES
 
-# unpublished() is redundant for the first three, since only ingested accessions are publishable,
-# but nothing at the database level enforces that and these have to partition the queryset the
-# same way Accession.state partitions instances.
-_STATE_QUERYSETS: dict[AccessionState, Callable[["AccessionQuerySet"], "AccessionQuerySet"]] = {
-    AccessionState.PROCESSING: lambda qs: qs.ingesting().unpublished(),
-    AccessionState.SKIPPED: lambda qs: qs.skipped().unpublished(),
-    AccessionState.FAILED: lambda qs: qs.failed().unpublished(),
-    AccessionState.AWAITING_REVIEW: lambda qs: qs.unreviewed(),
-    AccessionState.ACCEPTED: lambda qs: qs.accepted(),
-    AccessionState.REJECTED: lambda qs: qs.rejected(),
-    AccessionState.PUBLISHED: lambda qs: qs.published(),
+
+# rejected is deliberately absent: staff can re-review, and any later metadata change deletes the
+# review and sends the accession back to awaiting_review. this is a tuple rather than a set so
+# that iterating it, which in_flight() does, builds the same query every time.
+_TERMINAL_STATES = (AccessionState.SKIPPED, AccessionState.FAILED, AccessionState.PUBLISHED)
+
+_UNPUBLISHED = Q(image__isnull=True)
+_REVIEWABLE = Q(status=AccessionStatus.SUCCEEDED) & _UNPUBLISHED
+
+# these are Q objects rather than queryset methods so that they can be combined, which in_flight()
+# does. the unpublished half is redundant for the first three, since only ingested accessions are
+# publishable, but nothing at the database level enforces that and these have to partition the
+# queryset the same way Accession.state partitions instances.
+_STATE_FILTERS: dict[AccessionState, Q] = {
+    AccessionState.PROCESSING: ~Q(
+        status__in=[AccessionStatus.SUCCEEDED, AccessionStatus.FAILED, AccessionStatus.SKIPPED]
+    )
+    & _UNPUBLISHED,
+    AccessionState.SKIPPED: Q(status=AccessionStatus.SKIPPED) & _UNPUBLISHED,
+    AccessionState.FAILED: Q(status=AccessionStatus.FAILED) & _UNPUBLISHED,
+    AccessionState.AWAITING_REVIEW: _REVIEWABLE & Q(review__isnull=True),
+    AccessionState.ACCEPTED: _REVIEWABLE & Q(review__value=True),
+    AccessionState.REJECTED: _REVIEWABLE & Q(review__value=False),
+    AccessionState.PUBLISHED: Q(image__isnull=False),
 }
 
 _UNINGESTED_STATES = {

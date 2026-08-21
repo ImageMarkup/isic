@@ -70,6 +70,7 @@
         <p class="text-sm text-base-content/60">The engagement platform's integration with the archive.</p>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {% include 'core/partials/staff_tool_card.html' with name="Engagement Accessions" icon="ri-upload-cloud-line" url="engagement/accession-list" keywords="upload in flight state published" description="Accessions uploaded through the platform and where each one is." %}
         {% include 'core/partials/staff_tool_card.html' with name="Engagement Users" icon="ri-team-line" url="engagement/user-list" keywords="oauth profile assign contributor" description="Platform users and the contributor each is assigned to." %}
         {% include 'core/partials/staff_tool_card.html' with name="Email Domains" icon="ri-at-line" url="engagement/email-domain-list" keywords="autosuggest institution engagement" description="Map email domains to suggested default contributors." %}
       </div>
