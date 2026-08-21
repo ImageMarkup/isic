@@ -11,7 +11,7 @@
     {% include 'ingest/partials/breadcrumbs.html' %}
   </div>
 
-  {% if not grouped_accessions and cohort.accessions.unreviewed.exists %}
+  {% if not grouped_accessions and progress.num_unreviewed %}
     <div>
       No accessions with Lesion IDs left to review.
     </div>
