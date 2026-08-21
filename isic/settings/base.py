@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from cachalot.settings import Settings as CachalotSettings
 from celery.schedules import crontab
 import django_stubs_ext
 from environ import Env
@@ -68,6 +69,7 @@ INSTALLED_APPS = [
     # Install "ninja" to force Swagger to be served locally, so it can be overridden
     "ninja",
     "oauth2_provider",
+    "procrastinate.contrib.django",
     "resonant_utils",
     "s3_file_field",
     "template_partials",
@@ -178,25 +180,9 @@ SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
 CORS_ALLOW_ALL_ORIGINS = True
 
 CELERY_BEAT_SCHEDULE = {
-    "collect-google-analytics-stats": {
-        "task": "isic.stats.tasks.collect_google_analytics_metrics_task",
-        "schedule": timedelta(hours=6),
-    },
     "sync-elasticsearch-index": {
         "task": "isic.core.tasks.sync_elasticsearch_indices_task",
         "schedule": crontab(minute="0", hour="0"),
-    },
-    "prune-expired-oauth-tokens": {
-        "task": "isic.core.tasks.prune_expired_oauth_tokens_task",
-        "schedule": crontab(minute="0", hour="0"),
-    },
-    "refresh-materialized-view-collection-counts": {
-        "task": "isic.core.tasks.refresh_materialized_view_collection_counts_task",
-        "schedule": crontab(minute="*/15", hour="*"),
-        "options": {
-            # to avoid overcomputing, the message should expire 60 seconds after created
-            "expires": timedelta(seconds=60).total_seconds(),
-        },
     },
     "run-health-checks": {
         "task": "isic.core.tasks.run_health_checks_task",
@@ -204,6 +190,8 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 CELERY_WORKER_MAX_MEMORY_PER_CHILD = 256 * 1024
+
+PROCRASTINATE_WORKER_DEFAULTS = {"delete_jobs": "never"}
 
 CACHES = {
     # use django-redis instead of the builtin backend. the builtin redis backend
@@ -217,6 +205,16 @@ CACHALOT_CACHE_ITERATORS = False
 # This seems like an essential setting for correctness, see
 # https://github.com/noripyt/django-cachalot/issues/266
 CACHALOT_FINAL_SQL_CHECK = True
+# Procrastinate writes to its tables with raw cursor SQL, which never reaches
+# cachalot's SQLCompiler hooks. Without this, an ORM read of ProcrastinateJob
+# would be cached and never invalidated.
+CACHALOT_UNCACHABLE_TABLES = [
+    *CachalotSettings.CACHALOT_UNCACHABLE_TABLES,
+    "procrastinate_events",
+    "procrastinate_jobs",
+    "procrastinate_periodic_defers",
+    "procrastinate_workers",
+]
 
 MARKDOWNIFY = {
     "default": {
@@ -278,6 +276,9 @@ ISIC_ELASTICSEARCH_LESIONS_INDEX = "isic-lesions"
 ISIC_USE_ELASTICSEARCH_COUNTS = True
 # opensearch logs every single request, which is too verbose
 logging.getLogger("elastic_transport").setLevel(logging.WARNING)
+# procrastinate logs every task registration at import time, in every process
+logging.getLogger("procrastinate.blueprints").setLevel(logging.WARNING)
+logging.getLogger("procrastinate.periodic").setLevel(logging.WARNING)
 
 ISIC_DATACITE_API_URL: ParseResult | None = env.url("DJANGO_ISIC_DATACITE_API_URL", default=None)
 # These are the default styles with their proper names that are used by the

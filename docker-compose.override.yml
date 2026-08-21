@@ -82,6 +82,31 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  procrastinate:
+    build:
+      context: .
+      dockerfile: ./dev/django.Dockerfile
+    command: [
+      "uv", "run",
+      "./manage.py", "procrastinate", "worker"
+    ]
+    # uv progress doesn't display properly with a Docker TTY
+    tty: false
+    working_dir: /home/vscode/isic
+    env_file: ./dev/.env.docker-compose
+    volumes:
+      - .:/home/vscode/isic
+      - pkg_cache:/home/vscode/pkg-cache
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   zipstreamer:
     image: ghcr.io/imagemarkup/isic-zipstreamer:master
     environment:

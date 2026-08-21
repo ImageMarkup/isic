@@ -19,7 +19,10 @@ from django.db import transaction
 from django.db.models import Max
 from django.db.utils import IntegrityError
 from django.utils import timezone
+import procrastinate
+from procrastinate.contrib.django import app as procrastinate_app
 import pycountry
+import sentry_sdk
 
 from isic.core.models.image import Image
 from isic.stats.models import GaMetrics, ImageDownload, LastEnqueuedS3Log
@@ -68,7 +71,7 @@ def _get_google_analytics_report(client, property_id: str) -> GoogleAnalyticsRep
         metrics=[Metric(name="sessions")],
         date_ranges=[DateRange(start_date="30daysAgo", end_date="today")],
     )
-    response = client.run_report(request)
+    response = client.run_report(request, timeout=30)
 
     for row in response.rows:
         country_id, sessions = row.dimension_values[0].value, row.metric_values[0].value
@@ -95,12 +98,16 @@ def _country_from_iso_code(iso_code: str) -> dict:
     }
 
 
-@shared_task(
-    soft_time_limit=60,
-    time_limit=120,
+@procrastinate_app.periodic(cron="0 */6 * * *")
+@procrastinate_app.task(
     queue="stats-aggregation",
+    queueing_lock="collect_google_analytics_metrics",
+    # exponential_wait is a base, not a duration: the formula is
+    # wait + linear_wait * attempts + exponential_wait ** (attempts + 1).
+    retry=procrastinate.RetryStrategy(max_attempts=3, linear_wait=120),
 )
-def collect_google_analytics_metrics_task():
+@sentry_sdk.monitor(monitor_slug="collect-google-analytics-stats")
+def collect_google_analytics_metrics_task(timestamp: int = 0):
     client = _get_analytics_client()
     num_sessions = 0
     sessions_per_country = []

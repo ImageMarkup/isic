@@ -60,6 +60,10 @@ dump:
       - "oauth2_provider_refreshtoken"
       - "socialaccount_socialtoken"
       - "socialaccount_socialaccount"
+      - "procrastinate_events"
+      - "procrastinate_jobs"
+      - "procrastinate_periodic_defers"
+      - "procrastinate_workers"
 
 
   transformation:

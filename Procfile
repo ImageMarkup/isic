@@ -10,3 +10,4 @@ web: gunicorn --bind 0.0.0.0:$PORT --graceful-timeout 120 --timeout 125 --limit-
 worker: REMAP_SIGTERM=SIGQUIT ./deploy/worker.sh
 low_priority_worker: REMAP_SIGTERM=SIGQUIT ./deploy/low-priority-worker.sh
 beat: REMAP_SIGTERM=SIGQUIT celery --app isic.celery beat --loglevel INFO
+procrastinate: ./deploy/procrastinate-worker.sh

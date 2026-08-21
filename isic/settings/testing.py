@@ -63,6 +63,12 @@ MINIO_STORAGE_MEDIA_OBJECT_METADATA = {"Content-Disposition": "attachment"}
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
 
+# Don't hold persistent connections in tests. The procrastinate worker runs tasks
+# in an asgiref thread pool, and close_old_connections() respects CONN_MAX_AGE, so
+# a healthy persistent connection in one of those threads would outlive the test
+# and block the test database from being dropped.
+DATABASES["default"]["CONN_MAX_AGE"] = 0
+
 ISIC_ELASTICSEARCH_IMAGES_INDEX = "test-isic-images"
 ISIC_ELASTICSEARCH_LESIONS_INDEX = "test-isic-lesions"
 ISIC_USE_ELASTICSEARCH_COUNTS = False

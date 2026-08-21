@@ -7,7 +7,9 @@ import isic.core.tasks
 
 # needs a real transaction due to setting the isolation level
 @pytest.mark.django_db(transaction=True)
-def test_image_list_metadata_download_view(mocker, staff_client, mailoutbox, user, image: Image):
+def test_image_list_metadata_download_view(
+    mocker, staff_client, mailoutbox, user, image: Image, run_procrastinate_jobs
+):
     image.accession.update_metadata(
         user,
         {
@@ -25,6 +27,8 @@ def test_image_list_metadata_download_view(mocker, staff_client, mailoutbox, use
     spy = mocker.spy(isic.core.tasks, "expiring_url")
     r = staff_client.get(reverse("core/image-list-metadata-download"), follow=True)
     assert r.status_code == 200
+
+    run_procrastinate_jobs()
 
     assert len(mailoutbox) == 1
     assert spy.call_count == 1

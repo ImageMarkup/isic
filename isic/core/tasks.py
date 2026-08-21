@@ -14,10 +14,13 @@ from django.core.cache import cache
 from django.core.files.storage import default_storage, storages
 from django.core.mail import send_mail
 from django.db import connection, transaction
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django.template.loader import render_to_string
 from oauth2_provider.models import clear_expired as clear_expired_oauth_tokens
+from procrastinate.contrib.django import app as procrastinate_app
+from procrastinate.contrib.django.models import ProcrastinateJob
 from resonant_utils.storages import expiring_url
+import sentry_sdk
 from urllib3.exceptions import ConnectionError as Urllib3ConnectionError
 from urllib3.exceptions import TimeoutError as Urllib3TimeoutError
 
@@ -41,6 +44,11 @@ from isic.ingest.services.publish import embed_iptc_metadata
 logger = get_task_logger(__name__)
 
 DoiType = Literal["Doi", "DraftDoi"]
+
+MATERIALIZED_VIEW_REFRESH_EXPIRY = timedelta(seconds=60)
+
+# matches the worker's own stalled_worker_timeout default
+STALLED_WORKER_TIMEOUT = timedelta(seconds=30)
 
 
 @shared_task(soft_time_limit=600, time_limit=610)
@@ -139,7 +147,7 @@ def sync_elasticsearch_indices_task():
         cache.delete_pattern("es:*")
 
 
-@shared_task(soft_time_limit=1800, time_limit=1810)
+@procrastinate_app.task()
 def generate_staff_image_list_metadata_csv_task(user_id: int) -> None:
     user = User.objects.get(pk=user_id, is_staff=True)
 
@@ -256,13 +264,39 @@ def generate_archive_snapshot_task() -> None:
         Path(metadata_filename).unlink()
 
 
-@shared_task(soft_time_limit=10, time_limit=15)
-def prune_expired_oauth_tokens_task():
+@procrastinate_app.periodic(cron="*/10 * * * *")
+@procrastinate_app.task(queueing_lock="report_stalled_jobs")
+@sentry_sdk.monitor(monitor_slug="report-stalled-jobs")
+def report_stalled_jobs_task(timestamp: int = 0):
+    stalled = ProcrastinateJob.objects.filter(status="doing").filter(
+        Q(worker__isnull=True)
+        | Q(worker__last_heartbeat__lt=datetime.now(tz=UTC) - STALLED_WORKER_TIMEOUT)
+    )
+
+    for job_id, task_name in stalled.values_list("id", "task_name"):
+        logger.error("Procrastinate job %s is stalled, task %s", job_id, task_name)
+
+
+@procrastinate_app.periodic(cron="0 0 * * *")
+@procrastinate_app.task(queueing_lock="prune_expired_oauth_tokens")
+@sentry_sdk.monitor(monitor_slug="prune-expired-oauth-tokens")
+def prune_expired_oauth_tokens_task(timestamp: int = 0):
     clear_expired_oauth_tokens()
 
 
-@shared_task(soft_time_limit=90, time_limit=120)
-def refresh_materialized_view_collection_counts_task():
+# queueing_lock keeps at most one refresh waiting to run, replacing half of celery's
+# expires=60. The other half is the staleness check below: refreshing is expensive,
+# and a job scheduled for a period that has already passed has nothing to add over
+# the next one.
+@procrastinate_app.periodic(cron="*/15 * * * *")
+@procrastinate_app.task(queueing_lock="refresh_materialized_view_collection_counts")
+@sentry_sdk.monitor(monitor_slug="refresh-materialized-view-collection-counts")
+def refresh_materialized_view_collection_counts_task(timestamp: int = 0):
+    scheduled_at = datetime.fromtimestamp(timestamp, tz=UTC) if timestamp else None
+    if scheduled_at and datetime.now(tz=UTC) - scheduled_at > MATERIALIZED_VIEW_REFRESH_EXPIRY:
+        logger.info("Skipping collection counts refresh scheduled for %s", scheduled_at)
+        return
+
     with connection.cursor() as cursor:
         cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY materialized_collection_counts;")
 

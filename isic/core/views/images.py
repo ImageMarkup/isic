@@ -216,7 +216,7 @@ def staff_image_list_export(request: AuthenticatedHttpRequest) -> HttpResponse:
 
 @staff_member_required
 def staff_image_list_metadata_download(request: AuthenticatedHttpRequest):
-    generate_staff_image_list_metadata_csv_task.delay_on_commit(request.user.id)
+    generate_staff_image_list_metadata_csv_task.defer(user_id=request.user.id)
 
     messages.add_message(
         request,

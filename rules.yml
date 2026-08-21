@@ -122,6 +122,35 @@ rules:
           metavariable: $FUNC
           regex: ^(?!.*_task$).*
 
+  - id: require-procrastinate-task-suffix
+    languages:
+      - python
+    severity: ERROR
+    message: Procrastinate task functions must have a _task suffix.
+    patterns:
+      - pattern: |
+          @$APP.task(...)
+          def $FUNC(...):
+              ...
+      - metavariable-regex:
+          metavariable: $FUNC
+          regex: ^(?!.*_task$).*
+
+  - id: require-procrastinate-monitor
+    languages:
+      - python
+    severity: ERROR
+    message: Periodic procrastinate tasks must check in with a Sentry cron monitor.
+    patterns:
+      - pattern: |
+          @$APP.periodic(...)
+          def $FUNC(...):
+              ...
+      - pattern-not: |
+          @sentry_sdk.monitor(...)
+          def $FUNC(...):
+              ...
+
   - id: django-foreignkey-requires-related-name
     languages:
       - python

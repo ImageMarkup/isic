@@ -88,6 +88,20 @@
       }
     },
     {
+      "name": "Procrastinate: Worker",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/manage.py",
+      "args": ["procrastinate", "worker"],
+      "django": true,
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "presentation": {
+        "group": "2-services",
+        "order": 4
+      }
+    },
+    {
       "name": "Pytest: Debug",
       "type": "debugpy",
       "request": "launch",
@@ -108,7 +122,7 @@
       "console": "integratedTerminal",
       "presentation": {
         "group": "2-services",
-        "order": 4
+        "order": 5
       }
     }
   ],

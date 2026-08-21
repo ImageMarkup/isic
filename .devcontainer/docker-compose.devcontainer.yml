@@ -12,3 +12,7 @@ services:
   celerybeat:
     # Celery beat will be started via launch.json or the terminal.
     profiles: ["celerybeat"]
+
+  procrastinate:
+    # The procrastinate worker will be started via launch.json or the terminal.
+    profiles: ["procrastinate"]

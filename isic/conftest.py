@@ -7,8 +7,10 @@ from django.contrib.auth.models import Group, User
 from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.db import connection
 from django.test.client import Client
 from playwright.sync_api import expect
+from procrastinate.contrib.django import DjangoApp, procrastinate_app
 import pytest
 from pytest_factoryboy import register
 
@@ -84,6 +86,45 @@ def _search_index():
 @pytest.fixture(autouse=True)
 def _clear_cache():
     cache.clear()
+
+
+@pytest.fixture
+def run_procrastinate_jobs():
+    """
+    Run every queued procrastinate job to completion.
+
+    Procrastinate has no equivalent of CELERY_TASK_ALWAYS_EAGER, so a test that
+    triggers a deferral has to run a worker to observe what the job did. Needs
+    django_db(transaction=True), since the worker reads jobs the test committed.
+    """
+
+    def _run():
+        app = procrastinate_app.current_app
+        # A throwaway app, so the worker doesn't also schedule every periodic task
+        # into this test's database. It gets the worker connector rather than the
+        # default Django one, which hands back jsonb as a string and so can't
+        # decode job arguments.
+        worker_app = DjangoApp(connector=app.connector.get_worker_connector())
+        worker_app.tasks.update(app.tasks)
+        worker_app.run_worker(wait=False, install_signal_handlers=False, listen_notify=False)
+
+    return _run
+
+
+@pytest.fixture(autouse=True)
+def _clear_procrastinate_jobs(request):
+    # Procrastinate's models are managed=False, so django_table_names() skips them
+    # and TransactionTestCase never truncates them. Without this, a job deferred by
+    # a transaction=True test survives into the next one.
+    yield
+
+    if "django_db_setup" in request.fixturenames:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "TRUNCATE procrastinate_jobs, procrastinate_events,"
+                " procrastinate_periodic_defers, procrastinate_workers"
+                " RESTART IDENTITY CASCADE"
+            )
 
 
 @pytest.fixture
