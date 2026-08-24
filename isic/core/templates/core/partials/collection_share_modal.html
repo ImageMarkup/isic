@@ -57,13 +57,11 @@
       return user.text;
     }
 
-    const $container = $(
-      "<div class='select2-result-user clearfix'>" +
-      "<div class='select2-result-user__email'>" + user.email + "</div>" +
-      "<div class='select2-result-user__name'>" + user.first_name + " " + user.last_name + "</div>" +
-      "</div>"
+    // select2 only escapes templateResult when it returns a string, so a jQuery object has to
+    // carry the user's name and email as text nodes rather than as markup.
+    return $("<div class='select2-result-user clearfix'></div>").append(
+      $("<div class='select2-result-user__email'></div>").text(user.email),
+      $("<div class='select2-result-user__name'></div>").text(user.first_name + " " + user.last_name)
     );
-
-    return $container;
   }
 </script>

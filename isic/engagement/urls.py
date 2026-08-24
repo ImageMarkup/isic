@@ -2,6 +2,7 @@ from django.urls import path
 
 from isic.engagement.views.accession import (
     engagement_accession_list,
+    engagement_accession_publish,
     engagement_accession_review,
 )
 from isic.engagement.views.email_domain import (
@@ -37,6 +38,11 @@ urlpatterns = [
         "staff/engagement/accessions/review/",
         engagement_accession_review,
         name="engagement/accession-review",
+    ),
+    path(
+        "staff/engagement/accessions/publish/",
+        engagement_accession_publish,
+        name="engagement/accession-publish",
     ),
     path("staff/engagement/users/", engagement_user_list, name="engagement/user-list"),
     path(

@@ -15,7 +15,7 @@ from isic.ingest.models.accession import AccessionStatus
 from isic.ingest.services.accession import create_accession
 from isic.ingest.services.publish import (
     embed_iptc_metadata,
-    initialize_cohort_publish,
+    initialize_publish,
     publish_accession,
 )
 
@@ -86,13 +86,14 @@ def test_publish_copies_default_attribution(
     publishable_cohort_for_attributions.save(update_fields=["default_attribution"])
 
     with django_capture_on_commit_callbacks(execute=True):
-        publish_request = initialize_cohort_publish(
-            cohort=publishable_cohort_for_attributions,
+        publish_requests = initialize_publish(
+            accessions=publishable_cohort_for_attributions.accessions.all(),
             publisher=user,
             public=True,
         )
 
-    assert publish_request.default_attribution == "default attribution"
+    assert len(publish_requests) == 1
+    assert publish_requests[0].default_attribution == "default attribution"
 
     published_images = Image.objects.filter(accession__cohort=publishable_cohort_for_attributions)
 

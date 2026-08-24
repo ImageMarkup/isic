@@ -4,8 +4,7 @@
 
 {% block head_extra %}
   {{ block.super }}
-  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" integrity="sha256-9yRP/2EFlblE92vzCA10469Ctd0jT48HnmmMw5rJZrA=" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" integrity="sha256-zaSoHBhwFdle0scfGEFUCwggPN7F+ip9XRglo8IWb4w=" crossorigin="anonymous">
+  {% include 'ingest/partials/select2_assets.html' %}
 {% endblock %}
 
 {% block content %}
@@ -52,21 +51,7 @@
           </label>
         </fieldset>
 
-        <fieldset class="fieldset">
-          <label class="label">Additional collections</label>
-          <select id="additional-collections-selection" name="{{ form.additional_collections.name }}" multiple="multiple"></select>
-        </fieldset>
-
-        <div x-data="sharingInfo()" x-show="entries.length > 0" x-cloak role="alert" class="alert alert-info">
-          <div>
-            <strong>Publishing to these collections will give access to:</strong>
-            <ul class="list-disc list-inside mt-2">
-              <template x-for="entry in entries" :key="entry">
-                <li x-text="entry"></li>
-              </template>
-            </ul>
-          </div>
-        </div>
+        {% include 'ingest/partials/additional_collections_field.html' %}
 
         <div class="card-actions justify-center">
           <button onclick="return confirm('Are you sure you want to publish {{ num_publishable|intcomma }} images?')" type="submit" class="btn btn-primary">
@@ -76,87 +61,4 @@
       </div>
     </form>
   {% endif %}
-
-  <script type="text/javascript">
-    $("#additional-collections-selection").select2({
-      ajax: {
-        url: '{% url "api:collection_autocomplete" %}',
-        data: function (params) {
-        // remap the "term" parameter from select2 to "query" so it's
-        // consistent with other autocomplete endpoints.
-          return {
-            query: params.term
-          }
-        },
-        processResults: function (data) {
-          return {
-            results: data
-          };
-        },
-        delay: 50,
-      },
-      placeholder: 'Additional collections..',
-      minimumInputLength: 3,
-      templateResult: formatCollection,
-      templateSelection: function (collection) {
-        return collection.name || collection.text;
-      }
-    });
-
-    function formatCollection(collection) {
-      if(collection.loading) {
-        return collection.text;
-      }
-
-      const $container = $(
-        "<div class='select2-result-collection clearfix'>" +
-        "<div class='select2-result-collection__name'>" + collection.name + "</div>" +
-        "<div class='select2-result-collection__description'>" + collection.description + "</div>" +
-        "</div>"
-      );
-
-      return $container;
-    }
-
-    function sharingInfo() {
-      return {
-        entries: [],
-
-        init() {
-          // Select2 fires jQuery events, not native DOM events; addEventListener won't work here.
-          $("#additional-collections-selection").on("change", async () => {
-            await this.fetchSharingInfo();
-          });
-        },
-
-        async fetchSharingInfo() {
-          const select = document.getElementById("additional-collections-selection");
-          const selectedIds = Array.from(select.selectedOptions, opt => opt.value);
-
-          if (selectedIds.length === 0) {
-            this.entries = [];
-            return;
-          }
-
-          const params = new URLSearchParams();
-          selectedIds.forEach(id => params.append("collection_ids", id));
-
-          const { data } = await axios.get(
-            "{% url 'api:collection_sharing_info' %}?" + params.toString()
-          );
-
-          const entries = [];
-          data.forEach(col => {
-            entries.push(col.owner.name + " (owner of " + col.name + ")");
-            col.shared_with.forEach(user => {
-              entries.push(user.name + " (shared with " + col.name + ")");
-            });
-          });
-          this.entries = entries;
-        },
-      };
-    }
-  </script>
-
-
 {% endblock %}

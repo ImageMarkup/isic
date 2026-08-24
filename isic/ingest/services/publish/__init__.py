@@ -24,51 +24,68 @@ from isic.core.services.image import create_image
 from isic.core.utils.db import lock_table_for_writes
 from isic.core.utils.iterators import throttled_iterator
 from isic.core.views.doi import LICENSE_URIS
-from isic.ingest.models.accession import Accession
+from isic.ingest.models.accession import Accession, AccessionQuerySet
 from isic.ingest.models.cohort import Cohort
 from isic.ingest.models.publish_request import PublishRequest
 
 logger = logging.getLogger(__name__)
 
 
-def initialize_cohort_publish(
+def initialize_publish(
     *,
-    cohort: Cohort,
+    accessions: AccessionQuerySet,
     publisher: User,
     public: bool,
     collections: QuerySet[Collection] | None = None,
-) -> PublishRequest:
+) -> list[PublishRequest]:
+    """
+    Publish the publishable accessions of a set that can span cohorts.
+
+    Attribution and the magic collection are both cohort properties, and a publish request holds
+    a single attribution, so a set that spans cohorts becomes one publish request per cohort.
+    """
     from isic.ingest.tasks import publish_cohort_task
 
-    collections = collections or Collection.objects.none()
+    collections = collections if collections is not None else Collection.objects.none()
 
-    if not public and collections and collections.filter(public=True).exists():
+    if not public and collections.filter(public=True).exists():
         raise ValidationError("Can't add private images into a public collection.")
 
+    publishable = accessions.publishable()
+    publish_requests = []
+
     with transaction.atomic():
-        if not cohort.collection:
-            cohort.collection = create_collection(
+        cohorts = Cohort.objects.filter(pk__in=publishable.values("cohort_id")).order_by("pk")
+
+        for cohort in cohorts:
+            if not cohort.collection:
+                cohort.collection = create_collection(
+                    creator=publisher,
+                    name=f"Publish of {cohort.name}",
+                    description="",
+                    public=False,  # the collection is always private to avoid leaking cohort names
+                    locked=True,
+                )
+                cohort.save(update_fields=["collection"])
+
+            publish_request = PublishRequest.objects.create(
                 creator=publisher,
-                name=f"Publish of {cohort.name}",
-                description="",
-                public=False,  # the collection is always private to avoid leaking cohort names
-                locked=True,
+                public=public,
+                default_attribution=cohort.default_attribution,
             )
-            cohort.save(update_fields=["collection"])
+            # publishable() excludes accessions that already belong to a publish request, so each
+            # pass only sees what the earlier passes left behind. cohorts partition the accessions,
+            # so that is exactly this cohort's share.
+            publish_request.accessions.set(publishable.filter(cohort=cohort))
+            publish_request.collections.set(collections)
+            # ensure that the magic collection is also added to the publish request
+            publish_request.collections.add(cohort.collection)
+            publish_requests.append(publish_request)
 
-        publish_request = PublishRequest.objects.create(
-            creator=publisher,
-            public=public,
-            default_attribution=cohort.default_attribution,
-        )
-        publish_request.accessions.set(cohort.accessions.publishable())
-        publish_request.collections.set(collections)
-        # ensure that the magic collection is also added to the publish request
-        publish_request.collections.add(cohort.collection)
+    for publish_request in publish_requests:
+        publish_cohort_task.delay_on_commit(publish_request.pk)
 
-    publish_cohort_task.delay_on_commit(publish_request.pk)
-
-    return publish_request
+    return publish_requests
 
 
 def publish_cohort(*, publish_request: PublishRequest) -> None:

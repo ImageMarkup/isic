@@ -140,12 +140,8 @@ class MergeContributorForm(forms.Form):
         return cleaned_data
 
 
-class PublishCohortForm(forms.Form):
-    public = forms.BooleanField(
-        label="Public",
-        required=False,
-        help_text="Make this cohort publicly accessible.",
-    )
+class PublishForm(forms.Form):
+    """The collections half of publishing, for callers that don't choose public or private."""
 
     additional_collections = forms.ModelMultipleChoiceField(
         label="Additional collections",
@@ -154,11 +150,19 @@ class PublishCohortForm(forms.Form):
         help_text="Additional collections to add these images to.",
     )
 
+
+class PublishCohortForm(PublishForm):
+    public = forms.BooleanField(
+        label="Public",
+        required=False,
+        help_text="Make this cohort publicly accessible.",
+    )
+
     def clean(self):
         cleaned_data = super().clean()
         assert cleaned_data  # noqa: S101
 
-        # note that this logic is duplicated in initialize_cohort_publish, this is just
+        # note that this logic is duplicated in initialize_publish, this is just
         # added for easier form validation.
         has_public_additional_collections = Collection.objects.filter(
             pk__in=cleaned_data.get("additional_collections", []), public=True
