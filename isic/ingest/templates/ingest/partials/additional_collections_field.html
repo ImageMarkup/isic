@@ -1,0 +1,94 @@
+<fieldset class="fieldset">
+  <label class="label">Additional collections</label>
+  <select id="additional-collections-selection" name="{{ form.additional_collections.name }}" multiple="multiple"></select>
+</fieldset>
+
+<div x-data="sharingInfo()" x-show="entries.length > 0" x-cloak role="alert" class="alert alert-info">
+  <div>
+    <strong>Publishing to these collections will give access to:</strong>
+    <ul class="list-disc list-inside mt-2">
+      <template x-for="entry in entries" :key="entry">
+        <li x-text="entry"></li>
+      </template>
+    </ul>
+  </div>
+</div>
+
+<script type="text/javascript">
+  $("#additional-collections-selection").select2({
+    ajax: {
+      url: '{% url "api:collection_autocomplete" %}',
+      data: function (params) {
+      // remap the "term" parameter from select2 to "query" so it's
+      // consistent with other autocomplete endpoints.
+        return {
+          query: params.term
+        }
+      },
+      processResults: function (data) {
+        return {
+          results: data
+        };
+      },
+      delay: 50,
+    },
+    placeholder: 'Additional collections..',
+    minimumInputLength: 3,
+    templateResult: formatCollection,
+    templateSelection: function (collection) {
+      return collection.name || collection.text;
+    }
+  });
+
+  function formatCollection(collection) {
+    if(collection.loading) {
+      return collection.text;
+    }
+
+    // select2 only escapes templateResult when it returns a string, so a jQuery object has to
+    // carry the collection's name and description as text nodes rather than as markup.
+    return $("<div class='select2-result-collection clearfix'></div>").append(
+      $("<div class='select2-result-collection__name'></div>").text(collection.name),
+      $("<div class='select2-result-collection__description'></div>").text(collection.description)
+    );
+  }
+
+  function sharingInfo() {
+    return {
+      entries: [],
+
+      init() {
+        // Select2 fires jQuery events, not native DOM events; addEventListener won't work here.
+        $("#additional-collections-selection").on("change", async () => {
+          await this.fetchSharingInfo();
+        });
+      },
+
+      async fetchSharingInfo() {
+        const select = document.getElementById("additional-collections-selection");
+        const selectedIds = Array.from(select.selectedOptions, opt => opt.value);
+
+        if (selectedIds.length === 0) {
+          this.entries = [];
+          return;
+        }
+
+        const params = new URLSearchParams();
+        selectedIds.forEach(id => params.append("collection_ids", id));
+
+        const { data } = await axios.get(
+          "{% url 'api:collection_sharing_info' %}?" + params.toString()
+        );
+
+        const entries = [];
+        data.forEach(col => {
+          entries.push(col.owner.name + " (owner of " + col.name + ")");
+          col.shared_with.forEach(user => {
+            entries.push(user.name + " (shared with " + col.name + ")");
+          });
+        });
+        this.entries = entries;
+      },
+    };
+  }
+</script>

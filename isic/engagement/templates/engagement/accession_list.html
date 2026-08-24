@@ -9,7 +9,16 @@
         Every accession uploaded through the engagement platform, newest first.
       </p>
     </div>
-    <a href="{% url 'engagement/accession-review' %}" class="btn btn-primary btn-sm">Review</a>
+    <div class="flex items-center gap-2">
+      <a href="{% url 'engagement/accession-review' %}" class="btn btn-primary btn-sm">Review</a>
+      {% if num_publishable %}
+        <a href="{% url 'engagement/accession-publish' %}" class="btn btn-primary btn-sm">
+          Publish {{ num_publishable|intcomma }}
+        </a>
+      {% else %}
+        <span class="btn btn-primary btn-sm btn-disabled">Publish</span>
+      {% endif %}
+    </div>
   </header>
 
   <div class="my-4 flex justify-end">

@@ -17,7 +17,7 @@ from isic.ingest.models import Cohort
 from isic.ingest.models.accession import Accession, AccessionStatus
 from isic.ingest.models.contributor import Contributor
 from isic.ingest.services.cohort import merge_cohorts
-from isic.ingest.services.publish import initialize_cohort_publish
+from isic.ingest.services.publish import initialize_publish
 from isic.ingest.views import make_breadcrumbs
 
 
@@ -138,17 +138,20 @@ def cohort_publish(request, pk):
     form = PublishCohortForm(request.POST)
 
     if request.method == "POST" and form.is_valid():
-        publish_request = initialize_cohort_publish(
-            cohort=cohort,
+        publish_requests = initialize_publish(
+            accessions=cohort.accessions.all(),
             publisher=request.user,
             public=form.cleaned_data["public"],
             collections=form.cleaned_data["additional_collections"],
+        )
+        num_publishing = sum(
+            publish_request.accessions.count() for publish_request in publish_requests
         )
 
         messages.add_message(
             request,
             messages.SUCCESS,
-            f"Publishing {intcomma(publish_request.accessions.count())} images. This may take several minutes.",  # noqa: E501
+            f"Publishing {intcomma(num_publishing)} images. This may take several minutes.",
         )
         return HttpResponseRedirect(reverse("ingest/cohort-detail", args=[cohort.pk]))
 
