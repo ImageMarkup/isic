@@ -1,0 +1,11 @@
+<ul class="list-disc pl-5">
+  <template x-for="user in {{ users }}" :key="user.id">
+    <li>
+      <span x-text="user.email"></span>
+      <span class="opacity-70" x-show="user.name !== user.email" x-text="`(${user.name})`"></span>
+      <template x-if="user.has_engagement_profile">
+        <span class="badge badge-xs">engagement user</span>
+      </template>
+    </li>
+  </template>
+</ul>

@@ -1,5 +1,6 @@
 from django.urls import reverse
 import pytest
+from pytest_lazy_fixtures import lf
 
 
 @pytest.mark.django_db
@@ -52,3 +53,51 @@ def test_api_contributor_autocomplete_only_returns_visible_contributors(
 
     assert resp.status_code == 200, resp.json()
     assert [c["id"] for c in resp.json()] == [owned.pk]
+
+
+@pytest.mark.django_db
+def test_api_contributor_merge_impact(contributor_factory, user_factory, staff_client):
+    src_owner = user_factory()
+    dest_contributor = contributor_factory()
+    src_contributor = contributor_factory(owners=[src_owner])
+
+    resp = staff_client.get(
+        reverse("api:contributor_merge_impact"),
+        data={"dest_contributor": dest_contributor.pk, "src_contributor": src_contributor.pk},
+    )
+
+    assert resp.status_code == 200, resp.json()
+    assert resp.json()["dest_contributor"]["id"] == dest_contributor.pk
+    assert [u["email"] for u in resp.json()["users_gaining_access_to_dest"]] == [src_owner.email]
+
+
+@pytest.mark.django_db
+def test_api_contributor_merge_impact_same_contributor(contributor_factory, staff_client):
+    contributor = contributor_factory()
+
+    resp = staff_client.get(
+        reverse("api:contributor_merge_impact"),
+        data={"dest_contributor": contributor.pk, "src_contributor": contributor.pk},
+    )
+
+    assert resp.status_code == 400, resp.json()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("client_", "status_code"),
+    [
+        (lf("client"), 401),
+        (lf("authenticated_client"), 401),
+        (lf("staff_client"), 200),
+    ],
+)
+def test_api_contributor_merge_impact_permissions(client_, status_code, contributor_factory):
+    dest_contributor, src_contributor = contributor_factory(), contributor_factory()
+
+    resp = client_.get(
+        reverse("api:contributor_merge_impact"),
+        data={"dest_contributor": dest_contributor.pk, "src_contributor": src_contributor.pk},
+    )
+
+    assert resp.status_code == status_code
