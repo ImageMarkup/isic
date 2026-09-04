@@ -131,6 +131,9 @@ jobs:
           ./manage.py migrate
           greenmask validate --warnings --strict
           dev/greenmask-dump.sh --dump-only
+          # config-raw.yml has no transformers, so validating it only proves it
+          # still parses and still matches the schema.
+          GREENMASK_CONFIG=.greenmask/config-raw.yml greenmask validate --strict
         env:
           GREENMASK_CONFIG: .greenmask/config.yml
           # Used by .greenmask/config.yml's dump dbname and Django's database.

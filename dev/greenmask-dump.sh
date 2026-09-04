@@ -15,10 +15,12 @@
 #   dev/greenmask-dump.sh -r|--reuse-existing-dump restore the latest local dump
 #                                                  only (skips Heroku + dump)
 #   dev/greenmask-dump.sh -d|--dump-only           dump only, skip the restore
+#   dev/greenmask-dump.sh --raw                    no anonymization, no subset
 set -exuo pipefail
 
 REUSE_EXISTING_DUMP=0
 DUMP_ONLY=0
+RAW=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
   -r | --reuse-existing-dump)
@@ -27,6 +29,10 @@ while [[ $# -gt 0 ]]; do
     ;;
   -d | --dump-only)
     DUMP_ONLY=1
+    shift
+    ;;
+  --raw)
+    RAW=1
     shift
     ;;
   *)
@@ -53,9 +59,19 @@ declare -rx ACCESSION_SUBSET_PERCENT=10
 
 readonly LOG_LEVEL=info
 
+# Every greenmask subcommand below (dump, list-dumps, restore) reads its storage
+# path and transformations from this config.
+if [[ "$RAW" -eq 1 ]]; then
+  export GREENMASK_CONFIG=.greenmask/config-raw.yml
+  readonly DUMP_DIR=./.greenmask/dumps-raw
+  echo "--raw: this dump contains real production data. Delete $DUMP_DIR when you are done." >&2
+else
+  readonly DUMP_DIR=./.greenmask/dumps
+fi
+
 # greenmask's directory storage won't create the path for you, so make sure it
 # exists before dumping.
-mkdir -p ./.greenmask/dumps
+mkdir -p "$DUMP_DIR"
 
 if [[ "$REUSE_EXISTING_DUMP" -eq 1 ]]; then
   if [[ -z "$(greenmask list-dumps --quiet)" ]]; then
