@@ -133,10 +133,15 @@ class CohortAdmin(StaffReadonlyAdmin):
 
         writer.writeheader()
         for cohort in queryset.select_related("contributor"):
-            for accession in cohort.accessions.values(
-                "original_blob_name",
-                "image__isic_id",
-            ).iterator():
+            for accession in (
+                cohort.accessions.values(
+                    "original_blob_name",
+                    "image__isic_id",
+                )
+                # ordering causes performance issues on larger cohorts and isn't really necessary
+                .order_by()
+                .iterator()
+            ):
                 d = {
                     "contributor": cohort.contributor.institution_name,
                     "cohort": cohort.name,
