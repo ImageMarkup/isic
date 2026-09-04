@@ -1,0 +1,36 @@
+# Untransformed counterpart to config.yml, for debugging a specific production
+# issue against real values. It applies no transformers and no subset
+# conditions.
+
+storage:
+  type: directory
+  directory:
+    path: "./.greenmask/dumps-raw"
+
+restore:
+  pg_restore_options:
+    dbname: "${DJANGO_DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/django}"
+    no-owner: true
+    no-privileges: true
+  scripts:
+    post-data:
+      - name: "refresh materialized_collection_counts"
+        when: "after"
+        query: "REFRESH MATERIALIZED VIEW materialized_collection_counts;"
+
+dump:
+  pg_dump_options:
+    dbname: "${DATABASE_URL}"
+    exclude-table-data:
+      - "django_session"
+      - "oauth2_provider_accesstoken"
+      - "oauth2_provider_refreshtoken"
+      - "socialaccount_socialtoken"
+      - "socialaccount_socialaccount"
+      # The tables below dominate the dump size and download time. Nothing
+      # requires a row in any of them: core_imageembedding is a OneToOne that
+      # code reads through a nullable relation, and the other two are
+      # append-only logs. Comment out a line when the issue needs that table.
+      - "core_imageembedding"
+      - "ingest_metadataversion"
+      - "stats_imagedownload"

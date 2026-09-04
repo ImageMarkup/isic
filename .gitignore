@@ -6,6 +6,7 @@ dev/local-post-restore.sh
 docker-compose.local.yml
 
 .greenmask/dumps/
+.greenmask/dumps-raw/
 
 # Additional Celery Beat files
 celerybeat-schedule*
