@@ -2,10 +2,10 @@ version = 1
 revision = 3
 requires-python = ">=3.13"
 resolution-markers = [
-    "python_full_version >= '3.14' and sys_platform == 'win32'",
-    "python_full_version >= '3.14' and sys_platform == 'emscripten'",
     "python_full_version >= '3.15' and platform_machine != 'arm64' and sys_platform == 'darwin'",
     "python_full_version >= '3.15' and platform_machine == 'arm64' and sys_platform == 'darwin'",
+    "python_full_version >= '3.14' and sys_platform == 'win32'",
+    "python_full_version >= '3.14' and sys_platform == 'emscripten'",
     "python_full_version >= '3.14' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version == '3.14.*' and platform_machine != 'arm64' and sys_platform == 'darwin'",
     "python_full_version == '3.14.*' and platform_machine == 'arm64' and sys_platform == 'darwin'",
@@ -890,15 +890,15 @@ wheels = [
 
 [[package]]
 name = "django-ninja"
-version = "1.4.5"
+version = "1.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fa/9a/558489e0e25173772fbd826306b7d1777e80285b02d69e0e1aaec41e3eec/django_ninja-1.4.5.tar.gz", hash = "sha256:aa1a2ee2b22c5f1c2f4bfbc004386be7074cbfaf133680c2b359a31221965503", size = 3710511, upload-time = "2025-10-19T18:28:02.362Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/25/f7/410af3b53845f04c94a9dabe5934117d9546b6f5ce4028cff5b74deb933c/django_ninja-1.7.0.tar.gz", hash = "sha256:7a0ce06c978a42a808d9a9d7ba1cda383df8eea90040cfc232ad10b7d9024e0d", size = 2341450, upload-time = "2026-08-30T17:49:19.718Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/49/e3/168274a8def4b9a2fb2540319a68914e8e4e529cd7f7b5f1ba8939d011bc/django_ninja-1.4.5-py3-none-any.whl", hash = "sha256:d779702ddc6e17b10739049ddb075a6a1e6c6270bdc04e0b0429f6adbf670373", size = 2426449, upload-time = "2025-10-19T18:28:00.518Z" },
+    { url = "https://files.pythonhosted.org/packages/54/d6/f4f939b912c696b6fc19e15ed3b2b37ac7cb09600373e83211f44adaf6d5/django_ninja-1.7.0-py3-none-any.whl", hash = "sha256:f1a0f762c9810dabcb040fcff76c6e2f5d0cdb51b4a597799ee06b5df8481f3f", size = 2376156, upload-time = "2026-08-30T17:49:17.552Z" },
 ]
 
 [[package]]
@@ -1201,9 +1201,9 @@ name = "gdal"
 version = "3.11.0"
 source = { registry = "https://girder.github.io/large_image_wheels/" }
 resolution-markers = [
+    "python_full_version >= '3.15' and platform_machine != 'arm64' and sys_platform == 'darwin'",
     "python_full_version >= '3.14' and sys_platform == 'win32'",
     "python_full_version >= '3.14' and sys_platform == 'emscripten'",
-    "python_full_version >= '3.15' and platform_machine != 'arm64' and sys_platform == 'darwin'",
     "python_full_version >= '3.14' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version == '3.14.*' and platform_machine != 'arm64' and sys_platform == 'darwin'",
     "python_full_version < '3.14' and sys_platform == 'win32'",
@@ -1731,7 +1731,7 @@ requires-dist = [
     { name = "django-json-widget", specifier = "==2.1.1" },
     { name = "django-markdownify", specifier = "==0.9.7" },
     { name = "django-minio-storage", marker = "extra == 'development'", specifier = "==0.5.9" },
-    { name = "django-ninja", specifier = "==1.4.5" },
+    { name = "django-ninja", specifier = "==1.7.0" },
     { name = "django-oauth-toolkit", specifier = "==1.7.1" },
     { name = "django-recaptcha", specifier = "==4.1.0" },
     { name = "django-redis", specifier = "==7.0.0" },
@@ -4058,10 +4058,10 @@ name = "zipfile-deflate64"
 version = "0.2.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.14' and sys_platform == 'win32'",
-    "python_full_version >= '3.14' and sys_platform == 'emscripten'",
     "python_full_version >= '3.15' and platform_machine != 'arm64' and sys_platform == 'darwin'",
     "python_full_version >= '3.15' and platform_machine == 'arm64' and sys_platform == 'darwin'",
+    "python_full_version >= '3.14' and sys_platform == 'win32'",
+    "python_full_version >= '3.14' and sys_platform == 'emscripten'",
     "python_full_version >= '3.14' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version == '3.14.*' and platform_machine != 'arm64' and sys_platform == 'darwin'",
     "python_full_version < '3.14' and sys_platform == 'win32'",
