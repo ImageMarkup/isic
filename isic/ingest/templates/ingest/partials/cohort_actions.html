@@ -26,4 +26,8 @@
   <li>
     <a href="{% url 'upload/cohort-publish' cohort.pk %}">Publish Cohort</a>
   </li>
+  <hr class="my-1 border-base-content/10">
+  <li>
+    <a href="{{ cohort.derived_collections_url }}">View Derived Collections</a>
+  </li>
 </ul>

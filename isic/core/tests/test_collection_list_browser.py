@@ -158,3 +158,54 @@ def test_collection_list_mobile(
     expect(
         page.locator("tbody tr").filter(has_text=collection_private.name).get_by_text("Private")
     ).to_be_visible()
+
+
+@pytest.mark.playwright
+def test_collection_list_cohort_filter(
+    staff_authenticated_page,
+    authenticated_page,
+    cohort_factory,
+    accession_factory,
+    collection_factory,
+    image_factory,
+):
+    page = staff_authenticated_page
+
+    cohort = cohort_factory()
+    derived_collection = collection_factory(public=True, pinned=False, locked=False)
+    unrelated_collection = collection_factory(public=True, pinned=False, locked=False)
+
+    for _ in range(2):
+        add_images_to_collection(
+            collection=derived_collection,
+            image=image_factory(public=True, accession=accession_factory(cohort=cohort)),
+        )
+
+    add_images_to_collection(collection=unrelated_collection, image=image_factory(public=True))
+
+    _refresh_collection_counts()
+
+    page.goto(reverse("ingest/cohort-detail", args=[cohort.pk]))
+    page.get_by_role("button", name="Actions").click()
+    page.get_by_role("link", name="View Derived Collections").click()
+    page.wait_for_url("**/collections/?*")
+
+    expect(page.get_by_text(f"Collections derived from {cohort.name}")).to_be_visible()
+    expect(page.get_by_role("link", name=derived_collection.name)).to_be_visible()
+    expect(page.get_by_role("link", name=unrelated_collection.name)).not_to_be_visible()
+
+    # Clearing the filter brings back the collections that aren't derived from the cohort
+    page.get_by_role("link", name="Show all collections").click()
+    page.wait_for_load_state("networkidle")
+    expect(page.get_by_text(f"Collections derived from {cohort.name}")).not_to_be_visible()
+    expect(page.get_by_role("link", name=unrelated_collection.name)).to_be_visible()
+
+    # Non-staff users can't narrow by cohort, so the parameter is ignored
+    non_staff_page = authenticated_page
+    non_staff_page.goto(
+        reverse("core/collection-list", query={"cohort": cohort.pk, "magic_filter": "all"})
+    )
+    expect(
+        non_staff_page.get_by_text(f"Collections derived from {cohort.name}")
+    ).not_to_be_visible()
+    expect(non_staff_page.get_by_role("link", name=unrelated_collection.name)).to_be_visible()
