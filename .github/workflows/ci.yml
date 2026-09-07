@@ -12,7 +12,18 @@ concurrency:
   cancel-in-progress: true
 jobs:
   test:
+    name: test (${{ matrix.suite }})
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Playwright tests dominate the runtime, so they get their own job to
+          # run alongside everything else rather than after it.
+          - suite: main
+            tox_args: -- -m "not playwright"
+          - suite: playwright
+            tox_args: -e test -- -m playwright
     services:
       postgres:
         image: pgvector/pgvector:0.8.6-pg18
@@ -73,6 +84,10 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
       - name: Install Node.js
+        # Only the browser tests exercise the built frontend assets. The other
+        # suites use CompressedStaticFilesStorage, which never resolves a
+        # manifest, so they run without a build.
+        if: matrix.suite == 'playwright'
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: 24
@@ -90,12 +105,13 @@ jobs:
           PGPASSWORD: postgres
           PGDATABASE: django
       - name: Build frontend assets
+        if: matrix.suite == 'playwright'
         run: |
           npm ci
           npm run build
       - name: Run tests
         run: |
-          uv run --locked tox
+          uv run --locked tox ${{ matrix.tox_args }}
         env:
           DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
           DJANGO_ISIC_ELASTICSEARCH_URL: http://elastic:elastic@localhost:9200
@@ -103,6 +119,7 @@ jobs:
           DJANGO_MINIO_STORAGE_URL: http://minioAccessKey:minioSecretKey@localhost:9000/django-storage
           DJANGO_CACHE_URL: redis://localhost:6379/0
       - name: Validate greenmask config against the schema
+        if: matrix.suite == 'main'
         # Catch changes that can no longer legally run against our schema (a
         # renamed/dropped column, a broken subset condition, etc.) by
         # validating and dumping against a freshly-migrated database. Any
