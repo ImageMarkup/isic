@@ -11,7 +11,10 @@ from isic.factories import UserFactory
 from isic.ingest.models.cohort import Cohort
 from isic.ingest.models.contributor import Contributor
 from isic.ingest.services.cohort import merge_cohorts
-from isic.ingest.services.contributor import merge_contributors
+from isic.ingest.services.contributor import (
+    compute_contributor_merge_impact,
+    merge_contributors,
+)
 from isic.studies.tests.factories import StudyFactory
 
 
@@ -85,6 +88,80 @@ def test_merge_contributors_reassigns_email_domains(
 
     email_domain.refresh_from_db()
     assert email_domain.contributor == dest_contributor
+
+
+@pytest.mark.django_db
+def test_compute_contributor_merge_impact_both_directions(contributor_factory, user_factory):
+    dest_only, src_only, shared = user_factory(), user_factory(), user_factory()
+    dest_contributor = contributor_factory(owners=[dest_only, shared])
+    src_contributor = contributor_factory(owners=[src_only, shared])
+
+    impact = compute_contributor_merge_impact(
+        dest_contributor=dest_contributor, src_contributor=src_contributor
+    )
+
+    # the shared owner already sees both sides, so they gain nothing
+    assert [user.id for user in impact.users_gaining_access_to_dest] == [src_only.pk]
+    assert [user.id for user in impact.users_gaining_access_to_src] == [dest_only.pk]
+
+
+@pytest.mark.django_db
+def test_compute_contributor_merge_impact_without_new_access(contributor_factory, user_factory):
+    owners = [user_factory(), user_factory()]
+    dest_contributor = contributor_factory(owners=owners)
+    src_contributor = contributor_factory(owners=owners)
+
+    impact = compute_contributor_merge_impact(
+        dest_contributor=dest_contributor, src_contributor=src_contributor
+    )
+
+    assert impact.users_gaining_access_to_dest == []
+    assert impact.users_gaining_access_to_src == []
+
+
+@pytest.mark.django_db
+def test_compute_contributor_merge_impact_counts(
+    contributor_factory, cohort_factory, accession_factory, image_factory
+):
+    dest_contributor, src_contributor = contributor_factory(), contributor_factory()
+    dest_cohort = cohort_factory(contributor=dest_contributor)
+    image_factory(accession=accession_factory(cohort=dest_cohort))
+    # an unpublished accession counts towards accessions but not published images
+    accession_factory(cohort=dest_cohort)
+    accession_factory(cohort=cohort_factory(contributor=src_contributor))
+
+    impact = compute_contributor_merge_impact(
+        dest_contributor=dest_contributor, src_contributor=src_contributor
+    )
+
+    assert impact.dest_contributor.accession_count == 2
+    assert impact.dest_contributor.published_image_count == 1
+    assert impact.src_contributor.accession_count == 1
+    assert impact.src_contributor.published_image_count == 0
+
+
+@pytest.mark.django_db
+def test_compute_contributor_merge_impact_engagement_users(
+    contributor_factory, user_factory, engagement_profile_factory
+):
+    engagement_owner, plain_owner = user_factory(), user_factory()
+    dest_contributor = contributor_factory(owners=[plain_owner])
+    src_contributor = contributor_factory(owners=[engagement_owner])
+    engagement_profile_factory(user=engagement_owner, default_contributor=src_contributor)
+    # an engagement user who isn't an owner gains no access, but their default is repointed
+    non_owner_profile = engagement_profile_factory(default_contributor=src_contributor)
+
+    impact = compute_contributor_merge_impact(
+        dest_contributor=dest_contributor, src_contributor=src_contributor
+    )
+
+    assert [user.id for user in impact.users_gaining_access_to_dest] == [engagement_owner.pk]
+    assert impact.users_gaining_access_to_dest[0].has_engagement_profile
+    assert not impact.users_gaining_access_to_src[0].has_engagement_profile
+    assert {user.id for user in impact.engagement_profiles_repointed} == {
+        engagement_owner.pk,
+        non_owner_profile.user.pk,
+    }
 
 
 @pytest.mark.django_db

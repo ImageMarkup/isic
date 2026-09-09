@@ -1,4 +1,5 @@
-<fieldset class="fieldset" x-data="autocompleteInput({suggestUrl: '{{ suggest_url }}', detailUrl: '{{ detail_url }}', labelKey: '{{ label_key|default:"name" }}', required: {{ field.field.required|yesno:"true,false" }}})">
+<fieldset class="fieldset" x-data="autocompleteInput({suggestUrl: '{{ suggest_url }}', detailUrl: '{{ detail_url }}', labelKey: '{{ label_key|default:"name" }}', required: {{ field.field.required|yesno:"true,false" }}, fieldName: '{{ field.html_name }}'})">
+
   <label class="fieldset-legend">{{ field.label }}</label>
 
   <input
