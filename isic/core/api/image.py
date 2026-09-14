@@ -13,7 +13,6 @@ from isic_metadata import FIELD_REGISTRY
 from ninja import Field, ModelSchema, Query, Router, Schema
 from ninja.errors import ValidationError as NinjaValidationError
 from ninja.pagination import paginate
-from pyparsing.exceptions import ParseException
 from sentry_sdk import set_tag
 
 from isic.auth import allow_any, is_authenticated, is_staff
@@ -27,10 +26,6 @@ from isic.types import AuthenticatedHttpRequest
 router = Router()
 
 default_qs = Image.objects.select_related("accession__cohort").distinct()
-
-
-class ImageSearchParseError(Exception):
-    pass
 
 
 class FileOut(Schema):
@@ -218,25 +213,17 @@ def image_list(request: HttpRequest):
 )
 @paginate(PinnedFirstPagination)
 def image_search(request: HttpRequest, search: SearchQueryIn = Query(...)):
-    try:
-        qs = search.to_queryset(user=request.user, qs=default_qs)
-        if settings.ISIC_USE_ELASTICSEARCH_COUNTS:
-            es_query = search.to_es_query(request.user)
-    except ParseException as e:
-        # Normally we'd like this to be handled by the input serializer validation, but
-        # for backwards compatibility we must return 400 rather than 422.
-        # The pagination wrapper means we can't just return the response we'd like from here.
-        # The handler for this exception type is defined in urls.py.
-        raise ImageSearchParseError from e
-    else:
-        if settings.ISIC_USE_ELASTICSEARCH_COUNTS:
-            es_count = get_elasticsearch_client().count(
-                index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX,
-                body={"query": es_query},
-            )["count"]
-            return qs_with_hardcoded_count(qs, Image._meta.ordering, es_count)
+    qs = search.to_queryset(user=request.user, qs=default_qs)
 
-        return qs
+    if settings.ISIC_USE_ELASTICSEARCH_COUNTS:
+        es_query = search.to_es_query(request.user)
+        es_count = get_elasticsearch_client().count(
+            index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX,
+            body={"query": es_query},
+        )["count"]
+        return qs_with_hardcoded_count(qs, Image._meta.ordering, es_count)
+
+    return qs
 
 
 @router.get(
@@ -247,10 +234,7 @@ def image_search(request: HttpRequest, search: SearchQueryIn = Query(...)):
     auth=allow_any,
 )
 def image_search_size(request: HttpRequest, search: SearchQueryIn = Query(...)):
-    try:
-        es_query = search.to_es_query(request.user)
-    except ParseException as e:
-        raise ImageSearchParseError from e
+    es_query = search.to_es_query(request.user)
 
     body = {
         "size": 0,
@@ -277,11 +261,7 @@ def image_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):
     if cached_facets:
         return cached_facets
 
-    try:
-        query = search.to_es_query(request.user)
-    except ParseException as e:
-        raise ImageSearchParseError from e
-
+    query = search.to_es_query(request.user)
     ret = facets(query)
     cache.set(cache_key, ret, 86400)
     return ret

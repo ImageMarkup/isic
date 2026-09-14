@@ -8,8 +8,9 @@ from django.contrib.auth.models import AnonymousUser, User
 from django.shortcuts import get_object_or_404
 from ninja import Schema
 from pydantic import field_validator
+from pyparsing.exceptions import ParseException
 
-from isic.core.dsl import es_parser, parse_query
+from isic.core.dsl import SearchQueryParseError, django_parser, es_parser, parse_query
 from isic.core.models import Image
 from isic.core.models.collection import Collection
 from isic.core.permissions import get_visible_objects
@@ -30,6 +31,13 @@ class SearchQueryIn(Schema):
     def valid_search_query(cls, value: str | None):
         if value:
             value = value.strip()
+            try:
+                parse_query(django_parser, value)
+            except ParseException as e:
+                # pydantic only converts ValueError and AssertionError into validation errors,
+                # so this propagates untouched. That's deliberate: it reaches the handler in
+                # urls.py and becomes a 400, where a pydantic error would become a 422.
+                raise SearchQueryParseError from e
         return value
 
     @field_validator("collections", mode="before")

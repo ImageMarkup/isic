@@ -167,3 +167,23 @@ def test_zip_download_authentication(
         assert r.status_code == 200, r.content
     else:
         assert r.status_code == 401, r.content
+
+
+@pytest.mark.django_db
+def test_zip_download_url_rejects_malformed_query(authenticated_client, image_factory):
+    image = image_factory(public=True)
+
+    r = authenticated_client.post(
+        reverse("api:zip_download_url"),
+        {"query": "age_approx:[30 TO 40]"},
+        content_type="application/json",
+    )
+    assert r.status_code == 200, r.json()
+
+    r = authenticated_client.post(
+        reverse("api:zip_download_url"),
+        {"query": f"isic_id:[{image.isic_id}]"},
+        content_type="application/json",
+    )
+    assert r.status_code == 400, r.json()
+    assert "parse" in r.json()["message"].lower()
