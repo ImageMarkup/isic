@@ -87,14 +87,16 @@ def _validate_df_consistency(
 
         if row.get("patient_id") or row.get("lesion_id") or row.get("rcm_case_id"):
             try:
-                batch_metadata_row = MetadataRow(
-                    patient_id=row.get("patient_id"),
-                    lesion_id=row.get("lesion_id"),
-                    rcm_case_id=row.get("rcm_case_id"),
-                    # image_type is necessary for the batch check because RCM can only have
-                    # at most one macroscopic image.
-                    image_type=row.get("image_type"),
-                    _ignore_rcm_model_checks=True,
+                batch_metadata_row = MetadataRow.model_validate(
+                    {
+                        "patient_id": row.get("patient_id"),
+                        "lesion_id": row.get("lesion_id"),
+                        "rcm_case_id": row.get("rcm_case_id"),
+                        # image_type is necessary for the batch check because RCM can only have
+                        # at most one macroscopic image.
+                        "image_type": row.get("image_type"),
+                    },
+                    context={"ignore_rcm_model_checks": True},
                 )
             except PydanticValidationError:
                 # it's possible that even the narrow subset of fields we're trying to validate for
@@ -110,7 +112,10 @@ def _validate_df_consistency(
     # currently only applies to patient/lesion/rcm checks, we can sparsely populate the MetadataRow
     # objects to save on memory.
     try:
-        MetadataBatch(items=batch_metadata_rows)
+        MetadataBatch.model_validate(
+            {"items": batch_metadata_rows},
+            context={"ignore_rcm_model_checks": True},
+        )
     except PydanticValidationError as e:
         for error in e.errors():
             examples = error["ctx"]["examples"] if "ctx" in error else []

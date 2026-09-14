@@ -9,7 +9,7 @@ from isic.core.models.base import CopyrightLicense
 
 ROW_GROUP_SIZE = 10_000
 
-EXCLUDED_FIELDS = ["age", "marker_pen", "blurry", "hairy", "color_tint"]
+EXCLUDED_FIELDS = ["age"]
 
 FIELD_ORDER = [
     "isic_id",
