@@ -4,10 +4,13 @@
 {% block head_extra %}
   {{ block.super }}
   <script src="{% static 'ingest/autocomplete.js' %}"></script>
+  <script src="{% static 'ingest/contributor_merge_impact.js' %}"></script>
 {% endblock %}
 
 {% block content %}
-  <form class="flex flex-col max-w-2xl mx-auto space-y-4" method="post">
+  <form class="flex flex-col max-w-2xl mx-auto space-y-4" method="post"
+        x-data="contributorMergeImpact({impactUrl: '{% url 'api:contributor_merge_impact' %}', destField: '{{ form.contributor.html_name }}', srcField: '{{ form.contributor_to_merge.html_name }}'})"
+        @autocomplete-selection="onAutocompleteSelection($event.detail)">
     {% csrf_token %}
 
     {{ form.non_field_errors }}
@@ -18,6 +21,8 @@
     {% url 'api:contributor_list' as contributor_api_url %}
     {% include 'ingest/partials/autocomplete_field.html' with field=form.contributor suggest_url=contributor_suggest_url detail_url=contributor_api_url label_key='institution_name' detail_template='ingest/partials/contributor_autocomplete_detail.html' %}
     {% include 'ingest/partials/autocomplete_field.html' with field=form.contributor_to_merge suggest_url=contributor_suggest_url detail_url=contributor_api_url label_key='institution_name' detail_template='ingest/partials/contributor_autocomplete_detail.html' %}
+
+    {% include 'ingest/partials/contributor_merge_impact.html' %}
 
     <button type="submit" class="btn btn-primary self-end">Merge Contributors</button>
   </form>

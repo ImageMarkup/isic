@@ -1,0 +1,94 @@
+{# access is granted by Contributor.owners, see CohortPermissions and ImagePermissions.view_image_list #}
+<div x-cloak x-show="loading || impact" role="alert"
+     class="alert items-start" :class="anyoneGainsAccess ? 'alert-warning' : 'alert-info'">
+  <div class="w-full">
+    <div x-show="loading" class="flex justify-center">
+      <span class="loading loading-spinner loading-sm"></span>
+    </div>
+
+    <template x-if="impact">
+      <div class="space-y-3 text-sm">
+        <div class="font-bold">Access impact of this merge</div>
+
+        <div x-show="anyoneGainsAccess">
+          <div class="grid grid-cols-2 gap-4 text-xs uppercase tracking-wide opacity-60">
+            <div>Who gains access</div>
+            <div>What they gain</div>
+          </div>
+
+          <div class="divide-y divide-base-content/20">
+            <template x-if="impact.users_gaining_access_to_dest.length">
+              <div class="grid grid-cols-2 gap-4 py-2">
+                {% include 'ingest/partials/merge_impact_users.html' with users='impact.users_gaining_access_to_dest' %}
+                <div>
+                  <div class="font-bold" x-text="impact.dest_contributor.institution_name"></div>
+                  <div>
+                    <span x-text="number(impact.dest_contributor.accession_count)"></span>
+                    <span x-text="pluralize(impact.dest_contributor.accession_count, 'accession', 'accessions')"></span>
+                  </div>
+                  <div>
+                    <span x-text="number(impact.dest_contributor.published_image_count)"></span>
+                    published
+                    <span x-text="pluralize(impact.dest_contributor.published_image_count, 'image', 'images')"></span>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <template x-if="impact.users_gaining_access_to_src.length">
+              <div class="grid grid-cols-2 gap-4 py-2">
+                {% include 'ingest/partials/merge_impact_users.html' with users='impact.users_gaining_access_to_src' %}
+                <div>
+                  <div class="font-bold" x-text="impact.src_contributor.institution_name"></div>
+                  <div>
+                    <span x-text="number(impact.src_contributor.accession_count)"></span>
+                    <span x-text="pluralize(impact.src_contributor.accession_count, 'accession', 'accessions')"></span>
+                  </div>
+                  <div>
+                    <span x-text="number(impact.src_contributor.published_image_count)"></span>
+                    published
+                    <span x-text="pluralize(impact.src_contributor.published_image_count, 'image', 'images')"></span>
+                  </div>
+                  <div class="opacity-70">which becomes part of
+                    <span x-text="impact.dest_contributor.institution_name"></span>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <div x-show="anyoneGainsAccess" class="flex items-start gap-2">
+            <i class="ri-information-line shrink-0"></i>
+            <span>
+              Everyone listed above will also have access to every future upload to
+              <span class="font-bold" x-text="impact.dest_contributor.institution_name"></span>.
+            </span>
+          </div>
+
+          <template x-if="impact.engagement_profiles_repointed.length">
+            <div class="flex items-start gap-2">
+              <i class="ri-information-line shrink-0"></i>
+              <span>
+                <span x-text="number(impact.engagement_profiles_repointed.length)"></span>
+                engagement platform
+                <span x-text="pluralize(impact.engagement_profiles_repointed.length, 'user uploads', 'users upload')"></span>
+                to
+                <span class="font-bold" x-text="impact.src_contributor.institution_name"></span>
+                by default. Their default will be repointed to
+                <span class="font-bold" x-text="impact.dest_contributor.institution_name"></span>.
+                An engagement profile does not by itself grant access to any data.
+              </span>
+            </div>
+          </template>
+
+          <div x-show="!anyoneGainsAccess" class="flex items-start gap-2">
+            <i class="ri-information-line shrink-0"></i>
+            <span>No one gains access to data they can't already see.</span>
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+</div>
