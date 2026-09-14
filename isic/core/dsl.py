@@ -18,6 +18,10 @@ from isic.ingest.models.accession import Accession
 ParserElement.enable_packrat(cache_size_limit=2_000)
 
 
+class SearchQueryParseError(Exception):
+    pass
+
+
 @dataclass(frozen=True)
 class SearchTermKey:
     field_lookup: str

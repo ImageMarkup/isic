@@ -12,9 +12,9 @@ from ninja.openapi.views import openapi_view
 from isic.auth import allow_any
 from isic.core.api.collection import router as collection_router
 from isic.core.api.doi import router as doi_router
-from isic.core.api.image import ImageSearchParseError
 from isic.core.api.image import router as image_router
 from isic.core.api.user import router as user_router
+from isic.core.dsl import SearchQueryParseError
 from isic.core.sitemaps import sitemaps
 from isic.engagement.api import router as engagement_router
 from isic.find.api import autocomplete_router
@@ -70,8 +70,8 @@ def handle_django_validation_error(request, exc: ValidationError):
     )
 
 
-@api.exception_handler(ImageSearchParseError)
-def handle_image_search_parse_error(request, exc: ImageSearchParseError):
+@api.exception_handler(SearchQueryParseError)
+def handle_search_query_parse_error(request, exc: SearchQueryParseError):
     return api.create_response(
         request,
         {"message": "Could not parse search query."},

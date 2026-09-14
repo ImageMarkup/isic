@@ -139,6 +139,23 @@ def test_core_api_collection_populate_from_search(
 
 
 @pytest.mark.django_db
+def test_core_api_collection_populate_from_search_invalid_query(
+    authenticated_client, collection_factory, user
+):
+    # a private collection skips the queryset evaluation in the view, so an unparseable query
+    # used to reach the celery task rather than the caller.
+    collection = collection_factory(locked=False, creator=user, public=False)
+
+    r = authenticated_client.post(
+        reverse("api:collection_populate_from_search", kwargs={"id": collection.pk}),
+        {"query": "isic_id:(foo OR bar)"},
+        content_type="application/json",
+    )
+
+    assert r.status_code == 400, r.json()
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     ("url_name", "data"),
     [
