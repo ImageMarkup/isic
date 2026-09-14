@@ -2,15 +2,15 @@ version = 1
 revision = 3
 requires-python = ">=3.13"
 resolution-markers = [
+    "python_full_version >= '3.15' and platform_machine == 'arm64' and sys_platform == 'darwin'",
     "python_full_version == '3.14.*' and platform_machine == 'arm64' and sys_platform == 'darwin'",
-    "python_full_version < '3.14' and platform_machine == 'arm64' and sys_platform == 'darwin'",
     "python_full_version >= '3.14' and sys_platform == 'win32'",
     "python_full_version >= '3.14' and sys_platform == 'emscripten'",
     "(python_full_version >= '3.14' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version >= '3.14' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
+    "python_full_version < '3.14' and platform_machine == 'arm64' and sys_platform == 'darwin'",
     "python_full_version < '3.14' and sys_platform == 'win32'",
     "python_full_version < '3.14' and sys_platform == 'emscripten'",
     "(python_full_version < '3.14' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.14' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
-    "python_full_version >= '3.15' and platform_machine == 'arm64' and sys_platform == 'darwin'",
 ]
 
 [[package]]
@@ -1875,7 +1875,7 @@ requires-dist = [
     { name = "google-analytics-data", specifier = "==0.23.0" },
     { name = "gunicorn", specifier = "==26.0.0" },
     { name = "ipython", marker = "extra == 'development'", specifier = "==9.16.0" },
-    { name = "isic-metadata", specifier = "==5.1.0" },
+    { name = "isic-metadata", specifier = "==6.0.0" },
     { name = "jaro-winkler", specifier = "==2.0.3" },
     { name = "numpy", specifier = "==2.5.1" },
     { name = "orjson", specifier = "==3.11.9" },
@@ -1941,14 +1941,14 @@ type = [
 
 [[package]]
 name = "isic-metadata"
-version = "5.1.0"
+version = "6.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4c/e5/30e00437f179fabb242d157455265afd842fa64bd35845efb68e0aca44e8/isic_metadata-5.1.0.tar.gz", hash = "sha256:46660a476c324b80a99c2536f87c8a31fa4065ee17f38a049a56145999c0aaba", size = 26553, upload-time = "2026-05-12T17:20:02.984Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/89/2e/46a06f8b36da466f9445f5e9addd392117d9607449de849b9c2b586a5599/isic_metadata-6.0.0.tar.gz", hash = "sha256:b4820b413291bc412fa1148f0ac452409db25bb030074c7249079c1177158cf6", size = 25971, upload-time = "2026-09-14T13:02:13.491Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/db/eb/45c4bca73d4f474ab770fcddc20204e09318951194ce7dec404e10af7481/isic_metadata-5.1.0-py3-none-any.whl", hash = "sha256:32991eb1a7651a83bb2a047490b6f79057eef3a2a7f87e6de6a669e28d406ff6", size = 26654, upload-time = "2026-05-12T17:20:03.981Z" },
+    { url = "https://files.pythonhosted.org/packages/1b/db/33dcf635b07bc8825631f343e7c769dc03750f470a8f3f7253ec23c66351/isic_metadata-6.0.0-py3-none-any.whl", hash = "sha256:605994a1d1a6249e2326f8959fdbe12fbd34f6bb2560b8af211157085168d847", size = 25993, upload-time = "2026-09-14T13:02:12.406Z" },
 ]
 
 [[package]]
@@ -4206,13 +4206,13 @@ name = "zipfile-deflate64"
 version = "0.2.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
+    "python_full_version >= '3.15' and platform_machine == 'arm64' and sys_platform == 'darwin'",
     "python_full_version >= '3.14' and sys_platform == 'win32'",
     "python_full_version >= '3.14' and sys_platform == 'emscripten'",
     "(python_full_version >= '3.14' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version >= '3.14' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
     "python_full_version < '3.14' and sys_platform == 'win32'",
     "python_full_version < '3.14' and sys_platform == 'emscripten'",
     "(python_full_version < '3.14' and platform_machine != 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.14' and sys_platform != 'darwin' and sys_platform != 'emscripten' and sys_platform != 'win32')",
-    "python_full_version >= '3.15' and platform_machine == 'arm64' and sys_platform == 'darwin'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/03/1b/f397f821b48156ee94c5ca7ad82dc5cdb73cbcbc4377b9c1b21556f3ce8c/zipfile-deflate64-0.2.0.tar.gz", hash = "sha256:875a3299de102edf1c17f8cafcc528b1ca80b62dc4814b9cb56867ec59fbfd18", size = 62896, upload-time = "2022-01-05T09:24:39.575Z" }
 
