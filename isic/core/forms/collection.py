@@ -2,7 +2,8 @@ import logging
 
 from django import forms
 
-from isic.core.models.collection import Collection
+from isic.core.models.collection import Collection, CollectionTag
+from isic.core.widgets import ComboboxWidget
 
 logger = logging.getLogger(__name__)
 
@@ -13,3 +14,13 @@ class CollectionForm(forms.Form):
     name = fields["name"]
     description = fields["description"]
     public = fields["public"]
+    tags = forms.ModelMultipleChoiceField(
+        required=False,
+        queryset=CollectionTag.objects.all(),
+        widget=ComboboxWidget(
+            queryset=CollectionTag.objects.all(),
+            lookup_field="tag",
+            option_type="tag",
+            edit=True,
+        ),
+    )
