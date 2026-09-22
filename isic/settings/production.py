@@ -9,7 +9,7 @@ import sentry_sdk.integrations.logging
 import sentry_sdk.integrations.pure_eval
 from sentry_sdk.scrubber import DEFAULT_DENYLIST, EventScrubber
 
-from ._sentry_utils import get_sentry_performance_sample_rate
+from ._sentry_utils import filter_sentry_event, get_sentry_performance_sample_rate
 from .base import *
 
 # Import these afterwards, to override
@@ -86,4 +86,10 @@ sentry_sdk.init(
     event_scrubber=EventScrubber(denylist=[*DEFAULT_DENYLIST, "client_secret"]),
     traces_sampler=get_sentry_performance_sample_rate,
     profiles_sampler=get_sentry_performance_sample_rate,
+    before_send=filter_sentry_event,
 )
+
+# The elasticsearch transport logs failed connections and node failovers at warning level
+# while it transparently retries them. An exhausted retry raises, which is reported on its own.
+sentry_sdk.integrations.logging.ignore_logger("elastic_transport.transport")
+sentry_sdk.integrations.logging.ignore_logger("elastic_transport.node_pool")
