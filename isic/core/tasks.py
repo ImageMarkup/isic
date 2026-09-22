@@ -261,7 +261,7 @@ def prune_expired_oauth_tokens_task():
     clear_expired_oauth_tokens()
 
 
-@shared_task(soft_time_limit=90, time_limit=120)
+@shared_task(soft_time_limit=10 * 60, time_limit=10 * 60 + 60)
 def refresh_materialized_view_collection_counts_task():
     with connection.cursor() as cursor:
         cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY materialized_collection_counts;")

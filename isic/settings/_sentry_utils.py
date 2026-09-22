@@ -3,8 +3,25 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from logging import LogRecord
+
     from celery import Task
-    from sentry_sdk._types import SamplingContext
+    from sentry_sdk._types import Event, Hint, SamplingContext
+
+
+def filter_sentry_event(event: Event, hint: Hint) -> Event | None:
+    log_record: LogRecord | None = hint.get("log_record")
+
+    # gunicorn logs a malformed request (an oversized request line, an unparseable HTTP version)
+    # under this message. The client caused it and gunicorn already rejected it with a 4xx.
+    if (
+        log_record is not None
+        and log_record.name == "gunicorn.error"
+        and log_record.getMessage().startswith("Invalid request from ip=")
+    ):
+        return None
+
+    return event
 
 
 def get_sentry_performance_sample_rate(sampling_context: SamplingContext) -> float:

@@ -26,6 +26,8 @@ from isic.stats.models import GaMetrics, ImageDownload, LastEnqueuedS3Log
 
 logger = get_task_logger(__name__)
 
+GOOGLE_ANALYTICS_REPORT_TIMEOUT = 30
+
 
 def _s3_client():
     return boto3.client(
@@ -68,7 +70,7 @@ def _get_google_analytics_report(client, property_id: str) -> GoogleAnalyticsRep
         metrics=[Metric(name="sessions")],
         date_ranges=[DateRange(start_date="30daysAgo", end_date="today")],
     )
-    response = client.run_report(request)
+    response = client.run_report(request, timeout=GOOGLE_ANALYTICS_REPORT_TIMEOUT)
 
     for row in response.rows:
         country_id, sessions = row.dimension_values[0].value, row.metric_values[0].value
@@ -96,8 +98,8 @@ def _country_from_iso_code(iso_code: str) -> dict:
 
 
 @shared_task(
-    soft_time_limit=60,
-    time_limit=120,
+    soft_time_limit=300,
+    time_limit=360,
     queue="stats-aggregation",
 )
 def collect_google_analytics_metrics_task():
