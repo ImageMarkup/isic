@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",
     "cachalot",
+    "cookie_consent",
     "corsheaders",
     "django.contrib.admin",
     "django.contrib.auth",
@@ -314,6 +315,8 @@ TEMPLATES[0]["OPTIONS"]["context_processors"] += [
     "isic.core.context_processors.citation_styles",
 ]
 ISIC_JS_SENTRY = False
+
+COOKIE_CONSENT_LOG_ENABLED = True
 
 ISIC_DATA_EXPLORER_PARQUET_KEY = env.str(
     "DJANGO_ISIC_DATA_EXPLORER_PARQUET_KEY", default="snapshots/ISIC_metadata.parquet"

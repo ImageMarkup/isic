@@ -1,0 +1,16 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Cookies | {% endblock %}
+
+{% block content %}
+  <header class="border-b border-gray-100 py-2 pb-4 mb-6">
+    <div class="heading-1">Cookies</div>
+    <p class="mt-2">The categories of cookies this site uses and why we use them.</p>
+  </header>
+
+  <div class="flex flex-col gap-6">
+    {% for cookie_group in object_list %}
+      {% include 'cookie_consent/_cookie_group.html' %}
+    {% endfor %}
+  </div>
+{% endblock %}
