@@ -1,0 +1,15 @@
+{% extends "core/base.html" %}
+
+{% block title %}Terms of Use | {% endblock %}
+
+{% block content %}
+  <div class="card bg-base-100 border border-base-300 max-w-4xl mx-auto">
+    <div class="card-body">
+      <h1 class="text-2xl font-bold">Terms of Use Agreement and Privacy Policy</h1>
+      <p class="text-base-content/70">International Skin Imaging Collaboration ("ISIC")</p>
+      <div class="prose max-w-none max-h-[70vh] overflow-y-auto border-t border-base-300 pt-4 pr-4">
+        {% include "core/partials/terms_of_use_body.html" %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

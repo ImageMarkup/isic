@@ -1,0 +1,27 @@
+{% extends "account/base_entrance.html" %}
+{% load allauth %}
+
+{% block head_title %}Terms of Use{% endblock head_title %}
+
+{% block content %}
+  {% element h1 %}
+    Terms of Use
+  {% endelement %}
+  {% element p %}
+    You must agree to the Terms of Use before you continue.
+  {% endelement %}
+  {% url "login/accept-terms" as accept_terms_url %}
+  {% element form form=form method="post" action=accept_terms_url %}
+    {% slot body %}
+      {% csrf_token %}
+      {% element fields form=form %}
+      {% endelement %}
+      <input type="hidden" name="next" value="{{ next }}">
+    {% endslot %}
+    {% slot actions %}
+      {% element button type="submit" tags="prominent" %}
+        Continue
+      {% endelement %}
+    {% endslot %}
+  {% endelement %}
+{% endblock content %}
