@@ -863,6 +863,18 @@ socialaccount = [
 ]
 
 [[package]]
+name = "django-appconf"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d1/a2/e58bec8d7941b914af52a67c35b5709eceed2caa2848f28437f1666ed668/django_appconf-1.2.0.tar.gz", hash = "sha256:15a88d60dd942d6059f467412fe4581db632ef03018a3c183fb415d6fc9e5cec", size = 16127, upload-time = "2025-11-08T15:46:27.304Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e8/e6/4c34d94dfb74bbcbc489606e61f1924933de30d22c593dd1f429f35fbd7f/django_appconf-1.2.0-py3-none-any.whl", hash = "sha256:b81bce5ef0ceb9d84df48dfb623a32235d941c78cc5e45dbb6947f154ea277f4", size = 6500, upload-time = "2025-11-08T15:46:25.957Z" },
+]
+
+[[package]]
 name = "django-auth-style"
 version = "0.15.0"
 source = { registry = "https://pypi.org/simple" }
@@ -917,6 +929,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/fc/e9/80f860c3f2bb9bdcc58de6b9578bbc6b4a57bedefdc97211e736fb960380/django_click-2.5.0.tar.gz", hash = "sha256:60d346a04d0db991d0bb31754c0dcad282643aa26a4701ca5ff5df742a7473f8", size = 7251, upload-time = "2026-01-10T13:19:37.958Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/27/43/a8eedd594b0f1d5e736ad5afd48ff4431566d2760b79115af40d8b4e950a/django_click-2.5.0-py3-none-any.whl", hash = "sha256:6bcb71d0bac47f67b91d9ee1972d881d72b5bf20cd2a45a57265cdfac49b88aa", size = 7887, upload-time = "2026-01-10T13:19:37.13Z" },
+]
+
+[[package]]
+name = "django-cookie-consent"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+    { name = "django-appconf" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9a/80/fa34d2240e55097d02285fb63716e6e5c2bad5b42748749fa41986520563/django_cookie_consent-1.0.0.tar.gz", hash = "sha256:f78a6f9a55c2d7e1daa64118181891d313bf363158825f637ab24e3d0856eb14", size = 30039, upload-time = "2026-02-04T20:36:32.999Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/69/fb/53822dc832ac952097574c51de5d7ef716679ad7f9a47c92de93c8771145/django_cookie_consent-1.0.0-py3-none-any.whl", hash = "sha256:964b870ee5a9d6db6c62edb303f65671df91a5281d36cf77187dbdc5f724d971", size = 28597, upload-time = "2026-02-04T20:36:31.839Z" },
 ]
 
 [[package]]
@@ -1738,6 +1763,7 @@ dependencies = [
     { name = "django-auth-style", extra = ["allauth", "oauth-toolkit"] },
     { name = "django-cachalot" },
     { name = "django-click" },
+    { name = "django-cookie-consent" },
     { name = "django-cors-headers" },
     { name = "django-environ" },
     { name = "django-extensions" },
@@ -1846,6 +1872,7 @@ requires-dist = [
     { name = "django-browser-reload", marker = "extra == 'development'", specifier = "==1.21.0" },
     { name = "django-cachalot", specifier = "==2.9.0" },
     { name = "django-click", specifier = "==2.5.0" },
+    { name = "django-cookie-consent", specifier = "==1.0.0" },
     { name = "django-cors-headers", specifier = "==4.9.0" },
     { name = "django-debug-toolbar", marker = "extra == 'development'", specifier = "==7.0.0" },
     { name = "django-environ", specifier = "==0.14.0" },

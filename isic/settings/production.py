@@ -60,6 +60,8 @@ ISIC_DATACITE_DOI_PREFIX = "10.34970"
 
 ISIC_JS_SENTRY = True
 
+COOKIE_CONSENT_SECURE = True
+
 # sentry_sdk is able to directly use environment variables like "SENTRY_DSN", but prefix them
 # with "DJANGO_" to avoid conflicts with other Sentry-using services.
 sentry_sdk.init(

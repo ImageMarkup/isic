@@ -19,6 +19,7 @@ dependencies = [
   "django-auth-style[allauth,oauth-toolkit]==0.15.0",
   "django-cachalot==2.9.0",
   "django-click==2.5.0",
+  "django-cookie-consent==1.0.0",
   "django-cors-headers==4.9.0",
   "django-environ==0.14.0",
   "django-extensions==4.1",
