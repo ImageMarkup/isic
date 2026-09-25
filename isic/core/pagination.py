@@ -1,16 +1,16 @@
 from base64 import b64decode, b64encode
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any
 from urllib import parse
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models.query import QuerySet
 from django.http.request import HttpRequest
-from ninja import Field, Schema
-from ninja.errors import ValidationError as NinjaValidationError
-from ninja.pagination import PaginationBase
-from pydantic import field_validator
+from rest_framework import serializers
+from rest_framework.response import Response
+
+# limit to protect against possibly malicious queries
+_OFFSET_CUTOFF = 100
 
 
 def qs_with_hardcoded_count(qs: QuerySet, ordering: Sequence, count: int) -> QuerySet:
@@ -65,60 +65,17 @@ def _replace_query_param(url: str, key: str, val: str):
     return parse.urlunsplit((scheme, netloc, path, query, fragment))
 
 
-class CursorPagination(PaginationBase):
-    class Input(Schema):
-        limit: int | None = Field(None, description="Number of results to return per page.")
-        cursor: Cursor = Field(
-            default_factory=Cursor,
-            description="The pagination cursor value.",
-            json_schema_extra={"default": None},
-        )
-
-        @field_validator("cursor", mode="before", json_schema_input_type=str | None)
-        @classmethod
-        def decode_cursor(cls, encoded_cursor: Any) -> Cursor:
-            if encoded_cursor is None:
-                return Cursor()
-            if not isinstance(encoded_cursor, str):
-                raise ValueError("Invalid cursor.")  # noqa: TRY004
-
-            try:
-                querystring = b64decode(encoded_cursor).decode()
-                tokens = parse.parse_qs(querystring, keep_blank_values=True)
-
-                offset = int(tokens.get("o", ["0"])[0])
-                offset = _clamp(offset, 0, CursorPagination._offset_cutoff)
-
-                reverse_str = tokens.get("r", ["0"])[0]
-                reverse = bool(int(reverse_str))
-
-                position = tokens.get("p", [None])[0]
-            except (TypeError, ValueError) as e:
-                raise ValueError("Invalid cursor.") from e
-
-            return Cursor(offset=offset, reverse=reverse, position=position)
-
-    class Output(Schema):
-        results: list[Any] = Field(description="The page of objects.")
-        count: int | None = Field(
-            description="The total number of results across all pages. Only available on the first page."  # noqa: E501
-        )
-        next: str | None = Field(description="URL of next page of results if there is one.")
-        previous: str | None = Field(description="URL of previous page of results if there is one.")
-
-    items_attribute = "results"
+class CursorPagination:
     default_ordering = ("-created",)
     max_page_size = 100
-    _offset_cutoff = 100  # limit to protect against possibly malicious queries
 
-    def __init__(self, ordering: Sequence = default_ordering, **kwargs: Any) -> None:
+    def __init__(self, ordering: Sequence = default_ordering) -> None:
         self.ordering = ordering
-        super().__init__(**kwargs)
 
     def paginate_queryset(
-        self, queryset: QuerySet, pagination: Input, request: HttpRequest, **params
+        self, queryset: QuerySet, request: HttpRequest, *, limit: int | None, cursor: Cursor
     ) -> dict:
-        limit = _clamp(pagination.limit or self.max_page_size, 0, self.max_page_size)
+        limit = _clamp(limit or self.max_page_size, 0, self.max_page_size)
 
         if not queryset.query.order_by:
             queryset = queryset.order_by(*self.ordering)
@@ -133,12 +90,11 @@ class CursorPagination(PaginationBase):
             else queryset.count()
             # only count the total number of results if a position is absent, usually indicating
             # that we're on the first page. this improves performance for larger queries.
-            if pagination.cursor.position is None
+            if cursor.position is None
             else None
         )
 
         base_url = request.build_absolute_uri()
-        cursor = pagination.cursor
 
         if cursor.reverse:
             queryset = queryset.order_by(*_reverse_order(order))
@@ -351,11 +307,7 @@ class CursorPagination(PaginationBase):
             try:
                 position = queryset.model._meta.get_field(order_attr).to_python(cursor.position)
             except DjangoValidationError as e:
-                # match the message format of pydantic's rendering of a ValueError, which is
-                # how a cursor that fails to decode is reported
-                raise NinjaValidationError(
-                    [{"loc": ["query", "cursor"], "msg": "Value error, Invalid cursor."}]
-                ) from e
+                raise serializers.ValidationError({"cursor": ["Invalid cursor."]}) from e
 
             if cursor.reverse != is_reversed:
                 queryset = queryset.filter(**{f"{order_attr}__lt": position})
@@ -367,3 +319,36 @@ class CursorPagination(PaginationBase):
         field_name = ordering[0].lstrip("-")
         attr = instance[field_name] if isinstance(instance, dict) else getattr(instance, field_name)
         return str(attr)
+
+
+class CursorPaginationSerializer(serializers.Serializer):
+    limit = serializers.IntegerField(allow_null=True, default=None)
+    cursor = serializers.CharField(allow_null=True, default=None, trim_whitespace=False)
+
+    def validate_cursor(self, encoded_cursor: str | None) -> Cursor:
+        if encoded_cursor is None:
+            return Cursor()
+
+        try:
+            querystring = b64decode(encoded_cursor).decode()
+            tokens = parse.parse_qs(querystring, keep_blank_values=True)
+
+            offset = int(tokens.get("o", ["0"])[0])
+            offset = _clamp(offset, 0, _OFFSET_CUTOFF)
+
+            reverse_str = tokens.get("r", ["0"])[0]
+            reverse = bool(int(reverse_str))
+
+            position = tokens.get("p", [None])[0]
+        except (TypeError, ValueError) as e:
+            raise serializers.ValidationError("Invalid cursor.") from e
+
+        return Cursor(offset=offset, reverse=reverse, position=position)
+
+
+def paginate(request, queryset: QuerySet, serializer_class, paginator=None) -> Response:
+    paginator = paginator if paginator is not None else CursorPagination()
+    params = CursorPaginationSerializer(data=request.query_params)
+    params.is_valid(raise_exception=True)
+    page = paginator.paginate_queryset(queryset, request, **params.validated_data)
+    return Response({**page, "results": serializer_class(page["results"], many=True).data})

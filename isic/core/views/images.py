@@ -10,13 +10,12 @@ from django.db.models.query_utils import Q
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
-from ninja.errors import ValidationError as NinjaValidationError
-import pydantic
+from rest_framework.exceptions import ValidationError as DrfValidationError
 
 from isic.core.api.image import PinnedFirstPagination
 from isic.core.forms.search import ImageSearchForm
 from isic.core.models import Collection, Image
-from isic.core.pagination import qs_with_hardcoded_count
+from isic.core.pagination import CursorPaginationSerializer, qs_with_hardcoded_count
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.core.search import get_elasticsearch_client
 from isic.core.tasks import generate_staff_image_list_metadata_csv_task
@@ -177,13 +176,12 @@ def image_browser(request):
 
     paginator = PinnedFirstPagination()
     try:
-        cursor_input = PinnedFirstPagination.Input(
-            limit=request.GET.get("limit", 30), cursor=request.GET.get("cursor")
+        params = CursorPaginationSerializer(
+            data={"limit": request.GET.get("limit", 30), "cursor": request.GET.get("cursor")}
         )
-        page = paginator.paginate_queryset(
-            qs, pagination=cursor_input, request=request, pin_sort=True
-        )
-    except (pydantic.ValidationError, NinjaValidationError) as e:
+        params.is_valid(raise_exception=True)
+        page = paginator.paginate_queryset(qs, request, pin_sort=True, **params.validated_data)
+    except DrfValidationError as e:
         raise BadRequest("Invalid pagination parameters.") from e
 
     recent_collections = []

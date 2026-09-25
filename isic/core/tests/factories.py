@@ -1,3 +1,5 @@
+import random
+
 import factory
 import factory.django
 
@@ -36,7 +38,7 @@ class ImageEmbeddingFactory(factory.django.DjangoModelFactory):
         model = ImageEmbedding
 
     image = factory.SubFactory(ImageFactory)
-    embedding = factory.LazyFunction(lambda: [0.0] * 3584)
+    embedding = factory.LazyFunction(lambda: [random.uniform(-1, 1) for _ in range(3584)])
 
 
 class CollectionFactory(factory.django.DjangoModelFactory):

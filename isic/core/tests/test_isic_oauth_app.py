@@ -1,11 +1,13 @@
 from datetime import timedelta
 
-from django.test import RequestFactory, override_settings
-from django.urls import path, reverse
+from django.test import override_settings
+from django.urls import include, path, reverse
 from django.utils import timezone
-from ninja import NinjaAPI
 from oauth2_provider.models import get_access_token_model, get_application_model
 import pytest
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 
 from isic import auth
 from isic.core.models.base import IsicOAuthApplication
@@ -58,33 +60,45 @@ def test_redirect_uri_allowed(user, uri, allowed_uris, allowed):
     assert app.redirect_uri_allowed(uri) == allowed
 
 
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def allow_any_view(request):
+    return Response({"anonymous": request.user.is_anonymous})
+
+
+@api_view(["GET"])
+@permission_classes([auth.IsAuthenticated])
+def is_authenticated_view(request):
+    return Response({})
+
+
+@api_view(["GET"])
+@permission_classes([auth.IsStaff])
+def is_staff_view(request):
+    return Response({})
+
+
+@api_view(["GET"])
+@permission_classes([auth.is_application("ISIC_ENGAGEMENT_SERVICE_OAUTH_CLIENT_ID")])
+def is_application_view(request):
+    return Response({"application": request.auth.application.name})
+
+
 @pytest.fixture
-def test_oauth_api_endpoints(request):
-    # this is pretty gross, but DOT requires a "more" real request object be created, meaning the
-    # ninja test client can't be used since it mocks it. using the django test client means we have
-    # to add real routes and then remove them.
-    api = NinjaAPI(urls_namespace=request.function.__name__, auth=auth.allow_any)
-
-    @api.get("/allow-any")
-    def allow_any_view(request):
-        return {"anonymous": request.user.is_anonymous}
-
-    @api.get("/is-authenticated", auth=auth.is_authenticated)
-    def is_authenticated_view(request):
-        return {}
-
-    @api.get("/is-staff", auth=auth.is_staff)
-    def is_staff_view(request):
-        return {}
-
-    @api.get(
-        "/is-engagement-service",
-        auth=auth.is_application("ISIC_ENGAGEMENT_SERVICE_OAUTH_CLIENT_ID"),
+def test_oauth_api_endpoints():
+    # DOT requires a "more" real request object, so these are requested through the django test
+    # client, which means adding real routes and then removing them.
+    urlpattern = path(
+        "test-oauth/",
+        include(
+            [
+                path("allow-any", allow_any_view),
+                path("is-authenticated", is_authenticated_view),
+                path("is-staff", is_staff_view),
+                path("is-engagement-service", is_application_view),
+            ]
+        ),
     )
-    def is_application_view(request):
-        return {"application": request.auth.application.name}
-
-    urlpattern = path("test-oauth/", api.urls)
 
     from isic.urls import urlpatterns
 
@@ -93,7 +107,6 @@ def test_oauth_api_endpoints(request):
     yield
 
     urlpatterns.remove(urlpattern)
-    NinjaAPI._registry.remove(request.function.__name__)
 
 
 def get_bearer_token(user, oauth_token_factory):
@@ -298,16 +311,14 @@ def test_application_restricted_endpoint(
         assert response.status_code == 401
 
 
-def test_oauth2authbearer_any_accepts_invalid_token():
-    bearer = auth.OAuth2AuthBearer("any")
-    request = RequestFactory().get("/")
-    result = bearer.authenticate(request, "invalidtoken")
-    assert result is True
+@pytest.mark.django_db
+@pytest.mark.usefixtures("test_oauth_api_endpoints")
+def test_invalid_bearer_token(client):
+    headers = {"Authorization": "Bearer invalidtoken"}
 
-    bearer = auth.OAuth2AuthBearer("is_authenticated")
-    result = bearer.authenticate(request, "invalidtoken")
-    assert result is None
+    response = client.get("/test-oauth/allow-any", headers=headers)
+    assert response.status_code == 200
+    assert response.json() == {"anonymous": True}
 
-    bearer = auth.OAuth2AuthBearer("is_staff")
-    result = bearer.authenticate(request, "invalidtoken")
-    assert result is None
+    assert client.get("/test-oauth/is-authenticated", headers=headers).status_code == 401
+    assert client.get("/test-oauth/is-staff", headers=headers).status_code == 401

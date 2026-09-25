@@ -1,8 +1,7 @@
-{% load static %}
 <!DOCTYPE html>
 <html>
   <head>
-    <link type="text/css" rel="stylesheet" href="{% static 'ninja/swagger-ui.css' %}">
+    <link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.33.0/swagger-ui.css" integrity="sha384-Ov4/wv3j2bmct8cDc5X4ngJZohVPzEmc6uDPH8WeljUxO5vtoykvMEfbu9Vh6RaW" crossorigin="anonymous">
     <script src="https://cdn.tailwindcss.com"></script>
     <style type="text/css">
       .topbar,
@@ -17,11 +16,9 @@
         margin: 0;
       }
     </style>
-    <title>{{ api.title }}</title>
+    <title>ISIC Archive</title>
   </head>
-  <body
-    data-csrf-token="{% if add_csrf %}{{ csrf_token }}{% endif %}"
-    data-api-csrf="{% if add_csrf %}true{% endif %}">
+  <body>
 
     <div class="bg-gradient-to-br from-slate-800 to-slate-700 text-white py-6 px-8 shadow-lg">
       <div class="max-w-6xl mx-auto">
@@ -71,14 +68,18 @@
       </div>
     </div>
 
-    <script type="application/json" id="swagger-settings">
-      {{ swagger_settings | safe }}
-    </script>
+    {{ swagger_settings|json_script:"swagger-settings" }}
 
     <div id="swagger-ui"></div>
 
-    <script src="{% static 'ninja/swagger-ui-bundle.js' %}"></script>
-    <script src="{% static 'ninja/swagger-ui-init.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.33.0/swagger-ui-bundle.js" integrity="sha384-YDALVcy8kj8yltLBVi1vBiBAUqdxvus673gM8XKwiy6aDUJFXivF/KCufekjYbVf" crossorigin="anonymous"></script>
+    <script>
+      SwaggerUIBundle({
+        ...JSON.parse(document.getElementById("swagger-settings").textContent),
+        dom_id: "#swagger-ui",
+        presets: [SwaggerUIBundle.presets.apis, SwaggerUIBundle.SwaggerUIStandalonePreset],
+      });
+    </script>
 
   </body>
 </html>

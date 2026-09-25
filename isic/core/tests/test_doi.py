@@ -9,7 +9,6 @@ import pytest
 from pytest_lazy_fixtures import lf
 from s3_file_field.widgets import S3PlaceholderFile
 
-from isic.core.api.doi import RelatedIdentifierIn
 from isic.core.models.doi import Doi, DraftDoi
 from isic.core.models.image import Image
 from isic.core.services.collection.doi import (
@@ -524,16 +523,16 @@ def test_draft_doi_complete_lifecycle(  # noqa: PLR0915
     ]
 
     related_identifiers = [
-        RelatedIdentifierIn(
-            relation_type="IsReferencedBy",
-            related_identifier_type="DOI",
-            related_identifier="10.1000/182",
-        ),
-        RelatedIdentifierIn(
-            relation_type="IsSupplementedBy",
-            related_identifier_type="URL",
-            related_identifier="https://example.com/supplement",
-        ),
+        {
+            "relation_type": "IsReferencedBy",
+            "related_identifier_type": "DOI",
+            "related_identifier": "10.1000/182",
+        },
+        {
+            "relation_type": "IsSupplementedBy",
+            "related_identifier_type": "URL",
+            "related_identifier": "https://example.com/supplement",
+        },
     ]
 
     draft_doi = create_collection_draft_doi(

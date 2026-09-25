@@ -59,6 +59,4 @@ def test_pagination_invalid_cursor(image_factory, staff_client, cursor):
     resp = staff_client.get(reverse("api:image_list"), data={"cursor": cursor})
 
     assert resp.status_code == 422, resp.json()
-    error = resp.json()["detail"][0]
-    assert error["loc"] == ["query", "cursor"]
-    assert error["msg"] == "Value error, Invalid cursor."
+    assert resp.json() == {"detail": {"cursor": ["Invalid cursor."]}}

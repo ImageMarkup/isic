@@ -1,106 +1,106 @@
-from django.http.request import HttpRequest
 from django.shortcuts import get_object_or_404
-from ninja import Field, ModelSchema, Router
-from ninja.pagination import paginate
+from django.urls import path
+from rest_framework import serializers
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
 
-from isic.auth import is_authenticated, is_staff
-from isic.core.pagination import CursorPagination
-from isic.studies.models import Annotation, Feature, Question, QuestionChoice, Study, StudyTask
-
-annotation_router = Router()
-study_router = Router()
-study_task_router = Router()
+from isic.auth import IsAuthenticated, IsStaff
+from isic.core.pagination import paginate
+from isic.studies.models import Annotation, Feature, QuestionChoice, Study, StudyTask
+from isic.studies.models.study_question import StudyQuestion
 
 
-class AnnotationOut(ModelSchema):
+class AnnotationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Annotation
         fields = ["id", "study", "image", "task", "annotator"]
 
 
-@annotation_router.get("/", response=list[AnnotationOut], include_in_schema=False, auth=is_staff)
-@paginate(CursorPagination)
-def annotation_list(request: HttpRequest):
-    return Annotation.objects.all()
+@api_view(["GET"])
+@permission_classes([IsStaff])
+def annotation_list(request):
+    return paginate(request, Annotation.objects.all(), AnnotationSerializer)
 
 
-@annotation_router.get("/{id}/", response=AnnotationOut, include_in_schema=False, auth=is_staff)
-def annotation_detail(request: HttpRequest, id: int):
-    return get_object_or_404(Annotation, id=id)
+@api_view(["GET"])
+@permission_classes([IsStaff])
+def annotation_detail(request, id: int):
+    return Response(AnnotationSerializer(get_object_or_404(Annotation, id=id)).data)
 
 
-class FeatureOut(ModelSchema):
+class FeatureSerializer(serializers.ModelSerializer):
     class Meta:
         model = Feature
         fields = ["id", "required", "name", "official"]
 
 
-class QuestionChoiceOut(ModelSchema):
+class QuestionChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuestionChoice
         fields = ["id", "question", "text"]
 
 
-class QuestionOut(ModelSchema):
-    choices: list[QuestionChoiceOut]
-    required: bool = Field(alias="required")
+class StudyQuestionSerializer(serializers.ModelSerializer):
+    """Serialize a question along with whether its study requires it."""
 
     class Meta:
-        model = Question
-        fields = ["id", "type", "prompt", "official"]
+        model = StudyQuestion
+        fields = ["id", "type", "prompt", "official", "choices", "required"]
+
+    id = serializers.IntegerField(source="question.id")
+    type = serializers.CharField(source="question.type")
+    prompt = serializers.CharField(source="question.prompt")
+    official = serializers.BooleanField(source="question.official")
+    choices = QuestionChoiceSerializer(source="question.choices", many=True)
 
 
-class StudyOut(ModelSchema):
+class StudySerializer(serializers.ModelSerializer):
     class Meta:
         model = Study
-        fields = ["id", "created", "creator", "name", "description"]
+        fields = ["id", "created", "creator", "name", "description", "features", "questions"]
 
-    features: list[FeatureOut]
-    questions: list[QuestionOut] = Field(alias="questions")
-
-    @staticmethod
-    def resolve_questions(study: Study) -> list[QuestionOut]:
-        # Is there a better way with ninja to add fields from the M2M through-table?
-        vals = []
-        for study_question in study.study_questions.all():
-            study_question.question.required = study_question.required
-            question_out = QuestionOut.from_orm(study_question.question)
-            vals.append(question_out)
-        return vals
+    features = FeatureSerializer(many=True)
+    questions = StudyQuestionSerializer(source="study_questions", many=True)
 
 
-@study_router.get("/", response=list[StudyOut], include_in_schema=False, auth=is_staff)
-@paginate(CursorPagination)
-def study_list(request: HttpRequest):
-    return Study.objects.prefetch_related("features", "study_questions__question__choices")
+default_study_qs = Study.objects.prefetch_related("features", "study_questions__question__choices")
 
 
-@study_router.get("/{id}/", response=StudyOut, include_in_schema=False, auth=is_staff)
-def study_detail(request: HttpRequest, id: int):
-    return get_object_or_404(Study, id=id)
+@api_view(["GET"])
+@permission_classes([IsStaff])
+def study_list(request):
+    return paginate(request, default_study_qs, StudySerializer)
 
 
-class StudyTaskOut(ModelSchema):
+@api_view(["GET"])
+@permission_classes([IsStaff])
+def study_detail(request, id: int):
+    return Response(StudySerializer(get_object_or_404(default_study_qs, id=id)).data)
+
+
+class StudyTaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudyTask
-        fields = ["id", "study", "image", "annotator"]
+        fields = ["id", "study", "image", "annotator", "complete"]
 
-    complete: bool = Field(alias="complete")
-
-
-@study_task_router.get("/", response=list[StudyTaskOut], include_in_schema=False, auth=is_staff)
-@paginate(CursorPagination)
-def study_task_list(request: HttpRequest):
-    return StudyTask.objects.prefetch_related("annotation")
+    complete = serializers.BooleanField()
 
 
-@study_task_router.get("/{id}/", response=StudyTaskOut, include_in_schema=False, auth=is_staff)
-def study_task_detail(request: HttpRequest, id: int):
-    return get_object_or_404(StudyTask, id=id)
+@api_view(["GET"])
+@permission_classes([IsStaff])
+def study_task_list(request):
+    return paginate(request, StudyTask.objects.prefetch_related("annotation"), StudyTaskSerializer)
 
 
-@study_task_router.post("/{id}/undo/", include_in_schema=False, auth=is_authenticated)
-def study_task_undo(request: HttpRequest, id: int):
+@api_view(["GET"])
+@permission_classes([IsStaff])
+def study_task_detail(request, id: int):
+    return Response(StudyTaskSerializer(get_object_or_404(StudyTask, id=id)).data)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def study_task_undo(request, id: int):
     study_task: StudyTask = get_object_or_404(
         StudyTask.objects.select_related("annotation").for_user(request.user).just_completed(),
         pk=id,
@@ -109,4 +109,21 @@ def study_task_undo(request: HttpRequest, id: int):
     # this cascading deletes the response/markup
     study_task.annotation.delete()
 
-    return {"success": True}
+    return Response({"success": True})
+
+
+annotation_urlpatterns = [
+    path("", annotation_list, name="annotation_list"),
+    path("<int:id>/", annotation_detail, name="annotation_detail"),
+]
+
+study_urlpatterns = [
+    path("", study_list, name="study_list"),
+    path("<int:id>/", study_detail, name="study_detail"),
+]
+
+study_task_urlpatterns = [
+    path("", study_task_list, name="study_task_list"),
+    path("<int:id>/", study_task_detail, name="study_task_detail"),
+    path("<int:id>/undo/", study_task_undo, name="study_task_undo"),
+]

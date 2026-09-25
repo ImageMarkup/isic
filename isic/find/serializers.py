@@ -1,9 +1,7 @@
-from abc import ABC, abstractmethod
-
 from django.contrib.auth.models import User
 from django.urls.base import reverse
 from django.utils.text import capfirst
-from ninja import Field, Schema
+from rest_framework import serializers
 
 from isic.core.models import Collection, Image
 from isic.core.models.doi import Doi
@@ -11,159 +9,128 @@ from isic.ingest.models import Cohort, Contributor
 from isic.studies.models import Study
 
 
-class QuickfindResultOut(Schema, ABC):
-    title: str = Field(alias="name")
-    subtitle: str
-    icon: str
-    url: str = Field(alias="get_absolute_url")
-    yours: bool = False  # updated after creation
-    result_type: str
+class QuickfindResultSerializer(serializers.Serializer):
+    """
+    Serialize one quickfind result.
 
-    @staticmethod
-    def resolve_subtitle(obj) -> str:
+    The user doing the search must be passed in the context as "user".
+    """
+
+    title = serializers.CharField(source="name")
+    subtitle = serializers.SerializerMethodField()
+    icon = serializers.SerializerMethodField()
+    url = serializers.CharField(source="get_absolute_url")
+    yours = serializers.SerializerMethodField()
+    result_type = serializers.SerializerMethodField()
+
+    def get_subtitle(self, obj) -> str:
         return f"Created by {obj.creator.first_name} {obj.creator.last_name}"
 
-    @staticmethod
-    @abstractmethod
-    def resolve_icon(obj) -> str: ...
-
-    @staticmethod
-    @abstractmethod
-    def resolve_result_type(obj) -> str: ...
-
-    def set_yours(self, obj, user: User) -> None:
-        self.yours = obj.creator == user
+    def get_yours(self, obj) -> bool:
+        return obj.creator == self.context["user"]
 
 
-class StudyQuickfindResultOut(QuickfindResultOut):
-    @staticmethod
-    def resolve_icon(_):
+class StudyQuickfindResultSerializer(QuickfindResultSerializer):
+    def get_icon(self, _) -> str:
         return "ri-microscope-line"
 
-    @staticmethod
-    def resolve_result_type(_):
+    def get_result_type(self, _) -> str:
         return capfirst(Study._meta.verbose_name)
 
 
-class ImageQuickfindResultOut(QuickfindResultOut):
-    title: str = Field(alias="isic_id")
+class ImageQuickfindResultSerializer(QuickfindResultSerializer):
+    title = serializers.CharField(source="isic_id")
 
-    @staticmethod
-    def resolve_icon(_) -> str:
+    def get_icon(self, _) -> str:
         return "ri-image-line"
 
-    @staticmethod
-    def resolve_result_type(_) -> str:
+    def get_result_type(self, _) -> str:
         return capfirst(Image._meta.verbose_name)
 
-    @staticmethod
-    def resolve_subtitle(obj: Image):
+    def get_subtitle(self, obj: Image) -> str:
         return f"{obj.accession.attribution} ({obj.accession.copyright_license})"
 
-    def set_yours(self, obj: Image, user: User) -> None:
-        self.yours = user in obj.accession.cohort.contributor.owners.all()
+    def get_yours(self, obj: Image) -> bool:
+        return self.context["user"] in obj.accession.cohort.contributor.owners.all()
 
 
-class CollectionQuickfindResultOut(QuickfindResultOut):
-    @staticmethod
-    def resolve_subtitle(obj: Collection):
+class CollectionQuickfindResultSerializer(QuickfindResultSerializer):
+    def get_subtitle(self, obj: Collection) -> str:
         return f"{obj.images.count()} images"
 
-    @staticmethod
-    def resolve_icon(_):
+    def get_icon(self, _) -> str:
         return "ri-stack-line"
 
-    @staticmethod
-    def resolve_result_type(_):
+    def get_result_type(self, _) -> str:
         return capfirst(Collection._meta.verbose_name)
 
 
-class CohortQuickfindResultOut(QuickfindResultOut):
-    @staticmethod
-    def resolve_subtitle(obj: Cohort):
+class CohortQuickfindResultSerializer(QuickfindResultSerializer):
+    def get_subtitle(self, obj: Cohort) -> str:
         return obj.default_attribution
 
-    @staticmethod
-    def resolve_icon(_):
+    def get_icon(self, _) -> str:
         return "ri-group-line"
 
-    @staticmethod
-    def resolve_result_type(_):
+    def get_result_type(self, _) -> str:
         return capfirst(Cohort._meta.verbose_name)
 
 
-class ContributorQuickfindResultOut(QuickfindResultOut):
-    title: str = Field(alias="institution_name")
-    url: str
+class ContributorQuickfindResultSerializer(QuickfindResultSerializer):
+    title = serializers.CharField(source="institution_name")
+    url = serializers.SerializerMethodField()
 
-    @staticmethod
-    def resolve_url(obj):
+    def get_url(self, obj: Contributor) -> str:
         return reverse("admin:ingest_contributor_change", args=[obj.pk])
 
-    @staticmethod
-    def resolve_subtitle(obj: Contributor):
+    def get_subtitle(self, obj: Contributor) -> str:
         return ", ".join([f"{user.first_name} {user.last_name}" for user in obj.owners.all()])
 
-    @staticmethod
-    def resolve_icon(_):
+    def get_icon(self, _) -> str:
         return "ri-government-line"
 
-    @staticmethod
-    def resolve_result_type(_):
+    def get_result_type(self, _) -> str:
         return capfirst(Contributor._meta.verbose_name)
 
 
-class UserQuickfindResultOut(QuickfindResultOut):
-    title: str
-    url: str
+class UserQuickfindResultSerializer(QuickfindResultSerializer):
+    title = serializers.SerializerMethodField()
+    url = serializers.SerializerMethodField()
 
-    @staticmethod
-    def resolve_url(obj):
+    def get_url(self, obj: User) -> str:
         return reverse("core/user-detail", args=[obj.pk])
 
-    @staticmethod
-    def resolve_title(obj: User):
+    def get_title(self, obj: User) -> str:
         return f"{obj.first_name} {obj.last_name}"
 
-    @staticmethod
-    def resolve_subtitle(obj):
+    def get_subtitle(self, obj: User) -> str:
         return obj.email
 
-    @staticmethod
-    def resolve_icon(_):
+    def get_icon(self, _) -> str:
         return "ri-user-line"
 
-    @staticmethod
-    def resolve_result_type(_):
+    def get_result_type(self, _) -> str:
         return capfirst(str(User._meta.verbose_name))
 
-    def set_yours(self, obj, user):
-        self.yours = user == obj
+    def get_yours(self, obj: User) -> bool:
+        return self.context["user"] == obj
 
 
-class DoiQuickfindResultOut(QuickfindResultOut):
-    title: str
-    url: str
+class DoiQuickfindResultSerializer(QuickfindResultSerializer):
+    title = serializers.SerializerMethodField()
+    url = serializers.SerializerMethodField()
 
-    @staticmethod
-    def resolve_title(obj: Doi):
+    def get_title(self, obj: Doi) -> str:
         return obj.collection.name
 
-    @staticmethod
-    def resolve_url(obj: Doi):
+    def get_url(self, obj: Doi) -> str:
         return obj.get_absolute_url()
 
-    @staticmethod
-    def resolve_subtitle(obj: Doi):
+    def get_subtitle(self, obj: Doi) -> str:
         return f"DOI: {obj.id}"
 
-    @staticmethod
-    def resolve_icon(_):
+    def get_icon(self, _) -> str:
         return "ri-file-text-line"
 
-    @staticmethod
-    def resolve_result_type(_):
-        return Doi._meta.verbose_name
-
-    def set_yours(self, obj: Doi, user: User) -> None:
-        self.yours = obj.creator == user
+    def get_result_type(self, _) -> str:
+        return str(Doi._meta.verbose_name)

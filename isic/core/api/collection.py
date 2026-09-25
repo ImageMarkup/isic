@@ -1,21 +1,20 @@
-from typing import Annotated, Literal
-
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db.models import Count
-from django.http.response import JsonResponse
 from django.shortcuts import get_object_or_404
+from django.urls import path
 from jaro import jaro_winkler_metric
-from ninja import Field, ModelSchema, Query, Router, Schema
-from ninja.pagination import paginate
-from pydantic import field_validator
+from rest_framework import serializers, status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 
-from isic.auth import allow_any, is_authenticated, is_staff
+from isic.auth import IsAuthenticated, IsStaff, ReadOnly
 from isic.core.constants import ISIC_ID_REGEX
 from isic.core.models.collection import Collection
-from isic.core.pagination import CursorPagination
+from isic.core.pagination import paginate
 from isic.core.permissions import get_visible_objects
-from isic.core.serializers import SearchQueryIn
+from isic.core.serializers import SearchQueryBodySerializer, StrictSerializer
 from isic.core.services.collection import create_collection, delete_collection, update_collection
 from isic.core.services.collection.image import (
     add_collection_images_from_isic_ids,
@@ -28,115 +27,98 @@ from isic.core.tasks import (
 )
 from isic.ingest.models.accession import Accession
 
-router = Router()
 
-
-# See also isic.find.api.QueryIn
-class AutocompleteQueryIn(Schema):
-    query: str
-
-    model_config = {"extra": "forbid"}
-
-    @field_validator("query")
-    @classmethod
-    def query_min_length(cls, v: str):
-        if len(v) < 3:
-            raise ValueError("Query too short.")
-        return v
-
-
-class CollectionOut(ModelSchema):
+class CollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
-        fields = ["id", "name", "description", "public", "pinned", "locked"]
+        fields = ["id", "name", "description", "public", "pinned", "locked", "doi", "doi_url"]
 
-    doi: str | None = Field(None, alias="doi.id")
-    doi_url: str | None = Field(None, alias="doi.external_url")
+    doi = serializers.CharField(source="doi.id")
+    doi_url = serializers.CharField(source="doi.external_url")
 
 
-@router.get(
-    "/",
-    response=list[CollectionOut],
-    summary="Return a list of collections.",
-    include_in_schema=True,
-    auth=allow_any,
-)
-@paginate(CursorPagination)
-def collection_list(
-    request, pinned: bool | None = None, sort: Literal["name", "created"] | None = None
-) -> list[CollectionOut]:
+class CollectionListParamsSerializer(serializers.Serializer):
+    pinned = serializers.BooleanField(allow_null=True, default=None)
+    sort = serializers.ChoiceField(choices=["name", "created"], allow_null=True, default=None)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def collection_list(request):
+    params = CollectionListParamsSerializer(data=request.query_params)
+    params.is_valid(raise_exception=True)
     queryset = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
 
-    if pinned is not None:
-        queryset = queryset.filter(pinned=pinned)
+    if params.validated_data["pinned"] is not None:
+        queryset = queryset.filter(pinned=params.validated_data["pinned"])
 
-    if sort is not None:
-        queryset = queryset.order_by(sort)
+    if params.validated_data["sort"] is not None:
+        queryset = queryset.order_by(params.validated_data["sort"])
 
-    return queryset
-
-
-IsicIds = Annotated[list[Annotated[str, Field(pattern=ISIC_ID_REGEX)]], Field(min_length=1)]
+    return paginate(request, queryset, CollectionSerializer)
 
 
-class CreateCollectionFromIsicIdsIn(Schema):
-    name: str
-    description: str = ""
-    isic_ids: IsicIds
-
-    model_config = {"extra": "forbid"}
+def isic_ids_field(**kwargs) -> serializers.ListField:
+    return serializers.ListField(
+        child=serializers.RegexField(ISIC_ID_REGEX, trim_whitespace=False), **kwargs
+    )
 
 
-class CreateCollectionFromIsicIdsOut(Schema):
-    collection_id: int
+class CreateCollectionFromIsicIdsSerializer(StrictSerializer):
+    name = serializers.CharField(allow_blank=True, trim_whitespace=False)
+    description = serializers.CharField(default="", allow_blank=True, trim_whitespace=False)
+    isic_ids = isic_ids_field(min_length=1)
 
 
-@router.post(
-    "/create-from-isic-ids/",
-    response={202: CreateCollectionFromIsicIdsOut},
-    include_in_schema=False,
-    auth=is_authenticated,
-)
-def collection_create_from_isic_ids(request, payload: CreateCollectionFromIsicIdsIn):
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def collection_create_from_isic_ids(request):
+    payload = CreateCollectionFromIsicIdsSerializer(data=request.data)
+    payload.is_valid(raise_exception=True)
+    isic_ids = payload.validated_data["isic_ids"]
+
     new_collection = create_collection(
         creator=request.user,
-        name=payload.name,
-        description=payload.description,
+        name=payload.validated_data["name"],
+        description=payload.validated_data["description"],
         public=False,
         locked=False,
     )
 
     populate_collection_from_isic_ids_task.delay_on_commit(
-        new_collection.pk, request.user.pk, payload.isic_ids
+        new_collection.pk, request.user.pk, isic_ids
     )
 
     messages.add_message(
         request,
         messages.INFO,
-        f"Created collection '{new_collection.name}'. Adding {len(payload.isic_ids)} images, this may take a few minutes.",  # noqa: E501
+        f"Created collection '{new_collection.name}'. Adding {len(isic_ids)} images, this may take a few minutes.",  # noqa: E501
     )
 
-    return 202, {"collection_id": new_collection.pk}
+    return Response({"collection_id": new_collection.pk}, status=status.HTTP_202_ACCEPTED)
 
 
-# Note that this route needs to be defined before collection_detail to resolve the ambiguity
-# between the two. See https://github.com/vitalik/django-ninja/issues/507#issuecomment-1186450789.
-@router.get(
-    "/autocomplete/",
-    response=list[CollectionOut],
-    summary="Find relevant collections by auto completing by name.",
-    include_in_schema=False,
-    auth=allow_any,
-)
-def collection_autocomplete(
-    request, payload: AutocompleteQueryIn = Query(...)
-) -> list[CollectionOut]:
+# See also isic.find.api.QuerySerializer
+class AutocompleteQuerySerializer(serializers.Serializer):
+    query = serializers.CharField(allow_blank=True, trim_whitespace=False)
+
+    def validate_query(self, value: str) -> str:
+        if len(value) < 3:
+            raise serializers.ValidationError("Query too short.")
+        return value
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def collection_autocomplete(request):
+    params = AutocompleteQuerySerializer(data=request.query_params)
+    params.is_valid(raise_exception=True)
+    query = params.validated_data["query"]
+
     qs = get_visible_objects(
         request.user,
         "core.view_collection",
-        Collection.objects.select_related("doi").filter(
-            name__icontains=payload.query, locked=False
-        ),
+        Collection.objects.select_related("doi").filter(name__icontains=query, locked=False),
     )
 
     if not request.user.is_staff and request.user.is_authenticated:
@@ -147,18 +129,25 @@ def collection_autocomplete(
     collections = sorted(
         qs,
         key=lambda collection: (
-            -jaro_winkler_metric(collection.name.upper(), payload.query.upper()),
+            -jaro_winkler_metric(collection.name.upper(), query.upper()),
             collection.name,
         ),
     )
 
-    return collections[:20]
+    return Response(CollectionSerializer(collections[:20], many=True).data)
 
 
-@router.get("/sharing-info/", response={200: list}, include_in_schema=False, auth=is_staff)
-def collection_sharing_info(request, collection_ids: list[int] = Query(...)):
+class SharingInfoParamsSerializer(serializers.Serializer):
+    collection_ids = serializers.ListField(child=serializers.IntegerField())
+
+
+@api_view(["GET"])
+@permission_classes([IsStaff])
+def collection_sharing_info(request):
+    params = SharingInfoParamsSerializer(data=request.query_params)
+    params.is_valid(raise_exception=True)
     collections = (
-        Collection.objects.filter(id__in=collection_ids)
+        Collection.objects.filter(id__in=params.validated_data["collection_ids"])
         .select_related("creator")
         .prefetch_related("shares")
     )
@@ -166,95 +155,91 @@ def collection_sharing_info(request, collection_ids: list[int] = Query(...)):
     def display_name(user):
         return user.get_full_name() or user.email
 
-    return [
-        {
-            "id": collection.id,
-            "name": collection.name,
-            "public": collection.public,
-            "owner": {
-                "id": collection.creator.id,
-                "name": display_name(collection.creator),
-            },
-            "shared_with": [{"id": u.id, "name": display_name(u)} for u in collection.shared_with],
-        }
-        for collection in collections
-    ]
+    return Response(
+        [
+            {
+                "id": collection.id,
+                "name": collection.name,
+                "public": collection.public,
+                "owner": {
+                    "id": collection.creator.id,
+                    "name": display_name(collection.creator),
+                },
+                "shared_with": [
+                    {"id": u.id, "name": display_name(u)} for u in collection.shared_with
+                ],
+            }
+            for collection in collections
+        ]
+    )
 
 
-@router.get(
-    "/{id}/",
-    response=CollectionOut,
-    summary="Retrieve a single collection by ID.",
-    include_in_schema=True,
-    auth=allow_any,
-)
-def collection_detail(request, id: int) -> CollectionOut:
-    qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
-    return get_object_or_404(qs.distinct(), id=id)
-
-
-@router.delete(
-    "/{id}/",
-    response={204: None, 400: dict, 403: dict},
-    include_in_schema=False,
-    auth=is_authenticated,
-)
-def collection_delete(request, id: int):
+@api_view(["GET", "DELETE"])
+@permission_classes([ReadOnly | IsAuthenticated])
+def collection_detail(request, id: int):
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
     collection = get_object_or_404(qs.distinct(), id=id)
 
+    if request.method == "GET":
+        return Response(CollectionSerializer(collection).data)
+
     if not request.user.has_perm("core.edit_collection", collection):
-        return 403, {"error": "You do not have permission to delete this collection."}
+        return Response(
+            {"error": "You do not have permission to delete this collection."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
 
     try:
         delete_collection(collection=collection)
     except ValidationError as e:
-        return 400, {"error": e.message}
+        return Response({"error": e.message}, status=status.HTTP_400_BAD_REQUEST)
 
-    return 204, None
-
-
-class CollectionShareIn(Schema):
-    user_ids: list[int]
-    notify: bool = True
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-@router.post(
-    "/{id}/share/",
-    response={202: None, 400: dict, 404: dict},
-    include_in_schema=False,
-    auth=is_staff,
-)
-def collection_share_to_users(request, id: int, payload: CollectionShareIn):
+class CollectionShareSerializer(serializers.Serializer):
+    user_ids = serializers.ListField(child=serializers.IntegerField())
+    notify = serializers.BooleanField(default=True)
+
+
+@api_view(["POST"])
+@permission_classes([IsStaff])
+def collection_share_to_users(request, id: int):
+    payload = CollectionShareSerializer(data=request.data)
+    payload.is_valid(raise_exception=True)
+    user_ids = payload.validated_data["user_ids"]
+    notify = payload.validated_data["notify"]
+
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
     collection = get_object_or_404(qs.distinct(), id=id)
 
     if collection.is_magic:
-        return 400, {"error": "Magic collections cannot be shared."}
+        return Response(
+            {"error": "Magic collections cannot be shared."}, status=status.HTTP_400_BAD_REQUEST
+        )
 
-    if any(user_id == request.user.id for user_id in payload.user_ids):
-        return 400, {"error": "Cannot share a collection with yourself."}
+    if any(user_id == request.user.id for user_id in user_ids):
+        return Response(
+            {"error": "Cannot share a collection with yourself."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     share_collection_with_users_task.delay_on_commit(
-        collection.id, request.user.id, payload.user_ids, notify=payload.notify
+        collection.id, request.user.id, user_ids, notify=notify
     )
 
-    if payload.notify:
+    if notify:
         msg = "Sharing collection with user(s) and notifying them via email, this may take a few minutes."  # noqa: E501
     else:
         msg = "Sharing collection with user(s), this may take a few minutes."
     messages.add_message(request, messages.INFO, msg)
 
-    return 202, {}
+    return Response(status=status.HTTP_202_ACCEPTED)
 
 
-@router.get(
-    "/{id}/attribution/",
-    summary="Retrieve attribution information of the specified collection.",
-    include_in_schema=False,
-    auth=allow_any,
-)
-def collection_attribution_information(request, id: int) -> list[dict[str, int]]:
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def collection_attribution_information(request, id: int):
     qs = get_visible_objects(request.user, "core.view_collection")
     collection = get_object_or_404(qs.distinct(), id=id)
     images = get_visible_objects(request.user, "core.view_image", collection.images.distinct())
@@ -266,155 +251,159 @@ def collection_attribution_information(request, id: int) -> list[dict[str, int]]
         .values_list("copyright_license", "attribution", "count")
     )
 
-    return [{"license": x[0], "attribution": x[1], "count": x[2]} for x in counts]
+    return Response([{"license": x[0], "attribution": x[1], "count": x[2]} for x in counts])
 
 
-@router.post(
-    "/{id}/populate-from-search/",
-    response={202: None, 403: dict, 409: dict},
-    include_in_schema=False,
-    auth=is_authenticated,
-)
-def collection_populate_from_search(request, id: int, payload: SearchQueryIn):
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def collection_populate_from_search(request, id: int):
+    payload = SearchQueryBodySerializer(data=request.data)
+    payload.is_valid(raise_exception=True)
+
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
     collection = get_object_or_404(qs.distinct(), id=id)
 
     if not request.user.has_perm("core.add_images", collection):
-        return 403, {"error": "You do not have permission to add images to this collection."}
+        return Response(
+            {"error": "You do not have permission to add images to this collection."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
 
     if collection.locked:
-        return 409, {"error": "Collection is locked"}
+        return Response({"error": "Collection is locked"}, status=status.HTTP_409_CONFLICT)
 
     if collection.public and payload.to_queryset(request.user).private().exists():
-        return 409, {"error": "Collection is public and cannot contain private images."}
+        return Response(
+            {"error": "Collection is public and cannot contain private images."},
+            status=status.HTTP_409_CONFLICT,
+        )
 
-    # Pass data instead of validated_data because the celery task is going to revalidate.
-    # This avoids re encoding collections as a comma delimited string.
-    populate_collection_from_search_task.delay_on_commit(id, request.user.pk, payload.dict())
+    populate_collection_from_search_task.delay_on_commit(
+        id, request.user.pk, dict(payload.validated_data)
+    )
 
     # TODO: this is a weird mixture of concerns between SSR and an API, figure out a better
     # way to handle this.
     messages.add_message(
         request, messages.INFO, "Adding images to collection, this may take a few minutes."
     )
-    return 202, {}
+    return Response(status=status.HTTP_202_ACCEPTED)
 
 
-class PopulateCollectionFromIsicIdsIn(Schema):
-    isic_ids: IsicIds
-
-    model_config = {"extra": "forbid"}
+class PopulateCollectionFromIsicIdsSerializer(StrictSerializer):
+    isic_ids = isic_ids_field(min_length=1)
 
 
-@router.post(
-    "/{id}/populate-from-isic-ids/",
-    response={202: None, 403: dict, 409: dict},
-    include_in_schema=False,
-    auth=is_authenticated,
-)
-def collection_populate_from_isic_ids(request, id: int, payload: PopulateCollectionFromIsicIdsIn):
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def collection_populate_from_isic_ids(request, id: int):
+    payload = PopulateCollectionFromIsicIdsSerializer(data=request.data)
+    payload.is_valid(raise_exception=True)
+    isic_ids = payload.validated_data["isic_ids"]
+
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
     collection = get_object_or_404(qs.distinct(), id=id)
 
     if not request.user.has_perm("core.add_images", collection):
-        return 403, {"error": "You do not have permission to add images to this collection."}
+        return Response(
+            {"error": "You do not have permission to add images to this collection."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
 
     if collection.locked:
-        return 409, {"error": "Collection is locked"}
+        return Response({"error": "Collection is locked"}, status=status.HTTP_409_CONFLICT)
 
-    populate_collection_from_isic_ids_task.delay_on_commit(
-        collection.pk, request.user.pk, payload.isic_ids
-    )
+    populate_collection_from_isic_ids_task.delay_on_commit(collection.pk, request.user.pk, isic_ids)
 
     messages.add_message(
         request,
         messages.INFO,
-        f"Adding {len(payload.isic_ids)} images to '{collection.name}', this may take a few minutes.",  # noqa: E501
+        f"Adding {len(isic_ids)} images to '{collection.name}', this may take a few minutes.",
     )
 
-    return 202, {}
+    return Response(status=status.HTTP_202_ACCEPTED)
 
 
-class SetPinnedIn(Schema):
-    pinned: bool
-
-    model_config = {"extra": "forbid"}
+class SetPinnedSerializer(StrictSerializer):
+    pinned = serializers.BooleanField()
 
 
-@router.post(
-    "/{id}/set-pinned/",
-    response={200: None, 400: dict},
-    include_in_schema=False,
-    auth=is_staff,
-)
-def collection_set_pinned(request, id: int, payload: SetPinnedIn):
+@api_view(["POST"])
+@permission_classes([IsStaff])
+def collection_set_pinned(request, id: int):
+    payload = SetPinnedSerializer(data=request.data)
+    payload.is_valid(raise_exception=True)
+    pinned = payload.validated_data["pinned"]
+
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
     collection = get_object_or_404(qs.distinct(), id=id)
 
     try:
-        update_collection(collection=collection, ignore_lock=True, pinned=payload.pinned)
+        update_collection(collection=collection, ignore_lock=True, pinned=pinned)
     except ValidationError as e:
         error = "; ".join(e.messages)
         messages.add_message(request, messages.ERROR, error)
-        return 400, {"error": error}
+        return Response({"error": error}, status=status.HTTP_400_BAD_REQUEST)
 
-    action = "pinned" if payload.pinned else "unpinned"
+    action = "pinned" if pinned else "unpinned"
     messages.add_message(request, messages.SUCCESS, f"Collection {action}.")
-    return 200, None
+    return Response(status=status.HTTP_200_OK)
 
 
-class IsicIdList(Schema):
-    isic_ids: Annotated[list[Annotated[str, Field(pattern=ISIC_ID_REGEX)]], Field(max_length=500)]
-
-    model_config = {"extra": "forbid"}
+class IsicIdListSerializer(StrictSerializer):
+    isic_ids = isic_ids_field(max_length=500)
 
 
 # TODO: refactor *-from-list methods
-@router.post(
-    "/{id}/populate-from-list/",
-    response={200: None, 403: dict, 409: dict},
-    include_in_schema=False,
-    auth=is_authenticated,
-)
-def collection_populate_from_list(request, id, payload: IsicIdList):
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def collection_populate_from_list(request, id: int):
+    payload = IsicIdListSerializer(data=request.data)
+    payload.is_valid(raise_exception=True)
+
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
     collection = get_object_or_404(qs.distinct(), id=id)
 
     if not request.user.has_perm("core.add_images", collection):
-        return 403, {"error": "You do not have permission to add images to this collection."}
+        return Response(
+            {"error": "You do not have permission to add images to this collection."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
 
     if collection.locked:
-        return 409, {"error": "Collection is locked"}
+        return Response({"error": "Collection is locked"}, status=status.HTTP_409_CONFLICT)
 
     summary = add_collection_images_from_isic_ids(
         user=request.user,
         collection=collection,
-        isic_ids=payload.isic_ids,
+        isic_ids=payload.validated_data["isic_ids"],
     )
 
-    return JsonResponse(summary)
+    return Response(summary)
 
 
-@router.post(
-    "/{id}/remove-from-list/",
-    response={200: None, 403: dict, 409: dict},
-    include_in_schema=False,
-    auth=is_authenticated,
-)
-def collection_remove_from_list(request, id, payload: IsicIdList):
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def collection_remove_from_list(request, id: int):
+    payload = IsicIdListSerializer(data=request.data)
+    payload.is_valid(raise_exception=True)
+
     qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
     collection = get_object_or_404(qs.distinct(), id=id)
 
     if not request.user.has_perm("core.remove_images", collection):
-        return 403, {"error": "You do not have permission to add images to this collection."}
+        return Response(
+            {"error": "You do not have permission to add images to this collection."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
 
     if collection.locked:
-        return 409, {"error": "Collection is locked"}
+        return Response({"error": "Collection is locked"}, status=status.HTTP_409_CONFLICT)
 
     summary = remove_collection_images_from_isic_ids(
         user=request.user,
         collection=collection,
-        isic_ids=payload.isic_ids,
+        isic_ids=payload.validated_data["isic_ids"],
     )
 
     # TODO: this is a weird mixture of concerns between SSR and an API, figure out a better
@@ -425,4 +414,45 @@ def collection_remove_from_list(request, id, payload: IsicIdList):
         f"Removed {len(summary['succeeded'])} images. It may take some time for counts to be updated.",  # noqa: E501
     )
 
-    return JsonResponse(summary)
+    return Response(summary)
+
+
+urlpatterns = [
+    path("", collection_list, name="collection_list"),
+    path(
+        "create-from-isic-ids/",
+        collection_create_from_isic_ids,
+        name="collection_create_from_isic_ids",
+    ),
+    path("autocomplete/", collection_autocomplete, name="collection_autocomplete"),
+    path("sharing-info/", collection_sharing_info, name="collection_sharing_info"),
+    path("<int:id>/", collection_detail, name="collection_detail"),
+    path("<int:id>/", collection_detail, name="collection_delete"),
+    path("<int:id>/share/", collection_share_to_users, name="collection_share_to_users"),
+    path(
+        "<int:id>/attribution/",
+        collection_attribution_information,
+        name="collection_attribution_information",
+    ),
+    path(
+        "<int:id>/populate-from-search/",
+        collection_populate_from_search,
+        name="collection_populate_from_search",
+    ),
+    path(
+        "<int:id>/populate-from-isic-ids/",
+        collection_populate_from_isic_ids,
+        name="collection_populate_from_isic_ids",
+    ),
+    path("<int:id>/set-pinned/", collection_set_pinned, name="collection_set_pinned"),
+    path(
+        "<int:id>/populate-from-list/",
+        collection_populate_from_list,
+        name="collection_populate_from_list",
+    ),
+    path(
+        "<int:id>/remove-from-list/",
+        collection_remove_from_list,
+        name="collection_remove_from_list",
+    ),
+]
