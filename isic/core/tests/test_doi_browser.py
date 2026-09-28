@@ -8,11 +8,7 @@ from isic.core.services.collection.image import add_images_to_collection
 
 
 @pytest.mark.playwright
-@pytest.mark.usefixtures(
-    "_mock_datacite_create_draft_doi",
-    "mock_fetch_doi_citations",
-    "mock_fetch_doi_schema_org_dataset",
-)
+@pytest.mark.usefixtures("datacite")
 def test_doi_creation_form_related_identifiers_and_submit(
     staff_authenticated_page, collection_factory, image_factory
 ):
@@ -91,11 +87,7 @@ def test_doi_creation_form_related_identifiers_and_submit(
 
 
 @pytest.mark.playwright
-@pytest.mark.usefixtures(
-    "_mock_datacite_create_draft_doi",
-    "mock_fetch_doi_citations",
-    "mock_fetch_doi_schema_org_dataset",
-)
+@pytest.mark.usefixtures("datacite")
 def test_doi_creation_form_with_supplemental_file(
     staff_authenticated_page, collection_factory, image_factory
 ):

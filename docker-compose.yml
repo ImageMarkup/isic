@@ -73,9 +73,22 @@ services:
     volumes:
       - redis:/data
 
+  datacite:
+    build:
+      context: ./dev
+      dockerfile: datacite.Dockerfile
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--output-document=/dev/null", "http://127.0.0.1:8001/heartbeat"]
+      start_period: 30s
+    ports:
+      - 8001:8001
+    volumes:
+      # Pick up edits to the mock on restart, without a rebuild
+      - ./dev/datacite_mock.py:/app/datacite_mock.py:ro
+
 volumes:
   postgres:
   elasticsearch:
-  minio:
   rabbitmq:
   redis:
+  seaweedfs:

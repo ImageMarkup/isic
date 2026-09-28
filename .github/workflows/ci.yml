@@ -109,6 +109,9 @@ jobs:
         run: |
           npm ci
           npm run build
+      - name: Start DataCite mock
+        # Service containers start before checkout, so they can't build the mock's image.
+        run: docker compose --file docker-compose.yml up --detach --wait datacite
       - name: Run tests
         run: |
           uv run --locked tox ${{ matrix.tox_args }}
@@ -118,6 +121,7 @@ jobs:
           DJANGO_CELERY_BROKER_URL: amqp://localhost:5672/
           DJANGO_MINIO_STORAGE_URL: http://minioAccessKey:minioSecretKey@localhost:9000/django-storage
           DJANGO_CACHE_URL: redis://localhost:6379/0
+          DJANGO_ISIC_DATACITE_API_URL: http://mock.isic:password@localhost:8001
       - name: Validate greenmask config against the schema
         if: matrix.suite == 'main'
         # Catch changes that can no longer legally run against our schema (a

@@ -27,6 +27,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      datacite:
+        condition: service_healthy
 
   celery:
     build:
@@ -59,6 +61,8 @@ services:
       minio:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      datacite:
         condition: service_healthy
 
   celerybeat:

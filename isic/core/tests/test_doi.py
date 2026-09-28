@@ -2,6 +2,7 @@ from pathlib import Path
 import tempfile
 import zipfile
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files.storage import storages
 from django.urls import reverse
@@ -21,31 +22,28 @@ from isic.core.tests.factories import CollectionFactory, DoiFactory, DraftDoiFac
 
 
 @pytest.fixture
-def mock_datacite_create_draft_doi(mocker):
-    return mocker.patch("isic.core.services.collection.doi._datacite_create_draft_doi")
-
-
-@pytest.fixture
-def mock_datacite_promote_draft_doi_to_findable(mocker):
-    return mocker.patch("isic.core.services.collection.doi._datacite_promote_draft_doi_to_findable")
-
-
-@pytest.fixture
 def public_collection_with_public_images(image_factory, collection_factory):
     collection = collection_factory(public=True, locked=False)
     collection.images.set([image_factory(public=True) for _ in range(5)])
     return collection
 
 
+def _datacite_state(datacite, doi) -> str:
+    r = datacite.get(f"/dois/{doi.id}", timeout=5)
+    r.raise_for_status()
+    return r.json()["data"]["attributes"]["state"]
+
+
+def _assert_fetched_from_datacite(doi):
+    assert doi.citations.keys() == settings.ISIC_DATACITE_CITATION_STYLES.keys()
+    assert f"https://doi.org/{doi.id}" in doi.citations["apa"]
+    assert doi.schema_org_dataset["@id"] == f"https://doi.org/{doi.id}"
+    assert doi.schema_org_dataset["name"] == doi.collection.name
+    assert doi.schema_org_dataset["isAccessibleForFree"] is True
+
+
 @pytest.mark.django_db(transaction=True)
-def test_create_draft_doi(
-    public_collection_with_public_images,
-    staff_user,
-    mock_datacite_create_draft_doi,
-    mock_datacite_promote_draft_doi_to_findable,
-    mock_fetch_doi_citations,
-    mock_fetch_doi_schema_org_dataset,
-):
+def test_create_draft_doi(public_collection_with_public_images, staff_user, datacite):
     draft_doi = create_collection_draft_doi(
         user=staff_user,
         collection=public_collection_with_public_images,
@@ -56,29 +54,13 @@ def test_create_draft_doi(
     public_collection_with_public_images.refresh_from_db()
     assert public_collection_with_public_images.draftdoi is not None
     assert public_collection_with_public_images.locked
-    assert mock_datacite_create_draft_doi.call_count == 1
-    assert mock_datacite_promote_draft_doi_to_findable.call_count == 0
-    assert mock_fetch_doi_citations.call_count == 1
-    assert mock_fetch_doi_schema_org_dataset.call_count == 1
-    assert draft_doi.citations == {
-        "apa": "fake citation",
-        "chicago": "fake citation",
-    }
-    assert draft_doi.schema_org_dataset == {
-        "@type": "Dataset",
-        "name": "fake dataset",
-        "isAccessibleForFree": True,
-    }
+    assert _datacite_state(datacite, draft_doi) == "draft"
+    _assert_fetched_from_datacite(draft_doi)
 
 
 @pytest.mark.django_db(transaction=True)
 def test_collection_create_draft_and_publish_doi(
-    public_collection_with_public_images,
-    staff_user,
-    mock_datacite_create_draft_doi,
-    mock_datacite_promote_draft_doi_to_findable,
-    mock_fetch_doi_citations,
-    mock_fetch_doi_schema_org_dataset,
+    public_collection_with_public_images, staff_user, datacite
 ):
     draft_doi = create_collection_draft_doi(
         user=staff_user,
@@ -92,14 +74,8 @@ def test_collection_create_draft_and_publish_doi(
     assert public_collection_with_public_images.draftdoi
     assert public_collection_with_public_images.draftdoi.bundle
     assert public_collection_with_public_images.draftdoi.creator == staff_user
-    assert mock_datacite_create_draft_doi.call_count == 1
-    assert mock_datacite_promote_draft_doi_to_findable.call_count == 0
-    assert draft_doi.citations == {"apa": "fake citation", "chicago": "fake citation"}
-    assert draft_doi.schema_org_dataset == {
-        "@type": "Dataset",
-        "name": "fake dataset",
-        "isAccessibleForFree": True,
-    }
+    assert _datacite_state(datacite, draft_doi) == "draft"
+    _assert_fetched_from_datacite(draft_doi)
 
     doi = publish_draft_doi(user=staff_user, draft_doi=draft_doi)
     doi.refresh_from_db()
@@ -110,17 +86,12 @@ def test_collection_create_draft_and_publish_doi(
         not hasattr(public_collection_with_public_images, "draftdoi")
         or public_collection_with_public_images.draftdoi is None
     )
-    assert mock_datacite_promote_draft_doi_to_findable.call_count == 1
+    assert _datacite_state(datacite, doi) == "findable"
 
 
 @pytest.mark.django_db
-def test_draft_doi_allows_private_collection(
-    staff_user,
-    image_factory,
-    mock_datacite_create_draft_doi,
-    mock_fetch_doi_citations,
-    mock_fetch_doi_schema_org_dataset,
-):
+@pytest.mark.usefixtures("datacite")
+def test_draft_doi_allows_private_collection(staff_user, image_factory):
     collection = CollectionFactory.create(public=False)
     collection.images.set([image_factory(public=False)])
     create_collection_draft_doi(
@@ -240,15 +211,8 @@ def test_doi_creators_collapse_repeated_creators(collection_with_repeated_creato
 
 
 @pytest.mark.django_db(transaction=True)
-def test_doi_files(
-    image_factory,
-    collection_factory,
-    staff_user,
-    mock_datacite_create_draft_doi,
-    mock_datacite_promote_draft_doi_to_findable,
-    mock_fetch_doi_citations,
-    mock_fetch_doi_schema_org_dataset,
-):
+@pytest.mark.usefixtures("datacite")
+def test_doi_files(image_factory, collection_factory, staff_user):
     collection = collection_factory(public=True)
     images = [image_factory(public=True) for _ in range(3)]
     collection.images.set(images)
@@ -285,14 +249,9 @@ def test_doi_files(
 
 
 @pytest.mark.django_db(transaction=True)
+@pytest.mark.usefixtures("datacite")
 def test_api_doi_creation(
-    public_collection_with_public_images,
-    mock_datacite_create_draft_doi,
-    mock_datacite_promote_draft_doi_to_findable,
-    mock_fetch_doi_citations,
-    mock_fetch_doi_schema_org_dataset,
-    s3ff_random_field_value,
-    staff_client,
+    public_collection_with_public_images, s3ff_random_field_value, staff_client
 ):
     r = staff_client.post(
         reverse("api:doi_create"),
@@ -338,15 +297,9 @@ def test_api_doi_creation(
 
 
 @pytest.mark.django_db(transaction=True)
+@pytest.mark.usefixtures("datacite")
 def test_doi_bundle_includes_supplemental_files(
-    image_factory,
-    collection_factory,
-    staff_user,
-    mock_datacite_create_draft_doi,
-    mock_datacite_promote_draft_doi_to_findable,
-    mock_fetch_doi_citations,
-    mock_fetch_doi_schema_org_dataset,
-    s3ff_random_field_value,
+    image_factory, collection_factory, staff_user, s3ff_random_field_value
 ):
     from s3_file_field.widgets import S3PlaceholderFile
 
@@ -488,11 +441,8 @@ def test_draft_doi_complete_lifecycle(  # noqa: PLR0915
     collection_factory,
     staff_user,
     staff_client,
-    mock_datacite_create_draft_doi,
-    mock_datacite_promote_draft_doi_to_findable,
-    mock_fetch_doi_citations,
-    mock_fetch_doi_schema_org_dataset,
     s3ff_random_field_value,
+    datacite,
 ):
     from isic.core.models.doi import DraftDoi
 
@@ -567,16 +517,10 @@ def test_draft_doi_complete_lifecycle(  # noqa: PLR0915
     assert not collection.public
     assert all(not img.public for img in collection.images.all())
 
-    assert mock_datacite_create_draft_doi.call_count == 1
-    assert mock_datacite_promote_draft_doi_to_findable.call_count == 0
+    assert _datacite_state(datacite, draft_doi) == "draft"
 
     assert draft_doi.bundle is not None
-    assert draft_doi.citations == {"apa": "fake citation", "chicago": "fake citation"}
-    assert draft_doi.schema_org_dataset == {
-        "@type": "Dataset",
-        "name": "fake dataset",
-        "isAccessibleForFree": True,
-    }
+    _assert_fetched_from_datacite(draft_doi)
 
     draft_doi_id = draft_doi.id
     final_doi = publish_draft_doi(user=staff_user, draft_doi=draft_doi)
@@ -605,12 +549,7 @@ def test_draft_doi_complete_lifecycle(  # noqa: PLR0915
     assert final_doi.creator == staff_user
     assert final_doi.collection == collection
     assert final_doi.bundle is not None
-    assert final_doi.citations == {"apa": "fake citation", "chicago": "fake citation"}
-    assert final_doi.schema_org_dataset == {
-        "@type": "Dataset",
-        "name": "fake dataset",
-        "isAccessibleForFree": True,
-    }
+    _assert_fetched_from_datacite(final_doi)
 
     assert final_doi.supplemental_files.count() == 1
     final_supplemental_file = final_doi.supplemental_files.get()
@@ -626,7 +565,7 @@ def test_draft_doi_complete_lifecycle(  # noqa: PLR0915
     assert any(r.relation_type == "IsReferencedBy" for r in final_related_ids)
     assert any(r.relation_type == "IsSupplementedBy" for r in final_related_ids)
 
-    assert mock_datacite_promote_draft_doi_to_findable.call_count == 1
+    assert _datacite_state(datacite, final_doi) == "findable"
 
     assert final_doi.bundle is not None
     assert final_doi.bundle_size is not None

@@ -18,6 +18,7 @@ from isic.core.search import (
     get_elasticsearch_client,
     maybe_create_index,
 )
+from isic.core.services.collection.doi import _datacite_session
 from isic.core.tests.factories import (
     CollectionFactory,
     DoiFactory,
@@ -79,6 +80,14 @@ def _search_index():
     yield
     es.indices.delete(index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX)
     es.indices.delete(index=settings.ISIC_ELASTICSEARCH_LESIONS_INDEX)
+
+
+@pytest.fixture
+def datacite():
+    """Clear the DataCite mock (dev/datacite_mock.py) and return a session for reading it."""
+    with _datacite_session() as session:
+        session.post("/_mock/reset", timeout=5).raise_for_status()
+        yield session
 
 
 @pytest.fixture(autouse=True)
