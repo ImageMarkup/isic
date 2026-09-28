@@ -45,7 +45,7 @@ services:
       - rabbitmq:/var/lib/rabbitmq
 
   minio:
-    image: minio/minio:latest
+    image: docker.io/pgsty/silo:RELEASE.2026-09-16T00-00-00Z
     # When run with a TTY, minio prints credentials on startup
     tty: true
     command: ["server", "/data", "--console-address", ":9001"]
