@@ -94,6 +94,7 @@ urlpatterns = [
     path("", include("isic.core.urls")),
     path("", include("isic.engagement.urls")),
     path("", include("isic.ingest.urls")),
+    path("", include("isic.login.urls")),
     path("", include("isic.stats.urls")),
     path("", include("isic.studies.urls")),
 ]

@@ -1,3 +1,5 @@
+import datetime
+
 from allauth.account.models import EmailAddress
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
@@ -20,6 +22,7 @@ class ProfileFactory(factory.django.DjangoModelFactory):
         profile=None,
         raw_password=factory.SelfAttribute("..raw_password"),
     )
+    accepted_terms = factory.Faker("date_time", tzinfo=datetime.UTC)
 
     class Params:
         raw_password = factory.Faker("password")

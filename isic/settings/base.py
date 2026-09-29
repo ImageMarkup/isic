@@ -97,6 +97,7 @@ MIDDLEWARE = [
     "django.contrib.sites.middleware.CurrentSiteMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "isic.middleware.TermsOfUseMiddleware",
 ]
 
 # Internal datetimes are timezone-aware, so this only affects rendering and form input
