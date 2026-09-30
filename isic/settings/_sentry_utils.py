@@ -55,8 +55,8 @@ def get_sentry_performance_sample_rate(sampling_context: SamplingContext) -> flo
             return 1.0
 
         # Sample more important endpoints at a higher rate. Note that this can't be done
-        # with a decorator on the views because of how django-ninja resolves everything
-        # to one view function.
+        # with a decorator on the views because the sample rate is decided before the
+        # request is routed to a view.
         if any(
             path.startswith(prefix)
             for prefix in (

@@ -8,35 +8,33 @@ from pathlib import PurePosixPath
 from typing import TYPE_CHECKING
 
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.sites.models import Site
 from django.core.files.storage import default_storage, storages
 from django.core.signing import BadSignature, TimestampSigner
 from django.db import connection, transaction
 from django.db.models import QuerySet
 from django.http import StreamingHttpResponse
-from django.http.request import HttpRequest
 from django.http.response import Http404, HttpResponse
 from django.shortcuts import render
-from django.urls import reverse
-from django.views.decorators.csrf import csrf_exempt
-from ninja import Router
-from ninja.errors import AuthenticationError
-from ninja.security import APIKeyQuery
+from django.urls import path, reverse
 import orjson
+from rest_framework.authentication import BaseAuthentication
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 
-from isic.auth import allow_any
 from isic.core.models import CopyrightLicense, Image
-from isic.core.serializers import SearchQueryIn
+from isic.core.serializers import SearchQueryBodySerializer, SearchQuerySerializer
 from isic.core.services import image_metadata_csv
 from isic.core.utils.csv import EscapingDictWriter
 from isic.core.utils.http import Echo
-from isic.types import NinjaAuthHttpRequest
 
 if TYPE_CHECKING:
     from urllib.parse import ParseResult
 
 logger = logging.getLogger(__name__)
-zip_router = Router()
 
 ZIP_LISTING_BATCH_SIZE = 256
 
@@ -51,31 +49,33 @@ def get_attributions(attributions: Iterable[str]) -> list[str]:
     return [x[0] for x in attributions]
 
 
-class ZipDownloadTokenAuth(APIKeyQuery):
-    param_name = "token"
-
-    def authenticate(self, request: HttpRequest, key: str | None) -> dict:
+class ZipDownloadTokenAuthentication(BaseAuthentication):
+    def authenticate(self, request):
+        key = request.query_params.get("token")
         if not key:
-            raise AuthenticationError
+            raise AuthenticationFailed
 
         try:
             token_dict = TimestampSigner().unsign_object(key, max_age=timedelta(days=1))
         except BadSignature:
-            raise AuthenticationError from None
+            raise AuthenticationFailed from None
 
         token_dict["token"] = key
-        return token_dict
+        return AnonymousUser(), token_dict
 
 
-@csrf_exempt
-@zip_router.post("/url/", response=str, include_in_schema=False, auth=allow_any)
-def zip_download_url(request: HttpRequest, payload: SearchQueryIn):
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def zip_download_url(request):
+    payload = SearchQueryBodySerializer(data=request.data)
+    payload.is_valid(raise_exception=True)
+
     url: ParseResult | None = settings.ISIC_ZIP_DOWNLOAD_SERVICE_URL
     if url is None:
         raise ValueError("ISIC_ZIP_DOWNLOAD_SERVICE_URL is not set.")
 
     token = TimestampSigner().sign_object(payload.to_token_representation(user=request.user))
-    return f"{url.scheme}://{url.netloc}" + f"/download?zsid={token}"
+    return Response(f"{url.scheme}://{url.netloc}" + f"/download?zsid={token}")
 
 
 def _zip_file_listing_generator(qs: QuerySet[Image], token: str) -> Generator[dict[str, str]]:
@@ -143,17 +143,17 @@ def _write_file_listing(
     yield b"]}"
 
 
-@zip_router.get("/file-listing/", include_in_schema=False, auth=ZipDownloadTokenAuth())
+@api_view(["GET"])
+@authentication_classes([ZipDownloadTokenAuthentication])
+@permission_classes([AllowAny])
 @transaction.atomic
-def zip_download_listing(
-    request: NinjaAuthHttpRequest,
-):
+def zip_download_listing(request):
     # use repeatable read to ensure consistent results
     with connection.cursor() as cursor:
         cursor.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
 
     token = request.auth["token"]
-    user, search = SearchQueryIn.from_token_representation(request.auth)
+    user, search = SearchQuerySerializer.from_token_representation(request.auth)
 
     # ordering isn't necessary for the zipstreamer and can slow down the query considerably
     qs = search.to_queryset(user, Image.objects.select_related("accession")).order_by()
@@ -177,9 +177,11 @@ def zip_download_listing(
     )
 
 
-@zip_router.get("/metadata-file/", include_in_schema=False, auth=ZipDownloadTokenAuth())
-def zip_download_metadata_file(request: NinjaAuthHttpRequest):
-    user, search = SearchQueryIn.from_token_representation(request.auth)
+@api_view(["GET"])
+@authentication_classes([ZipDownloadTokenAuthentication])
+@permission_classes([AllowAny])
+def zip_download_metadata_file(request):
+    user, search = SearchQuerySerializer.from_token_representation(request.auth)
     qs = search.to_queryset(user, Image.objects.select_related("accession__cohort").distinct())
 
     fieldnames, metadata_rows = image_metadata_csv(qs=qs)
@@ -194,17 +196,37 @@ def zip_download_metadata_file(request: NinjaAuthHttpRequest):
     return StreamingHttpResponse(write_response(), content_type="text/csv")
 
 
-@zip_router.get("/attribution-file/", include_in_schema=False, auth=ZipDownloadTokenAuth())
-def zip_download_attribution_file(request: NinjaAuthHttpRequest):
-    user, search = SearchQueryIn.from_token_representation(request.auth)
+@api_view(["GET"])
+@authentication_classes([ZipDownloadTokenAuthentication])
+@permission_classes([AllowAny])
+def zip_download_attribution_file(request):
+    user, search = SearchQuerySerializer.from_token_representation(request.auth)
     qs = search.to_queryset(user, Image.objects.select_related("accession__cohort").distinct())
     attributions = get_attributions(qs.values_list("accession__attribution", flat=True))
     return HttpResponse("\n\n".join(attributions), content_type="text/plain")
 
 
-@zip_router.get("/license-file/{license_type}/", include_in_schema=False, auth=allow_any)
-def zip_download_license_file(request: HttpRequest, license_type: str):
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def zip_download_license_file(request, license_type: str):
     if license_type not in CopyrightLicense.values:
         raise Http404
 
     return render(request, f"zip_download/{license_type}.txt", content_type="text/plain")
+
+
+urlpatterns = [
+    path("url/", zip_download_url, name="zip_download_url"),
+    path("file-listing/", zip_download_listing, name="zip_download_listing"),
+    path("metadata-file/", zip_download_metadata_file, name="zip_download_metadata_file"),
+    path(
+        "attribution-file/",
+        zip_download_attribution_file,
+        name="zip_download_attribution_file",
+    ),
+    path(
+        "license-file/<license_type>/",
+        zip_download_license_file,
+        name="zip_download_license_file",
+    ),
+]

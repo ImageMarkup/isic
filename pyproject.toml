@@ -25,7 +25,6 @@ dependencies = [
   "django-filter==25.2",
   "django-json-widget==2.1.1",
   "django-markdownify==0.9.7",
-  "django-ninja==1.4.5",
   "django-oauth-toolkit==1.7.1",
   "django-recaptcha==4.1.0",
   "django-redis==7.0.0",
@@ -33,6 +32,7 @@ dependencies = [
   "django-resonant-utils[allauth,s3_storage]==0.19.0",
   "django-stubs-ext==5.2.9",
   "django-widget-tweaks==1.5.1",
+  "djangorestframework==3.18.0",
   "gdal==3.11.0",
   "google-analytics-data==0.23.0",
   "elasticsearch==9.4.1",
@@ -47,6 +47,7 @@ dependencies = [
   "pyexiv2==2.15.5",
   "pyparsing==3.3.2",
   "python-magic==0.4.27",
+  "pyyaml==6.0.3",
   "requests==2.34.2",
   "requests-toolbelt==1.0.0",
   "rich==15.0.0",
@@ -214,9 +215,6 @@ ignore = [
 [tool.ruff.lint.flake8-boolean-trap]
 extend-allowed-calls = ["pydantic.Field", "django.db.models.Value"]
 
-[tool.ruff.lint.flake8-bugbear]
-extend-immutable-calls = ["ninja.Query"]
-
 [tool.ruff.lint.flake8-self]
 extend-ignore-names = ["_base_manager", "_default_manager",  "_meta"]
 
@@ -275,9 +273,6 @@ filterwarnings = [
   "error",
   # pytest often causes unclosed socket warnings
   'ignore:unclosed <socket\.socket:ResourceWarning',
-  # https://github.com/vitalik/django-ninja/issues/1245
-  "ignore:Support for class-based `config` is deprecated:pydantic.warnings.PydanticDeprecatedSince20",
-  "ignore:csrf argument is deprecated:DeprecationWarning:isic.urls",
   # In test_publish_copies_default_attribution
   'ignore:Unclosed file <tempfile\.SpooledTemporaryFile:ResourceWarning',
 ]

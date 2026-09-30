@@ -1,14 +1,14 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from hashlib import sha1
 import json
 from typing import TYPE_CHECKING, cast
 
 from django.contrib.auth.models import AnonymousUser, User
 from django.shortcuts import get_object_or_404
-from ninja import Schema
-from pydantic import field_validator
 from pyparsing.exceptions import ParseException
+from rest_framework import serializers
 
 from isic.core.dsl import SearchQueryParseError, django_parser, es_parser, parse_query
 from isic.core.models import Image
@@ -20,38 +20,49 @@ if TYPE_CHECKING:
     from isic.core.models.image import ImageQuerySet
 
 
-class SearchQueryIn(Schema):
-    query: str | None = None
-    collections: list[int] | None = None
+class StrictSerializer(serializers.Serializer):
+    """A serializer that rejects any field it doesn't declare."""
 
-    model_config = {"extra": "forbid"}
+    def to_internal_value(self, data):
+        if isinstance(data, Mapping):
+            unexpected = sorted(set(data) - set(self.fields))
+            if unexpected:
+                raise serializers.ValidationError(
+                    {field: ["Unexpected field."] for field in unexpected}
+                )
+        return super().to_internal_value(data)
 
-    @field_validator("query")
-    @classmethod
-    def valid_search_query(cls, value: str | None):
+
+class CollectionIdsField(serializers.ListField):
+    child = serializers.IntegerField()
+
+    def to_internal_value(self, data):
+        # a comma delimited string of ids, possibly as the only value of a query parameter
+        if isinstance(data, list) and len(data) == 1 and isinstance(data[0], str):
+            data = data[0]
+        if isinstance(data, str):
+            data = data.split(",") if data else []
+        if not isinstance(data, list) or not data:
+            return None
+        return super().to_internal_value(data)
+
+
+class SearchQuerySerializer(serializers.Serializer):
+    query = serializers.CharField(
+        allow_null=True, allow_blank=True, default=None, trim_whitespace=False
+    )
+    collections = CollectionIdsField(allow_null=True, default=None)
+
+    def validate_query(self, value: str | None):
         if value:
             value = value.strip()
             try:
                 parse_query(django_parser, value)
             except ParseException as e:
-                # pydantic only converts ValueError and AssertionError into validation errors,
-                # so this propagates untouched. That's deliberate: it reaches the handler in
-                # urls.py and becomes a 400, where a pydantic error would become a 422.
+                # this propagates out of validation rather than becoming a validation error, so
+                # it reaches the exception handler and becomes a 400 rather than a 422.
                 raise SearchQueryParseError from e
         return value
-
-    @field_validator("collections", mode="before")
-    @classmethod
-    def collections_to_list(cls, value: str | list[int]):
-        if isinstance(value, str) and value:
-            return [int(x) for x in value.split(",")]
-        if isinstance(value, list) and len(value) == 1 and isinstance(value[0], str):
-            # TODO: this is a hack to get around the fact that ninja uses a swagger array input
-            # field for list types regardless.
-            return cls.collections_to_list(value[0])
-        if isinstance(value, list) and value:
-            return value
-        return None
 
     def to_token_representation(self, user=None):
         # it's important that user always be generated on the server side and not be passed
@@ -60,8 +71,8 @@ class SearchQueryIn(Schema):
 
         return {
             "user": user,
-            "query": self.query,
-            "collections": self.collections,
+            "query": self.validated_data["query"],
+            "collections": self.validated_data["collections"],
         }
 
     def to_cache_key(self, user=None):
@@ -74,38 +85,47 @@ class SearchQueryIn(Schema):
         return sha1(json.dumps(token, sort_keys=True).encode()).hexdigest()  # noqa: S324
 
     @classmethod
-    def from_token_representation(cls, token) -> tuple[User, SearchQueryIn]:
+    def from_token_representation(cls, token) -> tuple[User | AnonymousUser, SearchQuerySerializer]:
         user = token.get("user")
         user = get_object_or_404(User, pk=user) if user else AnonymousUser()
-        return user, cls(query=token["query"], collections=token["collections"])
+        serializer = cls(data={"query": token["query"], "collections": token["collections"]})
+        serializer.is_valid(raise_exception=True)
+        return user, serializer
 
     def to_queryset(
         self, user: User | AnonymousUser, qs: ImageQuerySet | None = None
     ) -> ImageQuerySet:
         qs = qs if qs is not None else Image.objects.all()
+        query = self.validated_data["query"]
+        collections = self.validated_data["collections"]
 
-        if self.query:
-            qs = qs.from_search_query(self.query)
+        if query:
+            qs = qs.from_search_query(query)
 
-        if self.collections:
+        if collections:
             qs = qs.filter(
                 collections__in=get_visible_objects(
                     user,
                     "core.view_collection",
-                    Collection.objects.filter(pk__in=self.collections),
+                    Collection.objects.filter(pk__in=collections),
                 )
             )
 
         return get_visible_objects(user, "core.view_image", qs).distinct()
 
     def to_es_query(self, user: User | AnonymousUser) -> dict:
+        query = self.validated_data["query"]
         es_query: dict | None = None
-        if self.query:
+        if query:
             # we know it can't be a Q object because we're using es_parser and not django_parser
-            es_query = cast("dict | None", parse_query(es_parser, self.query))
+            es_query = cast("dict | None", parse_query(es_parser, query))
 
         return build_elasticsearch_query(
             es_query or {},
             user,
-            self.collections,
+            self.validated_data["collections"],
         )
+
+
+class SearchQueryBodySerializer(StrictSerializer, SearchQuerySerializer):
+    pass

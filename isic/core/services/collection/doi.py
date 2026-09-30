@@ -35,13 +35,12 @@ from isic.core.views.doi import LICENSE_TITLES, LICENSE_URIS
 from isic.ingest.services.publish import unembargo_image
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Mapping, Sequence
     from urllib.parse import ParseResult
 
     from django.contrib.auth.models import User
     from django.db.models import QuerySet
 
-    from isic.core.api.doi import RelatedIdentifierIn
     from isic.core.models.collection import Collection
 
 logger = logging.getLogger(__name__)
@@ -121,7 +120,7 @@ def check_create_draft_doi_allowed(
     user: User,
     collection: Collection,
     supplemental_files: Sequence[dict[str, str]] | None = None,
-    related_identifiers: Sequence[RelatedIdentifierIn] | None = None,
+    related_identifiers: Sequence[Mapping[str, str]] | None = None,
 ) -> None:
     if not user.has_perm("core.create_doi", collection):
         raise ValidationError("You don't have permissions to do that.")
@@ -135,7 +134,7 @@ def check_create_draft_doi_allowed(
         raise ValidationError("A DOI can only have up to 10 supplemental files.")
     if (
         related_identifiers
-        and len([r for r in related_identifiers if r.relation_type == "IsDescribedBy"]) > 1
+        and len([r for r in related_identifiers if r["relation_type"] == "IsDescribedBy"]) > 1
     ):
         raise ValidationError("A DOI can only have one IsDescribedBy related identifier.")
 
@@ -191,7 +190,7 @@ def create_collection_draft_doi(
     collection: Collection,
     description: str,
     supplemental_files: Sequence[dict[str, str]] | None = None,
-    related_identifiers: Sequence[RelatedIdentifierIn] | None = None,
+    related_identifiers: Sequence[Mapping[str, str]] | None = None,
 ) -> DraftDoi:
     check_create_draft_doi_allowed(
         user=user,
@@ -220,9 +219,9 @@ def create_collection_draft_doi(
         if related_identifiers:
             for related_identifier in related_identifiers:
                 draft_doi.related_identifiers.create(
-                    relation_type=related_identifier.relation_type,
-                    related_identifier_type=related_identifier.related_identifier_type,
-                    related_identifier=related_identifier.related_identifier,
+                    relation_type=related_identifier["relation_type"],
+                    related_identifier_type=related_identifier["related_identifier_type"],
+                    related_identifier=related_identifier["related_identifier"],
                 )
 
         draft_doi_dict = build_collection_doi(

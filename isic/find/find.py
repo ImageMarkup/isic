@@ -9,13 +9,13 @@ from isic.core.models.doi import Doi
 from isic.core.models.image import Image
 from isic.core.permissions import get_visible_objects
 from isic.find.serializers import (
-    CohortQuickfindResultOut,
-    CollectionQuickfindResultOut,
-    ContributorQuickfindResultOut,
-    DoiQuickfindResultOut,
-    ImageQuickfindResultOut,
-    StudyQuickfindResultOut,
-    UserQuickfindResultOut,
+    CohortQuickfindResultSerializer,
+    CollectionQuickfindResultSerializer,
+    ContributorQuickfindResultSerializer,
+    DoiQuickfindResultSerializer,
+    ImageQuickfindResultSerializer,
+    StudyQuickfindResultSerializer,
+    UserQuickfindResultSerializer,
 )
 from isic.ingest.models.cohort import Cohort
 from isic.ingest.models.contributor import Contributor
@@ -31,25 +31,25 @@ def quickfind_execute(query: str, user: User) -> list[dict]:
             .order_by(),  # avoid ordering by created so index gets used
             "sort": "isic_id",
             "permission": "core.view_image",
-            "serializer": ImageQuickfindResultOut,
+            "serializer": ImageQuickfindResultSerializer,
         },
         "collections": {
             "filter": Collection.objects.select_related("creator").filter(name__icontains=query),
             "sort": "name",
             "permission": "core.view_collection",
-            "serializer": CollectionQuickfindResultOut,
+            "serializer": CollectionQuickfindResultSerializer,
         },
         "studies": {
             "filter": Study.objects.select_related("creator").filter(name__icontains=query),
             "sort": "name",
             "permission": "studies.view_study",
-            "serializer": StudyQuickfindResultOut,
+            "serializer": StudyQuickfindResultSerializer,
         },
         "cohorts": {
             "filter": Cohort.objects.select_related("creator").filter(name__icontains=query),
             "sort": "name",
             "permission": "ingest.view_cohort",
-            "serializer": CohortQuickfindResultOut,
+            "serializer": CohortQuickfindResultSerializer,
         },
         "contributors": {
             "filter": Contributor.objects.select_related("creator").filter(
@@ -57,7 +57,7 @@ def quickfind_execute(query: str, user: User) -> list[dict]:
             ),
             "sort": "institution_name",
             "permission": "ingest.view_contributor",
-            "serializer": ContributorQuickfindResultOut,
+            "serializer": ContributorQuickfindResultSerializer,
         },
         "users": {
             "filter": User.objects.filter(is_active=True)
@@ -72,7 +72,7 @@ def quickfind_execute(query: str, user: User) -> list[dict]:
                 for attr in ["first_name", "last_name"]
             ),
             "permission": "",
-            "serializer": UserQuickfindResultOut,
+            "serializer": UserQuickfindResultSerializer,
         },
         "dois": {
             "filter": Doi.objects.select_related("collection", "creator").filter(
@@ -80,7 +80,7 @@ def quickfind_execute(query: str, user: User) -> list[dict]:
             ),
             "sort": lambda v: jaro_winkler_metric(query.upper(), v.collection.name.upper()),
             "permission": "",
-            "serializer": DoiQuickfindResultOut,
+            "serializer": DoiQuickfindResultSerializer,
         },
     }
 
@@ -106,9 +106,6 @@ def quickfind_execute(query: str, user: User) -> list[dict]:
             reverse=True,
         )[:5]
 
-        for item in items:
-            serializer = search["serializer"].from_orm(item)
-            serializer.set_yours(item, user)
-            ret.append(serializer.dict())
+        ret.extend(search["serializer"](items, many=True, context={"user": user}).data)
 
     return ret

@@ -15,6 +15,7 @@ from resonant_settings.django import *
 from resonant_settings.django_extensions import *
 from resonant_settings.logging import *
 from resonant_settings.oauth_toolkit import *
+from resonant_settings.rest_framework import *
 
 if TYPE_CHECKING:
     from typing import Any
@@ -65,10 +66,9 @@ INSTALLED_APPS = [
     "django_filters",
     "django_recaptcha",
     "markdownify",
-    # Install "ninja" to force Swagger to be served locally, so it can be overridden
-    "ninja",
     "oauth2_provider",
     "resonant_utils",
+    "rest_framework",
     "s3_file_field",
     "template_partials",
     "widget_tweaks",
@@ -89,8 +89,6 @@ MIDDLEWARE = [
     "isic.middleware.SentryMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    # Insert "ExemptBearerAuthFromCSRFMiddleware" just before the CsrfViewMiddleware
-    "isic.middleware.ExemptBearerAuthFromCSRFMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -256,6 +254,20 @@ OAUTH2_PROVIDER.update(
     }
 )
 OAUTH2_PROVIDER_APPLICATION_MODEL = "core.IsicOAuthApplication"
+
+REST_FRAMEWORK.update(
+    {
+        "DEFAULT_AUTHENTICATION_CLASSES": [
+            "isic.auth.OAuth2Authentication",
+            "rest_framework.authentication.SessionAuthentication",
+        ],
+        "DEFAULT_PARSER_CLASSES": ["rest_framework.parsers.JSONParser"],
+        "DEFAULT_RENDERER_CLASSES": ["isic.renderers.JSONRenderer"],
+        # Leave datetimes as they are for the renderer to encode.
+        "DATETIME_FORMAT": None,
+        "EXCEPTION_HANDLER": "isic.exceptions.exception_handler",
+    }
+)
 
 # The client_id of the engagement platform's IsicOAuthApplication.
 ISIC_ENGAGEMENT_OAUTH_CLIENT_ID: str | None = env.str(

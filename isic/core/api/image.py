@@ -5,64 +5,47 @@ from django.contrib import messages
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
-from django.db.models import Case, Max, Q, Value, When
-from django.http.request import HttpRequest
+from django.db.models import Case, Max, Q, QuerySet, Value, When
 from django.shortcuts import get_object_or_404
-from django.template.loader import render_to_string
+from django.urls import path
 from isic_metadata import FIELD_REGISTRY
-from ninja import Field, ModelSchema, Query, Router, Schema
-from ninja.errors import ValidationError as NinjaValidationError
-from ninja.pagination import paginate
+from rest_framework import serializers, status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 from sentry_sdk import set_tag
 
-from isic.auth import allow_any, is_authenticated, is_staff
+from isic.auth import IsAuthenticated, IsStaff
 from isic.core.models import Image
-from isic.core.pagination import CursorPagination, qs_with_hardcoded_count
+from isic.core.pagination import CursorPagination, paginate, qs_with_hardcoded_count
 from isic.core.permissions import get_visible_objects
-from isic.core.search import facets, get_elasticsearch_client
-from isic.core.serializers import SearchQueryIn
-from isic.types import AuthenticatedHttpRequest
-
-router = Router()
+from isic.core.search import build_elasticsearch_query, facets, get_elasticsearch_client
+from isic.core.serializers import SearchQuerySerializer, StrictSerializer
 
 default_qs = Image.objects.select_related("accession__cohort").distinct()
 
 
-class FileOut(Schema):
-    url: str
-    size: int
-
-
-class ImageFilesOut(Schema):
-    full: FileOut
-    thumbnail_256: FileOut
-
-
-class ImageOut(ModelSchema):
+class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
-        fields = ["public"]
+        fields = ["public", "isic_id", "copyright_license", "attribution", "files", "metadata"]
 
-    isic_id: str = Field(alias="isic_id")
-    copyright_license: str = Field(alias="accession.copyright_license")
-    attribution: str = Field(alias="accession.cohort.default_attribution")
-    files: ImageFilesOut
-    metadata: dict
+    isic_id = serializers.CharField()
+    copyright_license = serializers.CharField(source="accession.copyright_license")
+    attribution = serializers.CharField(source="accession.cohort.default_attribution")
+    files = serializers.SerializerMethodField()
+    metadata = serializers.SerializerMethodField()
 
-    @staticmethod
-    def resolve_files(image: Image) -> ImageFilesOut:
-        full_url = image.blob.url
-        thumbnail_url = image.thumbnail_256.url
-        full_size = image.accession.blob_size
-        thumbnail_size = image.accession.thumbnail_256_size
+    def get_files(self, image: Image) -> dict:
+        return {
+            "full": {"url": image.blob.url, "size": image.accession.blob_size},
+            "thumbnail_256": {
+                "url": image.thumbnail_256.url,
+                "size": image.accession.thumbnail_256_size,
+            },
+        }
 
-        return ImageFilesOut(
-            full=FileOut(url=full_url, size=full_size),
-            thumbnail_256=FileOut(url=thumbnail_url, size=thumbnail_size),
-        )
-
-    @staticmethod
-    def resolve_metadata(image: Image) -> dict:
+    def get_metadata(self, image: Image) -> dict:
         metadata: dict[str, dict[str, Any]] = {
             "acquisition": {"pixels_x": image.accession.width, "pixels_y": image.accession.height},
             "clinical": {},
@@ -83,18 +66,23 @@ class ImageOut(ModelSchema):
         return metadata
 
 
+class SimilarImageSerializer(ImageSerializer):
+    class Meta(ImageSerializer.Meta):
+        fields = [*ImageSerializer.Meta.fields, "distance"]
+
+    distance = serializers.FloatField()
+
+
 class PinnedFirstPagination(CursorPagination):
     # Subclass of CursorPagination with custom behavior to allow ordering by multiple fields
     # If query contains "pin_sort=true", return pinned images first, then sort by created.
     #
-    # NOTE: Django Ninja has its own CursorPagination implementation upstream
-    # (https://github.com/vitalik/django-ninja/pull/1657), but it only derives the cursor
-    # position and the seek (__gt/__lt) filter from the FIRST ordering field -- any
-    # additional ordering fields affect ORDER BY only, not the keyset comparison. That
-    # makes it incorrect for paging across more than one field (e.g. "-pinned", "created"):
-    # rows tied on the first field aren't disambiguated by the rest. _apply_ordering and
-    # _get_position_from_instance are overridden below to build the position and the
-    # predicate from *all* ordering fields.
+    # CursorPagination only derives the cursor position and the seek (__gt/__lt) filter from the
+    # FIRST ordering field -- any additional ordering fields affect ORDER BY only, not the keyset
+    # comparison. That makes it incorrect for paging across more than one field (e.g. "-pinned",
+    # "created"): rows tied on the first field aren't disambiguated by the rest.
+    # _apply_ordering and _get_position_from_instance are overridden below to build the position
+    # and the predicate from *all* ordering fields.
 
     def _apply_ordering(self, queryset, cursor, order):
         """
@@ -123,7 +111,7 @@ class PinnedFirstPagination(CursorPagination):
 
         The cursor position is user-controlled, so it's fully validated here: a
         position that doesn't match the current ordering, or a value that isn't
-        parseable as its ordering field's type, raises ``NinjaValidationError`` so
+        parseable as its ordering field's type, raises a ``ValidationError`` so
         the caller can surface it as a 400/422 rather than a 500.
         """
         if cursor.position is not None:
@@ -158,12 +146,8 @@ class PinnedFirstPagination(CursorPagination):
         return queryset
 
     @staticmethod
-    def _invalid_cursor() -> NinjaValidationError:
-        # match the message format of pydantic's rendering of a ValueError, which is
-        # how a cursor that fails to decode is reported
-        return NinjaValidationError(
-            [{"loc": ["query", "cursor"], "msg": "Value error, Invalid cursor."}]
-        )
+    def _invalid_cursor() -> serializers.ValidationError:
+        return serializers.ValidationError({"cursor": ["Invalid cursor."]})
 
     def _get_position_from_instance(self, instance, ordering):
         values = []
@@ -173,47 +157,36 @@ class PinnedFirstPagination(CursorPagination):
             values.append(str(attr))
         return "|".join(values)
 
-    def paginate_queryset(self, queryset, pagination, request, **params):
-        if request.GET.get("pin_sort") or params.get("pin_sort"):
+    def paginate_queryset(self, queryset, request, *, pin_sort: bool = False, **kwargs):
+        if request.GET.get("pin_sort") or pin_sort:
             queryset = queryset.order_by("-pinned", "created")
         else:
             queryset = queryset.order_by("created")
-        return super().paginate_queryset(queryset, pagination, request, **params)
+        return super().paginate_queryset(queryset, request, **kwargs)
 
 
-@router.get(
-    "/",
-    response=list[ImageOut],
-    summary="Return a list of images.",
-    include_in_schema=True,
-    auth=allow_any,
-)
-@paginate(PinnedFirstPagination)
-def image_list(request: HttpRequest):
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def image_list(request):
     qs = get_visible_objects(request.user, "core.view_image", default_qs)
 
     if settings.ISIC_USE_ELASTICSEARCH_COUNTS:
-        es_query = SearchQueryIn().to_es_query(request.user)
+        es_query = build_elasticsearch_query({}, request.user, None)
         es_count = get_elasticsearch_client().count(
             index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX,
             body={"query": es_query},
         )["count"]
-        return qs_with_hardcoded_count(qs, Image._meta.ordering, es_count)
+        qs = qs_with_hardcoded_count(qs, Image._meta.ordering, es_count)
 
-    return qs
+    return paginate(request, qs, ImageSerializer, PinnedFirstPagination())
 
 
-@router.get(
-    "/search/",
-    response={200: list[ImageOut], 400: dict},
-    summary="Search images with a key:value query string.",
-    description=render_to_string("core/swagger_image_search_description.html"),
-    include_in_schema=True,
-    auth=allow_any,
-)
-@paginate(PinnedFirstPagination)
-def image_search(request: HttpRequest, search: SearchQueryIn = Query(...)):
-    qs = search.to_queryset(user=request.user, qs=default_qs)
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def image_search(request):
+    search = SearchQuerySerializer(data=request.query_params)
+    search.is_valid(raise_exception=True)
+    qs: QuerySet[Image] = search.to_queryset(user=request.user, qs=default_qs)
 
     if settings.ISIC_USE_ELASTICSEARCH_COUNTS:
         es_query = search.to_es_query(request.user)
@@ -221,19 +194,16 @@ def image_search(request: HttpRequest, search: SearchQueryIn = Query(...)):
             index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX,
             body={"query": es_query},
         )["count"]
-        return qs_with_hardcoded_count(qs, Image._meta.ordering, es_count)
+        qs = qs_with_hardcoded_count(qs, Image._meta.ordering, es_count)
 
-    return qs
+    return paginate(request, qs, ImageSerializer, PinnedFirstPagination())
 
 
-@router.get(
-    "/search/size/",
-    response={200: dict, 400: dict},
-    summary="Get total size of images matching a search query.",
-    include_in_schema=False,
-    auth=allow_any,
-)
-def image_search_size(request: HttpRequest, search: SearchQueryIn = Query(...)):
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def image_search_size(request):
+    search = SearchQuerySerializer(data=request.query_params)
+    search.is_valid(raise_exception=True)
     es_query = search.to_es_query(request.user)
 
     body = {
@@ -248,117 +218,124 @@ def image_search_size(request: HttpRequest, search: SearchQueryIn = Query(...)):
     )
 
     total_size = result["aggregations"]["total_size"]["value"] or 0
-    return {"size": int(total_size)}
+    return Response({"size": int(total_size)})
 
 
-@router.get("/facets/", response=dict, include_in_schema=False, auth=allow_any)
-def image_facets(request: HttpRequest, search: SearchQueryIn = Query(...)):
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def image_facets(request):
+    search = SearchQuerySerializer(data=request.query_params)
+    search.is_valid(raise_exception=True)
     cache_key = f"image_facets:{search.to_cache_key(request.user)}"
     cached_facets = cache.get(cache_key)
 
     set_tag("cached_facets", cached_facets is not None)
 
     if cached_facets:
-        return cached_facets
+        return Response(cached_facets)
 
     query = search.to_es_query(request.user)
     ret = facets(query)
     cache.set(cache_key, ret, 86400)
-    return ret
+    return Response(ret)
 
 
-@router.get(
-    "/{isic_id}/",
-    response=ImageOut,
-    summary="Retrieve a single image by ISIC ID.",
-    include_in_schema=True,
-    auth=allow_any,
-)
-def image_detail(request: HttpRequest, isic_id: str):
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def image_detail(request, isic_id: str):
     qs = get_visible_objects(request.user, "core.view_image", default_qs)
-    return get_object_or_404(qs, isic_id=isic_id)
+    return Response(ImageSerializer(get_object_or_404(qs, isic_id=isic_id)).data)
 
 
-class SimilarImageOut(ImageOut):
-    distance: float
+class SimilarImagesParamsSerializer(serializers.Serializer):
+    limit = serializers.IntegerField(default=10, min_value=1, max_value=50)
 
 
-@router.get(
-    "/{isic_id}/similar/",
-    response=list[SimilarImageOut],
-    summary="Find images similar to the specified image.",
-    include_in_schema=True,
-    auth=is_authenticated,
-)
-def image_similar(
-    request: AuthenticatedHttpRequest, isic_id: str, limit: int = Query(10, le=50)
-) -> list[SimilarImageOut]:
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def image_similar(request, isic_id: str):
+    params = SimilarImagesParamsSerializer(data=request.query_params)
+    params.is_valid(raise_exception=True)
     qs = get_visible_objects(request.user, "core.view_image", default_qs)
     image = get_object_or_404(qs, isic_id=isic_id)
 
     if not image.has_embedding:
-        return []
+        return Response([])
 
     similar_qs = image.similar_images().select_related("accession__cohort")
     similar_qs = get_visible_objects(request.user, "core.view_image", similar_qs)
-    return similar_qs[:limit]
+    return Response(
+        SimilarImageSerializer(similar_qs[: params.validated_data["limit"]], many=True).data
+    )
 
 
-class SetPinned(Schema):
-    pinned: bool
-
-    model_config = {"extra": "forbid"}
+class SetPinnedSerializer(StrictSerializer):
+    pinned = serializers.BooleanField()
 
 
-@router.post(
-    "/{id}/set-pinned/",
-    response={200: None, 400: dict},
-    include_in_schema=False,
-    auth=is_staff,
-)
-def image_set_pinned(request, id: int, payload: SetPinned):
+@api_view(["POST"])
+@permission_classes([IsStaff])
+def image_set_pinned(request, id: int):
+    payload = SetPinnedSerializer(data=request.data)
+    payload.is_valid(raise_exception=True)
+    pinned = payload.validated_data["pinned"]
+
     qs = get_visible_objects(request.user, "core.view_image", Image.objects.all())
     image = get_object_or_404(qs.distinct(), id=id)
-    if payload.pinned:
+    if pinned:
         if not image.public:
-            return 400, {"error": "Cannot pin a private image."}
+            return Response(
+                {"error": "Cannot pin a private image."}, status=status.HTTP_400_BAD_REQUEST
+            )
         last_pin = Image.objects.aggregate(Max("pinned")).get("pinned__max") or 0
         image.pinned = last_pin + 1
     else:
         image.pinned = 0
     image.save()
-    action = "pinned" if payload.pinned else "unpinned"
+    action = "pinned" if pinned else "unpinned"
     messages.add_message(request, messages.SUCCESS, f"Image {action}.")
-    return 200, None
+    return Response(status=status.HTTP_200_OK)
 
 
-class PinOrder(Schema):
-    order: list[str]
+class PinOrderSerializer(StrictSerializer):
+    order = serializers.ListField(
+        child=serializers.CharField(allow_blank=True, trim_whitespace=False)
+    )
 
-    model_config = {"extra": "forbid"}
 
+@api_view(["POST"])
+@permission_classes([IsStaff])
+def image_pins_reorder(request):
+    payload = PinOrderSerializer(data=request.data)
+    payload.is_valid(raise_exception=True)
+    order = payload.validated_data["order"]
 
-@router.post(
-    "/pins/reorder/",
-    response={200: None, 400: dict},
-    include_in_schema=False,
-    auth=is_staff,
-)
-def image_pins_reorder(request: HttpRequest, payload: PinOrder):
     with transaction.atomic():
-        result = Image.objects.filter(public=True, isic_id__in=payload.order).update(
+        result = Image.objects.filter(public=True, isic_id__in=order).update(
             pinned=Case(
                 *[
                     # pins are sorted in descending order, so reverse ordered list.
                     # pins are 1-indexed; 0 is unpinned.
                     When(isic_id=isic_id, then=Value(i))
-                    for i, isic_id in enumerate(reversed(payload.order), start=1)
+                    for i, isic_id in enumerate(reversed(order), start=1)
                 ]
             )
         )
-        if result != len(payload.order):
+        if result != len(order):
             transaction.set_rollback(True)
-            return 400, {"error": "Invalid ISIC ID list."}
+            return Response({"error": "Invalid ISIC ID list."}, status=status.HTTP_400_BAD_REQUEST)
 
     messages.add_message(request, messages.SUCCESS, "Reordered pinned images.")
-    return 200, None
+    return Response(status=status.HTTP_200_OK)
+
+
+urlpatterns = [
+    path("", image_list, name="image_list"),
+    path("search/", image_search, name="image_search"),
+    path("search/size/", image_search_size, name="image_search_size"),
+    path("facets/", image_facets, name="image_facets"),
+    path("<isic_id>/", image_detail, name="image_detail"),
+    path("<isic_id>/similar/", image_similar, name="image_similar"),
+    path("<int:id>/set-pinned/", image_set_pinned, name="image_set_pinned"),
+    path("pins/reorder/", image_pins_reorder, name="image_pins_reorder"),
+]

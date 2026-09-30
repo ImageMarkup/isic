@@ -1,55 +1,60 @@
 from pathlib import Path
-from typing import Any
 
 from django.db import IntegrityError, transaction
 from django.db.models import Prefetch
 from django.db.models.aggregates import Count
-from django.http.request import HttpRequest
 from django.shortcuts import get_object_or_404
-from ninja import Field, ModelSchema, Router, Schema
-from ninja.pagination import paginate
+from django.urls import path
 from pydantic import ValidationError as PydanticValidationError
-from pydantic import field_validator
+from rest_framework import serializers, status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 from s3_file_field.widgets import S3PlaceholderFile
 
-from isic.auth import allow_any, is_authenticated, is_staff
-from isic.core.api.image import ImageOut
-from isic.core.pagination import CursorPagination
+from isic.auth import IsAuthenticated, IsStaff
+from isic.core.api.image import ImageSerializer
+from isic.core.models import CopyrightLicense
+from isic.core.pagination import paginate
 from isic.core.permissions import get_visible_objects
+from isic.core.serializers import StrictSerializer
 from isic.ingest.models import Accession, Cohort, Contributor, Lesion, MetadataFile
 from isic.ingest.models.lesion import get_lesion_count_for_user
 from isic.ingest.services.accession import create_accession
 from isic.ingest.services.accession.review import bulk_create_accession_reviews
 from isic.ingest.tasks import update_metadata_task
 
-lesion_router = Router()
 
-
-class LesionOut(ModelSchema):
+class LesionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesion
-        fields = ["id"]
+        fields = [
+            "id",
+            "images",
+            "images_count",
+            "longitudinally_monitored",
+            "index_image_id",
+            "outcome_diagnosis",
+            "outcome_diagnosis_1",
+        ]
 
-    images: list[ImageOut]
-    images_count: int
-    longitudinally_monitored: bool
-    index_image_id: str | None
-    outcome_diagnosis: str | None
-    outcome_diagnosis_1: str | None
+    images = serializers.SerializerMethodField()
+    images_count = serializers.IntegerField()
+    longitudinally_monitored = serializers.BooleanField()
+    index_image_id = serializers.CharField()
+    outcome_diagnosis = serializers.CharField()
+    outcome_diagnosis_1 = serializers.CharField()
 
-    @staticmethod
-    def resolve_images(obj: Lesion) -> list[ImageOut]:
-        return [accession.image for accession in obj.accessions.all() if accession.published]
+    def get_images(self, obj: Lesion) -> list:
+        return ImageSerializer(
+            [accession.image for accession in obj.accessions.all() if accession.published],
+            many=True,
+        ).data
 
 
-@lesion_router.get(
-    "/{id}/",
-    response=LesionOut,
-    summary="Retrieve a single lesion by ID.",
-    include_in_schema=True,
-    auth=allow_any,
-)
-def lesion_detail(request: HttpRequest, id: str):
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def lesion_detail(request, id: str):
     qs = get_visible_objects(
         request.user,
         "ingest.view_lesion",
@@ -57,18 +62,12 @@ def lesion_detail(request: HttpRequest, id: str):
             "accessions__image", "accessions__cohort"
         ),
     )
-    return get_object_or_404(qs, id=id)
+    return Response(LesionSerializer(get_object_or_404(qs, id=id)).data)
 
 
-@lesion_router.get(
-    "/",
-    response=list[LesionOut],
-    summary="Return a list of lesions with diagnoses.",
-    include_in_schema=True,
-    auth=allow_any,
-)
-@paginate(CursorPagination)
-def lesion_list(request: HttpRequest):
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def lesion_list(request):
     # ordering is necessary for the paginator
     qs = get_visible_objects(
         request.user,
@@ -79,30 +78,25 @@ def lesion_list(request: HttpRequest):
     )
     # the count can be done much more efficiently than the full query
     qs.custom_count = get_lesion_count_for_user(request.user)
-    return qs
+    return paginate(request, qs, LesionSerializer)
 
 
-accession_router = Router()
+class AccessionCreateSerializer(StrictSerializer):
+    cohort = serializers.IntegerField()
+    original_blob = serializers.CharField(help_text="S3 file field value.", trim_whitespace=False)
+    metadata = serializers.DictField(default=dict)
+    engagement_external_id = serializers.CharField(
+        allow_null=True, allow_blank=True, default=None, trim_whitespace=False
+    )
 
-
-class AccessionIn(Schema):
-    cohort: int
-    original_blob: str = Field(..., description="S3 file field value.")
-    metadata: dict[str, Any] = Field(default_factory=dict)
-    engagement_external_id: str | None = None
-
-    model_config = {"extra": "forbid"}
-
-    @field_validator("original_blob")
-    @classmethod
-    def validate_s3_file(cls, value: str) -> S3PlaceholderFile:
+    def validate_original_blob(self, value: str) -> S3PlaceholderFile:
         s3_file = S3PlaceholderFile.from_field(value)
         if s3_file is None:
-            raise ValueError("Invalid S3 file field value.")
+            raise serializers.ValidationError("Invalid S3 file field value.")
         return s3_file
 
 
-class AccessionOut(ModelSchema):
+class AccessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Accession
         fields = ["id"]
@@ -118,69 +112,68 @@ def _metadata_errors(exc: PydanticValidationError) -> dict:
     }
 
 
-@accession_router.post(
-    "/",
-    response={201: AccessionOut, 403: dict, 400: dict},
-    summary="Create an Accession.",
-    include_in_schema=False,
-    auth=is_authenticated,
-)
-def accession_create(request: HttpRequest, payload: AccessionIn):
-    cohort = get_object_or_404(Cohort, pk=payload.cohort)
-    if not request.user.is_staff and not request.user.has_perm("ingest.add_accession", cohort):
-        return 403, {"error": "You do not have permission to add accessions to this cohort."}
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def accession_create(request):
+    payload = AccessionCreateSerializer(data=request.data)
+    payload.is_valid(raise_exception=True)
+    original_blob = payload.validated_data["original_blob"]
 
-    assert request.user.is_authenticated  # noqa: S101
-    # TODO: how to make django-ninja schema aware of S3PlaceholderFile while using str for input?
-    assert isinstance(payload.original_blob, S3PlaceholderFile)  # noqa: S101
+    cohort = get_object_or_404(Cohort, pk=payload.validated_data["cohort"])
+    if not request.user.is_staff and not request.user.has_perm("ingest.add_accession", cohort):
+        return Response(
+            {"error": "You do not have permission to add accessions to this cohort."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
 
     try:
         with transaction.atomic():
             accession = create_accession(
                 cohort=cohort,
                 creator=request.user,
-                original_blob=payload.original_blob,
-                original_blob_name=Path(payload.original_blob.name).name,
-                original_blob_size=payload.original_blob.size,
-                engagement_external_id=payload.engagement_external_id,
+                original_blob=original_blob,
+                original_blob_name=Path(original_blob.name).name,
+                original_blob_size=original_blob.size,
+                engagement_external_id=payload.validated_data["engagement_external_id"],
             )
 
-            if payload.metadata:
-                accession.update_metadata(request.user, payload.metadata)
+            if payload.validated_data["metadata"]:
+                accession.update_metadata(request.user, payload.validated_data["metadata"])
     except PydanticValidationError as e:
-        return 400, _metadata_errors(e)
+        return Response(_metadata_errors(e), status=status.HTTP_400_BAD_REQUEST)
     except IntegrityError:
         # cohort wide invariants like "a lesion belongs to one patient" are only enforced by the
         # database here, since a single accession can't be checked against rows it doesn't know
         # about the way a metadata CSV can.
-        return 400, {"message": "Metadata conflicts with existing cohort data."}
+        return Response(
+            {"message": "Metadata conflicts with existing cohort data."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
-    return 201, accession
-
-
-class AccessionReview(Schema):
-    id: int
-    value: bool
-
-    model_config = {"extra": "forbid"}
+    return Response(AccessionSerializer(accession).data, status=status.HTTP_201_CREATED)
 
 
-@accession_router.post(
-    "/create-review-bulk/", response={201: dict}, include_in_schema=False, auth=is_staff
-)
-def accession_review_bulk_create(request: HttpRequest, payload: list[AccessionReview]):
+class AccessionReviewSerializer(StrictSerializer):
+    id = serializers.IntegerField()
+    value = serializers.BooleanField()
+
+
+@api_view(["POST"])
+@permission_classes([IsStaff])
+def accession_review_bulk_create(request):
+    payload = AccessionReviewSerializer(data=request.data, many=True)
+    payload.is_valid(raise_exception=True)
     bulk_create_accession_reviews(
         reviewer=request.user,
-        accession_ids_values={x.id: x.value for x in payload},
+        accession_ids_values={x["id"]: x["value"] for x in payload.validated_data},
     )
-    return 201, {}
+    return Response({}, status=status.HTTP_201_CREATED)
 
 
-cohort_router = Router()
 default_cohort_qs = Cohort.objects.annotate(accession_count=Count("accessions"))
 
 
-class CohortOut(ModelSchema):
+class CohortSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cohort
         fields = [
@@ -192,51 +185,46 @@ class CohortOut(ModelSchema):
             "description",
             "default_copyright_license",
             "default_attribution",
+            "accession_count",
         ]
 
-    accession_count: int = Field(alias="accession_count")
+    accession_count = serializers.IntegerField()
 
 
-@cohort_router.get(
-    "/",
-    response=list[CohortOut],
-    summary="Return a list of cohorts.",
-    include_in_schema=False,
-    auth=is_authenticated,
-)
-@paginate(CursorPagination)
-def cohort_list(request: HttpRequest):
-    return get_visible_objects(request.user, "ingest.view_cohort", default_cohort_qs)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def cohort_list(request):
+    return paginate(
+        request,
+        get_visible_objects(request.user, "ingest.view_cohort", default_cohort_qs),
+        CohortSerializer,
+    )
 
 
-@cohort_router.get(
-    "/{id}/",
-    response=CohortOut,
-    summary="Retrieve a single cohort by ID.",
-    include_in_schema=False,
-    auth=is_authenticated,
-)
-def cohort_detail(request: HttpRequest, id: int):
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def cohort_detail(request, id: int):
     qs = get_visible_objects(request.user, "ingest.view_cohort", default_cohort_qs)
-    return get_object_or_404(qs, id=id)
+    return Response(CohortSerializer(get_object_or_404(qs, id=id)).data)
 
 
-contributor_router = Router()
+class ContributorCreateSerializer(serializers.Serializer):
+    institution_name = serializers.CharField(
+        max_length=255, allow_blank=True, trim_whitespace=False
+    )
+    institution_url = serializers.URLField(
+        max_length=200, allow_blank=True, default="", trim_whitespace=False
+    )
+    legal_contact_info = serializers.CharField(allow_blank=True, trim_whitespace=False)
+    default_copyright_license = serializers.ChoiceField(
+        choices=CopyrightLicense.choices, allow_blank=True, default=""
+    )
+    default_attribution = serializers.CharField(
+        max_length=255, allow_blank=True, default="", trim_whitespace=False
+    )
 
 
-class ContributorIn(ModelSchema):
-    class Meta:
-        model = Contributor
-        fields = [
-            "institution_name",
-            "institution_url",
-            "legal_contact_info",
-            "default_copyright_license",
-            "default_attribution",
-        ]
-
-
-class ContributorOut(ModelSchema):
+class ContributorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contributor
         fields = [
@@ -252,56 +240,53 @@ class ContributorOut(ModelSchema):
         ]
 
 
-class ContributorAutocompleteOut(ModelSchema):
+class ContributorAutocompleteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contributor
         fields = ["id", "institution_name"]
 
 
-class ContributorCohortOut(Schema):
-    id: int
-    name: str
-    accession_count: int
+class ContributorCohortSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    accession_count = serializers.IntegerField()
 
 
-class ContributorDetailOut(ContributorOut):
-    cohorts: list[ContributorCohortOut]
-    cohort_count: int
-    accession_count: int
+class ContributorDetailSerializer(ContributorSerializer):
+    class Meta(ContributorSerializer.Meta):
+        fields = [*ContributorSerializer.Meta.fields, "cohorts", "cohort_count", "accession_count"]
 
-    @staticmethod
-    def resolve_cohort_count(obj: Contributor) -> int:
+    cohorts = ContributorCohortSerializer(many=True)
+    cohort_count = serializers.SerializerMethodField()
+    accession_count = serializers.SerializerMethodField()
+
+    def get_cohort_count(self, obj: Contributor) -> int:
         return obj.cohorts.count()
 
-    @staticmethod
-    def resolve_accession_count(obj: Contributor) -> int:
+    def get_accession_count(self, obj: Contributor) -> int:
         return sum(cohort.accession_count for cohort in obj.cohorts.all())  # type: ignore[attr-defined]
 
 
-@contributor_router.get(
-    "/",
-    response=list[ContributorOut],
-    summary="Return a list of contributors.",
-    include_in_schema=False,
-    auth=is_authenticated,
-)
-@paginate(CursorPagination)
-def contributor_list(request: HttpRequest):
-    return get_visible_objects(
-        request.user,
-        "ingest.view_contributor",
-        Contributor.objects.prefetch_related("owners"),
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def contributor_list(request):
+    if request.method == "POST":
+        return _contributor_create(request)
+
+    return paginate(
+        request,
+        get_visible_objects(
+            request.user,
+            "ingest.view_contributor",
+            Contributor.objects.prefetch_related("owners"),
+        ),
+        ContributorSerializer,
     )
 
 
-@contributor_router.get(
-    "/{id}/",
-    response=ContributorDetailOut,
-    summary="Retrieve a single contributor by ID.",
-    include_in_schema=False,
-    auth=is_authenticated,
-)
-def contributor_detail(request: HttpRequest, id: int):
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def contributor_detail(request, id: int):
     qs = get_visible_objects(
         request.user,
         "ingest.view_contributor",
@@ -310,44 +295,66 @@ def contributor_detail(request: HttpRequest, id: int):
             Prefetch("cohorts", queryset=default_cohort_qs.order_by("-accession_count", "name")),
         ),
     )
-    return get_object_or_404(qs, id=id)
+    return Response(ContributorDetailSerializer(get_object_or_404(qs, id=id)).data)
 
 
-@contributor_router.post(
-    "/", response={201: ContributorOut}, include_in_schema=False, auth=is_authenticated
-)
 @transaction.atomic
-def contributor_create(request: HttpRequest, payload: ContributorIn):
-    contributor = Contributor.objects.create(creator=request.user, **payload.dict())
+def _contributor_create(request):
+    payload = ContributorCreateSerializer(data=request.data)
+    payload.is_valid(raise_exception=True)
+    contributor = Contributor.objects.create(creator=request.user, **payload.validated_data)
     contributor.owners.add(request.user)
-    return 201, contributor
+    return Response(ContributorSerializer(contributor).data, status=status.HTTP_201_CREATED)
 
 
-metadata_file_router = Router()
-
-
-class MetadataFileOut(ModelSchema):
-    class Meta:
-        model = MetadataFile
-        fields = ["id"]
-
-
-@metadata_file_router.delete("/{id}/", response={204: None}, include_in_schema=False, auth=is_staff)
-def metadata_file_delete(request: HttpRequest, id: int):
+@api_view(["DELETE"])
+@permission_classes([IsStaff])
+def metadata_file_delete(request, id: int):
     metadata_file = get_object_or_404(MetadataFile, id=id)
     metadata_file.delete()
     # Delete the blob from S3, making sure to not reattempt saving the same metadata_file model
     metadata_file.blob.delete(save=False)
-    return 204, None
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-@metadata_file_router.post(
-    "/{id}/update_metadata/",
-    response={202: None},
-    include_in_schema=False,
-    auth=is_staff,
-)
-def metadata_file_update_metadata(request: HttpRequest, id: int):
+@api_view(["POST"])
+@permission_classes([IsStaff])
+def metadata_file_update_metadata(request, id: int):
     metadata_file = get_object_or_404(MetadataFile, id=id)
     update_metadata_task.delay_on_commit(request.user.pk, metadata_file.pk)
-    return 202, None
+    return Response(status=status.HTTP_202_ACCEPTED)
+
+
+lesion_urlpatterns = [
+    path("<id>/", lesion_detail, name="lesion_detail"),
+    path("", lesion_list, name="lesion_list"),
+]
+
+accession_urlpatterns = [
+    path("", accession_create, name="accession_create"),
+    path(
+        "create-review-bulk/",
+        accession_review_bulk_create,
+        name="accession_review_bulk_create",
+    ),
+]
+
+cohort_urlpatterns = [
+    path("", cohort_list, name="cohort_list"),
+    path("<int:id>/", cohort_detail, name="cohort_detail"),
+]
+
+contributor_urlpatterns = [
+    path("", contributor_list, name="contributor_list"),
+    path("<int:id>/", contributor_detail, name="contributor_detail"),
+    path("", contributor_list, name="contributor_create"),
+]
+
+metadata_file_urlpatterns = [
+    path("<int:id>/", metadata_file_delete, name="metadata_file_delete"),
+    path(
+        "<int:id>/update_metadata/",
+        metadata_file_update_metadata,
+        name="metadata_file_update_metadata",
+    ),
+]

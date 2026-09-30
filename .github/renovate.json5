@@ -10,10 +10,6 @@
       allowedVersions: '<2.0.0',
     },
     {
-      matchPackageNames: ['django-ninja'],
-      groupName: 'django-ninja',
-    },
-    {
       matchPackageNames: ['gdal'],
       enabled: false,
     },

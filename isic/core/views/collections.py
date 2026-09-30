@@ -13,12 +13,15 @@ from django.http.response import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
 from django.urls.base import reverse
-from ninja.errors import ValidationError as NinjaValidationError
-import pydantic
+from rest_framework.exceptions import ValidationError as DrfValidationError
 
 from isic.core.forms.collection import CollectionForm
 from isic.core.models import Collection
-from isic.core.pagination import CursorPagination, qs_with_hardcoded_count
+from isic.core.pagination import (
+    CursorPagination,
+    CursorPaginationSerializer,
+    qs_with_hardcoded_count,
+)
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.core.services import image_metadata_csv
 from isic.core.services.collection import create_collection, update_collection
@@ -146,11 +149,12 @@ def collection_detail(request, pk):
 
     paginator = CursorPagination(ordering=("created",))
     try:
-        cursor_input = CursorPagination.Input(
-            limit=request.GET.get("limit", 30), cursor=request.GET.get("cursor")
+        params = CursorPaginationSerializer(
+            data={"limit": request.GET.get("limit", 30), "cursor": request.GET.get("cursor")}
         )
-        page = paginator.paginate_queryset(images, pagination=cursor_input, request=request)
-    except (pydantic.ValidationError, NinjaValidationError) as e:
+        params.is_valid(raise_exception=True)
+        page = paginator.paginate_queryset(images, request, **params.validated_data)
+    except DrfValidationError as e:
         raise BadRequest("Invalid pagination parameters.") from e
 
     contributors = get_visible_objects(

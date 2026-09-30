@@ -2,6 +2,8 @@ from django.urls import reverse
 import pytest
 from pytest_lazy_fixtures import lf
 
+from isic.ingest.models import Contributor
+
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
@@ -80,3 +82,34 @@ def test_core_api_contributor_create(authenticated_client, user):
     assert r.status_code == 201, r.json()
     assert r.json()["creator"] == user.pk
     assert r.json()["owners"] == [user.pk]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("institution_url", "not a url"),
+        ("default_copyright_license", "not a license"),
+    ],
+)
+def test_core_api_contributor_create_invalid(
+    authenticated_client, contributor_factory, field, value
+):
+    contributor = contributor_factory.build()
+    payload = {
+        "institution_name": contributor.institution_name,
+        "institution_url": contributor.institution_url,
+        "legal_contact_info": contributor.legal_contact_info,
+        "default_copyright_license": contributor.default_copyright_license,
+        "default_attribution": contributor.default_attribution,
+    }
+
+    r = authenticated_client.post(
+        reverse("api:contributor_create"),
+        data={**payload, field: value},
+        content_type="application/json",
+    )
+
+    assert r.status_code == 422, r.json()
+    assert field in r.json()["detail"]
+    assert not Contributor.objects.exists()

@@ -1,0 +1,585 @@
+openapi: 3.1.0
+info:
+  title: ISIC Archive
+  version: v2
+paths:
+  /api/v2/collections/:
+    get:
+      operationId: isic_core_api_collection_collection_list
+      summary: Return a list of collections.
+      tags:
+      - collections
+      parameters:
+      - in: query
+        name: pinned
+        required: false
+        schema:
+          type:
+          - boolean
+          - 'null'
+      - in: query
+        name: sort
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+          enum:
+          - name
+          - created
+          - null
+      - in: query
+        name: limit
+        description: Number of results to return per page.
+        required: false
+        schema:
+          type:
+          - integer
+          - 'null'
+      - in: query
+        name: cursor
+        description: The pagination cursor value.
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedCollectionOut'
+      security:
+      - SessionAuth: []
+      - OAuth2AuthBearer: []
+  /api/v2/collections/{id}/:
+    get:
+      operationId: isic_core_api_collection_collection_detail
+      summary: Retrieve a single collection by ID.
+      tags:
+      - collections
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionOut'
+      security:
+      - SessionAuth: []
+      - OAuth2AuthBearer: []
+  /api/v2/images/:
+    get:
+      operationId: isic_core_api_image_image_list
+      summary: Return a list of images.
+      tags:
+      - images
+      parameters:
+      - in: query
+        name: limit
+        description: Number of results to return per page.
+        required: false
+        schema:
+          type:
+          - integer
+          - 'null'
+      - in: query
+        name: cursor
+        description: The pagination cursor value.
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedImageOut'
+      security:
+      - SessionAuth: []
+      - OAuth2AuthBearer: []
+  /api/v2/images/search/:
+    get:
+      operationId: isic_core_api_image_image_search
+      summary: Search images with a key:value query string.
+      tags:
+      - images
+      parameters:
+      - in: query
+        name: query
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - in: query
+        name: collections
+        description: A comma separated list of collection IDs.
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      - in: query
+        name: limit
+        description: Number of results to return per page.
+        required: false
+        schema:
+          type:
+          - integer
+          - 'null'
+      - in: query
+        name: cursor
+        description: The pagination cursor value.
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedImageOut'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                required:
+                - message
+      security:
+      - SessionAuth: []
+      - OAuth2AuthBearer: []
+      description: |
+        The search query uses a simple DSL syntax.
+
+        Some example queries are:
+        <pre>
+            # Display images diagnosed as melanoma from patients that are approximately 50 years old.
+            age_approx:50 AND diagnosis_3:"Melanoma Invasive"
+        </pre>
+        <pre>
+            # Display images from male patients that are approximately 20 to 40 years old.
+            age_approx:[20 TO 40] AND sex:male
+        </pre>
+        <pre>
+            # Display all melanoma images (invasive, in situ, metastasis, and NOS) regardless of subtype.
+            diagnosis_3:Melanoma*
+        </pre>
+
+        The following fields are exposed to the query parameter:
+        <ul>
+          <li>diagnosis_1</li>
+          <li>diagnosis_2</li>
+          <li>diagnosis_3</li>
+          <li>diagnosis_4</li>
+          <li>diagnosis_5</li>
+          <li>age_approx</li>
+          <li>sex</li>
+          <li>diagnosis_confirm_type</li>
+          <li>personal_hx_mm</li>
+          <li>family_hx_mm</li>
+          <li>clin_size_long_diam_mm</li>
+          <li>melanocytic</li>
+          <li>acquisition_day</li>
+          <li>image_type</li>
+          <li>dermoscopic_type</li>
+          <li>mel_mitotic_index</li>
+          <li>mel_thick_mm</li>
+          <li>mel_ulcer</li>
+        </ul>
+
+        For additional information on the fields, see the [ISIC Data Dictionary](https://www.isic-archive.com/data-dictionary).
+  /api/v2/images/{isic_id}/:
+    get:
+      operationId: isic_core_api_image_image_detail
+      summary: Retrieve a single image by ISIC ID.
+      tags:
+      - images
+      parameters:
+      - in: path
+        name: isic_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageOut'
+      security:
+      - SessionAuth: []
+      - OAuth2AuthBearer: []
+  /api/v2/images/{isic_id}/similar/:
+    get:
+      operationId: isic_core_api_image_image_similar
+      summary: Find images similar to the specified image.
+      tags:
+      - images
+      parameters:
+      - in: path
+        name: isic_id
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: limit
+        required: false
+        schema:
+          type: integer
+          default: 10
+          minimum: 1
+          maximum: 50
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SimilarImageOut'
+      security:
+      - SessionAuth: []
+      - OAuth2AuthBearer: []
+  /api/v2/lesions/:
+    get:
+      operationId: isic_ingest_api_lesion_list
+      summary: Return a list of lesions with diagnoses.
+      tags:
+      - lesions
+      parameters:
+      - in: query
+        name: limit
+        description: Number of results to return per page.
+        required: false
+        schema:
+          type:
+          - integer
+          - 'null'
+      - in: query
+        name: cursor
+        description: The pagination cursor value.
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedLesionOut'
+      security:
+      - SessionAuth: []
+      - OAuth2AuthBearer: []
+  /api/v2/lesions/{id}/:
+    get:
+      operationId: isic_ingest_api_lesion_detail
+      summary: Retrieve a single lesion by ID.
+      tags:
+      - lesions
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LesionOut'
+      security:
+      - SessionAuth: []
+      - OAuth2AuthBearer: []
+  /api/v2/users/me/:
+    get:
+      operationId: isic_core_api_user_user_me
+      summary: Retrieve the currently logged in user.
+      tags:
+      - users
+      parameters: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+      security:
+      - SessionAuth: []
+      - OAuth2AuthBearer: []
+components:
+  schemas:
+    CollectionOut:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          description: Supports <a href="https://www.markdownguide.org/cheat-sheet/">markdown</a>.
+        public:
+          type: boolean
+        pinned:
+          type: boolean
+        locked:
+          type: boolean
+        doi:
+          type:
+          - string
+          - 'null'
+        doi_url:
+          type:
+          - string
+          - 'null'
+      required:
+      - id
+      - name
+      - description
+      - public
+      - pinned
+      - locked
+      - doi
+      - doi_url
+    PagedCollectionOut:
+      type: object
+      properties:
+        results:
+          type: array
+          description: The page of objects.
+          items:
+            $ref: '#/components/schemas/CollectionOut'
+        count:
+          type:
+          - integer
+          - 'null'
+          description: The total number of results across all pages. Only available on the first page.
+        next:
+          type:
+          - string
+          - 'null'
+          description: URL of next page of results if there is one.
+        previous:
+          type:
+          - string
+          - 'null'
+          description: URL of previous page of results if there is one.
+      required:
+      - results
+      - count
+      - next
+      - previous
+    FileOut:
+      type: object
+      properties:
+        url:
+          type: string
+        size:
+          type: integer
+      required:
+      - url
+      - size
+    ImageFilesOut:
+      type: object
+      properties:
+        full:
+          $ref: '#/components/schemas/FileOut'
+        thumbnail_256:
+          $ref: '#/components/schemas/FileOut'
+      required:
+      - full
+      - thumbnail_256
+    ImageOut:
+      type: object
+      properties:
+        public:
+          type: boolean
+        isic_id:
+          type: string
+        copyright_license:
+          type: string
+        attribution:
+          type: string
+        files:
+          $ref: '#/components/schemas/ImageFilesOut'
+        metadata:
+          type: object
+          additionalProperties: true
+      required:
+      - public
+      - isic_id
+      - copyright_license
+      - attribution
+      - files
+      - metadata
+    PagedImageOut:
+      type: object
+      properties:
+        results:
+          type: array
+          description: The page of objects.
+          items:
+            $ref: '#/components/schemas/ImageOut'
+        count:
+          type:
+          - integer
+          - 'null'
+          description: The total number of results across all pages. Only available on the first page.
+        next:
+          type:
+          - string
+          - 'null'
+          description: URL of next page of results if there is one.
+        previous:
+          type:
+          - string
+          - 'null'
+          description: URL of previous page of results if there is one.
+      required:
+      - results
+      - count
+      - next
+      - previous
+    SimilarImageOut:
+      allOf:
+      - $ref: '#/components/schemas/ImageOut'
+      - type: object
+        properties:
+          distance:
+            type: number
+        required:
+        - distance
+    LesionOut:
+      type: object
+      properties:
+        id:
+          type: string
+          maxLength: 12
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImageOut'
+        images_count:
+          type: integer
+        longitudinally_monitored:
+          type: boolean
+        index_image_id:
+          type:
+          - string
+          - 'null'
+        outcome_diagnosis:
+          type:
+          - string
+          - 'null'
+        outcome_diagnosis_1:
+          type:
+          - string
+          - 'null'
+      required:
+      - id
+      - images
+      - images_count
+      - longitudinally_monitored
+      - index_image_id
+      - outcome_diagnosis
+      - outcome_diagnosis_1
+    PagedLesionOut:
+      type: object
+      properties:
+        results:
+          type: array
+          description: The page of objects.
+          items:
+            $ref: '#/components/schemas/LesionOut'
+        count:
+          type:
+          - integer
+          - 'null'
+          description: The total number of results across all pages. Only available on the first page.
+        next:
+          type:
+          - string
+          - 'null'
+          description: URL of next page of results if there is one.
+        previous:
+          type:
+          - string
+          - 'null'
+          description: URL of previous page of results if there is one.
+      required:
+      - results
+      - count
+      - next
+      - previous
+    UserOut:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        created:
+          type: string
+          format: date-time
+        accepted_terms:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        hash_id:
+          type: string
+        full_name:
+          type: string
+      required:
+      - id
+      - email
+      - first_name
+      - last_name
+      - created
+      - accepted_terms
+      - hash_id
+      - full_name
+  securitySchemes:
+    SessionAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    OAuth2AuthBearer:
+      type: http
+      scheme: bearer
