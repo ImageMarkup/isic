@@ -20,7 +20,15 @@ def _require_unlocked_collection(collection: Collection) -> None:
         raise ValidationError("Can't modify the collection, it's locked.")
 
 
-def create_collection(*, creator: User, name: str, description: str, public: bool, locked: bool):
+def create_collection(  # noqa: PLR0913
+    *,
+    creator: User,
+    name: str,
+    description: str,
+    public: bool,
+    locked: bool,
+    tags: list[int] | None = None,
+):
     collection = Collection(
         creator=creator,
         name=name,
@@ -30,6 +38,8 @@ def create_collection(*, creator: User, name: str, description: str, public: boo
     )
     collection.full_clean()
     collection.save()
+    if tags is not None:
+        collection.tags.set(tags)
 
     return collection
 

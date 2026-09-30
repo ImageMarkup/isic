@@ -2,6 +2,7 @@ from typing import Annotated, Literal
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError, transaction
 from django.db.models import Count
 from django.http.response import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -12,7 +13,7 @@ from pydantic import field_validator
 
 from isic.auth import allow_any, is_authenticated, is_staff
 from isic.core.constants import ISIC_ID_REGEX
-from isic.core.models.collection import Collection
+from isic.core.models.collection import Collection, CollectionTag
 from isic.core.pagination import CursorPagination
 from isic.core.permissions import get_visible_objects
 from isic.core.serializers import SearchQueryIn
@@ -48,7 +49,7 @@ class AutocompleteQueryIn(Schema):
 class CollectionOut(ModelSchema):
     class Meta:
         model = Collection
-        fields = ["id", "name", "description", "public", "pinned", "locked"]
+        fields = ["id", "name", "description", "tags", "public", "pinned", "locked"]
 
     doi: str | None = Field(None, alias="doi.id")
     doi_url: str | None = Field(None, alias="doi.external_url")
@@ -333,6 +334,75 @@ def collection_populate_from_isic_ids(request, id: int, payload: PopulateCollect
     )
 
     return 202, {}
+
+
+class SetTags(Schema):
+    tags: list[str]
+
+    model_config = {"extra": "forbid"}
+
+
+class TagSchema(Schema):
+    tag: str
+
+    model_config = {"extra": "forbid"}
+
+
+@router.post(
+    "/{id}/set-tags/",
+    response={200: None, 400: dict},
+    include_in_schema=False,
+    auth=is_staff,
+)
+def collection_set_tags(request, id: int, payload: SetTags):
+    qs = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
+    collection = get_object_or_404(qs.distinct(), id=id)
+
+    with transaction.atomic():
+        for t in payload.tags:
+            try:
+                tag = CollectionTag.objects.get(tag=t)
+                collection.tags.add(tag)
+            except CollectionTag.DoesNotExist as e:
+                messages.add_message(request, messages.ERROR, str(e))
+                return 400, {"error": str(e)}
+        collection.save()
+
+    messages.add_message(request, messages.SUCCESS, "Collection Tags updated.")
+    return 200, None
+
+
+@router.get("/tags", response=list[str], include_in_schema=False, auth=allow_any)
+def get_collection_tags(request):
+    return [t.tag for t in CollectionTag.objects.all()]
+
+
+@router.post(
+    "/tags",
+    response={201: None, 400: dict},
+    include_in_schema=False,
+    auth=is_staff,
+)
+def create_collection_tag(request, payload: TagSchema):
+    try:
+        CollectionTag.objects.create(tag=payload.tag)
+    except IntegrityError:
+        return 400, {"error": "Tag already exists."}
+    messages.add_message(request, messages.SUCCESS, "Collection Tag created successfully.")
+    return 201, None
+
+
+@router.delete(
+    "/tags/{tag}/",
+    response={204: None, 400: None},
+    include_in_schema=False,
+    auth=is_staff,
+)
+def delete_collection_tag(request, tag: str):
+    collection_tag = get_object_or_404(CollectionTag.objects.all(), tag=tag)
+    collection_tag.delete()
+    messages.add_message(request, messages.SUCCESS, "Collection Tag deleted successfully.")
+    return 204, None
 
 
 class SetPinnedIn(Schema):
