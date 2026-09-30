@@ -44,7 +44,7 @@ dependencies = [
   "psycopg[binary]==3.3.4",
   "pycountry==26.2.16",
   "pydantic==2.13.4",
-  "pyexiv2==2.15.5",
+  "pyexiv2==2.16.0",
   "pyparsing==3.3.2",
   "python-magic==0.4.27",
   "pyyaml==6.0.3",
