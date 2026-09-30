@@ -185,7 +185,7 @@ def embed_iptc_metadata(
                     # https://iptc.org/std/photometadata/specification/IPTC-PhotoMetadata#image-supplier-image-id
                     "Xmp.plus.ImageSupplierImageID": isic_id,
                     # https://iptc.org/std/photometadata/specification/IPTC-PhotoMetadata#rights-usage-terms
-                    "Xmp.xmpRights.UsageTerms": copyright_license,
+                    "Xmp.xmpRights.UsageTerms": {'lang="x-default"': copyright_license},
                     # https://iptc.org/std/photometadata/specification/IPTC-PhotoMetadata#web-statement-of-rights
                     "Xmp.xmpRights.WebStatement": LICENSE_URIS[copyright_license],
                     # necessary to create the "struct" for the licensor data
