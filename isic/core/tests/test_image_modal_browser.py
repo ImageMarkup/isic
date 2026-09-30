@@ -1,6 +1,6 @@
 import io
+from urllib.parse import urlsplit
 
-from django.test import Client
 from django.urls import reverse
 from PIL import Image as PILImage
 from playwright.sync_api import expect
@@ -18,7 +18,12 @@ def _make_jpeg_bytes(width, height, color="red"):
 
 
 def _intercept_image_urls(page, urls):
+    # presigned urls embed the time they were signed, so the url the server renders can differ
+    # from the one generated here. match on the path alone.
     for url, jpeg_bytes in urls:
+
+        def _matches(path):
+            return lambda request_url: urlsplit(request_url).path == path
 
         def _fulfill(body):
             def _handler(route, *_args):
@@ -26,7 +31,7 @@ def _intercept_image_urls(page, urls):
 
             return _handler
 
-        page.route(url, _fulfill(jpeg_bytes))
+        page.route(_matches(urlsplit(url).path), _fulfill(jpeg_bytes))
 
 
 def _assert_modal_fits_viewport(modal, viewport):
@@ -62,8 +67,7 @@ VIEWPORT_SIZES = [
 @pytest.mark.parametrize("image_size", IMAGE_SIZES)
 @pytest.mark.parametrize("viewport", VIEWPORT_SIZES)
 def test_collection_detail_image_modal_fits_viewport(
-    new_context,
-    live_server,
+    page,
     collection_factory,
     image_factory,
     image_size,
@@ -82,10 +86,7 @@ def test_collection_detail_image_modal_fits_viewport(
     blob_bytes = _make_jpeg_bytes(w, h)
     thumb_bytes = _make_jpeg_bytes(256, 256)
 
-    ctx = new_context(base_url=live_server.url, viewport=viewport)
-    ctx.set_default_timeout(15_000)
-    page = ctx.new_page()
-
+    page.set_viewport_size(viewport)
     _intercept_image_urls(
         page,
         [
@@ -113,9 +114,7 @@ def test_collection_detail_image_modal_fits_viewport(
 @pytest.mark.parametrize("image_size", IMAGE_SIZES)
 @pytest.mark.parametrize("viewport", VIEWPORT_SIZES)
 def test_accession_modal_fits_viewport(
-    new_context,
-    live_server,
-    staff_authenticated_user,
+    staff_authenticated_page,
     cohort_factory,
     accession_factory,
     image_size,
@@ -129,23 +128,8 @@ def test_accession_modal_fits_viewport(
     blob_bytes = _make_jpeg_bytes(w, h)
     thumb_bytes = _make_jpeg_bytes(256, 256)
 
-    ctx = new_context(base_url=live_server.url, viewport=viewport)
-    ctx.set_default_timeout(15_000)
-    page = ctx.new_page()
-
-    client = Client()
-    client.force_login(staff_authenticated_user)
-    session_cookie = client.cookies["sessionid"]
-    ctx.add_cookies(
-        [
-            {
-                "name": "sessionid",
-                "value": session_cookie.value,
-                "url": live_server.url,
-            }
-        ]
-    )
-
+    page = staff_authenticated_page
+    page.set_viewport_size(viewport)
     _intercept_image_urls(
         page,
         [
@@ -173,8 +157,7 @@ def test_accession_modal_fits_viewport(
 @pytest.mark.parametrize("image_size", IMAGE_SIZES)
 @pytest.mark.parametrize("viewport", VIEWPORT_SIZES)
 def test_study_task_image_modal_fits_viewport(
-    new_context,
-    live_server,
+    authenticated_page,
     authenticated_user,
     collection_factory,
     image_factory,
@@ -206,23 +189,8 @@ def test_study_task_image_modal_fits_viewport(
     blob_bytes = _make_jpeg_bytes(w, h)
     thumb_bytes = _make_jpeg_bytes(256, 256)
 
-    ctx = new_context(base_url=live_server.url, viewport=viewport)
-    ctx.set_default_timeout(15_000)
-    page = ctx.new_page()
-
-    client = Client()
-    client.force_login(authenticated_user)
-    session_cookie = client.cookies["sessionid"]
-    ctx.add_cookies(
-        [
-            {
-                "name": "sessionid",
-                "value": session_cookie.value,
-                "url": live_server.url,
-            }
-        ]
-    )
-
+    page = authenticated_page
+    page.set_viewport_size(viewport)
     _intercept_image_urls(
         page,
         [
