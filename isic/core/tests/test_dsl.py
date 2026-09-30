@@ -80,6 +80,14 @@ from isic.core.dsl import django_parser, es_parser, parse_query
             "public:true image_type:dermoscopic",
             Q(public=True) & Q(accession__image_type="dermoscopic"),
         ),
+        (
+            "diagnosis_1:foobar OR (diagnosis_1:foobaz AND (diagnosis_1:foo* OR age_approx:50))",
+            Q(accession__diagnosis_1="foobar")
+            | (
+                Q(accession__diagnosis_1="foobaz")
+                & (Q(accession__diagnosis_1__startswith="foo") | Q(accession__age__approx=50))
+            ),
+        ),
     ],
 )
 def test_dsl_django_parser(query, filter_or_exception):

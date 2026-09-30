@@ -211,7 +211,7 @@ def es_query_or(s, loc, toks):
     ret: dict[str, Any] = {"bool": {"should": []}}
     for tok in toks[0]:
         ret["bool"]["should"].append(tok)
-    toks[0] = ret
+    return ret
 
 
 def q(s, loc, toks):
@@ -245,7 +245,7 @@ def q_or(s, loc, toks):
     ret = Q()
     for tok in toks[0]:
         ret |= tok
-    toks[0] = ret
+    return ret
 
 
 # Lucene DSL only supports uppercase AND/OR/TO
