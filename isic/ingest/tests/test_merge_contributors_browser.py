@@ -75,6 +75,72 @@ def test_merge_contributors_autocomplete_preview_and_submit(
 
 
 @pytest.mark.playwright
+def test_merge_contributors_shows_access_impact(
+    staff_authenticated_page,
+    contributor_with_cohorts,
+    accession_factory,
+    image_factory,
+    user_factory,
+    engagement_profile_factory,
+):
+    page = staff_authenticated_page
+
+    dest_contributor = contributor_with_cohorts()
+    src_contributor = contributor_with_cohorts()
+
+    # an owner of both contributors already sees everything, so they gain nothing from the merge
+    shared_owner = user_factory()
+    dest_contributor.owners.add(shared_owner)
+    src_contributor.owners.add(shared_owner)
+    dest_only_owner, src_only_owner = user_factory(), user_factory()
+    dest_contributor.owners.add(dest_only_owner)
+    src_contributor.owners.add(src_only_owner)
+
+    dest_cohort = dest_contributor.cohorts.first()
+    image_factory(accession=accession_factory(cohort=dest_cohort))
+    accession_factory(cohort=dest_cohort)
+
+    engagement_profile_factory(user=src_only_owner, default_contributor=src_contributor)
+    engagement_profile_factory(default_contributor=src_contributor)
+
+    page.goto(reverse("ingest/merge-contributors"))
+
+    for fieldset_filter, contributor in [
+        ({"has_text": "Contributor to merge into"}, dest_contributor),
+        (
+            {"has_text": "Contributor to merge", "has_not_text": "Contributor to merge into"},
+            src_contributor,
+        ),
+    ]:
+        fieldset = page.get_by_role("group").filter(**fieldset_filter)
+        fieldset.get_by_role("searchbox").press_sequentially(
+            contributor.institution_name[:5], delay=50
+        )
+        result = fieldset.get_by_text(contributor.institution_name, exact=True).first
+        expect(result).to_be_visible()
+        result.click()
+
+    impact = page.get_by_role("alert")
+    expect(impact.get_by_text("Access impact of this merge")).to_be_visible()
+
+    # both directions are described, and the owner of both contributors is left out of them
+    expect(impact.get_by_text(src_only_owner.email)).to_be_visible()
+    expect(impact.get_by_text(dest_only_owner.email)).to_be_visible()
+    expect(impact.get_by_text(shared_owner.email)).not_to_be_visible()
+
+    expect(impact.get_by_text("engagement user")).to_be_visible()
+    expect(impact.get_by_text("will also have access to every future upload")).to_be_visible()
+    expect(impact.get_by_text("Their default will be repointed to")).to_be_visible()
+
+    # clearing a contributor leaves nothing to describe
+    second_fieldset = page.get_by_role("group").filter(
+        has_text="Contributor to merge", has_not_text="Contributor to merge into"
+    )
+    second_fieldset.get_by_role("searchbox").fill("")
+    expect(impact).not_to_be_visible()
+
+
+@pytest.mark.playwright
 def test_merge_contributors_same_contributor_rejected(
     staff_authenticated_page, contributor_with_cohorts
 ):
@@ -100,3 +166,107 @@ def test_merge_contributors_same_contributor_rejected(
 
     expect(page.get_by_text("The two contributors must be different.")).to_be_visible()
     assert Contributor.objects.filter(pk=contributor.pk).exists()
+
+
+@pytest.mark.playwright
+def test_merge_contributors_stale_impact_not_shown_after_selection_change(
+    staff_authenticated_page,
+    contributor_with_cohorts,
+    user_factory,
+):
+    """Test that changing selections before impact loads doesn't show stale results."""
+    page = staff_authenticated_page
+
+    # Create three contributors with distinct owners
+    contributor_a = contributor_with_cohorts()
+    contributor_b = contributor_with_cohorts()
+    contributor_c = contributor_with_cohorts()
+
+    owner_a = user_factory()
+    owner_b = user_factory()
+    owner_c = user_factory()
+
+    contributor_a.owners.add(owner_a)
+    contributor_b.owners.add(owner_b)
+    contributor_c.owners.add(owner_c)
+
+    page.goto(reverse("ingest/merge-contributors"))
+
+    # Select contributor_a as destination
+    first_fieldset = page.get_by_role("group").filter(has_text="Contributor to merge into")
+    first_input = first_fieldset.get_by_role("searchbox")
+    first_input.press_sequentially(contributor_a.institution_name[:5], delay=50)
+    first_result = first_fieldset.get_by_text(contributor_a.institution_name, exact=True).first
+    expect(first_result).to_be_visible()
+    first_result.click()
+
+    # Select contributor_b as source (this will trigger an impact fetch)
+    second_fieldset = page.get_by_role("group").filter(
+        has_text="Contributor to merge", has_not_text="Contributor to merge into"
+    )
+    second_input = second_fieldset.get_by_role("searchbox")
+    second_input.press_sequentially(contributor_b.institution_name[:5], delay=50)
+    second_result = second_fieldset.get_by_text(contributor_b.institution_name, exact=True).first
+    expect(second_result).to_be_visible()
+    second_result.click()
+
+    # Immediately change to contributor_c before the first fetch completes
+    # This should supersede the first request
+    second_input.fill("")
+    second_input.press_sequentially(contributor_c.institution_name[:5], delay=50)
+    third_result = second_fieldset.get_by_text(contributor_c.institution_name, exact=True).first
+    expect(third_result).to_be_visible()
+    third_result.click()
+
+    # Wait for the impact alert to appear
+    impact = page.get_by_role("alert")
+    expect(impact.get_by_text("Access impact of this merge")).to_be_visible()
+
+    # The impact should only show owner_c (from contributor_c), not owner_b
+    expect(impact.get_by_text(owner_c.email)).to_be_visible()
+    expect(impact.get_by_text(owner_b.email)).not_to_be_visible()
+    expect(impact.get_by_text(owner_a.email)).not_to_be_visible()
+
+
+@pytest.mark.playwright
+def test_merge_contributors_stale_impact_not_shown_after_selection_cleared(
+    staff_authenticated_page,
+    contributor_with_cohorts,
+    user_factory,
+):
+    """Test that clearing selection before impact loads doesn't show stale results."""
+    page = staff_authenticated_page
+
+    contributor_a = contributor_with_cohorts()
+    contributor_b = contributor_with_cohorts()
+
+    owner_b = user_factory()
+    contributor_b.owners.add(owner_b)
+
+    page.goto(reverse("ingest/merge-contributors"))
+
+    # Select contributor_a as destination
+    first_fieldset = page.get_by_role("group").filter(has_text="Contributor to merge into")
+    first_input = first_fieldset.get_by_role("searchbox")
+    first_input.press_sequentially(contributor_a.institution_name[:5], delay=50)
+    first_result = first_fieldset.get_by_text(contributor_a.institution_name, exact=True).first
+    expect(first_result).to_be_visible()
+    first_result.click()
+
+    # Select contributor_b as source (this will trigger an impact fetch)
+    second_fieldset = page.get_by_role("group").filter(
+        has_text="Contributor to merge", has_not_text="Contributor to merge into"
+    )
+    second_input = second_fieldset.get_by_role("searchbox")
+    second_input.press_sequentially(contributor_b.institution_name[:5], delay=50)
+    second_result = second_fieldset.get_by_text(contributor_b.institution_name, exact=True).first
+    expect(second_result).to_be_visible()
+    second_result.click()
+
+    # Immediately clear the selection before the first fetch completes
+    second_input.fill("")
+
+    # The impact alert should not be visible (it was already tested to disappear
+    # when cleared in test_merge_contributors_shows_access_impact)
+    impact = page.get_by_role("alert")
+    expect(impact).not_to_be_visible()
