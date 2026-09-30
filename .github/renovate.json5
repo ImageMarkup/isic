@@ -17,5 +17,10 @@
       matchPackageNames: ['mypy'],
       allowedVersions: '<1.20',
     },
+    {
+      matchPackageNames: ['pyparsing'],
+      // 3.3.3 has an infix_notation regression: https://github.com/pyparsing/pyparsing/issues/672
+      allowedVersions: '!/^3\\.3\\.3$/',
+    },
   ],
 }
