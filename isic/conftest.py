@@ -138,6 +138,9 @@ expect.set_options(timeout=_PLAYWRIGHT_TIMEOUT)
 def _create_context(new_context, live_server):
     ctx = new_context(base_url=live_server.url)
     ctx.set_default_timeout(_PLAYWRIGHT_TIMEOUT)
+    # navigation waits for the load event, which a slow third party request can hold up.
+    # analytics has no bearing on any test, so don't depend on it.
+    ctx.route("https://www.googletagmanager.com/**", lambda route: route.abort())
     return ctx
 
 
