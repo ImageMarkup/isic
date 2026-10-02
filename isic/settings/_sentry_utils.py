@@ -21,6 +21,16 @@ def filter_sentry_event(event: Event, hint: Hint) -> Event | None:
     ):
         return None
 
+    # Django returns the full body for HEAD requests. gunicorn drops the body, but logs a
+    # warning on every such request.
+    if (
+        log_record is not None
+        and log_record.name == "gunicorn.http.wsgi"
+        and "RFC 9110" in log_record.getMessage()
+        and "method=HEAD " in log_record.getMessage()
+    ):
+        return None
+
     return event
 
 
