@@ -17,6 +17,7 @@ uv run tox -e benchmark -- --benchmark-disable      # run each benchmark once, w
 - Benchmarks that write data roll back each round.
 - Benchmarks that use the `benchmark_with_memory` fixture also record the peak memory Python allocates, measured in a separate call. Memory allocated outside Python, such as by psycopg, isn't counted.
 - CI (`.github/workflows/benchmarks.yml`) runs on each push to master. `history.py record` adds each benchmark's fastest round and peak memory to `benchmarks/data.js` on the `gh-pages` branch, and the job copies `index.html` next to it. Then `history.py check` fails the job when either is more than 50% higher than in the run before it.
+- `.github/workflows/benchmarks-backfill.yml` benchmarks the master merges since a date that have no results yet, such as ones from before the benchmarks existed or whose run failed, with the current benchmarks. It runs them all on one runner, so roughly 30 fit in the 6 hour job limit. For more, run it with a later date first, then an earlier one. Run it with `gh workflow run benchmarks-backfill.yml -f since=YYYY-MM-DD`.
 - `index.html` charts `data.js`, grouped by module and test, at https://imagemarkup.github.io/isic/benchmarks/. To chart local runs:
 
   ```sh

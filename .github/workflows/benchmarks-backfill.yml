@@ -1,0 +1,115 @@
+name: benchmarks-backfill
+on:
+  workflow_dispatch:
+    inputs:
+      since:
+        description: Benchmark each master merge since this date (YYYY-MM-DD) that has no results
+        required: true
+permissions:
+  # The job pushes its results to the gh-pages branch.
+  contents: write
+jobs:
+  backfill:
+    # One runner benchmarks every commit, so the differences between them come from the code rather
+    # than the hardware. Roughly 30 commits fit in the 6 hour job limit.
+    runs-on: ubuntu-24.04
+    # The same as benchmarks.yml.
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.6-pg18
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd "pg_isready --username postgres"
+          --health-start-period 30s
+          --health-start-interval 2s
+        ports:
+          - 5432:5432
+      elasticsearch:
+        image: elasticsearch:9.5.2
+        env:
+          ES_JAVA_OPTS: "-Xms250m -Xmx750m"
+          discovery.type: single-node
+          xpack.security.enabled: "true"
+          ELASTIC_PASSWORD: elastic
+        options: >-
+          --health-cmd "curl --fail --user elastic:elastic http://localhost:9200/"
+          --health-start-period 30s
+          --health-start-interval 2s
+        ports:
+          - 9200:9200
+    env:
+      DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+      DJANGO_ISIC_ELASTICSEARCH_URL: http://elastic:elastic@localhost:9200
+      DJANGO_CELERY_BROKER_URL: amqp://localhost:5672/
+      DJANGO_CACHE_URL: redis://localhost:6379/0
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Install uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+      - name: Increase maintenance_work_mem for pgvector
+        run: psql -c "ALTER SYSTEM SET maintenance_work_mem = '512MB'" -c "SELECT pg_reload_conf();"
+        env:
+          PGHOST: localhost
+          PGUSER: postgres
+          PGPASSWORD: postgres
+      - name: Benchmark commits without results
+        # Each commit runs the current benchmarks on its own locked dependencies, the way tox's
+        # benchmark environment does. A commit can predate both.
+        run: |
+          benchmark_group=$(git show "$GITHUB_SHA:pyproject.toml" \
+            | python3 -c "import sys, tomllib; print(*tomllib.load(sys.stdin.buffer)['dependency-groups']['benchmark'], sep=',')")
+          # Without a time, git uses the current time of day.
+          shas=$(git log --first-parent --since="$SINCE 00:00" --format=%H | jq --raw-input --null-input --raw-output \
+            --rawfile data <(git show origin/gh-pages:benchmarks/data.js) \
+            '[inputs] - [$data | ltrimstr("window.BENCHMARK_DATA = ") | fromjson | .entries.Benchmark[].commit.id] | .[]')
+          if [ -z "$shas" ]; then
+            echo "::error::Every master merge since $SINCE has results."
+            exit 1
+          fi
+
+          mkdir "$RUNNER_TEMP/reports"
+          for sha in $shas; do
+            git checkout --quiet --force "$sha"
+            git checkout "$GITHUB_SHA" -- benchmarks isic/settings/benchmark.py
+            uv run --locked --extra development --no-default-groups --group test --with "$benchmark_group" \
+              pytest benchmarks --ds=isic.settings.benchmark --no-cov \
+              --benchmark-disable-gc --benchmark-group-by=func --benchmark-columns=min,median,iqr,rounds \
+              --benchmark-json="$RUNNER_TEMP/reports/$sha.json" \
+              || echo "$sha" >> "$RUNNER_TEMP/failed"
+          done
+          git checkout --quiet --force "$GITHUB_SHA"
+        env:
+          SINCE: ${{ inputs.since }}
+          PYTHONPATH: ${{ github.workspace }}
+      - name: Checkout gh-pages
+        # After the benchmarks, so it has the results benchmarks.yml pushed meanwhile.
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: gh-pages
+          path: gh-pages
+      - name: Record results
+        run: |
+          for report in "$RUNNER_TEMP"/reports/*.json; do
+            python3 benchmarks/history.py record "$report" gh-pages/benchmarks/data.js
+          done
+      - name: Push results
+        working-directory: gh-pages
+        run: |
+          # See benchmarks.yml.
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add benchmarks
+          git commit --message "Record backfilled benchmarks since $SINCE"
+          git push
+        env:
+          SINCE: ${{ inputs.since }}
+      - name: Check for failed commits
+        run: |
+          if [ -s "$RUNNER_TEMP/failed" ]; then
+            echo "::error::The benchmarks failed for $(paste -sd ' ' "$RUNNER_TEMP/failed")."
+            exit 1
+          fi

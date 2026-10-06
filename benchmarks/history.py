@@ -8,6 +8,7 @@ Each run keeps each benchmark's fastest round, which varies less between runs th
 the peak memory of the benchmarks that record it.
 """
 
+from datetime import datetime
 import json
 from pathlib import Path
 import subprocess
@@ -39,7 +40,8 @@ def record(report_path: Path, data_path: Path) -> None:
 
     data = load(data_path)
     data["lastUpdate"] = time.time() * 1000
-    data["entries"]["Benchmark"].append(
+    runs = data["entries"]["Benchmark"]
+    runs.append(
         {
             "commit": {
                 "id": commit["id"],
@@ -66,6 +68,8 @@ def record(report_path: Path, data_path: Path) -> None:
             ],
         }
     )
+    # Backfilled runs are recorded after newer ones.
+    runs.sort(key=lambda run: datetime.fromisoformat(run["commit"]["timestamp"]))
     data_path.parent.mkdir(parents=True, exist_ok=True)
     data_path.write_text(PREFIX + json.dumps(data))
 
