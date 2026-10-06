@@ -6,10 +6,9 @@ on:
         description: Benchmark each master merge since this date (YYYY-MM-DD) that has no results
         required: true
 permissions:
-  # The job pushes its results to the gh-pages branch.
-  contents: write
+  contents: read
 jobs:
-  backfill:
+  benchmark:
     # One runner benchmarks every commit, so the differences between them come from the code rather
     # than the hardware. Roughly 30 commits fit in the 6 hour job limit.
     runs-on: ubuntu-24.04
@@ -48,6 +47,8 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          # This job runs each commit's code and dependencies, so it keeps no credentials.
+          persist-credentials: false
       - name: Install uv
         uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
       - name: Increase maintenance_work_mem for pgvector
@@ -85,15 +86,46 @@ jobs:
         env:
           SINCE: ${{ inputs.since }}
           PYTHONPATH: ${{ github.workspace }}
+      - name: Upload results
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: reports
+          path: ${{ runner.temp }}/reports
+          if-no-files-found: error
+      - name: Check for failed commits
+        run: |
+          if [ -s "$RUNNER_TEMP/failed" ]; then
+            echo "::error::The benchmarks failed for $(paste -sd ' ' "$RUNNER_TEMP/failed")."
+            exit 1
+          fi
+  publish:
+    needs: benchmark
+    # Record the commits that worked, even when others failed.
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-24.04
+    permissions:
+      # The job pushes the results to the gh-pages branch.
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # history.py reads each commit's message.
+          fetch-depth: 0
+          persist-credentials: false
       - name: Checkout gh-pages
-        # After the benchmarks, so it has the results benchmarks.yml pushed meanwhile.
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: gh-pages
           path: gh-pages
+      - name: Download results
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: reports
+          path: reports
       - name: Record results
         run: |
-          for report in "$RUNNER_TEMP"/reports/*.json; do
+          for report in reports/*.json; do
             python3 benchmarks/history.py record "$report" gh-pages/benchmarks/data.js
           done
       - name: Push results
@@ -107,9 +139,3 @@ jobs:
           git push
         env:
           SINCE: ${{ inputs.since }}
-      - name: Check for failed commits
-        run: |
-          if [ -s "$RUNNER_TEMP/failed" ]; then
-            echo "::error::The benchmarks failed for $(paste -sd ' ' "$RUNNER_TEMP/failed")."
-            exit 1
-          fi
