@@ -1,0 +1,79 @@
+name: benchmarks
+on:
+  push:
+    branches:
+      - master
+permissions:
+  # Each run pushes its results to the gh-pages branch.
+  contents: write
+# Each run adds to the history on gh-pages, so runs can't overlap.
+concurrency: benchmarks
+jobs:
+  benchmark:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.6-pg18
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd "pg_isready --username postgres"
+          --health-start-period 30s
+          --health-start-interval 2s
+        ports:
+          - 5432:5432
+      elasticsearch:
+        image: elasticsearch:9.5.2
+        env:
+          ES_JAVA_OPTS: "-Xms250m -Xmx750m"
+          discovery.type: single-node
+          xpack.security.enabled: "true"
+          ELASTIC_PASSWORD: elastic
+        options: >-
+          --health-cmd "curl --fail --user elastic:elastic http://localhost:9200/"
+          --health-start-period 30s
+          --health-start-interval 2s
+        ports:
+          - 9200:9200
+    env:
+      DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
+      DJANGO_ISIC_ELASTICSEARCH_URL: http://elastic:elastic@localhost:9200
+      # The same as ci.yml. No benchmark connects to them, so this job has no services for them.
+      DJANGO_CELERY_BROKER_URL: amqp://localhost:5672/
+      DJANGO_CACHE_URL: redis://localhost:6379/0
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+      - name: Increase maintenance_work_mem for pgvector
+        # The dataset rebuilds the imageembedding IVFFlat index; see ci.yml.
+        run: psql -c "ALTER SYSTEM SET maintenance_work_mem = '512MB'" -c "SELECT pg_reload_conf();"
+        env:
+          PGHOST: localhost
+          PGUSER: postgres
+          PGPASSWORD: postgres
+      - name: Run benchmarks
+        run: uv run --locked tox -e benchmark -- --benchmark-json=.benchmarks/ci.json
+      - name: Checkout gh-pages
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: gh-pages
+          path: gh-pages
+      - name: Record results
+        run: |
+          uv run --locked python benchmarks/history.py record .benchmarks/ci.json gh-pages/benchmarks/data.js
+          cp benchmarks/index.html gh-pages/benchmarks/
+      - name: Push results
+        # A regression is still recorded, so the next run compares against it.
+        working-directory: gh-pages
+        run: |
+          # github-actions[bot]'s noreply address (41898282 is its user ID), as in actions/checkout's
+          # README, so GitHub attributes the commit to that bot.
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add benchmarks
+          git commit --message "Record benchmarks for $GITHUB_SHA"
+          git push
+      - name: Check for regressions
+        run: uv run --locked python benchmarks/history.py check gh-pages/benchmarks/data.js

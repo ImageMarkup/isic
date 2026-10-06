@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ISIC benchmarks</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+  <script src="data.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 1rem; }
+    nav { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; font-size: 0.875rem; }
+    .charts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(32rem, 100%), 1fr)); gap: 2rem; }
+    .charts > div { position: relative; height: 24rem; padding: 0.75rem; border-radius: 0.5rem; }
+    .memory { background: #f3eefc; }
+    .hide-time .time, .hide-memory .memory,
+    .hide-time section:not(:has(.memory)), .hide-memory section:not(:has(.time)) { display: none; }
+    @media (min-width: 48rem) {
+      body { margin: 2rem 2rem 2rem 10rem; }
+      nav { position: fixed; top: 2rem; left: 2rem; flex-direction: column; }
+      nav label + a { margin-top: 0.75rem; }
+      .charts > div { height: 18rem; }
+    }
+  </style>
+</head>
+<body>
+  <h1>ISIC benchmarks</h1>
+  <nav>
+    <label><input type="checkbox" checked onchange="document.body.classList.toggle('hide-time', !this.checked)"> Timing</label>
+    <label><input type="checkbox" checked onchange="document.body.classList.toggle('hide-memory', !this.checked)"> Memory</label>
+  </nav>
+  <script>
+    const { repoUrl, lastUpdate, entries } = window.BENCHMARK_DATA;
+    const runs = entries.Benchmark;
+    document.body.insertAdjacentHTML(
+      "beforeend",
+      `<p><a href="${repoUrl}">${repoUrl}</a> &middot; Last updated ${new Date(lastUpdate).toLocaleString()}</p>`,
+    );
+    // Colorblind-safe in this order. Charts with more lines reuse them dashed.
+    const colors = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"];
+    const number = new Intl.NumberFormat(undefined, { maximumSignificantDigits: 3 });
+
+    // GitHub merge commits put the PR title on the third line.
+    function commitSubject(message) {
+      const [subject, , body] = message.split("\n");
+      const pr = subject.match(/^Merge pull request (#\d+)/)?.[1];
+      return pr && body ? `${pr} ${body}` : subject;
+    }
+
+    // Chart.js doesn't wrap tooltip text, so long lines run off narrow charts.
+    function wrap(text, width) {
+      return text.match(new RegExp(`.{1,${width}}(?:\\s|$)|\\S+`, "g")).map((line) => line.trim());
+    }
+
+    // The tooltip shows for the nearest run, but clicking through to its commit needs a hit on a point.
+    function runAt(event, chart) {
+      return runs[chart.getElementsAtEventForMode(event, "nearest", { intersect: true }, false)[0]?.index];
+    }
+
+    const groups = {};
+    runs.forEach((run, i) => {
+      for (const bench of run.benches) {
+        const [, module, test, param, memory = ""] = bench.name.match(
+          /^benchmarks\/test_(\w+)\.py::(\w+)(?:\[(.*)\])?( peak memory)?$/,
+        );
+        groups[module] ??= {};
+        const chart = (groups[module][test + memory] ??= { unit: bench.unit, lines: {} });
+        chart.lines[param ?? test] ??= Array(runs.length).fill(null);
+        chart.lines[param ?? test][i] = bench.value;
+      }
+    });
+
+    // A chart with more lines than colors splits into one chart per leading parameter.
+    for (const charts of Object.values(groups)) {
+      for (const [title, { unit, lines }] of Object.entries(charts)) {
+        if (Object.keys(lines).length > colors.length) {
+          delete charts[title];
+          for (const [param, values] of Object.entries(lines)) {
+            const [, prefix, rest] = param.match(/^(.*)-(.*?)$/);
+            (charts[`${title} (${prefix})`] ??= { unit, lines: {} }).lines[rest] = values;
+          }
+        }
+      }
+    }
+
+    for (const module of Object.keys(groups).sort()) {
+      document.querySelector("nav").insertAdjacentHTML("beforeend", `<a href="#${module}">${module}</a>`);
+      document.body.insertAdjacentHTML(
+        "beforeend",
+        `<section><h2 id="${module}">${module}</h2><div class="charts"></div></section>`,
+      );
+      const grid = document.body.lastElementChild.lastElementChild;
+      const charts = Object.entries(groups[module]).sort(
+        ([a, x], [b, y]) => (x.unit === "MiB") - (y.unit === "MiB") || a.localeCompare(b),
+      );
+      for (const [title, { unit, lines }] of charts) {
+        const cell = grid.appendChild(document.createElement("div"));
+        cell.className = unit === "MiB" ? "memory" : "time";
+        const canvas = cell.appendChild(document.createElement("canvas"));
+        new Chart(canvas, {
+          type: "line",
+          data: {
+            labels: runs.map((run) => run.commit.id.slice(0, 7)),
+            datasets: Object.entries(lines).map(([label, data], i) => ({
+              label,
+              data,
+              borderColor: colors[i % colors.length],
+              backgroundColor: colors[i % colors.length],
+              borderDash: i < colors.length ? [] : [6, 4],
+            })),
+          },
+          options: {
+            maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            onHover: (event, elements, chart) => (chart.canvas.style.cursor = runAt(event, chart) ? "pointer" : "default"),
+            onClick: (event, elements, chart) => {
+              const run = runAt(event, chart);
+              if (run) {
+                window.open(run.commit.url);
+              }
+            },
+            plugins: {
+              title: { display: true, text: title },
+              tooltip: {
+                itemSort: (a, b) => b.parsed.y - a.parsed.y,
+                callbacks: {
+                  title: ([item]) => {
+                    const { id, message, timestamp } = runs[item.dataIndex].commit;
+                    // About 8px per character of the bold 12px title font
+                    return [
+                      ...wrap(commitSubject(message), Math.floor(item.chart.width / 8)),
+                      `${id.slice(0, 7)} · ${new Date(timestamp).toLocaleDateString()}`,
+                    ];
+                  },
+                  label: (item) => `${item.dataset.label}: ${number.format(item.parsed.y)} ${unit}`,
+                },
+              },
+            },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: unit } } },
+          },
+        });
+      }
+    }
+  </script>
+</body>
+</html>
