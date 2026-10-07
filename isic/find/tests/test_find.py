@@ -14,10 +14,15 @@ def test_quickfind_hides_certain_groups(user, user_factory):
 
 @pytest.mark.django_db
 def test_quickfind_search_images(user, image_factory):
-    image = image_factory(public=True)
-    results = quickfind_execute(image.isic_id, user)
+    images = image_factory.create_batch(6, public=True)
+    results = quickfind_execute(images[0].isic_id, user)
     assert len(results) == 1
-    assert results[0]["title"] == image.isic_id
+    assert results[0]["title"] == images[0].isic_id
+
+    # a query that matches every image only returns the closest few
+    results = quickfind_execute("ISIC_", user)
+    assert len(results) == 5
+    assert {result["title"] for result in results} <= {image.isic_id for image in images}
 
 
 @pytest.mark.django_db
