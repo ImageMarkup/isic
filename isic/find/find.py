@@ -1,4 +1,5 @@
 from functools import partial
+import heapq
 
 from django.contrib.auth.models import User
 from django.db.models.query_utils import Q
@@ -22,17 +23,32 @@ from isic.ingest.models.contributor import Contributor
 from isic.studies.models import Study
 
 
+def _closest_images(query: str, user: User) -> list[Image]:
+    # a short query can match every image, so only the ids are ranked, and only the closest
+    # images are loaded.
+    isic_ids = (
+        get_visible_objects(
+            user,
+            "core.view_image",
+            # avoid ordering by created so index gets used
+            Image.objects.filter(isic__id__icontains=query).order_by(),
+        )
+        .values_list("isic_id", flat=True)
+        .iterator()
+    )
+    closest = heapq.nlargest(
+        5, isic_ids, key=lambda isic_id: jaro_winkler_metric(query.upper(), isic_id.upper())
+    )
+    images = (
+        Image.objects.select_related("accession__cohort")
+        .prefetch_related("accession__cohort__contributor__owners")
+        .in_bulk(closest, field_name="isic_id")
+    )
+    return [images[isic_id] for isic_id in closest]
+
+
 def quickfind_execute(query: str, user: User) -> list[dict]:
     searches = {
-        "images": {
-            "filter": Image.objects.select_related("accession__cohort")
-            .prefetch_related("accession__cohort__contributor__owners")
-            .filter(isic__id__icontains=query)
-            .order_by(),  # avoid ordering by created so index gets used
-            "sort": "isic_id",
-            "permission": "core.view_image",
-            "serializer": ImageQuickfindResultSerializer,
-        },
         "collections": {
             "filter": Collection.objects.select_related("creator").filter(name__icontains=query),
             "sort": "name",
@@ -84,7 +100,9 @@ def quickfind_execute(query: str, user: User) -> list[dict]:
         },
     }
 
-    ret = []
+    ret = ImageQuickfindResultSerializer(
+        _closest_images(query, user), many=True, context={"user": user}
+    ).data
 
     def default_sort(search, v):
         return jaro_winkler_metric(query.upper(), getattr(v, search["sort"]).upper())
