@@ -48,8 +48,9 @@ jobs:
           # A new image or instance type changes the results, so they only change deliberately.
           # ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20261004
           ec2-image-id: ami-0fa5967347d08d2df
-          # Burstable types throttle the CPU when they run out of credits.
-          ec2-instance-type: m7i.xlarge
+          # Each vCPU is a whole core, so the services and the benchmarks don't share one. Burstable
+          # types also throttle the CPU when they run out of credits.
+          ec2-instance-type: c7a.2xlarge
           ec2-volume-size: 30
           subnet-id: ${{ vars.BENCHMARK_RUNNER_SUBNET_ID }}
           security-group-id: ${{ vars.BENCHMARK_RUNNER_SECURITY_GROUP_ID }}
