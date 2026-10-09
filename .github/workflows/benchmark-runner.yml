@@ -50,7 +50,7 @@ jobs:
           ec2-image-id: ami-0fa5967347d08d2df
           # Each vCPU is a whole core, so the services and the benchmarks don't share one. Burstable
           # types also throttle the CPU when they run out of credits.
-          ec2-instance-type: c7a.2xlarge
+          ec2-instance-type: c8a.2xlarge
           ec2-volume-size: 30
           subnet-id: ${{ vars.BENCHMARK_RUNNER_SUBNET_ID }}
           security-group-id: ${{ vars.BENCHMARK_RUNNER_SECURITY_GROUP_ID }}
