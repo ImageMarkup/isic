@@ -55,8 +55,12 @@ jobs:
           security-group-id: ${{ vars.BENCHMARK_RUNNER_SECURITY_GROUP_ID }}
           # The AWS role can only launch and terminate instances with this tag.
           aws-resource-tags: '[{"Key": "Name", "Value": "isic-benchmark-runner"}]'
-          # The image has everything else the jobs use.
-          packages: '["docker.io", "postgresql-client"]'
+          # zipfile-deflate64 has no wheels, so installing it compiles it. The image has everything else
+          # the jobs use.
+          packages: '["build-essential", "docker.io", "postgresql-client"]'
+          # cloud-init starts the runner without HOME, so setup-uv would install Python inside the
+          # checkout.
+          pre-runner-script: export HOME=/root
       - name: Stop runner
         if: inputs.mode == 'stop'
         uses: machulav/ec2-github-runner@343a1b2ae682e681c3cec9a235d882da17ff04ef # v2.6.1
