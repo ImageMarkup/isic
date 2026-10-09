@@ -9,8 +9,16 @@ permissions:
 # Each run adds to the history on gh-pages, so runs can't overlap.
 concurrency: benchmarks
 jobs:
+  start-runner:
+    uses: ./.github/workflows/benchmark-runner.yml
+    permissions:
+      id-token: write
+    with:
+      mode: start
+    secrets: inherit
   benchmark:
-    runs-on: ubuntu-24.04
+    needs: start-runner
+    runs-on: ${{ needs.start-runner.outputs.label }}
     services:
       postgres:
         image: pgvector/pgvector:0.8.6-pg18
@@ -77,3 +85,17 @@ jobs:
           git push
       - name: Check for regressions
         run: uv run --locked python benchmarks/history.py check gh-pages/benchmarks/data.js
+  stop-runner:
+    needs:
+      - start-runner
+      - benchmark
+    # Terminate the instance even when the benchmarks fail or the run is cancelled.
+    if: ${{ always() }}
+    uses: ./.github/workflows/benchmark-runner.yml
+    permissions:
+      id-token: write
+    with:
+      mode: stop
+      label: ${{ needs.start-runner.outputs.label }}
+      ec2-instance-id: ${{ needs.start-runner.outputs.ec2-instance-id }}
+    secrets: inherit

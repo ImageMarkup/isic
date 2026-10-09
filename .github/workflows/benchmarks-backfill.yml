@@ -8,10 +8,20 @@ on:
 permissions:
   contents: read
 jobs:
+  start-runner:
+    uses: ./.github/workflows/benchmark-runner.yml
+    permissions:
+      id-token: write
+    with:
+      mode: start
+    secrets: inherit
   benchmark:
+    needs: start-runner
     # One runner benchmarks every commit, so the differences between them come from the code rather
-    # than the hardware. Roughly 30 commits fit in the 6 hour job limit.
-    runs-on: ubuntu-24.04
+    # than the hardware.
+    runs-on: ${{ needs.start-runner.outputs.label }}
+    # The 6 hour limit of GitHub-hosted runners doesn't apply to self-hosted ones.
+    timeout-minutes: 720
     # The same as benchmarks.yml.
     services:
       postgres:
@@ -98,6 +108,20 @@ jobs:
             echo "::error::The benchmarks failed for $(paste -sd ' ' "$RUNNER_TEMP/failed")."
             exit 1
           fi
+  stop-runner:
+    needs:
+      - start-runner
+      - benchmark
+    # See benchmarks.yml.
+    if: ${{ always() }}
+    uses: ./.github/workflows/benchmark-runner.yml
+    permissions:
+      id-token: write
+    with:
+      mode: stop
+      label: ${{ needs.start-runner.outputs.label }}
+      ec2-instance-id: ${{ needs.start-runner.outputs.ec2-instance-id }}
+    secrets: inherit
   publish:
     needs: benchmark
     # Record the commits that worked, even when others failed.

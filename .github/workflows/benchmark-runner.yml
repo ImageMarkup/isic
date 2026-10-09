@@ -1,0 +1,67 @@
+name: benchmark-runner
+# The benchmarks run on an EC2 instance that this workflow starts and stops, because GitHub-hosted
+# runners vary too much between runs to compare results across commits. Every benchmark workflow uses
+# it, so they all record results from the same hardware. ImageMarkup/isic-infrastructure manages the
+# AWS role, subnet, and security group.
+on:
+  workflow_call:
+    inputs:
+      mode:
+        description: start or stop
+        type: string
+        required: true
+      label:
+        description: The runner's label from start, when stopping
+        type: string
+      ec2-instance-id:
+        description: The runner's instance ID from start, when stopping
+        type: string
+    outputs:
+      label:
+        value: ${{ jobs.runner.outputs.label }}
+      ec2-instance-id:
+        value: ${{ jobs.runner.outputs.ec2-instance-id }}
+jobs:
+  runner:
+    runs-on: ubuntu-24.04
+    permissions:
+      # The job assumes the AWS role through GitHub's OIDC provider.
+      id-token: write
+    outputs:
+      label: ${{ steps.start.outputs.label }}
+      ec2-instance-id: ${{ steps.start.outputs.ec2-instance-id }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.BENCHMARK_RUNNER_ROLE_ARN }}
+          aws-region: us-east-1
+      - name: Start runner
+        id: start
+        if: inputs.mode == 'start'
+        uses: machulav/ec2-github-runner@343a1b2ae682e681c3cec9a235d882da17ff04ef # v2.6.1
+        with:
+          mode: start
+          github-token: ${{ secrets.BENCHMARK_RUNNER_GITHUB_TOKEN }}
+          # The runner takes one job, then deregisters.
+          use-jit: true
+          # A new image or instance type changes the results, so they only change deliberately.
+          # ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20261004
+          ec2-image-id: ami-0fa5967347d08d2df
+          # Burstable types throttle the CPU when they run out of credits.
+          ec2-instance-type: m7i.xlarge
+          ec2-volume-size: 30
+          subnet-id: ${{ vars.BENCHMARK_RUNNER_SUBNET_ID }}
+          security-group-id: ${{ vars.BENCHMARK_RUNNER_SECURITY_GROUP_ID }}
+          # The AWS role can only launch and terminate instances with this tag.
+          aws-resource-tags: '[{"Key": "Name", "Value": "isic-benchmark-runner"}]'
+          # The image has everything else the jobs use.
+          packages: '["docker.io", "postgresql-client"]'
+      - name: Stop runner
+        if: inputs.mode == 'stop'
+        uses: machulav/ec2-github-runner@343a1b2ae682e681c3cec9a235d882da17ff04ef # v2.6.1
+        with:
+          mode: stop
+          github-token: ${{ secrets.BENCHMARK_RUNNER_GITHUB_TOKEN }}
+          label: ${{ inputs.label }}
+          ec2-instance-id: ${{ inputs.ec2-instance-id }}
