@@ -86,6 +86,16 @@
       </div>
     </section>
 
+    <section class="mt-8" x-show="matchesAny($el)">
+      <div class="flex-col mb-4">
+        <h2 class="heading-2">Utilities</h2>
+        <p class="text-sm text-base-content/60">Standalone helpers for staff and contributors.</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {% include 'core/partials/staff_tool_card.html' with name="Metadata Validator" icon="ri-file-check-line" url="ingest/metadata-validator" keywords="csv check upload pyodide" description="Check a metadata CSV for problems before it's uploaded." %}
+      </div>
+    </section>
+
     <div class="text-center py-12" x-show="!matchesAny($root)" x-cloak>
       <h3 class="text-lg font-medium mb-2">No tools match &ldquo;<span x-text="query"></span>&rdquo;</h3>
       <p class="text-base-content/60">Try a different term, or browse the groups above.</p>

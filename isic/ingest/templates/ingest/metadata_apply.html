@@ -3,6 +3,14 @@
 {% block content %}
   {% include 'ingest/partials/breadcrumbs.html' %}
 
+  <div class="alert alert-info mt-6 w-3/4 mx-auto">
+    <i class="ri-lightbulb-line text-lg"></i>
+    <span>
+      Iterating on a CSV? The <a class="link" href="{% url 'ingest/metadata-validator' %}" target="_blank">metadata validator</a>
+      checks a file in your browser without uploading it.
+    </span>
+  </div>
+
   <div class="mt-6 w-3/4 mx-auto flex-row">
     {% include 'ingest/partials/metadata_file_select.html' %}
   </div>

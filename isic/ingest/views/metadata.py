@@ -1,3 +1,5 @@
+from importlib.metadata import version
+import inspect
 from pathlib import Path
 from typing import TypedDict
 
@@ -13,6 +15,7 @@ from s3_file_field.widgets import S3FileInput
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.ingest.models import Cohort, MetadataFile
 from isic.ingest.tasks import validate_metadata_task
+from isic.ingest.utils import internal_consistency
 from isic.ingest.utils.metadata import ColumnRowErrors, Problem
 
 from . import make_breadcrumbs
@@ -127,3 +130,16 @@ def metadata_apply(request, cohort_pk):
             )
 
     return render(request, "ingest/metadata_apply.html", ctx)
+
+
+def metadata_validator(request):
+    return render(
+        request,
+        "ingest/metadata_validator.html",
+        {
+            # The browser installs the exact isic-metadata the server runs, so Renovate only has
+            # one place to bump it.
+            "isic_metadata_version": version("isic-metadata"),
+            "internal_consistency_source": inspect.getsource(internal_consistency),
+        },
+    )
