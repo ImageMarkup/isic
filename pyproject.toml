@@ -36,7 +36,7 @@ dependencies = [
   "gdal==3.11.0",
   "google-analytics-data==0.23.2",
   "elasticsearch==9.5.1",
-  "isic-metadata==6.0.0",
+  "isic-metadata==6.1.0",
   "jaro-winkler==2.0.3",
   "numpy==2.5.3",
   "pandas==3.0.6",
