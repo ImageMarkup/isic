@@ -1,7 +1,17 @@
+import csv
+import io
+
 import pytest
 
 from isic.core.models.image import Image
 from isic.core.services import image_metadata_csv, staff_image_metadata_csv
+
+
+def read_image_metadata_csv(qs) -> tuple[list[str], list[dict[str, str]]]:
+    fieldnames, chunks = image_metadata_csv(qs=qs)
+    reader = csv.DictReader(io.StringIO(b"".join(chunks).decode()))
+    assert reader.fieldnames == fieldnames
+    return fieldnames, list(reader)
 
 
 @pytest.fixture
@@ -30,10 +40,10 @@ def image_with_metadata(image):
 
 @pytest.mark.django_db
 def test_image_metadata_csv_rows_correct(image_with_metadata):
-    _, rows = image_metadata_csv(qs=Image.objects.filter(pk=image_with_metadata.pk))
-    row = next(rows)
-    assert row == {
-        "age_approx": image_with_metadata.accession.age_approx,
+    _, rows = read_image_metadata_csv(Image.objects.filter(pk=image_with_metadata.pk))
+    assert len(rows) == 1
+    assert rows[0] == {
+        "age_approx": str(image_with_metadata.accession.age_approx),
         "anatom_site_1": "Head and neck",
         "anatom_site_2": "Head",
         "anatom_site_3": "Scalp",
