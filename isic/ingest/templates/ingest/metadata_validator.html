@@ -1,0 +1,282 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Metadata Validator | {% endblock %}
+
+{% block head_extra %}
+  {{ block.super }}
+  {{ internal_consistency_source|json_script:"internal-consistency-source" }}
+  {# Pyodide runs in a worker so a large CSV doesn't freeze the page. #}
+  <script type="text/plain" id="validator-worker">
+    const PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v314.0.7/full/';
+
+    const CSV_PATH = '/metadata.csv';
+    const COPY_CHUNK_BYTES = 8 * 1024 * 1024;
+
+    let validator;
+
+    async function setup(version, source) {
+      const { loadPyodide } = await import(`${PYODIDE_URL}pyodide.mjs`);
+      const pyodide = await loadPyodide({ indexURL: PYODIDE_URL });
+      await pyodide.loadPackage('micropip');
+      await pyodide.pyimport('micropip').install(`isic-metadata==${version}`);
+      pyodide.FS.writeFile('internal_consistency.py', source);
+      const validate = pyodide.runPython(`
+import csv
+import json
+
+from isic_metadata.utils import get_unstructured_columns
+
+from internal_consistency import validate_internal_consistency
+
+
+def validate(path, report):
+    """Validate the CSV at path, streaming it so the whole file is never in memory at once."""
+    with open(path, "rb") as f:
+        reader = csv.DictReader(raw.decode("utf-8-sig") for raw in f)
+
+        def rows():
+            count = 0
+            for count, row in enumerate(reader, start=1):
+                if count % 1000 == 0:
+                    report("rows", f.tell(), count)
+                yield row
+            report("batch", f.tell(), count)
+
+        column_errors, batch_problems = validate_internal_consistency(rows())
+
+    return json.dumps(
+        {
+            "unstructured_columns": get_unstructured_columns(reader.fieldnames or []),
+            "column_errors": [
+                {"column": column, "message": message, "rows": lines}
+                for (column, message), lines in column_errors.items()
+            ],
+            "batch_problems": [problem.model_dump() for problem in batch_problems],
+        }
+    )
+
+
+validate
+      `);
+      return { pyodide, validate };
+    }
+
+    async function copyToFileSystem(pyodide, file, report) {
+      const stream = pyodide.FS.open(CSV_PATH, 'w');
+      for (let offset = 0; offset < file.size; offset += COPY_CHUNK_BYTES) {
+        const bytes = new Uint8Array(await file.slice(offset, offset + COPY_CHUNK_BYTES).arrayBuffer());
+        pyodide.FS.write(stream, bytes, 0, bytes.length, offset);
+        report('copy', offset + bytes.length, 0);
+      }
+      pyodide.FS.close(stream);
+    }
+
+    self.onmessage = async ({ data }) => {
+      if (data.type === 'init') {
+        validator = setup(data.version, data.source);
+        validator.then(
+          () => postMessage({ type: 'ready' }),
+          (e) => postMessage({ type: 'error', message: e.message }),
+        );
+        return;
+      }
+
+      const { file } = data;
+      let rows = 0;
+      const report = (phase, done, count) => {
+        rows = count;
+        postMessage({ type: 'progress', phase, done, rows, total: file.size });
+      };
+      try {
+        const { pyodide, validate } = await validator;
+        await copyToFileSystem(pyodide, file, report);
+        try {
+          const result = JSON.parse(validate(CSV_PATH, report));
+          postMessage({ type: 'result', result: { rows, ...result } });
+        } finally {
+          pyodide.FS.unlink(CSV_PATH);
+        }
+      } catch (e) {
+        postMessage({ type: 'error', message: e.message });
+      }
+    };
+  </script>
+  <script type="text/javascript">
+    function metadataValidator() {
+      // Kept out of the Alpine data so it isn't wrapped in a reactive proxy, which breaks postMessage.
+      let worker;
+
+      return {
+        ready: false,
+        dragging: false,
+        filename: '',
+        progress: null,
+        result: null,
+        error: '',
+        init() {
+          const source = document.getElementById('validator-worker').textContent;
+          worker = new Worker(URL.createObjectURL(new Blob([source], { type: 'text/javascript' })), { type: 'module' });
+          worker.onmessage = ({ data }) => {
+            switch (data.type) {
+              case 'ready':
+                this.ready = true;
+                break;
+              case 'progress':
+                this.progress = data;
+                break;
+              case 'result':
+                this.result = data.result;
+                this.progress = null;
+                break;
+              case 'error':
+                this.error = `Unable to validate ${this.filename}: ${data.message}`;
+                this.progress = null;
+                break;
+            }
+          };
+          worker.onerror = (e) => {
+            this.error = `Unable to validate ${this.filename}: ${e.message}`;
+            this.progress = null;
+          };
+          // Loading Pyodide takes a few seconds, so start when the page loads rather than on the first file.
+          worker.postMessage({
+            type: 'init',
+            version: '{{ isic_metadata_version }}',
+            source: JSON.parse(document.getElementById('internal-consistency-source').textContent),
+          });
+        },
+        validate(files) {
+          if (!files.length || this.progress) {
+            return;
+          }
+          this.result = null;
+          this.error = '';
+          if (files.length > 1) {
+            this.filename = '';
+            this.error = `${files.length} files were chosen, but only one CSV can be checked at a time.`;
+            return;
+          }
+          const file = files[0];
+          this.filename = file.name;
+          this.progress = { phase: 'copy', done: 0, rows: 0, total: file.size };
+          worker.postMessage({ type: 'validate', file });
+        },
+        get progressLabel() {
+          const rows = this.progress.rows.toLocaleString();
+          return {
+            copy: `Reading ${this.filename}`,
+            rows: `Checking rows of ${this.filename} (${rows} so far)`,
+            batch: `Checking across the ${rows} rows of ${this.filename}`,
+          }[this.progress.phase];
+        },
+        get problemCount() {
+          return this.result.column_errors.length + this.result.batch_problems.length;
+        },
+        examples(values) {
+          const more = values.length > 5 ? ` (and ${values.length - 5} more)` : '';
+          return values.slice(0, 5).join(', ') + more;
+        },
+      };
+    }
+  </script>
+{% endblock %}
+
+{% block content %}
+  <div x-data="metadataValidator()">
+    <header class="border-b border-gray-100 py-2 pb-4">
+      <div class="heading-1">Metadata Validator</div>
+      <p class="text-sm text-base-content/60 mt-2">
+        Checks a metadata CSV for the problems that can be found from the file alone. The file never leaves your browser.
+        It can't catch everything, such as conflicts with metadata already in the cohort, so applying the file to a cohort is
+        still the final check.
+      </p>
+    </header>
+
+    <label class="mt-8 flex flex-col items-center gap-2 p-12 border-2 border-dashed rounded-box cursor-pointer transition hover:border-primary"
+           :class="dragging ? 'border-primary bg-primary/5' : 'border-base-300'"
+           @dragover.prevent="dragging = true"
+           @dragleave="dragging = false"
+           @drop.prevent="dragging = false; validate($event.dataTransfer.files)"
+           x-cloak>
+      <input type="file" accept=".csv" class="hidden" :disabled="progress" @change="validate($event.target.files); $event.target.value = ''">
+      <i class="ri-file-upload-line text-4xl text-primary"></i>
+      <span class="font-semibold">Drop a metadata CSV here, or click to choose one</span>
+      <span class="text-sm text-base-content/60" x-show="!ready">Loading the validator&hellip;</span>
+    </label>
+
+    <div class="mt-8 flex flex-col gap-4" x-show="filename || error" x-cloak>
+      <template x-if="progress">
+        <div class="flex flex-col gap-2">
+          <span x-text="progressLabel"></span>
+          {# The batch check is a single call, so the bar goes indeterminate for it. #}
+          <progress class="progress progress-primary w-full"
+                    :value="progress.phase === 'batch' ? null : progress.done"
+                    :max="progress.total"></progress>
+        </div>
+      </template>
+
+      <div class="alert alert-error" x-show="error">
+        <i class="ri-error-warning-line text-lg"></i>
+        <span x-text="error"></span>
+      </div>
+
+      <template x-if="result">
+        <div class="flex flex-col gap-4">
+          <div class="alert alert-success" x-show="problemCount === 0">
+            <i class="ri-checkbox-circle-line text-lg"></i>
+            <span x-text="`No problems in the ${result.rows} rows of ${filename}.`"></span>
+          </div>
+
+          <div class="alert alert-error" x-show="problemCount > 0">
+            <i class="ri-error-warning-line text-lg"></i>
+            <span x-text="`${problemCount} problems in the ${result.rows} rows of ${filename}.`"></span>
+          </div>
+
+          <div class="alert alert-warning" x-show="result.unstructured_columns.length">
+            <i class="ri-information-line text-lg"></i>
+            <div>
+              <div>These columns aren't recognized, so ingest keeps them as unstructured data:</div>
+              <div class="font-mono text-sm mt-1" x-text="result.unstructured_columns.join(', ')"></div>
+            </div>
+          </div>
+
+          <table class="table" x-show="result.column_errors.length">
+            <thead>
+              <tr>
+                <th>Column</th>
+                <th>Problem</th>
+                <th>Rows</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-for="columnError in result.column_errors">
+                <tr>
+                  <td class="font-mono" x-text="columnError.column"></td>
+                  <td x-text="columnError.message"></td>
+                  <td x-text="examples(columnError.rows)"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+
+          <table class="table" x-show="result.batch_problems.length">
+            <thead>
+              <tr>
+                <th>Problem across rows</th>
+                <th>Examples</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-for="problem in result.batch_problems">
+                <tr>
+                  <td x-text="problem.message"></td>
+                  <td class="font-mono" x-text="examples(problem.context)"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </template>
+    </div>
+  </div>
+{% endblock %}

@@ -3,7 +3,12 @@ from django.urls import path
 from isic.ingest.views.accession import accession_cog_viewer
 from isic.ingest.views.cohort import cohort_detail, cohort_list, cohort_merge, cohort_publish
 from isic.ingest.views.contributor import contributor_merge
-from isic.ingest.views.metadata import metadata_apply, metadata_file_create, metadata_file_detail
+from isic.ingest.views.metadata import (
+    metadata_apply,
+    metadata_file_create,
+    metadata_file_detail,
+    metadata_validator,
+)
 from isic.ingest.views.review import cohort_review, ingest_review
 from isic.ingest.views.upload import (
     cohort_files,
@@ -55,6 +60,7 @@ urlpatterns = [
         name="upload/metadata",
     ),
     path("upload/<int:pk>/publish/", cohort_publish, name="upload/cohort-publish"),
+    path("metadata-validator/", metadata_validator, name="ingest/metadata-validator"),
     # Staff pages
     path(
         "staff/accession-cog-viewer/<int:pk>/",
