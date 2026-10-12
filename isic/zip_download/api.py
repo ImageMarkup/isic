@@ -28,8 +28,6 @@ from rest_framework.response import Response
 from isic.core.models import CopyrightLicense, Image
 from isic.core.serializers import SearchQueryBodySerializer, SearchQuerySerializer
 from isic.core.services import image_metadata_csv
-from isic.core.utils.csv import EscapingDictWriter
-from isic.core.utils.http import Echo
 
 if TYPE_CHECKING:
     from urllib.parse import ParseResult
@@ -184,16 +182,9 @@ def zip_download_metadata_file(request):
     user, search = SearchQuerySerializer.from_token_representation(request.auth)
     qs = search.to_queryset(user, Image.objects.select_related("accession__cohort").distinct())
 
-    fieldnames, metadata_rows = image_metadata_csv(qs=qs)
+    _, csv_rows = image_metadata_csv(qs=qs)
 
-    def write_response() -> Generator[bytes]:
-        writer = EscapingDictWriter(Echo(), fieldnames)
-        yield writer.writeheader()
-
-        for metadata_row in metadata_rows:
-            yield writer.writerow(metadata_row)
-
-    return StreamingHttpResponse(write_response(), content_type="text/csv")
+    return StreamingHttpResponse(csv_rows, content_type="text/csv")
 
 
 @api_view(["GET"])

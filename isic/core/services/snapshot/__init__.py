@@ -7,7 +7,6 @@ from django.template.loader import render_to_string
 
 from isic.core.models import Image, SupplementalFile
 from isic.core.services import image_metadata_csv
-from isic.core.utils.csv import EscapingDictWriter
 from isic.zip_download.api import get_attributions
 
 CHUNK_SIZE = 5 * 1024 * 1024  # 5MB
@@ -31,12 +30,9 @@ def snapshot_images(
                     bundle.writestr(f"images/{image.isic_id}.{image.extension}", blob.read())
 
             # the metadata csv could be large enough that it needs to be written to disk first
-            with tempfile.NamedTemporaryFile("w", delete=False) as metadata_file:
-                fieldnames, collection_metadata = image_metadata_csv(qs=qs)
-                writer = EscapingDictWriter(metadata_file, fieldnames=fieldnames)
-                writer.writeheader()
-                for row in collection_metadata:
-                    writer.writerow(row)
+            with tempfile.NamedTemporaryFile("wb", delete=False) as metadata_file:
+                _, csv_rows = image_metadata_csv(qs=qs)
+                metadata_file.writelines(csv_rows)
                 metadata_file.flush()
 
                 bundle.write(metadata_file.name, "metadata.csv")
