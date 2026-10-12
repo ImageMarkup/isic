@@ -1,0 +1,27 @@
+{% load cookie_consent_tags %}
+
+{% not_accepted_or_declined_cookie_groups request as undecided_cookie_groups %}
+{% if undecided_cookie_groups %}
+  <div id="cookie-consent-banner" class="fixed bottom-0 inset-x-0 z-50 bg-base-200 border-t border-base-300 p-4">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center gap-4">
+      <p class="flex-1 text-sm">
+        We use cookies to understand how the Archive is used.
+        <a class="link" href="{% url 'cookie_consent_cookie_group_list' %}">Cookie settings</a>
+      </p>
+      <div class="flex gap-2">
+        <form method="post" action="{% url 'cookie_consent_decline' %}">
+          {% csrf_token %}
+          <input type="hidden" name="all_groups" value="on">
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button type="submit" id="cookie-consent-decline" class="btn btn-sm">Decline</button>
+        </form>
+        <form method="post" action="{% url 'cookie_consent_accept' %}">
+          {% csrf_token %}
+          <input type="hidden" name="all_groups" value="on">
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button type="submit" id="cookie-consent-accept" class="btn btn-sm btn-primary">Accept</button>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endif %}
