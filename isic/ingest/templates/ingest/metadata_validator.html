@@ -31,18 +31,21 @@ from internal_consistency import validate_internal_consistency
 
 def validate(path, report):
     """Validate the CSV at path, streaming it so the whole file is never in memory at once."""
-    with open(path, "rb") as f:
-        reader = csv.DictReader(raw.decode("utf-8-sig") for raw in f)
+    try:
+        with open(path, "rb") as f:
+            reader = csv.DictReader(raw.decode("utf-8-sig") for raw in f)
 
-        def rows():
-            count = 0
-            for count, row in enumerate(reader, start=1):
-                if count % 1000 == 0:
-                    report("rows", f.tell(), count)
-                yield row
-            report("batch", f.tell(), count)
+            def rows():
+                count = 0
+                for count, row in enumerate(reader, start=1):
+                    if count % 1000 == 0:
+                        report("rows", f.tell(), count)
+                    yield row
+                report("batch", f.tell(), count)
 
-        column_errors, batch_problems = validate_internal_consistency(rows())
+            column_errors, batch_problems = validate_internal_consistency(rows())
+    except (UnicodeDecodeError, csv.Error):
+        return json.dumps({"error": "it isn't a UTF-8 encoded CSV file."})
 
     return json.dumps(
         {
@@ -91,8 +94,12 @@ validate
         const { pyodide, validate } = await validator;
         await copyToFileSystem(pyodide, file, report);
         try {
-          const result = JSON.parse(validate(CSV_PATH, report));
-          postMessage({ type: 'result', result: { rows, ...result } });
+          const { error, ...result } = JSON.parse(validate(CSV_PATH, report));
+          if (error) {
+            postMessage({ type: 'error', message: error });
+          } else {
+            postMessage({ type: 'result', result: { rows, ...result } });
+          }
         } finally {
           pyodide.FS.unlink(CSV_PATH);
         }

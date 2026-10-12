@@ -17,12 +17,14 @@ def _csv_content(rows):
     return content.getvalue()
 
 
-def _choose_csv(page, name, rows):
+def _choose_file(page, name, mime_type, content):
     with page.expect_file_chooser() as file_chooser:
         page.get_by_text("Drop a metadata CSV here").click()
-    file_chooser.value.set_files(
-        {"name": name, "mimeType": "text/csv", "buffer": _csv_content(rows).encode()}
-    )
+    file_chooser.value.set_files({"name": name, "mimeType": mime_type, "buffer": content})
+
+
+def _choose_csv(page, name, rows):
+    _choose_file(page, name, "text/csv", _csv_content(rows).encode())
 
 
 def _drop_csvs(page, files):
@@ -100,3 +102,9 @@ def test_metadata_validator(context, faker):
         expect(column_row.get_by_role("cell").last).to_have_text(row)
     expect(page.get_by_role("row").filter(has_text="multiple patients")).to_contain_text(lesion_id)
     expect(page.get_by_text(unknown_column, exact=True)).to_be_visible()
+
+    png_name = faker.file_name(extension="png")
+    _choose_file(page, png_name, "image/png", b"\x89PNG\r\n\x1a\n" + faker.binary(length=64))
+    expect(
+        page.get_by_text(f"Unable to validate {png_name}: it isn't a UTF-8 encoded CSV file.")
+    ).to_be_visible()
