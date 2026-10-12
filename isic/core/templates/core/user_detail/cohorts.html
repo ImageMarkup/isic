@@ -1,0 +1,30 @@
+{% load localtime %}
+
+<table class="table table-zebra">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Contributor</th>
+      <th>Collection</th>
+      <th>Created</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for cohort in rows %}
+      <tr>
+        <td>
+          <a href="{% url 'ingest/cohort-detail' pk=cohort.pk %}" class="link link-hover link-primary">{{ cohort.name }}</a>
+        </td>
+        <td>{{ cohort.contributor.institution_name }}</td>
+        <td>
+          {% if cohort.collection %}
+            <a href="{% url 'core/collection-detail' pk=cohort.collection.pk %}" class="link link-hover link-primary">{{ cohort.collection.name }}</a>
+          {% else %}
+            <span class="text-gray-400">&mdash;</span>
+          {% endif %}
+        </td>
+        <td>{% localtime cohort.created %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

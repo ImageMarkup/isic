@@ -1,3 +1,4 @@
+{% load display %}
 {% load localtime %}
 {% load humanize %}
 {% load markdownify %}
@@ -8,7 +9,7 @@
     <li><span class="font-bold">Description:</span> <div class="prose max-w-none">{{ cohort.description|markdownify }}</div></li>
     <li><span class="font-bold">Default Attribution:</span> {{ cohort.default_attribution }}</li>
     <li><span class="font-bold">Default License:</span> {{ cohort.get_default_copyright_license_display }}</li>
-    <li><span class="font-bold">Created by:</span> {{ cohort.creator.first_name }} {{ cohort.creator.last_name }} ({{ cohort.creator }})</li>
+    <li><span class="font-bold">Created by:</span> {% user_link cohort.creator cohort.creator.get_full_name %} ({{ cohort.creator }})</li>
     <li><span class="font-bold">Created on:</span> {% localtime cohort.created %}</li>
     {% if cohort.collection %}
       <li><span class="font-bold">Magic Collection:</span> <a href="{% url 'core/collection-detail' cohort.collection.pk %}" class="link link-primary">{{ cohort.collection.name }}</a></li>

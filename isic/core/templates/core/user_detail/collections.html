@@ -1,0 +1,47 @@
+{% load localtime %}
+
+<table class="table table-zebra">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Status</th>
+      <th>DOI</th>
+      <th>Created</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for collection in rows %}
+      <tr>
+        <td>
+          <a href="{% url 'core/collection-detail' pk=collection.pk %}" class="link link-hover link-primary">{{ collection.name }}</a>
+        </td>
+        <td>
+          <div class="flex flex-wrap gap-1">
+            {% if collection.public %}
+              <span class="badge badge-success badge-sm">Public</span>
+            {% else %}
+              <span class="badge badge-ghost badge-sm">Private</span>
+            {% endif %}
+            {% if collection.pinned %}
+              <span class="badge badge-info badge-sm">Pinned</span>
+            {% endif %}
+            {% if collection.locked %}
+              <span class="badge badge-warning badge-sm">Locked</span>
+            {% endif %}
+            {% if collection.cohort %}
+              <span class="badge badge-sm">Cohort</span>
+            {% endif %}
+          </div>
+        </td>
+        <td>
+          {% if collection.doi %}
+            <a href="{% url 'core/doi-detail' slug=collection.doi.slug %}" class="link link-hover link-primary">{{ collection.doi.id }}</a>
+          {% else %}
+            <span class="text-gray-400">&mdash;</span>
+          {% endif %}
+        </td>
+        <td>{% localtime collection.created %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

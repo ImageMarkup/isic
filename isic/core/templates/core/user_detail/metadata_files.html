@@ -1,0 +1,35 @@
+{% load localtime %}
+
+<table class="table table-zebra">
+  <thead>
+    <tr>
+      <th>File</th>
+      <th>Cohort</th>
+      <th>Validation</th>
+      <th>Uploaded</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for metadata_file in rows %}
+      <tr>
+        <td>
+          <a href="{% url 'ingest/metadata-file-detail' metadata_file_pk=metadata_file.pk %}" class="link link-hover link-primary">{{ metadata_file.blob_name }}</a>
+          <div class="text-gray-400">{{ metadata_file.blob_size|filesizeformat }}</div>
+        </td>
+        <td>
+          <a href="{% url 'ingest/cohort-detail' pk=metadata_file.cohort.pk %}" class="link link-hover link-primary">{{ metadata_file.cohort.name }}</a>
+        </td>
+        <td>
+          {% if not metadata_file.validation_completed %}
+            <span class="badge badge-ghost badge-sm">Pending</span>
+          {% elif metadata_file.validation_errors %}
+            <span class="badge badge-error badge-sm">Invalid</span>
+          {% else %}
+            <span class="badge badge-success badge-sm">Valid</span>
+          {% endif %}
+        </td>
+        <td>{% localtime metadata_file.created %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

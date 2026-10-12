@@ -1,0 +1,29 @@
+{% load display %}
+{% load localtime %}
+
+<table class="table table-zebra">
+  <thead>
+    <tr>
+      <th>Collection</th>
+      <th>Direction</th>
+      <th>Shared</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for share in rows %}
+      <tr>
+        <td>
+          <a href="{% url 'core/collection-detail' pk=share.collection.pk %}" class="link link-hover link-primary">{{ share.collection.name }}</a>
+        </td>
+        <td>
+          {% if share.grantor_id == user.pk %}
+            Shared with {% user_link share.grantee share.grantee.get_full_name %}
+          {% else %}
+            Shared by {% user_link share.grantor share.grantor.get_full_name %}
+          {% endif %}
+        </td>
+        <td>{% localtime share.created %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

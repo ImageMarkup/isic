@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load display %}
 {% load humanize %}
 
 {% block content %}
@@ -20,7 +21,7 @@
       <tbody>
         {% for user in users %}
           <tr>
-            <td>{{ user.first_name }} {{ user.last_name }}</td>
+            <td>{% user_link user user.get_full_name %}</td>
             <td>{{ user.email }}</td>
             <td>{{ user.date_joined }}</td>
           </tr>

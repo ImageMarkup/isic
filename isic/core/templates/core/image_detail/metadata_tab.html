@@ -1,3 +1,4 @@
+{% load display %}
 {% load accession %}
 {% load localtime %}
 
@@ -38,7 +39,7 @@
       <tbody>
         {% for metadata_version, diff in metadata_versions reversed %}
           <tr class="hover:bg-base-300">
-            <td>{{ metadata_version.creator  }}</td>
+            <td>{% user_link metadata_version.creator %}</td>
             <td>{% localtime metadata_version.created  %}</td>
             <td>
               {% if forloop.last %}

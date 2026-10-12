@@ -1,0 +1,29 @@
+{% load display %}
+{% load localtime %}
+
+<table class="table table-zebra">
+  <thead>
+    <tr>
+      <th>ISIC ID</th>
+      <th>Direction</th>
+      <th>Shared</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for share in rows %}
+      <tr>
+        <td>
+          <a href="{% url 'core/image-detail' image_identifier=share.image.isic_id %}" class="link link-hover link-primary">{{ share.image.isic_id }}</a>
+        </td>
+        <td>
+          {% if share.grantor_id == user.pk %}
+            Shared with {% user_link share.grantee share.grantee.get_full_name %}
+          {% else %}
+            Shared by {% user_link share.grantor share.grantor.get_full_name %}
+          {% endif %}
+        </td>
+        <td>{% localtime share.created %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

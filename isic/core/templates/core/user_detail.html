@@ -1,346 +1,175 @@
 {% extends 'core/base.html' %}
-{% load localtime %}
 {% load humanize %}
+{% load localtime %}
+
+{% block title %}{{ user.get_full_name|default:user.email }} | {% endblock %}
 
 {% block content %}
-  <div class="space-y-4">
-    <div class="heading-3">
-      {{ user.first_name }} {{ user.last_name }} ({{ user.profile.hash_id }})
-    </div>
-
-    <table class="table table-zebra">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Created</th>
-          <th>Last login</th>
-          <th>Staff</th>
-          <th>Email Addresses</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th>{{ user.pk }}</th>
-          <td>{% localtime user.date_joined %}</td>
-          {% if user.last_login %}
-            <td>{% localtime user.last_login %}</td>
-          {% else %}
-            <td>Never</td>
-          {% endif %}
-          <td>{{ user.is_staff }}</td>
-          <td>{{ email_addresses|join:"<br />" }}</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div role="tablist" class="tabs tabs-lift">
-      <input type="radio" name="user_tabs" role="tab" class="tab"
-             aria-label="collections ({{ sections.collections.count|intcomma }})" checked />
-      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 overflow-x-auto p-6">
-        <table class="table table-zebra">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Created</th>
-              <th>Name</th>
-              <th>Public</th>
-              <th>DOI</th>
-              <th>Locked</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for collection in sections.collections.all %}
-              <tr>
-                <th>{{ collection.pk }}</th>
-                <td>{% localtime collection.created %}</td>
-                <td>{{ collection.name }}</td>
-                <td>{{ collection.public }}</td>
-                <td>{{ collection.doi }}</td>
-                <td>{{ collection.locked }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-      <input type="radio" name="user_tabs" role="tab" class="tab"
-             aria-label="contributors ({{ sections.contributors.count|intcomma }})" />
-      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 overflow-x-auto p-6">
-        <table class="table table-zebra">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Created</th>
-              <th>Creator</th>
-              <th>Owners</th>
-              <th>Institution Name</th>
-              <th>Institution URL</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for contributor in sections.contributors.all %}
-              <tr>
-                <th>{{ contributor.pk }}</th>
-                <td>{% localtime contributor.created %}</td>
-                <td>{{ contributor.creator }}</td>
-                <td>{{ contributor.owners.all|join:"<br />" }}</td>
-                <td>{{ contributor.institution_name }}</td>
-                <td>{{ contributor.institution_url }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-      <input type="radio" name="user_tabs" role="tab" class="tab"
-             aria-label="zip_uploads ({{ sections.zip_uploads.count|intcomma }})" />
-      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 overflow-x-auto p-6">
-        <table class="table table-zebra">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Created</th>
-              <th>Creator</th>
-              <th>Cohort</th>
-              <th>Name</th>
-              <th>Size</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for zip_upload in sections.zip_uploads.all %}
-              <tr>
-                <th>{{ zip_upload.pk }}</th>
-                <td>{% localtime zip_upload.created %}</td>
-                <td>{{ zip_upload.creator }}</td>
-                <td>{{ zip_upload.cohort }}</td>
-                <td>{{ zip_upload.blob_name }}</td>
-                <td>{{ zip_upload.blob_size|filesizeformat }}</td>
-                <td>{{ zip_upload.get_status_display }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-      <input type="radio" name="user_tabs" role="tab" class="tab"
-             aria-label="single_shot_accessions ({{ sections.single_shot_accessions.count|intcomma }})" />
-      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 overflow-x-auto p-6">
-        <table class="table table-zebra">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Created</th>
-              <th>Creator</th>
-              <th>Cohort</th>
-              <th>Name</th>
-              <th>Size</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for accession in sections.single_shot_accessions.all %}
-              <tr>
-                <th>{{ accession.pk }}</th>
-                <td>{% localtime accession.created %}</td>
-                <td>{{ accession.creator }}</td>
-                <td>{{ accession.cohort }}</td>
-                <td>{{ accession.blob_name }}</td>
-                <td>{{ accession.blob_size|filesizeformat }}</td>
-                <td>{{ accession.get_status_display }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-      <input type="radio" name="user_tabs" role="tab" class="tab"
-             aria-label="accession_reviews ({{ sections.accession_reviews.count|intcomma }})" />
-      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 overflow-x-auto p-6">
-        <table class="table table-zebra">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Created</th>
-              <th>Creator</th>
-              <th>Reviewed</th>
-              <th>Review</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for accession_review in sections.accession_reviews.all|slice:":10" %}
-              <tr>
-                <th>{{ accession_review.pk }}</th>
-                <td>{% localtime accession_review.created %}</td>
-                <td>{{ accession_review.creator }}</td>
-                <td>{{ accession_review.change_to }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-      <input type="radio" name="user_tabs" role="tab" class="tab"
-             aria-label="metadata_files ({{ sections.metadata_files.count|intcomma }})" />
-      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 overflow-x-auto p-6">
-        <table class="table table-zebra">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Created</th>
-              <th>Creator</th>
-              <th>Cohort</th>
-              <th>Name</th>
-              <th>Size</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for metadata_file in sections.metadata_files.all %}
-              <tr>
-                <th>{{ metadata_file.pk }}</th>
-                <td>{% localtime metadata_file.created %}</td>
-                <td>{{ metadata_file.creator }}</td>
-                <td>{{ metadata_file.cohort }}</td>
-                <td>{{ metadata_file.blob_name }}</td>
-                <td>{{ metadata_file.blob_size|filesizeformat }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-      <input type="radio" name="user_tabs" role="tab" class="tab"
-             aria-label="studies ({{ sections.studies.count|intcomma }})" />
-      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 overflow-x-auto p-6">
-        <table class="table table-zebra">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Created</th>
-              <th>Creator</th>
-              <th>Name</th>
-              <th>Collection</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for study in sections.studies.all %}
-              <tr>
-                <th>{{ study.pk }}</th>
-                <td>{% localtime study.created %}</td>
-                <td>{{ study.creator }}</td>
-                <td>{{ study.name }}</td>
-                <td>{{ study.collection.name }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-      <input type="radio" name="user_tabs" role="tab" class="tab"
-             aria-label="study_tasks ({{ sections.study_tasks.count|intcomma }})" />
-      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 overflow-x-auto p-6">
-        <table class="table table-zebra">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Created</th>
-              <th>Annotator</th>
-              <th>Image</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for study_task in sections.study_tasks.all|slice:":10" %}
-              <tr>
-                <th>{{ study_task.pk }}</th>
-                <td>{% localtime study_task.created %}</td>
-                <td>{{ study_task.annotator }}</td>
-                <td>{{ study_task.image }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-      <input type="radio" name="user_tabs" role="tab" class="tab"
-             aria-label="annotations ({{ sections.annotations.count|intcomma }})" />
-      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 overflow-x-auto p-6">
-        <table class="table table-zebra">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Created</th>
-              <th>Study</th>
-              <th>Annotator</th>
-              <th>Image</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for annotation in sections.annotations.all|slice:":10" %}
-              <tr>
-                <th>{{ annotation.pk }}</th>
-                <td>{% localtime annotation.created %}</td>
-                <td>{{ annotation.study }}</td>
-                <td>{{ annotation.annotator }}</td>
-                <td>{{ annotation.image }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-      <input type="radio" name="user_tabs" role="tab" class="tab"
-             aria-label="segmentations ({{ sections.segmentations.count|intcomma }})" />
-      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 overflow-x-auto p-6">
-        <table class="table table-zebra">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Created</th>
-              <th>Creator</th>
-              <th>Image</th>
-              <th>Mask</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for segmentation in sections.segmentations.all|slice:":10" %}
-              <tr>
-                <th>{{ segmentation.pk }}</th>
-                <td>{% localtime segmentation.created %}</td>
-                <td>{{ segmentation.creator }}</td>
-                <td>{{ segmentation.image }}</td>
-                <td>-</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-
-      <input type="radio" name="user_tabs" role="tab" class="tab"
-             aria-label="segmentation_reviews ({{ sections.segmentation_reviews.count|intcomma }})" />
-      <div role="tabpanel" class="tab-content bg-base-100 border-base-300 overflow-x-auto p-6">
-        <table class="table table-zebra">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Created</th>
-              <th>Creator</th>
-              <th>Segmentation</th>
-              <th>Approved</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for segmentation_review in sections.segmentation_reviews.all|slice:":10" %}
-              <tr>
-                <th>{{ segmentation_review.pk }}</th>
-                <td>{% localtime segmentation_review.created %}</td>
-                <td>{{ segmentation_review.creator }}</td>
-                <td>{{ segmentation_review.segmentation }}</td>
-                <td>{{ segmentation_review.approved }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+  <header class="border-b border-gray-100 py-2 pb-4">
+    <div class="flex-col min-w-0">
+      <div class="heading-1 break-words">{{ user.get_full_name|default:user.email }}</div>
+      <div class="flex flex-wrap items-center gap-2 mt-2 text-sm text-base-content/70">
+        <span class="break-all">{{ user.email }}</span>
+        <span class="font-mono">{{ user.profile.hash_id }}</span>
+        {% if user.is_staff %}
+          <span class="badge badge-primary badge-sm">Staff</span>
+        {% endif %}
+        {% if not user.is_active %}
+          <span class="badge badge-error badge-sm">Inactive</span>
+        {% endif %}
+        {% if user.engagement_profile %}
+          <span class="badge badge-info badge-sm">Engagement</span>
+        {% endif %}
       </div>
     </div>
+  </header>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 my-6">
+    <div class="card card-compact bg-base-100 border border-base-300">
+      <div class="card-body">
+        <h2 class="card-title text-base">Account</h2>
+        <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 text-sm">
+          <dt class="text-base-content/60">User ID</dt>
+          <dd>{{ user.pk }}</dd>
+          <dt class="text-base-content/60">Joined</dt>
+          <dd>{% localtime user.date_joined %}</dd>
+          <dt class="text-base-content/60">Last login</dt>
+          <dd>
+            {% if user.last_login %}
+              {% localtime user.last_login %}
+            {% else %}
+              Never
+            {% endif %}
+          </dd>
+          <dt class="text-base-content/60">Accepted terms</dt>
+          <dd>
+            {% if user.profile.accepted_terms %}
+              {% localtime user.profile.accepted_terms %}
+            {% else %}
+              Never
+            {% endif %}
+          </dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="card card-compact bg-base-100 border border-base-300">
+      <div class="card-body">
+        <h2 class="card-title text-base">Email Addresses</h2>
+        <ul class="space-y-1 text-sm">
+          {% for email_address in email_addresses %}
+            <li class="flex flex-wrap items-center gap-2">
+              <span class="break-all">{{ email_address.email }}</span>
+              {% if email_address.primary %}
+                <span class="badge badge-ghost badge-sm">Primary</span>
+              {% endif %}
+              {% if email_address.verified %}
+                <span class="badge badge-success badge-sm">Verified</span>
+              {% else %}
+                <span class="badge badge-warning badge-sm">Unverified</span>
+              {% endif %}
+            </li>
+          {% empty %}
+            <li class="text-gray-400">None</li>
+          {% endfor %}
+        </ul>
+        {% for social_account in user.socialaccount_set.all %}
+          <div class="mt-3 border-l-4 border-l-info pl-3 text-sm">
+            <div class="flex items-center gap-1 font-semibold">
+              <i class="ri-{{ social_account.provider }}-fill text-info"></i>
+              {{ social_account.provider|title }} sign-in
+            </div>
+            <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 mt-1">
+              <dt class="text-base-content/60">Email</dt>
+              <dd class="flex flex-wrap items-center gap-2">
+                <span class="break-all">{{ social_account.extra_data.email }}</span>
+                {% if social_account.extra_data.email|lower != user.email|lower %}
+                  <span class="badge badge-warning badge-sm">Different email</span>
+                {% endif %}
+              </dd>
+              <dt class="text-base-content/60">Linked</dt>
+              <dd>{% localtime social_account.date_joined %}</dd>
+              <dt class="text-base-content/60">Last login</dt>
+              <dd>{% localtime social_account.last_login %}</dd>
+            </dl>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if user.engagement_profile %}
+      <div class="card card-compact bg-base-100 border border-base-300">
+        <div class="card-body">
+          <h2 class="card-title text-base">Engagement Platform</h2>
+          <dl class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1 text-sm">
+            <dt class="text-base-content/60">First seen</dt>
+            <dd>{% localtime user.engagement_profile.created %}</dd>
+            <dt class="text-base-content/60">Contributor</dt>
+            <dd>
+              {% if user.engagement_profile.default_contributor %}
+                {{ user.engagement_profile.default_contributor.institution_name }}
+              {% else %}
+                <span class="text-gray-400">&mdash;</span>
+              {% endif %}
+            </dd>
+            <dt class="text-base-content/60">Cohort</dt>
+            <dd>
+              {% if user.engagement_profile.default_cohort %}
+                <a href="{% url 'ingest/cohort-detail' pk=user.engagement_profile.default_cohort.pk %}" class="link link-hover link-primary">
+                  {{ user.engagement_profile.default_cohort.name }}
+                </a>
+              {% else %}
+                <span class="text-gray-400">&mdash;</span>
+              {% endif %}
+            </dd>
+          </dl>
+        </div>
+      </div>
+    {% endif %}
   </div>
+
+  {% if section_groups %}
+    <nav aria-label="User resources" class="space-y-2 mb-6">
+      {% for group, entries in section_groups %}
+        <div class="flex flex-col sm:flex-row sm:items-baseline gap-x-4 gap-y-1">
+          <div class="sm:w-20 shrink-0 text-xs font-semibold uppercase tracking-wide text-base-content/60">{{ group }}</div>
+          <ul class="flex flex-wrap gap-1.5">
+            {% for entry in entries %}
+              <li>
+                <a href="{% querystring section=entry.key %}"
+                   class="btn btn-xs no-underline {% if entry.key == section.key %}btn-primary{% endif %}"
+                   {% if entry.key == section.key %}aria-current="page"{% endif %}>
+                  {{ entry.label }}
+                  <span class="font-normal opacity-70">{{ entry.count|intcomma }}</span>
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+    </nav>
+  {% endif %}
+
+  {% if rows %}
+    <section class="min-w-0">
+      <h2 class="heading-3 mb-3">
+        {{ section.label }}
+        <span class="text-base-content/50">({{ section.count|intcomma }})</span>
+      </h2>
+
+      <div class="overflow-x-auto border border-base-300 rounded-box">
+        {% include section.template_name %}
+      </div>
+
+      {% if section.count > rows|length %}
+        <p class="mt-3 text-center text-sm text-base-content/60">
+          Showing the newest {{ rows|length|intcomma }} of {{ section.count|intcomma }}.
+        </p>
+      {% endif %}
+    </section>
+  {% else %}
+    <div class="text-center py-12 text-gray-500 border border-dashed border-base-300 rounded-box">
+      Nothing to show for this user.
+    </div>
+  {% endif %}
 {% endblock %}

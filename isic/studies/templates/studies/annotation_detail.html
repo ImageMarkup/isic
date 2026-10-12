@@ -1,9 +1,10 @@
 {% extends 'core/base.html' %}
+{% load display %}
 
 {% block content %}
   <div>
     <div class="heading-2">{{ annotation.study.name }}</div>
-    {{ annotation.annotator }}
+    {% user_link annotation.annotator %}
     <br>
     {{ annotation.image.id }}
   </div>

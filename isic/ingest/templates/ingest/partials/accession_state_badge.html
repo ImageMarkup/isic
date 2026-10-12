@@ -1,0 +1,15 @@
+{% if state == 'published' %}
+  <span class="badge badge-success badge-sm">Published</span>
+{% elif state == 'accepted' %}
+  <span class="badge badge-info badge-sm">Accepted</span>
+{% elif state == 'rejected' %}
+  <span class="badge badge-error badge-sm">Rejected</span>
+{% elif state == 'failed' %}
+  <span class="badge badge-error badge-sm">Failed</span>
+{% elif state == 'skipped' %}
+  <span class="badge badge-ghost badge-sm">Skipped</span>
+{% elif state == 'processing' %}
+  <span class="badge badge-ghost badge-sm">Processing</span>
+{% else %}
+  <span class="badge badge-warning badge-sm">Awaiting review</span>
+{% endif %}

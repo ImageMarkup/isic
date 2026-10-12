@@ -37,3 +37,13 @@ def test_quickfind(benchmark_with_memory, endpoint, query, user):
     benchmark_with_memory(
         endpoint(user, f"{reverse('api:quickfind')}?{urlencode({'query': query})}")
     )
+
+
+# the staff user created nearly everything in the dataset. the default section is followed by
+# the ones with the most rows.
+@pytest.mark.parametrize("section", [None, "accessions", "published_images", "accession_reviews"])
+def test_user_detail_page(benchmark, endpoint, manifest, section):
+    url = reverse("core/user-detail", args=[manifest["users"]["staff"]])
+    if section:
+        url += f"?{urlencode({'section': section})}"
+    benchmark(endpoint("staff", url))

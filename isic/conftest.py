@@ -20,11 +20,15 @@ from isic.core.search import (
 )
 from isic.core.tests.factories import (
     CollectionFactory,
+    CollectionShareFactory,
     DoiFactory,
     DraftDoiFactory,
     ImageEmbeddingFactory,
     ImageFactory,
+    ImageShareFactory,
     IsicIdFactory,
+    SegmentationFactory,
+    SegmentationReviewFactory,
 )
 from isic.engagement.tests.factories import (
     EmailDomainContributorFactory,
@@ -35,16 +39,19 @@ from isic.ingest.models.accession import AccessionState, AccessionStatus
 from isic.ingest.tests.factories import (
     AccessionFactory,
     AccessionReviewFactory,
+    BulkMetadataApplicationFactory,
     CohortFactory,
     ContributorFactory,
     LesionFactory,
     MetadataFileFactory,
+    MetadataVersionFactory,
+    PublishRequestFactory,
     UnstructuredMetadataFactory,
     ZipUploadFactory,
 )
 from isic.studies.tests.factories import StudyFactory
 
-from .factories import EmailAddressFactory, ProfileFactory, UserFactory
+from .factories import EmailAddressFactory, ProfileFactory, SocialAccountFactory, UserFactory
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -227,15 +234,19 @@ def s3ff_random_field_value(s3ff_random_field_value_factory):
 # Top-level factories
 register(EmailAddressFactory)
 register(ProfileFactory)
+register(SocialAccountFactory)
 register(UserFactory)
 
 # ingest factories
 register(AccessionFactory)
 register(AccessionReviewFactory)
+register(BulkMetadataApplicationFactory)
 register(CohortFactory)
 register(ContributorFactory)
 register(LesionFactory)
 register(MetadataFileFactory)
+register(MetadataVersionFactory)
+register(PublishRequestFactory)
 register(UnstructuredMetadataFactory)
 register(ZipUploadFactory)
 
@@ -244,8 +255,12 @@ register(IsicIdFactory)
 register(ImageFactory)
 register(ImageEmbeddingFactory)
 register(CollectionFactory)
+register(CollectionShareFactory)
 register(DoiFactory)
 register(DraftDoiFactory)
+register(ImageShareFactory)
+register(SegmentationFactory)
+register(SegmentationReviewFactory)
 
 # studies factories
 register(StudyFactory)

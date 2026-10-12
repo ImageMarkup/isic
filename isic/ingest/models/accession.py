@@ -484,6 +484,9 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
             # useful for improving the performance of the cohort detail page which needs to provide
             # accession-wise status breakdowns.
             models.Index(fields=["cohort_id", "status", "created"]),
+            # the user detail page lists a user's newest accessions. without this, postgres walks
+            # the created index backwards and filters out every other user's newer accessions.
+            models.Index(fields=["creator", "created"]),
             # metadata selection does WHERE original_blob_name IN (...) queries
             models.Index(fields=["original_blob_name"]),
             models.Index(fields=["girder_id"]),

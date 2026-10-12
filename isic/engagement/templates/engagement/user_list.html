@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load display %}
 {% load humanize %}
 
 {% block content %}
@@ -41,9 +42,7 @@
           {% for profile, suggested_contributor in rows %}
             <tr>
               <td>
-                <a href="{% url 'core/user-detail' pk=profile.user.pk %}" class="link link-hover link-primary">
-                  {{ profile.user.first_name }} {{ profile.user.last_name }}
-                </a>
+                {% user_link profile.user profile.user.get_full_name %}
                 <div class="text-gray-400">{{ profile.user.email }}</div>
                 <div class="text-gray-400">joined {{ profile.created|timesince }} ago</div>
               </td>

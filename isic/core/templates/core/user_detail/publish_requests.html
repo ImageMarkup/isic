@@ -1,0 +1,39 @@
+{% load humanize %}
+{% load localtime %}
+
+<table class="table table-zebra">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Accessions</th>
+      <th>Visibility</th>
+      <th>Collections</th>
+      <th>Requested</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for publish_request in rows %}
+      <tr>
+        <td>{{ publish_request.pk }}</td>
+        <td>{{ publish_request.num_accessions|intcomma }}</td>
+        <td>
+          {% if publish_request.public %}
+            <span class="badge badge-success badge-sm">Public</span>
+          {% else %}
+            <span class="badge badge-ghost badge-sm">Private</span>
+          {% endif %}
+        </td>
+        <td>
+          {% for collection in publish_request.collections.all %}
+            <div>
+              <a href="{% url 'core/collection-detail' pk=collection.pk %}" class="link link-hover link-primary">{{ collection.name }}</a>
+            </div>
+          {% empty %}
+            <span class="text-gray-400">&mdash;</span>
+          {% endfor %}
+        </td>
+        <td>{% localtime publish_request.created %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

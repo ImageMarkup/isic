@@ -1,0 +1,30 @@
+{% load localtime %}
+
+<table class="table table-zebra">
+  <thead>
+    <tr>
+      <th>Accession</th>
+      <th>Cohort</th>
+      <th>ISIC ID</th>
+      <th>Created</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for metadata_version in rows %}
+      <tr>
+        <td>{{ metadata_version.accession.original_blob_name }}</td>
+        <td>
+          <a href="{% url 'ingest/cohort-detail' pk=metadata_version.accession.cohort.pk %}" class="link link-hover link-primary">{{ metadata_version.accession.cohort.name }}</a>
+        </td>
+        <td>
+          {% if metadata_version.accession.image %}
+            <a href="{% url 'core/image-detail' image_identifier=metadata_version.accession.image.isic_id %}" class="link link-hover link-primary">{{ metadata_version.accession.image.isic_id }}</a>
+          {% else %}
+            <span class="text-gray-400">&mdash;</span>
+          {% endif %}
+        </td>
+        <td>{% localtime metadata_version.created %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

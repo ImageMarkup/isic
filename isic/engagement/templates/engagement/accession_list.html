@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load display %}
 {% load humanize %}
 
 {% block content %}
@@ -53,23 +54,7 @@
                 <div class="font-mono text-sm">{{ accession.engagement.external_id }}</div>
                 <div class="text-gray-400">{{ accession.original_blob_name }}</div>
               </td>
-              <td>
-                {% if accession.state == 'published' %}
-                  <span class="badge badge-success badge-sm">Published</span>
-                {% elif accession.state == 'accepted' %}
-                  <span class="badge badge-info badge-sm">Accepted</span>
-                {% elif accession.state == 'rejected' %}
-                  <span class="badge badge-error badge-sm">Rejected</span>
-                {% elif accession.state == 'failed' %}
-                  <span class="badge badge-error badge-sm">Failed</span>
-                {% elif accession.state == 'skipped' %}
-                  <span class="badge badge-ghost badge-sm">Skipped</span>
-                {% elif accession.state == 'processing' %}
-                  <span class="badge badge-ghost badge-sm">Processing</span>
-                {% else %}
-                  <span class="badge badge-warning badge-sm">Awaiting review</span>
-                {% endif %}
-              </td>
+              <td>{% include 'ingest/partials/accession_state_badge.html' with state=accession.state %}</td>
               <td>
                 <a href="{% url 'ingest/cohort-detail' pk=accession.cohort.pk %}" class="link link-hover link-primary">
                   {{ accession.cohort.name }}
@@ -77,9 +62,7 @@
                 <div class="text-gray-400">{{ accession.cohort.contributor.institution_name }}</div>
               </td>
               <td>
-                <a href="{% url 'core/user-detail' pk=accession.creator.pk %}" class="link link-hover link-primary">
-                  {{ accession.creator.email }}
-                </a>
+                {% user_link accession.creator accession.creator.email %}
               </td>
               <td>
                 {% if accession.image %}

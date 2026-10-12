@@ -15,7 +15,7 @@
           <td>
             {% with user_slug=annotator.profile.hash_id %}
               {% if show_real_names %}
-                {{ annotator|user_nicename }} (User {{ user_slug }})
+                {% user_link annotator annotator|user_nicename %} (User {{ user_slug }})
               {% else %}
                 User {{ user_slug }}
               {% endif %}

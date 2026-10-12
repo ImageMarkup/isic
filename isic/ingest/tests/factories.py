@@ -11,10 +11,13 @@ from isic.core.models import CopyrightLicense
 from isic.factories import UserFactory
 from isic.ingest.models import (
     Accession,
+    BulkMetadataApplication,
     Cohort,
     Contributor,
     Lesion,
     MetadataFile,
+    MetadataVersion,
+    PublishRequest,
     UnstructuredMetadata,
     ZipUpload,
 )
@@ -219,3 +222,30 @@ class LesionFactory(factory.django.DjangoModelFactory):
     id = factory.Sequence(lambda n: f"IL_{n:07}")
     cohort = factory.SubFactory(CohortFactory)
     private_lesion_id = factory.Faker("uuid4")
+
+
+class MetadataVersionFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = MetadataVersion
+
+    creator = factory.SubFactory(UserFactory)
+    accession = factory.SubFactory(AccessionFactory)
+    metadata = factory.LazyFunction(dict)
+    unstructured_metadata = factory.LazyFunction(dict)
+
+
+class BulkMetadataApplicationFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = BulkMetadataApplication
+
+    creator = factory.SubFactory(UserFactory)
+    metadata_file = factory.SubFactory(MetadataFileFactory)
+    message = factory.Faker("sentence")
+
+
+class PublishRequestFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = PublishRequest
+
+    creator = factory.SubFactory(UserFactory)
+    public = factory.Faker("boolean")

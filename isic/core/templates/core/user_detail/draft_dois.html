@@ -1,0 +1,32 @@
+{% load localtime %}
+
+<table class="table table-zebra">
+  <thead>
+    <tr>
+      <th>DOI</th>
+      <th>Collection</th>
+      <th>Status</th>
+      <th>Created</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for draft_doi in rows %}
+      <tr>
+        <td>
+          <a href="{% url 'core/doi-detail' slug=draft_doi.slug %}" class="link link-hover link-primary">{{ draft_doi.id }}</a>
+        </td>
+        <td>
+          <a href="{% url 'core/collection-detail' pk=draft_doi.collection.pk %}" class="link link-hover link-primary">{{ draft_doi.collection.name }}</a>
+        </td>
+        <td>
+          {% if draft_doi.is_publishing %}
+            <span class="badge badge-info badge-sm">Publishing</span>
+          {% else %}
+            <span class="badge badge-ghost badge-sm">Draft</span>
+          {% endif %}
+        </td>
+        <td>{% localtime draft_doi.created %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

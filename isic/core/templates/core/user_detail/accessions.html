@@ -1,0 +1,43 @@
+{% load localtime %}
+
+<table class="table table-zebra">
+  <thead>
+    <tr>
+      <th>File</th>
+      <th>Cohort</th>
+      <th>State</th>
+      <th>ISIC ID</th>
+      <th>Uploaded</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for accession in rows %}
+      <tr>
+        <td>
+          <div>{{ accession.original_blob_name }}</div>
+          <div class="text-gray-400">
+            {% if accession.engagement %}
+              Engagement platform ({{ accession.engagement.external_id }})
+            {% elif accession.zip_upload %}
+              {{ accession.zip_upload.blob_name }}
+            {% else %}
+              Single upload
+            {% endif %}
+          </div>
+        </td>
+        <td>
+          <a href="{% url 'ingest/cohort-detail' pk=accession.cohort.pk %}" class="link link-hover link-primary">{{ accession.cohort.name }}</a>
+        </td>
+        <td>{% include 'ingest/partials/accession_state_badge.html' with state=accession.state %}</td>
+        <td>
+          {% if accession.image %}
+            <a href="{% url 'core/image-detail' image_identifier=accession.image.isic_id %}" class="link link-hover link-primary">{{ accession.image.isic_id }}</a>
+          {% else %}
+            <span class="text-gray-400">&mdash;</span>
+          {% endif %}
+        </td>
+        <td>{% localtime accession.created %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
