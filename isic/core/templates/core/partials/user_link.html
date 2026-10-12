@@ -1,0 +1,1 @@
+{% if linkable %}<a href="{% url 'core/user-detail' pk=linked_user.pk %}" class="link link-hover link-primary">{{ label }}</a>{% else %}{{ label }}{% endif %}

@@ -31,16 +31,17 @@ def test_core_embargoed_dashboard(client, authenticated_client, staff_client):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    ("client_", "visible"),
+    ("client_", "expected_status"),
     [
-        (lf("client"), False),
-        (lf("authenticated_client"), False),
-        (lf("staff_client"), True),
+        (lf("client"), 302),
+        (lf("authenticated_client"), 302),
+        (lf("staff_client"), 200),
     ],
+    ids=["anonymous", "authenticated", "staff"],
 )
-def test_core_user_detail(user, client_, visible):
+def test_core_user_detail(user, client_, expected_status):
     r = client_.get(reverse("core/user-detail", args=[user.pk]))
-    assert r.status_code == 200 if visible else 403
+    assert r.status_code == expected_status
 
 
 @pytest.mark.django_db

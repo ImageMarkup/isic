@@ -1,0 +1,28 @@
+{% load localtime %}
+
+<table class="table table-zebra">
+  <thead>
+    <tr>
+      <th>Annotation</th>
+      <th>Study</th>
+      <th>ISIC ID</th>
+      <th>Completed</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for annotation in rows %}
+      <tr>
+        <td>
+          <a href="{% url 'studies/annotation-detail' pk=annotation.pk %}" class="link link-hover link-primary">{{ annotation.pk }}</a>
+        </td>
+        <td>
+          <a href="{% url 'studies/study-detail' pk=annotation.study.pk %}" class="link link-hover link-primary">{{ annotation.study.name }}</a>
+        </td>
+        <td>
+          <a href="{% url 'core/image-detail' image_identifier=annotation.image.isic_id %}" class="link link-hover link-primary">{{ annotation.image.isic_id }}</a>
+        </td>
+        <td>{% localtime annotation.created %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

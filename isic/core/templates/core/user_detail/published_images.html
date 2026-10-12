@@ -1,0 +1,32 @@
+{% load localtime %}
+
+<table class="table table-zebra">
+  <thead>
+    <tr>
+      <th>ISIC ID</th>
+      <th>Cohort</th>
+      <th>Visibility</th>
+      <th>Published</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for image in rows %}
+      <tr>
+        <td>
+          <a href="{% url 'core/image-detail' image_identifier=image.isic_id %}" class="link link-hover link-primary">{{ image.isic_id }}</a>
+        </td>
+        <td>
+          <a href="{% url 'ingest/cohort-detail' pk=image.accession.cohort.pk %}" class="link link-hover link-primary">{{ image.accession.cohort.name }}</a>
+        </td>
+        <td>
+          {% if image.public %}
+            <span class="badge badge-success badge-sm">Public</span>
+          {% else %}
+            <span class="badge badge-ghost badge-sm">Private</span>
+          {% endif %}
+        </td>
+        <td>{% localtime image.created %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

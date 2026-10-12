@@ -119,3 +119,13 @@ rules:
             ...
       - pattern: django.db.models.ForeignKey($TO, ...)
       - pattern-not: django.db.models.ForeignKey($TO, ..., related_name=$NAME, ...)
+
+  - id: use-user-link-tag-for-user-detail
+    languages:
+      - html
+    severity: ERROR
+    message: Use {% user_link %} instead of linking to core/user-detail directly. The user detail page is staff only, and the tag only links for staff.
+    pattern-regex: \{%\s*url\s+["']core/user-detail["']
+    paths:
+      exclude:
+        - "**/core/partials/user_link.html"

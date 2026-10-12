@@ -1,0 +1,31 @@
+{% load humanize %}
+{% load localtime %}
+
+<table class="table table-zebra">
+  <thead>
+    <tr>
+      <th>ISIC ID</th>
+      <th>Mask</th>
+      <th>Reviews</th>
+      <th>Created</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for segmentation in rows %}
+      <tr>
+        <td>
+          <a href="{% url 'core/image-detail' image_identifier=segmentation.image.isic_id %}" class="link link-hover link-primary">{{ segmentation.image.isic_id }}</a>
+        </td>
+        <td>
+          {% if segmentation.mask %}
+            <span class="badge badge-success badge-sm">Present</span>
+          {% else %}
+            <span class="badge badge-ghost badge-sm">Missing</span>
+          {% endif %}
+        </td>
+        <td>{{ segmentation.num_reviews|intcomma }}</td>
+        <td>{% localtime segmentation.created %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

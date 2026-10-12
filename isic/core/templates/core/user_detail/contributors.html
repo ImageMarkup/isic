@@ -1,0 +1,44 @@
+{% load display %}
+{% load humanize %}
+{% load localtime %}
+
+<table class="table table-zebra">
+  <thead>
+    <tr>
+      <th>Institution</th>
+      <th>Role</th>
+      <th>Owners</th>
+      <th>Cohorts</th>
+      <th>Created</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for contributor in rows %}
+      <tr>
+        <td>
+          <div>{{ contributor.institution_name }}</div>
+          {% if contributor.institution_url %}
+            <a href="{{ contributor.institution_url }}" target="_blank" rel="noopener" class="link link-hover text-gray-400 break-all">{{ contributor.institution_url }}</a>
+          {% endif %}
+        </td>
+        <td>
+          <div class="flex flex-wrap gap-1">
+            {% if contributor.creator_id == user.pk %}
+              <span class="badge badge-sm">Creator</span>
+            {% endif %}
+            {% if user in contributor.owners.all %}
+              <span class="badge badge-sm">Owner</span>
+            {% endif %}
+          </div>
+        </td>
+        <td>
+          {% for owner in contributor.owners.all %}
+            <div>{% user_link owner owner.get_full_name %}</div>
+          {% endfor %}
+        </td>
+        <td>{{ contributor.num_cohorts|intcomma }}</td>
+        <td>{% localtime contributor.created %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

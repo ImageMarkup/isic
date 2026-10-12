@@ -1,0 +1,32 @@
+{% load localtime %}
+
+<table class="table table-zebra">
+  <thead>
+    <tr>
+      <th>Study</th>
+      <th>ISIC ID</th>
+      <th>Status</th>
+      <th>Assigned</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for study_task in rows %}
+      <tr>
+        <td>
+          <a href="{% url 'studies/study-detail' pk=study_task.study.pk %}" class="link link-hover link-primary">{{ study_task.study.name }}</a>
+        </td>
+        <td>
+          <a href="{% url 'core/image-detail' image_identifier=study_task.image.isic_id %}" class="link link-hover link-primary">{{ study_task.image.isic_id }}</a>
+        </td>
+        <td>
+          {% if study_task.annotation %}
+            <a href="{% url 'studies/annotation-detail' pk=study_task.annotation.pk %}" class="badge badge-success badge-sm no-underline">Complete</a>
+          {% else %}
+            <span class="badge badge-warning badge-sm">Pending</span>
+          {% endif %}
+        </td>
+        <td>{% localtime study_task.created %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

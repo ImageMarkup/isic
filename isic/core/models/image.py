@@ -80,6 +80,8 @@ class Image(CreationSortedTimeStampedModel):
             GinIndex(OpClass(Upper("isic"), name="gin_trgm_ops"), name="isic_name_gin"),
             # Used when sorting images by pinned state and then by created timestamp
             models.Index(fields=["-pinned", "created"], name="pinned_created_index"),
+            # Used when listing a user's newest images on the user detail page
+            models.Index(fields=["creator", "created"], name="image_creator_created_index"),
         ]
 
     accession = models.OneToOneField(

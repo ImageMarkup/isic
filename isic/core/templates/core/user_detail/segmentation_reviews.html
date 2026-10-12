@@ -1,0 +1,30 @@
+{% load localtime %}
+
+<table class="table table-zebra">
+  <thead>
+    <tr>
+      <th>ISIC ID</th>
+      <th>Decision</th>
+      <th>Skill</th>
+      <th>Reviewed</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for segmentation_review in rows %}
+      <tr>
+        <td>
+          <a href="{% url 'core/image-detail' image_identifier=segmentation_review.segmentation.image.isic_id %}" class="link link-hover link-primary">{{ segmentation_review.segmentation.image.isic_id }}</a>
+        </td>
+        <td>
+          {% if segmentation_review.approved %}
+            <span class="badge badge-success badge-sm">Approved</span>
+          {% else %}
+            <span class="badge badge-error badge-sm">Rejected</span>
+          {% endif %}
+        </td>
+        <td>{{ segmentation_review.get_skill_display }}</td>
+        <td>{% localtime segmentation_review.created %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

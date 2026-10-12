@@ -1,0 +1,38 @@
+{% load localtime %}
+
+<table class="table table-zebra">
+  <thead>
+    <tr>
+      <th>File</th>
+      <th>Cohort</th>
+      <th>Status</th>
+      <th>Uploaded</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for zip_upload in rows %}
+      <tr>
+        <td>
+          <div>{{ zip_upload.blob_name }}</div>
+          <div class="text-gray-400">{{ zip_upload.blob_size|filesizeformat }}</div>
+        </td>
+        <td>
+          <a href="{% url 'ingest/cohort-detail' pk=zip_upload.cohort.pk %}" class="link link-hover link-primary">{{ zip_upload.cohort.name }}</a>
+        </td>
+        <td>
+          {% if zip_upload.status == 'extracted' %}
+            <span class="badge badge-success badge-sm">Extracted</span>
+          {% elif zip_upload.status == 'failed' %}
+            <span class="badge badge-error badge-sm">Failed</span>
+            {% if zip_upload.fail_reason %}
+              <div class="text-gray-400">{{ zip_upload.get_fail_reason_display }}</div>
+            {% endif %}
+          {% else %}
+            <span class="badge badge-ghost badge-sm">{{ zip_upload.get_status_display }}</span>
+          {% endif %}
+        </td>
+        <td>{% localtime zip_upload.created %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

@@ -1,6 +1,7 @@
 import datetime
 
 from allauth.account.models import EmailAddress
+from allauth.socialaccount.models import SocialAccount
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
@@ -69,3 +70,16 @@ class UserFactory(factory.django.DjangoModelFactory):
 
     class Params:
         raw_password = factory.Faker("password")
+
+
+class SocialAccountFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = SocialAccount
+
+    user = factory.SubFactory(UserFactory)
+    provider = "google"
+    uid = factory.Faker("numerify", text="#####################")
+    extra_data = factory.LazyAttribute(lambda o: {"email": o.email})
+
+    class Params:
+        email = factory.SelfAttribute("user.email")

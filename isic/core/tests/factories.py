@@ -3,8 +3,10 @@ import random
 import factory
 import factory.django
 
-from isic.core.models import Collection, Doi, Image
+from isic.core.models import Collection, Doi, Image, Segmentation, SegmentationReview
+from isic.core.models.collection import CollectionShare
 from isic.core.models.doi import DraftDoi
+from isic.core.models.image import ImageShare
 from isic.core.models.image_embedding import ImageEmbedding
 from isic.core.models.isic_id import IsicId
 from isic.factories import UserFactory
@@ -69,3 +71,40 @@ class DraftDoiFactory(factory.django.DjangoModelFactory):
     slug = factory.Faker("slug")
     collection = factory.SubFactory(CollectionFactory)
     creator = factory.SubFactory(UserFactory)
+
+
+class CollectionShareFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = CollectionShare
+
+    grantor = factory.SubFactory(UserFactory)
+    collection = factory.SubFactory(CollectionFactory, creator=factory.SelfAttribute("..grantor"))
+    grantee = factory.SubFactory(UserFactory)
+
+
+class ImageShareFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = ImageShare
+
+    grantor = factory.SubFactory(UserFactory)
+    image = factory.SubFactory(ImageFactory)
+    grantee = factory.SubFactory(UserFactory)
+
+
+class SegmentationFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Segmentation
+
+    girder_id = factory.Faker("hexify", text="^" * 24)
+    creator = factory.SubFactory(UserFactory)
+    image = factory.SubFactory(ImageFactory)
+
+
+class SegmentationReviewFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = SegmentationReview
+
+    creator = factory.SubFactory(UserFactory)
+    segmentation = factory.SubFactory(SegmentationFactory)
+    approved = factory.Faker("boolean")
+    skill = factory.Faker("random_element", elements=["novice", "expert"])

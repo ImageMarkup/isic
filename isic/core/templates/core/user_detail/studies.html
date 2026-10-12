@@ -1,0 +1,43 @@
+{% load localtime %}
+
+<table class="table table-zebra">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Role</th>
+      <th>Collection</th>
+      <th>Visibility</th>
+      <th>Created</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for study in rows %}
+      <tr>
+        <td>
+          <a href="{% url 'studies/study-detail' pk=study.pk %}" class="link link-hover link-primary">{{ study.name }}</a>
+        </td>
+        <td>
+          <div class="flex flex-wrap gap-1">
+            {% if study.creator_id == user.pk %}
+              <span class="badge badge-sm">Creator</span>
+            {% endif %}
+            {% if user in study.owners.all %}
+              <span class="badge badge-sm">Owner</span>
+            {% endif %}
+          </div>
+        </td>
+        <td>
+          <a href="{% url 'core/collection-detail' pk=study.collection.pk %}" class="link link-hover link-primary">{{ study.collection.name }}</a>
+        </td>
+        <td>
+          {% if study.public %}
+            <span class="badge badge-success badge-sm">Public</span>
+          {% else %}
+            <span class="badge badge-ghost badge-sm">Private</span>
+          {% endif %}
+        </td>
+        <td>{% localtime study.created %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

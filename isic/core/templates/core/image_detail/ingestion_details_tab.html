@@ -1,3 +1,4 @@
+{% load display %}
 {% load localtime %}
 
 <div class="my-4">
@@ -13,7 +14,11 @@
       </tr>
       <tr>
         <th>Reviewer</th>
-        <td>{{ image.accession.review.creator }}</td>
+        <td>
+          {% if image.accession.review %}
+            {% user_link image.accession.review.creator %}
+          {% endif %}
+        </td>
       </tr>
       <tr>
         <th>Approved</th>

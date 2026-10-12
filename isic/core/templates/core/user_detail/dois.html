@@ -1,0 +1,24 @@
+{% load localtime %}
+
+<table class="table table-zebra">
+  <thead>
+    <tr>
+      <th>DOI</th>
+      <th>Collection</th>
+      <th>Created</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for doi in rows %}
+      <tr>
+        <td>
+          <a href="{% url 'core/doi-detail' slug=doi.slug %}" class="link link-hover link-primary">{{ doi.id }}</a>
+        </td>
+        <td>
+          <a href="{% url 'core/collection-detail' pk=doi.collection.pk %}" class="link link-hover link-primary">{{ doi.collection.name }}</a>
+        </td>
+        <td>{% localtime doi.created %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

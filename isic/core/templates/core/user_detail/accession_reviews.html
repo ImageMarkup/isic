@@ -1,0 +1,35 @@
+{% load localtime %}
+
+<table class="table table-zebra">
+  <thead>
+    <tr>
+      <th>Accession</th>
+      <th>Cohort</th>
+      <th>Decision</th>
+      <th>Reviewed</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for accession_review in rows %}
+      <tr>
+        <td>
+          <div>{{ accession_review.accession.original_blob_name }}</div>
+          {% if accession_review.accession.image %}
+            <a href="{% url 'core/image-detail' image_identifier=accession_review.accession.image.isic_id %}" class="link link-hover link-primary">{{ accession_review.accession.image.isic_id }}</a>
+          {% endif %}
+        </td>
+        <td>
+          <a href="{% url 'ingest/cohort-detail' pk=accession_review.accession.cohort.pk %}" class="link link-hover link-primary">{{ accession_review.accession.cohort.name }}</a>
+        </td>
+        <td>
+          {% if accession_review.value %}
+            <span class="badge badge-success badge-sm">Accepted</span>
+          {% else %}
+            <span class="badge badge-error badge-sm">Rejected</span>
+          {% endif %}
+        </td>
+        <td>{% localtime accession_review.reviewed_at %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

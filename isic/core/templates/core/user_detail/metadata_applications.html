@@ -1,0 +1,37 @@
+{% load localtime %}
+
+<table class="table table-zebra">
+  <thead>
+    <tr>
+      <th>Metadata File</th>
+      <th>Cohort</th>
+      <th>Message</th>
+      <th>Applied</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for application in rows %}
+      <tr>
+        {% if application.metadata_file %}
+          <td>
+            <a href="{% url 'ingest/metadata-file-detail' metadata_file_pk=application.metadata_file.pk %}" class="link link-hover link-primary">{{ application.metadata_file.blob_name }}</a>
+          </td>
+          <td>
+            <a href="{% url 'ingest/cohort-detail' pk=application.metadata_file.cohort.pk %}" class="link link-hover link-primary">{{ application.metadata_file.cohort.name }}</a>
+          </td>
+        {% else %}
+          <td><span class="text-gray-400">&mdash;</span></td>
+          <td><span class="text-gray-400">&mdash;</span></td>
+        {% endif %}
+        <td>
+          {% if application.message %}
+            {{ application.message|truncatechars:200 }}
+          {% else %}
+            <span class="text-gray-400">&mdash;</span>
+          {% endif %}
+        </td>
+        <td>{% localtime application.created %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
