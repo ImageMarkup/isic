@@ -1,13 +1,17 @@
 from collections.abc import Generator
 from functools import reduce
+import io
+from itertools import batched
 import operator
-from typing import Any, cast
+from typing import Any
 
 from django.db.models import F, Func
 from django.db.models.aggregates import Count
+from django.db.models.functions import Collate
 from django.db.models.query import QuerySet
 
 from isic.core.models.image import Image
+from isic.core.utils.csv import EscapingWriter
 from isic.ingest.models.accession import Accession
 
 
@@ -140,71 +144,89 @@ def staff_image_metadata_csv(*, qs: QuerySet[Image]) -> Generator[list[str] | di
         yield value
 
 
-def image_metadata_csv(*, qs: QuerySet[Image]) -> tuple[list[str], Generator[dict[str, Any]]]:
+def image_metadata_csv(*, qs: QuerySet[Image]) -> tuple[list[str], Generator[bytes]]:
     """
-    Generate the fieldnames and rows of a CSV of image metadata for non-staff users.
+    Generate a CSV of image metadata for non-staff users.
 
-    The fieldnames are computed eagerly, and the rows are a generator.
+    Returns the fieldnames, which are computed eagerly, and a generator of the encoded CSV,
+    starting with the header row.
     """
     initial_headers = ["isic_id", "attribution", "copyright_license"]
 
-    accession_qs = Accession.objects.filter(image__in=qs)
-
     # depending on which queryset is passed in, the set of headers is different.
     # get the superset of headers for this particular queryset.
-    counts = accession_qs.aggregate(**{k: Count(k) for k in Accession.metadata_keys()})
-    used_metadata_columns = [k for k, v in counts.items() if v > 0]
-
     # A remapped field's csv_field_name (e.g. lesion_id) is also the name of the FK column on
     # Accession. Further, since these remapped fields all use natural PKs, we can read the values
     # directly off the accession without a join.
-    used_remapped_columns = [
-        field.csv_field_name
-        for field in Accession.remapped_internal_fields
-        if accession_qs.exclude(**{field.relation_name: None}).exists()
-    ]
+    remapped_columns = [field.csv_field_name for field in Accession.remapped_internal_fields]
+    counts = qs.order_by().aggregate(
+        **{k: Count(f"accession__{k}") for k in [*Accession.metadata_keys(), *remapped_columns]}
+    )
+    used_columns = [k for k, v in counts.items() if v > 0]
 
     used_computed_fields = [
         computed_field
         for computed_field in Accession.computed_fields
-        if computed_field.input_field_name in used_metadata_columns
+        if computed_field.input_field_name in used_columns
     ]
 
-    used_metadata_keys = used_metadata_columns + used_remapped_columns
+    used_metadata_keys = list(used_columns)
     for computed_field in used_computed_fields:
         used_metadata_keys.remove(computed_field.input_field_name)
         used_metadata_keys += computed_field.output_field_names
 
     fieldnames = initial_headers + sorted(used_metadata_keys)
 
-    def rows() -> Generator[dict[str, Any]]:
-        # Note this uses .values because populating django ORM objects is very slow, and doing
-        # this on large querysets can add ~5s per 100k images to the request time. Only the
-        # columns in use are selected, and they're aliased to their CSV names in the query so
-        # that no per-row key renaming is needed.
-        for image in (
-            qs.order_by("isic_id")
-            .values(
-                "isic_id",
-                attribution=F("accession__attribution"),
-                copyright_license=F("accession__copyright_license"),
-                **{
-                    key: F(f"accession__{key}")
-                    for key in used_metadata_columns + used_remapped_columns
-                },
+    # a computed field's output columns select its input, and are replaced by the computed
+    # values in each row.
+    input_field_names = {
+        output_field_name: computed_field.input_field_name
+        for computed_field in used_computed_fields
+        for output_field_name in computed_field.output_field_names
+    }
+    computed_field_positions = [
+        (computed_field, [fieldnames.index(name) for name in computed_field.output_field_names])
+        for computed_field in used_computed_fields
+    ]
+
+    rows_qs = (
+        # ISIC IDs are ISIC_ followed by 7 digits, so the C collation sorts them the same way as
+        # the database's collation does, without the much slower locale aware comparisons.
+        qs.order_by(Collate(F("isic_id"), "C"))
+        # Note this uses .values_list because building a model instance or dict for each row adds
+        # seconds per 100k images to the request time.
+        .values_list(
+            "isic_id",
+            *[f"accession__{input_field_names.get(name, name)}" for name in fieldnames[1:]],
+        )
+    )
+
+    def with_computed_fields(row: tuple[Any, ...]) -> list[Any]:
+        computed_row = list(row)
+        for computed_field, positions in computed_field_positions:
+            input_value = computed_row[positions[0]]
+            computed_values = (
+                computed_field.transformer(input_value) if input_value else None
+            ) or {}
+            for position, name in zip(positions, computed_field.output_field_names, strict=True):
+                computed_row[position] = computed_values.get(name)
+        return computed_row
+
+    def rows() -> Generator[bytes]:
+        buffer = io.StringIO()
+        writer = EscapingWriter(buffer)
+        writer.writerow(fieldnames)
+        yield buffer.getvalue().encode()
+
+        # write the rows a fetched chunk at a time, since responding with many small chunks incurs
+        # per-chunk overhead in the WSGI write path and socket writes.
+        chunk_size = 2_000
+        for batch in batched(rows_qs.iterator(chunk_size=chunk_size), chunk_size, strict=False):
+            buffer.seek(0)
+            buffer.truncate()
+            writer.writerows(
+                map(with_computed_fields, batch) if computed_field_positions else batch
             )
-            .iterator()
-        ):
-            # Strip the TypedDict, since we're about to change some fields
-            row = cast("dict[str, Any]", image)
-
-            for computed_field in used_computed_fields:
-                input_value = row.pop(computed_field.input_field_name)
-                if input_value:
-                    computed_values = computed_field.transformer(input_value)
-                    if computed_values:
-                        row.update(computed_values)
-
-            yield row
+            yield buffer.getvalue().encode()
 
     return fieldnames, rows()
