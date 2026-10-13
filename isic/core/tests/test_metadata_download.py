@@ -80,3 +80,16 @@ def test_staff_image_metadata_csv_rows_correct(image_with_metadata):
         "public": image_with_metadata.public,
         "unstructured.unstructuredfield": "foo",
     }
+
+
+@pytest.mark.django_db
+def test_metadata_csv_computes_fields_from_falsy_values(image_factory, read_image_metadata_csv):
+    image = image_factory(accession__age=0)
+    qs = Image.objects.filter(pk=image.pk)
+    assert image.accession.age_approx == 0
+
+    _, rows = read_image_metadata_csv(qs)
+    assert rows[0]["age_approx"] == "0"
+
+    _, staff_row = list(staff_image_metadata_csv(qs=qs))
+    assert staff_row["age_approx"] == 0
