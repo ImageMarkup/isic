@@ -191,7 +191,9 @@ def image_metadata_csv(*, qs: QuerySet[Image]) -> tuple[list[str], Generator[byt
 
     rows_qs = (
         # ISIC IDs are ISIC_ followed by 7 digits, so the C collation sorts them the same way as
-        # the database's collation does, without the much slower locale aware comparisons.
+        # the database's collation does, without the much slower locale aware comparisons. The
+        # planner sorts the joined rows under either collation rather than walking the isic_id
+        # index, so no collated index is needed.
         qs.order_by(Collate(F("isic_id"), "C"))
         # Note this uses .values_list because building a model instance or dict for each row adds
         # seconds per 100k images to the request time.
