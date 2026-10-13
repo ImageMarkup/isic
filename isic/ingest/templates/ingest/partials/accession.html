@@ -26,7 +26,7 @@
   </div>
   {% if review_mode %}
     <div class="flex justify-evenly">
-      <button @click="toggleReject()" class="btn btn-sm btn-error review-button" :class="{'dim': review === false}">Reject</button>
+      <button @click="toggleReject()" class="btn btn-sm btn-error review-button" :class="{'dim': review === false}" x-cloak>Reject</button>
     </div>
   {% endif %}
 </div>
