@@ -58,7 +58,12 @@ def test_escaping_writer_matches_escaping_dict_writer():
     writer.writerows(rows)
 
     assert output.getvalue() == dict_output.getvalue()
-    for row in csv.reader(io.StringIO(output.getvalue())):
-        for value in row:
-            if value != "-5":
-                assert not value.startswith(FORBIDDEN_LEADING_CHARS)
+
+    # strings with a forbidden leading character are escaped, everything else is written as is.
+    written_rows = list(csv.reader(io.StringIO(output.getvalue())))
+    assert written_rows == [
+        ["\t=header", "text", "number", "flag", "empty"],
+        ["\t@at", 'a "quote", and a comma', "-5", "True", ""],
+        ["\t+plus", "two\nlines", "3", "False", ""],
+        ["\t-minus", "plain", "0", "", "\t=1+1"],
+    ]
