@@ -3,7 +3,7 @@
   <i class="ri-arrow-down-s-line"></i>
 </button>
 <ul class="dropdown dropdown-end menu w-max overflow-visible rounded-box bg-base-100 shadow-sm"
-    popover id="collection-detail-actions">
+    popover id="collection-detail-actions" x-cloak>
   {% if request.user.is_staff %}
     {% if collection.is_magic %}
       <li class="menu-disabled pointer-events-auto *:pointer-events-none" title="Cannot share a magic collection">

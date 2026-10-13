@@ -155,7 +155,7 @@
 
   <div x-data="collectionEditor({{ collection.pk }})">
     {% if image_removal_mode %}
-      <div class="alert shadow-lg my-6">
+      <div class="alert shadow-lg my-6" x-cloak>
         <div>
           <i class="ri-information-line stroke-info shrink-0 text-lg"></i>
           <span>
