@@ -1,8 +1,22 @@
+import csv
 import functools
+import io
 
 import pytest
 
+from isic.core.services import image_metadata_csv
 from isic.ingest.services.accession.review import update_or_create_accession_review
+
+
+@pytest.fixture
+def read_image_metadata_csv():
+    def read(qs) -> tuple[list[str], list[dict[str, str]]]:
+        fieldnames, chunks = image_metadata_csv(qs=qs)
+        reader = csv.DictReader(io.StringIO(b"".join(chunks).decode()))
+        assert reader.fieldnames == fieldnames
+        return fieldnames, list(reader)
+
+    return read
 
 
 @pytest.fixture

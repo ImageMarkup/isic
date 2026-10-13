@@ -2,7 +2,6 @@ import pytest
 
 from isic.core.models.image import Image
 from isic.core.services import image_metadata_csv
-from isic.core.tests.test_metadata_download import read_image_metadata_csv
 
 
 @pytest.fixture
@@ -45,7 +44,9 @@ def test_image_csv_headers_exposes_safe_metadata(image_with_maskable_metadata):
 
 
 @pytest.mark.django_db
-def test_image_csv_rows_exposes_safe_metadata(image_with_maskable_metadata):
+def test_image_csv_rows_exposes_safe_metadata(
+    image_with_maskable_metadata, read_image_metadata_csv
+):
     _, rows = read_image_metadata_csv(Image.objects.all())
     assert rows
     for row in rows:
