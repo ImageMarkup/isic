@@ -50,8 +50,7 @@ def test_escaping_writer_matches_escaping_dict_writer():
     dict_output = io.StringIO()
     dict_writer = EscapingDictWriter(dict_output, fieldnames=fieldnames)
     dict_writer.writeheader()
-    for row in rows:
-        dict_writer.writerow(dict(zip(fieldnames, row, strict=True)))
+    dict_writer.writerows(dict(zip(fieldnames, row, strict=True)) for row in rows)
 
     output = io.StringIO()
     writer = EscapingWriter(output)

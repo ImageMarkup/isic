@@ -22,8 +22,9 @@ class EscapingDictWriter(csv.DictWriter):
         return super().writerow(escaped_row)
 
     @override
-    def writerows(self, rows: Iterable[Mapping[Any, Any]]):
-        return map(self.writerow, rows)
+    def writerows(self, rows: Iterable[Mapping[Any, Any]]) -> None:
+        for row in rows:
+            self.writerow(row)
 
 
 class EscapingWriter:
