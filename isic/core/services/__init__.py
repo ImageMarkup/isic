@@ -134,8 +134,6 @@ def staff_image_metadata_csv(*, qs: QuerySet[Image]) -> Generator[list[str] | di
         for field in Accession.computed_fields:
             computed_output_fields = field.transformer(
                 image[f"accession__{field.input_field_name}"]
-                if image.get(f"accession__{field.input_field_name}")
-                else None
             )
 
             if computed_output_fields:
@@ -206,10 +204,7 @@ def image_metadata_csv(*, qs: QuerySet[Image]) -> tuple[list[str], Generator[byt
     def with_computed_fields(row: tuple[Any, ...]) -> list[Any]:
         computed_row = list(row)
         for computed_field, positions in computed_field_positions:
-            input_value = computed_row[positions[0]]
-            computed_values = (
-                computed_field.transformer(input_value) if input_value else None
-            ) or {}
+            computed_values = computed_field.transformer(computed_row[positions[0]]) or {}
             for position, name in zip(positions, computed_field.output_field_names, strict=True):
                 computed_row[position] = computed_values.get(name)
         return computed_row
