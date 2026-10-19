@@ -30,16 +30,23 @@ class IsicMinioMediaStorage(PreventRenamingMixin, MinioMediaStorage):
 
 
 class PlaceholderMinioStorage(IsicMinioMediaStorage):
-    def url(self, name: str | None, *, max_age: timedelta | None = None) -> str:
-        if name is None:
-            raise ValueError("name must be provided.")
-
+    @staticmethod
+    def _placeholder_url(name: str) -> str | None:
         # Exclude PNG images, since those should be 16-bit)
         if name.endswith(".jpg"):
             size = 256 if "thumbnail" in name else 1000
             return f"https://picsum.photos/seed/{hash(name)}/{size}"
 
-        return super().url(name, max_age=max_age)
+        return None
+
+    def url(self, name: str | None, *, max_age: timedelta | None = None) -> str:
+        if name is None:
+            raise ValueError("name must be provided.")
+
+        return self._placeholder_url(name) or super().url(name, max_age=max_age)
+
+    def unsigned_url(self, name: str) -> str:
+        return self._placeholder_url(name) or super().unsigned_url(name)
 
 
 class S3ProxyMinioStorage(IsicMinioMediaStorage):
@@ -88,3 +95,7 @@ class S3ProxyMinioStorage(IsicMinioMediaStorage):
             raise ValueError("name must be provided.")
         self._ensure_exists(name)
         return super().url(name, max_age=max_age)
+
+    def unsigned_url(self, name: str) -> str:
+        self._ensure_exists(name)
+        return super().unsigned_url(name)

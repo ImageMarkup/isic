@@ -6,6 +6,7 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import Case, Max, Q, QuerySet, Value, When
+from django.db.models.fields.files import FieldFile
 from django.shortcuts import get_object_or_404
 from django.urls import path
 from isic_metadata import FIELD_REGISTRY
@@ -25,6 +26,14 @@ from isic.core.serializers import SearchQuerySerializer, StrictSerializer
 default_qs = Image.objects.select_related("accession__cohort").distinct()
 
 
+def _file_url(image: Image, file: FieldFile) -> str:
+    # public images are served from a bucket that needs no signing, so the url can be built
+    # locally. S3Storage.url would otherwise have boto presign it and then strip the signature.
+    if image.public:
+        return file.storage.unsigned_url(file.name)
+    return file.url
+
+
 class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
@@ -38,9 +47,9 @@ class ImageSerializer(serializers.ModelSerializer):
 
     def get_files(self, image: Image) -> dict:
         return {
-            "full": {"url": image.blob.url, "size": image.accession.blob_size},
+            "full": {"url": _file_url(image, image.blob), "size": image.accession.blob_size},
             "thumbnail_256": {
-                "url": image.thumbnail_256.url,
+                "url": _file_url(image, image.thumbnail_256),
                 "size": image.accession.thumbnail_256_size,
             },
         }
