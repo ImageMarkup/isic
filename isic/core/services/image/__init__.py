@@ -39,14 +39,15 @@ def share_image(
 
     with transaction.atomic():
         ImageShareM2M = Image.shares.through  # noqa: N806
-        for image_batch in itertools.batched(qs.iterator(), 5_000, strict=False):
+        image_ids = qs.values_list("pk", flat=True).iterator()
+        for image_id_batch in itertools.batched(image_ids, 5_000, strict=False):
             # ignore_conflicts is necessary to make this method idempotent. ignore_conflicts only
             # ignores primary key, duplicate, and exclusion constraints. we don't use primary
             # key or exclusion here, so this should only ignore duplicate entries.
             ImageShareM2M.objects.bulk_create(
                 [
-                    ImageShareM2M(image=image, grantor=grantor, grantee=grantee)
-                    for image in image_batch
+                    ImageShareM2M(image_id=image_id, grantor=grantor, grantee=grantee)
+                    for image_id in image_id_batch
                 ],
                 ignore_conflicts=True,
             )

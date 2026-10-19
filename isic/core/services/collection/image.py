@@ -33,13 +33,17 @@ def add_images_to_collection(
 
     with transaction.atomic():
         CollectionImageM2M = Collection.images.through  # noqa: N806
-        for image_batch in itertools.batched(qs.iterator(), 5_000, strict=False):  # type: ignore[union-attr]
+        image_ids = qs.values_list("pk", flat=True).iterator()  # type: ignore[union-attr]
+        for image_id_batch in itertools.batched(image_ids, 5_000, strict=False):
             # ignore_conflicts is necessary to make this method idempotent (consistent with
             # collection.images.add) ignore_conflicts only ignores primary key, duplicate, and
             # exclusion constraints. we don't use primary key or exclusion here, so this should
             # only ignore duplicate entries.
             CollectionImageM2M.objects.bulk_create(
-                [CollectionImageM2M(collection=collection, image=image) for image in image_batch],
+                [
+                    CollectionImageM2M(collection=collection, image_id=image_id)
+                    for image_id in image_id_batch
+                ],
                 ignore_conflicts=True,
             )
 
