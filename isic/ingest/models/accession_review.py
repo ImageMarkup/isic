@@ -15,6 +15,7 @@ class AccessionReview(models.Model):
     class Meta:
         ordering = ["-reviewed_at"]
         get_latest_by = "reviewed_at"
+        indexes = [models.Index(fields=["creator", "-reviewed_at"])]
 
     def __str__(self):
         return f"{self.creator} at {self.reviewed_at}"
