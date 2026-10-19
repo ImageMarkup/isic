@@ -3,7 +3,8 @@ import logging
 
 from django.contrib import admin
 from django.contrib.humanize.templatetags.humanize import intcomma
-from django.db.models import Count
+from django.db.models import Count, OuterRef, Subquery
+from django.db.models.functions import Coalesce
 from django.http import HttpResponse
 from django.template.defaultfilters import filesizeformat
 from django.utils.html import format_html
@@ -69,9 +70,23 @@ class ContributorAdmin(StaffReadonlyAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
+
+        def count_per_contributor(model, contributor_field: str):
+            return Coalesce(
+                Subquery(
+                    model.objects.filter(**{contributor_field: OuterRef("pk")})
+                    .order_by()
+                    .values(contributor_field)
+                    .annotate(count=Count("pk"))
+                    .values("count")
+                ),
+                0,
+            )
+
+        # subqueries instead of joins so the counts don't scan every accession per contributor
         return qs.annotate(
-            cohorts_count=Count("cohorts", distinct=True),
-            accessions_count=Count("cohorts__accessions", distinct=True),
+            cohorts_count=count_per_contributor(Cohort, "contributor"),
+            accessions_count=count_per_contributor(Accession, "cohort__contributor"),
         )
 
     @admin.display(ordering="cohorts_count")
