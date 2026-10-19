@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Exists, OuterRef
 from django.db.models.query_utils import Q
 from django.urls import reverse
 from django_extensions.db.models import TimeStampedModel
@@ -102,6 +103,10 @@ class StudyPermissions:
     }
 
     @staticmethod
+    def _owned_by(user_obj: User) -> Exists:
+        return Exists(Study.owners.through.objects.filter(study=OuterRef("pk"), user=user_obj))
+
+    @staticmethod
     def view_study_results_list(
         user_obj: User, qs: QuerySet[Study] | None = None
     ) -> QuerySet[Study]:
@@ -112,7 +117,7 @@ class StudyPermissions:
             return qs
 
         if user_obj.is_authenticated:
-            return qs.filter(Q(owners=user_obj) | Q(public=True))
+            return qs.filter(StudyPermissions._owned_by(user_obj) | Q(public=True))
 
         return qs.public()
 
@@ -127,13 +132,16 @@ class StudyPermissions:
         if user_obj.is_staff:
             return qs
         if user_obj.is_authenticated:
+            from .study_task import StudyTask
+
             # Owner of the study, it's public, or the user has been assigned a task from
-            # the study.
+            # the study. These are subqueries rather than joins so that callers that join
+            # tasks or annotations themselves don't multiply the rows by them.
             return qs.filter(
                 Q(creator=user_obj)
-                | Q(owners=user_obj)
+                | StudyPermissions._owned_by(user_obj)
                 | Q(public=True)
-                | Q(tasks__annotator=user_obj)
+                | Exists(StudyTask.objects.filter(study=OuterRef("pk"), annotator=user_obj))
             )
 
         return qs.public()
