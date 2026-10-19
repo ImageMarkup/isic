@@ -10,7 +10,9 @@
     body { font-family: system-ui, sans-serif; margin: 1rem; }
     nav { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; font-size: 0.875rem; }
     .charts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(32rem, 100%), 1fr)); gap: 2rem; }
-    .charts > div { position: relative; height: 24rem; padding: 0.75rem; border-radius: 0.5rem; }
+    .charts > div { display: flex; flex-direction: column; height: 24rem; padding: 0.75rem; border-radius: 0.5rem; }
+    .charts h3 { margin: 0 0 0.5rem; font: bold 12px system-ui, sans-serif; color: #666; text-align: center; }
+    .charts h3 + div { position: relative; flex: 1; min-height: 0; }
     .memory { background: #f3eefc; }
     .hide-time .time, .hide-memory .memory,
     .hide-time section:not(:has(.memory)), .hide-memory section:not(:has(.time)) { display: none; }
@@ -95,7 +97,8 @@
       for (const [title, { unit, lines }] of charts) {
         const cell = grid.appendChild(document.createElement("div"));
         cell.className = unit === "MiB" ? "memory" : "time";
-        const canvas = cell.appendChild(document.createElement("canvas"));
+        cell.insertAdjacentHTML("beforeend", `<h3>${title}</h3><div></div>`);
+        const canvas = cell.lastElementChild.appendChild(document.createElement("canvas"));
         new Chart(canvas, {
           type: "line",
           data: {
@@ -119,7 +122,6 @@
               }
             },
             plugins: {
-              title: { display: true, text: title },
               tooltip: {
                 itemSort: (a, b) => b.parsed.y - a.parsed.y,
                 callbacks: {
