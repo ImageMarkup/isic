@@ -4,7 +4,6 @@ from datetime import timedelta
 from itertools import batched
 import json
 import logging
-from pathlib import PurePosixPath
 from typing import TYPE_CHECKING
 
 from django.conf import settings
@@ -78,7 +77,9 @@ def zip_download_url(request):
 
 def _zip_file_listing_generator(qs: QuerySet[Image], token: str) -> Generator[dict[str, str]]:
     def extension_from_str(s: str) -> str:
-        return PurePosixPath(s).suffix.lstrip(".")
+        # the same as PurePosixPath(s).suffix, but saves about 120 ms per 100k entries
+        stem, dot, extension = s.rpartition("/")[2].rpartition(".")
+        return extension if dot and stem else ""
 
     for image in (
         qs.values("accession__blob", "accession__sponsored_blob", "public", "isic_id")
