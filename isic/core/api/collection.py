@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from django.urls import path
-from jaro import jaro_winkler_metric
+from rapidfuzz.distance import JaroWinkler
 from rest_framework import serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
@@ -129,7 +129,7 @@ def collection_autocomplete(request):
     collections = sorted(
         qs,
         key=lambda collection: (
-            -jaro_winkler_metric(collection.name.upper(), query.upper()),
+            -JaroWinkler.similarity(collection.name.upper(), query.upper()),
             collection.name,
         ),
     )

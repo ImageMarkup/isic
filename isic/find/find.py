@@ -3,7 +3,7 @@ import heapq
 
 from django.contrib.auth.models import User
 from django.db.models.query_utils import Q
-from jaro import jaro_winkler_metric
+from rapidfuzz.distance import JaroWinkler
 
 from isic.core.models.collection import Collection
 from isic.core.models.doi import Doi
@@ -36,8 +36,9 @@ def _closest_images(query: str, user: User) -> list[Image]:
         .values_list("isic_id", flat=True)
         .iterator()
     )
+    # process.extract would be faster still, but it copies the whole iterable into a list.
     closest = heapq.nlargest(
-        5, isic_ids, key=lambda isic_id: jaro_winkler_metric(query.upper(), isic_id.upper())
+        5, isic_ids, key=lambda isic_id: JaroWinkler.similarity(query.upper(), isic_id.upper())
     )
     images = (
         Image.objects.select_related("accession__cohort")
@@ -84,7 +85,7 @@ def quickfind_execute(query: str, user: User) -> list[dict]:
             )
             .distinct(),
             "sort": lambda v: sum(
-                jaro_winkler_metric(query.upper(), getattr(v, attr).upper())
+                JaroWinkler.similarity(query.upper(), getattr(v, attr).upper())
                 for attr in ["first_name", "last_name"]
             ),
             "permission": "",
@@ -94,7 +95,7 @@ def quickfind_execute(query: str, user: User) -> list[dict]:
             "filter": Doi.objects.select_related("collection", "creator").filter(
                 collection__name__icontains=query
             ),
-            "sort": lambda v: jaro_winkler_metric(query.upper(), v.collection.name.upper()),
+            "sort": lambda v: JaroWinkler.similarity(query.upper(), v.collection.name.upper()),
             "permission": "",
             "serializer": DoiQuickfindResultSerializer,
         },
@@ -105,7 +106,7 @@ def quickfind_execute(query: str, user: User) -> list[dict]:
     ).data
 
     def default_sort(search, v):
-        return jaro_winkler_metric(query.upper(), getattr(v, search["sort"]).upper())
+        return JaroWinkler.similarity(query.upper(), getattr(v, search["sort"]).upper())
 
     for k, search in searches.items():
         if not user.is_staff and k in ["cohorts", "users", "contributors"]:
