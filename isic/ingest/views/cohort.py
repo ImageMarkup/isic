@@ -16,6 +16,8 @@ from isic.ingest.forms import MergeCohortForm, PublishCohortForm
 from isic.ingest.models import Cohort
 from isic.ingest.models.accession import Accession, AccessionStatus
 from isic.ingest.models.contributor import Contributor
+from isic.ingest.models.lesion import Lesion
+from isic.ingest.models.patient import Patient
 from isic.ingest.services.cohort import merge_cohorts
 from isic.ingest.services.publish import initialize_publish
 from isic.ingest.views import make_breadcrumbs
@@ -43,12 +45,16 @@ def cohort_list(request):
         Prefetch("cohorts", queryset=Cohort.objects.order_by("default_attribution", "name"))
     ).order_by("institution_name")
 
-    counts_by_cohort_qs = Accession.objects.values("cohort_id").annotate(
-        lesion_count=Count("lesion", distinct=True),
-        patient_count=Count("patient", distinct=True),
-        accession_count=Count("pk"),
-    )
-    counts_by_cohort = {row["cohort_id"]: row for row in counts_by_cohort_qs}
+    # lesions and patients have their own tables, so counting them there avoids counting
+    # distinct ids over every accession.
+    counts_by_cohort: dict[int, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    for model, key in [
+        (Accession, "accession_count"),
+        (Lesion, "lesion_count"),
+        (Patient, "patient_count"),
+    ]:
+        for row in model.objects.values("cohort_id").annotate(count=Count("pk")):
+            counts_by_cohort[row["cohort_id"]][key] = row["count"]
 
     rows = []
     for contributor in contributors.all():
@@ -59,7 +65,7 @@ def cohort_list(request):
         ):
             display_attribution = True
             for cohort in cohorts:
-                aggregate_data = counts_by_cohort.get(cohort.pk, defaultdict(int))
+                aggregate_data = counts_by_cohort[cohort.pk]
                 rows.append(
                     {
                         "contributor": contributor,
