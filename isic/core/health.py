@@ -11,6 +11,7 @@ from isic.core.models.image import Image
 from isic.core.models.image_embedding import ImageEmbedding
 from isic.core.models.isic_id import IsicId
 from isic.engagement.models import EngagementProfile
+from isic.ingest.services.publish import image_iptc_metadata
 from isic.login.models import Profile
 
 logger = logging.getLogger(__name__)
@@ -185,16 +186,28 @@ def check_iptc_metadata_consistency() -> HealthCheckResult:
     errors = []
 
     for image in jpg_images:
-        with field_file_to_local_path(image.blob) as path, pyexiv2.Image(str(path)) as img:
-            # TODO: attributes
-            iptc_credit = img.read_iptc().get("Iptc.Application2.Credit", "")
-            if iptc_credit != image.accession.attribution:
-                errors.append(f"{image.isic_id}: attribution mismatch")
+        expected = image_iptc_metadata(
+            image.accession.attribution, image.accession.copyright_license, image.isic_id
+        )
+
+        for blob_name, blob in [("blob", image.blob), ("thumbnail", image.thumbnail_256)]:
+            with field_file_to_local_path(blob) as path, pyexiv2.Image(str(path)) as img:
+                # pyexiv2 exposes IPTC and XMP through separate readers; the expected dict
+                # covers both, and the key union below also catches fields on only one side.
+                actual = img.read_iptc() | img.read_xmp()
+
+            mismatches = [
+                f"{field} expected={expected.get(field)!r} actual={actual.get(field)!r}"
+                for field in sorted(expected.keys() | actual.keys())
+                if expected.get(field) != actual.get(field)
+            ]
+            if mismatches:
+                errors.append(f"{image.isic_id} {blob_name}: {', '.join(mismatches)}")
 
     return HealthCheckResult(
         name="iptc_metadata_consistency",
         passed=not errors,
-        message=f"Found issues: {', '.join(errors)}" if errors else "IPTC metadata consistent",
+        message=f"Found issues: {'; '.join(errors)}" if errors else "IPTC metadata consistent",
     )
 
 

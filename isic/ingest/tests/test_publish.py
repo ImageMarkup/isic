@@ -10,11 +10,11 @@ from resonant_utils.files import field_file_to_local_path
 
 from isic.core.models.collection import Collection
 from isic.core.models.image import Image
-from isic.core.views.doi import LICENSE_URIS
 from isic.ingest.models.accession import AccessionStatus
 from isic.ingest.services.accession import create_accession
 from isic.ingest.services.publish import (
     embed_iptc_metadata,
+    image_iptc_metadata,
     initialize_publish,
     publish_accession,
 )
@@ -224,34 +224,8 @@ def test_iptc_metadata_embedding(
                 assert iptc_data == {}
                 assert xmp_data == {}
             else:
-                # For JPEG files, metadata should be present
-                assert image_file.read_iptc() == {
-                    "Iptc.Application2.Credit": image.accession.attribution,
-                    "Iptc.Application2.Source": "ISIC Archive",
-                    "Iptc.Envelope.CharacterSet": "\x1b%G",
-                }
-                # see https://iptc.org/std/photometadata/specification/IPTC-PhotoMetadata#lang-alt-value-type
-                assert image_file.read_xmp()["Xmp.dc.title"] == {'lang="x-default"': image.isic_id}
-                assert (
-                    image_file.read_xmp()["Xmp.plus.ImageSupplier[1]/plus:ImageSupplierName"]
-                    == "ISIC Archive"
-                )
-                assert image_file.read_xmp()["Xmp.plus.ImageSupplierImageID"] == image.isic_id
-                # see https://iptc.org/std/photometadata/specification/IPTC-PhotoMetadata#lang-alt-value-type
-                assert image_file.read_xmp()["Xmp.xmpRights.UsageTerms"] == {
-                    'lang="x-default"': image.accession.copyright_license,
-                }
-                assert (
-                    image_file.read_xmp()["Xmp.xmpRights.WebStatement"]
-                    == LICENSE_URIS[image.accession.copyright_license]
-                )
-                assert (
-                    image_file.read_xmp()["Xmp.plus.Licensor[1]/plus:LicensorURL"]
-                    == "https://www.isic-archive.com"
-                )
-                assert (
-                    image_file.read_xmp()["Xmp.plus.Licensor[1]/plus:LicensorName"]
-                    == "ISIC Archive"
+                assert image_file.read_iptc() | image_file.read_xmp() == image_iptc_metadata(
+                    image.accession.attribution, image.accession.copyright_license, image.isic_id
                 )
 
 
