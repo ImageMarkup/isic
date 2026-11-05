@@ -142,6 +142,33 @@ def publish_accession(
             )
 
 
+def image_iptc_metadata(
+    attribution: str, copyright_license: str, isic_id: str
+) -> dict[str, str | dict[str, str]]:
+    """
+    Return the metadata embed_iptc_metadata writes, in the form pyexiv2 reads it back.
+
+    This isn't the same as the dicts passed to modify_iptc/modify_xmp: the ImageSupplier and
+    Licensor containers read back as type markers and dc.title reads back as a lang alt.
+    """
+    return {
+        "Iptc.Application2.Credit": attribution,
+        "Iptc.Application2.Source": "ISIC Archive",
+        "Iptc.Envelope.CharacterSet": "\x1b%G",
+        "Xmp.dc.title": {'lang="x-default"': isic_id},
+        "Xmp.plus.ImageSupplier": 'type="Seq"',
+        "Xmp.plus.ImageSupplier[1]": 'type="Struct"',
+        "Xmp.plus.ImageSupplier[1]/plus:ImageSupplierName": "ISIC Archive",
+        "Xmp.plus.ImageSupplierImageID": isic_id,
+        "Xmp.xmpRights.UsageTerms": {'lang="x-default"': copyright_license},
+        "Xmp.xmpRights.WebStatement": LICENSE_URIS[copyright_license],
+        "Xmp.plus.Licensor": 'type="Seq"',
+        "Xmp.plus.Licensor[1]": 'type="Struct"',
+        "Xmp.plus.Licensor[1]/plus:LicensorURL": "https://www.isic-archive.com",
+        "Xmp.plus.Licensor[1]/plus:LicensorName": "ISIC Archive",
+    }
+
+
 @contextmanager
 def embed_iptc_metadata(
     field_file: FieldFile, attribution: str, copyright_license: str, isic_id: str
