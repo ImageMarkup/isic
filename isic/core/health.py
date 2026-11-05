@@ -169,6 +169,11 @@ def check_magic_collections_have_no_doi() -> HealthCheckResult:
     )
 
 
+# images made public before #1215 (2025-06-07) were embedded without a character set and
+# were never regenerated, so it isn't compared.
+IGNORED_IPTC_FIELDS = {"Iptc.Envelope.CharacterSet"}
+
+
 def check_iptc_metadata_consistency() -> HealthCheckResult:
     jpg_images = (
         Image.objects.filter(
@@ -198,7 +203,7 @@ def check_iptc_metadata_consistency() -> HealthCheckResult:
 
             mismatches = [
                 f"{field} expected={expected.get(field)!r} actual={actual.get(field)!r}"
-                for field in sorted(expected.keys() | actual.keys())
+                for field in sorted((expected.keys() | actual.keys()) - IGNORED_IPTC_FIELDS)
                 if expected.get(field) != actual.get(field)
             ]
             if mismatches:
