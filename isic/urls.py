@@ -52,6 +52,7 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     path("oauth/", include("oauth2_provider.urls")),
     path("admin/", admin.site.urls),
+    path("cookies/", include("cookie_consent.urls")),
     path("api/v2/s3-upload/", include("s3_file_field.urls")),
     path("api/v2/", include((api_urlpatterns, "api"))),
     path("api/docs/swagger/", swagger, name="docs-swagger"),

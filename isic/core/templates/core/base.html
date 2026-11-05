@@ -1,4 +1,4 @@
-{% load static %}
+{% load static cookie_consent_tags %}
 
 <!DOCTYPE html>
 <html data-theme="winter">
@@ -22,15 +22,19 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.26.0/axios.min.js" integrity="sha512-bPh3uwgU5qEMipS/VOmRqynnMXGGSRv+72H/N260MQeXZIK4PG48401Bsby9Nq5P5fz7hy5UGNmC/W1Z51h2GQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-VBHRJSWF1T"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-VBHRJSWF1T');
     </script>
+    {% if request|cookie_group_accepted:"analytics" %}
+      <!-- Global site tag (gtag.js) - Google Analytics -->
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-VBHRJSWF1T"></script>
+      <script>
+        gtag('js', new Date());
+
+        gtag('config', 'G-VBHRJSWF1T');
+      </script>
+    {% endif %}
     <script>
       document.addEventListener('alpine:init', () => {
         Alpine.store('accessions', {
@@ -114,6 +118,8 @@
 
       {% include 'find/quickfind_modal.html' %}
     </div>
+
+    {% include 'core/partials/cookie_banner.html' %}
 
     <script type="module" src="https://unpkg.com/@github/time-elements@3.1.2?module"></script>
   </body>
