@@ -201,6 +201,12 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute="0", hour="0"),
     },
 }
+CELERY_TASK_ROUTES = {
+    "isic.core.tasks.sync_elasticsearch_indices_task": {"queue": "es-indexing"},
+    "isic.stats.tasks.collect_google_analytics_metrics_task": {"queue": "stats-aggregation"},
+    "isic.stats.tasks.collect_image_download_records_task": {"queue": "s3-log-processing"},
+    "isic.stats.tasks.process_s3_log_file_task": {"queue": "s3-log-processing"},
+}
 CELERY_WORKER_MAX_MEMORY_PER_CHILD = 256 * 1024
 
 CACHES = {

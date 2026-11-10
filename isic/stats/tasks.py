@@ -100,7 +100,6 @@ def _country_from_iso_code(iso_code: str) -> dict:
 @shared_task(
     soft_time_limit=300,
     time_limit=360,
-    queue="stats-aggregation",
 )
 def collect_google_analytics_metrics_task():
     client = _get_analytics_client()
@@ -169,7 +168,6 @@ def _cdn_access_log_records(log_file_bytes: BytesIO) -> Iterable[dict]:
 
 
 @shared_task(
-    queue="s3-log-processing",
     soft_time_limit=900,
     time_limit=930,
 )
@@ -196,7 +194,6 @@ def collect_image_download_records_task():
     time_limit=630,
     max_retries=5,
     retry_backoff=True,
-    queue="s3-log-processing",
 )
 def process_s3_log_file_task(s3_log_object_key: str):
     logger.info("Processing s3 log file %s", s3_log_object_key)
