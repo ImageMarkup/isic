@@ -5,6 +5,11 @@
   ],
   packageRules: [
     {
+      // Wait for upstream support from Resonant
+      matchPackageNames: ['celery'],
+      enabled: false,
+    },
+    {
       matchPackageNames: ['django-oauth-toolkit'],
       // v2 removed OOB support: https://github.com/jazzband/django-oauth-toolkit/pull/1124
       allowedVersions: '<2.0.0',
