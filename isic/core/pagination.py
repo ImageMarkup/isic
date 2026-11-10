@@ -177,7 +177,7 @@ class CursorPagination:
         encoded = b64encode(querystring.encode()).decode()
         return _replace_query_param(base_url, "cursor", encoded)
 
-    def next_link(  # noqa: PLR0913
+    def next_link(  # noqa: PLR0913, PLR0917
         self,
         base_url: str,
         page: list,
@@ -237,7 +237,7 @@ class CursorPagination:
         next_cursor = Cursor(offset=offset, reverse=False, position=position)
         return self._encode_cursor(next_cursor, base_url)
 
-    def previous_link(  # noqa: PLR0913
+    def previous_link(  # noqa: PLR0913, PLR0917
         self,
         base_url: str,
         page: list,
