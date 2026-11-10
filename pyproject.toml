@@ -71,7 +71,7 @@ dependencies = [
 development = [
   # Runtime dependencies, only needed with "development" settings
   "django-browser-reload==1.21.0",
-  "django-debug-toolbar==7.1.1",
+  "django-debug-toolbar==8.0.0",
   "django-minio-storage==0.6.0",
   "django-resonant-utils[minio_storage]==0.21.0",
   "django-s3-file-field[minio]==1.1.0",
