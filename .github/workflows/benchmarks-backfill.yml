@@ -42,7 +42,7 @@ jobs:
           xpack.security.enabled: "true"
           ELASTIC_PASSWORD: elastic
         options: >-
-          --health-cmd "curl --fail --user elastic:elastic http://localhost:9200/"
+          --health-cmd "curl --fail --user elastic:elastic --silent http://localhost:9200/"
           --health-start-period 30s
           --health-start-interval 2s
         ports:
@@ -126,7 +126,7 @@ jobs:
     needs: benchmark
     # Record the commits that worked, even when others failed.
     if: ${{ !cancelled() }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       # The job pushes the results to the gh-pages branch.
       contents: write

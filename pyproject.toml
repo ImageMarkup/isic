@@ -98,6 +98,7 @@ type = [
   "mypy==1.19.1",
   "celery-types==0.26.0",
   "django-stubs[compatible-mypy]==5.2.9",
+  "djangorestframework-stubs[compatible-mypy]==3.16.9",
   "pandas-stubs==3.0.5.260730",
 ]
 test = [
@@ -173,6 +174,7 @@ ignore = [
 
   # Overly burdensome
   "ANN", # flake8-annotations
+  "CPY001", # missing-copyright-notice
   "D1", # undocumented-*
   "EM", # flake8-errmsg
   "ERA001", # commented-out-code
@@ -197,6 +199,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "**/migrations/**" = [
+  "ICN001", # unconventional-import-alias
   "N806", # non-lowercase-variable-in-function
   "RUF012", # mutable-class-default
 ]
@@ -207,21 +210,21 @@ ignore = [
 "**/settings/{benchmark,development,testing}.py" = [
   "S105", # hardcoded-password-string
 ]
-"benchmarks/**" = [
-  "PLR0913", # too-many-arguments
-  "S", # flake8-bandit
-]
-"**/tests/**" = [
+"{benchmarks,**/tests}/**" = [
   "DJ007", # django-all-with-model-form
   "DJ008", # django-model-without-dunder-str
   "INP001", # implicit-namespace-package
   "PLR0913", # too-many-arguments
+  "PLR0917", # too-many-positional-arguments
   "S", # flake8-bandit
   "SLF001", # private-member-access
 ]
 
 [tool.ruff.lint.flake8-boolean-trap]
 extend-allowed-calls = ["pydantic.Field", "django.db.models.Value"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["ninja.Query"]
 
 [tool.ruff.lint.flake8-self]
 extend-ignore-names = ["_base_manager", "_default_manager",  "_meta"]
@@ -250,12 +253,13 @@ files = [
 ]
 check_untyped_defs = true
 ignore_missing_imports = true
-show_error_codes = true
 warn_redundant_casts = true
 warn_unused_configs = true
 warn_unused_ignores = true
+enable_error_code = ["exhaustive-match"]
 plugins = [
-    "mypy_django_plugin.main",
+  "mypy_django_plugin.main",
+  "mypy_drf_plugin.main",
 ]
 
 [tool.django-stubs]

@@ -205,7 +205,7 @@ def template_name() -> str:
 
 
 def template_exists() -> bool:
-    with connection._nodb_cursor() as cursor:  # noqa: SLF001
+    with connection._nodb_cursor() as cursor:
         cursor.execute("SELECT 1 FROM pg_database WHERE datname = %s", [template_name()])
         return cursor.fetchone() is not None
 
