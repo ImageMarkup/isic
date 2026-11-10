@@ -1,5 +1,5 @@
 import logging
-from typing import cast
+from typing import Any, cast
 
 from django_extensions.utils import InternalIPS
 from minio_storage.policy import Policy
@@ -89,7 +89,11 @@ elif ISIC_FAKE_STORAGE == "placeholder":
     STORAGES["default"]["BACKEND"] = "isic.core.storages.minio.PlaceholderMinioStorage"
     STORAGES["sponsored"]["BACKEND"] = "isic.core.storages.minio.PlaceholderMinioStorage"
 
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+MAILERS: dict[str, dict[str, Any]] = {
+    "default": {
+        "BACKEND": "django.core.mail.backends.console.EmailBackend",
+    },
+}
 
 # Expire cache entries immediately to promote better understanding of actual query performance
 CACHES["default"]["TIMEOUT"] = 0
