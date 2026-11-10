@@ -2,7 +2,7 @@ from collections import defaultdict
 from collections.abc import Iterable
 import csv
 from dataclasses import dataclass
-import datetime
+import datetime as dt
 from datetime import timedelta
 import gzip
 from io import BytesIO
@@ -157,9 +157,9 @@ def _cdn_access_log_records(log_file_bytes: BytesIO) -> Iterable[dict]:
         )
         for row in reader:
             yield {
-                "download_time": datetime.datetime.strptime(
+                "download_time": dt.datetime.strptime(
                     f"{row['date']} {row['time']}", "%Y-%m-%d %H:%M:%S"
-                ).replace(tzinfo=datetime.UTC),
+                ).replace(tzinfo=dt.UTC),
                 "path": row["cs-uri-stem"].lstrip("/"),
                 "ip_address": row["c-ip"],
                 "user_agent": urllib.parse.unquote(row["cs(User-Agent)"]),

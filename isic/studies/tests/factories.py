@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 import random
 from typing import Any
 
@@ -120,7 +120,7 @@ class AnnotationFactory(factory.django.DjangoModelFactory):
         annotator=factory.SelfAttribute("..annotator"),
     )
 
-    start_time = factory.Faker("date_time", tzinfo=datetime.UTC)
+    start_time = factory.Faker("date_time", tzinfo=dt.UTC)
 
 
 class ResponseFactory(factory.django.DjangoModelFactory):
