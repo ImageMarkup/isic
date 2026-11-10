@@ -93,7 +93,7 @@ lint = [
   "semgrep==1.184.0"
 ]
 type = [
-  "mypy==2.0.0",
+  "mypy==2.4.1",
   "celery-types==0.26.0",
   "django-stubs[compatible-mypy]==6.1.2",
   "djangorestframework-stubs[compatible-mypy]==3.18.2",
