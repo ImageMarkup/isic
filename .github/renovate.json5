@@ -22,5 +22,10 @@
       // 3.3.3 has an infix_notation regression: https://github.com/pyparsing/pyparsing/issues/672
       allowedVersions: '!/^3\\.3\\.3$/',
     },
+    {
+      matchPackageNames: ['tailwindcss', '@tailwindcss/postcss'],
+      // 4.3.4 drops daisyUI "join" rules from optimized builds: https://github.com/tailwindlabs/tailwindcss/issues/20668
+      allowedVersions: '<4.3.4',
+    },
   ],
 }
