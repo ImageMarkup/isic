@@ -85,7 +85,7 @@ dev = [
   # so use this to install "development" extras by default too
   "isic[development]",
   "tox==4.67.13",
-  "tox-uv==1.37.6",
+  "tox-uv==1.37.7",
 ]
 lint = [
   "djhtml==3.0.11",
