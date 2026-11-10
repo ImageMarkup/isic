@@ -64,7 +64,6 @@ INSTALLED_APPS = [
     "django.contrib.sites",
     "django.contrib.staticfiles",
     "django_extensions",
-    "django_filters",
     "django_recaptcha",
     "markdownify",
     "oauth2_provider",
