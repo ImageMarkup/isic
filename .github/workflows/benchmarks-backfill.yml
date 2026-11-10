@@ -126,7 +126,7 @@ jobs:
     needs: benchmark
     # Record the commits that worked, even when others failed.
     if: ${{ !cancelled() }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       # The job pushes the results to the gh-pages branch.
       contents: write
