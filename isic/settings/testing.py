@@ -1,6 +1,6 @@
 import logging
 from secrets import randbelow
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from urllib.parse import ParseResult
@@ -57,7 +57,13 @@ STORAGES.update(
 )
 MINIO_STORAGE_MEDIA_OBJECT_METADATA = {"Content-Disposition": "attachment"}
 
-# Testing will set EMAIL_BACKEND to use the memory backend
+# Django's test runner will override every mailer here with the memory backend, but a "default"
+# mailer must exist for outgoing email to be captured instead of failing.
+MAILERS: dict[str, dict[str, Any]] = {
+    "default": {
+        "BACKEND": "django.core.mail.backends.locmem.EmailBackend",
+    },
+}
 
 # ISIC tests expect these to always be enabled, though they are optional in development
 CELERY_TASK_ALWAYS_EAGER = True

@@ -18,9 +18,7 @@ class Question(TimeStampedModel):
         DIAGNOSIS = "diagnosis", "Diagnosis"
 
     prompt = models.CharField(max_length=400)
-    type = models.CharField(
-        max_length=11, choices=QuestionType.choices, default=QuestionType.SELECT
-    )
+    type = models.CharField(max_length=11, choices=QuestionType, default=QuestionType.SELECT)
     official = models.BooleanField()
     # TODO: maybe add a default field
 

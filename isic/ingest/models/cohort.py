@@ -60,7 +60,7 @@ class Cohort(CreationSortedTimeStampedModel):
 
     # This is the default copyright_license accessions will be assigned, but accessions can have
     # different licenses within the same cohort.
-    default_copyright_license = models.CharField(choices=CopyrightLicense.choices, max_length=255)
+    default_copyright_license = models.CharField(choices=CopyrightLicense, max_length=255)
 
     # required if default_copyright_license is CC-BY-*
     default_attribution = models.CharField(

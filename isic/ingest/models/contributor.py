@@ -33,7 +33,7 @@ class Contributor(CreationSortedTimeStampedModel):
     creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="created_contributors")
     owners = models.ManyToManyField(User, related_name="owned_contributors")
     default_copyright_license = models.CharField(
-        choices=CopyrightLicense.choices,
+        choices=CopyrightLicense,
         max_length=255,
         blank=True,
         verbose_name="Default Copyright License",
