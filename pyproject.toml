@@ -85,42 +85,42 @@ dev = [
   # The "dev" dependency group is installed by default,
   # so use this to install "development" extras by default too
   "isic[development]",
-  "tox==4.58.0",
-  "tox-uv==1.36.0",
+  "tox==4.67.13",
+  "tox-uv==1.37.6",
 ]
 lint = [
   "djhtml==3.0.11",
-  "ruff==0.15.20",
-  "semgrep==1.172.0"
+  "ruff==0.17.4",
+  "semgrep==1.184.0"
 ]
 type = [
   "mypy==2.0.0",
   "celery-types==0.26.0",
   "django-stubs[compatible-mypy]==6.1.2",
   "djangorestframework-stubs[compatible-mypy]==3.18.2",
-  "pandas-stubs==3.0.5.260730",
+  "pandas-stubs==3.1.0.261029",
 ]
 test = [
   "factory-boy==3.3.3",
-  "hypothesis==6.164.0",
+  "hypothesis==6.170.15",
   "pytest==8.4.2",
   "pytest-cov==7.1.0",
-  "pytest-django==4.12.0",
+  "pytest-django==4.14.0",
   "pytest-factoryboy==2.8.1",
-  "pytest-lazy-fixtures==1.4.0",
-  "pytest-mock==3.15.1",
+  "pytest-lazy-fixtures==1.4.1",
+  "pytest-mock==3.17.0",
   # Enable with "pytest --random-order ..."
   "pytest-random-order==1.2.0",
   # Enable with "pytest --count=... ..."
   "pytest-repeat==0.9.4",
-  "pytest-playwright==0.8.0",
+  "pytest-playwright==0.10.0",
 ]
 profile = [
-  "memray==1.19.3",
+  "memray==1.20.0",
   "pyinstrument==5.1.3",
 ]
 benchmark = [
-  "pytest-benchmark==5.3.0",
+  "pytest-benchmark==5.3.1",
 ]
 
 [tool.hatch.build]
