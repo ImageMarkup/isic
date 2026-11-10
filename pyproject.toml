@@ -23,7 +23,6 @@ dependencies = [
   "django-cors-headers==4.9.0",
   "django-environ==0.14.0",
   "django-extensions==4.1",
-  "django-filter==25.2",
   "django-json-widget==2.1.1",
   "django-markdownify==0.9.7",
   "django-oauth-toolkit==1.7.1",
