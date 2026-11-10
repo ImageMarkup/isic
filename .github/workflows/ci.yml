@@ -13,7 +13,7 @@ concurrency:
 jobs:
   test:
     name: test (${{ matrix.suite }})
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     strategy:
       fail-fast: false
       matrix:
@@ -44,34 +44,32 @@ jobs:
           xpack.security.enabled: "true"
           ELASTIC_PASSWORD: elastic
         options: >-
-          --health-cmd "curl --fail --user elastic:elastic http://localhost:9200/"
+          --health-cmd "curl --fail --user elastic:elastic --silent http://localhost:9200/"
           --health-start-period 30s
           --health-start-interval 2s
         ports:
           - 9200:9200
       rabbitmq:
-        image: rabbitmq:4.3-management-alpine
+        image: rabbitmq:4.4.0-management-alpine
         options: >-
           --health-cmd "rabbitmq-diagnostics ping"
           --health-start-period 30s
           --health-start-interval 2s
         ports:
           - 5672:5672
-      minio:
-        # This image does not require any command arguments (which GitHub Actions don't support)
-        image: bitnamilegacy/minio:latest
+      seaweedfs:
+        image: chrislusf/seaweedfs:4.50
         env:
-          MINIO_ROOT_USER: minioAccessKey
-          MINIO_ROOT_PASSWORD: minioSecretKey
+          AWS_ACCESS_KEY_ID: seaweedAccessKey
+          AWS_SECRET_ACCESS_KEY: seaweedSecretKey
         options: >-
-          --health-cmd "mc ready local"
-          --health-timeout 1s
+          --health-cmd "curl --fail --silent http://localhost:8333/healthz"
           --health-start-period 30s
           --health-start-interval 2s
         ports:
-          - 9000:9000
+          - 8333:8333
       redis:
-        image: redis:alpine
+        image: redis:8.10.1-alpine
         options: >-
           --health-cmd "redis-cli ping"
           --health-start-period 30s
@@ -116,7 +114,7 @@ jobs:
           DJANGO_DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
           DJANGO_ISIC_ELASTICSEARCH_URL: http://elastic:elastic@localhost:9200
           DJANGO_CELERY_BROKER_URL: amqp://localhost:5672/
-          DJANGO_MINIO_STORAGE_URL: http://minioAccessKey:minioSecretKey@localhost:9000/django-storage
+          DJANGO_MINIO_STORAGE_URL: http://seaweedAccessKey:seaweedSecretKey@localhost:8333/django-storage
           DJANGO_CACHE_URL: redis://localhost:6379/0
       - name: Validate greenmask config against the schema
         if: matrix.suite == 'main'
@@ -159,7 +157,7 @@ jobs:
           DJANGO_SETTINGS_MODULE: isic.settings.testing
           DJANGO_ISIC_ELASTICSEARCH_URL: http://elastic:elastic@localhost:9200
           DJANGO_CELERY_BROKER_URL: amqp://localhost:5672/
-          DJANGO_MINIO_STORAGE_URL: http://minioAccessKey:minioSecretKey@localhost:9000/django-storage
+          DJANGO_MINIO_STORAGE_URL: http://seaweedAccessKey:seaweedSecretKey@localhost:8333/django-storage
           DJANGO_CACHE_URL: redis://localhost:6379/0
           # The transformer templates reference env "SALT"; any value works here.
           SALT: ci-test-salt

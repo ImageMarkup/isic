@@ -23,7 +23,7 @@ on:
         value: ${{ jobs.runner.outputs.ec2-instance-id }}
 jobs:
   runner:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       # The job assumes the AWS role through GitHub's OIDC provider.
       id-token: write

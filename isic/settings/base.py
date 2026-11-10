@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import timedelta
+import datetime as dt
 import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -105,7 +105,7 @@ TIME_ZONE = "UTC"
 DATABASES = {
     "default": {
         **env.db_url("DJANGO_DATABASE_URL", engine="django.db.backends.postgresql"),
-        "CONN_MAX_AGE": timedelta(minutes=10).total_seconds(),
+        "CONN_MAX_AGE": dt.timedelta(minutes=10).total_seconds(),
     },
 }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -180,7 +180,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 CELERY_BEAT_SCHEDULE = {
     "collect-google-analytics-stats": {
         "task": "isic.stats.tasks.collect_google_analytics_metrics_task",
-        "schedule": timedelta(hours=6),
+        "schedule": dt.timedelta(hours=6),
     },
     "sync-elasticsearch-index": {
         "task": "isic.core.tasks.sync_elasticsearch_indices_task",
@@ -195,7 +195,7 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": crontab(minute="*/15", hour="*"),
         "options": {
             # to avoid overcomputing, the message should expire 60 seconds after created
-            "expires": timedelta(seconds=60).total_seconds(),
+            "expires": dt.timedelta(seconds=60).total_seconds(),
         },
     },
     "run-health-checks": {

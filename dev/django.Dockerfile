@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
+FROM mcr.microsoft.com/devcontainers/base:3-ubuntu26.04
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
@@ -22,9 +22,6 @@ ENV GREENMASK_CONFIG=/home/vscode/isic/.greenmask/config.yml
 
 # Ensure Python output appears immediately in container logs.
 ENV PYTHONUNBUFFERED=1
-
-# Override Node's default of attempting to bind to IPv6 interfaces over IPv4
-ENV NODE_OPTIONS=--dns-result-order=ipv4first
 
 # Put the uv and npm caches in a separate location,
 # where they can persist and be shared across containers.

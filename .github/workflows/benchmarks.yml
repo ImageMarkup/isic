@@ -38,7 +38,7 @@ jobs:
           xpack.security.enabled: "true"
           ELASTIC_PASSWORD: elastic
         options: >-
-          --health-cmd "curl --fail --user elastic:elastic http://localhost:9200/"
+          --health-cmd "curl --fail --user elastic:elastic --silent http://localhost:9200/"
           --health-start-period 30s
           --health-start-interval 2s
         ports:

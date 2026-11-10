@@ -12,11 +12,8 @@
   // The "vscode" user and remoteUser are set by the base image label (devcontainers/base).
   "workspaceFolder": "/home/vscode/isic",
   "features": {
-    "ghcr.io/devcontainers/features/git-lfs:1": {},
     "ghcr.io/devcontainers/features/node:2": {
-      "version": "24",
-      // Work around https://github.com/devcontainers/features/pull/1625
-      "pnpmVersion": "none"
+      "version": "24"
     },
     "ghcr.io/rails/devcontainer/features/postgres-client:1": {
       "version": 18
