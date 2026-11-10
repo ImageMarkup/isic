@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, override
 
 from django.conf import settings
 from django.contrib import messages
@@ -84,6 +84,7 @@ class PinnedFirstPagination(CursorPagination):
     # _apply_ordering and _get_position_from_instance are overridden below to build the position
     # and the predicate from *all* ordering fields.
 
+    @override
     def _apply_ordering(self, queryset, cursor, order):
         """
         Filter ``queryset`` down to the rows that fall *after* the cursor position.
@@ -149,6 +150,7 @@ class PinnedFirstPagination(CursorPagination):
     def _invalid_cursor() -> serializers.ValidationError:
         return serializers.ValidationError({"cursor": ["Invalid cursor."]})
 
+    @override
     def _get_position_from_instance(self, instance, ordering):
         values = []
         for field in ordering:
@@ -157,6 +159,7 @@ class PinnedFirstPagination(CursorPagination):
             values.append(str(attr))
         return "|".join(values)
 
+    @override
     def paginate_queryset(self, queryset, request, *, pin_sort: bool = False, **kwargs):
         if request.GET.get("pin_sort") or pin_sort:
             queryset = queryset.order_by("-pinned", "created")

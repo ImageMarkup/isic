@@ -76,7 +76,7 @@ def get_sentry_performance_sample_rate(sampling_context: SamplingContext) -> flo
             )
         ):
             return 0.20
-    elif "celery_job" in sampling_context:
+    elif "celery_job" in sampling_context:  # noqa: SIM102
         if sampling_context["celery_job"]["task"] in infrequent_task_names:
             return 1.0
 

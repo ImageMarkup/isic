@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 
 from allauth.account.models import EmailAddress
 from allauth.socialaccount.models import SocialAccount
@@ -23,7 +23,7 @@ class ProfileFactory(factory.django.DjangoModelFactory):
         profile=None,
         raw_password=factory.SelfAttribute("..raw_password"),
     )
-    accepted_terms = factory.Faker("date_time", tzinfo=datetime.UTC)
+    accepted_terms = factory.Faker("date_time", tzinfo=dt.UTC)
 
     class Params:
         raw_password = factory.Faker("password")
