@@ -72,7 +72,12 @@ class S3ProxyMinioStorage(IsicMinioMediaStorage):
             else:
                 size = upstream_file.tell()
                 upstream_file.seek(0)
-                self.client.put_object(self.bucket_name, name, upstream_file, size)
+                self.client.put_object(
+                    bucket_name=self.bucket_name,
+                    object_name=name,
+                    data=upstream_file,
+                    length=size,
+                )
 
     def open(self, name, *args, **kwargs):
         self._ensure_exists(name)
