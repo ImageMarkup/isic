@@ -1,14 +1,3 @@
-import S3FileFieldClient from "django-s3-file-field";
-
-function formatBytes(bytes: number, decimals = 2) {
-  if (bytes === 0) return "0 Bytes";
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
-}
-
 type RelationType = "IsReferencedBy" | "IsSupplementedBy" | "IsDescribedBy";
 type RelatedIdentifierType = "DOI" | "URL";
 
@@ -37,19 +26,19 @@ type PartialRelationTypeIdentifier = {
   related_identifier: string,
 };
 
+type SupplementalFile = {
+  // A stable key, as rows may be removed from the middle
+  id: number,
+  // The value of the row's <s3-file-input>, empty until its upload completes
+  blob: string,
+  description: string,
+};
+
 type RelationTypeIdentifierArray = (RelationTypeIdentifier | PartialRelationTypeIdentifier)[];
 
 
 function DoiCreationForm() {
-  const csrfToken = JSON.parse(document.getElementById("csrf-token")?.textContent!);
-  const s3ffClient = new S3FileFieldClient({
-    baseUrl: "/api/v2/s3-upload/",
-    apiConfig: {
-      headers: {
-        "X-CSRFToken": csrfToken,
-      },
-    },
-  });
+  let nextFileId = 0;
 
   const relatedIdentifierTypeExamples = {
     doiExample: "10.7910/DVN.DBW86T",
@@ -100,10 +89,8 @@ function DoiCreationForm() {
 
   return {
     description: "",
-    files: [] as File[],
-    descriptions: [] as string[],
-    _fieldValues: [] as string[],
-    numFilesInProgress: 0,
+    files: [] as SupplementalFile[],
+    maxFiles: 10,
     ...identifiers,
     relationTypes,
 
@@ -111,10 +98,14 @@ function DoiCreationForm() {
       this.description = JSON.parse(document.getElementById("collection-description")!.textContent!);
     },
 
+    addFile() {
+      if (this.files.length < this.maxFiles) {
+        this.files.push({ id: nextFileId++, blob: "", description: "" });
+      }
+    },
+
     removeFile(index: number) {
       this.files.splice(index, 1);
-      this.descriptions.splice(index, 1);
-      this._fieldValues.splice(index, 1);
     },
 
     addRelatedIdentifier(relationType: RelationType) {
@@ -160,23 +151,8 @@ function DoiCreationForm() {
       return "Select type first";
     },
 
-    async handleFileUpload(event: Event) {
-      if (this.files.length >= 10) {
-        alert("You can only upload up to 10 supplemental files.");
-        return;
-      }
-
-      const file = (event.target as HTMLInputElement).files![0];
-      this.files.push(file);
-      this.descriptions.push("");
-
-      this.numFilesInProgress++;
-      const fieldValue = await s3ffClient.uploadFile(file, "core.DraftSupplementalFile.blob");
-      this._fieldValues.push(fieldValue);
-      this.numFilesInProgress--;
-    },
-
     async createDOI(collectionId: number) {
+      const csrfToken = document.querySelector<HTMLInputElement>("[name=csrfmiddlewaretoken]")!.value;
       const response = await fetch("/api/v2/doi/", {
         method: "POST",
         headers: {
@@ -186,10 +162,7 @@ function DoiCreationForm() {
         body: JSON.stringify({
           collection_id: collectionId,
           description: this.description,
-          supplemental_files: this._fieldValues.map((fieldValue, index) => ({
-            blob: fieldValue,
-            description: this.descriptions[index],
-          })),
+          supplemental_files: this.files.map(({ blob, description }) => ({ blob, description })),
           // flatmap
           related_identifiers: this.relationTypes.flatMap(rt => this.getIdentifiersArray(rt.type)),
         }),
@@ -217,4 +190,3 @@ function DoiCreationForm() {
 }
 
 globalThis.DoiCreationForm = DoiCreationForm;
-globalThis.formatBytes = formatBytes;

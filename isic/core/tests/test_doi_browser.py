@@ -107,14 +107,13 @@ def test_doi_creation_form_with_supplemental_file(
 
     page.goto(reverse("core/collection-create-doi", args=[collection.pk]))
 
-    # The submit button starts enabled (no in-progress uploads).
     submit_button = page.get_by_role("button", name="Create Draft DOI")
-    expect(submit_button).to_be_enabled()
 
-    # Upload a supplemental file through the hidden file input. This triggers the real
-    # django-s3-file-field upload to storage; the submit button is disabled until it finishes.
+    # Upload a supplemental file through a new row's "<s3-file-input>" element. This triggers
+    # the real django-s3-file-field upload to storage.
     supplement_filename = f"supplement-{collection.pk}.csv"
-    page.locator("#file-input").set_input_files(
+    page.get_by_role("button", name="Add File").click()
+    page.get_by_label("Choose file").set_input_files(
         files=[
             {
                 "name": supplement_filename,
@@ -124,15 +123,13 @@ def test_doi_creation_form_with_supplemental_file(
         ]
     )
 
-    # The uploaded file should show up in the files table with its name and size.
-    expect(page.get_by_role("cell", name=supplement_filename)).to_be_visible()
+    # Once the S3 upload completes, the element shows the uploaded file.
+    expect(page.get_by_text(supplement_filename)).to_be_visible()
+    expect(page.get_by_text("Uploaded, not yet saved")).to_be_visible()
 
     # A description is required for each supplemental file.
     supplement_description = f"Supplemental metadata for {collection.name}"
     page.get_by_placeholder("Description", exact=True).fill(supplement_description)
-
-    # Once the S3 upload completes, the submit button becomes enabled again.
-    expect(submit_button).to_be_enabled()
 
     submit_button.click()
 

@@ -185,11 +185,11 @@ def test_accession_without_zip_upload(user, jpg_blob, cohort):
 
 
 @pytest.mark.django_db
-def test_accession_upload(authenticated_client, s3ff_random_field_value, user_with_cohort):
+def test_accession_upload(authenticated_client, original_blob_field_value, user_with_cohort):
     _, cohort = user_with_cohort
     r = authenticated_client.post(
         reverse("upload/single-accession", args=[cohort.pk]),
-        {"original_blob": s3ff_random_field_value, "age": "50"},
+        {"original_blob": original_blob_field_value, "age": "50"},
     )
     assert r.status_code == 302, r.data
     assert cohort.accessions.count() == 1
@@ -198,12 +198,12 @@ def test_accession_upload(authenticated_client, s3ff_random_field_value, user_wi
 
 @pytest.mark.django_db
 def test_accession_upload_duplicate_name(
-    authenticated_client, s3ff_random_field_value, user_with_cohort
+    authenticated_client, original_blob_field_value, user_with_cohort
 ):
     _, cohort = user_with_cohort
     r = authenticated_client.post(
         reverse("upload/single-accession", args=[cohort.pk]),
-        {"original_blob": s3ff_random_field_value},
+        {"original_blob": original_blob_field_value},
         follow=True,
     )
     assert r.status_code == 200, r.data
@@ -212,7 +212,7 @@ def test_accession_upload_duplicate_name(
     # try uploading the same file
     r = authenticated_client.post(
         reverse("upload/single-accession", args=[cohort.pk]),
-        {"original_blob": s3ff_random_field_value},
+        {"original_blob": original_blob_field_value},
     )
     assert r.status_code == 200, r.data
     assert cohort.accessions.count() == 1
@@ -220,7 +220,7 @@ def test_accession_upload_duplicate_name(
 
 @pytest.mark.django_db
 def test_accession_upload_invalid_cohort(
-    authenticated_client, s3ff_random_field_value, cohort_factory, user_factory
+    authenticated_client, original_blob_field_value, cohort_factory, user_factory
 ):
     # create a cohort owned by someone else to try to upload to
     cohort = cohort_factory(contributor__creator=user_factory())
@@ -230,7 +230,7 @@ def test_accession_upload_invalid_cohort(
 
     r = authenticated_client.post(
         reverse("upload/single-accession", args=[cohort.pk]),
-        {"original_blob": s3ff_random_field_value},
+        {"original_blob": original_blob_field_value},
     )
     assert r.status_code == 403, r.data
 

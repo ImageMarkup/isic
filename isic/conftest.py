@@ -204,28 +204,31 @@ def staff_authenticated_page(staff_authenticated_context):
 
 
 @pytest.fixture
-def s3ff_random_field_value_factory(s3ff_field_value_factory):
-    # this is largely taken from upstream: https://github.com/kitware-resonant/django-s3-file-field/blob/73be92f74f2047d3a8f132c935008ac6234e3d15/s3_file_field/fixtures.py#L16
+def stored_file_factory():
+    """Return a function to produce a File, already saved directly into the default Storage."""
+    # this is largely taken from upstream: https://github.com/kitware-resonant/django-s3-file-field/blob/v2.0.2/s3_file_field/fixtures.py#L20
     # the difference is we need to run it ourselves because we forbid get_alternative_name.
-    keys = []
+    files = []
 
-    def f():
+    def f(content=b"test content", suffix=""):
         key = default_storage.save(
-            f"test_key_{secrets.token_hex(16)}", ContentFile(b"test content")
+            f"test_key_{secrets.token_hex(16)}{suffix}", ContentFile(content)
         )
-        keys.append(key)
-        with default_storage.open(key) as file_object:
-            return s3ff_field_value_factory(file_object)
+        # Storage.open returns a File, which knows its name and size and can access its content
+        file_object = default_storage.open(key)
+        files.append(file_object)
+        return file_object
 
     yield f
 
-    for key in keys:
-        default_storage.delete(key)
+    for file_object in files:
+        file_object.close()
+        default_storage.delete(file_object.name)
 
 
 @pytest.fixture
-def s3ff_random_field_value(s3ff_random_field_value_factory):
-    return s3ff_random_field_value_factory()
+def stored_file(stored_file_factory):
+    return stored_file_factory()
 
 
 # To make pytest-factoryboy fixture creation work properly, all factories must be registered at

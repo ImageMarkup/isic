@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "daisyui": "5.7.50",
-    "django-s3-file-field": "2.0.2",
     "ol": "10.11.0",
     "tailwindcss": "4.3.3"
   },

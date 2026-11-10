@@ -12,7 +12,7 @@ from isic_metadata.fields import (
 from s3_file_field.forms import S3FormFileField
 
 from isic.core.models.collection import Collection
-from isic.ingest.models import Cohort, Contributor
+from isic.ingest.models import Accession, Cohort, Contributor
 
 
 def choice_field_from_enum(
@@ -70,7 +70,9 @@ class ContributorForm(ModelForm):
 
 
 class SingleAccessionUploadForm(forms.Form):
-    original_blob = S3FormFileField(model_field_id="ingest.Accession.original_blob", label="Image")
+    original_blob = S3FormFileField(
+        model_field=Accession._meta.get_field("original_blob"), label="Image"
+    )
 
     age = forms.IntegerField(min_value=1, max_value=85, required=False)
     sex = forms.ChoiceField(
