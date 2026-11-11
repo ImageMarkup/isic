@@ -117,7 +117,7 @@ jobs:
         run: |
           # Install greenmask directly from the GitHub release rather than the
           # greenmask.io install script, which rate-limits CI runners (HTTP 429).
-          curl -fsSL https://github.com/GreenmaskIO/greenmask/releases/download/v0.2.22/greenmask-linux-amd64.tar.gz \
+          curl -fsSL "https://github.com/GreenmaskIO/greenmask/releases/download/${GREENMASK_VERSION}/greenmask-linux-amd64.tar.gz" \
             | sudo tar xz -C /usr/local/bin greenmask
           # The runner's default postgres client is older than the pg18 service
           # container, and pg_dump aborts on a server version mismatch. The
@@ -137,6 +137,8 @@ jobs:
           # still parses and still matches the schema.
           GREENMASK_CONFIG=.greenmask/config-raw.yml greenmask validate --strict
         env:
+          # renovate: datasource=github-releases depName=GreenmaskIO/greenmask
+          GREENMASK_VERSION: v0.2.22
           GREENMASK_CONFIG: .greenmask/config.yml
           # Used by .greenmask/config.yml's dump dbname and Django's database.
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/django

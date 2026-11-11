@@ -16,7 +16,9 @@ RUN --mount=type=tmpfs,target=/var/lib/apt/lists \
 # Install greenmask for database dumps/restores. Pull the binary straight from
 # the GitHub release rather than the greenmask.io install script, which
 # rate-limits automated clients (HTTP 429).
-RUN curl -fsSL https://github.com/GreenmaskIO/greenmask/releases/download/v0.2.22/greenmask-linux-amd64.tar.gz \
+# renovate: datasource=github-releases depName=GreenmaskIO/greenmask
+ARG GREENMASK_VERSION=v0.2.22
+RUN curl -fsSL "https://github.com/GreenmaskIO/greenmask/releases/download/${GREENMASK_VERSION}/greenmask-linux-amd64.tar.gz" \
   | tar xz -C /usr/local/bin greenmask
 ENV GREENMASK_CONFIG=/home/vscode/isic/.greenmask/config.yml
 

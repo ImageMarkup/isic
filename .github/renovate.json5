@@ -2,8 +2,18 @@
   $schema: 'https://docs.renovatebot.com/renovate-schema.json',
   extends: [
     'github>kitware-resonant/.github:renovate-project.json5',
+    // These customManagers allow Renovate to update "*_VERSION" variables annotated with
+    // a "# renovate:" comment, to support Greenmask updates.
+    'customManagers:dockerfileVersions',
+    'customManagers:githubActionsVersions',
   ],
   packageRules: [
+    {
+      matchDepNames: ['GreenmaskIO/greenmask'],
+      matchUpdateTypes: ['minor', 'patch'],
+      groupName: 'dev dependencies',
+      groupSlug: 'dev-deps',
+    },
     {
       // Wait for upstream support from Resonant
       matchPackageNames: ['celery'],
