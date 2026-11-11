@@ -62,6 +62,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       - name: Increase maintenance_work_mem for pgvector
+        # See benchmarks.yml.
         run: psql -c "ALTER SYSTEM SET maintenance_work_mem = '512MB'" -c "SELECT pg_reload_conf();"
         env:
           PGHOST: localhost

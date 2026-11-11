@@ -89,19 +89,6 @@ jobs:
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
-      - name: Increase maintenance_work_mem for pgvector
-        # The imageembedding IVFFlat index (lists=1000, dimensions=3584) requires
-        # ~350 MB to rebuild. This happens during test TRUNCATE, greenmask restores,
-        # and any bulk reindex. The default maintenance_work_mem (64 MB) is too low.
-        # GH Actions service containers don't support custom commands, so we use
-        # ALTER SYSTEM instead (docker-compose.yml uses a command-line flag).
-        # Use multiple -c flags to avoid a transaction block, which "ALTER SYSTEM" doesn't support.
-        run: psql -c "ALTER SYSTEM SET maintenance_work_mem = '512MB'" -c "SELECT pg_reload_conf();"
-        env:
-          PGHOST: localhost
-          PGUSER: postgres
-          PGPASSWORD: postgres
-          PGDATABASE: django
       - name: Build frontend assets
         if: matrix.suite == 'playwright'
         run: |

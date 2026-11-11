@@ -55,7 +55,11 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       - name: Increase maintenance_work_mem for pgvector
-        # The dataset rebuilds the imageembedding IVFFlat index; see ci.yml.
+        # The dataset rebuilds the imageembedding IVFFlat index (lists=1000, dimensions=3584) with
+        # enough rows that the default maintenance_work_mem (64 MB) is too low.
+        # GH Actions service containers don't support custom commands, so we use
+        # ALTER SYSTEM instead (docker-compose.yml uses a command-line flag).
+        # Use multiple -c flags to avoid a transaction block, which "ALTER SYSTEM" doesn't support.
         run: psql -c "ALTER SYSTEM SET maintenance_work_mem = '512MB'" -c "SELECT pg_reload_conf();"
         env:
           PGHOST: localhost
