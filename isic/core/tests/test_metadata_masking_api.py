@@ -44,8 +44,11 @@ def test_image_csv_headers_exposes_safe_metadata(image_with_maskable_metadata):
 
 
 @pytest.mark.django_db
-def test_image_csv_rows_exposes_safe_metadata(image_with_maskable_metadata):
-    _, rows = image_metadata_csv(qs=Image.objects.all())
+def test_image_csv_rows_exposes_safe_metadata(
+    image_with_maskable_metadata, read_image_metadata_csv
+):
+    _, rows = read_image_metadata_csv(Image.objects.all())
+    assert rows
     for row in rows:
         assert "age" not in row
         assert "age_approx" in row

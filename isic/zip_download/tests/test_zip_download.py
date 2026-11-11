@@ -1,3 +1,5 @@
+import csv
+import io
 import json
 from typing import Literal
 from urllib.parse import ParseResult, parse_qs, urlparse
@@ -167,6 +169,32 @@ def test_zip_download_authentication(
         assert r.status_code == 200, r.content
     else:
         assert r.status_code == 401, r.content
+
+
+@pytest.mark.django_db
+def test_zip_download_metadata_file(authenticated_client, image_factory, user):
+    private_image = image_factory(public=False, accession__age=51)
+    public_image = image_factory(public=True)
+    private_image.accession.cohort.contributor.owners.add(user)
+
+    r = authenticated_client.post(
+        reverse("api:zip_download_url"), {"query": ""}, content_type="application/json"
+    )
+    assert r.status_code == 200, r.json()
+    token = parse_qs(urlparse(r.json()).query)["zsid"][0]
+
+    r = authenticated_client.get(reverse("api:zip_download_metadata_file"), data={"token": token})
+    assert r.status_code == 200
+    rows = list(csv.DictReader(io.StringIO(b"".join(r.streaming_content).decode())))
+
+    assert [row["isic_id"] for row in rows] == sorted([private_image.isic_id, public_image.isic_id])
+    assert all(row["age_approx"] == "" for row in rows if row["isic_id"] != private_image.isic_id)
+    assert next(row for row in rows if row["isic_id"] == private_image.isic_id) == {
+        "isic_id": private_image.isic_id,
+        "attribution": private_image.accession.attribution,
+        "copyright_license": private_image.accession.copyright_license,
+        "age_approx": str(private_image.accession.age_approx),
+    }
 
 
 @pytest.mark.django_db

@@ -1,3 +1,4 @@
+import csv
 from pathlib import Path
 import tempfile
 import zipfile
@@ -274,7 +275,11 @@ def test_doi_files(
             image_path = f"images/{image.isic_id}.jpg"
             assert (Path(temp_dir) / image_path).exists()
 
-        assert (Path(temp_dir) / "metadata.csv").exists()
+        with (Path(temp_dir) / "metadata.csv").open() as metadata_file:
+            reader = csv.DictReader(metadata_file)
+            assert reader.fieldnames
+            assert reader.fieldnames[:3] == ["isic_id", "attribution", "copyright_license"]
+            assert [row["isic_id"] for row in reader] == sorted(image.isic_id for image in images)
 
         licenses = {images[0].accession.copyright_license for image in images}
         for license_ in licenses:

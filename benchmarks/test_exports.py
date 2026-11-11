@@ -1,9 +1,10 @@
+import tempfile
+
 from django.urls import reverse
 
 from isic.core.models import Image
 from isic.core.services import staff_image_metadata_csv
 from isic.core.utils.csv import EscapingDictWriter
-from isic.core.utils.http import Echo
 
 
 def test_staff_image_metadata_csv(benchmark_with_memory):
@@ -11,10 +12,11 @@ def test_staff_image_metadata_csv(benchmark_with_memory):
 
     def generate():
         rows = staff_image_metadata_csv(qs=Image.objects.all())
-        writer = EscapingDictWriter(Echo(), next(rows))
-        writer.writeheader()
-        for row in rows:
-            writer.writerow(row)
+        with tempfile.TemporaryFile("w") as f:
+            writer = EscapingDictWriter(f, next(rows))
+            writer.writeheader()
+            for row in rows:
+                writer.writerow(row)
 
     benchmark_with_memory(generate)
 

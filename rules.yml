@@ -49,7 +49,7 @@ rules:
     languages:
       - python
     severity: ERROR
-    message: Found a call to a regular csv writer, use EscapingDictWriter instead.
+    message: Found a call to a regular csv writer, use EscapingDictWriter or EscapingWriter instead.
     pattern: csv.writer(...)
 
   - id: require-escaping-csv-dict-writer
