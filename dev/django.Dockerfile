@@ -17,7 +17,7 @@ RUN --mount=type=tmpfs,target=/var/lib/apt/lists \
 # the GitHub release rather than the greenmask.io install script, which
 # rate-limits automated clients (HTTP 429).
 # renovate: datasource=github-releases depName=GreenmaskIO/greenmask
-ARG GREENMASK_VERSION=v0.2.22
+ARG GREENMASK_VERSION=v0.2.26
 RUN curl -fsSL "https://github.com/GreenmaskIO/greenmask/releases/download/${GREENMASK_VERSION}/greenmask-linux-amd64.tar.gz" \
   | tar xz -C /usr/local/bin greenmask
 ENV GREENMASK_CONFIG=/home/vscode/isic/.greenmask/config.yml

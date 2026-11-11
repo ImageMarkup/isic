@@ -138,7 +138,7 @@ jobs:
           GREENMASK_CONFIG=.greenmask/config-raw.yml greenmask validate --strict
         env:
           # renovate: datasource=github-releases depName=GreenmaskIO/greenmask
-          GREENMASK_VERSION: v0.2.22
+          GREENMASK_VERSION: v0.2.26
           GREENMASK_CONFIG: .greenmask/config.yml
           # Used by .greenmask/config.yml's dump dbname and Django's database.
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/django
