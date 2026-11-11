@@ -155,12 +155,10 @@
   <div x-data="collectionEditor({{ collection.pk }})">
     {% if image_removal_mode %}
       <div class="alert shadow-lg my-6" x-cloak>
-        <div>
-          <i class="ri-information-line stroke-info shrink-0 text-lg"></i>
-          <span>
-            <span x-text="images.size"></span> images pending removal.
-          </span>
-        </div>
+        <i class="ri-information-line stroke-info shrink-0 text-lg"></i>
+        <span>
+          <span x-text="images.size"></span> images pending removal.
+        </span>
         <div class="flex-none">
           <button class="btn btn-sm btn-ghost" @click="resetImages('{% url 'core/collection-detail' collection.id %}')">Abort</button>
           <button class="btn btn-sm btn-error" @click="deleteImages()">Remove</button>
