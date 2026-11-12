@@ -3,7 +3,7 @@ from functools import partial
 from django.contrib.auth.models import User
 from django.db.models.aggregates import Count
 from django.urls import path
-from jaro import jaro_winkler_metric
+from rapidfuzz.distance import JaroWinkler
 from rest_framework import serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
@@ -88,7 +88,7 @@ def find_collection_autocomplete(request):
         "core.view_collection",
         Collection.objects.filter(name__icontains=query, cohort=None).order_by("name", "-created"),
     )
-    distance = partial(jaro_winkler_metric, query.upper())
+    distance = partial(JaroWinkler.similarity, query.upper())
     collections = sorted(
         qs, key=lambda collection: distance(collection.name.upper()), reverse=True
     )[:10]
@@ -106,7 +106,7 @@ class UserSerializer(serializers.ModelSerializer):
 def user_autocomplete(request):
     query = autocomplete_query(request)
     qs = User.objects.filter(is_active=True, email__icontains=query).order_by("email")
-    distance = partial(jaro_winkler_metric, query.upper())
+    distance = partial(JaroWinkler.similarity, query.upper())
     users = sorted(qs, key=lambda user: distance(user.email.upper()), reverse=True)[:10]
     return Response(UserSerializer(users, many=True).data)
 

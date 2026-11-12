@@ -103,13 +103,16 @@ class SearchQuerySerializer(serializers.Serializer):
             qs = qs.from_search_query(query)
 
         if collections:
-            qs = qs.filter(
-                collections__in=get_visible_objects(
+            # the visible collections are listed rather than left as a subquery so an empty
+            # list is an empty result without a query, and the planner sees the literal ids.
+            visible_collections = list(
+                get_visible_objects(
                     user,
                     "core.view_collection",
                     Collection.objects.filter(pk__in=collections),
-                )
+                ).values_list("pk", flat=True)
             )
+            qs = qs.filter(collections__in=visible_collections)
 
         return get_visible_objects(user, "core.view_image", qs).distinct()
 
