@@ -108,7 +108,6 @@ def share_collection_with_users_task(
     retry_backoff=True,
     retry_backoff_max=600,
     retry_kwargs={"max_retries": 3},
-    queue="es-indexing",
 )
 def sync_elasticsearch_indices_task():
     bulk_add_to_search_index(
