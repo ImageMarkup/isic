@@ -5,7 +5,6 @@ import itertools
 from typing import Any
 
 from django.forms.models import ModelForm
-from s3_file_field.widgets import S3FileInput
 
 from isic.ingest.models import Accession, Cohort, MetadataFile
 from isic.ingest.utils.internal_consistency import (
@@ -19,7 +18,6 @@ class MetadataForm(ModelForm):
     class Meta:
         model = MetadataFile
         fields = ["blob"]
-        widgets = {"blob": S3FileInput(attrs={"accept": "text/csv"})}
 
 
 def validate_csv_format_and_filenames(rows: csv.DictReader, cohort: Cohort) -> list[Problem]:

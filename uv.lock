@@ -1224,15 +1224,16 @@ s3-storage = [
 
 [[package]]
 name = "django-s3-file-field"
-version = "1.1.0"
+version = "2.0.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "django" },
     { name = "djangorestframework" },
+    { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/94/c8/97674eefea66c69246a792f9b698d1a3e2a1ed37843045f27763788ef2e9/django_s3_file_field-1.1.0.tar.gz", hash = "sha256:d3f9f9492875c6725433cc2ba21f1d8c24605eec968cbf33f7c14815388901db", size = 36241, upload-time = "2025-05-30T10:34:22.264Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9a/24/98ab36f8c29cf3f923878c3ccc77eff09bbc24d24e435cf067b7c0b2ade5/django_s3_file_field-2.0.2.tar.gz", hash = "sha256:1cdd7e1e05286b18cff89853f3459df10aa99b7a75cacf1c7d437affb2f97924", size = 74911, upload-time = "2026-11-09T18:37:10.321Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fa/04/1a5d8b6172e0e0016eabfbb7cd725e04082a1891e6f2a9ae110c54dc9fa7/django_s3_file_field-1.1.0-py3-none-any.whl", hash = "sha256:655957fee0fd026eacdb03e75a333a615559f2ae32441fa69070e1ce55c0061b", size = 39518, upload-time = "2025-05-30T10:34:19.376Z" },
+    { url = "https://files.pythonhosted.org/packages/a3/10/146a0c88ae516e36486e4fa6b7c27a1177d9473223519f65613571528188/django_s3_file_field-2.0.2-py3-none-any.whl", hash = "sha256:ac4df9acf47d2679a90c419b6ffcf404185825a98c0bd4d7d08a6e4edbb8d83c", size = 71973, upload-time = "2026-11-09T18:37:09.14Z" },
 ]
 
 [package.optional-dependencies]
@@ -2016,8 +2017,8 @@ requires-dist = [
     { name = "django-resonant-settings", extras = ["allauth", "celery"], specifier = "==0.53.1" },
     { name = "django-resonant-utils", extras = ["allauth", "s3-storage"], specifier = "==0.21.0" },
     { name = "django-resonant-utils", extras = ["minio-storage"], marker = "extra == 'development'", specifier = "==0.21.0" },
-    { name = "django-s3-file-field", extras = ["minio"], marker = "extra == 'development'", specifier = "==1.1.0" },
-    { name = "django-s3-file-field", extras = ["s3"], specifier = "==1.1.0" },
+    { name = "django-s3-file-field", extras = ["minio"], marker = "extra == 'development'", specifier = "==2.0.2" },
+    { name = "django-s3-file-field", extras = ["s3"], specifier = "==2.0.2" },
     { name = "django-storages", extras = ["s3"], specifier = "==1.14.6" },
     { name = "django-stubs-ext", specifier = "==6.1.2" },
     { name = "django-widget-tweaks", specifier = "==1.5.1" },

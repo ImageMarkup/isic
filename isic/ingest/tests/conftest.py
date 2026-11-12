@@ -1,5 +1,7 @@
 import pytest
 
+from isic.ingest.models import Accession
+
 from .csv_streams import (
     csv_stream_bom_filename_column,
     csv_stream_duplicate_filenames,
@@ -16,3 +18,8 @@ csv_stream_valid = pytest.fixture(csv_stream_valid)
 csv_stream_without_filename_column = pytest.fixture(csv_stream_without_filename_column)
 csv_stream_bom_filename_column = pytest.fixture(csv_stream_bom_filename_column)
 csv_stream_duplicate_filenames = pytest.fixture(csv_stream_duplicate_filenames)
+
+
+@pytest.fixture
+def original_blob_field_value(s3ff_field_value_factory, stored_file):
+    return s3ff_field_value_factory(stored_file, Accession._meta.get_field("original_blob"))

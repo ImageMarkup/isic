@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from urllib import parse
 
 from django.conf import settings
@@ -119,7 +119,7 @@ def check_create_draft_doi_allowed(
     *,
     user: User,
     collection: Collection,
-    supplemental_files: Sequence[dict[str, str]] | None = None,
+    supplemental_files: Sequence[Mapping[str, Any]] | None = None,
     related_identifiers: Sequence[Mapping[str, str]] | None = None,
 ) -> None:
     if not user.has_perm("core.create_doi", collection):
@@ -189,7 +189,7 @@ def create_collection_draft_doi(
     user: User,
     collection: Collection,
     description: str,
-    supplemental_files: Sequence[dict[str, str]] | None = None,
+    supplemental_files: Sequence[Mapping[str, Any]] | None = None,
     related_identifiers: Sequence[Mapping[str, str]] | None = None,
 ) -> DraftDoi:
     check_create_draft_doi_allowed(

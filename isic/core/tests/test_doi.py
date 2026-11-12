@@ -8,10 +8,10 @@ from django.core.files.storage import storages
 from django.urls import reverse
 import pytest
 from pytest_lazy_fixtures import lf
-from s3_file_field.widgets import S3PlaceholderFile
 
 from isic.core.models.doi import Doi, DraftDoi
 from isic.core.models.image import Image
+from isic.core.models.supplemental_file import DraftSupplementalFile
 from isic.core.services.collection.doi import (
     build_collection_doi,
     create_collection_draft_doi,
@@ -295,7 +295,8 @@ def test_api_doi_creation(
     mock_datacite_promote_draft_doi_to_findable,
     mock_fetch_doi_citations,
     mock_fetch_doi_schema_org_dataset,
-    s3ff_random_field_value,
+    s3ff_field_value_factory,
+    stored_file,
     staff_client,
 ):
     r = staff_client.post(
@@ -305,7 +306,9 @@ def test_api_doi_creation(
             "description": "Test description",
             "supplemental_files": [
                 {
-                    "blob": s3ff_random_field_value,
+                    "blob": s3ff_field_value_factory(
+                        stored_file, DraftSupplementalFile._meta.get_field("blob")
+                    ),
                     "description": "test supplemental file",
                 }
             ],
@@ -350,10 +353,8 @@ def test_doi_bundle_includes_supplemental_files(
     mock_datacite_promote_draft_doi_to_findable,
     mock_fetch_doi_citations,
     mock_fetch_doi_schema_org_dataset,
-    s3ff_random_field_value,
+    stored_file,
 ):
-    from s3_file_field.widgets import S3PlaceholderFile
-
     collection = collection_factory(public=True)
     collection.images.add(image_factory(public=True))
 
@@ -363,7 +364,7 @@ def test_doi_bundle_includes_supplemental_files(
         description="Test description",
         supplemental_files=[
             {
-                "blob": S3PlaceholderFile.from_field(s3ff_random_field_value),
+                "blob": stored_file,
                 "description": "Test supplemental file",
             }
         ],
@@ -496,7 +497,7 @@ def test_draft_doi_complete_lifecycle(  # noqa: PLR0915
     mock_datacite_promote_draft_doi_to_findable,
     mock_fetch_doi_citations,
     mock_fetch_doi_schema_org_dataset,
-    s3ff_random_field_value,
+    stored_file,
 ):
     from isic.core.models.doi import DraftDoi
 
@@ -522,7 +523,7 @@ def test_draft_doi_complete_lifecycle(  # noqa: PLR0915
 
     supplemental_files = [
         {
-            "blob": S3PlaceholderFile.from_field(s3ff_random_field_value),
+            "blob": stored_file,
             "description": "Test supplemental file",
         }
     ]
