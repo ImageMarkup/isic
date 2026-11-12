@@ -87,8 +87,8 @@ dump:
         - name: "Replace"
           params:
             column: "password"
-            # Replace with the exact output of make_password("password").
-            value: "pbkdf2_sha256$870000$REPLACE_WITH_REAL_HASH..."
+            # The output of make_password("password").
+            value: "pbkdf2_sha256$1500000$rBXuUceYRsn0BzK1ZMN8Xs$95iyqasXKw5iP3W6Q55cdnA5ecyAd2LyBSRHomJknzo="
 
     # ============ EMAIL ADDRESSES (allauth) ============
     - schema: "public"
