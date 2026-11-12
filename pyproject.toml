@@ -51,7 +51,6 @@ dependencies = [
   "requests==2.34.2",
   "requests-toolbelt==1.0.0",
   "rich==15.0.0",
-  "tenacity==9.2.1",
   "whitenoise[brotli]==6.12.0",
   "zipfile-deflate64==0.2.0",
   # Production-only
