@@ -1,4 +1,4 @@
-from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core import exceptions as django_exceptions
 from django.http import Http404
 from rest_framework import exceptions, status
 from rest_framework.response import Response
@@ -22,9 +22,14 @@ def exception_handler(exc, context):
         data, status_code = {"detail": "Not Found"}, status.HTTP_404_NOT_FOUND
     elif isinstance(exc, exceptions.ParseError):
         data, status_code = {"detail": "Cannot parse request body"}, status.HTTP_400_BAD_REQUEST
+    elif isinstance(exc, django_exceptions.RequestDataTooBig):
+        data, status_code = (
+            {"detail": "Request body is too large"},
+            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+        )
     elif isinstance(exc, exceptions.ValidationError):
         data, status_code = {"detail": exc.detail}, status.HTTP_422_UNPROCESSABLE_ENTITY
-    elif isinstance(exc, DjangoValidationError):
+    elif isinstance(exc, django_exceptions.ValidationError):
         # messages rather than message, since a ValidationError raised by full_clean carries a
         # dict of per field errors and has no .message at all.
         data, status_code = {"message": "; ".join(exc.messages)}, status.HTTP_400_BAD_REQUEST
