@@ -40,6 +40,11 @@
     // Colorblind-safe in this order. Charts with more lines reuse them dashed.
     const colors = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"];
     const number = new Intl.NumberFormat(undefined, { maximumSignificantDigits: 3 });
+    const percent = new Intl.NumberFormat(undefined, { style: "percent", signDisplay: "exceptZero", maximumFractionDigits: 0 });
+    // Matches THRESHOLD in history.py: `history.py check` fails the benchmark job in CI when a
+    // benchmark grows by more than this over the run before it.
+    const THRESHOLD = 1.5;
+    const tooltipColors = { worse: "#ff8a80", better: "#69f0ae", "": "#fff" };
 
     // GitHub merge commits put the PR title on the third line.
     function commitSubject(message) {
@@ -58,6 +63,24 @@
       return runs[chart.getElementsAtEventForMode(event, "nearest", { intersect: true }, false)[0]?.index];
     }
 
+    const byName = runs.map((run) => Object.fromEntries(run.benches.map((bench) => [bench.name, bench.value])));
+
+    // A benchmark's value over its value in the run before, or undefined when either is missing.
+    function ratio(i, name) {
+      const previous = byName[i - 1]?.[name];
+      return previous && name in byName[i] ? byName[i][name] / previous : undefined;
+    }
+
+    function verdict(ratio) {
+      if (ratio > THRESHOLD) {
+        return "worse";
+      }
+      if (ratio < 1 / THRESHOLD) {
+        return "better";
+      }
+      return "";
+    }
+
     const groups = {};
     runs.forEach((run, i) => {
       for (const bench of run.benches) {
@@ -66,8 +89,8 @@
         );
         groups[module] ??= {};
         const chart = (groups[module][test + memory] ??= { unit: bench.unit, lines: {} });
-        chart.lines[param ?? test] ??= Array(runs.length).fill(null);
-        chart.lines[param ?? test][i] = bench.value;
+        const line = (chart.lines[param ?? test] ??= { name: bench.name, values: Array(runs.length).fill(null) });
+        line.values[i] = bench.value;
       }
     });
 
@@ -76,9 +99,9 @@
       for (const [title, { unit, lines }] of Object.entries(charts)) {
         if (Object.keys(lines).length > colors.length) {
           delete charts[title];
-          for (const [param, values] of Object.entries(lines)) {
+          for (const [param, line] of Object.entries(lines)) {
             const [, prefix, rest] = param.match(/^(.*)-(.*?)$/);
-            (charts[`${title} (${prefix})`] ??= { unit, lines: {} }).lines[rest] = values;
+            (charts[`${title} (${prefix})`] ??= { unit, lines: {} }).lines[rest] = line;
           }
         }
       }
@@ -103,9 +126,10 @@
           type: "line",
           data: {
             labels: runs.map((run) => run.commit.id.slice(0, 7)),
-            datasets: Object.entries(lines).map(([label, data], i) => ({
+            datasets: Object.entries(lines).map(([label, { name, values }], i) => ({
               label,
-              data,
+              name,
+              data: values,
               borderColor: colors[i % colors.length],
               backgroundColor: colors[i % colors.length],
               borderDash: i < colors.length ? [] : [6, 4],
@@ -133,7 +157,14 @@
                       `${id.slice(0, 7)} · ${new Date(timestamp).toLocaleDateString()}`,
                     ];
                   },
-                  label: (item) => `${item.dataset.label}: ${number.format(item.parsed.y)} ${unit}`,
+                  label: (item) => {
+                    const r = ratio(item.dataIndex, item.dataset.name);
+                    const change = r === undefined ? "" : ` (${percent.format(r - 1)})`;
+                    return `${item.dataset.label}: ${number.format(item.parsed.y)} ${unit}${change}`;
+                  },
+                  labelTextColor: (item) => tooltipColors[verdict(ratio(item.dataIndex, item.dataset.name))],
+                  footer: ([item]) =>
+                    item.dataIndex > 0 ? `Change since ${runs[item.dataIndex - 1].commit.id.slice(0, 7)}` : "",
                 },
               },
             },
