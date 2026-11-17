@@ -1,4 +1,6 @@
 from cachalot.api import cachalot_disabled
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from isic_metadata.fields import ImageTypeEnum
 import pytest
@@ -61,9 +63,14 @@ def test_elasticsearch_counts(searchable_images, settings, client, route):
 
     settings.ISIC_USE_ELASTICSEARCH_COUNTS = True
 
-    r = client.get(reverse(route))
-    assert r.status_code == 200, r.json()
-    assert r.json()["count"] == 1, r.json()
+    # asserting on the queries a view runs is unusual here, but ordering a queryset silently drops
+    # its hardcoded count, so this is the only way to make sure the postgres count stays gone.
+    for params in [{}, {"pin_sort": "true"}]:
+        with CaptureQueriesContext(connection) as queries:
+            r = client.get(reverse(route), params)
+        assert r.status_code == 200, r.json()
+        assert r.json()["count"] == 1, r.json()
+        assert not [q["sql"] for q in queries.captured_queries if "COUNT(" in q["sql"]]
 
 
 @pytest.fixture
