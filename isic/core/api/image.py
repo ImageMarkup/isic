@@ -170,11 +170,17 @@ class PinnedFirstPagination(CursorPagination):
 
     @override
     def paginate_queryset(self, queryset, request, *, pin_sort: bool = False, **kwargs):
-        if request.GET.get("pin_sort") or pin_sort:
-            queryset = queryset.order_by("-pinned", "created")
-        else:
-            queryset = queryset.order_by("created")
+        # ordering clones the queryset, which would drop a hardcoded count, so a queryset that
+        # the view already ordered (see _ordering) is left alone.
+        if not queryset.query.order_by:
+            queryset = queryset.order_by(*_ordering(request, pin_sort=pin_sort))
         return super().paginate_queryset(queryset, request, **kwargs)
+
+
+def _ordering(request, *, pin_sort: bool = False) -> tuple[str, ...]:
+    if request.GET.get("pin_sort") or pin_sort:
+        return ("-pinned", "created")
+    return ("created",)
 
 
 @api_view(["GET"])
@@ -188,7 +194,7 @@ def image_list(request):
             index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX,
             body={"query": es_query},
         )["count"]
-        qs = qs_with_hardcoded_count(qs, Image._meta.ordering, es_count)
+        qs = qs_with_hardcoded_count(qs, _ordering(request), es_count)
 
     return paginate(request, qs, ImageSerializer, PinnedFirstPagination())
 
@@ -206,7 +212,7 @@ def image_search(request):
             index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX,
             body={"query": es_query},
         )["count"]
-        qs = qs_with_hardcoded_count(qs, Image._meta.ordering, es_count)
+        qs = qs_with_hardcoded_count(qs, _ordering(request), es_count)
 
     return paginate(request, qs, ImageSerializer, PinnedFirstPagination())
 
