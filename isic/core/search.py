@@ -321,16 +321,9 @@ def build_elasticsearch_query(
 
         # the logic below of generalizing the query parameters to avoid user-specific data
         # is identical to the logic in ImagePermissions.view_image_list.
+        # contributor_owner_ids holds the ids of the users who own an image's contributor
         if user.owned_contributors.exists():
-            query_dict["bool"]["should"].append(
-                {
-                    "terms": {
-                        "contributor_owner_ids": list(
-                            user.owned_contributors.order_by().values_list("id", flat=True)
-                        )
-                    }
-                }
-            )
+            query_dict["bool"]["should"].append({"terms": {"contributor_owner_ids": [user.pk]}})
 
         if user.image_shares_received.exists():
             query_dict["bool"]["should"].append({"terms": {"shared_to": [user.pk]}})
