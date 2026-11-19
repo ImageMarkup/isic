@@ -10,10 +10,26 @@
     body { font-family: system-ui, sans-serif; margin: 1rem; }
     nav { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; font-size: 0.875rem; }
     .charts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(32rem, 100%), 1fr)); gap: 2rem; }
-    .charts > div { display: flex; flex-direction: column; height: 24rem; padding: 0.75rem; border-radius: 0.5rem; }
-    .charts h3 { margin: 0 0 0.5rem; font: bold 12px system-ui, sans-serif; color: #666; text-align: center; }
-    .charts h3 + div { position: relative; flex: 1; min-height: 0; }
-    .memory { background: #f3eefc; }
+    .charts > div { position: relative; display: flex; flex-direction: column; height: 24rem; padding: 0.75rem; border-radius: 0.5rem; --bg: #fff; }
+    .charts h3 { margin: 0 3rem 0.5rem; font: bold 12px system-ui, sans-serif; color: #666; text-align: center; }
+    .charts button { position: absolute; top: 0.75rem; right: 0.75rem; padding: 0; border: 0; background: none; font: 12px system-ui, sans-serif; color: #666; cursor: pointer; }
+    .charts button:hover { text-decoration: underline; }
+    .charts .chart { position: relative; flex: 1; min-height: 0; }
+    .charts .table { display: none; flex: 1; min-height: 0; overflow: auto; font-size: 12px; }
+    .charts .as-table .chart { display: none; }
+    .charts .as-table .table { display: block; }
+    .charts table { border-collapse: collapse; white-space: nowrap; }
+    .charts th, .charts td { padding: 0.15rem 0.5rem; text-align: right; }
+    .charts th { position: sticky; top: 0; background: var(--bg); }
+    .charts th:first-child, .charts td:first-child { position: sticky; left: 0; background: var(--bg); }
+    .charts th:first-child { z-index: 1; }
+    .charts th:nth-child(-n+2), .charts td:nth-child(-n+2) { text-align: left; }
+    .charts td small { display: inline-block; min-width: 2.75em; margin-left: 0.35rem; text-align: right; color: #999; }
+    .charts td small.worse { color: #c62828; }
+    .charts td small.better { color: #2e7d32; }
+    .charts td.worse { background: #ffe0dc; }
+    .charts td.better { background: #dcf5e6; }
+    .memory { background: #f3eefc; --bg: #f3eefc; }
     .hide-time .time, .hide-memory .memory,
     .hide-time section:not(:has(.memory)), .hide-memory section:not(:has(.time)) { display: none; }
     @media (min-width: 48rem) {
@@ -44,6 +60,8 @@
     // Matches THRESHOLD in history.py: `history.py check` fails the benchmark job in CI when a
     // benchmark grows by more than this over the run before it.
     const THRESHOLD = 1.5;
+    // Changes smaller than this are within the noise between runs.
+    const NOISE = 1.05;
     const tooltipColors = { worse: "#ff8a80", better: "#69f0ae", "": "#fff" };
 
     // GitHub merge commits put the PR title on the third line.
@@ -71,14 +89,36 @@
       return previous && name in byName[i] ? byName[i][name] / previous : undefined;
     }
 
-    function verdict(ratio) {
-      if (ratio > THRESHOLD) {
+    function verdict(ratio, threshold = THRESHOLD) {
+      if (ratio > threshold) {
         return "worse";
       }
-      if (ratio < 1 / THRESHOLD) {
+      if (ratio < 1 / threshold) {
         return "better";
       }
       return "";
+    }
+
+    function escape(text) {
+      return text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+    }
+
+    function table(lines, unit) {
+      const entries = Object.entries(lines);
+      const rows = runs.map(({ commit }, i) => {
+        const cells = entries.map(([, { name, values }]) => {
+          if (values[i] === null) {
+            return "<td></td>";
+          }
+          const r = ratio(i, name);
+          const change = r === undefined ? "" : `<small class="${verdict(r, NOISE)}">${percent.format(r - 1)}</small>`;
+          return `<td class="${verdict(r)}">${number.format(values[i])}${change}</td>`;
+        });
+        const link = `<a href="${commit.url}" title="${escape(commitSubject(commit.message))}">${commit.id.slice(0, 7)}</a>`;
+        return `<tr><td>${link}</td><td>${new Date(commit.timestamp).toLocaleDateString()}</td>${cells.join("")}</tr>`;
+      });
+      const head = entries.map(([label]) => `<th>${label} (${unit})</th>`);
+      return `<table><thead><tr><th>Commit</th><th>Date</th>${head.join("")}</tr></thead><tbody>${rows.reverse().join("")}</tbody></table>`;
     }
 
     const groups = {};
@@ -120,8 +160,14 @@
       for (const [title, { unit, lines }] of charts) {
         const cell = grid.appendChild(document.createElement("div"));
         cell.className = unit === "MiB" ? "memory" : "time";
-        cell.insertAdjacentHTML("beforeend", `<h3>${title}</h3><div></div>`);
-        const canvas = cell.lastElementChild.appendChild(document.createElement("canvas"));
+        cell.insertAdjacentHTML(
+          "beforeend",
+          `<h3>${title}</h3><button type="button">table</button><div class="chart"></div><div class="table">${table(lines, unit)}</div>`,
+        );
+        cell.querySelector("button").onclick = (event) => {
+          event.target.textContent = cell.classList.toggle("as-table") ? "chart" : "table";
+        };
+        const canvas = cell.querySelector(".chart").appendChild(document.createElement("canvas"));
         new Chart(canvas, {
           type: "line",
           data: {
