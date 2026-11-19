@@ -47,7 +47,9 @@ class CollectionListParamsSerializer(serializers.Serializer):
 def collection_list(request):
     params = CollectionListParamsSerializer(data=request.query_params)
     params.is_valid(raise_exception=True)
-    queryset = get_visible_objects(request.user, "core.view_collection", Collection.objects.all())
+    queryset = get_visible_objects(
+        request.user, "core.view_collection", Collection.objects.select_related("doi")
+    )
 
     if params.validated_data["pinned"] is not None:
         queryset = queryset.filter(pinned=params.validated_data["pinned"])
