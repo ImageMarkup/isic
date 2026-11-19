@@ -29,9 +29,9 @@
     .charts td small.better { color: #2e7d32; }
     .charts td.worse { background: #ffe0dc; }
     .charts td.better { background: #dcf5e6; }
+    .charts > div[hidden] { display: none; }
     .memory { background: #f3eefc; --bg: #f3eefc; }
-    .hide-time .time, .hide-memory .memory,
-    .hide-time section:not(:has(.memory)), .hide-memory section:not(:has(.time)) { display: none; }
+    nav input[type="range"] { display: block; width: 6rem; margin: 0; }
     @media (min-width: 48rem) {
       body { margin: 2rem 2rem 2rem 10rem; }
       nav { position: fixed; top: 2rem; left: 2rem; flex-direction: column; }
@@ -43,8 +43,9 @@
 <body>
   <h1>ISIC benchmarks</h1>
   <nav>
-    <label><input type="checkbox" checked onchange="document.body.classList.toggle('hide-time', !this.checked)"> Timing</label>
-    <label><input type="checkbox" checked onchange="document.body.classList.toggle('hide-memory', !this.checked)"> Memory</label>
+    <label><input type="checkbox" checked> Timing</label>
+    <label title="Hide timing charts whose latest value is below this"><input type="range" min="0" value="0"> <output>all</output></label>
+    <label><input type="checkbox" checked> Memory</label>
   </nav>
   <script>
     const { repoUrl, lastUpdate, entries } = window.BENCHMARK_DATA;
@@ -160,6 +161,7 @@
       for (const [title, { unit, lines }] of charts) {
         const cell = grid.appendChild(document.createElement("div"));
         cell.className = unit === "MiB" ? "memory" : "time";
+        cell.dataset.latest = Math.max(...Object.values(lines).map(({ values }) => values.findLast((v) => v !== null)));
         cell.insertAdjacentHTML(
           "beforeend",
           `<h3>${title}</h3><button type="button">table</button><div class="chart"></div><div class="table">${table(lines, unit)}</div>`,
@@ -219,6 +221,35 @@
         });
       }
     }
+
+    const nav = document.querySelector("nav");
+    const [showTime, threshold, showMemory] = nav.querySelectorAll("input");
+    // 1, 2, 5, 10, 20, ... up to the slowest benchmark, since timings span several orders of magnitude.
+    const slowest = Math.max(...[...document.querySelectorAll(".time")].map((cell) => Number(cell.dataset.latest)));
+    const thresholds = [0];
+    for (let step = 1; step <= slowest; step *= 10) {
+      thresholds.push(...[step, step * 2, step * 5].filter((ms) => ms <= slowest));
+    }
+    threshold.max = thresholds.length - 1;
+
+    function filter() {
+      const minimum = thresholds[threshold.value];
+      threshold.disabled = !showTime.checked;
+      threshold.nextElementSibling.textContent = minimum ? `≥ ${minimum} ms` : "all";
+      for (const cell of document.querySelectorAll(".charts > div")) {
+        cell.hidden = cell.classList.contains("memory")
+          ? !showMemory.checked
+          : !showTime.checked || Number(cell.dataset.latest) < minimum;
+      }
+      for (const section of document.querySelectorAll("section")) {
+        section.hidden = !section.querySelector(".charts > div:not([hidden])");
+      }
+      for (const link of nav.querySelectorAll("a")) {
+        link.hidden = document.getElementById(link.hash.slice(1)).closest("section").hidden;
+      }
+    }
+    nav.oninput = filter;
+    filter();
   </script>
 </body>
 </html>
