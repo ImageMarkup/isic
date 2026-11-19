@@ -49,7 +49,9 @@ def add_images_to_collection(
 
         # adding images to a collection that's shared with a user should implicitly share the
         # images with that user.
-        for share_collection in CollectionShare.objects.filter(collection=collection).all():
+        for share_collection in CollectionShare.objects.filter(
+            collection=collection
+        ).select_related("grantor", "grantee"):
             share_image(qs=qs, grantor=share_collection.grantor, grantee=share_collection.grantee)
 
 
