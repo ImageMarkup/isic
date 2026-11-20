@@ -13,6 +13,7 @@ uv run tox -e benchmark -- --benchmark-disable      # run each benchmark once, w
 ```
 
 - Each session starts from a fresh copy of the dataset. The first run for a schema generates about 100k images, which takes about 2 minutes, and keeps them in a `test_isic_benchmark_<hash>` database that later runs copy. Drop old ones with `DROP DATABASE test_isic_benchmark_<hash>`.
+- `BENCHMARK_EXTRA_IMAGES=1000000` adds a million images with the same proportions as the fixed dataset, for benchmarking a larger archive. They get a template database of their own.
 - Caching is disabled (`DummyCache`, cachalot off), so every request does its full work.
 - Benchmarks that write data roll back each round.
 - Benchmarks that use the `benchmark_with_memory` fixture also record the peak memory Python allocates, measured in a separate call. Memory allocated outside Python, such as by psycopg, isn't counted.
