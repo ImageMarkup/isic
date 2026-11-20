@@ -7,6 +7,7 @@ fifth of the images shared with them, and one collection holds three quarters of
 
 from datetime import UTC, datetime
 import hashlib
+import os
 from pathlib import Path
 import random
 from typing import Literal, get_args
@@ -93,6 +94,20 @@ DOI_SLUG = "benchmark-medium"
 
 PUBLIC_STUDY = "Benchmark Public Study"
 PRIVATE_STUDY = "Benchmark Private Study"
+
+# BENCHMARK_EXTRA_TILES=1000000 adds that many TBP tiles on top of the fixed dataset, to benchmark
+# a larger archive. As in production, they arrive in a few huge cohorts, about 400 per patient,
+# and only one in twenty has a lesion. The fixed dataset's rows and collections are unchanged.
+EXTRA_TILES = int(os.environ.get("BENCHMARK_EXTRA_TILES", "0"))
+# (percentage of extra tiles, fraction of them that is public)
+TILE_COHORTS = [(25, 1.0), (25, 0.0), (25, 0.5), (25, 0.5)]
+TILE_PATIENT_SIZE = 400
+TILE_LESION_FRACTION = 0.05
+TILE_LESION_SIZES = [1, 1, 1, 1, 1, 1, 2, 3]
+TILE_TYPES = [(80, "3D: XP"), (20, "3D: white")]
+TILE_CHUNK = 40_000
+TILES_COLLECTION = "Benchmark Tiles"
+
 
 # the most common value combinations in production, as (weight, values)
 DIAGNOSES = [
@@ -232,6 +247,7 @@ def _dataset_key() -> str:
     digest = hashlib.sha256(Path(__file__).read_bytes())
     for migration in sorted(Path(isic.__file__).parent.glob("*/migrations/*.py")):
         digest.update(migration.read_bytes())
+    digest.update(str(EXTRA_TILES).encode())
     return digest.hexdigest()[:16]
 
 
@@ -271,11 +287,14 @@ def _build() -> None:
     _create_reviews(rng, staff, published, unpublished)
     _create_unstructured_metadata(rng, [*published, *unpublished])
     _create_metadata_versions(staff, published[0])
+    tile_public_ids = _create_tiles(users)
     _set_created_times()
 
     public_ids = [image.pk for image in images if image.public]
     private_ids = [image.pk for image in images if not image.public]
-    collections = _create_collections(rng, users, [image.pk for image in images], public_ids)
+    collections = _create_collections(
+        rng, users, [image.pk for image in images], public_ids, tile_public_ids
+    )
     _create_shares(rng, users, private_ids, collections)
     _create_embeddings(public_ids[:EMBEDDINGS])
     _create_studies(rng, users, collections)
@@ -497,6 +516,137 @@ def _create_metadata_versions(staff: User, accession: Accession) -> None:
     )
 
 
+def _create_tiles(users: dict[str, User]) -> list[int]:
+    """Create the extra tiles in chunks, so memory stays flat, and return the public image ids."""
+    if not EXTRA_TILES:
+        return []
+
+    # a separate generator, so the fixed dataset's rows don't change
+    rng = random.Random(SEED + 1)
+    staff = users["staff"]
+    contributors = list(Contributor.objects.order_by("pk"))
+    # ids outside the fixed dataset's ISIC_00xxxxx range
+    isic_ids = iter(rng.sample(range(200_000, 10_000_000), EXTRA_TILES))
+    public_ids, private_ids = [], []
+    patients = lesions = tiles = 0
+
+    for cohort_index, (percentage, public_fraction) in enumerate(TILE_COHORTS):
+        contributor = contributors[cohort_index % len(contributors)]
+        cohort = Cohort.objects.create(
+            contributor=contributor,
+            creator=staff,
+            name=f"Benchmark Tiles {cohort_index}",
+            description=f"Benchmark Tiles {cohort_index}",
+            default_copyright_license="CC-BY",
+            default_attribution=contributor.default_attribution,
+        )
+        remaining = EXTRA_TILES * percentage // 100
+
+        while remaining:
+            chunk_patients, chunk_lesions, accessions, chunk_isic_ids = [], [], [], []
+            chunk = min(remaining, TILE_CHUNK)
+            while len(accessions) < chunk:
+                patient = Patient(
+                    id=f"IP_{1_000_000 + patients:07}",
+                    cohort=cohort,
+                    private_patient_id=f"tile-patient-{patients}",
+                )
+                chunk_patients.append(patient)
+                patients += 1
+                lesion, lesion_remaining = None, 0
+                for _ in range(min(TILE_PATIENT_SIZE, chunk - len(accessions))):
+                    if not lesion_remaining:
+                        lesion_remaining = rng.choice(TILE_LESION_SIZES)
+                        lesion = None
+                        if rng.random() < TILE_LESION_FRACTION:
+                            lesion = Lesion(
+                                id=f"IL_{1_000_000 + lesions:07}",
+                                cohort=cohort,
+                                private_lesion_id=f"tile-lesion-{lesions}",
+                            )
+                            chunk_lesions.append(lesion)
+                            lesions += 1
+                    lesion_remaining -= 1
+
+                    isic_id = f"ISIC_{next(isic_ids):07}"
+                    chunk_isic_ids.append(isic_id)
+                    public = rng.random() < public_fraction
+                    blob, thumbnail = f"images/{isic_id}.jpg", f"thumbnails/{isic_id}.jpg"
+                    accessions.append(
+                        Accession(
+                            creator=staff,
+                            cohort=cohort,
+                            patient=patient,
+                            lesion=lesion,
+                            attribution=cohort.default_attribution,
+                            original_blob=f"original/TILE_{tiles:07}.png",
+                            original_blob_name=f"TILE_{tiles:07}.png",
+                            original_blob_size=rng.randint(50_000, 200_000),
+                            status=AccessionStatus.SUCCEEDED,
+                            blob="" if public else blob,
+                            thumbnail_256="" if public else thumbnail,
+                            sponsored_blob=blob if public else "",
+                            sponsored_thumbnail_256_blob=thumbnail if public else "",
+                            blob_size=rng.randint(20_000, 80_000),
+                            thumbnail_256_size=rng.randint(3_000, 8_000),
+                            width=256,
+                            height=256,
+                            **{
+                                **_metadata(rng),
+                                "image_type": "TBP tile: close-up",
+                                "dermoscopic_type": None,
+                                "tbp_tile_type": _pick(rng, TILE_TYPES),
+                            },
+                        )
+                    )
+                    tiles += 1
+
+            Patient.objects.bulk_create(chunk_patients, batch_size=5_000)
+            Lesion.objects.bulk_create(chunk_lesions, batch_size=5_000)
+            Accession.objects.bulk_create(accessions, batch_size=5_000)
+            isic_id_rows = IsicId.objects.bulk_create(
+                (IsicId(id=isic_id) for isic_id in chunk_isic_ids), batch_size=5_000
+            )
+            images = Image.objects.bulk_create(
+                (
+                    Image(
+                        accession=accession,
+                        isic=isic_id,
+                        creator=staff,
+                        public=bool(accession.sponsored_blob),
+                    )
+                    for accession, isic_id in zip(accessions, isic_id_rows, strict=True)
+                ),
+                batch_size=5_000,
+            )
+            AccessionReview.objects.bulk_create(
+                (
+                    AccessionReview(
+                        accession=accession, creator=staff, reviewed_at=EPOCH, value=True
+                    )
+                    for accession in accessions
+                ),
+                batch_size=5_000,
+            )
+            UnstructuredMetadata.objects.bulk_create(
+                (UnstructuredMetadata(accession=accession, value={}) for accession in accessions),
+                batch_size=5_000,
+            )
+            for image in images:
+                (public_ids if image.public else private_ids).append(image.pk)
+            remaining -= chunk
+
+    # as in the fixed dataset, a fifth of the images are shared with one user
+    ImageShare.objects.bulk_create(
+        (
+            ImageShare(grantor=staff, grantee=users["shares"], image_id=pk)
+            for pk in sorted(rng.sample(private_ids, min(len(private_ids), EXTRA_TILES // 5)))
+        ),
+        batch_size=5_000,
+    )
+    return public_ids
+
+
 def _set_created_times() -> None:
     with connection.cursor() as cursor:
         cursor.execute(
@@ -511,7 +661,11 @@ def _set_created_times() -> None:
 
 
 def _create_collections(
-    rng: random.Random, users: dict[str, User], image_ids: list[int], public_ids: list[int]
+    rng: random.Random,
+    users: dict[str, User],
+    image_ids: list[int],
+    public_ids: list[int],
+    tile_public_ids: list[int],
 ) -> dict[str, Collection]:
     staff = users["staff"]
 
@@ -526,7 +680,11 @@ def _create_collections(
 
     collections = {
         "all_public": collection(
-            COLLECTIONS["all_public"], staff, public_ids, public=True, pinned=True
+            COLLECTIONS["all_public"],
+            staff,
+            [*public_ids, *tile_public_ids],
+            public=True,
+            pinned=True,
         ),
         "large": collection(
             COLLECTIONS["large"],
@@ -549,6 +707,11 @@ def _create_collections(
         ),
         "target": collection(COLLECTIONS["target"], staff, [], public=False),
     }
+
+    if tile_public_ids:
+        collections["tiles"] = collection(
+            TILES_COLLECTION, staff, tile_public_ids, public=True, locked=True
+        )
 
     creators = [staff, users["owner"], users["user"], users["shares"]]
     for i in range(MISC_COLLECTIONS):
