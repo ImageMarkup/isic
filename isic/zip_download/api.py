@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.sites.models import Site
-from django.core.files.storage import default_storage, storages
+from django.core.files.storage import storages
 from django.core.signing import BadSignature, TimestampSigner
 from django.db import connection, transaction
 from django.db.models import QuerySet
@@ -34,6 +34,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 ZIP_LISTING_BATCH_SIZE = 256
+# rows fetched from the server side cursor at a time, about 100 bytes each
+ZIP_LISTING_CHUNK_SIZE = 20_000
 
 
 # this is directly mirrored in isic-cli
@@ -75,69 +77,87 @@ def zip_download_url(request):
     return Response(f"{url.scheme}://{url.netloc}" + f"/download?zsid={token}")
 
 
-def _zip_file_listing_generator(qs: QuerySet[Image], token: str) -> Generator[dict[str, str]]:
-    def extension_from_str(s: str) -> str:
-        # the same as PurePosixPath(s).suffix, but saves about 120 ms per 100k entries
-        stem, dot, extension = s.rpartition("/")[2].rpartition(".")
-        return extension if dot and stem else ""
+def _zip_file_listing_generator(qs: QuerySet[Image], auth: dict) -> Generator[dict[str, str]]:
+    sponsored_storage = storages["sponsored"]
+    private_storage = storages["default"]
+    licenses: set[str] = set()
+    file_count = 0
 
-    for image in (
-        qs.values("accession__blob", "accession__sponsored_blob", "public", "isic_id")
+    rows = (
+        qs.values_list(
+            "accession__blob",
+            "accession__sponsored_blob",
+            "public",
+            "isic_id",
+            "accession__copyright_license",
+        )
         .order_by()
-        .iterator()
-    ):
-        if image["public"]:
-            url = storages["sponsored"].unsigned_url(image["accession__sponsored_blob"])
-            zip_path = (
-                f"{image['isic_id']}.{extension_from_str(image['accession__sponsored_blob'])}"
-            )
+        .iterator(chunk_size=ZIP_LISTING_CHUNK_SIZE)
+    )
+    for blob, sponsored_blob, public, isic_id, copyright_license in rows:
+        file_count += 1
+        licenses.add(copyright_license)
+        if public:
+            storage, name = sponsored_storage, sponsored_blob
         else:
-            url = default_storage.unsigned_url(image["accession__blob"])
-            zip_path = f"{image['isic_id']}.{extension_from_str(image['accession__blob'])}"
-
+            storage, name = private_storage, blob
+        # the same as PurePosixPath(name).suffix, but saves about 1 second per million entries
+        stem, dot, extension = name.rpartition("/")[2].rpartition(".")
         yield {
-            "url": url,
-            "zipPath": zip_path,
+            "url": storage.unsigned_url(name),
+            "zipPath": f"{isic_id}.{extension if dot and stem else ''}",
         }
 
-    # initialize files with metadata and attribution files
+    logger.info("Listed %d images for zip download: %s", file_count, json.dumps(auth))
+
     domain = Site.objects.get_current().domain
     for endpoint, zip_path in [
         [reverse("api:zip_download_metadata_file"), "metadata.csv"],
         [reverse("api:zip_download_attribution_file"), "attribution.txt"],
     ]:
         yield {
-            "url": f"http://{domain}{endpoint}?token={token}",
+            "url": f"http://{domain}{endpoint}?token={auth['token']}",
             "zipPath": zip_path,
         }
 
-    yield from (
-        {
+    for license_ in sorted(licenses):
+        yield {
             "url": f"http://{domain}{reverse('api:zip_download_license_file', args=[license_])}",
             "zipPath": f"licenses/{license_}.txt",
         }
-        for license_ in (
-            qs.values_list("accession__copyright_license", flat=True).order_by().distinct()
-        )
-    )
 
 
-def _write_file_listing(
-    suggested_filename: str, files: Iterable[dict[str, str]]
-) -> Generator[bytes]:
-    yield b'{"suggestedFilename": ' + orjson.dumps(suggested_filename) + b', "files": ['
+def _write_file_listing(qs: QuerySet[Image], auth: dict) -> Generator[bytes]:
+    # the response streams after the view returns, so the transaction is opened here instead of
+    # around the view
+    with transaction.atomic():
+        with connection.cursor() as cursor:
+            # the filename check and the listing read the same snapshot
+            cursor.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+            # django reads the listing through a server side cursor (DECLARE ... CURSOR), and
+            # postgres assumes a cursor fetches only cursor_tuple_fraction (default 0.1) of its
+            # rows, so it plans for a cheap first row instead of a cheap full result. the listing
+            # always fetches every row, and at a million images the first-row plan took 7 seconds
+            # against 1.
+            cursor.execute("SET LOCAL cursor_tuple_fraction = 1.0")
 
-    has_preceding_element = False
-    # yield entries in batches, since responding with many small chunks incurs per-chunk
-    # overhead in the WSGI write path and socket writes.
-    for file_batch in batched(files, ZIP_LISTING_BATCH_SIZE, strict=False):
-        chunk: list[bytes] = []
-        for file in file_batch:
-            if has_preceding_element:
-                chunk.append(b",")
-            has_preceding_element = True
-            chunk.append(orjson.dumps({"url": file["url"], "zipPath": file["zipPath"]}))
-        yield b"".join(chunk)
+        isic_ids = list(qs.values_list("isic_id", flat=True)[:2])
+        suggested_filename = f"{isic_ids[0]}.zip" if len(isic_ids) == 1 else "ISIC-images.zip"
+        yield b'{"suggestedFilename": ' + orjson.dumps(suggested_filename) + b', "files": ['
+
+        has_preceding_element = False
+        # yield entries in batches, since responding with many small chunks incurs per-chunk
+        # overhead in the WSGI write path and socket writes.
+        for file_batch in batched(
+            _zip_file_listing_generator(qs, auth), ZIP_LISTING_BATCH_SIZE, strict=False
+        ):
+            chunk: list[bytes] = []
+            for file in file_batch:
+                if has_preceding_element:
+                    chunk.append(b",")
+                has_preceding_element = True
+                chunk.append(orjson.dumps({"url": file["url"], "zipPath": file["zipPath"]}))
+            yield b"".join(chunk)
 
     yield b"]}"
 
@@ -145,34 +165,14 @@ def _write_file_listing(
 @api_view(["GET"])
 @authentication_classes([ZipDownloadTokenAuthentication])
 @permission_classes([AllowAny])
-@transaction.atomic
 def zip_download_listing(request):
-    # use repeatable read to ensure consistent results
-    with connection.cursor() as cursor:
-        cursor.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
-
-    token = request.auth["token"]
     user, search = SearchQuerySerializer.from_token_representation(request.auth)
 
     # ordering isn't necessary for the zipstreamer and can slow down the query considerably
-    qs = search.to_queryset(user, Image.objects.select_related("accession")).order_by()
-    file_count = qs.count()
-    if file_count == 1:
-        only_image = qs.first()
-        assert isinstance(only_image, Image)  # noqa: S101
-        suggested_filename = f"{only_image.isic_id}.zip"
-    else:
-        suggested_filename = "ISIC-images.zip"
-
-    logger.info(
-        "Creating zip file descriptor for %d images: %s",
-        file_count,
-        json.dumps(request.auth),
-    )
-    files = _zip_file_listing_generator(qs, token)
+    qs = search.to_queryset(user, Image.objects.all()).order_by()
 
     return StreamingHttpResponse(
-        _write_file_listing(suggested_filename, files), content_type="application/json"
+        _write_file_listing(qs, request.auth), content_type="application/json"
     )
 
 
