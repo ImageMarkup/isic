@@ -1,4 +1,5 @@
 from collections.abc import Generator
+import csv
 from functools import reduce
 import io
 from itertools import batched
@@ -11,7 +12,6 @@ from django.db.models.functions import Collate
 from django.db.models.query import QuerySet
 
 from isic.core.models.image import Image
-from isic.core.utils.csv import EscapingWriter
 from isic.ingest.models.accession import Accession
 
 
@@ -148,6 +148,12 @@ def image_metadata_csv(*, qs: QuerySet[Image]) -> tuple[list[str], Generator[byt
 
     Returns the fieldnames, which are computed eagerly, and a generator of the encoded CSV,
     starting with the header row.
+
+    Values are written without escaping, since checking each one costs seconds on the largest
+    exports. Every column is validated to never need it instead: isic-metadata rejects structured
+    metadata starting with a FORBIDDEN_LEADING_CHARS character, attribution is constrained the same
+    way, and the remaining columns are generated ids and licenses. Anything unstructured, like the
+    staff export, must keep using EscapingDictWriter.
     """
     initial_headers = ["isic_id", "attribution", "copyright_license"]
 
@@ -211,7 +217,7 @@ def image_metadata_csv(*, qs: QuerySet[Image]) -> tuple[list[str], Generator[byt
 
     def rows() -> Generator[bytes]:
         buffer = io.StringIO()
-        writer = EscapingWriter(buffer)
+        writer = csv.writer(buffer)  # nosemgrep: require-csv-dict-writer
         writer.writerow(fieldnames)
         yield buffer.getvalue().encode()
 

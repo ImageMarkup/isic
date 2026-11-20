@@ -32,6 +32,7 @@ from resonant_utils.files import field_file_to_local_path
 from s3_file_field import S3FileField
 
 from isic.core.models import CopyrightLicense, CreationSortedTimeStampedModel
+from isic.core.utils.csv import no_forbidden_leading_char_q, validate_no_forbidden_leading_char
 from isic.ingest.models.cohort import Cohort
 from isic.ingest.models.lesion import Lesion
 from isic.ingest.models.patient import Patient
@@ -326,7 +327,9 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
     copyright_license = models.CharField(choices=CopyrightLicense, max_length=255)
     # attribution is initially empty, with cohort.default_attribution being copied over during
     # publish if not otherwise set.
-    attribution = models.CharField(max_length=200, blank=True)
+    attribution = models.CharField(
+        max_length=200, blank=True, validators=[validate_no_forbidden_leading_char]
+    )
 
     # the original blob is stored in case blobs need to be reprocessed
     original_blob = S3FileField(unique=True)
@@ -474,6 +477,11 @@ class Accession(CreationSortedTimeStampedModel, AccessionMetadata):
                 condition=Q(is_cog=False)
                 | Q(image_type__isnull=True)
                 | Q(image_type=ImageTypeEnum.rcm_mosaic),
+            ),
+            # attribution is exported without CSV escaping, see image_metadata_csv.
+            CheckConstraint(
+                name="accession_attribution_no_forbidden_leading_char",
+                condition=no_forbidden_leading_char_q("attribution"),
             ),
         ]
 

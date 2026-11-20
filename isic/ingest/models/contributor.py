@@ -4,6 +4,7 @@ from django.db.models.query import QuerySet
 from django.utils.safestring import mark_safe
 
 from isic.core.models import CopyrightLicense, CreationSortedTimeStampedModel
+from isic.core.utils.csv import validate_no_forbidden_leading_char
 
 
 class Contributor(CreationSortedTimeStampedModel):
@@ -41,6 +42,7 @@ class Contributor(CreationSortedTimeStampedModel):
     default_attribution = models.CharField(
         max_length=255,
         blank=True,
+        validators=[validate_no_forbidden_leading_char],
         verbose_name="Default Attribution",
         help_text=mark_safe(
             "Text which must be reproduced by users of your images, to comply with Creative "

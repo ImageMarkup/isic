@@ -18,6 +18,8 @@ def test_image_list_metadata_download_view(mocker, staff_client, mailoutbox, use
             "diagnosis": "Melanoma Invasive",
             "anatom_site": "Scalp",
             "image_type": "RCM: macroscopic",
+            # unstructured metadata isn't validated, so the staff export has to escape it
+            "note": "=1+1",
         },
         ignore_image_check=True,
     )
@@ -55,6 +57,7 @@ def test_image_list_metadata_download_view(mocker, staff_client, mailoutbox, use
         "patient_id",
         "private_rcm_case_id",
         "rcm_case_id",
+        "unstructured.note",
     ]
 
     # we know these can't be None due to the update_metadata call above
@@ -84,6 +87,7 @@ def test_image_list_metadata_download_view(mocker, staff_client, mailoutbox, use
         image.accession.patient_id,
         "baz",
         image.accession.rcm_case_id,
+        "\t=1+1",
     ]
 
     expected = (

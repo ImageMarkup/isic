@@ -1,12 +1,13 @@
 from django.contrib.auth.models import User
 from django.db import models
-from django.db.models import Q, UniqueConstraint
+from django.db.models import CheckConstraint, Q, UniqueConstraint
 from django.db.models.query import QuerySet
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 
 # TODO: way to view failed/skipped  accessions
 from isic.core.models import CopyrightLicense, CreationSortedTimeStampedModel
+from isic.core.utils.csv import no_forbidden_leading_char_q, validate_no_forbidden_leading_char
 
 from .contributor import Contributor
 
@@ -34,7 +35,12 @@ class Cohort(CreationSortedTimeStampedModel):
         constraints = [
             UniqueConstraint(
                 name="cohort_unique_girder_id", fields=["girder_id"], condition=~Q(girder_id="")
-            )
+            ),
+            # default_attribution is copied to accessions, which export it without CSV escaping.
+            CheckConstraint(
+                name="cohort_default_attribution_no_forbidden_leading_char",
+                condition=no_forbidden_leading_char_q("default_attribution"),
+            ),
         ]
 
     contributor = models.ForeignKey(Contributor, on_delete=models.PROTECT, related_name="cohorts")
@@ -64,7 +70,9 @@ class Cohort(CreationSortedTimeStampedModel):
 
     # required if default_copyright_license is CC-BY-*
     default_attribution = models.CharField(
-        help_text="The institution name that should be attributed.", max_length=200
+        help_text="The institution name that should be attributed.",
+        max_length=200,
+        validators=[validate_no_forbidden_leading_char],
     )
 
     collection = models.OneToOneField(
