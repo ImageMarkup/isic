@@ -1,4 +1,6 @@
 from collections.abc import Callable
+from pathlib import Path
+import re
 import tracemalloc
 
 from django.conf import settings
@@ -13,6 +15,13 @@ from benchmarks.dataset import Viewer
 from isic.core.dsl import parse_query
 from isic.core.search import IMAGE_INDEX_MAPPINGS, LESION_INDEX_MAPPINGS, get_elasticsearch_client
 from isic.core.tasks import sync_elasticsearch_indices_task
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--profile-dir",
+        help="write a pyinstrument profile of one call of each benchmarked function here",
+    )
 
 
 @pytest.fixture(scope="session")
@@ -137,7 +146,34 @@ def rolled_back() -> Callable[[Callable[[], object]], Callable[[], None]]:
 
 
 @pytest.fixture
-def benchmark_with_memory(benchmark) -> Callable[[Callable[[], object]], None]:
+def profile(request) -> Callable[[Callable[[], object]], None]:
+    """Profile one call of a function with pyinstrument, when --profile-dir is given."""
+    profile_dir = request.config.getoption("--profile-dir")
+
+    def run(fn):
+        if profile_dir is None:
+            return
+        from pyinstrument import Profiler
+
+        profiler = Profiler()
+        profiler.start()
+        try:
+            fn()
+        finally:
+            profiler.stop()
+        name = re.sub(r"[^\w.-]+", "_", request.node.name).strip("_")
+        path = Path(profile_dir) / f"{request.node.module.__name__.rpartition('.')[2]}.{name}"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        Path(f"{path}.html").write_text(profiler.output_html())
+        Path(f"{path}.txt").write_text(
+            profiler.output_text(unicode=True, show_all=True, timeline=False)
+        )
+
+    return run
+
+
+@pytest.fixture
+def benchmark_with_memory(benchmark, profile) -> Callable[[Callable[[], object]], None]:
     """
     Benchmark a function, and record the peak memory Python allocates while calling it.
 
@@ -151,6 +187,7 @@ def benchmark_with_memory(benchmark) -> Callable[[Callable[[], object]], None]:
             benchmark.extra_info["peak_memory_mib"] = tracemalloc.get_traced_memory()[1] / 2**20
         finally:
             tracemalloc.stop()
+        profile(fn)
         benchmark(fn)
 
     return run
