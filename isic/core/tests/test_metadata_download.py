@@ -1,7 +1,9 @@
+from pydantic import ValidationError
 import pytest
 
 from isic.core.models.image import Image
 from isic.core.services import staff_image_metadata_csv
+from isic.core.utils.csv import FORBIDDEN_LEADING_CHARS
 
 
 @pytest.fixture
@@ -93,3 +95,18 @@ def test_metadata_csv_computes_fields_from_falsy_values(image_factory, read_imag
 
     _, staff_row = list(staff_image_metadata_csv(qs=qs))
     assert staff_row["age_approx"] == 0
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("char", FORBIDDEN_LEADING_CHARS)
+@pytest.mark.parametrize("field", ["patient_id", "lesion_id", "rcm_case_id"])
+def test_image_metadata_csv_relies_on_metadata_validation(image_with_metadata, char, field):
+    # the CSV is written without escaping, so every structured value has to be rejected on the way
+    # in. the remapped ids are the only free text a contributor supplies.
+    accession = image_with_metadata.accession
+    with pytest.raises(ValidationError, match="forbidden_leading_character"):
+        accession.update_metadata(
+            image_with_metadata.creator,
+            {field: f"{char}{getattr(accession, field)}"},
+            ignore_image_check=True,
+        )

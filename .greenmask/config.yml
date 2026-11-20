@@ -35,6 +35,10 @@ validate:
     - "0a5d8cbf6d9073760d3066bae066f886"  # ingest_metadataversion.patient
     - "5e9c24f20af8dd0522fbf7000ca85d1b"  # ingest_metadataversion.lesion
     - "cb9783660c39db681b7a75d730b7533f"  # ingest_metadataversion.rcm_case
+    # "column has Check constraint": the constraint forbids a leading = - + or @,
+    # and these Template outputs always start with a title-cased faker word.
+    - "536f93852a086a3810a9f4b9d844ffed"  # ingest_accession.attribution
+    - "9706738b986c6cf140d2ae54669e4871"  # ingest_cohort.default_attribution
 
 restore:
   pg_restore_options:
