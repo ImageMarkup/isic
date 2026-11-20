@@ -10,7 +10,7 @@ from rest_framework import serializers, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from s3_file_field.widgets import S3PlaceholderFile
+from s3_file_field.rest_framework import S3FileSerializerField
 
 from isic.auth import IsAuthenticated, IsStaff
 from isic.core.api.image import ImageSerializer
@@ -83,17 +83,13 @@ def lesion_list(request):
 
 class AccessionCreateSerializer(StrictSerializer):
     cohort = serializers.IntegerField()
-    original_blob = serializers.CharField(help_text="S3 file field value.", trim_whitespace=False)
+    original_blob = S3FileSerializerField(
+        model_field=Accession._meta.get_field("original_blob"), help_text="S3 file field value."
+    )
     metadata = serializers.DictField(default=dict)
     engagement_external_id = serializers.CharField(
         allow_null=True, allow_blank=True, default=None, trim_whitespace=False
     )
-
-    def validate_original_blob(self, value: str) -> S3PlaceholderFile:
-        s3_file = S3PlaceholderFile.from_field(value)
-        if s3_file is None:
-            raise serializers.ValidationError("Invalid S3 file field value.")
-        return s3_file
 
 
 class AccessionSerializer(serializers.ModelSerializer):

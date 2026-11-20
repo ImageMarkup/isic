@@ -12,9 +12,11 @@ from django.shortcuts import get_object_or_404, render
 from django.template.defaultfilters import slugify
 from django.urls.base import reverse
 from rest_framework.exceptions import ValidationError as DrfValidationError
+from s3_file_field.widgets import get_base_url
 
 from isic.core.forms.collection import CollectionForm
 from isic.core.models import Collection
+from isic.core.models.supplemental_file import DraftSupplementalFile
 from isic.core.pagination import (
     CursorPagination,
     CursorPaginationSerializer,
@@ -97,6 +99,9 @@ def collection_create_doi(request, pk):
     context: dict[str, Any] = {
         "collection": collection,
         "error": None,
+        # For the supplemental files' "<s3-file-input>" elements
+        "s3ff_base_url": get_base_url(),
+        "s3ff_field_id": DraftSupplementalFile._meta.get_field("blob").id,
     }
 
     if hasattr(collection, "doi") or hasattr(collection, "draftdoi"):

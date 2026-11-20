@@ -8,7 +8,6 @@ from django.core.files.base import File
 from django.db import transaction
 from django.db.models import FileField
 from django.db.models.query import QuerySet
-from s3_file_field.widgets import S3PlaceholderFile
 
 from isic.core.models.base import CopyrightLicense
 from isic.core.models.image import Image
@@ -46,9 +45,6 @@ def create_accession(  # noqa: PLR0913
 
     if engagement_external_id and not EngagementProfile.objects.filter(user=creator).exists():
         raise ValidationError("Only engagement platform users can set an engagement external id.")
-
-    if isinstance(original_blob, S3PlaceholderFile):
-        original_blob = original_blob.name
 
     with transaction.atomic():
         accession = Accession(

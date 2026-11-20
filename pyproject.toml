@@ -55,7 +55,7 @@ dependencies = [
   "whitenoise[brotli]==6.12.0",
   "zipfile-deflate64==0.2.0",
   # Production-only
-  "django-s3-file-field[s3]==1.1.0",
+  "django-s3-file-field[s3]==2.0.2",
   "django-storages[s3]==1.14.6",
   "sentry-sdk[celery,django,pure_eval]==2.74.0",
   "gunicorn==26.2.0",
@@ -72,7 +72,7 @@ development = [
   "django-debug-toolbar==8.0.0",
   "django-minio-storage==0.6.0",
   "django-resonant-utils[minio_storage]==0.21.0",
-  "django-s3-file-field[minio]==1.1.0",
+  "django-s3-file-field[minio]==2.0.2",
   "ipython==9.18.1",
   "watchdog==6.0.0",
   "werkzeug==3.1.9",
