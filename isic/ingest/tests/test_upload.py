@@ -3,11 +3,11 @@ import pathlib
 from typing import BinaryIO
 import zipfile
 
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls.base import reverse
 import pytest
 from pytest_lazy_fixtures import lf
 
+from isic.ingest.models import ZipUpload
 from isic.ingest.models.accession import AccessionStatus
 
 data_dir = pathlib.Path(__file__).parent / "data"
@@ -50,22 +50,23 @@ def test_upload_zip(
     user,
     authenticated_client,
     zip_stream,
+    s3ff_field_value_factory,
+    stored_file_factory,
     django_capture_on_commit_callbacks,
 ):
     cohort = cohort_factory(creator=user, contributor__creator=user)
-    zip_stream.seek(0)
-    zipfile = SimpleUploadedFile(
-        "foo.zip",
-        zip_stream.getvalue(),
-        "application/zip",
+    field_value = s3ff_field_value_factory(
+        stored_file_factory(zip_stream.getvalue(), suffix=".zip"),
+        ZipUpload._meta.get_field("blob"),
     )
 
     with django_capture_on_commit_callbacks(execute=True):
-        authenticated_client.post(
+        r = authenticated_client.post(
             reverse("upload/zip", args=[cohort.pk]),
             {
-                "blob": zipfile,
+                "blob": field_value,
             },
         )
 
+    assert r.status_code == 302
     assert cohort.accessions.filter(status=AccessionStatus.SUCCEEDED).count() == 5

@@ -10,7 +10,6 @@ from django.forms.models import ModelForm
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
-from s3_file_field.widgets import S3FileInput
 
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.ingest.models import Cohort, MetadataFile
@@ -25,7 +24,6 @@ class MetadataFileForm(ModelForm):
     class Meta:
         model = MetadataFile
         fields = ["blob"]
-        widgets = {"blob": S3FileInput(attrs={"accept": "text/csv"})}
 
 
 class ValidateMetadataForm(forms.Form):
@@ -53,7 +51,7 @@ def metadata_file_create(request, cohort_pk):
         form = MetadataFileForm(request.POST)
         if form.is_valid():
             form.instance.creator = request.user
-            form.instance.blob_size = form.instance.blob.size
+            form.instance.blob_size = form.cleaned_data["blob"].size
             form.instance.blob_name = Path(form.instance.blob.name).name
             form.instance.cohort = cohort
             form.save(commit=True)

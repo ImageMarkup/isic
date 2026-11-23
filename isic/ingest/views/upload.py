@@ -15,7 +15,6 @@ from django.shortcuts import get_object_or_404, render
 from django.urls.base import reverse
 from django.utils.safestring import mark_safe
 from pydantic import ValidationError as PydanticValidationError
-from s3_file_field.widgets import S3FileInput
 
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.ingest.forms import CohortForm, ContributorForm, SingleAccessionUploadForm
@@ -28,7 +27,6 @@ class ZipForm(ModelForm):
     class Meta:
         model = ZipUpload
         fields = ["blob"]
-        widgets = {"blob": S3FileInput(attrs={"accept": "application/zip"})}
 
 
 @login_required
@@ -182,10 +180,10 @@ def upload_zip(request, cohort_pk):
     cohort = get_object_or_404(Cohort, pk=cohort_pk)
 
     if request.method == "POST":
-        form = ZipForm(request.POST, request.FILES)
+        form = ZipForm(request.POST)
         if form.is_valid():
             form.instance.creator = request.user
-            form.instance.blob_size = form.instance.blob.size
+            form.instance.blob_size = form.cleaned_data["blob"].size
             form.instance.blob_name = Path(form.instance.blob.name).name
             form.instance.cohort = cohort
             form.save(commit=True)
