@@ -23,7 +23,7 @@ from isic.core.permissions import get_visible_objects
 from isic.core.search import build_elasticsearch_query, facets, get_elasticsearch_client
 from isic.core.serializers import SearchQuerySerializer, StrictSerializer
 
-default_qs = Image.objects.select_related("accession__cohort").distinct()
+default_qs = Image.objects.select_related("accession__cohort")
 
 
 def _file_url(image: Image, file: FieldFile) -> str:
@@ -296,7 +296,7 @@ def image_set_pinned(request, id: int):
     pinned = payload.validated_data["pinned"]
 
     qs = get_visible_objects(request.user, "core.view_image", Image.objects.all())
-    image = get_object_or_404(qs.distinct(), id=id)
+    image = get_object_or_404(qs, id=id)
     if pinned:
         if not image.public:
             return Response(

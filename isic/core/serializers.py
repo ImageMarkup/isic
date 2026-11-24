@@ -6,13 +6,14 @@ import json
 from typing import TYPE_CHECKING, cast
 
 from django.contrib.auth.models import AnonymousUser, User
+from django.db.models import Exists, OuterRef
 from django.shortcuts import get_object_or_404
 from pyparsing.exceptions import ParseException
 from rest_framework import serializers
 
 from isic.core.dsl import SearchQueryParseError, django_parser, es_parser, parse_query
 from isic.core.models import Image
-from isic.core.models.collection import Collection
+from isic.core.models.collection import Collection, CollectionImage
 from isic.core.permissions import get_visible_objects
 from isic.core.search import build_elasticsearch_query
 
@@ -112,9 +113,17 @@ class SearchQuerySerializer(serializers.Serializer):
                     Collection.objects.filter(pk__in=collections),
                 ).values_list("pk", flat=True)
             )
-            qs = qs.filter(collections__in=visible_collections)
+            if not visible_collections:
+                return qs.none()
+            qs = qs.filter(
+                Exists(
+                    CollectionImage.objects.filter(
+                        image_id=OuterRef("pk"), collection_id__in=visible_collections
+                    )
+                )
+            )
 
-        return get_visible_objects(user, "core.view_image", qs).distinct()
+        return get_visible_objects(user, "core.view_image", qs)
 
     def to_es_query(self, user: User | AnonymousUser) -> dict:
         query = self.validated_data["query"]
