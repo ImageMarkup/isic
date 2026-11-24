@@ -181,7 +181,7 @@ def zip_download_listing(request):
 @permission_classes([AllowAny])
 def zip_download_metadata_file(request):
     user, search = SearchQuerySerializer.from_token_representation(request.auth)
-    qs = search.to_queryset(user, Image.objects.select_related("accession__cohort").distinct())
+    qs = search.to_queryset(user, Image.objects.select_related("accession__cohort"))
 
     _, csv_rows = image_metadata_csv(qs=qs)
 
@@ -193,7 +193,7 @@ def zip_download_metadata_file(request):
 @permission_classes([AllowAny])
 def zip_download_attribution_file(request):
     user, search = SearchQuerySerializer.from_token_representation(request.auth)
-    qs = search.to_queryset(user, Image.objects.select_related("accession__cohort").distinct())
+    qs = search.to_queryset(user, Image.objects.select_related("accession__cohort"))
     attributions = get_attributions(qs.values_list("accession__attribution", flat=True))
     return HttpResponse("\n\n".join(attributions), content_type="text/plain")
 

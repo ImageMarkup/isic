@@ -244,7 +244,7 @@ def collection_share_to_users(request, id: int):
 def collection_attribution_information(request, id: int):
     qs = get_visible_objects(request.user, "core.view_collection")
     collection = get_object_or_404(qs.distinct(), id=id)
-    images = get_visible_objects(request.user, "core.view_image", collection.images.distinct())
+    images = get_visible_objects(request.user, "core.view_image", collection.images.all())
     counts = (
         Accession.objects.filter(image__in=images)
         .values("copyright_license", "attribution")

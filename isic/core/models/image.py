@@ -9,7 +9,7 @@ from django.contrib.postgres.aggregates.general import ArrayAgg
 from django.contrib.postgres.indexes import GinIndex, OpClass
 from django.db import models
 from django.db.models.constraints import CheckConstraint
-from django.db.models.expressions import F
+from django.db.models.expressions import Exists, F, OuterRef
 from django.db.models.functions import Upper
 from django.db.models.query_utils import Q
 from django.urls import reverse
@@ -294,38 +294,49 @@ class ImagePermissions:
         return ImagePermissions.view_full_metadata_list(user_obj).contains(obj)
 
     @staticmethod
+    def visible_image_q(user_obj: User) -> Q:
+        """
+        Return the images a non-staff user can see, as a predicate on an Image queryset.
+
+        Each branch is a column test, a join that can't multiply rows or a correlated subquery, so
+        filtering by it never needs distinct(). build_elasticsearch_query mirrors it.
+        """
+        if not user_obj.is_authenticated:
+            return Q(public=True)
+
+        image_visibility_requirements = Q(public=True)
+
+        # the contributor ids are inlined so the query carries no user id and users with the same
+        # privileges share the query cache. the list doubles as the check for whether the branch
+        # is needed, so there is no separate exists() query here. this stays a join: the accession
+        # is one-to-one and its cohort many-to-one, so it can't multiply rows, and as a subquery
+        # postgres would hash every accession the user owns before returning the first row.
+        owned_contributor_ids = list(
+            user_obj.owned_contributors.order_by().values_list("id", flat=True)
+        )
+        if owned_contributor_ids:
+            image_visibility_requirements |= Q(
+                accession__cohort__contributor_id__in=owned_contributor_ids
+            )
+
+        # the only branch that puts the user id into the query, so it's only added for users with
+        # shares; everyone else keeps sharing the cache. nothing from the shares is inlined, so an
+        # exists() is the cheapest way to find out.
+        if user_obj.image_shares_received.exists():
+            image_visibility_requirements |= Exists(
+                ImageShare.objects.filter(image_id=OuterRef("pk"), grantee=user_obj)
+            )
+
+        return image_visibility_requirements
+
+    @staticmethod
     def view_image_list(user_obj: User, qs: QuerySet[Image] | None = None) -> QuerySet[Image]:
         qs = qs if qs is not None else Image._default_manager.all()
 
         if user_obj.is_staff:
             return qs
-        elif user_obj.is_authenticated:
-            image_visibility_requirements = Q(public=True)
 
-            if user_obj.owned_contributors.exists():
-                image_visibility_requirements |= Q(
-                    # this needs list coercion because otherwise it will be a subquery that contains
-                    # the user_id, which doesn't allow users with identical privileges to share
-                    # the query cache.
-                    accession__cohort__contributor_id__in=list(
-                        user_obj.owned_contributors.order_by().values_list("id", flat=True)
-                    )
-                )
-
-            if user_obj.image_shares_received.exists():
-                # this is the worst case scenario where we have to put the specific user into the
-                # query, guaranteeing that they won't share the cache with others.
-                # this is also the only portion that demands a left join, forcing the
-                # caller to wrap the query in a distinct() call.
-                image_visibility_requirements |= Q(shares=user_obj)
-
-            # Note: permissions here must be also modified in build_elasticsearch_query and
-            # LesionPermissions.view_lesion_list.
-            return qs.filter(
-                image_visibility_requirements,
-            )
-        else:
-            return qs.public()
+        return qs.filter(ImagePermissions.visible_image_q(user_obj))
 
     @staticmethod
     def view_image(user_obj: User, obj: Image) -> bool:

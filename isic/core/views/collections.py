@@ -128,7 +128,7 @@ def collection_detail(request, pk):
     images = get_visible_objects(
         request.user,
         "core.view_image",
-        collection.images.select_related("accession").order_by("created").distinct(),
+        collection.images.select_related("accession").order_by("created"),
     )
 
     # prevent the paginator from doing a slow count.
