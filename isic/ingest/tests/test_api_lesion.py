@@ -95,6 +95,41 @@ def test_api_lesion_permissions_contributor(
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures("_search_index")
+def test_api_lesion_permissions_shares(
+    client,
+    user,
+    user_factory,
+    lesion_factory,
+    image_factory,
+    image_share_factory,
+    accession_factory,
+):
+    lesion = lesion_factory()
+    image_factory(accession__lesion=lesion, public=True)
+    private_image = image_factory(accession__lesion=lesion, public=False)
+    # shared with the user and with someone else
+    image_share_factory(image=private_image, grantee=user)
+    image_share_factory(image=private_image)
+
+    def visible_lesion_ids() -> list[str]:
+        resp = client.get(reverse("api:lesion_list"))
+        assert resp.status_code == 200, resp.json()
+        return [result["id"] for result in resp.json()["results"]]
+
+    assert visible_lesion_ids() == []
+    client.force_login(user_factory())
+    assert visible_lesion_ids() == []
+    client.force_login(user)
+    assert visible_lesion_ids() == [lesion.id]
+
+    # an unpublished accession doesn't change who can see the lesion
+    accession_factory(lesion=lesion)
+    assert user.has_perm("ingest.view_lesion", lesion)
+    assert not user_factory().has_perm("ingest.view_lesion", lesion)
+
+
+@pytest.mark.django_db
+@pytest.mark.usefixtures("_search_index")
 def test_api_lesion_completeness(client, lesion_factory, image_factory):
     lesion = lesion_factory()
     image = image_factory(
