@@ -15,7 +15,7 @@ from rest_framework.exceptions import ValidationError as DrfValidationError
 from isic.core.api.image import PinnedFirstPagination
 from isic.core.forms.search import ImageSearchForm
 from isic.core.models import Collection, Image
-from isic.core.pagination import CursorPaginationSerializer, qs_with_hardcoded_count
+from isic.core.pagination import CursorPaginationSerializer
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.core.search import get_elasticsearch_client
 from isic.core.tasks import generate_staff_image_list_metadata_csv_task
@@ -161,18 +161,19 @@ def image_browser(request):
         collections=collections,
     )
     qs: QuerySet[Image] = Image.objects.none()
-    order_by = ("-pinned", "created")
+    total_images = 0
 
     if search_form.is_valid():
         qs = search_form.results
 
         if settings.ISIC_USE_ELASTICSEARCH_COUNTS:
             es_query = search_form.serializer.to_es_query(request.user)
-            es_count = get_elasticsearch_client().count(
+            total_images = get_elasticsearch_client().count(
                 index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX,
                 body={"query": es_query},
             )["count"]
-            qs = qs_with_hardcoded_count(qs, order_by, es_count)
+        else:
+            total_images = qs.count()
 
     paginator = PinnedFirstPagination()
     try:
@@ -180,7 +181,9 @@ def image_browser(request):
             data={"limit": request.GET.get("limit", 30), "cursor": request.GET.get("cursor")}
         )
         params.is_valid(raise_exception=True)
-        page = paginator.paginate_queryset(qs, request, pin_sort=True, **params.validated_data)
+        page = paginator.paginate_queryset(
+            qs, request, pin_sort=True, count=total_images, **params.validated_data
+        )
     except DrfValidationError as e:
         raise BadRequest("Invalid pagination parameters.") from e
 
@@ -195,7 +198,7 @@ def image_browser(request):
         request,
         "core/image_browser.html",
         {
-            "total_images": qs.count(),
+            "total_images": total_images,
             "images": page["results"],
             "page": page,
             # This gets POSTed to the populate endpoint if called

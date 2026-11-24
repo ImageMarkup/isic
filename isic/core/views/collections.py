@@ -15,11 +15,7 @@ from rest_framework.exceptions import ValidationError as DrfValidationError
 
 from isic.core.forms.collection import CollectionForm
 from isic.core.models import Collection
-from isic.core.pagination import (
-    CursorPagination,
-    CursorPaginationSerializer,
-    qs_with_hardcoded_count,
-)
+from isic.core.pagination import CursorPagination, CursorPaginationSerializer
 from isic.core.permissions import get_visible_objects, needs_object_permission
 from isic.core.services import image_metadata_csv
 from isic.core.services.collection import create_collection, update_collection
@@ -132,8 +128,7 @@ def collection_detail(request, pk):
     )
 
     # prevent the paginator from doing a slow count.
-    if hasattr(collection, "cached_counts"):
-        images = qs_with_hardcoded_count(images, ("created",), collection.cached_counts.image_count)
+    count = collection.cached_counts.image_count if hasattr(collection, "cached_counts") else None
 
     paginator = CursorPagination(ordering=("created",))
     try:
@@ -141,7 +136,7 @@ def collection_detail(request, pk):
             data={"limit": request.GET.get("limit", 30), "cursor": request.GET.get("cursor")}
         )
         params.is_valid(raise_exception=True)
-        page = paginator.paginate_queryset(images, request, **params.validated_data)
+        page = paginator.paginate_queryset(images, request, count=count, **params.validated_data)
     except DrfValidationError as e:
         raise BadRequest("Invalid pagination parameters.") from e
 

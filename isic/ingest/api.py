@@ -77,8 +77,7 @@ def lesion_list(request):
         .order_by("id"),
     )
     # the count can be done much more efficiently than the full query
-    qs.custom_count = get_lesion_count_for_user(request.user)
-    return paginate(request, qs, LesionSerializer)
+    return paginate(request, qs, LesionSerializer, count=get_lesion_count_for_user(request.user))
 
 
 class AccessionCreateSerializer(StrictSerializer):
