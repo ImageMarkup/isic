@@ -18,7 +18,7 @@ from sentry_sdk import set_tag
 
 from isic.auth import IsAuthenticated, IsStaff
 from isic.core.models import Image
-from isic.core.pagination import CursorPagination, paginate, qs_with_hardcoded_count
+from isic.core.pagination import CursorPagination, paginate
 from isic.core.permissions import get_visible_objects
 from isic.core.search import build_elasticsearch_query, facets, get_elasticsearch_client
 from isic.core.serializers import SearchQuerySerializer, StrictSerializer
@@ -170,10 +170,7 @@ class PinnedFirstPagination(CursorPagination):
 
     @override
     def paginate_queryset(self, queryset, request, *, pin_sort: bool = False, **kwargs):
-        # ordering clones the queryset, which would drop a hardcoded count, so a queryset that
-        # the view already ordered (see _ordering) is left alone.
-        if not queryset.query.order_by:
-            queryset = queryset.order_by(*_ordering(request, pin_sort=pin_sort))
+        queryset = queryset.order_by(*_ordering(request, pin_sort=pin_sort))
         return super().paginate_queryset(queryset, request, **kwargs)
 
 
@@ -188,15 +185,15 @@ def _ordering(request, *, pin_sort: bool = False) -> tuple[str, ...]:
 def image_list(request):
     qs = get_visible_objects(request.user, "core.view_image", default_qs)
 
+    count = None
     if settings.ISIC_USE_ELASTICSEARCH_COUNTS:
         es_query = build_elasticsearch_query({}, request.user, None)
-        es_count = get_elasticsearch_client().count(
+        count = get_elasticsearch_client().count(
             index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX,
             body={"query": es_query},
         )["count"]
-        qs = qs_with_hardcoded_count(qs, _ordering(request), es_count)
 
-    return paginate(request, qs, ImageSerializer, PinnedFirstPagination())
+    return paginate(request, qs, ImageSerializer, PinnedFirstPagination(), count=count)
 
 
 @api_view(["GET"])
@@ -206,15 +203,15 @@ def image_search(request):
     search.is_valid(raise_exception=True)
     qs: QuerySet[Image] = search.to_queryset(user=request.user, qs=default_qs)
 
+    count = None
     if settings.ISIC_USE_ELASTICSEARCH_COUNTS:
         es_query = search.to_es_query(request.user)
-        es_count = get_elasticsearch_client().count(
+        count = get_elasticsearch_client().count(
             index=settings.ISIC_ELASTICSEARCH_IMAGES_INDEX,
             body={"query": es_query},
         )["count"]
-        qs = qs_with_hardcoded_count(qs, _ordering(request), es_count)
 
-    return paginate(request, qs, ImageSerializer, PinnedFirstPagination())
+    return paginate(request, qs, ImageSerializer, PinnedFirstPagination(), count=count)
 
 
 @api_view(["GET"])

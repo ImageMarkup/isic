@@ -13,25 +13,6 @@ from rest_framework.response import Response
 _OFFSET_CUTOFF = 100
 
 
-def qs_with_hardcoded_count(qs: QuerySet, ordering: Sequence, count: int) -> QuerySet:
-    """
-    Modify a queryset to return a hardcoded count rather than querying the database.
-
-    This is useful when the count can be obtained with a cheaper method instead of
-    the default queryset.count() method, e.g. elasticsearch, a separate query with
-    fewer joins, etc.
-    """
-    # This is an unfortunate bit of hackery to get around the fact that the CursorPagination class
-    # adds an order by which clones the queryset, overriding our hardcoded count. We have to repeat
-    # the logic here to make sure the paginator doesn't modify our queryset.
-    if not qs.query.order_by:
-        qs = qs.order_by(*ordering)
-
-    qs.count = lambda: count
-
-    return qs
-
-
 @dataclass
 class Cursor:
     offset: int = 0
@@ -73,8 +54,22 @@ class CursorPagination:
         self.ordering = ordering
 
     def paginate_queryset(
-        self, queryset: QuerySet, request: HttpRequest, *, limit: int | None, cursor: Cursor
+        self,
+        queryset: QuerySet,
+        request: HttpRequest,
+        *,
+        limit: int | None,
+        cursor: Cursor,
+        count: int | None = None,
     ) -> dict:
+        """
+        Paginate a queryset.
+
+        count is the total number of results, for callers that can get it cheaper than
+        queryset.count(), e.g. from elasticsearch or a materialized view. It's returned on every
+        page, whereas queryset.count() only runs on the first page since it's slow for large
+        queries.
+        """
         limit = _clamp(limit or self.max_page_size, 0, self.max_page_size)
 
         if not queryset.query.order_by:
@@ -82,17 +77,12 @@ class CursorPagination:
 
         order: tuple[str, ...] = queryset.query.order_by
 
-        total_count = (
-            # let the queryset define a custom_count attribute in the event that computing
-            # the count can be done cheaper than the default queryset.count() method.
-            queryset.custom_count
-            if hasattr(queryset, "custom_count")
-            else queryset.count()
-            # only count the total number of results if a position is absent, usually indicating
-            # that we're on the first page. this improves performance for larger queries.
-            if cursor.position is None
-            else None
-        )
+        if count is not None:
+            total_count = count
+        elif cursor.position is None:
+            total_count = queryset.count()
+        else:
+            total_count = None
 
         base_url = request.build_absolute_uri()
 
@@ -346,9 +336,11 @@ class CursorPaginationSerializer(serializers.Serializer):
         return Cursor(offset=offset, reverse=reverse, position=position)
 
 
-def paginate(request, queryset: QuerySet, serializer_class, paginator=None) -> Response:
+def paginate(
+    request, queryset: QuerySet, serializer_class, paginator=None, *, count: int | None = None
+) -> Response:
     paginator = paginator if paginator is not None else CursorPagination()
     params = CursorPaginationSerializer(data=request.query_params)
     params.is_valid(raise_exception=True)
-    page = paginator.paginate_queryset(queryset, request, **params.validated_data)
+    page = paginator.paginate_queryset(queryset, request, count=count, **params.validated_data)
     return Response({**page, "results": serializer_class(page["results"], many=True).data})
